@@ -123,16 +123,31 @@ export default function ServerStatus() {
 
   const fetchStatus = useCallback(async () => {
     try {
-      const res = await fetch('https://api.mcsrvstat.us/3/play.jod.cool', {
-        cache: 'no-store',
-      });
+      // Primary: mcstatus.io (returns UUIDs with dashes, better for crafatar)
+      const res = await fetch(
+        'https://api.mcstatus.io/v2/status/java/stebbias.exaroton.me',
+        { cache: 'no-store' }
+      );
       const json: ServerData = await res.json();
       setData(json);
       setLastUpdated(
         new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       );
     } catch {
-      setData({ online: false });
+      try {
+        // Fallback: mcsrvstat.us
+        const res = await fetch(
+          'https://api.mcsrvstat.us/3/stebbias.exaroton.me',
+          { cache: 'no-store' }
+        );
+        const json: ServerData = await res.json();
+        setData(json);
+        setLastUpdated(
+          new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        );
+      } catch {
+        setData({ online: false });
+      }
     } finally {
       setLoading(false);
     }
