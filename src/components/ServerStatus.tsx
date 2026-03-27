@@ -15,6 +15,11 @@ interface ServerData {
     max: number;
     list?: Player[];
   };
+  motd?: {
+    clean?: string[];
+  };
+  icon?: string;
+  version?: string;
 }
 
 function PlayerCard({ player, index }: { player: Player; index: number }) {
@@ -42,7 +47,9 @@ function PlayerCard({ player, index }: { player: Player; index: number }) {
         position: 'relative',
         transition: 'border-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease',
         transform: hovered ? 'translateY(-6px)' : 'translateY(0)',
-        boxShadow: hovered ? '0 8px 32px rgba(0,255,65,0.12), 0 0 1px rgba(0,255,65,0.3)' : 'none',
+        boxShadow: hovered
+          ? '0 8px 32px rgba(0,255,65,0.12), 0 0 1px rgba(0,255,65,0.3)'
+          : 'none',
       }}
     >
       {/* Online dot */}
@@ -123,9 +130,8 @@ export default function ServerStatus() {
 
   const fetchStatus = useCallback(async () => {
     try {
-      // Primary: mcstatus.io (returns UUIDs with dashes, better for crafatar)
       const res = await fetch(
-        'https://api.mcstatus.io/v2/status/java/stebbias.exaroton.me',
+        'https://api.mcsrvstat.us/3/stebbias.exaroton.me',
         { cache: 'no-store' }
       );
       const json: ServerData = await res.json();
@@ -134,20 +140,7 @@ export default function ServerStatus() {
         new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       );
     } catch {
-      try {
-        // Fallback: mcsrvstat.us
-        const res = await fetch(
-          'https://api.mcsrvstat.us/3/stebbias.exaroton.me',
-          { cache: 'no-store' }
-        );
-        const json: ServerData = await res.json();
-        setData(json);
-        setLastUpdated(
-          new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        );
-      } catch {
-        setData({ online: false });
-      }
+      setData({ online: false });
     } finally {
       setLoading(false);
     }
@@ -163,6 +156,7 @@ export default function ServerStatus() {
   const playerCount = data?.players?.online ?? 0;
   const playerMax = data?.players?.max ?? 0;
   const players = data?.players?.list ?? [];
+  const motd = data?.motd?.clean?.[0] ?? '';
 
   return (
     <section
@@ -173,7 +167,7 @@ export default function ServerStatus() {
         overflow: 'hidden',
       }}
     >
-      {/* Ambient glow when online */}
+      {/* Ambient glow */}
       {isOnline && (
         <div
           style={{
@@ -207,12 +201,12 @@ export default function ServerStatus() {
         01 — SERVER
       </motion.p>
 
-      {/* Status row */}
+      {/* Status row: orb + icon + ONLINE + player count */}
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 'clamp(1.2rem, 3vw, 2.5rem)',
+          gap: 'clamp(1rem, 2.5vw, 2rem)',
           flexWrap: 'wrap',
         }}
       >
@@ -252,35 +246,80 @@ export default function ServerStatus() {
               inset: 0,
               borderRadius: '50%',
               background: loading ? '#222' : isOnline ? '#00ff41' : '#ff3333',
-              boxShadow: isOnline && !loading
-                ? '0 0 14px rgba(0,255,65,0.7), 0 0 4px rgba(0,255,65,1)'
-                : 'none',
+              boxShadow:
+                isOnline && !loading
+                  ? '0 0 14px rgba(0,255,65,0.7), 0 0 4px rgba(0,255,65,1)'
+                  : 'none',
               transition: 'background 0.5s ease, box-shadow 0.5s ease',
               zIndex: 1,
             }}
           />
         </motion.div>
 
-        {/* ONLINE / OFFLINE */}
-        <motion.h2
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-          style={{
-            fontFamily: "'Space Grotesk', sans-serif",
-            fontSize: 'clamp(2.5rem, 6vw, 5rem)',
-            fontWeight: 900,
-            letterSpacing: '-0.03em',
-            lineHeight: 1,
-            color: loading ? '#222' : isOnline ? '#00ff41' : '#ff3333',
-            textShadow:
-              isOnline && !loading ? '0 0 60px rgba(0,255,65,0.25)' : 'none',
-            transition: 'color 0.5s ease, text-shadow 0.5s ease',
-          }}
-        >
-          {loading ? '· · ·' : isOnline ? 'ONLINE' : 'OFFLINE'}
-        </motion.h2>
+        {/* Server icon */}
+        {data?.icon && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.05 }}
+            style={{
+              flexShrink: 0,
+              border: '1px solid #1a1a1a',
+              lineHeight: 0,
+              boxShadow: isOnline ? '0 0 16px rgba(0,255,65,0.08)' : 'none',
+            }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={data.icon}
+              alt="Server icon"
+              width={52}
+              height={52}
+              style={{ imageRendering: 'pixelated', display: 'block' }}
+            />
+          </motion.div>
+        )}
+
+        {/* ONLINE / OFFLINE + MOTD */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+          <motion.h2
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+            style={{
+              fontFamily: "'Space Grotesk', sans-serif",
+              fontSize: 'clamp(2.5rem, 6vw, 5rem)',
+              fontWeight: 900,
+              letterSpacing: '-0.03em',
+              lineHeight: 1,
+              color: loading ? '#222' : isOnline ? '#00ff41' : '#ff3333',
+              textShadow:
+                isOnline && !loading ? '0 0 60px rgba(0,255,65,0.25)' : 'none',
+              transition: 'color 0.5s ease, text-shadow 0.5s ease',
+            }}
+          >
+            {loading ? '· · ·' : isOnline ? 'ONLINE' : 'OFFLINE'}
+          </motion.h2>
+
+          {/* MOTD */}
+          {!loading && isOnline && motd && (
+            <motion.p
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.25 }}
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: '0.65rem',
+                color: '#444',
+                letterSpacing: '0.1em',
+                lineHeight: 1,
+              }}
+            >
+              {motd}
+            </motion.p>
+          )}
+        </div>
 
         {/* Player count */}
         {!loading && isOnline && (
@@ -310,6 +349,7 @@ export default function ServerStatus() {
                 letterSpacing: '-0.02em',
                 color: '#f0f0f0',
                 lineHeight: 1,
+                textAlign: 'right',
               }}
             >
               {playerCount}
