@@ -1,5 +1,6 @@
 import HeroSection from '@/components/HeroSection';
 import TickerStrip from '@/components/TickerStrip';
+import ServerStatus from '@/components/ServerStatus';
 import DatapacksSection from '@/components/DatapacksSection';
 import GallerySection from '@/components/GallerySection';
 import JoinSection from '@/components/JoinSection';
@@ -9,6 +10,7 @@ export default function Home() {
     <main className="bg-bg min-h-screen">
       <HeroSection />
       <TickerStrip />
+      <ServerStatus />
       <DatapacksSection />
       <GallerySection />
       <JoinSection />
