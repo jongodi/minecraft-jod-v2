@@ -1,68 +1,57 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 
 interface GalleryItem {
   id: number;
   label: string;
   sublabel: string;
   gradient: string;
+  photo: string;
 }
 
 const GALLERY_ITEMS: GalleryItem[] = [
   {
     id: 1,
-    label: 'THE OVERWORLD',
-    sublabel: 'SURFACE',
-    gradient: 'linear-gradient(160deg, #1a3a1a 0%, #2d5a1b 25%, #4a7c3a 45%, #7a7a7a 75%, #555 100%)',
+    label: 'SPAWN HILL',
+    sublabel: 'THE TOWER',
+    gradient: 'linear-gradient(160deg, #87ceeb 0%, #6ba8d4 20%, #5a9e7a 45%, #7a7a6a 75%, #555045 100%)',
+    photo: '/screenshots/spawn-hill.png',
   },
   {
     id: 2,
-    label: 'DEEP DARK',
-    sublabel: 'Y -52',
-    gradient: 'linear-gradient(160deg, #050508 0%, #0a0a12 30%, #0d0d1a 55%, #1a0d2e 80%, #0a0510 100%)',
+    label: 'CHERRY ESTATE',
+    sublabel: 'BLOSSOM GROVE',
+    gradient: 'linear-gradient(160deg, #87ceeb 0%, #d4a0b8 25%, #c87898 50%, #b86080 70%, #a05570 100%)',
+    photo: '/screenshots/cherry-estate.png',
   },
   {
     id: 3,
-    label: 'THE NETHER',
-    sublabel: 'HELL DIMENSION',
-    gradient: 'linear-gradient(160deg, #1a0000 0%, #3d0800 25%, #7a1500 50%, #cc3300 70%, #ff6600 85%, #1a0a00 100%)',
+    label: 'J CLUB',
+    sublabel: 'THE UNDERGROUND',
+    gradient: 'linear-gradient(160deg, #050308 0%, #120820 25%, #1e0a30 50%, #2d1048 70%, #1a0828 100%)',
+    photo: '/screenshots/j-club.png',
   },
   {
     id: 4,
-    label: 'BASE CAMP',
-    sublabel: 'HOME',
-    gradient: 'linear-gradient(160deg, #1a1208 0%, #2a1e0a 30%, #3d2d12 55%, #555040 75%, #777070 100%)',
+    label: 'THE HALL',
+    sublabel: 'MARKET',
+    gradient: 'linear-gradient(160deg, #1e1810 0%, #302820 25%, #483828 50%, #605040 70%, #786858 100%)',
+    photo: '/screenshots/the-hall.png',
   },
   {
     id: 5,
-    label: 'THE END',
-    sublabel: 'FINAL FRONTIER',
-    gradient: 'linear-gradient(160deg, #030308 0%, #0d0520 35%, #1a0a3a 55%, #2a1050 70%, #0a0014 85%, #ffffee08 100%)',
-  },
-  {
-    id: 6,
-    label: 'MOUNTAIN PEAK',
-    sublabel: 'Y 220',
-    gradient: 'linear-gradient(170deg, #c8d8e8 0%, #d0d8e0 30%, #b0b8c0 55%, #888 75%, #666 100%)',
-  },
-  {
-    id: 7,
-    label: 'OCEAN FLOOR',
-    sublabel: 'Y -30',
-    gradient: 'linear-gradient(160deg, #001428 0%, #002040 25%, #003055 45%, #004466 60%, #002035 80%, #000810 100%)',
-  },
-  {
-    id: 8,
-    label: 'SPAWN POINT',
-    sublabel: 'X 0 Z 0',
-    gradient: 'linear-gradient(160deg, #1a3010 0%, #254018 25%, #3a5520 45%, #5a4530 65%, #7a7060 80%, #5a5a5a 100%)',
+    label: 'WATERFRONT',
+    sublabel: 'COASTAL TOWN',
+    gradient: 'linear-gradient(160deg, #1a3860 0%, #284e78 20%, #183a68 40%, #c87840 65%, #a86030 85%, #183050 100%)',
+    photo: '/screenshots/waterfront.png',
   },
 ];
 
 export default function GallerySection() {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [hoveredId, setHoveredId] = useState<number | null>(null);
 
   return (
     <section
@@ -170,40 +159,73 @@ export default function GallerySection() {
             initial={{ opacity: 0, scale: 0.96 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: i * 0.04 }}
-            whileHover={{ scale: 1.02 }}
+            transition={{ duration: 0.5, delay: i * 0.06 }}
+            onMouseEnter={() => setHoveredId(item.id)}
+            onMouseLeave={() => setHoveredId(null)}
             style={{
               flexShrink: 0,
-              width: 'clamp(260px, 28vw, 380px)',
-              height: 'clamp(180px, 20vw, 260px)',
-              background: item.gradient,
+              width: 'clamp(280px, 30vw, 420px)',
+              height: 'clamp(190px, 21vw, 280px)',
               position: 'relative',
               scrollSnapAlign: 'start',
               overflow: 'hidden',
               border: '1px solid #1a1a1a',
             }}
           >
-            {/* Noise overlay for texture */}
+            {/* Photo layer — revealed on hover */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={item.photo}
+              alt={item.label}
+              style={{
+                position: 'absolute',
+                inset: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                objectPosition: 'center',
+                opacity: hoveredId === item.id ? 1 : 0,
+                transform: hoveredId === item.id ? 'scale(1)' : 'scale(1.06)',
+                transition: 'opacity 0.55s ease, transform 0.65s ease',
+                pointerEvents: 'none',
+              }}
+            />
+
+            {/* Gradient color layer — shown by default, fades on hover */}
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                background: item.gradient,
+                opacity: hoveredId === item.id ? 0 : 1,
+                transition: 'opacity 0.45s ease',
+                pointerEvents: 'none',
+              }}
+            />
+
+            {/* Noise texture overlay */}
             <div
               style={{
                 position: 'absolute',
                 inset: 0,
                 backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 128 128' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
-                opacity: 0.06,
+                opacity: hoveredId === item.id ? 0 : 0.06,
+                transition: 'opacity 0.45s ease',
                 pointerEvents: 'none',
               }}
             />
 
-            {/* Bottom gradient fade */}
+            {/* Bottom gradient fade — always present for label readability */}
             <div
               style={{
                 position: 'absolute',
                 bottom: 0,
                 left: 0,
                 right: 0,
-                height: '60%',
-                background: 'linear-gradient(to top, rgba(8,8,8,0.85) 0%, transparent 100%)',
+                height: '65%',
+                background: 'linear-gradient(to top, rgba(8,8,8,0.9) 0%, rgba(8,8,8,0.4) 50%, transparent 100%)',
                 pointerEvents: 'none',
+                zIndex: 2,
               }}
             />
 
@@ -214,6 +236,7 @@ export default function GallerySection() {
                 bottom: '1rem',
                 left: '1rem',
                 right: '1rem',
+                zIndex: 3,
               }}
             >
               <p
@@ -221,9 +244,10 @@ export default function GallerySection() {
                   fontFamily: "'JetBrains Mono', monospace",
                   fontSize: '0.5rem',
                   letterSpacing: '0.25em',
-                  color: '#666',
+                  color: hoveredId === item.id ? '#00ff41' : '#666',
                   textTransform: 'uppercase',
                   marginBottom: '0.2rem',
+                  transition: 'color 0.4s ease',
                 }}
               >
                 {item.sublabel}
@@ -252,15 +276,28 @@ export default function GallerySection() {
                 fontSize: '0.5rem',
                 color: 'rgba(255,255,255,0.2)',
                 letterSpacing: '0.1em',
+                zIndex: 3,
               }}
             >
               {String(item.id).padStart(2, '0')} / {String(GALLERY_ITEMS.length).padStart(2, '0')}
             </div>
+
+            {/* Hover border glow */}
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                border: `1px solid ${hoveredId === item.id ? 'rgba(0,255,65,0.3)' : 'transparent'}`,
+                transition: 'border-color 0.4s ease',
+                pointerEvents: 'none',
+                zIndex: 4,
+              }}
+            />
           </motion.div>
         ))}
       </motion.div>
 
-      {/* Note about screenshots */}
+      {/* Bottom label */}
       <p
         style={{
           paddingLeft: 'clamp(1.5rem, 6vw, 5rem)',
@@ -272,7 +309,6 @@ export default function GallerySection() {
           textTransform: 'uppercase',
         }}
       >
-        {/* Replace gradients above with actual server screenshots */}
         SCREENSHOTS FROM JOD — play.jod.cool
       </p>
     </section>
