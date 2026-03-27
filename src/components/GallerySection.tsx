@@ -14,38 +14,80 @@ interface GalleryItem {
 const GALLERY_ITEMS: GalleryItem[] = [
   {
     id: 1,
-    label: 'SPAWN HILL',
-    sublabel: 'THE TOWER',
-    gradient: 'linear-gradient(160deg, #87ceeb 0%, #6ba8d4 20%, #5a9e7a 45%, #7a7a6a 75%, #555045 100%)',
-    photo: '/screenshots/spawn-hill.png',
+    label: 'GOÐI CASTLE',
+    sublabel: 'FAR AWAY LANDS',
+    gradient: 'linear-gradient(160deg, #87ceeb 0%, #6ba8d4 20%, #4a7a5a 45%, #3a5a3a 65%, #555a55 85%, #404040 100%)',
+    photo: '/screenshots/the-castle.png',
   },
   {
     id: 2,
-    label: 'CHERRY ESTATE',
-    sublabel: 'BLOSSOM GROVE',
-    gradient: 'linear-gradient(160deg, #87ceeb 0%, #d4a0b8 25%, #c87898 50%, #b86080 70%, #a05570 100%)',
-    photo: '/screenshots/cherry-estate.png',
+    label: 'JOÐ VILLE',
+    sublabel: 'OLD BASE',
+    gradient: 'linear-gradient(160deg, #87ceeb 0%, #6ba8d4 20%, #c8a0b8 45%, #5a9a6a 65%, #7a7a6a 85%, #555045 100%)',
+    photo: '/screenshots/spawn-hill.png',
   },
   {
     id: 3,
+    label: 'PINK ESTATE',
+    sublabel: 'OLD BASE',
+    gradient: 'linear-gradient(160deg, #87ceeb 0%, #c8a0b8 20%, #d4789a 45%, #c06888 65%, #a85878 85%, #903060 100%)',
+    photo: '/screenshots/cherry-estate.png',
+  },
+  {
+    id: 4,
     label: 'J CLUB',
-    sublabel: 'THE UNDERGROUND',
+    sublabel: 'SECRET UNDERGROUND CLUB',
     gradient: 'linear-gradient(160deg, #050308 0%, #120820 25%, #1e0a30 50%, #2d1048 70%, #1a0828 100%)',
     photo: '/screenshots/j-club.png',
   },
   {
-    id: 4,
-    label: 'THE HALL',
-    sublabel: 'MARKET',
+    id: 5,
+    label: 'MUSHROOM ISLAND',
+    sublabel: 'SHROOMY HEAVEN',
+    gradient: 'linear-gradient(160deg, #87ceeb 0%, #6ba8d4 20%, #cc2222 45%, #aa1818 65%, #1a3860 80%, #081828 100%)',
+    photo: '/screenshots/mushroom-isle.png',
+  },
+  {
+    id: 6,
+    label: 'POTIONS TOWER',
+    sublabel: 'NEW BASE',
     gradient: 'linear-gradient(160deg, #1e1810 0%, #302820 25%, #483828 50%, #605040 70%, #786858 100%)',
     photo: '/screenshots/the-hall.png',
   },
   {
-    id: 5,
-    label: 'WATERFRONT',
-    sublabel: 'COASTAL TOWN',
-    gradient: 'linear-gradient(160deg, #1a3860 0%, #284e78 20%, #183a68 40%, #c87840 65%, #a86030 85%, #183050 100%)',
+    id: 7,
+    label: 'VENICE',
+    sublabel: 'NEW BASE',
+    gradient: 'linear-gradient(160deg, #87ceeb 0%, #c87840 25%, #a86030 45%, #284e78 65%, #183060 85%, #0a1828 100%)',
     photo: '/screenshots/waterfront.png',
+  },
+  {
+    id: 8,
+    label: 'CITY HALL',
+    sublabel: 'NEW BASE',
+    gradient: 'linear-gradient(160deg, #87ceeb 0%, #6ba8d4 20%, #7a5a30 45%, #504020 65%, #3a3018 85%, #252010 100%)',
+    photo: '/screenshots/the-tavern.png',
+  },
+  {
+    id: 9,
+    label: 'THE VILLAGE',
+    sublabel: 'NEW BASE',
+    gradient: 'linear-gradient(160deg, #87ceeb 0%, #6ba8d4 20%, #6a8a40 40%, #4a6a28 60%, #7a5a30 80%, #503818 100%)',
+    photo: '/screenshots/the-village.png',
+  },
+  {
+    id: 10,
+    label: 'BALLOON PARADISE',
+    sublabel: 'NEW BASE',
+    gradient: 'linear-gradient(160deg, #87ceeb 0%, #a8d4f0 20%, #6bc8f0 40%, #4a9a6a 65%, #387850 85%, #204830 100%)',
+    photo: '/screenshots/balloon-island.png',
+  },
+  {
+    id: 11,
+    label: 'NEW TOWN',
+    sublabel: 'NEW BASE',
+    gradient: 'linear-gradient(160deg, #020408 0%, #080d18 20%, #0d1525 40%, #1a2a40 60%, #102030 80%, #050a12 100%)',
+    photo: '/screenshots/night-sky.png',
   },
 ];
 
@@ -159,7 +201,7 @@ export default function GallerySection() {
             initial={{ opacity: 0, scale: 0.96 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: i * 0.06 }}
+            transition={{ duration: 0.5, delay: i * 0.04 }}
             onMouseEnter={() => setHoveredId(item.id)}
             onMouseLeave={() => setHoveredId(null)}
             style={{
