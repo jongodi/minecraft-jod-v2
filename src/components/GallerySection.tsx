@@ -1,7 +1,7 @@
 'use client';
 
-import { motion, useRef } from 'framer-motion';
-import { useRef as useReactRef } from 'react';
+import { motion } from 'framer-motion';
+import { useRef } from 'react';
 
 interface GalleryItem {
   id: number;
@@ -62,7 +62,7 @@ const GALLERY_ITEMS: GalleryItem[] = [
 ];
 
 export default function GallerySection() {
-  const scrollRef = useReactRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   return (
     <section
