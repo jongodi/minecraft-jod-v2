@@ -13,51 +13,87 @@ interface Datapack {
 const DATAPACKS: Datapack[] = [
   {
     id: 1,
-    name: 'Armor Statues',
-    description: 'Full control over armor stand poses & properties',
-    category: 'BUILD',
-  },
-  {
-    id: 2,
-    name: 'Graves',
-    description: 'Your items rest in a tombstone when you fall',
-    category: 'SURVIVAL',
-  },
-  {
-    id: 3,
-    name: 'Multiplayer Sleep',
-    description: '50% of players needed to skip the night',
-    category: 'QOL',
-  },
-  {
-    id: 4,
-    name: 'Timber',
-    description: 'Cut the base, fell the whole tree',
-    category: 'QOL',
-  },
-  {
-    id: 5,
-    name: 'Player Heads',
-    description: 'Collect skulls from fallen players',
+    name: 'MVP',
+    description: 'More mob variety — unique perks & drops per biome',
     category: 'LOOT',
   },
   {
+    id: 2,
+    name: 'Banner Flags',
+    description: 'Plant banners as flags anywhere in the world',
+    category: 'BUILD',
+  },
+  {
+    id: 3,
+    name: 'Call of the King',
+    description: 'Summon and battle a powerful new boss',
+    category: 'COMBAT',
+  },
+  {
+    id: 4,
+    name: 'Colored Name Teams',
+    description: 'Color-coded team nametags visible above players',
+    category: 'SOCIAL',
+  },
+  {
+    id: 5,
+    name: 'Dungeons & Taverns',
+    description: 'Overhauled dungeons and tavern structures in worldgen',
+    category: 'STRUCTURE',
+  },
+  {
     id: 6,
-    name: 'Anti-Grief',
-    description: 'Endermen leave the landscape untouched',
-    category: 'WORLD',
+    name: 'Ghast Mayhem',
+    description: 'Ghasts are angrier, more dangerous, and more rewarding',
+    category: 'COMBAT',
   },
   {
     id: 7,
-    name: 'Wandering Trades',
-    description: 'Expanded merchant catalogue',
-    category: 'TRADE',
+    name: 'Holographic Tags',
+    description: 'Floating holographic name displays above players',
+    category: 'SOCIAL',
   },
   {
     id: 8,
-    name: 'Custom Recipes',
-    description: 'New crafting combinations, new possibilities',
-    category: 'CRAFT',
+    name: 'LY Graves',
+    description: 'A grave marks your death — your loot stays safe',
+    category: 'SURVIVAL',
+  },
+  {
+    id: 9,
+    name: 'Show Player Health',
+    description: "See other players' health above their heads",
+    category: 'SOCIAL',
+  },
+  {
+    id: 10,
+    name: 'Better Mineshaft',
+    description: 'Completely redesigned mineshaft structures to explore',
+    category: 'STRUCTURE',
+  },
+  {
+    id: 11,
+    name: 'MC Paint',
+    description: 'Create custom pixel-art paintings in-game',
+    category: 'BUILD',
+  },
+  {
+    id: 12,
+    name: 'Waystones',
+    description: 'Place waystones to fast-travel across the world',
+    category: 'QOL',
+  },
+  {
+    id: 13,
+    name: 'Vanilla Refresh',
+    description: 'New items, recipes and mechanics that feel vanilla',
+    category: 'QOL',
+  },
+  {
+    id: 14,
+    name: 'Wabi-Sabi Structures',
+    description: 'Japanese-inspired structures scattered across the world',
+    category: 'STRUCTURE',
   },
 ];
 
@@ -69,6 +105,9 @@ const CATEGORY_COLORS: Record<string, string> = {
   WORLD: '#95e1d3',
   TRADE: '#c9b1ff',
   CRAFT: '#ff9ff3',
+  COMBAT: '#ff4466',
+  SOCIAL: '#c9b1ff',
+  STRUCTURE: '#f0a500',
 };
 
 function DatapackCard({ pack, index }: { pack: Datapack; index: number }) {
@@ -251,7 +290,7 @@ export default function DatapacksSection() {
             maxWidth: '400px',
           }}
         >
-          Server-side enhancements that make vanilla feel complete.
+          14 datapacks — combat, structure, social, and more.
         </motion.p>
       </div>
 

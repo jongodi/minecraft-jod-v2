@@ -22,11 +22,25 @@ interface ServerData {
   version?: string;
 }
 
+const HEAD_SOURCES = (uuid: string, name: string) => [
+  `https://mc-heads.net/head/${uuid}/128`,
+  `https://crafatar.com/renders/head/${uuid}?size=128&overlay=true`,
+  `https://minotar.net/helm/${name}/128`,
+];
+
 function PlayerCard({ player, index }: { player: Player; index: number }) {
   const [hovered, setHovered] = useState(false);
-  const [imgError, setImgError] = useState(false);
+  const [srcIndex, setSrcIndex] = useState(0);
+  const sources = HEAD_SOURCES(player.uuid, player.name);
+  const allFailed = srcIndex >= sources.length;
 
-  const headUrl = `https://crafatar.com/renders/head/${player.uuid}?size=128&overlay=true`;
+  const handleImgError = () => {
+    if (srcIndex < sources.length - 1) {
+      setSrcIndex((i) => i + 1);
+    } else {
+      setSrcIndex(sources.length); // mark all failed
+    }
+  };
 
   return (
     <motion.div
@@ -67,14 +81,14 @@ function PlayerCard({ player, index }: { player: Player; index: number }) {
       />
 
       {/* Head render */}
-      {!imgError ? (
+      {!allFailed ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={headUrl}
+          src={sources[srcIndex]}
           alt={player.name}
           width={64}
           height={64}
-          onError={() => setImgError(true)}
+          onError={handleImgError}
           style={{
             imageRendering: 'pixelated',
             transform: hovered ? 'scale(1.1) translateY(-2px)' : 'scale(1)',
