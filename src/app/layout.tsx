@@ -8,6 +8,10 @@ export const metadata: Metadata = {
   description:
     'Private Minecraft survival server. Custom datapacks, tight-knit community. IP: play.jod.cool',
   keywords: ['minecraft', 'survival', 'private server', 'JOD', 'datapacks'],
+  icons: {
+    icon: '/icon.svg',
+    shortcut: '/icon.svg',
+  },
   openGraph: {
     title: 'JOD — Private Minecraft Survival',
     description: 'Private survival. Custom datapacks. play.jod.cool',
