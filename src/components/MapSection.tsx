@@ -166,7 +166,7 @@ export default function MapSection() {
           marginBottom: '0.75rem',
         }}
       >
-        04 — THE MAP
+        03 — THE REALM
       </motion.p>
 
       <motion.h2

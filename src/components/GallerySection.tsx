@@ -119,7 +119,7 @@ export default function GallerySection() {
             marginBottom: '0.75rem',
           }}
         >
-          03 — GALLERY
+          02 — THE WORLD
         </motion.p>
 
         <motion.h2

@@ -258,7 +258,7 @@ export default function DatapacksSection() {
             marginBottom: '0.75rem',
           }}
         >
-          02 — ENHANCEMENTS
+          04 — DATAPACKS
         </motion.p>
 
         <motion.h2

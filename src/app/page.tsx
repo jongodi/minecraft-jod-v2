@@ -12,9 +12,9 @@ export default function Home() {
       <HeroSection />
       <TickerStrip />
       <ServerStatus />
-      <DatapacksSection />
       <GallerySection />
       <MapSection />
+      <DatapacksSection />
       <JoinSection />
       <footer className="border-t border-border py-6 px-8">
         <p className="font-mono text-muted text-xs text-center tracking-widest uppercase">
