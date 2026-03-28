@@ -13,17 +13,17 @@ interface Location {
 }
 
 const LOCATIONS: Location[] = [
-  { id: 1,  label: 'GOÐI CASTLE',      sublabel: 'FAR AWAY LANDS',         x: 242, y: 322, type: 'surface'     },
-  { id: 2,  label: 'JOÐ VILLE',        sublabel: 'OLD BASE · SPAWN',        x: 462, y: 255, type: 'surface'     },
-  { id: 3,  label: 'PINK ESTATE',      sublabel: 'OLD BASE',                x: 408, y: 152, type: 'surface'     },
-  { id: 4,  label: 'J CLUB',           sublabel: 'SECRET UNDERGROUND CLUB', x: 492, y: 345, type: 'underground' },
-  { id: 5,  label: 'MUSHROOM ISLAND',  sublabel: 'SHROOMY HEAVEN',          x: 838, y: 308, type: 'island'      },
-  { id: 6,  label: 'POTIONS TOWER',    sublabel: 'NEW BASE',                x: 535, y: 398, type: 'surface'     },
-  { id: 7,  label: 'VENICE',           sublabel: 'NEW BASE · COASTAL',      x: 352, y: 468, type: 'surface'     },
-  { id: 8,  label: 'CITY HALL',        sublabel: 'NEW BASE',                x: 544, y: 192, type: 'surface'     },
-  { id: 9,  label: 'THE VILLAGE',      sublabel: 'NEW BASE · MAIN STREET',  x: 498, y: 452, type: 'surface'     },
-  { id: 10, label: 'BALLOON PARADISE', sublabel: 'NEW BASE · FROM ABOVE',   x: 628, y: 212, type: 'aerial'      },
-  { id: 11, label: 'NEW TOWN',         sublabel: 'NEW BASE · NIGHT',        x: 308, y: 428, type: 'surface'     },
+  { id: 1,  label: 'GOÐI CASTLE',      sublabel: 'FAR AWAY LANDS',         x: 162, y: 345, type: 'surface'     },
+  { id: 2,  label: 'JOÐ VILLE',        sublabel: 'OLD BASE · SPAWN',        x: 355, y: 90,  type: 'surface'     },
+  { id: 3,  label: 'PINK ESTATE',      sublabel: 'OLD BASE',                x: 268, y: 205, type: 'surface'     },
+  { id: 4,  label: 'J CLUB',           sublabel: 'SECRET UNDERGROUND CLUB', x: 392, y: 215, type: 'underground' },
+  { id: 5,  label: 'MUSHROOM ISLAND',  sublabel: 'SHROOMY HEAVEN',          x: 872, y: 260, type: 'island'      },
+  { id: 6,  label: 'POTIONS TOWER',    sublabel: 'NEW BASE',                x: 545, y: 452, type: 'surface'     },
+  { id: 7,  label: 'VENICE',           sublabel: 'NEW BASE · COASTAL',      x: 568, y: 412, type: 'surface'     },
+  { id: 8,  label: 'CITY HALL',        sublabel: 'NEW BASE',                x: 438, y: 455, type: 'surface'     },
+  { id: 9,  label: 'THE VILLAGE',      sublabel: 'NEW BASE · MAIN STREET',  x: 488, y: 502, type: 'surface'     },
+  { id: 10, label: 'BALLOON PARADISE', sublabel: 'NEW BASE · FROM ABOVE',   x: 592, y: 378, type: 'aerial'      },
+  { id: 11, label: 'NEW TOWN',         sublabel: 'NEW BASE · NIGHT',        x: 405, y: 505, type: 'surface'     },
 ];
 
 const TYPE_COLOR: Record<string, string> = {
@@ -38,8 +38,8 @@ function Pin({ loc, index }: { loc: Location; index: number }) {
   const color = TYPE_COLOR[loc.type];
 
   // Flip tooltip left if near right edge
-  const flipLeft = loc.x > 700;
-  const flipUp   = loc.y > 480;
+  const flipLeft = loc.x > 820;
+  const flipUp   = loc.y > 540;
 
   return (
     <g
@@ -222,127 +222,127 @@ export default function MapSection() {
           xmlns="http://www.w3.org/2000/svg"
           style={{ width: '100%', display: 'block', fontFamily: "'JetBrains Mono', monospace" }}
         >
+          <defs>
+            <radialGradient id="vignette" cx="50%" cy="50%" r="65%">
+              <stop offset="55%" stopColor="transparent"/>
+              <stop offset="100%" stopColor="#020810" stopOpacity={0.8}/>
+            </radialGradient>
+            <radialGradient id="landGrad" cx="50%" cy="45%" r="55%">
+              <stop offset="0%" stopColor="#0f1e0f"/>
+              <stop offset="100%" stopColor="#090f09"/>
+            </radialGradient>
+          </defs>
+
           {/* ── Ocean background ── */}
           <rect width="1000" height="650" fill="#040d18"/>
 
           {/* ── Coordinate grid ── */}
           {[100,200,300,400,500,600,700,800,900].map(x => (
-            <line key={`gx${x}`} x1={x} y1={0} x2={x} y2={650} stroke="rgba(0,255,65,0.04)" strokeWidth={0.5}/>
+            <line key={`gx${x}`} x1={x} y1={0} x2={x} y2={650} stroke="rgba(0,255,65,0.035)" strokeWidth={0.5}/>
           ))}
           {[100,200,300,400,500,600].map(y => (
-            <line key={`gy${y}`} x1={0} y1={y} x2={1000} y2={y} stroke="rgba(0,255,65,0.04)" strokeWidth={0.5}/>
+            <line key={`gy${y}`} x1={0} y1={y} x2={1000} y2={y} stroke="rgba(0,255,65,0.035)" strokeWidth={0.5}/>
           ))}
 
           {/* ── Ocean texture dots ── */}
           {[
-            [80,180],[130,420],[180,80],[185,520],[60,310],
-            [900,150],[940,420],[870,520],[955,280],[880,80],
-            [150,600],[760,580],[820,80],[960,580],[50,580],
+            [48,195],[52,430],[920,155],[945,435],[962,295],
+            [68,555],[938,548],[32,318],[978,82],[920,582],
+            [840,82],[48,88],[750,600],[955,195],
           ].map(([x,y], i) => (
-            <circle key={i} cx={x} cy={y} r={1.5} fill="rgba(0,100,180,0.3)" />
+            <circle key={i} cx={x} cy={y} r={1.5} fill="rgba(0,80,160,0.25)" />
           ))}
 
-          {/* ── Main island ── */}
+          {/* ── Main landmass ── */}
           <path
-            d="M 460 78
-               C 518 65, 604 82, 652 128
-               C 698 168, 710 218, 718 262
-               C 724 298, 704 334, 698 368
-               C 690 402, 704 434, 690 464
-               C 672 502, 618 532, 552 546
-               C 496 558, 436 554, 380 540
-               C 322 526, 266 502, 238 466
-               C 204 428, 193 385, 193 342
-               C 193 298, 205 258, 222 224
-               C 240 188, 260 158, 288 138
-               C 326 108, 392 90, 460 78 Z"
-            fill="#0d1a0d"
-            stroke="rgba(0,255,65,0.18)"
+            d="M 435 60
+               C 528 45, 674 78, 752 142
+               C 810 194, 822 262, 818 330
+               C 814 402, 786 460, 746 502
+               C 700 550, 635 582, 555 596
+               C 476 610, 396 604, 320 582
+               C 232 558, 155 512, 110 458
+               C 62 400, 50 336, 56 278
+               C 62 218, 88 166, 132 136
+               C 182 100, 298 70, 435 60 Z"
+            fill="url(#landGrad)"
+            stroke="rgba(0,255,65,0.2)"
+            strokeWidth={1.4}
+          />
+
+          {/* ── Faraway Lands zone (west oval) ── */}
+          <ellipse
+            cx={162} cy={345} rx={78} ry={58}
+            fill="rgba(60,55,80,0.14)"
+            stroke="rgba(150,140,200,0.22)"
             strokeWidth={1.2}
+            strokeDasharray="5 4"
           />
+          {/* Stone/earth texture hint */}
+          <ellipse cx={162} cy={345} rx={55} ry={40} fill="rgba(70,65,88,0.08)"/>
+          <text x={122} y={416} fill="rgba(180,170,220,0.25)" fontFamily="'JetBrains Mono',monospace" fontSize={6.5} letterSpacing={1.5}>FARAWAY LANDS</text>
 
-          {/* ── Biome zones ── */}
-
-          {/* Cherry grove - north */}
-          <path
-            d="M 382 82 C 432 70, 520 80, 558 124 C 572 150, 562 192, 530 206
-               C 498 220, 452 214, 418 198 C 374 180, 348 148, 360 112 C 366 94, 382 82, 382 82 Z"
-            fill="rgba(200,80,130,0.16)"
+          {/* ── Old Base zone (upper circle) ── */}
+          <circle
+            cx={350} cy={192} r={148}
+            fill="rgba(45,18,72,0.10)"
+            stroke="rgba(185,115,255,0.22)"
+            strokeWidth={1.4}
+            strokeDasharray="6 4"
           />
+          {/* Cherry grove sub-tint inside old base */}
+          <ellipse cx={310} cy={160} rx={95} ry={70} fill="rgba(190,70,120,0.08)"/>
+          <text x={420} y={72} fill="rgba(185,115,255,0.3)" fontFamily="'JetBrains Mono',monospace" fontSize={7} letterSpacing={2}>OLD BASE</text>
 
-          {/* Forest — center east */}
-          <path
-            d="M 558 148 C 614 132, 688 162, 706 210 C 718 248, 700 298, 664 318
-               C 628 334, 578 322, 554 290 C 530 258, 530 190, 558 148 Z"
-            fill="rgba(20,80,30,0.2)"
+          {/* ── New Base zone (lower oval) ── */}
+          <ellipse
+            cx={488} cy={466} rx={200} ry={112}
+            fill="rgba(8,38,78,0.16)"
+            stroke="rgba(56,189,248,0.22)"
+            strokeWidth={1.4}
+            strokeDasharray="6 4"
           />
+          {/* Coastal sub-tint inside new base */}
+          <ellipse cx={510} cy={448} rx={145} ry={80} fill="rgba(12,50,105,0.10)"/>
+          <text x={488} y={590} fill="rgba(56,189,248,0.25)" fontFamily="'JetBrains Mono',monospace" fontSize={7} letterSpacing={2} textAnchor="middle">NEW BASE</text>
 
-          {/* Settlement zone — center */}
+          {/* ── River through New Base ── */}
           <path
-            d="M 390 290 C 432 268, 518 264, 568 296 C 598 318, 602 368, 576 400
-               C 550 432, 498 448, 448 440 C 398 432, 362 400, 362 366
-               C 360 330, 372 308, 390 290 Z"
-            fill="rgba(40,90,40,0.14)"
-          />
-
-          {/* Coastal / Venice — southwest */}
-          <path
-            d="M 238 428 C 272 412, 362 436, 396 472 C 408 490, 398 518, 375 528
-               C 346 540, 290 528, 258 502 C 222 472, 210 446, 238 428 Z"
-            fill="rgba(15,40,90,0.28)"
-          />
-
-          {/* Stone / castle zone — west */}
-          <path
-            d="M 195 295 C 218 268, 278 260, 318 282 C 348 300, 355 340, 338 368
-               C 320 396, 276 405, 244 390 C 204 370, 190 325, 195 295 Z"
-            fill="rgba(80,85,90,0.18)"
-          />
-
-          {/* ── River ── */}
-          <path
-            d="M 292 262 C 270 298, 248 342, 252 388 C 256 422, 272 448, 258 474"
-            fill="none"
-            stroke="#061828"
-            strokeWidth={9}
+            d="M 566 404 C 542 428, 502 444, 462 460 C 438 472, 416 492, 405 516"
+            fill="none" stroke="#061828" strokeWidth={10}
           />
           <path
-            d="M 292 262 C 270 298, 248 342, 252 388 C 256 422, 272 448, 258 474"
-            fill="none"
-            stroke="#0c2e4a"
-            strokeWidth={5}
+            d="M 566 404 C 542 428, 502 444, 462 460 C 438 472, 416 492, 405 516"
+            fill="none" stroke="#0d2e50" strokeWidth={6}
           />
           <path
-            d="M 292 262 C 270 298, 248 342, 252 388 C 256 422, 272 448, 258 474"
-            fill="none"
-            stroke="rgba(20,80,140,0.4)"
-            strokeWidth={2}
+            d="M 566 404 C 542 428, 502 444, 462 460 C 438 472, 416 492, 405 516"
+            fill="none" stroke="rgba(22,90,160,0.45)" strokeWidth={2.5}
           />
 
-          {/* ── Mushroom island ── */}
-          <ellipse cx={838} cy={308} rx={52} ry={40} fill="#110815" stroke="rgba(249,115,22,0.2)" strokeWidth={1}/>
-          <ellipse cx={838} cy={308} rx={42} ry={30} fill="#180d1e"/>
-          {/* mushroom dots */}
-          {[[820,295],[845,288],[860,305],[830,315],[852,320]].map(([x,y],i) => (
-            <circle key={i} cx={x} cy={y} r={4} fill="rgba(220,50,50,0.5)"/>
+          {/* ── Mushroom Island (separate, east) ── */}
+          <ellipse cx={872} cy={260} rx={56} ry={44} fill="#100814" stroke="rgba(249,115,22,0.22)" strokeWidth={1.2}/>
+          <ellipse cx={872} cy={260} rx={44} ry={33} fill="#160b1c"/>
+          {[[856,247],[878,238],[894,256],[864,268],[886,272]].map(([x,y],i) => (
+            <circle key={i} cx={x} cy={y} r={4.5} fill="rgba(210,50,50,0.48)"/>
           ))}
-          <text x={800} y={362} fill="rgba(249,115,22,0.5)" fontFamily="'JetBrains Mono',monospace" fontSize={7} letterSpacing={1.5}>MUSHROOM ISLE</text>
+          <text x={835} y={316} fill="rgba(249,115,22,0.45)" fontFamily="'JetBrains Mono',monospace" fontSize={7} letterSpacing={1.5}>MUSHROOM ISLE</text>
 
-          {/* ── Small islands ── */}
-          <ellipse cx={155} cy={520} rx={28} ry={18} fill="#0c1a0c" stroke="rgba(0,255,65,0.08)" strokeWidth={0.8}/>
-          <ellipse cx={880} cy={490} rx={22} ry={15} fill="#0c1a0c" stroke="rgba(0,255,65,0.06)" strokeWidth={0.8}/>
-          <ellipse cx={760} cy={130} rx={18} ry={12} fill="#0c1a0c" stroke="rgba(0,255,65,0.06)" strokeWidth={0.8}/>
+          {/* ── Small scatter islands ── */}
+          <ellipse cx={895} cy={490} rx={20} ry={14} fill="#0a140a" stroke="rgba(0,255,65,0.06)" strokeWidth={0.8}/>
+          <ellipse cx={68}  cy={545} rx={24} ry={16} fill="#0a140a" stroke="rgba(0,255,65,0.06)" strokeWidth={0.8}/>
+          <ellipse cx={780} cy={120} rx={16} ry={11} fill="#0a140a" stroke="rgba(0,255,65,0.05)" strokeWidth={0.8}/>
 
           {/* ── Map border (double line) ── */}
-          <rect x={8}  y={8}  width={984} height={634} fill="none" stroke="rgba(0,255,65,0.12)" strokeWidth={1}/>
+          <rect x={8}  y={8}  width={984} height={634} fill="none" stroke="rgba(0,255,65,0.14)" strokeWidth={1}/>
           <rect x={14} y={14} width={972} height={622} fill="none" stroke="rgba(0,255,65,0.06)" strokeWidth={0.5}/>
 
           {/* ── Coordinate labels ── */}
           {[100,200,300,400,500,600,700,800,900].map(x => (
-            <text key={`lx${x}`} x={x} y={642} fill="rgba(0,255,65,0.2)" fontFamily="'JetBrains Mono',monospace" fontSize={7} textAnchor="middle" letterSpacing={0.5}>{x}</text>
+            <text key={`lx${x}`} x={x} y={642} fill="rgba(0,255,65,0.18)" fontFamily="'JetBrains Mono',monospace" fontSize={7} textAnchor="middle" letterSpacing={0.5}>{x}</text>
           ))}
           {[100,200,300,400,500,600].map(y => (
-            <text key={`ly${y}`} x={4} y={y + 3} fill="rgba(0,255,65,0.2)" fontFamily="'JetBrains Mono',monospace" fontSize={7} textAnchor="start" letterSpacing={0.5}>{y}</text>
+            <text key={`ly${y}`} x={4} y={y + 3} fill="rgba(0,255,65,0.18)" fontFamily="'JetBrains Mono',monospace" fontSize={7} textAnchor="start" letterSpacing={0.5}>{y}</text>
           ))}
 
           {/* ── Location pins ── */}
@@ -352,19 +352,13 @@ export default function MapSection() {
 
           {/* ── Compass rose (bottom right) ── */}
           <g transform="translate(930, 575)">
-            {/* Arms */}
             <line x1={0}   y1={-28} x2={0}   y2={28}  stroke="rgba(0,255,65,0.35)" strokeWidth={0.8}/>
             <line x1={-28} y1={0}   x2={28}  y2={0}   stroke="rgba(0,255,65,0.35)" strokeWidth={0.8}/>
-            {/* Diagonal arms */}
             <line x1={-18} y1={-18} x2={18}  y2={18}  stroke="rgba(0,255,65,0.15)" strokeWidth={0.5}/>
             <line x1={18}  y1={-18} x2={-18} y2={18}  stroke="rgba(0,255,65,0.15)" strokeWidth={0.5}/>
-            {/* North arrow */}
             <polygon points="0,-28 4,-14 0,-18 -4,-14" fill="rgba(0,255,65,0.7)"/>
-            {/* South arrow */}
-            <polygon points="0,28 4,14 0,18 -4,14"  fill="rgba(0,255,65,0.2)"/>
-            {/* Center dot */}
+            <polygon points="0,28 4,14 0,18 -4,14"     fill="rgba(0,255,65,0.2)"/>
             <rect x={-2} y={-2} width={4} height={4} fill="#00ff41" opacity={0.8}/>
-            {/* Cardinal labels */}
             <text x={0}   y={-33} fill="rgba(0,255,65,0.7)" fontSize={8} textAnchor="middle" fontFamily="'JetBrains Mono',monospace" letterSpacing={1} fontWeight="bold">N</text>
             <text x={0}   y={44}  fill="rgba(0,255,65,0.3)" fontSize={7} textAnchor="middle" fontFamily="'JetBrains Mono',monospace" letterSpacing={1}>S</text>
             <text x={38}  y={4}   fill="rgba(0,255,65,0.3)" fontSize={7} textAnchor="start"  fontFamily="'JetBrains Mono',monospace" letterSpacing={1}>E</text>
@@ -388,12 +382,6 @@ export default function MapSection() {
           </g>
 
           {/* ── Edge vignette ── */}
-          <defs>
-            <radialGradient id="vignette" cx="50%" cy="50%" r="65%">
-              <stop offset="55%" stopColor="transparent"/>
-              <stop offset="100%" stopColor="#020810" stopOpacity={0.75}/>
-            </radialGradient>
-          </defs>
           <rect width="1000" height="650" fill="url(#vignette)" pointerEvents="none"/>
         </svg>
       </motion.div>
