@@ -55,8 +55,8 @@ async function fromExaroton(): Promise<NextResponse<StatusResponse>> {
   const data = await res.json();
   const server = data.data;
 
-  // Exaroton status codes: 0=offline 1=loading 2=online 3=saving 4=stopping 5=stopped 6=crashed
-  const isOnline = server.status === 2;
+  // Exaroton status codes: 0=offline 1=online 2=starting 3=stopping 4=restarting 5=saving 6=loading 7=crashed 8=pending 9=preparing
+  const isOnline = server.status === 1;
   const nameList: string[] = server.players?.list ?? [];
 
   const payload: StatusResponse = {
