@@ -2,7 +2,17 @@
 
 import { motion } from 'framer-motion';
 import { useEffect, useState, useCallback } from 'react';
-import type { StatusResponse } from '@/app/api/server-status/route';
+
+interface StatusResponse {
+  online: boolean;
+  players?: {
+    online: number;
+    max: number;
+    list?: Array<{ name: string; uuid: string }>;
+  };
+  motd?: { clean?: string[] };
+  icon?: string;
+}
 
 // ─── Static crew list ────────────────────────────────────────────────────────
 const CREW = [
@@ -174,14 +184,14 @@ export default function ServerStatus() {
 
   const fetchStatus = useCallback(async () => {
     try {
-      const res = await fetch('/api/server-status', { cache: 'no-store' });
+      const res = await fetch('https://api.mcsrvstat.us/3/stebbias.exaroton.me', { cache: 'no-store' });
       const json: StatusResponse = await res.json();
       setData(json);
       setLastUpdated(
         new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       );
     } catch {
-      setData({ online: false, source: 'error' });
+      setData({ online: false });
     } finally {
       setLoading(false);
     }
@@ -520,7 +530,6 @@ export default function ServerStatus() {
           }}
         >
           UPDATED {lastUpdated} · REFRESHES EVERY 60S
-          {data?.source === 'exaroton' && ' · EXAROTON API'}
         </p>
       )}
     </section>
