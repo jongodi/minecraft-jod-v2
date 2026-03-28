@@ -14,16 +14,16 @@ interface Location {
 
 const LOCATIONS: Location[] = [
   { id: 1,  label: 'GOÐI CASTLE',      sublabel: 'FAR AWAY LANDS',         x: 162, y: 345, type: 'surface'     },
-  { id: 2,  label: 'JOÐ VILLE',        sublabel: 'OLD BASE · SPAWN',        x: 355, y: 90,  type: 'surface'     },
-  { id: 3,  label: 'PINK ESTATE',      sublabel: 'OLD BASE',                x: 268, y: 205, type: 'surface'     },
-  { id: 4,  label: 'J CLUB',           sublabel: 'SECRET UNDERGROUND CLUB', x: 392, y: 215, type: 'underground' },
+  { id: 2,  label: 'JOÐ VILLE',        sublabel: 'OLD BASE · SPAWN',        x: 262, y: 172, type: 'surface'     },
+  { id: 3,  label: 'PINK ESTATE',      sublabel: 'OLD BASE',                x: 258, y: 210, type: 'surface'     },
+  { id: 4,  label: 'J CLUB',           sublabel: 'SECRET UNDERGROUND CLUB', x: 306, y: 210, type: 'underground' },
   { id: 5,  label: 'MUSHROOM ISLAND',  sublabel: 'SHROOMY HEAVEN',          x: 872, y: 260, type: 'island'      },
-  { id: 6,  label: 'POTIONS TOWER',    sublabel: 'NEW BASE',                x: 545, y: 452, type: 'surface'     },
-  { id: 7,  label: 'VENICE',           sublabel: 'NEW BASE · COASTAL',      x: 568, y: 412, type: 'surface'     },
-  { id: 8,  label: 'CITY HALL',        sublabel: 'NEW BASE',                x: 438, y: 455, type: 'surface'     },
-  { id: 9,  label: 'THE VILLAGE',      sublabel: 'NEW BASE · MAIN STREET',  x: 488, y: 502, type: 'surface'     },
-  { id: 10, label: 'BALLOON PARADISE', sublabel: 'NEW BASE · FROM ABOVE',   x: 592, y: 378, type: 'aerial'      },
-  { id: 11, label: 'NEW TOWN',         sublabel: 'NEW BASE · NIGHT',        x: 405, y: 505, type: 'surface'     },
+  { id: 6,  label: 'POTIONS TOWER',    sublabel: 'NEW BASE',                x: 408, y: 488, type: 'surface'     },
+  { id: 7,  label: 'VENICE',           sublabel: 'NEW BASE · COASTAL',      x: 568, y: 415, type: 'surface'     },
+  { id: 8,  label: 'TOWN HALL',        sublabel: 'NEW BASE',                x: 438, y: 448, type: 'surface'     },
+  { id: 9,  label: 'THE VILLAGE',      sublabel: 'NEW BASE · MAIN STREET',  x: 472, y: 502, type: 'surface'     },
+  { id: 10, label: 'BALLOON PARADISE', sublabel: 'NEW BASE · FROM ABOVE',   x: 426, y: 472, type: 'aerial'      },
+  { id: 11, label: 'NEW TOWN',         sublabel: 'NEW BASE · NIGHT',        x: 405, y: 508, type: 'surface'     },
 ];
 
 const TYPE_COLOR: Record<string, string> = {
@@ -284,15 +284,15 @@ export default function MapSection() {
 
           {/* ── Old Base zone (upper circle) ── */}
           <circle
-            cx={350} cy={192} r={148}
+            cx={282} cy={197} r={118}
             fill="rgba(45,18,72,0.10)"
             stroke="rgba(185,115,255,0.22)"
             strokeWidth={1.4}
             strokeDasharray="6 4"
           />
           {/* Cherry grove sub-tint inside old base */}
-          <ellipse cx={310} cy={160} rx={95} ry={70} fill="rgba(190,70,120,0.08)"/>
-          <text x={420} y={72} fill="rgba(185,115,255,0.3)" fontFamily="'JetBrains Mono',monospace" fontSize={7} letterSpacing={2}>OLD BASE</text>
+          <ellipse cx={272} cy={188} rx={80} ry={62} fill="rgba(190,70,120,0.08)"/>
+          <text x={360} y={98} fill="rgba(185,115,255,0.3)" fontFamily="'JetBrains Mono',monospace" fontSize={7} letterSpacing={2}>OLD BASE</text>
 
           {/* ── New Base zone (lower oval) ── */}
           <ellipse
@@ -306,18 +306,18 @@ export default function MapSection() {
           <ellipse cx={510} cy={448} rx={145} ry={80} fill="rgba(12,50,105,0.10)"/>
           <text x={488} y={590} fill="rgba(56,189,248,0.25)" fontFamily="'JetBrains Mono',monospace" fontSize={7} letterSpacing={2} textAnchor="middle">NEW BASE</text>
 
-          {/* ── River through New Base ── */}
+          {/* ── Lake / river — vertical, between VENICE (east) and TOWN HALL/VILLAGE (west) ── */}
           <path
-            d="M 566 404 C 542 428, 502 444, 462 460 C 438 472, 416 492, 405 516"
-            fill="none" stroke="#061828" strokeWidth={10}
+            d="M 520 390 C 512 418, 528 452, 516 488 C 505 522, 520 542, 514 562"
+            fill="none" stroke="#061828" strokeWidth={11}
           />
           <path
-            d="M 566 404 C 542 428, 502 444, 462 460 C 438 472, 416 492, 405 516"
-            fill="none" stroke="#0d2e50" strokeWidth={6}
+            d="M 520 390 C 512 418, 528 452, 516 488 C 505 522, 520 542, 514 562"
+            fill="none" stroke="#0d2e52" strokeWidth={6}
           />
           <path
-            d="M 566 404 C 542 428, 502 444, 462 460 C 438 472, 416 492, 405 516"
-            fill="none" stroke="rgba(22,90,160,0.45)" strokeWidth={2.5}
+            d="M 520 390 C 512 418, 528 452, 516 488 C 505 522, 520 542, 514 562"
+            fill="none" stroke="rgba(22,90,165,0.5)" strokeWidth={2.5}
           />
 
           {/* ── Mushroom Island (separate, east) ── */}
