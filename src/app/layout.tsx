@@ -6,7 +6,7 @@ import ScrollProgress from '@/components/ScrollProgress';
 export const metadata: Metadata = {
   title: 'JOD — Private Minecraft Survival',
   description:
-    'Private Minecraft survival server. Custom datapacks, tight-knit community. IP: play.jod.cool',
+    'Private Minecraft survival server. Custom datapacks, tight-knit community. IP: play.jodcraft.world',
   keywords: ['minecraft', 'survival', 'private server', 'JOD', 'datapacks'],
   icons: {
     icon: '/icon.svg',
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: 'JOD — Private Minecraft Survival',
-    description: 'Private survival. Custom datapacks. play.jod.cool',
+    description: 'Private survival. Custom datapacks. play.jodcraft.world',
     type: 'website',
   },
 };
