@@ -351,7 +351,7 @@ export default function GallerySection() {
           textTransform: 'uppercase',
         }}
       >
-        SCREENSHOTS FROM JOD — play.jod.cool
+        SCREENSHOTS FROM JOD — play.jodcraft.world
       </p>
     </section>
   );

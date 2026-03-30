@@ -4,7 +4,7 @@ import { useCallback, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import ParticleCanvas from './ParticleCanvas';
 
-const IP = 'play.jod.cool';
+const IP = 'play.jodcraft.world';
 const SCRAMBLE_CHARS = '!<>-_\\/[]{}—=+*^?#@$%&';
 
 function scrambleText(

@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const SERVER_IP = 'play.jod.cool';
+const SERVER_IP = 'play.jodcraft.world';
 const SCRAMBLE_CHARS = '!<>-_\\/[]{}—=+*^?#@$%&ABCDEFabcdef0123456789';
 
 export default function JoinSection() {
@@ -135,7 +135,7 @@ export default function JoinSection() {
               transition: 'color 0.3s ease',
             }}
           >
-            play.jod.cool
+            play.jodcraft.world
           </motion.h2>
         </button>
       </motion.div>

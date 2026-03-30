@@ -6,13 +6,13 @@ export default function TickerStrip() {
     'COMMUNITY',
     'CUSTOM DATAPACKS',
     'CUSTOM RESOURCE PACK',
-    'PLAY.JOD.COOL',
+    'PLAY.JODCRAFT.WORLD',
     'SINCE 2024',
     'SURVIVAL',
     'COMMUNITY',
     'CUSTOM DATAPACKS',
     'CUSTOM RESOURCE PACK',
-    'PLAY.JOD.COOL',
+    'PLAY.JODCRAFT.WORLD',
     'SINCE 2024',
   ];
 
