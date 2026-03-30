@@ -176,7 +176,7 @@ export default function MapSection() {
         transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
         style={{
           fontFamily: "'Space Grotesk', sans-serif",
-          fontSize: 'clamp(2.5rem, 6vw, 5rem)',
+          fontSize: 'clamp(3rem, 8vw, 7rem)',
           fontWeight: 900,
           letterSpacing: '-0.03em',
           color: '#f0f0f0',
@@ -386,23 +386,43 @@ export default function MapSection() {
         </svg>
       </motion.div>
 
-      {/* Location count */}
-      <motion.p
+      <motion.div
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
         viewport={{ once: true }}
         transition={{ duration: 0.5, delay: 0.5 }}
         style={{
           marginTop: '1.5rem',
-          fontFamily: "'JetBrains Mono', monospace",
-          fontSize: '0.5rem',
-          color: '#222',
-          letterSpacing: '0.2em',
-          textTransform: 'uppercase',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '0.5rem',
         }}
       >
-        {LOCATIONS.length} LOCATIONS MAPPED · JOD SURVIVAL WORLD
-      </motion.p>
+        <p
+          style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: '0.5rem',
+            color: '#1e1e1e',
+            letterSpacing: '0.22em',
+            textTransform: 'uppercase',
+          }}
+        >
+          {LOCATIONS.length} LOCATIONS MAPPED · JOD SURVIVAL WORLD
+        </p>
+        <p
+          style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: '0.5rem',
+            color: '#1a1a1a',
+            letterSpacing: '0.22em',
+            textTransform: 'uppercase',
+          }}
+        >
+          HOVER PINS TO EXPLORE
+        </p>
+      </motion.div>
     </section>
   );
 }

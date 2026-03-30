@@ -71,6 +71,53 @@ export default function HeroSection() {
         background: '#080808',
       }}
     >
+      {/* Top-left corner label */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1, delay: 0.2 }}
+        style={{
+          position: 'absolute',
+          top: 'clamp(1.2rem, 2.5vw, 2rem)',
+          left: 'clamp(1.2rem, 3vw, 2.5rem)',
+          zIndex: 3,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.18rem',
+        }}
+      >
+        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.52rem', letterSpacing: '0.35em', color: '#00ff41', textTransform: 'uppercase' }}>
+          JOD
+        </span>
+        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.48rem', letterSpacing: '0.22em', color: '#282828', textTransform: 'uppercase' }}>
+          PRIVATE SERVER
+        </span>
+      </motion.div>
+
+      {/* Top-right corner label */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1, delay: 0.3 }}
+        style={{
+          position: 'absolute',
+          top: 'clamp(1.2rem, 2.5vw, 2rem)',
+          right: 'clamp(1.2rem, 3vw, 2.5rem)',
+          zIndex: 3,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.18rem',
+          alignItems: 'flex-end',
+        }}
+      >
+        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.48rem', letterSpacing: '0.22em', color: '#282828', textTransform: 'uppercase' }}>
+          JAVA EDITION
+        </span>
+        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.48rem', letterSpacing: '0.18em', color: '#1e1e1e', textTransform: 'uppercase' }}>
+          EST. 2024
+        </span>
+      </motion.div>
+
       {/* Particle background */}
       <ParticleCanvas />
 
@@ -127,7 +174,7 @@ export default function HeroSection() {
             data-text="JOD"
             style={{
               fontFamily: "'Space Grotesk', sans-serif",
-              fontSize: 'clamp(8rem, 22vw, 22rem)',
+              fontSize: 'clamp(9rem, 26vw, 28rem)',
               fontWeight: 900,
               lineHeight: 0.85,
               letterSpacing: '-0.03em',
@@ -162,13 +209,13 @@ export default function HeroSection() {
           transition={{ duration: 0.6, delay: 0.7 }}
           style={{
             fontFamily: "'JetBrains Mono', monospace",
-            fontSize: 'clamp(0.65rem, 1.5vw, 0.85rem)',
+            fontSize: 'clamp(0.6rem, 1.2vw, 0.75rem)',
             letterSpacing: '0.2em',
-            color: '#666666',
+            color: '#323232',
             textTransform: 'uppercase',
           }}
         >
-          private survival&nbsp;&nbsp;·&nbsp;&nbsp;custom datapacks&nbsp;&nbsp;·&nbsp;&nbsp;resource pack
+          PRIVATE SURVIVAL&nbsp;&nbsp;·&nbsp;&nbsp;CUSTOM DATAPACKS&nbsp;&nbsp;·&nbsp;&nbsp;RESOURCE PACK
         </motion.p>
 
         {/* Stats chips */}
@@ -218,9 +265,9 @@ export default function HeroSection() {
               display: 'flex',
               alignItems: 'center',
               gap: '0.75rem',
-              background: '#111111',
-              border: `1px solid ${copied ? '#00ff41' : '#1a1a1a'}`,
-              padding: '0.875rem 1.5rem',
+              background: 'transparent',
+              border: `1px solid ${copied ? '#00ff41' : '#222'}`,
+              padding: '0.9rem 1.75rem',
               fontFamily: "'JetBrains Mono', monospace",
               fontSize: 'clamp(0.8rem, 2vw, 1rem)',
               color: copied ? '#00ff41' : '#f0f0f0',

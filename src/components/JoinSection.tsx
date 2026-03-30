@@ -96,10 +96,10 @@ export default function JoinSection() {
         <span
           style={{
             fontFamily: "'Space Grotesk', sans-serif",
-            fontSize: 'clamp(16rem, 35vw, 52rem)',
+            fontSize: 'clamp(18rem, 38vw, 58rem)',
             fontWeight: 900,
             color: 'transparent',
-            WebkitTextStroke: '1px rgba(255,255,255,0.025)',
+            WebkitTextStroke: '1px rgba(255,255,255,0.03)',
             letterSpacing: '-0.05em',
             lineHeight: 1,
             userSelect: 'none',
@@ -139,6 +139,7 @@ export default function JoinSection() {
         style={{ position: 'relative', zIndex: 1, padding: '1.5rem 0' }}
       >
         {/* Corner brackets */}
+
         {(['tl','tr','bl','br'] as const).map((pos) => (
           <motion.div
             key={pos}
@@ -175,7 +176,7 @@ export default function JoinSection() {
             transition={{ duration: 0.4 }}
             style={{
               fontFamily: "'Space Grotesk', sans-serif",
-              fontSize: 'clamp(2.5rem, 10vw, 10rem)',
+              fontSize: 'clamp(2rem, 9vw, 11rem)',
               fontWeight: 900,
               letterSpacing: '-0.04em',
               lineHeight: 0.9,
@@ -187,6 +188,23 @@ export default function JoinSection() {
           </motion.h2>
         </button>
       </motion.div>
+
+      {/* Accent horizontal rule */}
+      <motion.div
+        initial={{ scaleX: 0, opacity: 0 }}
+        whileInView={{ scaleX: 1, opacity: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 1.2, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+        style={{
+          width: 'min(700px, 90vw)',
+          height: '1px',
+          background: 'linear-gradient(to right, transparent, rgba(0,255,65,0.4) 30%, rgba(0,255,65,0.4) 70%, transparent)',
+          transformOrigin: 'center',
+          position: 'relative',
+          zIndex: 1,
+          marginTop: '-0.5rem',
+        }}
+      />
 
       {/* Subtext */}
       <motion.p
@@ -222,11 +240,11 @@ export default function JoinSection() {
           className="btn-fill"
           style={{
             fontFamily: "'JetBrains Mono', monospace",
-            fontSize: '0.75rem',
+            fontSize: '0.72rem',
             letterSpacing: '0.25em',
             color: copied ? '#080808' : '#00ff41',
             border: '1px solid #00ff41',
-            padding: '0.9rem 2.5rem',
+            padding: '1rem 3.5rem',
             background: copied ? '#00ff41' : 'transparent',
             transition: 'background 0.3s ease, color 0.3s ease',
             minWidth: '180px',

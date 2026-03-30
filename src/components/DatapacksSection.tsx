@@ -92,7 +92,7 @@ function DatapackRow({ pack, index }: { pack: Datapack; index: number }) {
         <h3
           style={{
             fontFamily: "'Space Grotesk', sans-serif",
-            fontSize: 'clamp(1.05rem, 2.2vw, 1.6rem)',
+            fontSize: 'clamp(1.1rem, 2.5vw, 1.8rem)',
             fontWeight: 700,
             letterSpacing: '-0.02em',
             color: hovered ? '#f0f0f0' : '#555',
@@ -134,6 +134,29 @@ function DatapackRow({ pack, index }: { pack: Datapack; index: number }) {
       >
         {pack.category}
       </span>
+
+      {/* Ghost number */}
+      <span
+        aria-hidden
+        style={{
+          position: 'absolute',
+          right: '-0.5rem',
+          top: '50%',
+          transform: 'translateY(-50%)',
+          fontFamily: "'Space Grotesk', sans-serif",
+          fontSize: 'clamp(4rem, 8vw, 8rem)',
+          fontWeight: 900,
+          color: hovered ? 'rgba(0,255,65,0.04)' : 'rgba(255,255,255,0.018)',
+          lineHeight: 1,
+          userSelect: 'none',
+          pointerEvents: 'none',
+          letterSpacing: '-0.05em',
+          transition: 'color 0.3s ease',
+          zIndex: 0,
+        }}
+      >
+        {String(pack.id).padStart(2, '0')}
+      </span>
     </motion.div>
   );
 }
@@ -174,7 +197,7 @@ export default function DatapacksSection() {
             transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
             style={{
               fontFamily: "'Space Grotesk', sans-serif",
-              fontSize: 'clamp(2.5rem, 6vw, 5rem)',
+              fontSize: 'clamp(3rem, 8vw, 7rem)',
               fontWeight: 900,
               letterSpacing: '-0.03em',
               color: '#f0f0f0',
@@ -210,7 +233,7 @@ export default function DatapacksSection() {
           style={{
             marginTop: '1.5rem',
             height: '1px',
-            background: 'linear-gradient(to right, #00ff41, rgba(0,255,65,0.15) 40%, transparent)',
+            background: 'linear-gradient(to right, #00ff41 0%, rgba(0,255,65,0.3) 30%, rgba(0,255,65,0.08) 60%, transparent)',
             transformOrigin: 'left',
           }}
         />

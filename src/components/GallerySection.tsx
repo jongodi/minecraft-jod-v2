@@ -130,7 +130,7 @@ export default function GallerySection() {
             transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
             style={{
               fontFamily: "'Space Grotesk', sans-serif",
-              fontSize: 'clamp(2.5rem, 6vw, 5rem)',
+              fontSize: 'clamp(3rem, 8vw, 7rem)',
               fontWeight: 900,
               letterSpacing: '-0.03em',
               color: '#f0f0f0',
@@ -148,7 +148,7 @@ export default function GallerySection() {
             transition={{ duration: 0.5, delay: 0.3 }}
             style={{
               fontFamily: "'JetBrains Mono', monospace",
-              fontSize: 'clamp(1.8rem, 4vw, 3rem)',
+              fontSize: 'clamp(2rem, 5vw, 4.5rem)',
               fontWeight: 700,
               color: hoveredId ? '#00ff41' : '#141414',
               letterSpacing: '-0.02em',
@@ -233,8 +233,8 @@ export default function GallerySection() {
             onMouseLeave={() => setHoveredId(null)}
             style={{
               flexShrink: 0,
-              width: i === 0 ? 'clamp(380px, 48vw, 680px)' : 'clamp(280px, 30vw, 420px)',
-              height: i === 0 ? 'clamp(240px, 28vw, 380px)' : 'clamp(190px, 21vw, 280px)',
+              width: 'clamp(300px, 32vw, 460px)',
+              height: 'clamp(210px, 23vw, 320px)',
               position: 'relative',
               scrollSnapAlign: 'start',
               overflow: 'hidden',
@@ -324,7 +324,7 @@ export default function GallerySection() {
               <p
                 style={{
                   fontFamily: "'Space Grotesk', sans-serif",
-                  fontSize: i === 0 ? '1.2rem' : '0.9rem',
+                  fontSize: '0.95rem',
                   fontWeight: 700,
                   letterSpacing: '0.05em',
                   color: '#f0f0f0',
@@ -356,7 +356,7 @@ export default function GallerySection() {
               style={{
                 position: 'absolute',
                 inset: 0,
-                border: `1px solid ${hoveredId === item.id ? 'rgba(0,255,65,0.3)' : 'transparent'}`,
+                border: `1px solid ${hoveredId === item.id ? 'rgba(0,255,65,0.5)' : 'transparent'}`,
                 transition: 'border-color 0.4s ease',
                 pointerEvents: 'none',
                 zIndex: 4,
@@ -373,8 +373,8 @@ export default function GallerySection() {
           marginTop: '1.5rem',
           fontFamily: "'JetBrains Mono', monospace",
           fontSize: '0.55rem',
-          color: '#2a2a2a',
-          letterSpacing: '0.15em',
+          color: '#1e1e1e',
+          letterSpacing: '0.25em',
           textTransform: 'uppercase',
         }}
       >

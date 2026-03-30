@@ -51,8 +51,8 @@ function CrewCard({
         flexDirection: 'column',
         alignItems: 'center',
         gap: '0.6rem',
-        padding: '1.1rem 0.85rem 0.9rem',
-        width: 96,
+        padding: '1.25rem 0.9rem 1rem',
+        width: 100,
         background: isOnline
           ? 'rgba(0,255,65,0.03)'
           : '#090909',
@@ -62,7 +62,7 @@ function CrewCard({
             : hovered ? '#2a2a2a' : '#141414'
         }`,
         boxShadow: isOnline && hovered
-          ? '0 6px 28px rgba(0,255,65,0.1), 0 0 1px rgba(0,255,65,0.25)'
+          ? '0 8px 32px rgba(0,255,65,0.14), 0 0 0 1px rgba(0,255,65,0.18)'
           : 'none',
         transform: hovered ? 'translateY(-5px)' : 'translateY(0)',
         transition: 'all 0.25s ease',
@@ -92,8 +92,8 @@ function CrewCard({
         <img
           src={sources[srcIndex]}
           alt={name}
-          width={56}
-          height={56}
+          width={60}
+          height={60}
           onError={() => {
             if (srcIndex < sources.length - 1) setSrcIndex((i) => i + 1);
             else setSrcIndex(sources.length);
@@ -112,8 +112,8 @@ function CrewCard({
       ) : (
         <div
           style={{
-            width: 56,
-            height: 56,
+            width: 60,
+            height: 60,
             background: '#111',
             border: '1px solid #1a1a1a',
             display: 'flex',
@@ -323,7 +323,7 @@ export default function ServerStatus() {
             transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
             style={{
               fontFamily: "'Space Grotesk', sans-serif",
-              fontSize: 'clamp(2.5rem, 6vw, 5rem)',
+              fontSize: 'clamp(3rem, 7vw, 6.5rem)',
               fontWeight: 900,
               letterSpacing: '-0.03em',
               lineHeight: 1,
@@ -444,8 +444,8 @@ export default function ServerStatus() {
             <h3
               style={{
                 fontFamily: "'Space Grotesk', sans-serif",
-                fontSize: 'clamp(1.4rem, 3vw, 2.2rem)',
-                fontWeight: 800,
+                fontSize: 'clamp(1.8rem, 4vw, 3rem)',
+                fontWeight: 900,
                 letterSpacing: '-0.02em',
                 color: '#f0f0f0',
                 lineHeight: 1,
