@@ -81,6 +81,35 @@ export default function JoinSection() {
         }}
       />
 
+      {/* Giant watermark text */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          pointerEvents: 'none',
+          overflow: 'hidden',
+        }}
+      >
+        <span
+          style={{
+            fontFamily: "'Space Grotesk', sans-serif",
+            fontSize: 'clamp(16rem, 35vw, 52rem)',
+            fontWeight: 900,
+            color: 'transparent',
+            WebkitTextStroke: '1px rgba(255,255,255,0.025)',
+            letterSpacing: '-0.05em',
+            lineHeight: 1,
+            userSelect: 'none',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          JOD
+        </span>
+      </div>
+
       {/* Section label */}
       <motion.p
         initial={{ opacity: 0, y: -12 }}
@@ -107,8 +136,27 @@ export default function JoinSection() {
         whileInView={{ opacity: 1, scale: 1 }}
         viewport={{ once: true }}
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        style={{ position: 'relative', zIndex: 1 }}
+        style={{ position: 'relative', zIndex: 1, padding: '1.5rem 0' }}
       >
+        {/* Corner brackets */}
+        {(['tl','tr','bl','br'] as const).map((pos) => (
+          <motion.div
+            key={pos}
+            initial={{ opacity: 0, scale: 0.5 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            style={{
+              position: 'absolute',
+              width: 18,
+              height: 18,
+              ...(pos === 'tl' && { top: 0, left: -4,  borderTop: '1px solid rgba(0,255,65,0.5)', borderLeft: '1px solid rgba(0,255,65,0.5)' }),
+              ...(pos === 'tr' && { top: 0, right: -4, borderTop: '1px solid rgba(0,255,65,0.5)', borderRight: '1px solid rgba(0,255,65,0.5)' }),
+              ...(pos === 'bl' && { bottom: 0, left: -4,  borderBottom: '1px solid rgba(0,255,65,0.5)', borderLeft: '1px solid rgba(0,255,65,0.5)' }),
+              ...(pos === 'br' && { bottom: 0, right: -4, borderBottom: '1px solid rgba(0,255,65,0.5)', borderRight: '1px solid rgba(0,255,65,0.5)' }),
+            }}
+          />
+        ))}
         <button
           onClick={handleCopy}
           data-cursor="hover"

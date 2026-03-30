@@ -137,6 +137,22 @@ export default function HeroSection() {
           >
             JOD
           </h1>
+          {/* Decorative horizontal rules */}
+          <motion.div
+            initial={{ scaleX: 0, opacity: 0 }}
+            animate={{ scaleX: 1, opacity: 1 }}
+            transition={{ duration: 1.2, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            style={{
+              position: 'absolute',
+              bottom: '10%',
+              left: '-8vw',
+              right: '-8vw',
+              height: '1px',
+              background: 'linear-gradient(to right, transparent 0%, #1a1a1a 20%, #00ff41 50%, #1a1a1a 80%, transparent 100%)',
+              transformOrigin: 'center',
+              pointerEvents: 'none',
+            }}
+          />
         </motion.div>
 
         {/* Subtitle */}
@@ -154,6 +170,40 @@ export default function HeroSection() {
         >
           private survival&nbsp;&nbsp;·&nbsp;&nbsp;custom datapacks&nbsp;&nbsp;·&nbsp;&nbsp;resource pack
         </motion.p>
+
+        {/* Stats chips */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.7, delay: 1.0 }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0',
+            marginTop: '-0.5rem',
+          }}
+        >
+          {(['EST. 2024', '8 MEMBERS', '14 DATAPACKS'] as const).map((v, i) => (
+            <span key={v} style={{ display: 'inline-flex', alignItems: 'center' }}>
+              <span
+                style={{
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: '0.58rem',
+                  letterSpacing: '0.22em',
+                  color: '#383838',
+                  textTransform: 'uppercase',
+                }}
+              >
+                {v}
+              </span>
+              {i < 2 && (
+                <span style={{ margin: '0 1.1rem', color: '#1e1e1e', fontSize: '0.5rem' }}>
+                  /
+                </span>
+              )}
+            </span>
+          ))}
+        </motion.div>
 
         {/* IP Terminal box */}
         <motion.div
@@ -234,52 +284,56 @@ export default function HeroSection() {
         </motion.div>
       </div>
 
-      {/* Scroll chevron */}
+      {/* Animated scroll indicator */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 1.4, duration: 0.6 }}
+        transition={{ delay: 1.6, duration: 0.8 }}
         style={{
           position: 'absolute',
-          bottom: '2rem',
+          bottom: '2.5rem',
           left: '50%',
           transform: 'translateX(-50%)',
           zIndex: 2,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: '0.25rem',
+          gap: '0.5rem',
         }}
       >
         <span
-          className="animate-chevron-bounce"
           style={{
             fontFamily: "'JetBrains Mono', monospace",
-            fontSize: '0.55rem',
-            letterSpacing: '0.3em',
-            color: '#333',
+            fontSize: '0.48rem',
+            letterSpacing: '0.4em',
+            color: '#2a2a2a',
             textTransform: 'uppercase',
-            display: 'block',
-            marginBottom: '0.25rem',
           }}
         >
           SCROLL
         </span>
-        <svg
-          className="animate-chevron-bounce"
-          width="18"
-          height="18"
-          viewBox="0 0 18 18"
-          fill="none"
-          style={{ color: '#444' }}
+        <div
+          style={{
+            width: '1px',
+            height: '52px',
+            background: '#1a1a1a',
+            position: 'relative',
+            overflow: 'hidden',
+          }}
         >
-          <path
-            d="M3 6L9 12L15 6"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="square"
+          <motion.div
+            animate={{ y: ['-100%', '200%'] }}
+            transition={{ duration: 1.6, repeat: Infinity, ease: 'linear', repeatDelay: 0.3 }}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '40%',
+              background: 'linear-gradient(to bottom, transparent, #00ff41, transparent)',
+            }}
           />
-        </svg>
+        </div>
       </motion.div>
 
       {/* Bottom border line */}

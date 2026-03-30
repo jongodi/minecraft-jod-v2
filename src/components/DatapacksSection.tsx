@@ -1,7 +1,7 @@
 'use client';
 
-import { motion, useInView } from 'framer-motion';
-import { useRef } from 'react';
+import { motion } from 'framer-motion';
+import { useState } from 'react';
 
 interface Datapack {
   id: number;
@@ -11,230 +11,134 @@ interface Datapack {
 }
 
 const DATAPACKS: Datapack[] = [
-  {
-    id: 1,
-    name: 'MVP',
-    description: 'More mob variety — unique perks & drops per biome',
-    category: 'LOOT',
-  },
-  {
-    id: 2,
-    name: 'Banner Flags',
-    description: 'Plant banners as flags anywhere in the world',
-    category: 'BUILD',
-  },
-  {
-    id: 3,
-    name: 'Call of the King',
-    description: 'Summon and battle a powerful new boss',
-    category: 'COMBAT',
-  },
-  {
-    id: 4,
-    name: 'Colored Name Teams',
-    description: 'Color-coded team nametags visible above players',
-    category: 'SOCIAL',
-  },
-  {
-    id: 5,
-    name: 'Dungeons & Taverns',
-    description: 'Overhauled dungeons and tavern structures in worldgen',
-    category: 'STRUCTURE',
-  },
-  {
-    id: 6,
-    name: 'Ghast Mayhem',
-    description: 'Ghasts are angrier, more dangerous, and more rewarding',
-    category: 'COMBAT',
-  },
-  {
-    id: 7,
-    name: 'Holographic Tags',
-    description: 'Floating holographic name displays above players',
-    category: 'SOCIAL',
-  },
-  {
-    id: 8,
-    name: 'LY Graves',
-    description: 'A grave marks your death — your loot stays safe',
-    category: 'SURVIVAL',
-  },
-  {
-    id: 9,
-    name: 'Show Player Health',
-    description: "See other players' health above their heads",
-    category: 'SOCIAL',
-  },
-  {
-    id: 10,
-    name: 'Better Mineshaft',
-    description: 'Completely redesigned mineshaft structures to explore',
-    category: 'STRUCTURE',
-  },
-  {
-    id: 11,
-    name: 'MC Paint',
-    description: 'Create custom pixel-art paintings in-game',
-    category: 'BUILD',
-  },
-  {
-    id: 12,
-    name: 'Waystones',
-    description: 'Place waystones to fast-travel across the world',
-    category: 'QOL',
-  },
-  {
-    id: 13,
-    name: 'Vanilla Refresh',
-    description: 'New items, recipes and mechanics that feel vanilla',
-    category: 'QOL',
-  },
-  {
-    id: 14,
-    name: 'Wabi-Sabi Structures',
-    description: 'Japanese-inspired structures scattered across the world',
-    category: 'STRUCTURE',
-  },
+  { id: 1,  name: 'MVP',                   description: 'More mob variety — unique perks & drops per biome',             category: 'LOOT'      },
+  { id: 2,  name: 'Banner Flags',          description: 'Plant banners as flags anywhere in the world',                   category: 'BUILD'     },
+  { id: 3,  name: 'Call of the King',      description: 'Summon and battle a powerful new boss',                          category: 'COMBAT'    },
+  { id: 4,  name: 'Colored Name Teams',    description: 'Color-coded team nametags visible above players',                category: 'SOCIAL'    },
+  { id: 5,  name: 'Dungeons & Taverns',    description: 'Overhauled dungeons and tavern structures in worldgen',          category: 'STRUCTURE' },
+  { id: 6,  name: 'Ghast Mayhem',          description: 'Ghasts are angrier, more dangerous, and more rewarding',        category: 'COMBAT'    },
+  { id: 7,  name: 'Holographic Tags',      description: 'Floating holographic name displays above players',               category: 'SOCIAL'    },
+  { id: 8,  name: 'LY Graves',             description: 'A grave marks your death — your loot stays safe',                category: 'SURVIVAL'  },
+  { id: 9,  name: 'Show Player Health',    description: "See other players' health above their heads",                    category: 'SOCIAL'    },
+  { id: 10, name: 'Better Mineshaft',      description: 'Completely redesigned mineshaft structures to explore',          category: 'STRUCTURE' },
+  { id: 11, name: 'MC Paint',             description: 'Create custom pixel-art paintings in-game',                      category: 'BUILD'     },
+  { id: 12, name: 'Waystones',            description: 'Place waystones to fast-travel across the world',                 category: 'QOL'       },
+  { id: 13, name: 'Vanilla Refresh',      description: 'New items, recipes and mechanics that feel vanilla',              category: 'QOL'       },
+  { id: 14, name: 'Wabi-Sabi Structures', description: 'Japanese-inspired structures scattered across the world',         category: 'STRUCTURE' },
 ];
 
 const CATEGORY_COLORS: Record<string, string> = {
-  BUILD: '#00ff41',
-  SURVIVAL: '#ff6b35',
-  QOL: '#4ecdc4',
-  LOOT: '#f7dc6f',
-  WORLD: '#95e1d3',
-  TRADE: '#c9b1ff',
-  CRAFT: '#ff9ff3',
-  COMBAT: '#ff4466',
-  SOCIAL: '#c9b1ff',
-  STRUCTURE: '#f0a500',
+  BUILD: '#00ff41', SURVIVAL: '#ff6b35', QOL: '#4ecdc4', LOOT: '#f7dc6f',
+  WORLD: '#95e1d3', TRADE: '#c9b1ff', CRAFT: '#ff9ff3',
+  COMBAT: '#ff4466', SOCIAL: '#c9b1ff', STRUCTURE: '#f0a500',
 };
 
-function DatapackCard({ pack, index }: { pack: Datapack; index: number }) {
-  const categoryColor = CATEGORY_COLORS[pack.category] ?? '#00ff41';
+function DatapackRow({ pack, index }: { pack: Datapack; index: number }) {
+  const [hovered, setHovered] = useState(false);
+  const color = CATEGORY_COLORS[pack.category] ?? '#00ff41';
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-50px' }}
-      transition={{ duration: 0.5, delay: index * 0.06, ease: [0.16, 1, 0.3, 1] }}
-      whileHover={{
-        y: -4,
-        borderColor: '#00ff41',
-        boxShadow: '0 0 24px rgba(0,255,65,0.2), 0 8px 32px rgba(0,0,0,0.4)',
-        transition: { duration: 0.2 },
-      }}
-      data-cursor="hover"
+      initial={{ opacity: 0, x: -24 }}
+      whileInView={{ opacity: 1, x: 0 }}
+      viewport={{ once: true, margin: '-20px' }}
+      transition={{ duration: 0.5, delay: index * 0.035, ease: [0.16, 1, 0.3, 1] }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       style={{
-        background: '#111111',
-        border: '1px solid #1a1a1a',
-        padding: '1.25rem',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '0.75rem',
+        display: 'grid',
+        gridTemplateColumns: '3.5rem 1fr auto',
+        alignItems: 'start',
+        gap: '0 clamp(1rem, 3vw, 2.5rem)',
+        padding: 'clamp(1rem, 2vw, 1.5rem) 0',
+        borderBottom: '1px solid #111',
         position: 'relative',
-        overflow: 'hidden',
+        background: hovered ? 'rgba(0,255,65,0.018)' : 'transparent',
+        transition: 'background 0.25s ease',
       }}
     >
-      {/* Corner accent */}
+      {/* Left accent bar */}
       <div
         style={{
           position: 'absolute',
+          left: 0,
           top: 0,
-          right: 0,
-          width: '0',
-          height: '0',
-          borderLeft: '20px solid transparent',
-          borderTop: `20px solid ${categoryColor}22`,
+          bottom: 0,
+          width: '2px',
+          background: color,
+          transformOrigin: 'top',
+          transform: hovered ? 'scaleY(1)' : 'scaleY(0)',
+          transition: 'transform 0.22s ease',
         }}
       />
 
-      {/* Category tag */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-      >
-        <span
-          style={{
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: '0.55rem',
-            letterSpacing: '0.3em',
-            color: categoryColor,
-            textTransform: 'uppercase',
-            background: `${categoryColor}12`,
-            padding: '0.2rem 0.5rem',
-            border: `1px solid ${categoryColor}33`,
-          }}
-        >
-          {pack.category}
-        </span>
-        <span
-          style={{
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: '0.5rem',
-            color: '#333',
-            letterSpacing: '0.1em',
-          }}
-        >
-          #{String(pack.id).padStart(2, '0')}
-        </span>
-      </div>
-
-      {/* Name */}
-      <h3
-        style={{
-          fontFamily: "'Space Grotesk', sans-serif",
-          fontSize: '1rem',
-          fontWeight: 700,
-          color: '#f0f0f0',
-          letterSpacing: '-0.01em',
-          lineHeight: 1.2,
-        }}
-      >
-        {pack.name}
-      </h3>
-
-      {/* Description */}
-      <p
+      {/* Index number */}
+      <span
         style={{
           fontFamily: "'JetBrains Mono', monospace",
-          fontSize: '0.7rem',
-          color: '#555',
-          lineHeight: 1.6,
-          letterSpacing: '0.02em',
-          marginTop: 'auto',
+          fontSize: '0.6rem',
+          color: hovered ? color : '#222',
+          letterSpacing: '0.08em',
+          paddingTop: '0.2rem',
+          paddingLeft: '0.75rem',
+          transition: 'color 0.25s ease',
         }}
       >
-        {pack.description}
-      </p>
+        {String(pack.id).padStart(2, '0')}
+      </span>
 
-      {/* Bottom accent line */}
-      <motion.div
-        initial={{ scaleX: 0 }}
-        whileHover={{ scaleX: 1 }}
-        transition={{ duration: 0.3 }}
+      {/* Name + description */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+        <h3
+          style={{
+            fontFamily: "'Space Grotesk', sans-serif",
+            fontSize: 'clamp(1.05rem, 2.2vw, 1.6rem)',
+            fontWeight: 700,
+            letterSpacing: '-0.02em',
+            color: hovered ? '#f0f0f0' : '#555',
+            lineHeight: 1.1,
+            transition: 'color 0.22s ease',
+          }}
+        >
+          {pack.name}
+        </h3>
+        <p
+          style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: '0.65rem',
+            color: '#3a3a3a',
+            lineHeight: 1.55,
+            letterSpacing: '0.01em',
+            opacity: hovered ? 1 : 0,
+            transform: hovered ? 'translateY(0)' : 'translateY(4px)',
+            transition: 'opacity 0.25s ease, transform 0.25s ease',
+            maxWidth: '520px',
+          }}
+        >
+          {pack.description}
+        </p>
+      </div>
+
+      {/* Category */}
+      <span
         style={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: '2px',
-          background: `linear-gradient(to right, ${categoryColor}, transparent)`,
-          transformOrigin: 'left',
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: '0.52rem',
+          letterSpacing: '0.28em',
+          color: hovered ? color : '#2a2a2a',
+          textTransform: 'uppercase',
+          paddingTop: '0.25rem',
+          transition: 'color 0.25s ease',
+          whiteSpace: 'nowrap',
         }}
-      />
+      >
+        {pack.category}
+      </span>
     </motion.div>
   );
 }
 
 export default function DatapacksSection() {
-  const headerRef = useRef<HTMLDivElement>(null);
-  const isInView = useInView(headerRef, { once: true, margin: '-80px' });
-
   return (
     <section
       style={{
@@ -243,11 +147,12 @@ export default function DatapacksSection() {
         background: '#080808',
       }}
     >
-      {/* Section header */}
-      <div ref={headerRef} style={{ marginBottom: '3rem' }}>
+      {/* Header */}
+      <div style={{ marginBottom: 'clamp(2rem, 4vw, 4rem)' }}>
         <motion.p
           initial={{ opacity: 0, x: -16 }}
-          animate={isInView ? { opacity: 1, x: 0 } : {}}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true }}
           transition={{ duration: 0.5 }}
           style={{
             fontFamily: "'JetBrains Mono', monospace",
@@ -261,53 +166,79 @@ export default function DatapacksSection() {
           04 — DATAPACKS
         </motion.p>
 
-        <motion.h2
-          initial={{ opacity: 0, y: 16 }}
-          animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-          style={{
-            fontFamily: "'Space Grotesk', sans-serif",
-            fontSize: 'clamp(2.5rem, 6vw, 5rem)',
-            fontWeight: 900,
-            letterSpacing: '-0.03em',
-            color: '#f0f0f0',
-            lineHeight: 1,
-          }}
-        >
-          DATAPACKS
-        </motion.h2>
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+          <motion.h2
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+            style={{
+              fontFamily: "'Space Grotesk', sans-serif",
+              fontSize: 'clamp(2.5rem, 6vw, 5rem)',
+              fontWeight: 900,
+              letterSpacing: '-0.03em',
+              color: '#f0f0f0',
+              lineHeight: 1,
+            }}
+          >
+            DATAPACKS
+          </motion.h2>
 
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={isInView ? { opacity: 1 } : {}}
-          transition={{ duration: 0.5, delay: 0.3 }}
+          <motion.p
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: '0.6rem',
+              color: '#2a2a2a',
+              letterSpacing: '0.2em',
+              paddingBottom: '0.4rem',
+            }}
+          >
+            14 ACTIVE
+          </motion.p>
+        </div>
+
+        {/* Full-width divider */}
+        <motion.div
+          initial={{ scaleX: 0 }}
+          whileInView={{ scaleX: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 1, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
           style={{
-            marginTop: '1rem',
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: '0.75rem',
-            color: '#444',
-            letterSpacing: '0.05em',
-            maxWidth: '400px',
+            marginTop: '1.5rem',
+            height: '1px',
+            background: 'linear-gradient(to right, #00ff41, rgba(0,255,65,0.15) 40%, transparent)',
+            transformOrigin: 'left',
           }}
-        >
-          14 datapacks — combat, structure, social, and more.
-        </motion.p>
+        />
       </div>
 
-      {/* Grid */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(min(240px, 100%), 1fr))',
-          gap: '1px',
-          background: '#1a1a1a',
-          border: '1px solid #1a1a1a',
-        }}
-      >
+      {/* List */}
+      <div>
         {DATAPACKS.map((pack, i) => (
-          <DatapackCard key={pack.id} pack={pack} index={i} />
+          <DatapackRow key={pack.id} pack={pack} index={i} />
         ))}
       </div>
+
+      <motion.p
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.5, delay: 0.4 }}
+        style={{
+          marginTop: '2rem',
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: '0.5rem',
+          color: '#1e1e1e',
+          letterSpacing: '0.2em',
+          textTransform: 'uppercase',
+        }}
+      >
+        HOVER TO REVEAL — ALL SOURCED FROM MODRINTH
+      </motion.p>
     </section>
   );
 }

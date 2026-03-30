@@ -122,22 +122,49 @@ export default function GallerySection() {
           02 — THE WORLD
         </motion.p>
 
-        <motion.h2
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-          style={{
-            fontFamily: "'Space Grotesk', sans-serif",
-            fontSize: 'clamp(2.5rem, 6vw, 5rem)',
-            fontWeight: 900,
-            letterSpacing: '-0.03em',
-            color: '#f0f0f0',
-            lineHeight: 1,
-          }}
-        >
-          THE WORLD
-        </motion.h2>
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', paddingRight: 'clamp(1.5rem, 6vw, 5rem)' }}>
+          <motion.h2
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+            style={{
+              fontFamily: "'Space Grotesk', sans-serif",
+              fontSize: 'clamp(2.5rem, 6vw, 5rem)',
+              fontWeight: 900,
+              letterSpacing: '-0.03em',
+              color: '#f0f0f0',
+              lineHeight: 1,
+            }}
+          >
+            THE WORLD
+          </motion.h2>
+
+          {/* Live counter */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 'clamp(1.8rem, 4vw, 3rem)',
+              fontWeight: 700,
+              color: hoveredId ? '#00ff41' : '#141414',
+              letterSpacing: '-0.02em',
+              lineHeight: 1,
+              transition: 'color 0.3s ease',
+              paddingBottom: '0.15rem',
+            }}
+          >
+            {hoveredId
+              ? String(hoveredId).padStart(2, '0')
+              : String(GALLERY_ITEMS.length).padStart(2, '0')}
+            <span style={{ fontSize: '40%', color: '#1e1e1e', letterSpacing: '0.1em', marginLeft: '0.3em' }}>
+              / {String(GALLERY_ITEMS.length).padStart(2, '0')}
+            </span>
+          </motion.div>
+        </div>
 
         <motion.p
           initial={{ opacity: 0 }}
@@ -147,13 +174,13 @@ export default function GallerySection() {
           style={{
             marginTop: '0.75rem',
             fontFamily: "'JetBrains Mono', monospace",
-            fontSize: '0.65rem',
-            color: '#333',
-            letterSpacing: '0.15em',
+            fontSize: '0.6rem',
+            color: '#222',
+            letterSpacing: '0.2em',
             textTransform: 'uppercase',
           }}
         >
-          ← DRAG TO EXPLORE →
+          DRAG TO EXPLORE
         </motion.p>
       </div>
 
@@ -206,8 +233,8 @@ export default function GallerySection() {
             onMouseLeave={() => setHoveredId(null)}
             style={{
               flexShrink: 0,
-              width: 'clamp(280px, 30vw, 420px)',
-              height: 'clamp(190px, 21vw, 280px)',
+              width: i === 0 ? 'clamp(380px, 48vw, 680px)' : 'clamp(280px, 30vw, 420px)',
+              height: i === 0 ? 'clamp(240px, 28vw, 380px)' : 'clamp(190px, 21vw, 280px)',
               position: 'relative',
               scrollSnapAlign: 'start',
               overflow: 'hidden',
@@ -297,7 +324,7 @@ export default function GallerySection() {
               <p
                 style={{
                   fontFamily: "'Space Grotesk', sans-serif",
-                  fontSize: '0.9rem',
+                  fontSize: i === 0 ? '1.2rem' : '0.9rem',
                   fontWeight: 700,
                   letterSpacing: '0.05em',
                   color: '#f0f0f0',
