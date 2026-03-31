@@ -12,6 +12,7 @@ export default function ScrollProgress() {
       const pct = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
       setProgress(pct);
     };
+
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
@@ -24,11 +25,11 @@ export default function ScrollProgress() {
         left: 0,
         height: 2,
         width: `${progress}%`,
-        background: 'linear-gradient(to right, #F5A623, #8B5CF6)',
+        background: '#00ff41',
         zIndex: 9997,
         pointerEvents: 'none',
-        transition: 'width 0.06s linear',
-        boxShadow: '0 0 10px rgba(245,166,35,0.7)',
+        transition: 'width 0.05s linear',
+        boxShadow: '0 0 8px rgba(0,255,65,0.6)',
       }}
     />
   );

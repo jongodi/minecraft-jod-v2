@@ -1,12 +1,21 @@
 'use client';
 
+'use client';
+
 import { motion } from 'framer-motion';
 import { useEffect, useState, useCallback } from 'react';
 import type { StatusResponse } from '@/app/api/server-status/route';
 
+// ─── Static crew list ────────────────────────────────────────────────────────
 const CREW = [
-  'stebbias', 'AmmaGaur', 'joenana', 'ingunnbirta',
-  'Gamla123', 'fafnir1994', 'IMlonely', 'eikibleiki',
+  'stebbias',
+  'AmmaGaur',
+  'joenana',
+  'ingunnbirta',
+  'Gamla123',
+  'fafnir1994',
+  'IMlonely',
+  'eikibleiki',
 ];
 
 const HEAD_SOURCES = (name: string) => [
@@ -14,57 +23,65 @@ const HEAD_SOURCES = (name: string) => [
   `https://minotar.net/helm/${name}/128`,
 ];
 
-function CrewCard({ name, isOnline, index }: { name: string; isOnline: boolean; index: number }) {
-  const [hovered,  setHovered]  = useState(false);
+// ─── Crew card ───────────────────────────────────────────────────────────────
+function CrewCard({
+  name,
+  isOnline,
+  index,
+}: {
+  name: string;
+  isOnline: boolean;
+  index: number;
+}) {
+  const [hovered, setHovered] = useState(false);
   const [srcIndex, setSrcIndex] = useState(0);
-  const sources  = HEAD_SOURCES(name);
+  const sources = HEAD_SOURCES(name);
   const allFailed = srcIndex >= sources.length;
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20, scale: 0.92 }}
+      initial={{ opacity: 0, y: 18, scale: 0.94 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.5, delay: 0.12 + index * 0.06, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: 0.45, delay: 0.1 + index * 0.055, ease: [0.16, 1, 0.3, 1] }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      data-cursor="hover"
       style={{
-        position:       'relative',
-        display:        'flex',
-        flexDirection:  'column',
-        alignItems:     'center',
-        gap:            '0.6rem',
-        padding:        '1.25rem 0.9rem 1rem',
-        width:          100,
-        background:     hovered
-          ? isOnline ? 'rgba(245,166,35,0.06)' : 'rgba(255,255,255,0.04)'
-          : isOnline ? 'rgba(245,166,35,0.03)' : 'rgba(8,14,28,0.6)',
-        border:         `1px solid ${
+        position: 'relative',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '0.6rem',
+        padding: '1.1rem 0.85rem 0.9rem',
+        width: 96,
+        background: isOnline
+          ? 'rgba(0,255,65,0.03)'
+          : '#090909',
+        border: `1px solid ${
           isOnline
-            ? hovered ? 'rgba(245,166,35,0.5)' : 'rgba(245,166,35,0.18)'
-            : hovered ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)'
+            ? hovered ? 'rgba(0,255,65,0.65)' : 'rgba(0,255,65,0.18)'
+            : hovered ? '#2a2a2a' : '#141414'
         }`,
-        backdropFilter: 'blur(8px)',
-        boxShadow:      isOnline && hovered
-          ? '0 8px 32px rgba(0,0,0,0.5), 0 0 30px rgba(245,166,35,0.1)'
-          : '0 4px 16px rgba(0,0,0,0.3)',
-        transform:      hovered ? 'translateY(-6px)' : 'translateY(0)',
-        transition:     'all 0.3s cubic-bezier(0.16,1,0.3,1)',
-        opacity:        isOnline ? 1 : 0.4,
+        boxShadow: isOnline && hovered
+          ? '0 8px 32px rgba(0,255,65,0.18), 0 0 20px rgba(0,255,65,0.12), 0 0 1px rgba(0,255,65,0.4)'
+          : 'none',
+        transform: hovered ? 'translateY(-5px)' : 'translateY(0)',
+        transition: 'all 0.25s ease',
+        opacity: isOnline ? 1 : 0.45,
+        cursor: 'default',
       }}
     >
-      {/* Online dot */}
+      {/* Online indicator ring */}
       {isOnline && (
         <span
           style={{
-            position:     'absolute',
-            top:          '0.5rem',
-            right:        '0.5rem',
-            width:        7,
-            height:       7,
+            position: 'absolute',
+            top: '0.45rem',
+            right: '0.45rem',
+            width: 6,
+            height: 6,
             borderRadius: '50%',
-            background:   '#10B981',
-            boxShadow:    '0 0 8px rgba(16,185,129,0.9)',
+            background: '#00ff41',
+            boxShadow: '0 0 7px rgba(0,255,65,0.9)',
           }}
         />
       )}
@@ -75,32 +92,37 @@ function CrewCard({ name, isOnline, index }: { name: string; isOnline: boolean; 
         <img
           src={sources[srcIndex]}
           alt={name}
-          width={52}
-          height={52}
-          onError={() => setSrcIndex(i => (i < sources.length - 1 ? i + 1 : sources.length))}
+          width={56}
+          height={56}
+          onError={() => {
+            if (srcIndex < sources.length - 1) setSrcIndex((i) => i + 1);
+            else setSrcIndex(sources.length);
+          }}
           style={{
             imageRendering: 'pixelated',
-            transform:      hovered ? 'scale(1.1) translateY(-2px)' : 'scale(1)',
-            transition:     'transform 0.3s ease',
-            filter:         isOnline && hovered
-              ? 'drop-shadow(0 4px 12px rgba(245,166,35,0.35))'
-              : isOnline ? 'none' : 'grayscale(0.5) brightness(0.6)',
+            transform: hovered ? 'scale(1.08) translateY(-2px)' : 'scale(1)',
+            transition: 'transform 0.3s ease',
+            filter: isOnline && hovered
+              ? 'drop-shadow(0 3px 10px rgba(0,255,65,0.3))'
+              : isOnline
+              ? 'none'
+              : 'grayscale(0.4) brightness(0.7)',
           }}
         />
       ) : (
         <div
           style={{
-            width:          52,
-            height:         52,
-            background:     'rgba(8,14,28,0.8)',
-            border:         '1px solid rgba(255,255,255,0.08)',
-            display:        'flex',
-            alignItems:     'center',
+            width: 56,
+            height: 56,
+            background: '#111',
+            border: '1px solid #1a1a1a',
+            display: 'flex',
+            alignItems: 'center',
             justifyContent: 'center',
-            fontFamily:     "'Playfair Display', serif",
-            fontSize:       '1.3rem',
-            fontWeight:     700,
-            color:          isOnline ? '#F5A623' : '#4B5563',
+            fontFamily: "'Space Grotesk', sans-serif",
+            fontSize: '1.4rem',
+            fontWeight: 900,
+            color: isOnline ? '#00ff41' : '#333',
           }}
         >
           {name.charAt(0).toUpperCase()}
@@ -110,32 +132,33 @@ function CrewCard({ name, isOnline, index }: { name: string; isOnline: boolean; 
       {/* Name */}
       <p
         style={{
-          fontFamily:    "'JetBrains Mono', monospace",
-          fontSize:      '0.52rem',
-          fontWeight:    500,
-          letterSpacing: '0.05em',
-          color:         isOnline
-            ? hovered ? '#F5A623' : 'rgba(245,166,35,0.65)'
-            : hovered ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.2)',
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: '0.55rem',
+          fontWeight: 600,
+          letterSpacing: '0.06em',
+          color: isOnline
+            ? hovered ? '#00ff41' : 'rgba(0,255,65,0.7)'
+            : hovered ? '#444' : '#2a2a2a',
           textTransform: 'uppercase',
-          textAlign:     'center',
-          wordBreak:     'break-all',
-          lineHeight:    1.3,
-          transition:    'color 0.25s ease',
+          textAlign: 'center',
+          wordBreak: 'break-all',
+          lineHeight: 1.3,
+          transition: 'color 0.25s ease',
         }}
       >
         {name}
       </p>
 
+      {/* ONLINE label */}
       {isOnline && (
         <span
           style={{
-            fontFamily:    "'JetBrains Mono', monospace",
-            fontSize:      '0.4rem',
-            letterSpacing: '0.2em',
-            color:         'rgba(16,185,129,0.7)',
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: '0.42rem',
+            letterSpacing: '0.18em',
+            color: 'rgba(0,255,65,0.55)',
             textTransform: 'uppercase',
-            marginTop:     '-0.2rem',
+            marginTop: '-0.25rem',
           }}
         >
           IN GAME
@@ -145,17 +168,20 @@ function CrewCard({ name, isOnline, index }: { name: string; isOnline: boolean; 
   );
 }
 
+// ─── Main component ──────────────────────────────────────────────────────────
 export default function ServerStatus() {
-  const [data,        setData]        = useState<StatusResponse | null>(null);
-  const [loading,     setLoading]     = useState(true);
+  const [data, setData] = useState<StatusResponse | null>(null);
+  const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState('');
 
   const fetchStatus = useCallback(async () => {
     try {
-      const res  = await fetch('/api/server-status', { cache: 'no-store' });
+      const res = await fetch('/api/server-status', { cache: 'no-store' });
       const json: StatusResponse = await res.json();
       setData(json);
-      setLastUpdated(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+      setLastUpdated(
+        new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      );
     } catch {
       setData({ online: false, source: 'error' });
     } finally {
@@ -169,37 +195,52 @@ export default function ServerStatus() {
     return () => clearInterval(id);
   }, [fetchStatus]);
 
-  const isOnline    = data?.online ?? false;
+  const isOnline = data?.online ?? false;
   const playerCount = data?.players?.online ?? 0;
-  const playerMax   = data?.players?.max   ?? 0;
-  const motd        = data?.motd?.clean?.[0] ?? '';
-  const onlineNames = new Set((data?.players?.list ?? []).map(p => p.name.toLowerCase()));
+  const playerMax = data?.players?.max ?? 0;
+  const motd = data?.motd?.clean?.[0] ?? '';
+
+  // Build a set of online player names (lowercase) for fast lookup
+  const onlineNames = new Set(
+    (data?.players?.list ?? []).map((p) => p.name.toLowerCase())
+  );
 
   return (
     <section
       style={{
-        padding:      'clamp(5rem, 12vw, 10rem) clamp(1.5rem, 6vw, 5rem)',
-        borderBottom: '1px solid rgba(255,255,255,0.05)',
-        position:     'relative',
-        overflow:     'hidden',
-        background:   '#060A14',
+        padding: 'clamp(4rem, 10vw, 8rem) clamp(1.5rem, 6vw, 5rem)',
+        borderBottom: '1px solid #1a1a1a',
+        position: 'relative',
+        overflow: 'hidden',
       }}
     >
-      {/* Ambient glow */}
-      <div
-        style={{
-          position:      'absolute',
-          top:           '-10%',
-          left:          '-5%',
-          width:         '50%',
-          height:        '120%',
-          background:    isOnline
-            ? 'radial-gradient(ellipse at 0% 50%, rgba(245,166,35,0.05) 0%, transparent 65%)'
-            : 'none',
-          pointerEvents: 'none',
-          transition:    'background 1s ease',
-        }}
-      />
+      {/* Ambient glow when online */}
+      {isOnline && (
+        <>
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: '-5%',
+              width: '65%',
+              height: '100%',
+              background:
+                'radial-gradient(ellipse at 0% 40%, rgba(0,255,65,0.06) 0%, transparent 70%)',
+              pointerEvents: 'none',
+            }}
+          />
+          {/* CRT scanlines overlay */}
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,255,65,0.012) 3px, rgba(0,255,65,0.012) 4px)',
+              pointerEvents: 'none',
+              zIndex: 0,
+            }}
+          />
+        </>
+      )}
 
       {/* Section label */}
       <motion.p
@@ -208,42 +249,55 @@ export default function ServerStatus() {
         viewport={{ once: true }}
         transition={{ duration: 0.5 }}
         style={{
-          fontFamily:    "'JetBrains Mono', monospace",
-          fontSize:      '0.62rem',
-          letterSpacing: '0.32em',
-          color:         'rgba(245,166,35,0.7)',
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: '0.65rem',
+          letterSpacing: '0.3em',
+          color: '#00ff41',
           textTransform: 'uppercase',
-          marginBottom:  '2.5rem',
+          marginBottom: '2rem',
         }}
       >
-        01 — Server
+        01 — SERVER
       </motion.p>
 
-      {/* Status row */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(1.2rem, 3vw, 2.5rem)', flexWrap: 'wrap' }}>
-        {/* Pulse orb */}
+      {/* ── Status row ── */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 'clamp(1rem, 2.5vw, 2rem)',
+          flexWrap: 'wrap',
+        }}
+      >
+        {/* Pulsing orb */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.3 }}
+          initial={{ opacity: 0, scale: 0.4 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-          style={{ position: 'relative', width: 20, height: 20, flexShrink: 0 }}
+          style={{ position: 'relative', width: 18, height: 18, flexShrink: 0 }}
         >
-          {isOnline && !loading && (
+          {isOnline && (
             <>
-              <span className="glow-ring" style={{ position: 'absolute', inset: -1, borderRadius: '50%', background: '#F5A623' }} />
-              <span className="glow-ring glow-ring-delay" style={{ position: 'absolute', inset: -1, borderRadius: '50%', background: '#F5A623' }} />
+              <span
+                className="status-ring"
+                style={{ position: 'absolute', inset: -1, borderRadius: '50%', background: '#00ff41' }}
+              />
+              <span
+                className="status-ring status-ring-delay"
+                style={{ position: 'absolute', inset: -1, borderRadius: '50%', background: '#00ff41' }}
+              />
             </>
           )}
           <span
             style={{
-              position:   'absolute',
-              inset:      0,
+              position: 'absolute',
+              inset: 0,
               borderRadius: '50%',
-              background:   loading ? '#1a1a2e' : isOnline ? '#F5A623' : '#EF4444',
-              boxShadow:    isOnline && !loading ? '0 0 16px rgba(245,166,35,0.8), 0 0 6px rgba(245,166,35,1)' : 'none',
-              transition:   'background 0.6s ease, box-shadow 0.6s ease',
-              zIndex:       1,
+              background: loading ? '#222' : isOnline ? '#00ff41' : '#ff3333',
+              boxShadow: isOnline && !loading ? '0 0 14px rgba(0,255,65,0.7), 0 0 4px rgba(0,255,65,1)' : 'none',
+              transition: 'background 0.5s ease, box-shadow 0.5s ease',
+              zIndex: 1,
             }}
           />
         </motion.div>
@@ -251,59 +305,59 @@ export default function ServerStatus() {
         {/* Server icon */}
         {data?.icon && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.7 }}
+            initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.5, delay: 0.05 }}
             style={{
-              flexShrink:   0,
-              border:       '1px solid rgba(255,255,255,0.08)',
-              lineHeight:   0,
-              boxShadow:    isOnline ? '0 0 20px rgba(245,166,35,0.12)' : 'none',
-              background:   'rgba(8,14,28,0.6)',
+              flexShrink: 0,
+              border: '1px solid #1a1a1a',
+              lineHeight: 0,
+              boxShadow: isOnline ? '0 0 16px rgba(0,255,65,0.08)' : 'none',
             }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={data.icon}
               alt="Server icon"
-              width={56}
-              height={56}
+              width={52}
+              height={52}
               style={{ imageRendering: 'pixelated', display: 'block' }}
             />
           </motion.div>
         )}
 
-        {/* Status text */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+        {/* ONLINE / OFFLINE + MOTD */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
           <motion.h2
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.7, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
             style={{
-              fontFamily:    "'Playfair Display', serif",
-              fontSize:      'clamp(2.8rem, 7vw, 6rem)',
-              fontWeight:    900,
-              fontStyle:     'italic',
-              letterSpacing: '-0.01em',
-              lineHeight:    1,
-              color:         loading ? '#1a2a4a' : isOnline ? '#F5A623' : '#EF4444',
-              textShadow:    isOnline && !loading ? '0 0 60px rgba(245,166,35,0.3)' : 'none',
-              transition:    'color 0.6s ease, text-shadow 0.6s ease',
+              fontFamily: "'Space Grotesk', sans-serif",
+              fontSize: 'clamp(2.5rem, 6vw, 5rem)',
+              fontWeight: 900,
+              letterSpacing: '-0.03em',
+              lineHeight: 1,
+              color: loading ? '#222' : isOnline ? '#00ff41' : '#ff3333',
+              textShadow: isOnline && !loading ? '0 0 60px rgba(0,255,65,0.25)' : 'none',
+              transition: 'color 0.5s ease, text-shadow 0.5s ease',
             }}
           >
-            {loading ? '· · ·' : isOnline ? 'Online' : 'Offline'}
+            {loading ? '· · ·' : isOnline ? 'ONLINE' : 'OFFLINE'}
           </motion.h2>
+
           {!loading && isOnline && motd && (
             <motion.p
               initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.25 }}
               style={{
-                fontFamily:    "'Inter', sans-serif",
-                fontSize:      '0.75rem',
-                color:         'rgba(255,255,255,0.3)',
-                letterSpacing: '0.05em',
-                fontWeight:    300,
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: '0.65rem',
+                color: '#444',
+                letterSpacing: '0.1em',
+                lineHeight: 1,
               }}
             >
               {motd}
@@ -317,44 +371,39 @@ export default function ServerStatus() {
             initial={{ opacity: 0, x: 16 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            style={{
-              marginLeft:     'auto',
-              padding:        '0.8rem 1.4rem',
-              background:     'rgba(8,14,28,0.7)',
-              border:         '1px solid rgba(245,166,35,0.2)',
-              backdropFilter: 'blur(8px)',
-              textAlign:      'center',
-            }}
+            style={{ marginLeft: 'auto' }}
           >
             <p
               style={{
-                fontFamily:    "'JetBrains Mono', monospace",
-                fontSize:      '0.48rem',
-                color:         'rgba(255,255,255,0.3)',
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: '0.5rem',
+                color: '#333',
                 letterSpacing: '0.25em',
                 textTransform: 'uppercase',
-                marginBottom:  '0.2rem',
+                marginBottom: '0.15rem',
               }}
             >
-              PLAYERS
+              PLAYERS ONLINE
             </p>
             <p
               style={{
-                fontFamily:    "'Playfair Display', serif",
-                fontSize:      'clamp(1.6rem, 3.5vw, 2.8rem)',
-                fontWeight:    700,
-                lineHeight:    1,
-                color:         '#F0EAD6',
+                fontFamily: "'Space Grotesk', sans-serif",
+                fontSize: 'clamp(1.5rem, 3vw, 2.5rem)',
+                fontWeight: 800,
+                letterSpacing: '-0.02em',
+                color: '#f0f0f0',
+                lineHeight: 1,
+                textAlign: 'right',
               }}
             >
               {playerCount}
               <span
                 style={{
-                  fontFamily:    "'JetBrains Mono', monospace",
-                  fontSize:      '0.7rem',
-                  fontWeight:    400,
-                  color:         'rgba(255,255,255,0.2)',
-                  letterSpacing: '0.08em',
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: '0.75rem',
+                  fontWeight: 400,
+                  color: '#2a2a2a',
+                  letterSpacing: '0.1em',
                 }}
               >
                 {' '}/ {playerMax}
@@ -370,59 +419,59 @@ export default function ServerStatus() {
           initial={{ scaleX: 0 }}
           whileInView={{ scaleX: 1 }}
           viewport={{ once: true }}
-          transition={{ duration: 1.0, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 0.9, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
           style={{
-            height:          '1px',
-            background:      isOnline
-              ? 'linear-gradient(to right, rgba(245,166,35,0.6), rgba(245,166,35,0.12) 50%, transparent)'
-              : 'linear-gradient(to right, rgba(239,68,68,0.4), rgba(239,68,68,0.06) 50%, transparent)',
-            margin:          '3rem 0',
+            height: '1px',
+            background: isOnline
+              ? 'linear-gradient(to right, rgba(0,255,65,0.9), rgba(0,255,65,0.35) 30%, rgba(0,255,65,0.08) 60%, transparent)'
+              : 'linear-gradient(to right, rgba(255,51,51,0.7), rgba(255,51,51,0.12) 40%, transparent)',
+            margin: '2.5rem 0 3rem',
             transformOrigin: 'left',
           }}
         />
       )}
 
-      {/* Crew */}
+      {/* ── THE CREW subsection ── */}
       {!loading && (
         <>
+          {/* Sub-heading */}
           <motion.div
-            initial={{ opacity: 0, y: 14 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.35 }}
-            style={{ marginBottom: '1.8rem' }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            style={{ marginBottom: '1.5rem' }}
           >
             <p
               style={{
-                fontFamily:    "'JetBrains Mono', monospace",
-                fontSize:      '0.52rem',
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: '0.55rem',
                 letterSpacing: '0.3em',
-                color:         'rgba(255,255,255,0.2)',
+                color: '#2a2a2a',
                 textTransform: 'uppercase',
-                marginBottom:  '0.4rem',
+                marginBottom: '0.25rem',
               }}
             >
               WHO&apos;S IN
             </p>
             <h3
               style={{
-                fontFamily:    "'Playfair Display', serif",
-                fontSize:      'clamp(1.6rem, 3.5vw, 2.5rem)',
-                fontWeight:    700,
-                fontStyle:     'italic',
-                color:         '#F0EAD6',
-                lineHeight:    1,
+                fontFamily: "'Space Grotesk', sans-serif",
+                fontSize: 'clamp(1.4rem, 3vw, 2.2rem)',
+                fontWeight: 800,
+                letterSpacing: '-0.02em',
+                color: '#f0f0f0',
+                lineHeight: 1,
               }}
             >
-              The Crew
+              THE CREW
               <span
                 style={{
-                  fontFamily:    "'JetBrains Mono', monospace",
-                  fontSize:      '0.58rem',
-                  fontWeight:    400,
-                  fontStyle:     'normal',
-                  letterSpacing: '0.22em',
-                  color:         'rgba(255,255,255,0.2)',
-                  marginLeft:    '1.2rem',
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: '0.6rem',
+                  fontWeight: 400,
+                  letterSpacing: '0.2em',
+                  color: '#2a2a2a',
+                  marginLeft: '1rem',
                   verticalAlign: 'middle',
                 }}
               >
@@ -431,7 +480,14 @@ export default function ServerStatus() {
             </h3>
           </motion.div>
 
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
+          {/* Crew grid */}
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '0.65rem',
+            }}
+          >
             {CREW.map((name, i) => (
               <CrewCard
                 key={name}
@@ -442,41 +498,42 @@ export default function ServerStatus() {
             ))}
           </div>
 
+          {/* Online count hint */}
           {isOnline && (
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.4, delay: 0.7 }}
+              transition={{ duration: 0.4, delay: 0.6 }}
               style={{
-                marginTop:     '1.5rem',
-                fontFamily:    "'JetBrains Mono', monospace",
-                fontSize:      '0.5rem',
-                color:         'rgba(255,255,255,0.15)',
-                letterSpacing: '0.22em',
+                marginTop: '1.25rem',
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: '0.5rem',
+                color: '#1e1e1e',
+                letterSpacing: '0.2em',
                 textTransform: 'uppercase',
               }}
             >
               {onlineNames.size > 0
-                ? `${onlineNames.size} of ${CREW.length} crew members in game`
-                : 'No crew members currently in game'}
+                ? `${onlineNames.size} OF ${CREW.length} CREW MEMBERS IN GAME`
+                : 'NO CREW MEMBERS CURRENTLY IN GAME'}
             </motion.p>
           )}
         </>
       )}
 
+      {/* Last updated */}
       {lastUpdated && (
         <p
           style={{
-            marginTop:     '2.5rem',
-            fontFamily:    "'JetBrains Mono', monospace",
-            fontSize:      '0.46rem',
-            color:         'rgba(255,255,255,0.1)',
+            marginTop: '2rem',
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: '0.48rem',
+            color: '#1a1a1a',
             letterSpacing: '0.2em',
             textTransform: 'uppercase',
           }}
         >
-          UPDATED {lastUpdated} · REFRESHES EVERY 60S
-          {data?.source === 'exaroton' ? ' · EXAROTON API' : ''}
+          UPDATED {lastUpdated} · REFRESHES EVERY 60S{data?.source === 'exaroton' ? ' · EXAROTON API' : ''}
         </p>
       )}
     </section>

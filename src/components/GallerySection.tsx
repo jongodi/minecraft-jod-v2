@@ -1,320 +1,358 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useRef, useState, useCallback } from 'react';
+import { useRef, useState } from 'react';
 
 interface GalleryItem {
-  id:       number;
-  label:    string;
+  id: number;
+  label: string;
   sublabel: string;
-  photo:    string;
+  gradient: string;
+  photo: string;
 }
 
 const GALLERY_ITEMS: GalleryItem[] = [
-  { id:  1, label: 'GOÐI CASTLE',       sublabel: 'Far Away Lands',         photo: '/screenshots/the-castle.png'      },
-  { id:  2, label: 'JOÐ VILLE',         sublabel: 'Old Base · Spawn',       photo: '/screenshots/spawn-hill.png'      },
-  { id:  3, label: 'PINK ESTATE',       sublabel: 'Old Base',               photo: '/screenshots/cherry-estate.png'   },
-  { id:  4, label: 'J CLUB',            sublabel: 'Secret Underground',     photo: '/screenshots/j-club.png'          },
-  { id:  5, label: 'MUSHROOM ISLAND',   sublabel: 'Shroomy Heaven',         photo: '/screenshots/mushroom-isle.png'   },
-  { id:  6, label: 'POTIONS TOWER',     sublabel: 'New Base',               photo: '/screenshots/the-hall.png'        },
-  { id:  7, label: 'VENICE',            sublabel: 'New Base · Coastal',     photo: '/screenshots/waterfront.png'      },
-  { id:  8, label: 'CITY HALL',         sublabel: 'New Base',               photo: '/screenshots/the-tavern.png'      },
-  { id:  9, label: 'THE VILLAGE',       sublabel: 'New Base · Main Street', photo: '/screenshots/the-village.png'     },
-  { id: 10, label: 'BALLOON PARADISE',  sublabel: 'New Base · From Above',  photo: '/screenshots/balloon-island.png'  },
-  { id: 11, label: 'NEW TOWN',          sublabel: 'New Base · Night',       photo: '/screenshots/night-sky.png'       },
+  {
+    id: 1,
+    label: 'GOÐI CASTLE',
+    sublabel: 'FAR AWAY LANDS',
+    gradient: 'linear-gradient(160deg, #87ceeb 0%, #6ba8d4 20%, #4a7a5a 45%, #3a5a3a 65%, #555a55 85%, #404040 100%)',
+    photo: '/screenshots/the-castle.png',
+  },
+  {
+    id: 2,
+    label: 'JOÐ VILLE',
+    sublabel: 'OLD BASE',
+    gradient: 'linear-gradient(160deg, #87ceeb 0%, #6ba8d4 20%, #c8a0b8 45%, #5a9a6a 65%, #7a7a6a 85%, #555045 100%)',
+    photo: '/screenshots/spawn-hill.png',
+  },
+  {
+    id: 3,
+    label: 'PINK ESTATE',
+    sublabel: 'OLD BASE',
+    gradient: 'linear-gradient(160deg, #87ceeb 0%, #c8a0b8 20%, #d4789a 45%, #c06888 65%, #a85878 85%, #903060 100%)',
+    photo: '/screenshots/cherry-estate.png',
+  },
+  {
+    id: 4,
+    label: 'J CLUB',
+    sublabel: 'SECRET UNDERGROUND CLUB',
+    gradient: 'linear-gradient(160deg, #050308 0%, #120820 25%, #1e0a30 50%, #2d1048 70%, #1a0828 100%)',
+    photo: '/screenshots/j-club.png',
+  },
+  {
+    id: 5,
+    label: 'MUSHROOM ISLAND',
+    sublabel: 'SHROOMY HEAVEN',
+    gradient: 'linear-gradient(160deg, #87ceeb 0%, #6ba8d4 20%, #cc2222 45%, #aa1818 65%, #1a3860 80%, #081828 100%)',
+    photo: '/screenshots/mushroom-isle.png',
+  },
+  {
+    id: 6,
+    label: 'POTIONS TOWER',
+    sublabel: 'NEW BASE',
+    gradient: 'linear-gradient(160deg, #1e1810 0%, #302820 25%, #483828 50%, #605040 70%, #786858 100%)',
+    photo: '/screenshots/the-hall.png',
+  },
+  {
+    id: 7,
+    label: 'VENICE',
+    sublabel: 'NEW BASE',
+    gradient: 'linear-gradient(160deg, #87ceeb 0%, #c87840 25%, #a86030 45%, #284e78 65%, #183060 85%, #0a1828 100%)',
+    photo: '/screenshots/waterfront.png',
+  },
+  {
+    id: 8,
+    label: 'CITY HALL',
+    sublabel: 'NEW BASE',
+    gradient: 'linear-gradient(160deg, #87ceeb 0%, #6ba8d4 20%, #7a5a30 45%, #504020 65%, #3a3018 85%, #252010 100%)',
+    photo: '/screenshots/the-tavern.png',
+  },
+  {
+    id: 9,
+    label: 'THE VILLAGE',
+    sublabel: 'NEW BASE',
+    gradient: 'linear-gradient(160deg, #87ceeb 0%, #6ba8d4 20%, #6a8a40 40%, #4a6a28 60%, #7a5a30 80%, #503818 100%)',
+    photo: '/screenshots/the-village.png',
+  },
+  {
+    id: 10,
+    label: 'BALLOON PARADISE',
+    sublabel: 'NEW BASE',
+    gradient: 'linear-gradient(160deg, #87ceeb 0%, #a8d4f0 20%, #6bc8f0 40%, #4a9a6a 65%, #387850 85%, #204830 100%)',
+    photo: '/screenshots/balloon-island.png',
+  },
+  {
+    id: 11,
+    label: 'NEW TOWN',
+    sublabel: 'NEW BASE',
+    gradient: 'linear-gradient(160deg, #020408 0%, #080d18 20%, #0d1525 40%, #1a2a40 60%, #102030 80%, #050a12 100%)',
+    photo: '/screenshots/night-sky.png',
+  },
 ];
 
-function GalleryCard({ item, index }: { item: GalleryItem; index: number }) {
-  const [hovered, setHovered]     = useState(false);
-  const [tilt,    setTilt]        = useState({ x: 0, y: 0 });
-  const [glowPos, setGlowPos]     = useState({ x: 50, y: 50 });
-  const cardRef                   = useRef<HTMLDivElement>(null);
-
-  const onMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const rx   = (e.clientX - rect.left) / rect.width  - 0.5;
-    const ry   = (e.clientY - rect.top)  / rect.height - 0.5;
-    setTilt({ x: rx * 16, y: ry * -16 });
-    setGlowPos({
-      x: ((e.clientX - rect.left) / rect.width)  * 100,
-      y: ((e.clientY - rect.top)  / rect.height) * 100,
-    });
-  }, []);
-
-  const onLeave = useCallback(() => {
-    setHovered(false);
-    setTilt({ x: 0, y: 0 });
-    setGlowPos({ x: 50, y: 50 });
-  }, []);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 40 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-40px' }}
-      transition={{ duration: 0.6, delay: index * 0.06, ease: [0.16, 1, 0.3, 1] }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseMove={onMove}
-      onMouseLeave={onLeave}
-      ref={cardRef}
-      data-cursor="hover"
-      style={{
-        position:       'relative',
-        aspectRatio:    '16 / 9',
-        overflow:       'hidden',
-        border:         `1px solid ${hovered ? 'rgba(245,166,35,0.4)' : 'rgba(255,255,255,0.06)'}`,
-        transform:      `perspective(900px) rotateY(${tilt.x}deg) rotateX(${tilt.y}deg) scale(${hovered ? 1.03 : 1})`,
-        transition:     hovered
-          ? 'border-color 0.3s ease, box-shadow 0.3s ease'
-          : 'transform 0.55s cubic-bezier(0.03,0.98,0.52,0.99), border-color 0.4s ease, box-shadow 0.4s ease',
-        boxShadow:      hovered
-          ? `0 20px 60px rgba(0,0,0,0.7), 0 0 40px rgba(245,166,35,0.12), ${-tilt.x * 1.2}px ${tilt.y * 1.2}px 30px rgba(0,0,0,0.3)`
-          : '0 4px 20px rgba(0,0,0,0.4)',
-        willChange:     'transform',
-        transformStyle: 'preserve-3d',
-      }}
-    >
-      {/* Photo */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={item.photo}
-        alt={item.label}
-        style={{
-          position:   'absolute',
-          inset:      0,
-          width:      '100%',
-          height:     '100%',
-          objectFit:  'cover',
-          objectPosition: 'center',
-          transform:  hovered ? 'scale(1.08)' : 'scale(1)',
-          transition: 'transform 0.7s cubic-bezier(0.16,1,0.3,1)',
-        }}
-      />
-
-      {/* Mouse glow overlay */}
-      <div
-        style={{
-          position:   'absolute',
-          inset:      0,
-          background: `radial-gradient(circle at ${glowPos.x}% ${glowPos.y}%, rgba(245,166,35,0.14) 0%, transparent 65%)`,
-          opacity:    hovered ? 1 : 0,
-          transition: 'opacity 0.3s ease',
-          pointerEvents: 'none',
-          zIndex:     2,
-        }}
-      />
-
-      {/* Gradient overlay */}
-      <div
-        style={{
-          position:   'absolute',
-          inset:      0,
-          background: `linear-gradient(to top,
-            rgba(3,5,10,0.96) 0%,
-            rgba(3,5,10,0.55) 35%,
-            rgba(3,5,10,0.15) 60%,
-            transparent 100%
-          )`,
-          zIndex: 3,
-        }}
-      />
-
-      {/* Top-right index */}
-      <div
-        style={{
-          position:      'absolute',
-          top:           '0.75rem',
-          right:         '0.85rem',
-          fontFamily:    "'JetBrains Mono', monospace",
-          fontSize:      '0.48rem',
-          letterSpacing: '0.12em',
-          color:         'rgba(255,255,255,0.25)',
-          zIndex:        4,
-        }}
-      >
-        {String(item.id).padStart(2, '0')} / {String(GALLERY_ITEMS.length).padStart(2, '0')}
-      </div>
-
-      {/* Labels */}
-      <div
-        style={{
-          position:  'absolute',
-          bottom:    0,
-          left:      0,
-          right:     0,
-          padding:   '1.2rem 1rem 1rem',
-          zIndex:    4,
-          transform: hovered ? 'translateY(0)' : 'translateY(6px)',
-          transition: 'transform 0.4s cubic-bezier(0.16,1,0.3,1)',
-        }}
-      >
-        <p
-          style={{
-            fontFamily:    "'JetBrains Mono', monospace",
-            fontSize:      '0.48rem',
-            letterSpacing: '0.25em',
-            color:         hovered ? 'rgba(245,166,35,0.9)' : 'rgba(255,255,255,0.35)',
-            textTransform: 'uppercase',
-            marginBottom:  '0.3rem',
-            transition:    'color 0.35s ease',
-          }}
-        >
-          {item.sublabel}
-        </p>
-        <p
-          style={{
-            fontFamily:    "'Playfair Display', serif",
-            fontSize:      'clamp(0.85rem, 1.8vw, 1.1rem)',
-            fontWeight:    700,
-            letterSpacing: '0.03em',
-            color:         '#F0EAD6',
-            lineHeight:    1.1,
-          }}
-        >
-          {item.label}
-        </p>
-      </div>
-
-      {/* Border shimmer on hover */}
-      <div
-        style={{
-          position:  'absolute',
-          inset:     0,
-          border:    `1px solid rgba(245,166,35,${hovered ? 0.3 : 0})`,
-          transition: 'border-color 0.4s ease',
-          zIndex:    5,
-          pointerEvents: 'none',
-        }}
-      />
-    </motion.div>
-  );
-}
-
 export default function GallerySection() {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [hoveredId, setHoveredId] = useState<number | null>(null);
+
   return (
     <section
       style={{
-        padding:      'clamp(5rem, 12vw, 10rem) clamp(1.5rem, 6vw, 5rem)',
-        borderBottom: '1px solid rgba(255,255,255,0.05)',
-        background:   '#03050A',
-        position:     'relative',
-        overflow:     'hidden',
+        padding: 'clamp(4rem, 10vw, 8rem) 0',
+        borderBottom: '1px solid #1a1a1a',
+        overflow: 'hidden',
       }}
     >
-      {/* Subtle bg glow */}
-      <div
-        style={{
-          position:      'absolute',
-          top:           '20%',
-          left:          '50%',
-          transform:     'translateX(-50%)',
-          width:         '80vw',
-          height:        '50vh',
-          background:    'radial-gradient(ellipse, rgba(139,92,246,0.05) 0%, transparent 70%)',
-          pointerEvents: 'none',
-        }}
-      />
-
-      {/* Section header */}
-      <div style={{ marginBottom: 'clamp(2.5rem, 5vw, 4rem)' }}>
+      {/* Header */}
+      <div style={{ paddingLeft: 'clamp(1.5rem, 6vw, 5rem)', marginBottom: '2.5rem' }}>
         <motion.p
           initial={{ opacity: 0, x: -16 }}
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
           style={{
-            fontFamily:    "'JetBrains Mono', monospace",
-            fontSize:      '0.62rem',
-            letterSpacing: '0.32em',
-            color:         'rgba(245,166,35,0.7)',
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: '0.65rem',
+            letterSpacing: '0.3em',
+            color: '#00ff41',
             textTransform: 'uppercase',
-            marginBottom:  '0.9rem',
+            marginBottom: '0.75rem',
           }}
         >
-          02 — The World
+          02 — THE WORLD
         </motion.p>
 
         <motion.h2
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.7, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
           style={{
-            fontFamily:    "'Playfair Display', serif",
-            fontSize:      'clamp(2.8rem, 7vw, 6rem)',
-            fontWeight:    900,
-            fontStyle:     'italic',
-            letterSpacing: '-0.01em',
-            color:         '#F0EAD6',
-            lineHeight:    1,
+            fontFamily: "'Space Grotesk', sans-serif",
+            fontSize: 'clamp(2.5rem, 6vw, 5rem)',
+            fontWeight: 900,
+            letterSpacing: '-0.03em',
+            color: '#f0f0f0',
+            lineHeight: 1,
           }}
         >
-          The World
+          THE WORLD
         </motion.h2>
-
-        <motion.div
-          initial={{ scaleX: 0 }}
-          whileInView={{ scaleX: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8, delay: 0.3 }}
-          style={{
-            marginTop:      '1.25rem',
-            width:          'clamp(80px, 15vw, 160px)',
-            height:         '2px',
-            background:     'linear-gradient(to right, #F5A623, rgba(245,166,35,0))',
-            transformOrigin: 'left',
-          }}
-        />
 
         <motion.p
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.4 }}
+          transition={{ duration: 0.5, delay: 0.25 }}
           style={{
-            marginTop:     '1rem',
-            fontFamily:    "'Inter', sans-serif",
-            fontSize:      '0.8rem',
-            color:         'rgba(255,255,255,0.3)',
-            fontWeight:    300,
-            letterSpacing: '0.02em',
+            marginTop: '0.75rem',
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: '0.65rem',
+            color: '#333',
+            letterSpacing: '0.15em',
+            textTransform: 'uppercase',
           }}
         >
-          11 locations across the realm — hover to explore
+          ← DRAG TO EXPLORE →
         </motion.p>
       </div>
 
-      {/* Grid — all same 16:9 size */}
-      <div
-        style={{
-          display:               'grid',
-          gridTemplateColumns:   'repeat(auto-fill, minmax(min(340px, 100%), 1fr))',
-          gap:                   'clamp(0.75rem, 1.5vw, 1.25rem)',
-        }}
-      >
-        {GALLERY_ITEMS.map((item, i) => (
-          <GalleryCard key={item.id} item={item} index={i} />
-        ))}
-      </div>
-
-      {/* Bottom meta */}
-      <motion.p
+      {/* Horizontal scroll strip */}
+      <motion.div
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
         viewport={{ once: true }}
-        transition={{ duration: 0.5, delay: 0.3 }}
+        transition={{ duration: 0.6, delay: 0.2 }}
+        ref={scrollRef}
+        className="gallery-scroll"
         style={{
-          marginTop:     '2rem',
-          fontFamily:    "'JetBrains Mono', monospace",
-          fontSize:      '0.52rem',
-          color:         'rgba(255,255,255,0.12)',
-          letterSpacing: '0.18em',
-          textTransform: 'uppercase',
-          textAlign:     'center',
+          display: 'flex',
+          gap: '1px',
+          overflowX: 'auto',
+          paddingLeft: 'clamp(1.5rem, 6vw, 5rem)',
+          paddingRight: 'clamp(1.5rem, 6vw, 5rem)',
+          paddingBottom: '1px',
+          scrollSnapType: 'x mandatory',
+          WebkitOverflowScrolling: 'touch',
+          cursor: 'grab',
+        }}
+        onMouseDown={(e) => {
+          const el = scrollRef.current;
+          if (!el) return;
+          el.style.cursor = 'grabbing';
+          const startX = e.pageX - el.offsetLeft;
+          const scrollLeft = el.scrollLeft;
+          const onMove = (me: MouseEvent) => {
+            const x = me.pageX - el.offsetLeft;
+            el.scrollLeft = scrollLeft - (x - startX);
+          };
+          const onUp = () => {
+            el.style.cursor = 'grab';
+            window.removeEventListener('mousemove', onMove);
+            window.removeEventListener('mouseup', onUp);
+          };
+          window.addEventListener('mousemove', onMove);
+          window.addEventListener('mouseup', onUp);
         }}
       >
-        Screenshots from JOD · play.jodcraft.world
-      </motion.p>
+        {GALLERY_ITEMS.map((item, i) => (
+          <motion.div
+            key={item.id}
+            initial={{ opacity: 0, scale: 0.96 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: i * 0.04 }}
+            onMouseEnter={() => setHoveredId(item.id)}
+            onMouseLeave={() => setHoveredId(null)}
+            style={{
+              flexShrink: 0,
+              width: 'clamp(280px, 30vw, 420px)',
+              height: 'clamp(190px, 21vw, 280px)',
+              position: 'relative',
+              scrollSnapAlign: 'start',
+              overflow: 'hidden',
+              border: '1px solid #1a1a1a',
+            }}
+          >
+            {/* Photo layer — revealed on hover */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={item.photo}
+              alt={item.label}
+              style={{
+                position: 'absolute',
+                inset: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                objectPosition: 'center',
+                opacity: hoveredId === item.id ? 1 : 0,
+                transform: hoveredId === item.id ? 'scale(1)' : 'scale(1.06)',
+                transition: 'opacity 0.55s ease, transform 0.65s ease',
+                pointerEvents: 'none',
+              }}
+            />
+
+            {/* Gradient color layer — shown by default, fades on hover */}
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                background: item.gradient,
+                opacity: hoveredId === item.id ? 0 : 1,
+                transition: 'opacity 0.45s ease',
+                pointerEvents: 'none',
+              }}
+            />
+
+            {/* Noise texture overlay */}
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 128 128' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
+                opacity: hoveredId === item.id ? 0 : 0.06,
+                transition: 'opacity 0.45s ease',
+                pointerEvents: 'none',
+              }}
+            />
+
+            {/* Bottom gradient fade — always present for label readability */}
+            <div
+              style={{
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: '65%',
+                background: 'linear-gradient(to top, rgba(8,8,8,0.9) 0%, rgba(8,8,8,0.4) 50%, transparent 100%)',
+                pointerEvents: 'none',
+                zIndex: 2,
+              }}
+            />
+
+            {/* Labels */}
+            <div
+              style={{
+                position: 'absolute',
+                bottom: '1rem',
+                left: '1rem',
+                right: '1rem',
+                zIndex: 3,
+              }}
+            >
+              <p
+                style={{
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: '0.5rem',
+                  letterSpacing: '0.25em',
+                  color: hoveredId === item.id ? '#00ff41' : '#666',
+                  textTransform: 'uppercase',
+                  marginBottom: '0.2rem',
+                  transition: 'color 0.4s ease',
+                }}
+              >
+                {item.sublabel}
+              </p>
+              <p
+                style={{
+                  fontFamily: "'Space Grotesk', sans-serif",
+                  fontSize: '0.9rem',
+                  fontWeight: 700,
+                  letterSpacing: '0.05em',
+                  color: '#f0f0f0',
+                  textTransform: 'uppercase',
+                }}
+              >
+                {item.label}
+              </p>
+            </div>
+
+            {/* Index number top-right */}
+            <div
+              style={{
+                position: 'absolute',
+                top: '0.75rem',
+                right: '0.75rem',
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: '0.5rem',
+                color: 'rgba(255,255,255,0.2)',
+                letterSpacing: '0.1em',
+                zIndex: 3,
+              }}
+            >
+              {String(item.id).padStart(2, '0')} / {String(GALLERY_ITEMS.length).padStart(2, '0')}
+            </div>
+
+            {/* Hover border glow */}
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                border: `1px solid ${hoveredId === item.id ? 'rgba(0,255,65,0.3)' : 'transparent'}`,
+                transition: 'border-color 0.4s ease',
+                pointerEvents: 'none',
+                zIndex: 4,
+              }}
+            />
+          </motion.div>
+        ))}
+      </motion.div>
+
+      {/* Bottom label */}
+      <p
+        style={{
+          paddingLeft: 'clamp(1.5rem, 6vw, 5rem)',
+          marginTop: '1.5rem',
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: '0.55rem',
+          color: '#2a2a2a',
+          letterSpacing: '0.15em',
+          textTransform: 'uppercase',
+        }}
+      >
+        SCREENSHOTS FROM JOD — play.jodcraft.world
+      </p>
     </section>
   );
 }
