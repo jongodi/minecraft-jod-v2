@@ -9,32 +9,44 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        bg: '#080808',
-        accent: '#00ff41',
-        'accent-dim': '#00cc33',
-        card: '#111111',
-        border: '#1a1a1a',
-        text: '#f0f0f0',
-        muted: '#666666',
+        bg:     '#03050A',
+        bg2:    '#060A14',
+        gold:   '#F5A623',
+        purple: '#8B5CF6',
+        teal:   '#06B6D4',
+        text:   '#F0EAD6',
+        muted:  '#4B5563',
+        border: 'rgba(255,255,255,0.07)',
+        card:   'rgba(8,14,28,0.88)',
       },
       fontFamily: {
-        display: ['Space Grotesk', 'sans-serif'],
-        mono: ['JetBrains Mono', 'monospace'],
+        cinzel:   ['Cinzel', 'serif'],
+        playfair: ['Playfair Display', 'serif'],
+        sans:     ['Inter', 'sans-serif'],
+        mono:     ['JetBrains Mono', 'monospace'],
       },
       animation: {
-        glitch: 'glitch 6s infinite',
-        'scroll-x': 'scroll-x 30s linear infinite',
-        'chevron-bounce': 'chevron-bounce 1.5s ease-in-out infinite',
-        'cursor-ring': 'cursor-ring 0.15s ease-out',
+        ticker:          'ticker-scroll 45s linear infinite',
+        'chevron-bounce':'chevron-bounce 2s ease-in-out infinite',
+        'glow-pulse':    'glow-pulse 2.2s ease-out infinite',
+        float:           'float 6s ease-in-out infinite',
       },
       keyframes: {
-        'scroll-x': {
-          '0%': { transform: 'translateX(0)' },
+        'ticker-scroll': {
+          '0%':   { transform: 'translateX(0)' },
           '100%': { transform: 'translateX(-50%)' },
         },
         'chevron-bounce': {
-          '0%, 100%': { transform: 'translateY(0)', opacity: '0.4' },
-          '50%': { transform: 'translateY(8px)', opacity: '1' },
+          '0%, 100%': { transform: 'translateX(-50%) translateY(0)',    opacity: '0.4' },
+          '50%':       { transform: 'translateX(-50%) translateY(10px)', opacity: '1'   },
+        },
+        'glow-pulse': {
+          '0%':   { transform: 'scale(1)',   opacity: '0.6' },
+          '100%': { transform: 'scale(3.2)', opacity: '0'   },
+        },
+        float: {
+          '0%, 100%': { transform: 'translateY(0px)'  },
+          '50%':       { transform: 'translateY(-14px)' },
         },
       },
     },
