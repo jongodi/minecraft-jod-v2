@@ -58,11 +58,11 @@ function CrewCard({
           : '#090909',
         border: `1px solid ${
           isOnline
-            ? hovered ? 'rgba(0,255,65,0.45)' : 'rgba(0,255,65,0.18)'
+            ? hovered ? 'rgba(0,255,65,0.65)' : 'rgba(0,255,65,0.18)'
             : hovered ? '#2a2a2a' : '#141414'
         }`,
         boxShadow: isOnline && hovered
-          ? '0 6px 28px rgba(0,255,65,0.1), 0 0 1px rgba(0,255,65,0.25)'
+          ? '0 8px 32px rgba(0,255,65,0.18), 0 0 20px rgba(0,255,65,0.12), 0 0 1px rgba(0,255,65,0.4)'
           : 'none',
         transform: hovered ? 'translateY(-5px)' : 'translateY(0)',
         transition: 'all 0.25s ease',
@@ -216,18 +216,30 @@ export default function ServerStatus() {
     >
       {/* Ambient glow when online */}
       {isOnline && (
-        <div
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: '-5%',
-            width: '55%',
-            height: '100%',
-            background:
-              'radial-gradient(ellipse at 0% 40%, rgba(0,255,65,0.04) 0%, transparent 70%)',
-            pointerEvents: 'none',
-          }}
-        />
+        <>
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: '-5%',
+              width: '65%',
+              height: '100%',
+              background:
+                'radial-gradient(ellipse at 0% 40%, rgba(0,255,65,0.06) 0%, transparent 70%)',
+              pointerEvents: 'none',
+            }}
+          />
+          {/* CRT scanlines overlay */}
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,255,65,0.012) 3px, rgba(0,255,65,0.012) 4px)',
+              pointerEvents: 'none',
+              zIndex: 0,
+            }}
+          />
+        </>
       )}
 
       {/* Section label */}
@@ -411,8 +423,8 @@ export default function ServerStatus() {
           style={{
             height: '1px',
             background: isOnline
-              ? 'linear-gradient(to right, rgba(0,255,65,0.6), rgba(0,255,65,0.1) 40%, transparent)'
-              : 'linear-gradient(to right, rgba(255,51,51,0.5), rgba(255,51,51,0.08) 40%, transparent)',
+              ? 'linear-gradient(to right, rgba(0,255,65,0.9), rgba(0,255,65,0.35) 30%, rgba(0,255,65,0.08) 60%, transparent)'
+              : 'linear-gradient(to right, rgba(255,51,51,0.7), rgba(255,51,51,0.12) 40%, transparent)',
             margin: '2.5rem 0 3rem',
             transformOrigin: 'left',
           }}
