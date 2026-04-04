@@ -207,6 +207,7 @@ export default function ServerStatus() {
 
   return (
     <section
+      id="server"
       style={{
         padding: 'clamp(4rem, 10vw, 8rem) clamp(1.5rem, 6vw, 5rem)',
         borderBottom: '1px solid #1a1a1a',
