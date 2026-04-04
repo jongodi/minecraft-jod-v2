@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useRef, useEffect, useCallback } from "react";
+import JSZip from "jszip";
 
 const VANILLA_PREFIXES = ["block/","item/","entity/","gui/","environment/","font/","map/","misc/","mob_effect/","painting/","particle/","colormap/","effect/","models/","textures/","sounds/"];
 function isLikelyVanilla(path) { return VANILLA_PREFIXES.some(p => path.toLowerCase().includes(p)); }
@@ -344,7 +345,6 @@ export default function App(){
 
   const loadZip=async(file)=>{
     try{
-      const{default:JSZip}=await import("https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js");
       const zip=await JSZip.loadAsync(file);
       const loaded={};const promises=[];
       zip.forEach((relPath,zipEntry)=>{
@@ -390,7 +390,6 @@ export default function App(){
 
   const exportZip=async()=>{
     try{
-      const{default:JSZip}=await import("https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js");
       const zip=new JSZip();
       for(const[path,content]of Object.entries(files)){
         if(typeof content==="string"&&content.startsWith("data:")){
