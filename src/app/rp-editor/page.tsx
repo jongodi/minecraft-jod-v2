@@ -272,6 +272,14 @@ function PixelPainter({dataUrl,onSave,compact}:any){
   const[canRedo,setCanRedo]=useState(false);
   const paintedRef=useRef(false); // true if pixels were painted in the current stroke
 
+  // Image import state
+  const[showImport,setShowImport]=useState(false);
+  const[importSrc,setImportSrc]=useState<string|null>(null);
+  const[pixelBlock,setPixelBlock]=useState(16);
+  const importFileRef=useRef<any>();
+  const importImgRef=useRef<HTMLImageElement|null>(null);
+  const previewRef=useRef<any>();
+
   // drawOverlay stored in a ref so undo/redo always call the current-scale version
   const drawOverlayRef=useRef<(s?:number)=>void>(()=>{});
   const drawOverlay=useCallback((s=scale)=>{
@@ -343,6 +351,51 @@ function PixelPainter({dataUrl,onSave,compact}:any){
     window.addEventListener('keydown',h);return()=>window.removeEventListener('keydown',h);
   },[undo,redo]);
 
+  // Render pixelated preview — downscale then upscale without smoothing
+  const renderImportPreview=useCallback((img:HTMLImageElement,block:number)=>{
+    const pv=previewRef.current;if(!pv)return;
+    const tw=Math.max(1,Math.round(img.width/block));
+    const th=Math.max(1,Math.round(img.height/block));
+    const tmp=document.createElement('canvas');tmp.width=tw;tmp.height=th;
+    const tc=tmp.getContext("2d")!;tc.imageSmoothingEnabled=true;tc.drawImage(img,0,0,tw,th);
+    // Show preview at a reasonable display size
+    const maxPv=compact?220:320;
+    const dispScale=Math.max(1,Math.floor(maxPv/Math.max(tw,th)));
+    pv.width=tw*dispScale;pv.height=th*dispScale;
+    const pc=pv.getContext("2d")!;pc.imageSmoothingEnabled=false;pc.drawImage(tmp,0,0,tw*dispScale,th*dispScale);
+  },[compact]);
+
+  // Update preview when block size or source changes
+  useEffect(()=>{
+    if(!importSrc)return;
+    if(importImgRef.current){renderImportPreview(importImgRef.current,pixelBlock);}
+  },[importSrc,pixelBlock,renderImportPreview]);
+
+  const handleImportFile=(e:any)=>{
+    const f=e.target.files?.[0];if(!f)return;
+    const reader=new FileReader();
+    reader.onload=(ev)=>{
+      const src=ev.target?.result as string;
+      setImportSrc(src);
+      const img=new Image();
+      img.onload=()=>{importImgRef.current=img;renderImportPreview(img,pixelBlock);};
+      img.src=src;
+    };reader.readAsDataURL(f);
+  };
+
+  const applyImport=useCallback(()=>{
+    const img=importImgRef.current;const c=canvasRef.current;if(!img||!c)return;
+    const tw=Math.max(1,Math.round(img.width/pixelBlock));
+    const th=Math.max(1,Math.round(img.height/pixelBlock));
+    const tmp=document.createElement('canvas');tmp.width=tw;tmp.height=th;
+    const tc=tmp.getContext("2d")!;tc.imageSmoothingEnabled=true;tc.drawImage(img,0,0,tw,th);
+    const ctx=c.getContext("2d")!;ctx.imageSmoothingEnabled=false;
+    ctx.clearRect(0,0,c.width,c.height);
+    ctx.drawImage(tmp,0,0,c.width,c.height);
+    pushHistory();drawOverlayRef.current();
+    setShowImport(false);setImportSrc(null);importImgRef.current=null;
+  },[pixelBlock,pushHistory]);
+
   const paint=(e:any)=>{
     const ov=overlayRef.current;const c=canvasRef.current;if(!ov||!c)return;
     const rect=ov.getBoundingClientRect();
@@ -365,6 +418,8 @@ function PixelPainter({dataUrl,onSave,compact}:any){
 
   const changeScale=(s:number)=>{setScale(s);drawOverlay(s);};
 
+  const BLOCK_PRESETS=[8,16,32,64,128,256,512];
+
   return(
     <div style={{display:"flex",flexDirection:"column",gap:8}}>
       <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
@@ -375,10 +430,55 @@ function PixelPainter({dataUrl,onSave,compact}:any){
           <input type="color" value={color} onChange={e=>setColor(e.target.value)} style={{width:28,height:26,padding:2,background:BG3,border:`1px solid ${BORDER}`,cursor:"pointer"}}/>
           <span style={{fontSize:10,color:DIM}}>{color}</span>
         </div>
+        <button className={`btn sm${showImport?" active":""}`} style={{marginLeft:4}} onClick={()=>{setShowImport(v=>!v);setImportSrc(null);importImgRef.current=null;}}>↑ Import</button>
         <div style={{marginLeft:"auto",display:"flex",gap:3}}>
           {[2,4,8,16].map(s=><button key={s} className={`btn sm${scale===s?" active":""}`} onClick={()=>changeScale(s)}>{s}x</button>)}
         </div>
       </div>
+
+      {showImport&&(
+        <div style={{background:BG2,border:`1px solid ${BORDER}`,padding:10,display:"flex",flexDirection:"column",gap:8}}>
+          <div style={{fontSize:9,color:DIM,letterSpacing:'2px',textTransform:'uppercase'}}>Import image as texture</div>
+          {!importSrc?(
+            <div style={{display:'flex',flexDirection:'column',gap:6,alignItems:'flex-start'}}>
+              <div
+                style={{border:`2px dashed ${BORDER}`,padding:'18px 24px',textAlign:'center',cursor:'pointer',color:DIM,fontSize:11,width:'100%'}}
+                onClick={()=>importFileRef.current?.click()}
+                onDragOver={e=>{e.preventDefault();(e.currentTarget as any).style.borderColor=ACCENT;}}
+                onDragLeave={e=>{(e.currentTarget as any).style.borderColor=BORDER;}}
+                onDrop={e=>{e.preventDefault();(e.currentTarget as any).style.borderColor=BORDER;const f=e.dataTransfer.files[0];if(f){const r=new FileReader();r.onload=ev=>{const src=ev.target?.result as string;setImportSrc(src);const img=new Image();img.onload=()=>{importImgRef.current=img;renderImportPreview(img,pixelBlock);};img.src=src;};r.readAsDataURL(f);}}}
+              >
+                Drop image here or click to browse
+              </div>
+              <input ref={importFileRef} type="file" accept="image/*" style={{display:'none'}} onChange={handleImportFile}/>
+            </div>
+          ):(
+            <div style={{display:'flex',flexDirection:'column',gap:8}}>
+              <div style={{fontSize:10,color:TEXT2}}>Block size (pixelation)</div>
+              <div style={{display:'flex',gap:4,flexWrap:'wrap',alignItems:'center'}}>
+                {BLOCK_PRESETS.map(b=>(
+                  <button key={b} className={`btn sm${pixelBlock===b?" active":""}`} onClick={()=>setPixelBlock(b)}>{b}</button>
+                ))}
+              </div>
+              <div style={{display:'flex',alignItems:'center',gap:8}}>
+                <input type="range" min={8} max={512} step={1} value={pixelBlock}
+                  onChange={e=>setPixelBlock(Number(e.target.value))}
+                  style={{flex:1,accentColor:ACCENT}}/>
+                <span style={{fontSize:11,color:ACCENT,minWidth:36,textAlign:'right'}}>{pixelBlock}px</span>
+              </div>
+              <div style={{fontSize:9,color:DIM,letterSpacing:'1px'}}>Preview</div>
+              <div style={{overflow:'auto',maxHeight:compact?180:260,border:`1px solid ${BORDER}`,background:'#070910',display:'inline-block'}}>
+                <canvas ref={previewRef} style={{imageRendering:'pixelated',display:'block'}}/>
+              </div>
+              <div style={{display:'flex',gap:6}}>
+                <button className="btn active" onClick={applyImport}>Apply to canvas</button>
+                <button className="btn sm" onClick={()=>{setImportSrc(null);importImgRef.current=null;}}>← Back</button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       <div style={{display:"flex",gap:4,alignItems:"center"}}>
         <button className="btn sm" onClick={undo} disabled={!canUndo}
           title="Undo (Ctrl+Z)" style={{opacity:canUndo?1:0.3,cursor:canUndo?'pointer':'default'}}>← Undo</button>
