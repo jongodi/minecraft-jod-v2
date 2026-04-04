@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo, memo } from "react";
 import JSZip from "jszip";
 
 const VANILLA_PREFIXES = ["block/","item/","entity/","gui/","environment/","font/","map/","misc/","mob_effect/","painting/","particle/","colormap/","effect/","models/","textures/","sounds/"];
@@ -65,9 +65,9 @@ textarea.code:focus{border-color:${ACCENT2}}
 textarea.code.has-errors{border-color:${ERR}}
 `;
 
-function buildTree(files) {
+function buildTree(paths) {
   const root={};
-  for(const path of Object.keys(files)){
+  for(const path of paths){
     const parts=path.split("/");let node=root;
     for(let i=0;i<parts.length;i++){
       const p=parts[i];
@@ -78,7 +78,7 @@ function buildTree(files) {
   return root;
 }
 
-function TreeNode({name,node,path,depth,selected,onSelect}){
+const TreeNode=memo(function TreeNode({name,node,path,depth,selected,onSelect}){
   const[open,setOpen]=useState(depth<2);
   const isDir=node!==null&&typeof node==="object";
   const full=path?`${path}/${name}`:name;
@@ -101,7 +101,7 @@ function TreeNode({name,node,path,depth,selected,onSelect}){
       <span>{name}</span>
     </div>
   );
-}
+});
 
 // ── Pixel Painter ──────────────────────────────────────────────────────────────
 function PixelPainter({dataUrl,onSave}){
@@ -281,9 +281,9 @@ function PackMetaEditor({content,onChange}){
 }
 
 // ── Dependency Drawer ──────────────────────────────────────────────────────────
-function DependencyDrawer({open,onClose,files,textureRefs}){
-  const textures=Object.keys(files).filter(f=>f.endsWith(".png"));
-  const jsonFiles=Object.keys(files).filter(f=>f.endsWith(".json")&&!f.includes("pack.mcmeta"));
+function DependencyDrawer({open,onClose,filePaths,textureRefs}){
+  const textures=filePaths.filter(f=>f.endsWith(".png"));
+  const jsonFiles=filePaths.filter(f=>f.endsWith(".json")&&!f.includes("pack.mcmeta"));
   return(
     <div className={`drawer${open?" open":""}`}>
       <div className="drawer-title"><span>Dependency graph</span><button className="btn" onClick={onClose}>✕</button></div>
@@ -334,64 +334,96 @@ function parseTextureRefs(fs){
 }
 
 export default function App(){
-  const[files,setFiles]=useState({});
+  // All file content lives in a ref — changes never trigger re-renders
+  const fileDataRef=useRef({});
+  // State only holds the list of paths (drives tree/stats) + selection + current file content
+  const[filePaths,setFilePaths]=useState([]);
   const[selected,setSelected]=useState(null);
+  const[selectedContent,setSelectedContent]=useState(null);
   const[tab,setTab]=useState("preview");
   const[drawerOpen,setDrawerOpen]=useState(false);
   const[dragging,setDragging]=useState(false);
   const[status,setStatus]=useState("No pack loaded");
-  const[textureRefs,setTextureRefs]=useState({});
   const fileInputRef=useRef();
 
+  // Derived stats — recompute only when filePaths changes
+  const fileCount=useMemo(()=>filePaths.length,[filePaths]);
+  const textureCount=useMemo(()=>filePaths.filter(f=>f.endsWith(".png")).length,[filePaths]);
+  const audioCount=useMemo(()=>filePaths.filter(f=>f.endsWith(".ogg")||f.endsWith(".mp3")).length,[filePaths]);
+
+  // Tree — recompute only when filePaths changes
+  const tree=useMemo(()=>buildTree(filePaths),[filePaths]);
+
+  // Texture refs — only computed when drawer opens, not on every render
+  const textureRefs=useMemo(()=>{
+    if(!drawerOpen)return{};
+    const subset={};
+    for(const path of filePaths){
+      if(path.endsWith(".json")&&!path.includes("pack.mcmeta"))subset[path]=fileDataRef.current[path];
+    }
+    return parseTextureRefs(subset);
+  },[drawerOpen,filePaths]);
+
   const loadZip=async(file)=>{
+    setStatus("Loading…");
     try{
       const zip=await JSZip.loadAsync(file);
-      const loaded={};const promises=[];
+      const newData={};const promises=[];
       zip.forEach((relPath,zipEntry)=>{
         if(zipEntry.dir)return;
         const ext=relPath.split(".").pop().toLowerCase();
         if(["png","jpg","jpeg"].includes(ext)){
-          promises.push(zipEntry.async("base64").then(b64=>{loaded[relPath]=`data:image/${ext};base64,${b64}`;}));
+          promises.push(zipEntry.async("base64").then(b64=>{newData[relPath]=`data:image/${ext};base64,${b64}`;}));
         }else if(ext==="ogg"||ext==="mp3"||ext==="wav"){
-          promises.push(zipEntry.async("base64").then(b64=>{loaded[relPath]=`data:audio/${ext};base64,${b64}`;}));
+          promises.push(zipEntry.async("base64").then(b64=>{newData[relPath]=`data:audio/${ext};base64,${b64}`;}));
         }else if(["json","mcmeta","txt","md"].includes(ext)||relPath.includes("pack")){
-          promises.push(zipEntry.async("string").then(s=>{loaded[relPath]=s;}));
+          promises.push(zipEntry.async("string").then(s=>{newData[relPath]=s;}));
         }
       });
       await Promise.all(promises);
-      setFiles(loaded);setTextureRefs(parseTextureRefs(loaded));
-      setStatus(`Loaded ${Object.keys(loaded).length} files from ${file.name}`);
-      setSelected(null);
+      fileDataRef.current=newData;
+      setFilePaths(Object.keys(newData));
+      setStatus(`Loaded ${Object.keys(newData).length} files from ${file.name}`);
+      setSelected(null);setSelectedContent(null);
     }catch(e){setStatus("Error loading zip: "+e.message);}
   };
 
   const handleDrop=useCallback(e=>{e.preventDefault();setDragging(false);const f=e.dataTransfer.files[0];if(f&&f.name.endsWith(".zip"))loadZip(f);},[]);
   const handleFileChange=e=>{const f=e.target.files[0];if(f)loadZip(f);};
 
-  const handleSelect=(path)=>{
+  const handleSelect=useCallback((path)=>{
     setSelected(path);
+    setSelectedContent(fileDataRef.current[path]);
     const ext=path.split(".").pop().toLowerCase();
     if(["png","jpg","jpeg"].includes(ext))setTab("preview");
     else if(["ogg","mp3","wav"].includes(ext))setTab("audio");
     else if(path.includes("pack.mcmeta"))setTab("meta");
     else setTab("editor");
-  };
+  },[]);
 
-  const updateContent=(val)=>{
-    const updated={...files,[selected]:val};
-    setFiles(updated);
-    if(selected?.endsWith(".json")||selected?.includes("pack.mcmeta"))setTextureRefs(parseTextureRefs(updated));
-  };
+  // Write to ref only — no full re-render, only selectedContent updates
+  const updateContent=useCallback((val)=>{
+    if(!selected)return;
+    fileDataRef.current[selected]=val;
+    setSelectedContent(val);
+  },[selected]);
 
-  const saveTexture=(dataUrl)=>{
-    setFiles(f=>({...f,[selected]:dataUrl}));
-    setStatus(`Saved edits to ${selected?.split("/").pop()}`);
-  };
+  const saveTexture=useCallback((dataUrl)=>{
+    if(!selected)return;
+    fileDataRef.current[selected]=dataUrl;
+    setSelectedContent(dataUrl);
+    setStatus(`Saved edits to ${selected.split("/").pop()}`);
+  },[selected]);
+
+  const clearAll=useCallback(()=>{
+    fileDataRef.current={};
+    setFilePaths([]);setSelected(null);setSelectedContent(null);setStatus("No pack loaded");
+  },[]);
 
   const exportZip=async()=>{
     try{
       const zip=new JSZip();
-      for(const[path,content]of Object.entries(files)){
+      for(const[path,content]of Object.entries(fileDataRef.current)){
         if(typeof content==="string"&&content.startsWith("data:")){
           zip.file(path,content.split(",")[1],{base64:true});
         }else{zip.file(path,content);}
@@ -408,10 +440,6 @@ export default function App(){
   const isAudio=["ogg","mp3","wav"].includes(ext);
   const isMeta=selected?.includes("pack.mcmeta");
   const isJson=ext==="json"&&!isMeta;
-  const fileCount=Object.keys(files).length;
-  const textureCount=Object.keys(files).filter(f=>f.endsWith(".png")).length;
-  const audioCount=Object.keys(files).filter(f=>f.endsWith(".ogg")||f.endsWith(".mp3")).length;
-  const tree=buildTree(files);
 
   return(
     <>
@@ -424,7 +452,7 @@ export default function App(){
           {fileCount>0&&<>
             <button className="btn" onClick={()=>setDrawerOpen(o=>!o)}>{drawerOpen?"Close graph":"Dep. Graph"}</button>
             <button className="btn" onClick={exportZip}>Export .zip</button>
-            <button className="btn danger" onClick={()=>{setFiles({});setSelected(null);setStatus("No pack loaded");}}>Clear</button>
+            <button className="btn danger" onClick={clearAll}>Clear</button>
           </>}
           <button className="btn" onClick={()=>fileInputRef.current.click()}>{fileCount>0?"Load new":"Open .zip"}</button>
           <input ref={fileInputRef} type="file" accept=".zip" style={{display:"none"}} onChange={handleFileChange}/>
@@ -471,23 +499,23 @@ export default function App(){
                     <div className="editor-area">
                       {tab==="preview"&&isImage&&(
                         <div>
-                          <img src={files[selected]} style={{imageRendering:"pixelated",border:`1px solid ${BORDER}`,maxWidth:"100%"}} alt={selected}/>
+                          <img src={selectedContent} style={{imageRendering:"pixelated",border:`1px solid ${BORDER}`,maxWidth:"100%"}} alt={selected}/>
                           <div style={{marginTop:8,fontSize:11,color:DIM}}>Switch to ✏ Paint tab to edit pixels</div>
                         </div>
                       )}
-                      {tab==="paint"&&isImage&&<PixelPainter dataUrl={files[selected]} onSave={saveTexture}/>}
-                      {tab==="audio"&&isAudio&&<AudioPlayer dataUrl={files[selected]} name={selected.split("/").pop()}/>}
-                      {tab==="meta"&&isMeta&&<PackMetaEditor content={files[selected]} onChange={updateContent}/>}
-                      {tab==="editor"&&(isJson||isMeta)&&<JsonEditor content={files[selected]} onChange={updateContent}/>}
+                      {tab==="paint"&&isImage&&<PixelPainter dataUrl={selectedContent} onSave={saveTexture}/>}
+                      {tab==="audio"&&isAudio&&<AudioPlayer dataUrl={selectedContent} name={selected.split("/").pop()}/>}
+                      {tab==="meta"&&isMeta&&<PackMetaEditor content={selectedContent} onChange={updateContent}/>}
+                      {tab==="editor"&&(isJson||isMeta)&&<JsonEditor content={selectedContent} onChange={updateContent}/>}
                       {tab==="editor"&&!isJson&&!isMeta&&!isImage&&!isAudio&&(
-                        <textarea className="code" value={files[selected]||""} onChange={e=>updateContent(e.target.value)} spellCheck={false}/>
+                        <textarea className="code" value={selectedContent||""} onChange={e=>updateContent(e.target.value)} spellCheck={false}/>
                       )}
                     </div>
                   </>
                 )}
               </div>
 
-              <DependencyDrawer open={drawerOpen} onClose={()=>setDrawerOpen(false)} files={files} textureRefs={textureRefs}/>
+              <DependencyDrawer open={drawerOpen} onClose={()=>setDrawerOpen(false)} filePaths={filePaths} textureRefs={textureRefs}/>
             </>
           )}
         </div>
