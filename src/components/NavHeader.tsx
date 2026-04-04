@@ -15,6 +15,7 @@ const NAV_LINKS = [
 export default function NavHeader() {
   const pathname   = usePathname();
   const [scrolled, setScrolled]     = useState(false);
+  if (pathname.startsWith('/rp-editor') || pathname.startsWith('/admin')) return null;
   const [menuOpen, setMenuOpen]     = useState(false);
   const [activeId, setActiveId]     = useState('');
 
