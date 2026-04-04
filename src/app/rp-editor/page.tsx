@@ -150,42 +150,43 @@ function findBestMatch(brokenRef:string,textures:string[]):string|null{
   return best;
 }
 
-function analyzepack(filePaths:string[],fileData:Record<string,string>){
+// Yield helper — lets browser paint/process events between chunks
+const yieldToMain=()=>new Promise<void>(r=>setTimeout(r,0));
+
+async function analyzepackAsync(filePaths:string[],fileData:Record<string,string>){
   const textures=filePaths.filter(f=>/\.(png|jpg|jpeg)$/i.test(f));
   const models=filePaths.filter(f=>f.endsWith('.json')&&!f.includes('pack.mcmeta'));
 
-  // Normalized texture lookup
   const texNorm=new Map<string,string>();
   for(const t of textures){
-    const n=normTexPath(t);
-    texNorm.set(n,t);
+    const n=normTexPath(t);texNorm.set(n,t);
     if(n.startsWith('textures/'))texNorm.set(n.slice(9),t);
   }
-  function resolveRef(v:string):string|null{
-    const n=normTexPath(v);
-    return texNorm.get(n)??texNorm.get('textures/'+n)??null;
-  }
+  const resolveRef=(v:string):string|null=>{const n=normTexPath(v);return texNorm.get(n)??texNorm.get('textures/'+n)??null;};
 
-  // Parse model texture refs
   const modelData:Record<string,{refs:{key:string,value:string,status:string,resolvedPath:string|null}[],broken:number}>={};
-  for(const mp of models){
-    const content=fileData[mp];
-    if(!content){modelData[mp]={refs:[],broken:0};continue;}
-    try{
-      const json=JSON.parse(content);
-      const texMap=json?.textures??{};
-      const refs:any[]=[];
-      for(const[key,value] of Object.entries(texMap)){
-        if(typeof value!=='string'||value.startsWith('#'))continue;
-        const resolvedPath=resolveRef(value);
-        const status=resolvedPath?'found':isLikelyVanilla(value)?'vanilla':'broken';
-        refs.push({key,value,status,resolvedPath});
-      }
-      modelData[mp]={refs,broken:refs.filter(r=>r.status==='broken').length};
-    }catch{modelData[mp]={refs:[],broken:0};}
+  // Process in chunks of 40, yielding between chunks so the UI never freezes
+  const CHUNK=40;
+  for(let i=0;i<models.length;i+=CHUNK){
+    for(const mp of models.slice(i,i+CHUNK)){
+      const content=fileData[mp];
+      if(!content){modelData[mp]={refs:[],broken:0};continue;}
+      try{
+        const json=JSON.parse(content);
+        const texMap=json?.textures??{};
+        const refs:any[]=[];
+        for(const[key,value] of Object.entries(texMap)){
+          if(typeof value!=='string'||value.startsWith('#'))continue;
+          const resolvedPath=resolveRef(value);
+          const status=resolvedPath?'found':isLikelyVanilla(value)?'vanilla':'broken';
+          refs.push({key,value,status,resolvedPath});
+        }
+        modelData[mp]={refs,broken:refs.filter(r=>r.status==='broken').length};
+      }catch{modelData[mp]={refs:[],broken:0};}
+    }
+    if(i+CHUNK<models.length)await yieldToMain();
   }
 
-  // Texture link map
   const textureLinkedBy:Record<string,string[]>={};
   for(const[mp,{refs}] of Object.entries(modelData)){
     for(const r of refs){
@@ -195,21 +196,10 @@ function analyzepack(filePaths:string[],fileData:Record<string,string>){
       }
     }
   }
-
-  // Texture status
   const textureStatus:Record<string,'linked'|'vanilla'|'unlinked'>={};
-  for(const t of textures){
-    textureStatus[t]=(textureLinkedBy[t]?.length>0)?'linked':isLikelyVanilla(t)?'vanilla':'unlinked';
-  }
-
-  // Issues
+  for(const t of textures)textureStatus[t]=(textureLinkedBy[t]?.length>0)?'linked':isLikelyVanilla(t)?'vanilla':'unlinked';
   const issues:any[]=[];
-  for(const[mp,{refs}] of Object.entries(modelData)){
-    for(const r of refs.filter(x=>x.status==='broken')){
-      issues.push({modelPath:mp,...r});
-    }
-  }
-
+  for(const[mp,{refs}] of Object.entries(modelData))for(const r of refs.filter(x=>x.status==='broken'))issues.push({modelPath:mp,...r});
   return{textures,models,modelData,textureLinkedBy,textureStatus,issues};
 }
 
@@ -603,14 +593,18 @@ function IssuesView({analysis,fileData,onApplyFix,onApplyAllFixes,onOpenInEditor
   const[fixState,setFixState]=useState<Record<string,string>>({});
   const[showFixAll,setShowFixAll]=useState(false);
 
-  // Auto-suggestions for Fix All panel
-  const suggestions=useMemo(()=>{
-    if(!showFixAll)return {};
-    return Object.fromEntries(issues.map((issue:any)=>{
+  // Auto-suggestions and top match lists — computed once when Fix All opens, never inline in render
+  const {suggestions,allTopMatches}=useMemo(()=>{
+    if(!showFixAll)return{suggestions:{} as Record<string,string>,allTopMatches:{} as Record<string,string[]>};
+    const suggestions:Record<string,string>={};
+    const allTopMatches:Record<string,string[]>={};
+    for(const issue of issues){
       const id=`${issue.modelPath}::${issue.key}`;
-      const suggested=findBestMatch(issue.value,textures);
-      return [id, suggested??''];
-    }));
+      const top=getTopMatches(issue.value,textures,16);
+      allTopMatches[id]=top;
+      suggestions[id]=top[0]??''; // best match is first after sorting
+    }
+    return{suggestions,allTopMatches};
   },[showFixAll,issues,textures]);
 
   const[fixAllVals,setFixAllVals]=useState<Record<string,string>>({});
@@ -669,8 +663,7 @@ function IssuesView({analysis,fileData,onApplyFix,onApplyAllFixes,onOpenInEditor
               const id=`${issue.modelPath}::${issue.key}`;
               const val=effectiveFAVals[id]??'';
               const dlId=`fa-dl-${i}`;
-              // Compute top matches only for the suggestion list (cheap subset)
-              const topM=getTopMatches(issue.value,textures,16);
+              const topM=allTopMatches[id]??[];
               return(
                 <div key={id} style={{display:'grid',gridTemplateColumns:'1fr 16px 1fr',gap:8,alignItems:'center',fontSize:11,background:'#0d1510',padding:'5px 8px'}}>
                   <div style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
@@ -756,7 +749,8 @@ export default function App(){
   const[status,setStatus]=useState("No pack loaded");
   const[mainTab,setMainTab]=useState('overview');
   const[revision,setRevision]=useState(0);
-  const[analysis,setAnalysis]=useState<ReturnType<typeof analyzepack>|null>(null);
+  type Analysis=Awaited<ReturnType<typeof analyzepackAsync>>;
+  const[analysis,setAnalysis]=useState<Analysis|null>(null);
   const[isAnalyzing,setIsAnalyzing]=useState(false);
   const[loadingMsg,setLoadingMsg]=useState('');
   const fileInputRef=useRef<any>();
@@ -766,15 +760,15 @@ export default function App(){
   const audioCount=useMemo(()=>filePaths.filter(f=>f.endsWith('.ogg')||f.endsWith('.mp3')).length,[filePaths]);
   const tree=useMemo(()=>buildTree(filePaths),[filePaths]);
 
-  // Deferred analysis — runs off the critical render path so UI stays responsive
+  // Non-blocking async analysis — yields to browser between chunks
   useEffect(()=>{
     if(filePaths.length===0){setAnalysis(null);setIsAnalyzing(false);return;}
     setIsAnalyzing(true);setLoadingMsg('Analysing pack…');
-    const id=setTimeout(()=>{
-      setAnalysis(analyzepack(filePaths,fileDataRef.current));
-      setIsAnalyzing(false);setLoadingMsg('');
-    },20);
-    return()=>clearTimeout(id);
+    let cancelled=false;
+    analyzepackAsync(filePaths,fileDataRef.current).then(result=>{
+      if(!cancelled){setAnalysis(result);setIsAnalyzing(false);setLoadingMsg('');}
+    });
+    return()=>{cancelled=true;};
   },[filePaths,revision]);
 
   const loadZip=async(file:File)=>{
@@ -845,28 +839,34 @@ export default function App(){
   },[selected]);
 
   const applyAllFixes=useCallback((fixMap:Record<string,string>)=>{
-    // Show loading overlay immediately before blocking work
     setIsAnalyzing(true);setLoadingMsg('Applying fixes…');
-    setTimeout(()=>{
-      let count=0;
-      const modified=new Set<string>();
+    // Use requestAnimationFrame to ensure the overlay actually paints before we block
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      // Group fixes by model — one JSON.parse per model instead of one per ref
+      const byModel:Record<string,Array<{key:string,val:string}>>={};
       for(const[id,newValue] of Object.entries(fixMap)){
         if(!newValue.trim())continue;
-        const sep=id.indexOf('::');
-        if(sep<0)continue;
-        const modelPath=id.slice(0,sep);
-        const refKey=id.slice(sep+2);
-        if(!fileDataRef.current[modelPath])continue;
+        const sep=id.indexOf('::');if(sep<0)continue;
+        const mp=id.slice(0,sep),key=id.slice(sep+2);
+        if(!fileDataRef.current[mp])continue;
+        (byModel[mp]||(byModel[mp]=[])).push({key,val:newValue});
+      }
+      let count=0;const modified=new Set<string>();
+      for(const[mp,fixes] of Object.entries(byModel)){
         try{
-          const json=JSON.parse(fileDataRef.current[modelPath]);
-          if(json.textures){json.textures[refKey]=newValue;fileDataRef.current[modelPath]=JSON.stringify(json,null,2);modified.add(modelPath);count++;}
+          const json=JSON.parse(fileDataRef.current[mp]);
+          if(json.textures){
+            for(const{key,val} of fixes){json.textures[key]=val;count++;}
+            fileDataRef.current[mp]=JSON.stringify(json,null,2);
+            modified.add(mp);
+          }
         }catch{}
       }
       if(selected&&modified.has(selected))setSelectedContent(fileDataRef.current[selected]);
-      const msg=`Applied ${count} fix${count!==1?'es':''} across ${modified.size} model${modified.size!==1?'s':''}`;
-      setStatus(msg);setLoadingMsg('Re-analysing…');
-      setRevision(r=>r+1); // triggers useEffect which runs analyzepack and clears loading
-    },20);
+      setStatus(`Applied ${count} fix${count!==1?'es':''} across ${modified.size} model${modified.size!==1?'s':''}`);
+      setLoadingMsg('Re-analysing…');
+      setRevision(r=>r+1);
+    }));
   },[selected]);
 
   const clearAll=useCallback(()=>{
