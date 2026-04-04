@@ -264,6 +264,45 @@ function PixelPainter({dataUrl,onSave,compact}:any){
   const canvasRef=useRef<any>();const overlayRef=useRef<any>();
   const[scale,setScale]=useState(8);const[color,setColor]=useState("#4ade80");
   const[tool,setTool]=useState("pen");const[painting,setPainting]=useState(false);
+  // Undo/redo history — stored as ImageData snapshots
+  const historyRef=useRef<ImageData[]>([]);
+  const historyIdxRef=useRef<number>(-1);
+  const[histLen,setHistLen]=useState(0);// triggers re-render for button state
+  const[histIdx,setHistIdx]=useState(-1);
+
+  const pushHistory=useCallback(()=>{
+    const c=canvasRef.current;if(!c)return;
+    const ctx=c.getContext("2d");
+    const snap=ctx.getImageData(0,0,c.width,c.height);
+    // Truncate any redo states above current position
+    historyRef.current=historyRef.current.slice(0,historyIdxRef.current+1);
+    historyRef.current.push(snap);
+    historyIdxRef.current=historyRef.current.length-1;
+    setHistLen(historyRef.current.length);
+    setHistIdx(historyIdxRef.current);
+  },[]);
+
+  const undo=useCallback(()=>{
+    if(historyIdxRef.current<=0)return;
+    historyIdxRef.current--;
+    const c=canvasRef.current;if(!c)return;
+    const ctx=c.getContext("2d");
+    ctx.putImageData(historyRef.current[historyIdxRef.current],0,0);
+    drawOverlay();
+    setHistIdx(historyIdxRef.current);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[]);
+
+  const redo=useCallback(()=>{
+    if(historyIdxRef.current>=historyRef.current.length-1)return;
+    historyIdxRef.current++;
+    const c=canvasRef.current;if(!c)return;
+    const ctx=c.getContext("2d");
+    ctx.putImageData(historyRef.current[historyIdxRef.current],0,0);
+    drawOverlay();
+    setHistIdx(historyIdxRef.current);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[]);
 
   const drawOverlay=useCallback((s=scale)=>{
     const c=canvasRef.current;const ov=overlayRef.current;if(!c||!ov)return;
@@ -280,13 +319,24 @@ function PixelPainter({dataUrl,onSave,compact}:any){
       const c=canvasRef.current;if(!c)return;
       c.width=img.width;c.height=img.height;
       const ctx=c.getContext("2d");ctx.imageSmoothingEnabled=false;ctx.drawImage(img,0,0);
-      // Auto-fit: scale so the larger dimension is at most 400px (compact: 260px)
+      // Seed history with initial state
+      historyRef.current=[ctx.getImageData(0,0,c.width,c.height)];
+      historyIdxRef.current=0;setHistLen(1);setHistIdx(0);
       const maxPx=compact?260:400;
       const auto=Math.max(1,Math.min(32,Math.floor(maxPx/Math.max(img.width,img.height))));
       setScale(auto);drawOverlay(auto);
     };img.src=dataUrl;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[dataUrl]);
+
+  // Keyboard shortcuts: Ctrl+Z undo, Ctrl+Shift+Z / Ctrl+Y redo
+  useEffect(()=>{
+    const handler=(e:KeyboardEvent)=>{
+      if((e.ctrlKey||e.metaKey)&&e.key==='z'&&!e.shiftKey){e.preventDefault();undo();}
+      if((e.ctrlKey||e.metaKey)&&(e.key==='y'||(e.key==='z'&&e.shiftKey))){e.preventDefault();redo();}
+    };
+    window.addEventListener('keydown',handler);return()=>window.removeEventListener('keydown',handler);
+  },[undo,redo]);
 
   const paint=(e:any)=>{
     const ov=overlayRef.current;const c=canvasRef.current;if(!ov||!c)return;
@@ -301,6 +351,8 @@ function PixelPainter({dataUrl,onSave,compact}:any){
   };
 
   const changeScale=(s:number)=>{setScale(s);drawOverlay(s);};
+  const canUndo=histIdx>0;
+  const canRedo=histIdx<histLen-1;
 
   return(
     <div style={{display:"flex",flexDirection:"column",gap:8}}>
@@ -316,11 +368,23 @@ function PixelPainter({dataUrl,onSave,compact}:any){
           {[2,4,8,16].map(s=><button key={s} className={`btn sm${scale===s?" active":""}`} onClick={()=>changeScale(s)}>{s}x</button>)}
         </div>
       </div>
+      {/* Undo/redo row */}
+      <div style={{display:"flex",gap:4,alignItems:"center"}}>
+        <button className="btn sm" onClick={undo} disabled={!canUndo}
+          title="Undo (Ctrl+Z)"
+          style={{opacity:canUndo?1:0.3,cursor:canUndo?'pointer':'default'}}>← Undo</button>
+        <button className="btn sm" onClick={redo} disabled={!canRedo}
+          title="Redo (Ctrl+Shift+Z)"
+          style={{opacity:canRedo?1:0.3,cursor:canRedo?'pointer':'default'}}>Redo →</button>
+        <span style={{fontSize:9,color:DIM,marginLeft:4}}>{histIdx}/{histLen-1}</span>
+      </div>
       <canvas ref={canvasRef} style={{display:"none"}}/>
-      {/* Scrollable canvas container — never larger than viewport */}
-      <div style={{overflow:"auto",maxHeight:compact?"calc(100vh - 240px)":"calc(100vh - 320px)",display:"inline-block",maxWidth:"100%",border:`1px solid ${BORDER}`,background:"#070910"}}>
+      <div style={{overflow:"auto",maxHeight:compact?"calc(100vh - 280px)":"calc(100vh - 360px)",display:"inline-block",maxWidth:"100%",border:`1px solid ${BORDER}`,background:"#070910"}}>
         <canvas ref={overlayRef} style={{imageRendering:"pixelated",cursor:"crosshair",display:"block"}}
-          onMouseDown={e=>{setPainting(true);paint(e);}}
+          onMouseDown={e=>{
+            if(tool!=="picker")pushHistory(); // snapshot before stroke
+            setPainting(true);paint(e);
+          }}
           onMouseMove={e=>{if(painting)paint(e);}}
           onMouseUp={()=>setPainting(false)}
           onMouseLeave={()=>setPainting(false)}
