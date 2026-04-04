@@ -259,20 +259,57 @@ const TreeNode=memo(function TreeNode({name,node,path,depth,selected,onSelect}:a
   );
 });
 
+// ── PixelPainter helpers (pure, outside component) ────────────────────────────
+function bresenhamLine(x0:number,y0:number,x1:number,y1:number,cb:(x:number,y:number)=>void){
+  const dx=Math.abs(x1-x0),dy=Math.abs(y1-y0);
+  const sx=x0<x1?1:-1,sy=y0<y1?1:-1;let err=dx-dy;
+  for(;;){cb(x0,y0);if(x0===x1&&y0===y1)break;const e2=2*err;if(e2>-dy){err-=dy;x0+=sx;}if(e2<dx){err+=dx;y0+=sy;}}
+}
+function pixelRectOutline(x0:number,y0:number,x1:number,y1:number,cw:number,ch:number,cb:(x:number,y:number)=>void){
+  const lx=Math.max(0,Math.min(x0,x1)),rx=Math.min(cw-1,Math.max(x0,x1));
+  const ty=Math.max(0,Math.min(y0,y1)),by=Math.min(ch-1,Math.max(y0,y1));
+  for(let x=lx;x<=rx;x++){cb(x,ty);if(by!==ty)cb(x,by);}
+  for(let y=ty+1;y<by;y++){cb(lx,y);if(rx!==lx)cb(rx,y);}
+}
+function floodFill(ctx:CanvasRenderingContext2D,sx:number,sy:number,fillHex:string,cw:number,ch:number){
+  const img=ctx.getImageData(0,0,cw,ch);const d=img.data;
+  const idx=(x:number,y:number)=>(y*cw+x)*4;
+  const si=idx(sx,sy);const[tr,tg,tb,ta]=[d[si],d[si+1],d[si+2],d[si+3]];
+  const fr=parseInt(fillHex.slice(1,3),16),fg=parseInt(fillHex.slice(3,5),16),fb=parseInt(fillHex.slice(5,7),16);
+  if(tr===fr&&tg===fg&&tb===fb&&ta===255)return;
+  const stack:number[][]=[[sx,sy]];
+  while(stack.length){
+    const[x,y]=stack.pop()!;if(x<0||x>=cw||y<0||y>=ch)continue;
+    const i=idx(x,y);if(d[i]!==tr||d[i+1]!==tg||d[i+2]!==tb||d[i+3]!==ta)continue;
+    d[i]=fr;d[i+1]=fg;d[i+2]=fb;d[i+3]=255;
+    stack.push([x+1,y],[x-1,y],[x,y+1],[x,y-1]);
+  }
+  ctx.putImageData(img,0,0);
+}
+
 // ── PixelPainter ───────────────────────────────────────────────────────────────
+const TOOLS=[
+  {id:"pen",label:"✏ Pen"},
+  {id:"line",label:"╱ Line"},
+  {id:"rect",label:"□ Rect"},
+  {id:"fill",label:"◉ Fill"},
+  {id:"eraser",label:"◻ Erase"},
+  {id:"picker",label:"✦ Pick"},
+  {id:"select",label:"▣ Select"},
+];
 function PixelPainter({dataUrl,onSave,compact}:any){
   const canvasRef=useRef<any>();const overlayRef=useRef<any>();
   const[scale,setScale]=useState(8);const[color,setColor]=useState("#4ade80");
   const[tool,setTool]=useState("pen");const[painting,setPainting]=useState(false);
 
-  // Undo/redo — history is ImageData snapshots, index tracked via ref (no stale closure)
+  // Undo/redo
   const historyRef=useRef<ImageData[]>([]);
   const historyIdxRef=useRef<number>(-1);
   const[canUndo,setCanUndo]=useState(false);
   const[canRedo,setCanRedo]=useState(false);
-  const paintedRef=useRef(false); // true if pixels were painted in the current stroke
+  const paintedRef=useRef(false);
 
-  // Image import state
+  // Image import
   const[showImport,setShowImport]=useState(false);
   const[importSrc,setImportSrc]=useState<string|null>(null);
   const[pixelBlock,setPixelBlock]=useState(16);
@@ -280,28 +317,53 @@ function PixelPainter({dataUrl,onSave,compact}:any){
   const importImgRef=useRef<HTMLImageElement|null>(null);
   const previewRef=useRef<any>();
 
-  // drawOverlay stored in a ref so undo/redo always call the current-scale version
+  // Line / rect / select drag state
+  const dragStartRef=useRef<{x:number,y:number}|null>(null);
+  const baseSnapRef=useRef<ImageData|null>(null); // canvas snapshot before preview drag
+  const[selection,setSelection]=useState<{x1:number,y1:number,x2:number,y2:number}|null>(null);
+  const selectionRef=useRef<{x1:number,y1:number,x2:number,y2:number}|null>(null);
+  const[replaceFrom,setReplaceFrom]=useState("#000000");
+  const[replaceTo,setReplaceTo]=useState("#4ade80");
+
+  // drawOverlay + drawSelMarquee in refs so undo/redo always use current scale
   const drawOverlayRef=useRef<(s?:number)=>void>(()=>{});
+  const drawSelMarqueeRef=useRef<(x1:number,y1:number,x2:number,y2:number,s?:number)=>void>(()=>{});
+
   const drawOverlay=useCallback((s=scale)=>{
     const c=canvasRef.current;const ov=overlayRef.current;if(!c||!ov)return;
     ov.width=c.width*s;ov.height=c.height*s;
-    const ctx=ov.getContext("2d");ctx.imageSmoothingEnabled=false;ctx.drawImage(c,0,0,c.width*s,c.height*s);
+    const ctx=ov.getContext("2d")!;ctx.imageSmoothingEnabled=false;ctx.drawImage(c,0,0,c.width*s,c.height*s);
     ctx.strokeStyle="rgba(255,255,255,0.08)";
     for(let x=0;x<=c.width;x++){ctx.beginPath();ctx.moveTo(x*s,0);ctx.lineTo(x*s,ov.height);ctx.stroke();}
     for(let y=0;y<=c.height;y++){ctx.beginPath();ctx.moveTo(0,y*s);ctx.lineTo(ov.width,y*s);ctx.stroke();}
+    // re-draw selection marquee if one exists
+    if(selectionRef.current){
+      const{x1,y1,x2,y2}=selectionRef.current;
+      drawSelMarqueeRef.current(x1,y1,x2,y2,s);
+    }
   },[scale]);
-  // Always point to latest drawOverlay — fixes stale scale inside undo/redo
   drawOverlayRef.current=drawOverlay;
+
+  const drawSelMarquee=useCallback((x1:number,y1:number,x2:number,y2:number,s=scale)=>{
+    const ov=overlayRef.current;if(!ov)return;
+    const ctx=ov.getContext("2d")!;
+    const lx=Math.min(x1,x2)*s,ty=Math.min(y1,y2)*s;
+    const rw=(Math.abs(x2-x1)+1)*s,bh=(Math.abs(y2-y1)+1)*s;
+    ctx.save();ctx.strokeStyle=ACCENT2;ctx.lineWidth=1;ctx.setLineDash([3,3]);
+    ctx.strokeRect(lx+0.5,ty+0.5,rw,bh);
+    ctx.strokeStyle="rgba(0,0,0,0.5)";ctx.lineDashOffset=3;ctx.strokeRect(lx+0.5,ty+0.5,rw,bh);
+    ctx.restore();
+  },[scale]);
+  drawSelMarqueeRef.current=drawSelMarquee;
 
   const syncButtons=useCallback(()=>{
     setCanUndo(historyIdxRef.current>0);
     setCanRedo(historyIdxRef.current<historyRef.current.length-1);
   },[]);
 
-  // Push AFTER stroke ends (not before it starts) — avoids duplicate blank entry
   const pushHistory=useCallback(()=>{
     const c=canvasRef.current;if(!c)return;
-    const snap=c.getContext("2d").getImageData(0,0,c.width,c.height);
+    const snap=c.getContext("2d")!.getImageData(0,0,c.width,c.height);
     historyRef.current=historyRef.current.slice(0,historyIdxRef.current+1);
     historyRef.current.push(snap);
     historyIdxRef.current=historyRef.current.length-1;
@@ -312,18 +374,16 @@ function PixelPainter({dataUrl,onSave,compact}:any){
     if(historyIdxRef.current<=0)return;
     historyIdxRef.current--;
     const c=canvasRef.current;if(!c)return;
-    c.getContext("2d").putImageData(historyRef.current[historyIdxRef.current],0,0);
-    drawOverlayRef.current(); // ref always holds current-scale version
-    syncButtons();
+    c.getContext("2d")!.putImageData(historyRef.current[historyIdxRef.current],0,0);
+    drawOverlayRef.current();syncButtons();
   },[syncButtons]);
 
   const redo=useCallback(()=>{
     if(historyIdxRef.current>=historyRef.current.length-1)return;
     historyIdxRef.current++;
     const c=canvasRef.current;if(!c)return;
-    c.getContext("2d").putImageData(historyRef.current[historyIdxRef.current],0,0);
-    drawOverlayRef.current();
-    syncButtons();
+    c.getContext("2d")!.putImageData(historyRef.current[historyIdxRef.current],0,0);
+    drawOverlayRef.current();syncButtons();
   },[syncButtons]);
 
   useEffect(()=>{
@@ -331,11 +391,9 @@ function PixelPainter({dataUrl,onSave,compact}:any){
     img.onload=()=>{
       const c=canvasRef.current;if(!c)return;
       c.width=img.width;c.height=img.height;
-      const ctx=c.getContext("2d");ctx.imageSmoothingEnabled=false;ctx.drawImage(img,0,0);
-      // Seed history with the initial image — this is undo index 0
+      const ctx=c.getContext("2d")!;ctx.imageSmoothingEnabled=false;ctx.drawImage(img,0,0);
       historyRef.current=[ctx.getImageData(0,0,c.width,c.height)];
-      historyIdxRef.current=0;
-      setCanUndo(false);setCanRedo(false);
+      historyIdxRef.current=0;setCanUndo(false);setCanRedo(false);
       const maxPx=compact?260:400;
       const auto=Math.max(1,Math.min(32,Math.floor(maxPx/Math.max(img.width,img.height))));
       setScale(auto);drawOverlay(auto);
@@ -347,123 +405,230 @@ function PixelPainter({dataUrl,onSave,compact}:any){
     const h=(e:KeyboardEvent)=>{
       if((e.ctrlKey||e.metaKey)&&e.key==='z'&&!e.shiftKey){e.preventDefault();undo();}
       if((e.ctrlKey||e.metaKey)&&(e.key==='y'||(e.key==='z'&&e.shiftKey))){e.preventDefault();redo();}
+      if(e.key==='Escape'){selectionRef.current=null;setSelection(null);drawOverlayRef.current();}
     };
     window.addEventListener('keydown',h);return()=>window.removeEventListener('keydown',h);
   },[undo,redo]);
 
-  // Render pixelated preview — downscale then upscale without smoothing
+  // ── Import helpers ──────────────────────────────────────────────────────────
   const renderImportPreview=useCallback((img:HTMLImageElement,block:number)=>{
     const pv=previewRef.current;if(!pv)return;
-    const tw=Math.max(1,Math.round(img.width/block));
-    const th=Math.max(1,Math.round(img.height/block));
+    const tw=Math.max(1,Math.round(img.width/block)),th=Math.max(1,Math.round(img.height/block));
     const tmp=document.createElement('canvas');tmp.width=tw;tmp.height=th;
     const tc=tmp.getContext("2d")!;tc.imageSmoothingEnabled=true;tc.drawImage(img,0,0,tw,th);
-    // Show preview at a reasonable display size
     const maxPv=compact?220:320;
-    const dispScale=Math.max(1,Math.floor(maxPv/Math.max(tw,th)));
-    pv.width=tw*dispScale;pv.height=th*dispScale;
-    const pc=pv.getContext("2d")!;pc.imageSmoothingEnabled=false;pc.drawImage(tmp,0,0,tw*dispScale,th*dispScale);
+    const ds=Math.max(1,Math.floor(maxPv/Math.max(tw,th)));
+    pv.width=tw*ds;pv.height=th*ds;
+    const pc=pv.getContext("2d")!;pc.imageSmoothingEnabled=false;pc.drawImage(tmp,0,0,tw*ds,th*ds);
   },[compact]);
 
-  // Update preview when block size or source changes
   useEffect(()=>{
-    if(!importSrc)return;
-    if(importImgRef.current){renderImportPreview(importImgRef.current,pixelBlock);}
+    if(importSrc&&importImgRef.current)renderImportPreview(importImgRef.current,pixelBlock);
   },[importSrc,pixelBlock,renderImportPreview]);
 
   const handleImportFile=(e:any)=>{
     const f=e.target.files?.[0];if(!f)return;
     const reader=new FileReader();
     reader.onload=(ev)=>{
-      const src=ev.target?.result as string;
-      setImportSrc(src);
-      const img=new Image();
-      img.onload=()=>{importImgRef.current=img;renderImportPreview(img,pixelBlock);};
-      img.src=src;
+      const src=ev.target?.result as string;setImportSrc(src);
+      const img=new Image();img.onload=()=>{importImgRef.current=img;renderImportPreview(img,pixelBlock);};img.src=src;
     };reader.readAsDataURL(f);
   };
 
   const applyImport=useCallback(()=>{
     const img=importImgRef.current;const c=canvasRef.current;if(!img||!c)return;
-    const tw=Math.max(1,Math.round(img.width/pixelBlock));
-    const th=Math.max(1,Math.round(img.height/pixelBlock));
+    const tw=Math.max(1,Math.round(img.width/pixelBlock)),th=Math.max(1,Math.round(img.height/pixelBlock));
     const tmp=document.createElement('canvas');tmp.width=tw;tmp.height=th;
     const tc=tmp.getContext("2d")!;tc.imageSmoothingEnabled=true;tc.drawImage(img,0,0,tw,th);
     const ctx=c.getContext("2d")!;ctx.imageSmoothingEnabled=false;
-    ctx.clearRect(0,0,c.width,c.height);
-    ctx.drawImage(tmp,0,0,c.width,c.height);
+    ctx.clearRect(0,0,c.width,c.height);ctx.drawImage(tmp,0,0,c.width,c.height);
     pushHistory();drawOverlayRef.current();
     setShowImport(false);setImportSrc(null);importImgRef.current=null;
   },[pixelBlock,pushHistory]);
 
-  const paint=(e:any)=>{
-    const ov=overlayRef.current;const c=canvasRef.current;if(!ov||!c)return;
-    const rect=ov.getBoundingClientRect();
-    const px=Math.floor((e.clientX-rect.left)/scale);const py=Math.floor((e.clientY-rect.top)/scale);
-    if(px<0||py<0||px>=c.width||py>=c.height)return;
-    const ctx=c.getContext("2d");
-    if(tool==="picker"){const d=ctx.getImageData(px,py,1,1).data;setColor(`#${[d[0],d[1],d[2]].map((v:number)=>v.toString(16).padStart(2,"0")).join("")}`);return;}
-    if(tool==="eraser")ctx.clearRect(px,py,1,1);
-    else{ctx.fillStyle=color;ctx.fillRect(px,py,1,1);}
-    paintedRef.current=true;
-    drawOverlay();
+  // ── Pixel coords helper ─────────────────────────────────────────────────────
+  const getPixel=(e:any):[number,number]=>{
+    const ov=overlayRef.current;if(!ov)return[-1,-1];
+    const r=ov.getBoundingClientRect();
+    return[Math.floor((e.clientX-r.left)/scale),Math.floor((e.clientY-r.top)/scale)];
   };
 
-  // Called on mouseUp and mouseLeave — commits history only if something was painted
-  const endStroke=useCallback(()=>{
-    if(paintedRef.current)pushHistory();
-    paintedRef.current=false;
-    setPainting(false);
-  },[pushHistory]);
+  // ── Mouse handlers ──────────────────────────────────────────────────────────
+  const handleMouseDown=(e:any)=>{
+    const[px,py]=getPixel(e);
+    const c=canvasRef.current;if(!c)return;
+    const ctx=c.getContext("2d")!;
+    if(tool==="pen"||tool==="eraser"){
+      setPainting(true);paintedRef.current=false;
+      if(px<0||py<0||px>=c.width||py>=c.height)return;
+      if(tool==="eraser")ctx.clearRect(px,py,1,1);
+      else{ctx.fillStyle=color;ctx.fillRect(px,py,1,1);}
+      paintedRef.current=true;drawOverlayRef.current();
+    } else if(tool==="picker"){
+      if(px<0||py<0||px>=c.width||py>=c.height)return;
+      const d=ctx.getImageData(px,py,1,1).data;
+      setColor(`#${[d[0],d[1],d[2]].map((v:number)=>v.toString(16).padStart(2,"0")).join("")}`);
+    } else if(tool==="fill"){
+      if(px<0||py<0||px>=c.width||py>=c.height)return;
+      floodFill(ctx,px,py,color,c.width,c.height);
+      pushHistory();drawOverlayRef.current();
+    } else if(tool==="line"||tool==="rect"){
+      if(px<0||py<0||px>=c.width||py>=c.height)return;
+      dragStartRef.current={x:px,y:py};
+      baseSnapRef.current=ctx.getImageData(0,0,c.width,c.height);
+    } else if(tool==="select"){
+      selectionRef.current=null;setSelection(null);
+      dragStartRef.current={x:px,y:py};
+      drawOverlayRef.current();
+    }
+  };
+
+  const handleMouseMove=(e:any)=>{
+    const[px,py]=getPixel(e);
+    const c=canvasRef.current;if(!c)return;
+    const ctx=c.getContext("2d")!;
+    if((tool==="pen"||tool==="eraser")&&painting){
+      if(px<0||py<0||px>=c.width||py>=c.height)return;
+      if(tool==="eraser")ctx.clearRect(px,py,1,1);
+      else{ctx.fillStyle=color;ctx.fillRect(px,py,1,1);}
+      paintedRef.current=true;drawOverlayRef.current();
+    } else if((tool==="line"||tool==="rect")&&dragStartRef.current&&baseSnapRef.current){
+      ctx.putImageData(baseSnapRef.current,0,0);
+      ctx.fillStyle=color;
+      const{x:sx,y:sy}=dragStartRef.current;
+      const ex=Math.max(0,Math.min(c.width-1,px)),ey=Math.max(0,Math.min(c.height-1,py));
+      if(tool==="line")
+        bresenhamLine(sx,sy,ex,ey,(x,y)=>ctx.fillRect(x,y,1,1));
+      else
+        pixelRectOutline(sx,sy,ex,ey,c.width,c.height,(x,y)=>ctx.fillRect(x,y,1,1));
+      drawOverlayRef.current();
+    } else if(tool==="select"&&dragStartRef.current){
+      const{x:sx,y:sy}=dragStartRef.current;
+      const ex=Math.max(0,Math.min(c.width-1,px)),ey=Math.max(0,Math.min(c.height-1,py));
+      drawOverlayRef.current();
+      drawSelMarqueeRef.current(sx,sy,ex,ey);
+    }
+  };
+
+  const handleMouseUp=(e:any)=>{
+    const[px,py]=getPixel(e);
+    const c=canvasRef.current;if(!c)return;
+    if(tool==="pen"||tool==="eraser"){
+      if(paintedRef.current)pushHistory();
+      paintedRef.current=false;setPainting(false);
+    } else if((tool==="line"||tool==="rect")&&dragStartRef.current){
+      pushHistory();dragStartRef.current=null;baseSnapRef.current=null;
+    } else if(tool==="select"&&dragStartRef.current){
+      const{x:sx,y:sy}=dragStartRef.current;
+      const ex=Math.max(0,Math.min(c.width-1,px)),ey=Math.max(0,Math.min(c.height-1,py));
+      const sel={x1:Math.min(sx,ex),y1:Math.min(sy,ey),x2:Math.max(sx,ex),y2:Math.max(sy,ey)};
+      selectionRef.current=sel;setSelection(sel);
+      dragStartRef.current=null;
+      drawOverlayRef.current();
+    }
+  };
+
+  const handleMouseLeave=()=>{
+    if(tool==="pen"||tool==="eraser"){
+      if(paintedRef.current)pushHistory();
+      paintedRef.current=false;setPainting(false);
+    }
+  };
+
+  // ── Selection actions ───────────────────────────────────────────────────────
+  const selFill=useCallback((fillColor:string)=>{
+    if(!selection)return;const c=canvasRef.current;if(!c)return;
+    const ctx=c.getContext("2d")!;ctx.fillStyle=fillColor;
+    const w=selection.x2-selection.x1+1,h=selection.y2-selection.y1+1;
+    ctx.fillRect(selection.x1,selection.y1,w,h);
+    pushHistory();drawOverlayRef.current();
+  },[selection,pushHistory]);
+
+  const selClear=useCallback(()=>{
+    if(!selection)return;const c=canvasRef.current;if(!c)return;
+    const ctx=c.getContext("2d")!;
+    const w=selection.x2-selection.x1+1,h=selection.y2-selection.y1+1;
+    ctx.clearRect(selection.x1,selection.y1,w,h);
+    pushHistory();drawOverlayRef.current();
+  },[selection,pushHistory]);
+
+  const selReplaceColor=useCallback(()=>{
+    if(!selection)return;const c=canvasRef.current;if(!c)return;
+    const ctx=c.getContext("2d")!;
+    const img=ctx.getImageData(selection.x1,selection.y1,selection.x2-selection.x1+1,selection.y2-selection.y1+1);
+    const d=img.data;
+    const fr=parseInt(replaceFrom.slice(1,3),16),fg=parseInt(replaceFrom.slice(3,5),16),fb=parseInt(replaceFrom.slice(5,7),16);
+    const tr=parseInt(replaceTo.slice(1,3),16),tg=parseInt(replaceTo.slice(3,5),16),tb=parseInt(replaceTo.slice(5,7),16);
+    for(let i=0;i<d.length;i+=4){
+      if(d[i]===fr&&d[i+1]===fg&&d[i+2]===fb&&d[i+3]>0){d[i]=tr;d[i+1]=tg;d[i+2]=tb;d[i+3]=255;}
+    }
+    ctx.putImageData(img,selection.x1,selection.y1);
+    pushHistory();drawOverlayRef.current();
+  },[selection,replaceFrom,replaceTo,pushHistory]);
+
+  const pickFromCanvas=(setter:(c:string)=>void)=>{
+    // temporarily switch to picker; on next click pick the color then restore
+    setTool("picker");
+    const once=(e:any)=>{
+      const ov=overlayRef.current;const c=canvasRef.current;if(!ov||!c)return;
+      const r=ov.getBoundingClientRect();
+      const px=Math.floor((e.clientX-r.left)/scale),py=Math.floor((e.clientY-r.top)/scale);
+      if(px>=0&&py>=0&&px<c.width&&py<c.height){
+        const d=c.getContext("2d")!.getImageData(px,py,1,1).data;
+        setter(`#${[d[0],d[1],d[2]].map((v:number)=>v.toString(16).padStart(2,"0")).join("")}`);
+      }
+      setTool("select");
+      overlayRef.current?.removeEventListener("click",once);
+    };
+    overlayRef.current?.addEventListener("click",once,{once:true});
+  };
 
   const changeScale=(s:number)=>{setScale(s);drawOverlay(s);};
-
   const BLOCK_PRESETS=[8,16,32,64,128,256,512];
 
   return(
     <div style={{display:"flex",flexDirection:"column",gap:8}}>
-      <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
-        {["pen","eraser","picker"].map(t=>(
-          <button key={t} className={`btn${tool===t?" active":""}`} onClick={()=>setTool(t)}>{t==="pen"?"✏ Pen":t==="eraser"?"◻ Erase":"✦ Pick"}</button>
+      {/* Tool row */}
+      <div style={{display:"flex",gap:4,flexWrap:"wrap",alignItems:"center"}}>
+        {TOOLS.map(t=>(
+          <button key={t.id} className={`btn sm${tool===t.id?" active":""}`}
+            onClick={()=>{setTool(t.id);if(t.id!=="select"){selectionRef.current=null;setSelection(null);drawOverlayRef.current();}}}
+          >{t.label}</button>
         ))}
-        <div style={{display:"flex",alignItems:"center",gap:6}}>
-          <input type="color" value={color} onChange={e=>setColor(e.target.value)} style={{width:28,height:26,padding:2,background:BG3,border:`1px solid ${BORDER}`,cursor:"pointer"}}/>
-          <span style={{fontSize:10,color:DIM}}>{color}</span>
-        </div>
+      </div>
+
+      {/* Color + import row */}
+      <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
+        <input type="color" value={color} onChange={e=>setColor(e.target.value)} style={{width:28,height:26,padding:2,background:BG3,border:`1px solid ${BORDER}`,cursor:"pointer"}}/>
+        <span style={{fontSize:10,color:DIM}}>{color}</span>
         <button className={`btn sm${showImport?" active":""}`} style={{marginLeft:4}} onClick={()=>{setShowImport(v=>!v);setImportSrc(null);importImgRef.current=null;}}>↑ Import</button>
         <div style={{marginLeft:"auto",display:"flex",gap:3}}>
           {[2,4,8,16].map(s=><button key={s} className={`btn sm${scale===s?" active":""}`} onClick={()=>changeScale(s)}>{s}x</button>)}
         </div>
       </div>
 
+      {/* Import panel */}
       {showImport&&(
         <div style={{background:BG2,border:`1px solid ${BORDER}`,padding:10,display:"flex",flexDirection:"column",gap:8}}>
           <div style={{fontSize:9,color:DIM,letterSpacing:'2px',textTransform:'uppercase'}}>Import image as texture</div>
           {!importSrc?(
-            <div style={{display:'flex',flexDirection:'column',gap:6,alignItems:'flex-start'}}>
-              <div
-                style={{border:`2px dashed ${BORDER}`,padding:'18px 24px',textAlign:'center',cursor:'pointer',color:DIM,fontSize:11,width:'100%'}}
+            <div style={{display:'flex',flexDirection:'column',gap:6}}>
+              <div style={{border:`2px dashed ${BORDER}`,padding:'18px 24px',textAlign:'center',cursor:'pointer',color:DIM,fontSize:11,width:'100%'}}
                 onClick={()=>importFileRef.current?.click()}
                 onDragOver={e=>{e.preventDefault();(e.currentTarget as any).style.borderColor=ACCENT;}}
                 onDragLeave={e=>{(e.currentTarget as any).style.borderColor=BORDER;}}
                 onDrop={e=>{e.preventDefault();(e.currentTarget as any).style.borderColor=BORDER;const f=e.dataTransfer.files[0];if(f){const r=new FileReader();r.onload=ev=>{const src=ev.target?.result as string;setImportSrc(src);const img=new Image();img.onload=()=>{importImgRef.current=img;renderImportPreview(img,pixelBlock);};img.src=src;};r.readAsDataURL(f);}}}
-              >
-                Drop image here or click to browse
-              </div>
+              >Drop image here or click to browse</div>
               <input ref={importFileRef} type="file" accept="image/*" style={{display:'none'}} onChange={handleImportFile}/>
             </div>
           ):(
             <div style={{display:'flex',flexDirection:'column',gap:8}}>
               <div style={{fontSize:10,color:TEXT2}}>Block size (pixelation)</div>
-              <div style={{display:'flex',gap:4,flexWrap:'wrap',alignItems:'center'}}>
-                {BLOCK_PRESETS.map(b=>(
-                  <button key={b} className={`btn sm${pixelBlock===b?" active":""}`} onClick={()=>setPixelBlock(b)}>{b}</button>
-                ))}
+              <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>
+                {BLOCK_PRESETS.map(b=><button key={b} className={`btn sm${pixelBlock===b?" active":""}`} onClick={()=>setPixelBlock(b)}>{b}</button>)}
               </div>
               <div style={{display:'flex',alignItems:'center',gap:8}}>
-                <input type="range" min={8} max={512} step={1} value={pixelBlock}
-                  onChange={e=>setPixelBlock(Number(e.target.value))}
-                  style={{flex:1,accentColor:ACCENT}}/>
+                <input type="range" min={8} max={512} step={1} value={pixelBlock} onChange={e=>setPixelBlock(Number(e.target.value))} style={{flex:1,accentColor:ACCENT}}/>
                 <span style={{fontSize:11,color:ACCENT,minWidth:36,textAlign:'right'}}>{pixelBlock}px</span>
               </div>
               <div style={{fontSize:9,color:DIM,letterSpacing:'1px'}}>Preview</div>
@@ -479,22 +644,56 @@ function PixelPainter({dataUrl,onSave,compact}:any){
         </div>
       )}
 
+      {/* Selection panel */}
+      {selection&&tool==="select"&&(
+        <div style={{background:BG2,border:`1px solid ${ACCENT2}44`,padding:10,display:'flex',flexDirection:'column',gap:8}}>
+          <div style={{display:'flex',alignItems:'center',gap:8}}>
+            <span style={{fontSize:9,color:ACCENT2,letterSpacing:'2px',textTransform:'uppercase'}}>Selection</span>
+            <span style={{fontSize:10,color:DIM}}>{selection.x2-selection.x1+1}×{selection.y2-selection.y1+1}px @ ({selection.x1},{selection.y1})</span>
+            <button className="btn sm" style={{marginLeft:'auto'}} onClick={()=>{selectionRef.current=null;setSelection(null);drawOverlayRef.current();}}>✕ Deselect</button>
+          </div>
+          <div style={{display:'flex',gap:6,flexWrap:'wrap',alignItems:'center'}}>
+            <button className="btn sm" onClick={()=>selFill(color)}>Fill with color</button>
+            <button className="btn sm danger" onClick={selClear}>Erase</button>
+          </div>
+          <div style={{borderTop:`1px solid ${BORDER}`,paddingTop:6,display:'flex',flexDirection:'column',gap:6}}>
+            <div style={{fontSize:9,color:DIM,letterSpacing:'2px',textTransform:'uppercase'}}>Replace color</div>
+            <div style={{display:'flex',gap:6,alignItems:'center',flexWrap:'wrap'}}>
+              <div style={{display:'flex',flexDirection:'column',gap:3,alignItems:'center'}}>
+                <span style={{fontSize:9,color:DIM}}>From</span>
+                <div style={{display:'flex',gap:4,alignItems:'center'}}>
+                  <input type="color" value={replaceFrom} onChange={e=>setReplaceFrom(e.target.value)} style={{width:26,height:24,padding:2,background:BG3,border:`1px solid ${BORDER}`,cursor:'pointer'}}/>
+                  <button className="btn sm" title="Pick from canvas" onClick={()=>pickFromCanvas(setReplaceFrom)}>✦</button>
+                </div>
+              </div>
+              <span style={{fontSize:14,color:DIM,marginTop:12}}>→</span>
+              <div style={{display:'flex',flexDirection:'column',gap:3,alignItems:'center'}}>
+                <span style={{fontSize:9,color:DIM}}>To</span>
+                <div style={{display:'flex',gap:4,alignItems:'center'}}>
+                  <input type="color" value={replaceTo} onChange={e=>setReplaceTo(e.target.value)} style={{width:26,height:24,padding:2,background:BG3,border:`1px solid ${BORDER}`,cursor:'pointer'}}/>
+                  <button className="btn sm" title="Pick from canvas" onClick={()=>pickFromCanvas(setReplaceTo)}>✦</button>
+                </div>
+              </div>
+              <button className="btn sm apply" style={{marginTop:12}} onClick={selReplaceColor}>Replace</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Undo/redo */}
       <div style={{display:"flex",gap:4,alignItems:"center"}}>
-        <button className="btn sm" onClick={undo} disabled={!canUndo}
-          title="Undo (Ctrl+Z)" style={{opacity:canUndo?1:0.3,cursor:canUndo?'pointer':'default'}}>← Undo</button>
-        <button className="btn sm" onClick={redo} disabled={!canRedo}
-          title="Redo (Ctrl+Shift+Z)" style={{opacity:canRedo?1:0.3,cursor:canRedo?'pointer':'default'}}>Redo →</button>
-        <span style={{fontSize:9,color:DIM,marginLeft:2,letterSpacing:'1px'}}>
-          {historyIdxRef.current}/{historyRef.current.length-1}
-        </span>
+        <button className="btn sm" onClick={undo} disabled={!canUndo} title="Undo (Ctrl+Z)" style={{opacity:canUndo?1:0.3,cursor:canUndo?'pointer':'default'}}>← Undo</button>
+        <button className="btn sm" onClick={redo} disabled={!canRedo} title="Redo (Ctrl+Shift+Z)" style={{opacity:canRedo?1:0.3,cursor:canRedo?'pointer':'default'}}>Redo →</button>
+        <span style={{fontSize:9,color:DIM,marginLeft:2,letterSpacing:'1px'}}>{historyIdxRef.current}/{historyRef.current.length-1}</span>
       </div>
+
       <canvas ref={canvasRef} style={{display:"none"}}/>
       <div style={{overflow:"auto",maxHeight:compact?"calc(100vh - 280px)":"calc(100vh - 360px)",display:"inline-block",maxWidth:"100%",border:`1px solid ${BORDER}`,background:"#070910"}}>
-        <canvas ref={overlayRef} style={{imageRendering:"pixelated",cursor:"crosshair",display:"block"}}
-          onMouseDown={e=>{setPainting(true);paintedRef.current=false;paint(e);}}
-          onMouseMove={e=>{if(painting)paint(e);}}
-          onMouseUp={endStroke}
-          onMouseLeave={endStroke}
+        <canvas ref={overlayRef} style={{imageRendering:"pixelated",cursor:tool==="select"?"crosshair":tool==="picker"?"cell":"crosshair",display:"block"}}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseLeave}
         />
       </div>
       <div style={{display:"flex",gap:6,alignItems:"center"}}>
