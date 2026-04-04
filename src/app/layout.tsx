@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import CustomCursor from '@/components/CustomCursor';
 import ScrollProgress from '@/components/ScrollProgress';
+import RpEditorButton from '@/components/RpEditorButton';
 
 export const metadata: Metadata = {
   title: 'JOD — Private Minecraft Survival',
@@ -29,6 +30,7 @@ export default function RootLayout({
       <body>
         <CustomCursor />
         <ScrollProgress />
+        <RpEditorButton />
         {children}
       </body>
     </html>
