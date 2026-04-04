@@ -27,8 +27,7 @@ function LoginForm() {
         body:    JSON.stringify({ token }),
       });
       if (res.ok) {
-        router.push(next);
-        router.refresh();
+        window.location.href = next;
       } else {
         setError('Invalid token.');
         setToken('');
