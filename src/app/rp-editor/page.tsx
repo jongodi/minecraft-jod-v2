@@ -260,7 +260,7 @@ const TreeNode=memo(function TreeNode({name,node,path,depth,selected,onSelect}:a
 });
 
 // ── PixelPainter ───────────────────────────────────────────────────────────────
-function PixelPainter({dataUrl,onSave}:any){
+function PixelPainter({dataUrl,onSave,compact}:any){
   const canvasRef=useRef<any>();const overlayRef=useRef<any>();
   const[scale,setScale]=useState(8);const[color,setColor]=useState("#4ade80");
   const[tool,setTool]=useState("pen");const[painting,setPainting]=useState(false);
@@ -280,7 +280,10 @@ function PixelPainter({dataUrl,onSave}:any){
       const c=canvasRef.current;if(!c)return;
       c.width=img.width;c.height=img.height;
       const ctx=c.getContext("2d");ctx.imageSmoothingEnabled=false;ctx.drawImage(img,0,0);
-      drawOverlay(scale);
+      // Auto-fit: scale so the larger dimension is at most 400px (compact: 260px)
+      const maxPx=compact?260:400;
+      const auto=Math.max(1,Math.min(32,Math.floor(maxPx/Math.max(img.width,img.height))));
+      setScale(auto);drawOverlay(auto);
     };img.src=dataUrl;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[dataUrl]);
@@ -297,31 +300,36 @@ function PixelPainter({dataUrl,onSave}:any){
     drawOverlay();
   };
 
-  const changeScale=(s:number)=>{setScale(s);drawOverlay(s);}; 
+  const changeScale=(s:number)=>{setScale(s);drawOverlay(s);};
 
   return(
-    <div style={{display:"flex",flexDirection:"column",gap:12}}>
+    <div style={{display:"flex",flexDirection:"column",gap:8}}>
       <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
         {["pen","eraser","picker"].map(t=>(
           <button key={t} className={`btn${tool===t?" active":""}`} onClick={()=>setTool(t)}>{t==="pen"?"✏ Pen":t==="eraser"?"◻ Erase":"✦ Pick"}</button>
         ))}
         <div style={{display:"flex",alignItems:"center",gap:6}}>
-          <label style={{fontSize:11,color:DIM}}>Color</label>
-          <input type="color" value={color} onChange={e=>setColor(e.target.value)} style={{width:32,height:28,padding:2,background:BG3,border:`1px solid ${BORDER}`,cursor:"pointer"}}/>
-          <span style={{fontSize:11,color:DIM}}>{color}</span>
+          <input type="color" value={color} onChange={e=>setColor(e.target.value)} style={{width:28,height:26,padding:2,background:BG3,border:`1px solid ${BORDER}`,cursor:"pointer"}}/>
+          <span style={{fontSize:10,color:DIM}}>{color}</span>
         </div>
-        <div style={{marginLeft:"auto",display:"flex",gap:4}}>
-          {[4,8,12,16].map(s=><button key={s} className={`btn${scale===s?" active":""}`} onClick={()=>changeScale(s)}>{s}x</button>)}
+        <div style={{marginLeft:"auto",display:"flex",gap:3}}>
+          {[2,4,8,16].map(s=><button key={s} className={`btn sm${scale===s?" active":""}`} onClick={()=>changeScale(s)}>{s}x</button>)}
         </div>
       </div>
       <canvas ref={canvasRef} style={{display:"none"}}/>
-      <canvas ref={overlayRef} style={{imageRendering:"pixelated",cursor:"crosshair",border:`1px solid ${BORDER}`,maxWidth:"100%"}}
-        onMouseDown={e=>{setPainting(true);paint(e);}}
-        onMouseMove={e=>{if(painting)paint(e);}}
-        onMouseUp={()=>setPainting(false)}
-        onMouseLeave={()=>setPainting(false)}
-      />
-      <button className="btn active" onClick={()=>{const c=canvasRef.current;if(c)onSave(c.toDataURL("image/png"));}} style={{alignSelf:"flex-start"}}>Save changes to pack</button>
+      {/* Scrollable canvas container — never larger than viewport */}
+      <div style={{overflow:"auto",maxHeight:compact?"calc(100vh - 240px)":"calc(100vh - 320px)",display:"inline-block",maxWidth:"100%",border:`1px solid ${BORDER}`,background:"#070910"}}>
+        <canvas ref={overlayRef} style={{imageRendering:"pixelated",cursor:"crosshair",display:"block"}}
+          onMouseDown={e=>{setPainting(true);paint(e);}}
+          onMouseMove={e=>{if(painting)paint(e);}}
+          onMouseUp={()=>setPainting(false)}
+          onMouseLeave={()=>setPainting(false)}
+        />
+      </div>
+      <div style={{display:"flex",gap:6,alignItems:"center"}}>
+        <button className="btn active" onClick={()=>{const c=canvasRef.current;if(c)onSave(c.toDataURL("image/png"));}}>Save to pack</button>
+        <span style={{fontSize:9,color:DIM,letterSpacing:'1px'}}>W: {overlayRef.current?.width/scale|0}px · H: {overlayRef.current?.height/scale|0}px</span>
+      </div>
     </div>
   );
 }
@@ -780,6 +788,7 @@ export default function App(){
   const[status,setStatus]=useState("No pack loaded");
   const[mainTab,setMainTab]=useState('overview');
   const[revision,setRevision]=useState(0);
+  const[painting3dTex,setPainting3dTex]=useState<string|null>(null);
   type Analysis=Awaited<ReturnType<typeof analyzepackAsync>>;
   const[analysis,setAnalysis]=useState<Analysis|null>(null);
   const[isAnalyzing,setIsAnalyzing]=useState(false);
@@ -833,6 +842,7 @@ export default function App(){
 
   const openInEditor=useCallback((path:string)=>{
     setSelected(path);
+    setPainting3dTex(null);
     setSelectedContent(fileDataRef.current[path]);
     const ext=path.split('.').pop()!.toLowerCase();
     if(['png','jpg','jpeg'].includes(ext))setEditorTab('preview');
@@ -1014,23 +1024,62 @@ export default function App(){
                           {!isImage&&!isAudio&&!isJson&&!isMeta&&<div className={`tab${editorTab==='editor'?' active':''}`} onClick={()=>setEditorTab('editor')}>Raw</div>}
                           <div style={{padding:'6px 10px',fontSize:11,color:DIM,marginLeft:'auto',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{selected.split('/').slice(-2).join('/')}</div>
                         </div>
-                        <div className="editor-area">
-                          {editorTab==='preview'&&isImage&&<div><img src={selectedContent!} style={{imageRendering:'pixelated',border:`1px solid ${BORDER}`,maxWidth:'100%'}} alt={selected}/><div style={{marginTop:8,fontSize:11,color:DIM}}>Switch to ✏ Paint to edit pixels</div></div>}
-                          {editorTab==='paint'&&isImage&&<PixelPainter dataUrl={selectedContent} onSave={saveTexture}/>}
-                          {editorTab==='audio'&&isAudio&&<AudioPlayer dataUrl={selectedContent} name={selected.split('/').pop()}/>}
-                          {editorTab==='meta'&&isMeta&&<PackMetaEditor content={selectedContent} onChange={updateContent}/>}
-                          {editorTab==='editor'&&(isJson||isMeta)&&<JsonEditor content={selectedContent} onChange={updateContent}/>}
-                          {editorTab==='editor'&&!isJson&&!isMeta&&!isImage&&!isAudio&&<textarea className="code" value={selectedContent||''} onChange={e=>updateContent(e.target.value)} spellCheck={false}/>}
-                          {editorTab==='3d'&&isJson&&(
-                            <ModelViewer3D
-                              modelContent={selectedContent??''}
-                              fileData={fileDataRef.current}
-                              texturePaths={filePaths.filter(p=>/\.(png|jpg|jpeg)$/i.test(p))}
-                              revision={revision}
-                              onSelectTexture={openInEditor}
-                            />
-                          )}
-                        </div>
+                        {editorTab==='3d'&&isJson?(
+                          // 3D split layout — no editor-area padding, fills remaining height
+                          <div style={{flex:1,display:'flex',overflow:'hidden',minHeight:0}}>
+                            {/* Left: 3D viewer + texture slots */}
+                            <div style={{flex:1,minWidth:0,overflow:'auto',padding:'12px 16px'}}>
+                              <ModelViewer3D
+                                modelContent={selectedContent??''}
+                                fileData={fileDataRef.current}
+                                texturePaths={filePaths.filter(p=>/\.(png|jpg|jpeg)$/i.test(p))}
+                                revision={revision}
+                                onSelectTexture={setPainting3dTex}
+                              />
+                            </div>
+                            {/* Right: texture painter panel (or hint) */}
+                            {painting3dTex?(
+                              <div style={{width:290,borderLeft:`2px solid ${BORDER}`,display:'flex',flexDirection:'column',flexShrink:0,overflow:'hidden'}}>
+                                {/* Panel header */}
+                                <div style={{padding:'8px 12px',background:BG2,borderBottom:`1px solid ${BORDER}`,display:'flex',alignItems:'center',gap:8,flexShrink:0}}>
+                                  <img src={fileDataRef.current[painting3dTex]} style={{width:22,height:22,imageRendering:'pixelated',objectFit:'contain',background:'#070910',border:`1px solid ${BORDER}`,flexShrink:0}} alt=""/>
+                                  <span style={{flex:1,fontSize:10,color:ACCENT2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                                    ✏ {painting3dTex.split('/').pop()}
+                                  </span>
+                                  <button className="btn sm" onClick={()=>setPainting3dTex(null)}>✕</button>
+                                </div>
+                                {/* Painter */}
+                                <div style={{flex:1,overflow:'auto',padding:'12px',minHeight:0}}>
+                                  <PixelPainter
+                                    compact={true}
+                                    dataUrl={fileDataRef.current[painting3dTex]}
+                                    onSave={(dataUrl:string)=>{
+                                      fileDataRef.current[painting3dTex]=dataUrl;
+                                      setRevision(r=>r+1);
+                                      setStatus(`Saved edits to ${painting3dTex.split('/').pop()}`);
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            ):(
+                              <div style={{width:200,display:'flex',alignItems:'center',justifyContent:'center',color:DIM,fontSize:11,padding:20,textAlign:'center',flexShrink:0,borderLeft:`1px solid ${BORDER}`}}>
+                                <div>
+                                  <div style={{fontSize:28,marginBottom:8,color:BORDER}}>◈</div>
+                                  Click a texture below the 3D view to paint it
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ):(
+                          <div className="editor-area">
+                            {editorTab==='preview'&&isImage&&<div><img src={selectedContent!} style={{imageRendering:'pixelated',border:`1px solid ${BORDER}`,maxWidth:'100%'}} alt={selected}/><div style={{marginTop:8,fontSize:11,color:DIM}}>Switch to ✏ Paint to edit pixels</div></div>}
+                            {editorTab==='paint'&&isImage&&<PixelPainter dataUrl={selectedContent} onSave={saveTexture}/>}
+                            {editorTab==='audio'&&isAudio&&<AudioPlayer dataUrl={selectedContent} name={selected.split('/').pop()}/>}
+                            {editorTab==='meta'&&isMeta&&<PackMetaEditor content={selectedContent} onChange={updateContent}/>}
+                            {editorTab==='editor'&&(isJson||isMeta)&&<JsonEditor content={selectedContent} onChange={updateContent}/>}
+                            {editorTab==='editor'&&!isJson&&!isMeta&&!isImage&&!isAudio&&<textarea className="code" value={selectedContent||''} onChange={e=>updateContent(e.target.value)} spellCheck={false}/>}
+                          </div>
+                        )}
                       </>
                     )}
                   </div>

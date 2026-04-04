@@ -299,9 +299,9 @@ export default function ModelViewer3D({
               </div>
             ))}
           </div>
-          {onSelectTexture && texSlots.some(s => s.packPath) && (
-            <div style={{fontSize:9,color:'#333',marginTop:6,letterSpacing:'0.5px'}}>
-              Click a texture slot to open it in the Paint editor
+          {texSlots.some(s => s.packPath) && (
+            <div style={{fontSize:9,color:'#4a5568',marginTop:6,letterSpacing:'0.5px'}}>
+              Click a texture to paint it in the panel →
             </div>
           )}
         </div>
