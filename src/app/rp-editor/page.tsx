@@ -123,6 +123,16 @@ function normTexPath(p:string):string{
   return p.replace(/^minecraft:/,'').replace(/^assets\/[^/]+\/textures\//,'').replace(/\.(png|jpg|jpeg)$/i,'').toLowerCase();
 }
 
+// Fast O(n) similarity — no Set allocation, used for bulk Fix All suggestions
+function quickSim(a:string,b:string):number{
+  if(!a||!b)return 0; if(a===b)return 1;
+  const la=a.toLowerCase(),lb=b.toLowerCase();
+  if(la===lb)return 1;
+  if(la.includes(lb)||lb.includes(la))return 0.8;
+  return 0;
+}
+
+// Precise bigram similarity — only used for single-item lookups (findBestMatch)
 function strSim(a:string,b:string):number{
   if(a===b)return 1; if(!a.length||!b.length)return 0;
   const la=a.toLowerCase(),lb=b.toLowerCase();
@@ -132,13 +142,20 @@ function strSim(a:string,b:string):number{
   const un=ba.size+bb.size-inter;return un===0?0:inter/un;
 }
 
+// Uses quickSim — safe to call in bulk (no Set allocations)
 function getTopMatches(brokenRef:string,textures:string[],limit=24):string[]{
   const ref=normTexPath(brokenRef);const refName=ref.split('/').pop()??'';
-  return textures
-    .map(t=>{const n=normTexPath(t);return{n,s:Math.max(strSim(refName,n.split('/').pop()??''),strSim(ref,n))};})
-    .sort((a,b)=>b.s-a.s).slice(0,limit).map(x=>x.n);
+  const scored:{n:string,s:number}[]=[];
+  for(const t of textures){
+    const n=normTexPath(t);
+    const s=Math.max(quickSim(refName,n.split('/').pop()??''),quickSim(ref,n));
+    if(s>0)scored.push({n,s});
+  }
+  scored.sort((a,b)=>b.s-a.s);
+  return scored.slice(0,limit).map(x=>x.n);
 }
 
+// Uses precise strSim — only call for a single item at a time
 function findBestMatch(brokenRef:string,textures:string[]):string|null{
   const refName=brokenRef.split('/').pop()??brokenRef;
   let best:string|null=null,bestScore=0.28;
@@ -593,18 +610,28 @@ function IssuesView({analysis,fileData,onApplyFix,onApplyAllFixes,onOpenInEditor
   const[fixState,setFixState]=useState<Record<string,string>>({});
   const[showFixAll,setShowFixAll]=useState(false);
 
-  // Auto-suggestions and top match lists — computed once when Fix All opens, never inline in render
-  const {suggestions,allTopMatches}=useMemo(()=>{
-    if(!showFixAll)return{suggestions:{} as Record<string,string>,allTopMatches:{} as Record<string,string[]>};
-    const suggestions:Record<string,string>={};
-    const allTopMatches:Record<string,string[]>={};
-    for(const issue of issues){
-      const id=`${issue.modelPath}::${issue.key}`;
-      const top=getTopMatches(issue.value,textures,16);
-      allTopMatches[id]=top;
-      suggestions[id]=top[0]??''; // best match is first after sorting
-    }
-    return{suggestions,allTopMatches};
+  // Async suggestion computation — never blocks the main thread
+  const[suggReady,setSuggReady]=useState(false);
+  const[suggestions,setSuggestions]=useState<Record<string,string>>({});
+  const[allTopMatches,setAllTopMatches]=useState<Record<string,string[]>>({});
+
+  useEffect(()=>{
+    if(!showFixAll){setSuggReady(false);setSuggestions({});setAllTopMatches({});return;}
+    setSuggReady(false);setSuggestions({});setAllTopMatches({});
+    let cancelled=false;
+    (async()=>{
+      const sugg:Record<string,string>={};const atm:Record<string,string[]>={};
+      for(let i=0;i<issues.length;i++){
+        if(cancelled)return;
+        const issue=issues[i];
+        const id=`${issue.modelPath}::${issue.key}`;
+        const top=getTopMatches(issue.value,textures,16);
+        atm[id]=top;sugg[id]=top[0]??'';
+        if((i+1)%20===0)await yieldToMain(); // yield every 20 issues — ~1-2ms per chunk
+      }
+      if(!cancelled){setSuggestions(sugg);setAllTopMatches(atm);setSuggReady(true);}
+    })();
+    return()=>{cancelled=true;};
   },[showFixAll,issues,textures]);
 
   const[fixAllVals,setFixAllVals]=useState<Record<string,string>>({});
@@ -639,12 +666,13 @@ function IssuesView({analysis,fileData,onApplyFix,onApplyAllFixes,onOpenInEditor
             </button>
           ):(
             <>
-              <button className="btn sm apply" style={{borderColor:ACCENT+'44',color:ACCENT}}
+              <button className="btn sm apply" style={{borderColor:ACCENT+'44',color:ACCENT,opacity:suggReady?1:0.5}}
+                disabled={!suggReady}
                 onClick={()=>{
                   onApplyAllFixes(effectiveFAVals);
                   setShowFixAll(false);setFixAllVals({});
                 }}>
-                Apply {autoFixCount} fix{autoFixCount!==1?'es':''}
+                {suggReady?`Apply ${autoFixCount} fix${autoFixCount!==1?'es':''}` : 'Computing…'}
               </button>
               <button className="btn sm" onClick={()=>{setShowFixAll(false);setFixAllVals({});}}>Cancel</button>
             </>
@@ -655,8 +683,11 @@ function IssuesView({analysis,fileData,onApplyFix,onApplyAllFixes,onOpenInEditor
       {/* Fix All review panel */}
       {showFixAll&&(
         <div style={{background:'#0a1208',borderBottom:`2px solid ${ACCENT}33`,padding:'12px 20px',flexShrink:0,maxHeight:280,overflowY:'auto'}}>
-          <div style={{fontSize:9,color:ACCENT,letterSpacing:'3px',marginBottom:10,textTransform:'uppercase'}}>
-            Review auto-suggestions — confirm or change each replacement
+          <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10}}>
+            <div style={{fontSize:9,color:ACCENT,letterSpacing:'3px',textTransform:'uppercase'}}>
+              {suggReady?'Review auto-suggestions — confirm or change each replacement':'Computing suggestions…'}
+            </div>
+            {!suggReady&&<div className="spinner" style={{width:12,height:12,borderWidth:1.5,flexShrink:0}}/>}
           </div>
           <div style={{display:'flex',flexDirection:'column',gap:4}}>
             {issues.map((issue:any,i:number)=>{
