@@ -15,9 +15,10 @@ const NAV_LINKS = [
 export default function NavHeader() {
   const pathname   = usePathname();
   const [scrolled, setScrolled]     = useState(false);
-  if (pathname.startsWith('/rp-editor') || pathname.startsWith('/admin')) return null;
   const [menuOpen, setMenuOpen]     = useState(false);
   const [activeId, setActiveId]     = useState('');
+
+  const hidden = pathname.startsWith('/rp-editor') || pathname.startsWith('/admin');
 
   // Track scroll for background opacity
   useEffect(() => {
@@ -60,6 +61,8 @@ export default function NavHeader() {
   const mono = "'JetBrains Mono', monospace";
   const sans = "'Space Grotesk', sans-serif";
   const green = '#00ff41';
+
+  if (hidden) return null;
 
   return (
     <>
