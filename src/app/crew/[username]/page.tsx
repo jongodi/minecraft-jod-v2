@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, use, useRef, FormEvent } from 'react';
+import { useEffect, useState, useRef, FormEvent } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import type { CrewProfile, CrewPost } from '@/lib/crew';
@@ -66,8 +66,8 @@ function LoginModal({
 
 // ─── Profile page ─────────────────────────────────────────────────────────────
 
-export default function CrewProfilePage({ params }: { params: Promise<{ username: string }> }) {
-  const { username } = use(params);
+export default function CrewProfilePage({ params }: { params: { username: string } }) {
+  const { username } = params;
   const [profile,    setProfile]    = useState<CrewProfile | null>(null);
   const [session,    setSession]    = useState<string | null>(null); // logged-in username
   const [showLogin,  setShowLogin]  = useState(false);

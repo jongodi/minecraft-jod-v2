@@ -4,6 +4,7 @@
 
 import { motion } from 'framer-motion';
 import { useEffect, useState, useCallback } from 'react';
+import Link from 'next/link';
 import type { StatusResponse } from '@/app/api/server-status/route';
 
 // ─── Static crew list ────────────────────────────────────────────────────────
@@ -39,6 +40,7 @@ function CrewCard({
   const allFailed = srcIndex >= sources.length;
 
   return (
+    <Link href={`/crew/${name}`} style={{ textDecoration: 'none' }}>
     <motion.div
       initial={{ opacity: 0, y: 18, scale: 0.94 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -67,7 +69,7 @@ function CrewCard({
         transform: hovered ? 'translateY(-5px)' : 'translateY(0)',
         transition: 'all 0.25s ease',
         opacity: isOnline ? 1 : 0.45,
-        cursor: 'default',
+        cursor: 'pointer',
       }}
     >
       {/* Online indicator ring */}
@@ -165,6 +167,7 @@ function CrewCard({
         </span>
       )}
     </motion.div>
+    </Link>
   );
 }
 
