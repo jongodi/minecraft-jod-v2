@@ -3,6 +3,11 @@
 import Link from 'next/link';
 import { useState, useRef, useCallback, useMemo, memo, useEffect } from "react";
 import JSZip from "jszip";
+import dynamic from 'next/dynamic';
+
+const ModelViewer3D = dynamic(() => import('./model-viewer-3d'), { ssr: false,
+  loading: () => <div style={{height:380,display:'flex',alignItems:'center',justifyContent:'center',color:'#4a5568',fontSize:12,border:'1px solid #2a3040',background:'#0d0f12'}}>Loading 3D viewer…</div>
+});
 
 const BG="#0d0f12",BG2="#13161b",BG3="#1a1e26",BORDER="#2a3040";
 const ACCENT="#4ade80",ACCENT2="#22d3ee",DIM="#4a5568",TEXT="#e2e8f0",TEXT2="#94a3b8",WARN="#f59e0b",ERR="#f87171";
@@ -109,6 +114,26 @@ textarea.code:focus{border-color:${ACCENT2}}textarea.code.has-errors{border-colo
 // ── Pack analysis ──────────────────────────────────────────────────────────────
 function normTexPath(p:string):string{
   return p.replace(/^minecraft:/,'').replace(/^assets\/[^/]+\/textures\//,'').replace(/\.(png|jpg|jpeg)$/i,'').toLowerCase();
+}
+
+function strSim(a:string,b:string):number{
+  if(a===b)return 1; if(!a.length||!b.length)return 0;
+  const la=a.toLowerCase(),lb=b.toLowerCase();
+  if(la.includes(lb)||lb.includes(la))return 0.8;
+  const bg=(s:string)=>{const r=new Set<string>();for(let i=0;i<s.length-1;i++)r.add(s.slice(i,i+2));return r;};
+  const ba=bg(la),bb=bg(lb);let inter=0;ba.forEach(g=>{if(bb.has(g))inter++;});
+  const un=ba.size+bb.size-inter;return un===0?0:inter/un;
+}
+
+function findBestMatch(brokenRef:string,textures:string[]):string|null{
+  const refName=brokenRef.split('/').pop()??brokenRef;
+  let best:string|null=null,bestScore=0.28;
+  for(const t of textures){
+    const tn=normTexPath(t),tname=tn.split('/').pop()??'';
+    const score=Math.max(strSim(refName,tname),strSim(normTexPath(brokenRef),tn));
+    if(score>bestScore){bestScore=score;best=tn;}
+  }
+  return best;
 }
 
 function analyzepack(filePaths:string[],fileData:Record<string,string>){
@@ -559,9 +584,23 @@ function ModelsView({analysis,fileData,onApplyFix,onOpenInEditor}:any){
 }
 
 // ── IssuesView ─────────────────────────────────────────────────────────────────
-function IssuesView({analysis,fileData,onApplyFix,onOpenInEditor}:any){
+function IssuesView({analysis,fileData,onApplyFix,onApplyAllFixes,onOpenInEditor}:any){
   const{issues,textures}=analysis;
   const[fixState,setFixState]=useState<Record<string,string>>({});
+  const[showFixAll,setShowFixAll]=useState(false);
+
+  // Auto-suggestions for Fix All panel
+  const suggestions=useMemo(()=>{
+    if(!showFixAll)return {};
+    return Object.fromEntries(issues.map((issue:any)=>{
+      const id=`${issue.modelPath}::${issue.key}`;
+      const suggested=findBestMatch(issue.value,textures);
+      return [id, suggested??''];
+    }));
+  },[showFixAll,issues,textures]);
+
+  const[fixAllVals,setFixAllVals]=useState<Record<string,string>>({});
+  const effectiveFAVals=showFixAll?{...suggestions,...fixAllVals}:{};
 
   if(issues.length===0)return(
     <div className="scroll-area">
@@ -576,36 +615,95 @@ function IssuesView({analysis,fileData,onApplyFix,onOpenInEditor}:any){
   );
 
   const modelCount=new Set(issues.map((i:any)=>i.modelPath)).size;
+  const autoFixCount=Object.values({...suggestions,...fixAllVals}).filter(Boolean).length;
 
   return(
     <div style={{display:'flex',flexDirection:'column',height:'100%',overflow:'hidden'}}>
-      <div style={{padding:'10px 20px',borderBottom:`1px solid ${BORDER}`,flexShrink:0,display:'flex',gap:16,alignItems:'center'}}>
+      {/* Header */}
+      <div style={{padding:'10px 20px',borderBottom:`1px solid ${BORDER}`,flexShrink:0,display:'flex',gap:12,alignItems:'center',flexWrap:'wrap'}}>
         <span style={{fontSize:10,color:ERR,letterSpacing:2,textTransform:'uppercase'}}>{issues.length} broken ref{issues.length!==1?'s':''}</span>
         <span style={{fontSize:10,color:DIM}}>across {modelCount} model{modelCount!==1?'s':''}</span>
+        <div style={{marginLeft:'auto',display:'flex',gap:6}}>
+          {!showFixAll?(
+            <button className="btn sm" style={{borderColor:ACCENT+'44',color:ACCENT}}
+              onClick={()=>{setShowFixAll(true);setFixAllVals({});}}>
+              ⚡ Auto-fix all ({issues.length})
+            </button>
+          ):(
+            <>
+              <button className="btn sm apply" style={{borderColor:ACCENT+'44',color:ACCENT}}
+                onClick={()=>{
+                  onApplyAllFixes(effectiveFAVals);
+                  setShowFixAll(false);setFixAllVals({});
+                }}>
+                Apply {autoFixCount} fix{autoFixCount!==1?'es':''}
+              </button>
+              <button className="btn sm" onClick={()=>{setShowFixAll(false);setFixAllVals({});}}>Cancel</button>
+            </>
+          )}
+        </div>
       </div>
+
+      {/* Fix All review panel */}
+      {showFixAll&&(
+        <div style={{background:'#0a1208',borderBottom:`2px solid ${ACCENT}33`,padding:'12px 20px',flexShrink:0,maxHeight:280,overflowY:'auto'}}>
+          <div style={{fontSize:9,color:ACCENT,letterSpacing:'3px',marginBottom:10,textTransform:'uppercase'}}>
+            Review auto-suggestions — confirm or change each replacement
+          </div>
+          <div style={{display:'flex',flexDirection:'column',gap:6}}>
+            {issues.map((issue:any)=>{
+              const id=`${issue.modelPath}::${issue.key}`;
+              const val=effectiveFAVals[id]??'';
+              return(
+                <div key={id} style={{display:'grid',gridTemplateColumns:'1fr auto 1fr',gap:8,alignItems:'center',fontSize:11,background:'#0d1510',padding:'5px 8px'}}>
+                  <div style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                    <span style={{color:DIM,fontSize:9}}>{issue.modelPath.split('/').pop()} › </span>
+                    <span style={{color:ERR}}>{issue.value}</span>
+                  </div>
+                  <span style={{color:DIM,fontSize:10}}>→</span>
+                  <select className="fix-sel" value={val}
+                    onChange={e=>setFixAllVals(s=>({...s,[id]:e.target.value}))}>
+                    <option value="">— skip this ref —</option>
+                    {textures.map((t:string)=>{const n=normTexPath(t);return<option key={t} value={n}>{n}</option>;})}
+                  </select>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Individual issues list */}
       <div className="scroll-area">
         <div className="issue-list">
           {issues.map((issue:any)=>{
             const id=`${issue.modelPath}::${issue.key}`;
             const isFixing=id in fixState;
             const fixVal=fixState[id]??issue.value;
+            // Show auto-suggested value badge in fix-all mode
+            const autoSuggested=effectiveFAVals[id];
             return(
-              <div key={id} className="issue-item">
-                <div className="ref-nopreview" style={{width:32,height:32,flexShrink:0,marginTop:2,fontSize:14,color:ERR}}>✕</div>
+              <div key={id} className="issue-item" style={showFixAll&&autoSuggested?{borderColor:ACCENT+'44',background:'#0a100a'}:{}}>
+                <div className="ref-nopreview" style={{width:32,height:32,flexShrink:0,marginTop:2,fontSize:14,color:showFixAll&&autoSuggested?ACCENT:ERR}}>
+                  {showFixAll&&autoSuggested?'✓':'✕'}
+                </div>
                 <div className="issue-meta">
                   <div className="issue-model">{issue.modelPath.split('/').slice(-3).join('/')}</div>
-                  <div className="issue-key">texture key: <span style={{color:TEXT}}>{issue.key}</span></div>
+                  <div className="issue-key">key: <span style={{color:TEXT}}>{issue.key}</span></div>
                   <div className="issue-ref">{issue.value}</div>
-                  {!isFixing?(
+                  {showFixAll&&autoSuggested&&(
+                    <div style={{fontSize:10,color:ACCENT,marginTop:2}}>→ {autoSuggested}</div>
+                  )}
+                  {!showFixAll&&(!isFixing?(
                     <div style={{display:'flex',gap:6,marginTop:4}}>
-                      <button className="btn sm fixbtn" style={{borderColor:WARN+'44',color:WARN}} onClick={()=>setFixState(s=>({...s,[id]:issue.value}))}>Fix reference</button>
+                      <button className="btn sm fixbtn" style={{borderColor:WARN+'44',color:WARN}} onClick={()=>setFixState(s=>({...s,[id]:findBestMatch(issue.value,textures)??issue.value}))}>Fix reference</button>
                       <button className="btn sm" onClick={()=>onOpenInEditor(issue.modelPath)}>Edit model</button>
                     </div>
                   ):(
                     <div className="fix-wrap" style={{marginTop:6}}>
                       <select className="fix-sel" value={fixVal} onChange={e=>setFixState(s=>({...s,[id]:e.target.value}))}>
-                        <option value="">— pick replacement texture —</option>
-                        {textures.map((t:string)=>{const n=normTexPath(t);return <option key={t} value={n}>{n}</option>;})}
+                        <option value="">— pick replacement —</option>
+                        {textures.map((t:string)=>{const n=normTexPath(t);return<option key={t} value={n}>{n}</option>;})}
                       </select>
                       <span className="fix-or">or</span>
                       <input className="fix-inp" value={fixVal} onChange={e=>setFixState(s=>({...s,[id]:e.target.value}))} placeholder="block/stone"/>
@@ -613,10 +711,10 @@ function IssuesView({analysis,fileData,onApplyFix,onOpenInEditor}:any){
                         const val=fixState[id];
                         if(val?.trim())onApplyFix(issue.modelPath,issue.key,val.trim());
                         setFixState(s=>{const n={...s};delete n[id];return n;});
-                      }}>Apply Fix</button>
+                      }}>Apply</button>
                       <button className="btn sm" onClick={()=>setFixState(s=>{const n={...s};delete n[id];return n;})}>✕</button>
                     </div>
-                  )}
+                  ))}
                 </div>
               </div>
             );
@@ -712,6 +810,27 @@ export default function App(){
     }catch(e:any){setStatus('Fix failed: '+e.message);}
   },[selected]);
 
+  const applyAllFixes=useCallback((fixMap:Record<string,string>)=>{
+    let count=0;
+    const modified=new Set<string>();
+    for(const[id,newValue] of Object.entries(fixMap)){
+      if(!newValue.trim())continue;
+      const sep=id.indexOf('::');
+      if(sep<0)continue;
+      const modelPath=id.slice(0,sep);
+      const refKey=id.slice(sep+2);
+      const content=fileDataRef.current[modelPath];
+      if(!content)continue;
+      try{
+        const json=JSON.parse(fileDataRef.current[modelPath]);
+        if(json.textures){json.textures[refKey]=newValue;fileDataRef.current[modelPath]=JSON.stringify(json,null,2);modified.add(modelPath);count++;}
+      }catch{}
+    }
+    if(selected&&modified.has(selected))setSelectedContent(fileDataRef.current[selected]);
+    setRevision(r=>r+1);
+    setStatus(`Applied ${count} fix${count!==1?'es':''} across ${modified.size} model${modified.size!==1?'s':''}`);
+  },[selected]);
+
   const clearAll=useCallback(()=>{
     fileDataRef.current={};setFilePaths([]);setSelected(null);setSelectedContent(null);setStatus('No pack loaded');setRevision(0);
   },[]);
@@ -789,7 +908,7 @@ export default function App(){
               {mainTab==='overview'&&<OverviewTab analysis={analysis} fileCount={fileCount} setMainTab={setMainTab}/>}
               {mainTab==='textures'&&<TextureGrid analysis={analysis} fileData={fileDataRef.current} onOpenInEditor={openInEditor}/>}
               {mainTab==='models'&&<ModelsView analysis={analysis} fileData={fileDataRef.current} onApplyFix={applyFix} onOpenInEditor={openInEditor}/>}
-              {mainTab==='issues'&&<IssuesView analysis={analysis} fileData={fileDataRef.current} onApplyFix={applyFix} onOpenInEditor={openInEditor}/>}
+              {mainTab==='issues'&&<IssuesView analysis={analysis} fileData={fileDataRef.current} onApplyFix={applyFix} onApplyAllFixes={applyAllFixes} onOpenInEditor={openInEditor}/>}
               {mainTab==='editor'&&(
                 <div className="editor-layout">
                   <div className="sidebar">
@@ -813,6 +932,7 @@ export default function App(){
                           {isAudio&&<div className={`tab${editorTab==='audio'?' active':''}`} onClick={()=>setEditorTab('audio')}>♪ Audio</div>}
                           {isMeta&&<div className={`tab${editorTab==='meta'?' active':''}`} onClick={()=>setEditorTab('meta')}>Form</div>}
                           {(isJson||isMeta)&&<div className={`tab${editorTab==='editor'?' active':''}`} onClick={()=>setEditorTab('editor')}>JSON</div>}
+                          {isJson&&<div className={`tab${editorTab==='3d'?' active':''}`} onClick={()=>setEditorTab('3d')}>◈ 3D View</div>}
                           {!isImage&&!isAudio&&!isJson&&!isMeta&&<div className={`tab${editorTab==='editor'?' active':''}`} onClick={()=>setEditorTab('editor')}>Raw</div>}
                           <div style={{padding:'6px 10px',fontSize:11,color:DIM,marginLeft:'auto',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{selected.split('/').slice(-2).join('/')}</div>
                         </div>
@@ -823,6 +943,15 @@ export default function App(){
                           {editorTab==='meta'&&isMeta&&<PackMetaEditor content={selectedContent} onChange={updateContent}/>}
                           {editorTab==='editor'&&(isJson||isMeta)&&<JsonEditor content={selectedContent} onChange={updateContent}/>}
                           {editorTab==='editor'&&!isJson&&!isMeta&&!isImage&&!isAudio&&<textarea className="code" value={selectedContent||''} onChange={e=>updateContent(e.target.value)} spellCheck={false}/>}
+                          {editorTab==='3d'&&isJson&&(
+                            <ModelViewer3D
+                              modelContent={selectedContent??''}
+                              fileData={fileDataRef.current}
+                              texturePaths={filePaths.filter(p=>/\.(png|jpg|jpeg)$/i.test(p))}
+                              revision={revision}
+                              onSelectTexture={openInEditor}
+                            />
+                          )}
                         </div>
                       </>
                     )}
