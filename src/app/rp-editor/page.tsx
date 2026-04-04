@@ -20,7 +20,7 @@ const css=`
 ::-webkit-scrollbar{width:6px;height:6px}
 ::-webkit-scrollbar-track{background:${BG}}
 ::-webkit-scrollbar-thumb{background:${BORDER};border-radius:2px}
-.root{display:flex;flex-direction:column;height:100vh;min-height:600px;background:${BG};${PX};font-size:13px;color:${TEXT};overflow:hidden}
+.root{display:flex;flex-direction:column;height:100vh;min-height:600px;background:${BG};${PX};font-size:13px;color:${TEXT};overflow:hidden;position:relative}
 .topbar{display:flex;align-items:center;gap:10px;padding:8px 12px;background:${BG2};border-bottom:2px solid ${BORDER};flex-shrink:0}
 .logo{color:${ACCENT};font-size:15px;font-weight:700;letter-spacing:2px}.logo span{color:${ACCENT2}}
 .btn{background:${BG3};border:1px solid ${BORDER};color:${TEXT};padding:5px 12px;cursor:pointer;font-family:inherit;font-size:12px;letter-spacing:1px;text-transform:uppercase;transition:border-color 0.2s,color 0.2s}
@@ -109,7 +109,14 @@ const css=`
 textarea.code{background:${BG};border:1px solid ${BORDER};color:${ACCENT2};font-size:11px;padding:10px 10px 10px 44px;width:100%;min-height:300px;resize:vertical;outline:none;font-family:'Courier New',monospace;line-height:1.5;tab-size:2}
 textarea.code:focus{border-color:${ACCENT2}}textarea.code.has-errors{border-color:${ERR}}
 .status-bar{background:${BG2};border-top:1px solid ${BORDER};padding:4px 12px;font-size:11px;color:${DIM};flex-shrink:0;display:flex;gap:16px;flex-wrap:wrap}
-.status-bar b{color:${ACCENT}}`;
+.status-bar b{color:${ACCENT}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
+.spinner{width:26px;height:26px;border:2px solid ${BORDER};border-top-color:${ACCENT};border-radius:50%;animation:spin 0.65s linear infinite}
+.loading-overlay{position:absolute;inset:0;background:rgba(13,15,18,0.82);display:flex;align-items:center;justify-content:center;z-index:200;backdrop-filter:blur(3px);animation:fadein 0.12s ease}
+.loading-box{display:flex;flex-direction:column;align-items:center;gap:14px;background:${BG2};border:1px solid ${BORDER};padding:28px 36px}
+.loading-label{font-size:10px;color:${ACCENT};letter-spacing:3px;text-transform:uppercase}
+.loading-sub{font-size:9px;color:${DIM};letter-spacing:1px}`;
 
 // ── Pack analysis ──────────────────────────────────────────────────────────────
 function normTexPath(p:string):string{
@@ -123,6 +130,13 @@ function strSim(a:string,b:string):number{
   const bg=(s:string)=>{const r=new Set<string>();for(let i=0;i<s.length-1;i++)r.add(s.slice(i,i+2));return r;};
   const ba=bg(la),bb=bg(lb);let inter=0;ba.forEach(g=>{if(bb.has(g))inter++;});
   const un=ba.size+bb.size-inter;return un===0?0:inter/un;
+}
+
+function getTopMatches(brokenRef:string,textures:string[],limit=24):string[]{
+  const ref=normTexPath(brokenRef);const refName=ref.split('/').pop()??'';
+  return textures
+    .map(t=>{const n=normTexPath(t);return{n,s:Math.max(strSim(refName,n.split('/').pop()??''),strSim(ref,n))};})
+    .sort((a,b)=>b.s-a.s).slice(0,limit).map(x=>x.n);
 }
 
 function findBestMatch(brokenRef:string,textures:string[]):string|null{
@@ -485,8 +499,12 @@ function TextureGrid({analysis,fileData,onOpenInEditor}:any){
 function ModelRefRow({refData,fileData,textures,onApplyFix}:any){
   const{key,value,status,resolvedPath}=refData;
   const[fixing,setFixing]=useState(false);
-  const[fixVal,setFixVal]=useState(value);
+  const[fixVal,setFixVal]=useState('');
+  // Only compute top matches when the fix UI is opened
+  const topMatches=useMemo(()=>fixing?getTopMatches(value,textures):[],[fixing,value,textures]);
+  const dlId=useMemo(()=>'dl-'+key.replace(/\W/g,''),[key]);
   const hintMap:any={found:'✓ found in pack',vanilla:'✓ vanilla — uses MC default',broken:'✕ not found anywhere'};
+  const openFix=useCallback(()=>{setFixVal(findBestMatch(value,textures)??'');setFixing(true);},[value,textures]);
   return(
     <div>
       <div className="ref-row">
@@ -495,16 +513,12 @@ function ModelRefRow({refData,fileData,textures,onApplyFix}:any){
           <div className={`ref-val ${status==='found'?'found':status==='vanilla'?'vanilla':'broken'}`}>{value}</div>
           <div className={`ref-hint ${status==='found'?'found':status==='vanilla'?'vanilla':'broken'}`}>{hintMap[status]}</div>
           {status==='broken'&&!fixing&&(
-            <button className="btn sm fixbtn" style={{borderColor:WARN+'44',color:WARN,alignSelf:'flex-start',marginTop:2}} onClick={()=>{setFixing(true);setFixVal(value);}}>Fix reference</button>
+            <button className="btn sm fixbtn" style={{borderColor:WARN+'44',color:WARN,alignSelf:'flex-start',marginTop:2}} onClick={openFix}>Fix reference</button>
           )}
           {fixing&&(
             <div className="fix-wrap">
-              <select className="fix-sel" value={fixVal} onChange={e=>setFixVal(e.target.value)}>
-                <option value="">— pick from pack —</option>
-                {textures.map((t:string)=>{const n=normTexPath(t);return <option key={t} value={n}>{n}</option>;})}
-              </select>
-              <span className="fix-or">or type:</span>
-              <input className="fix-inp" value={fixVal} onChange={e=>setFixVal(e.target.value)} placeholder="block/stone"/>
+              <input className="fix-inp" list={dlId} value={fixVal} onChange={e=>setFixVal(e.target.value)} placeholder="block/stone" style={{flex:1,minWidth:80}}/>
+              <datalist id={dlId}>{topMatches.map((n:string)=><option key={n} value={n}/>)}</datalist>
               <button className="btn sm apply" style={{borderColor:ACCENT+'44',color:ACCENT}} onClick={()=>{if(fixVal.trim())onApplyFix(key,fixVal.trim());setFixing(false);}}>Apply</button>
               <button className="btn sm" onClick={()=>setFixing(false)}>✕</button>
             </div>
@@ -650,22 +664,28 @@ function IssuesView({analysis,fileData,onApplyFix,onApplyAllFixes,onOpenInEditor
           <div style={{fontSize:9,color:ACCENT,letterSpacing:'3px',marginBottom:10,textTransform:'uppercase'}}>
             Review auto-suggestions — confirm or change each replacement
           </div>
-          <div style={{display:'flex',flexDirection:'column',gap:6}}>
-            {issues.map((issue:any)=>{
+          <div style={{display:'flex',flexDirection:'column',gap:4}}>
+            {issues.map((issue:any,i:number)=>{
               const id=`${issue.modelPath}::${issue.key}`;
               const val=effectiveFAVals[id]??'';
+              const dlId=`fa-dl-${i}`;
+              // Compute top matches only for the suggestion list (cheap subset)
+              const topM=getTopMatches(issue.value,textures,16);
               return(
-                <div key={id} style={{display:'grid',gridTemplateColumns:'1fr auto 1fr',gap:8,alignItems:'center',fontSize:11,background:'#0d1510',padding:'5px 8px'}}>
+                <div key={id} style={{display:'grid',gridTemplateColumns:'1fr 16px 1fr',gap:8,alignItems:'center',fontSize:11,background:'#0d1510',padding:'5px 8px'}}>
                   <div style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
                     <span style={{color:DIM,fontSize:9}}>{issue.modelPath.split('/').pop()} › </span>
                     <span style={{color:ERR}}>{issue.value}</span>
                   </div>
-                  <span style={{color:DIM,fontSize:10}}>→</span>
-                  <select className="fix-sel" value={val}
-                    onChange={e=>setFixAllVals(s=>({...s,[id]:e.target.value}))}>
-                    <option value="">— skip this ref —</option>
-                    {textures.map((t:string)=>{const n=normTexPath(t);return<option key={t} value={n}>{n}</option>;})}
-                  </select>
+                  <span style={{color:DIM,fontSize:10,textAlign:'center'}}>→</span>
+                  <div style={{display:'flex',gap:4,alignItems:'center',minWidth:0}}>
+                    <input className="fix-inp" list={dlId} value={val}
+                      onChange={e=>setFixAllVals(s=>({...s,[id]:e.target.value}))}
+                      placeholder="leave empty to skip"
+                      style={{flex:1,minWidth:0,width:'100%'}}/>
+                    <datalist id={dlId}>{topM.map((n:string)=><option key={n} value={n}/>)}</datalist>
+                    {val&&<button className="btn sm" style={{flexShrink:0,padding:'2px 5px'}} onClick={()=>setFixAllVals(s=>({...s,[id]:''}))}>✕</button>}
+                  </div>
                 </div>
               );
             })}
@@ -696,17 +716,17 @@ function IssuesView({analysis,fileData,onApplyFix,onApplyAllFixes,onOpenInEditor
                   )}
                   {!showFixAll&&(!isFixing?(
                     <div style={{display:'flex',gap:6,marginTop:4}}>
-                      <button className="btn sm fixbtn" style={{borderColor:WARN+'44',color:WARN}} onClick={()=>setFixState(s=>({...s,[id]:findBestMatch(issue.value,textures)??issue.value}))}>Fix reference</button>
+                      <button className="btn sm fixbtn" style={{borderColor:WARN+'44',color:WARN}} onClick={()=>setFixState(s=>({...s,[id]:findBestMatch(issue.value,textures)??''}))}>Fix reference</button>
                       <button className="btn sm" onClick={()=>onOpenInEditor(issue.modelPath)}>Edit model</button>
                     </div>
                   ):(
                     <div className="fix-wrap" style={{marginTop:6}}>
-                      <select className="fix-sel" value={fixVal} onChange={e=>setFixState(s=>({...s,[id]:e.target.value}))}>
-                        <option value="">— pick replacement —</option>
-                        {textures.map((t:string)=>{const n=normTexPath(t);return<option key={t} value={n}>{n}</option>;})}
-                      </select>
-                      <span className="fix-or">or</span>
-                      <input className="fix-inp" value={fixVal} onChange={e=>setFixState(s=>({...s,[id]:e.target.value}))} placeholder="block/stone"/>
+                      <input className="fix-inp" list={`ifl-${id.replace(/[^a-z0-9]/gi,'s')}`} value={fixVal}
+                        onChange={e=>setFixState(s=>({...s,[id]:e.target.value}))}
+                        placeholder="block/stone" style={{flex:1,minWidth:80}}/>
+                      <datalist id={`ifl-${id.replace(/[^a-z0-9]/gi,'s')}`}>
+                        {getTopMatches(issue.value,textures,20).map((n:string)=><option key={n} value={n}/>)}
+                      </datalist>
                       <button className="btn sm apply" style={{borderColor:ACCENT+'44',color:ACCENT}} onClick={()=>{
                         const val=fixState[id];
                         if(val?.trim())onApplyFix(issue.modelPath,issue.key,val.trim());
@@ -736,15 +756,29 @@ export default function App(){
   const[status,setStatus]=useState("No pack loaded");
   const[mainTab,setMainTab]=useState('overview');
   const[revision,setRevision]=useState(0);
+  const[analysis,setAnalysis]=useState<ReturnType<typeof analyzepack>|null>(null);
+  const[isAnalyzing,setIsAnalyzing]=useState(false);
+  const[loadingMsg,setLoadingMsg]=useState('');
   const fileInputRef=useRef<any>();
 
   const fileCount=useMemo(()=>filePaths.length,[filePaths]);
   const textureCount=useMemo(()=>filePaths.filter(f=>/\.(png|jpg|jpeg)$/i.test(f)).length,[filePaths]);
   const audioCount=useMemo(()=>filePaths.filter(f=>f.endsWith('.ogg')||f.endsWith('.mp3')).length,[filePaths]);
   const tree=useMemo(()=>buildTree(filePaths),[filePaths]);
-  const analysis=useMemo(()=>filePaths.length===0?null:analyzepack(filePaths,fileDataRef.current),[filePaths,revision]);
+
+  // Deferred analysis — runs off the critical render path so UI stays responsive
+  useEffect(()=>{
+    if(filePaths.length===0){setAnalysis(null);setIsAnalyzing(false);return;}
+    setIsAnalyzing(true);setLoadingMsg('Analysing pack…');
+    const id=setTimeout(()=>{
+      setAnalysis(analyzepack(filePaths,fileDataRef.current));
+      setIsAnalyzing(false);setLoadingMsg('');
+    },20);
+    return()=>clearTimeout(id);
+  },[filePaths,revision]);
 
   const loadZip=async(file:File)=>{
+    setIsAnalyzing(true);setLoadingMsg('Loading zip…');
     setStatus("Loading…");
     try{
       const zip=await JSZip.loadAsync(file);
@@ -811,24 +845,28 @@ export default function App(){
   },[selected]);
 
   const applyAllFixes=useCallback((fixMap:Record<string,string>)=>{
-    let count=0;
-    const modified=new Set<string>();
-    for(const[id,newValue] of Object.entries(fixMap)){
-      if(!newValue.trim())continue;
-      const sep=id.indexOf('::');
-      if(sep<0)continue;
-      const modelPath=id.slice(0,sep);
-      const refKey=id.slice(sep+2);
-      const content=fileDataRef.current[modelPath];
-      if(!content)continue;
-      try{
-        const json=JSON.parse(fileDataRef.current[modelPath]);
-        if(json.textures){json.textures[refKey]=newValue;fileDataRef.current[modelPath]=JSON.stringify(json,null,2);modified.add(modelPath);count++;}
-      }catch{}
-    }
-    if(selected&&modified.has(selected))setSelectedContent(fileDataRef.current[selected]);
-    setRevision(r=>r+1);
-    setStatus(`Applied ${count} fix${count!==1?'es':''} across ${modified.size} model${modified.size!==1?'s':''}`);
+    // Show loading overlay immediately before blocking work
+    setIsAnalyzing(true);setLoadingMsg('Applying fixes…');
+    setTimeout(()=>{
+      let count=0;
+      const modified=new Set<string>();
+      for(const[id,newValue] of Object.entries(fixMap)){
+        if(!newValue.trim())continue;
+        const sep=id.indexOf('::');
+        if(sep<0)continue;
+        const modelPath=id.slice(0,sep);
+        const refKey=id.slice(sep+2);
+        if(!fileDataRef.current[modelPath])continue;
+        try{
+          const json=JSON.parse(fileDataRef.current[modelPath]);
+          if(json.textures){json.textures[refKey]=newValue;fileDataRef.current[modelPath]=JSON.stringify(json,null,2);modified.add(modelPath);count++;}
+        }catch{}
+      }
+      if(selected&&modified.has(selected))setSelectedContent(fileDataRef.current[selected]);
+      const msg=`Applied ${count} fix${count!==1?'es':''} across ${modified.size} model${modified.size!==1?'s':''}`;
+      setStatus(msg);setLoadingMsg('Re-analysing…');
+      setRevision(r=>r+1); // triggers useEffect which runs analyzepack and clears loading
+    },20);
   },[selected]);
 
   const clearAll=useCallback(()=>{
@@ -869,6 +907,15 @@ export default function App(){
     <>
       <style>{css}</style>
       <div className="root">
+        {isAnalyzing&&(
+          <div className="loading-overlay">
+            <div className="loading-box">
+              <div className="spinner"/>
+              <div className="loading-label">{loadingMsg||'Processing…'}</div>
+              <div className="loading-sub">Please wait</div>
+            </div>
+          </div>
+        )}
         <div className="topbar">
           <Link href="/" style={{textDecoration:'none'}}><button className="btn">← HOME</button></Link>
           <div className="logo">JOD<span>craft</span> · Pack Editor</div>
