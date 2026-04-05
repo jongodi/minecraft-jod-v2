@@ -913,7 +913,7 @@ function OverviewTab({analysis,fileCount,setMainTab}:any){
         <div style={{marginBottom:24}}>
           <div className="sh">Broken references <span className="cnt">{issues.length}</span></div>
           <p style={{color:TEXT2,fontSize:12,marginBottom:12,lineHeight:1.6}}>
-            {modelsWithIssues} model{modelsWithIssues!==1?'s':''} reference textures that don't exist in this pack and don't match vanilla naming. These will appear as missing (magenta) textures in-game.
+            {modelsWithIssues} model{modelsWithIssues!==1?'s':''} reference textures that do not exist in this pack and do not match vanilla naming. These will appear as missing (magenta) textures in-game.
           </p>
           <div style={{display:'flex',gap:8}}>
             <button className="btn" style={{borderColor:ERR+'66',color:ERR}} onClick={()=>setMainTab('issues')}>View all issues →</button>
@@ -926,7 +926,7 @@ function OverviewTab({analysis,fileCount,setMainTab}:any){
         <div style={{marginBottom:24}}>
           <div className="sh">Unlinked textures <span className="cnt">{unlinked}</span></div>
           <p style={{color:TEXT2,fontSize:12,marginBottom:12,lineHeight:1.6}}>
-            These textures exist in the pack but are not referenced by any model and don't follow vanilla naming — they may be unused.
+            These textures exist in the pack but are not referenced by any model and do not follow vanilla naming — they may be unused.
           </p>
           <button className="btn" onClick={()=>setMainTab('textures')}>View textures →</button>
         </div>
