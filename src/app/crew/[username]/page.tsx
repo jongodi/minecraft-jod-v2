@@ -35,7 +35,12 @@ function LoginModal({
         body:    JSON.stringify({ username, token }),
       });
       if (res.ok) { onSuccess(); onClose(); }
-      else setError('Invalid token.');
+      else {
+        const data = await res.json().catch(() => ({})) as { error?: string };
+        setError(data.error ?? 'Invalid token.');
+      }
+    } catch {
+      setError('Network error — try again.');
     } finally {
       setLoading(false);
     }
@@ -69,15 +74,18 @@ function LoginModal({
 export default function CrewProfilePage({ params }: { params: { username: string } }) {
   const { username } = params;
   const [profile,    setProfile]    = useState<CrewProfile | null>(null);
-  const [session,    setSession]    = useState<string | null>(null); // logged-in username
+  const [session,    setSession]    = useState<string | null>(null);
   const [showLogin,  setShowLogin]  = useState(false);
   const [editingBio, setEditingBio] = useState(false);
   const [bioText,    setBioText]    = useState('');
   const [newPost,    setNewPost]    = useState('');
   const [posting,    setPosting]    = useState(false);
+  const [postError,  setPostError]  = useState('');
+  const [bioError,   setBioError]   = useState('');
+  const [photoError, setPhotoError] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const isOwner = session?.toLowerCase() === username.toLowerCase();
+  const isOwner = !!session && session.toLowerCase() === username.toLowerCase();
 
   async function loadProfile() {
     const res = await fetch(`/api/crew/${username}`);
@@ -88,28 +96,36 @@ export default function CrewProfilePage({ params }: { params: { username: string
     }
   }
 
-  // Check if already logged in via cookie by calling a protected endpoint
+  // Verify session cookie server-side on every page load
   async function checkSession() {
-    const res = await fetch('/api/crew/auth', { method: 'DELETE' });
-    // We just want to know if the session is valid — don't actually log out
-    // Instead call the bio endpoint with an empty patch to test auth
-    if (res.ok) {
-      // Re-fetch to check
+    try {
+      const res = await fetch('/api/crew/me');
+      if (res.ok) {
+        const { username: loggedIn } = await res.json() as { username: string | null };
+        if (loggedIn) {
+          setSession(loggedIn);
+          localStorage.setItem('jod_crew_user', loggedIn);
+        } else {
+          setSession(null);
+          localStorage.removeItem('jod_crew_user');
+        }
+      }
+    } catch {
+      // Network error — fall back to localStorage
+      const stored = localStorage.getItem('jod_crew_user');
+      if (stored) setSession(stored);
     }
-    // Just try the current session state from local memory
   }
 
   useEffect(() => {
     loadProfile();
-    // Try to detect if user is logged in by checking localStorage fallback
-    const stored = localStorage.getItem('jod_crew_user');
-    if (stored) setSession(stored);
+    checkSession();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [username]);
 
   function onLoginSuccess() {
-    setSession(username);
-    localStorage.setItem('jod_crew_user', username);
+    // Re-check session from server to confirm cookie is set
+    checkSession();
     loadProfile();
   }
 
@@ -120,6 +136,7 @@ export default function CrewProfilePage({ params }: { params: { username: string
   }
 
   async function saveBio() {
+    setBioError('');
     const res = await fetch(`/api/crew/${username}/bio`, {
       method:  'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -128,6 +145,9 @@ export default function CrewProfilePage({ params }: { params: { username: string
     if (res.ok) {
       setProfile(p => p ? { ...p, bio: bioText } : p);
       setEditingBio(false);
+    } else {
+      const data = await res.json().catch(() => ({})) as { error?: string };
+      setBioError(data.error ?? 'Failed to save bio.');
     }
   }
 
@@ -135,17 +155,32 @@ export default function CrewProfilePage({ params }: { params: { username: string
     e.preventDefault();
     if (!newPost.trim()) return;
     setPosting(true);
-    const res = await fetch(`/api/crew/${username}/posts`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ text: newPost }),
-    });
-    if (res.ok) {
-      const post = await res.json() as CrewPost;
-      setProfile(p => p ? { ...p, posts: [post, ...p.posts] } : p);
-      setNewPost('');
+    setPostError('');
+    try {
+      const res = await fetch(`/api/crew/${username}/posts`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ text: newPost }),
+      });
+      if (res.ok) {
+        const post = await res.json() as CrewPost;
+        setProfile(p => p ? { ...p, posts: [post, ...p.posts] } : p);
+        setNewPost('');
+      } else {
+        const data = await res.json().catch(() => ({})) as { error?: string };
+        if (res.status === 401) {
+          setPostError('Session expired — please log in again.');
+          setSession(null);
+          localStorage.removeItem('jod_crew_user');
+        } else {
+          setPostError(data.error ?? 'Failed to post — try again.');
+        }
+      }
+    } catch {
+      setPostError('Network error — try again.');
+    } finally {
+      setPosting(false);
     }
-    setPosting(false);
   }
 
   async function deletePost(id: string) {
@@ -156,18 +191,23 @@ export default function CrewProfilePage({ params }: { params: { username: string
   async function uploadPhoto(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    setPhotoError('');
     const fd = new FormData();
     fd.append('file', file);
-    const res = await fetch(`/api/crew/${username}/photos`, { method: 'POST', body: fd });
-    if (res.ok) {
-      const photo = await res.json();
-      setProfile(p => p ? { ...p, photos: [photo, ...p.photos] } : p);
+    try {
+      const res = await fetch(`/api/crew/${username}/photos`, { method: 'POST', body: fd });
+      if (res.ok) {
+        const photo = await res.json();
+        setProfile(p => p ? { ...p, photos: [photo, ...p.photos] } : p);
+      } else {
+        const data = await res.json().catch(() => ({})) as { error?: string };
+        setPhotoError(data.error ?? 'Upload failed.');
+      }
+    } catch {
+      setPhotoError('Network error — upload failed.');
     }
     if (fileRef.current) fileRef.current.value = '';
   }
-
-  // Suppress lint – checkSession is unused intentionally above
-  void checkSession;
 
   if (!profile) {
     return (
@@ -232,9 +272,10 @@ export default function CrewProfilePage({ params }: { params: { username: string
                 rows={3}
                 style={{ background: '#111', border: '1px solid #2a2a2a', color: '#ccc', fontFamily: mono, fontSize: '0.7rem', padding: '0.5rem', outline: 'none', resize: 'vertical', lineHeight: 1.6 }}
               />
+              {bioError && <p style={{ fontFamily: mono, fontSize: '0.55rem', color: '#ff4466' }}>{bioError}</p>}
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <button onClick={saveBio} style={{ fontFamily: mono, fontSize: '0.55rem', letterSpacing: '0.1em', textTransform: 'uppercase', background: green + '22', color: green, border: `1px solid ${green}44`, padding: '0.3rem 0.7rem', cursor: 'pointer' }}>SAVE</button>
-                <button onClick={() => setEditingBio(false)} style={{ fontFamily: mono, fontSize: '0.55rem', background: 'none', color: '#444', border: '1px solid #2a2a2a', padding: '0.3rem 0.6rem', cursor: 'pointer' }}>✕</button>
+                <button onClick={() => { setEditingBio(false); setBioError(''); }} style={{ fontFamily: mono, fontSize: '0.55rem', background: 'none', color: '#444', border: '1px solid #2a2a2a', padding: '0.3rem 0.6rem', cursor: 'pointer' }}>✕</button>
               </div>
             </div>
           ) : (
@@ -263,12 +304,15 @@ export default function CrewProfilePage({ params }: { params: { username: string
           <form onSubmit={submitPost} style={{ marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             <textarea
               value={newPost}
-              onChange={e => setNewPost(e.target.value)}
+              onChange={e => { setNewPost(e.target.value); setPostError(''); }}
               placeholder="What's happening on the server..."
               maxLength={1000}
               rows={2}
-              style={{ background: '#111', border: '1px solid #2a2a2a', color: '#ccc', fontFamily: mono, fontSize: '0.7rem', padding: '0.6rem', outline: 'none', resize: 'vertical', lineHeight: 1.5 }}
+              style={{ background: '#111', border: `1px solid ${postError ? '#ff4466' : '#2a2a2a'}`, color: '#ccc', fontFamily: mono, fontSize: '0.7rem', padding: '0.6rem', outline: 'none', resize: 'vertical', lineHeight: 1.5 }}
             />
+            {postError && (
+              <p style={{ fontFamily: mono, fontSize: '0.55rem', color: '#ff4466' }}>{postError}</p>
+            )}
             <button type="submit" disabled={posting || !newPost.trim()} style={{ alignSelf: 'flex-end', fontFamily: mono, fontSize: '0.55rem', letterSpacing: '0.15em', textTransform: 'uppercase', background: newPost.trim() ? green + '22' : 'none', color: newPost.trim() ? green : '#333', border: `1px solid ${newPost.trim() ? green + '44' : '#1a1a1a'}`, padding: '0.35rem 0.8rem', cursor: newPost.trim() ? 'pointer' : 'not-allowed' }}>
               {posting ? 'POSTING...' : 'POST →'}
             </button>
@@ -296,7 +340,7 @@ export default function CrewProfilePage({ params }: { params: { username: string
 
       {/* Photos */}
       <div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
           <p style={{ fontFamily: mono, fontSize: '0.6rem', letterSpacing: '0.25em', color: green, textTransform: 'uppercase' }}>
             PHOTOS {profile.photos.length > 0 && `(${profile.photos.length})`}
           </p>
@@ -309,6 +353,9 @@ export default function CrewProfilePage({ params }: { params: { username: string
             </>
           )}
         </div>
+        {photoError && (
+          <p style={{ fontFamily: mono, fontSize: '0.55rem', color: '#ff4466', marginBottom: '0.75rem' }}>{photoError}</p>
+        )}
 
         {profile.photos.length === 0 ? (
           <p style={{ fontFamily: mono, fontSize: '0.6rem', color: '#2a2a2a', fontStyle: 'italic' }}>No photos yet.</p>
