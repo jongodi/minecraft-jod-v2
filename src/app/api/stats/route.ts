@@ -99,9 +99,9 @@ export async function GET() {
   try {
     const id = await getServerId(token);
 
-    // Fetch the list of stat files
+    // Fetch the list of stat files via /files/info/ (returns directory children)
     const listRes = await fetch(
-      `https://api.exaroton.com/v1/servers/${id}/files/list/?path=world/stats`,
+      `https://api.exaroton.com/v1/servers/${id}/files/info/?path=world/stats`,
       { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' }
     );
     if (!listRes.ok) {
@@ -110,7 +110,8 @@ export async function GET() {
     }
 
     const listData = await listRes.json();
-    const files: string[] = (listData.data as any[])?.map((f: any) => f.name as string) ?? [];
+    const children: any[] = listData.data?.children ?? [];
+    const files: string[] = children.map((f: any) => f.name as string);
     const uuidFiles = files.filter(f => /^[0-9a-f-]{36}\.json$/i.test(f));
 
     // Resolve UUID → username via Mojang API
