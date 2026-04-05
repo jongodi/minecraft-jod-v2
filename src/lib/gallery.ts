@@ -14,7 +14,7 @@ export interface GalleryPhoto {
 const KV_KEY = 'gallery:photos';
 
 function hasKV(): boolean {
-  return !!process.env.KV_REST_API_URL;
+  return !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
 }
 
 function galleryPath(): string {

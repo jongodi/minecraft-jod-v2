@@ -43,7 +43,7 @@ export interface CrewProfile {
 
 // Check for KV_REST_API_URL (set by Vercel Redis / Upstash integration)
 function hasKV(): boolean {
-  return !!process.env.KV_REST_API_URL;
+  return !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
 }
 
 // Detect if we're running on Vercel (filesystem is read-only)
