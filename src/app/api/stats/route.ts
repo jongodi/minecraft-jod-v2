@@ -99,14 +99,26 @@ export async function GET() {
   try {
     const id = await getServerId(token);
 
-    // Fetch the list of stat files via /files/info/{path} (path is a URL segment, not query param)
+    // First, list the world directory to find the stats folder
+    const worldRes = await fetch(
+      `https://api.exaroton.com/v1/servers/${id}/files/info/world`,
+      { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' }
+    );
+    if (!worldRes.ok) {
+      const body = await worldRes.text().catch(() => '');
+      throw new Error(`World dir HTTP ${worldRes.status}: ${body.slice(0, 300)}`);
+    }
+    const worldData = await worldRes.json();
+    const worldChildren: string[] = (worldData.data?.children ?? []).map((f: any) => f.name as string);
+
+    // Fetch the list of stat files via /files/info/{path}
     const listRes = await fetch(
       `https://api.exaroton.com/v1/servers/${id}/files/info/world/stats`,
       { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' }
     );
     if (!listRes.ok) {
       const body = await listRes.text().catch(() => '');
-      throw new Error(`File list HTTP ${listRes.status}: ${body.slice(0, 300)}`);
+      throw new Error(`File list HTTP ${listRes.status} (world children: ${worldChildren.join(', ')}): ${body.slice(0, 200)}`);
     }
 
     const listData = await listRes.json();
