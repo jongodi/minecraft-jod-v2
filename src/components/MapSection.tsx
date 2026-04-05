@@ -2,10 +2,9 @@
 
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
-import type { MapLocation } from '@/lib/map-types';
-import { DEFAULT_LOCATIONS } from '@/lib/map-types';
+import type { MapLocation, MapZone } from '@/lib/map-types';
+import { DEFAULT_LOCATIONS, DEFAULT_ZONES } from '@/lib/map-types';
 
-// Re-export as Location for local use
 type Location = MapLocation;
 
 const TYPE_COLOR: Record<string, string> = {
@@ -136,16 +135,24 @@ function Pin({ loc, index, total, selected, onClick }: { loc: Location; index: n
   );
 }
 
+const LAND_COLORS: Record<string, string> = {
+  purple: '#1a1228',
+  blue:   '#0a1828',
+  orange: '#180c04',
+  green:  '#0a1a0a',
+};
+
 export default function MapSection() {
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
   const [locations, setLocations] = useState<Location[]>(DEFAULT_LOCATIONS);
+  const [zones,     setZones]     = useState<MapZone[]>(DEFAULT_ZONES);
 
-  // Fetch live map config; fall back to defaults on error
   useEffect(() => {
     fetch('/api/map')
       .then(r => r.ok ? r.json() : null)
-      .then((cfg: { locations?: Location[] } | null) => {
+      .then((cfg: { locations?: Location[]; zones?: MapZone[] } | null) => {
         if (cfg?.locations?.length) setLocations(cfg.locations);
+        if (cfg?.zones?.length)     setZones(cfg.zones);
       })
       .catch(() => { /* keep defaults */ });
   }, []);
@@ -262,6 +269,14 @@ export default function MapSection() {
             <circle key={i} cx={x} cy={y} r={1.5} fill="rgba(0,80,160,0.25)" />
           ))}
 
+          {/* ── Extra land patches (below main landmass) ── */}
+          {zones.filter(z => z.kind === 'land').map(z => (
+            <ellipse key={z.id} cx={z.cx} cy={z.cy} rx={z.rx} ry={z.ry}
+              fill={LAND_COLORS[z.colorKey] ?? '#0a1a0a'}
+              stroke="rgba(0,255,65,0.08)" strokeWidth={0.8}
+            />
+          ))}
+
           {/* ── Main landmass ── */}
           <path
             d="M 435 60
@@ -279,41 +294,28 @@ export default function MapSection() {
             strokeWidth={1.4}
           />
 
-          {/* ── Faraway Lands zone (west oval) ── */}
-          <ellipse
-            cx={162} cy={345} rx={78} ry={58}
-            fill="rgba(60,55,80,0.14)"
-            stroke="rgba(150,140,200,0.22)"
-            strokeWidth={1.2}
-            strokeDasharray="5 4"
-          />
-          {/* Stone/earth texture hint */}
-          <ellipse cx={162} cy={345} rx={55} ry={40} fill="rgba(70,65,88,0.08)"/>
-          <text x={122} y={416} fill="rgba(180,170,220,0.25)" fontFamily="'JetBrains Mono',monospace" fontSize={6.5} letterSpacing={1.5}>FARAWAY LANDS</text>
-
-          {/* ── Old Base zone (upper circle) ── */}
-          <circle
-            cx={282} cy={197} r={118}
-            fill="rgba(45,18,72,0.10)"
-            stroke="rgba(185,115,255,0.22)"
-            strokeWidth={1.4}
-            strokeDasharray="6 4"
-          />
-          {/* Cherry grove sub-tint inside old base */}
-          <ellipse cx={272} cy={188} rx={80} ry={62} fill="rgba(190,70,120,0.08)"/>
-          <text x={360} y={98} fill="rgba(185,115,255,0.3)" fontFamily="'JetBrains Mono',monospace" fontSize={7} letterSpacing={2}>OLD BASE</text>
-
-          {/* ── New Base zone (lower oval) ── */}
-          <ellipse
-            cx={488} cy={466} rx={200} ry={112}
-            fill="rgba(8,38,78,0.16)"
-            stroke="rgba(56,189,248,0.22)"
-            strokeWidth={1.4}
-            strokeDasharray="6 4"
-          />
-          {/* Coastal sub-tint inside new base */}
-          <ellipse cx={510} cy={448} rx={145} ry={80} fill="rgba(12,50,105,0.10)"/>
-          <text x={488} y={590} fill="rgba(56,189,248,0.25)" fontFamily="'JetBrains Mono',monospace" fontSize={7} letterSpacing={2} textAnchor="middle">NEW BASE</text>
+          {/* ── Named zones (dynamic) ── */}
+          {zones.filter(z => z.kind === 'zone').map(z => {
+            const zoneColors: Record<string, { stroke: string; fill: string }> = {
+              purple: { stroke: 'rgba(185,115,255,0.22)', fill: 'rgba(45,18,72,0.12)'  },
+              blue:   { stroke: 'rgba(56,189,248,0.22)',  fill: 'rgba(8,38,78,0.16)'   },
+              orange: { stroke: 'rgba(249,115,22,0.22)',  fill: 'rgba(80,30,0,0.14)'   },
+              green:  { stroke: 'rgba(0,255,65,0.18)',    fill: 'rgba(5,35,10,0.12)'   },
+            };
+            const c = zoneColors[z.colorKey] ?? zoneColors.purple;
+            return (
+              <g key={z.id}>
+                <ellipse cx={z.cx} cy={z.cy} rx={z.rx} ry={z.ry}
+                  fill={c.fill} stroke={c.stroke} strokeWidth={1.4} strokeDasharray="6 4"
+                />
+                <text x={z.cx} y={z.cy + z.ry + 12}
+                  fill={c.stroke.replace('0.22','0.35')} fontFamily="'JetBrains Mono',monospace"
+                  fontSize={7} letterSpacing={1.5} textAnchor="middle">
+                  {z.label}
+                </text>
+              </g>
+            );
+          })}
 
           {/* ── Lake / river — vertical, between VENICE (east) and TOWN HALL/VILLAGE (west) ── */}
           <path

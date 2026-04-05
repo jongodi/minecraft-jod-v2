@@ -12,12 +12,13 @@ export interface MapLocation {
 export interface MapZone {
   id:       string;
   label:    string;
-  shape:    'ellipse' | 'circle';
+  /** 'zone' = named region (dashed ring). 'land' = solid terrain patch. */
+  kind:     'zone' | 'land';
   cx:       number;
   cy:       number;
   rx:       number;
   ry:       number;
-  colorKey: 'purple' | 'blue' | 'orange';
+  colorKey: 'purple' | 'blue' | 'orange' | 'green';
 }
 
 export interface MapConfig {
@@ -40,9 +41,9 @@ export const DEFAULT_LOCATIONS: MapLocation[] = [
 ];
 
 export const DEFAULT_ZONES: MapZone[] = [
-  { id: 'faraway', label: 'FARAWAY LANDS', shape: 'ellipse', cx: 162, cy: 345, rx:  78, ry:  58, colorKey: 'purple' },
-  { id: 'oldbase', label: 'OLD BASE',      shape: 'circle',  cx: 282, cy: 197, rx: 118, ry: 118, colorKey: 'purple' },
-  { id: 'newbase', label: 'NEW BASE',      shape: 'ellipse', cx: 488, cy: 466, rx: 200, ry: 112, colorKey: 'blue'   },
+  { id: 'faraway', label: 'FARAWAY LANDS', kind: 'zone', cx: 162, cy: 345, rx:  78, ry:  58, colorKey: 'purple' },
+  { id: 'oldbase', label: 'OLD BASE',      kind: 'zone', cx: 282, cy: 197, rx: 118, ry: 118, colorKey: 'purple' },
+  { id: 'newbase', label: 'NEW BASE',      kind: 'zone', cx: 488, cy: 466, rx: 200, ry: 112, colorKey: 'blue'   },
 ];
 
 export const DEFAULT_CONFIG: MapConfig = {
