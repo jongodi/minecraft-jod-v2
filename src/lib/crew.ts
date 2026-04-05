@@ -43,7 +43,7 @@ export interface CrewProfile {
 
 // Check for KV_REST_API_URL (set by Vercel Redis / Upstash integration)
 function hasKV(): boolean {
-  return !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
+  return !!process.env.REDIS_URL;
 }
 
 // Detect if we're running on Vercel (filesystem is read-only)
@@ -62,11 +62,11 @@ export async function readProfile(username: string): Promise<CrewProfile> {
 
   if (hasKV()) {
     try {
-      const { kv } = await import('@vercel/kv');
-      const data = await kv.get<CrewProfile>(key);
+      const { rGet } = await import('./redis');
+      const data = await rGet<CrewProfile>(key);
       return data ?? { username, bio: '', photos: [], posts: [] };
     } catch (e) {
-      console.error('KV readProfile error:', e);
+      console.error('Redis readProfile error:', e);
       return { username, bio: '', photos: [], posts: [] };
     }
   }
@@ -86,11 +86,11 @@ export async function writeProfile(profile: CrewProfile): Promise<void> {
 
   if (hasKV()) {
     try {
-      const { kv } = await import('@vercel/kv');
-      await kv.set(key, profile);
+      const { rSet } = await import('./redis');
+      await rSet(key, profile);
       return;
     } catch (e) {
-      console.error('KV writeProfile error:', e);
+      console.error('Redis writeProfile error:', e);
       throw new Error('Storage error: failed to save profile');
     }
   }
