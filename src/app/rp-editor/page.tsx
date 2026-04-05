@@ -995,7 +995,7 @@ function TextureGrid({analysis,fileData,onOpenInEditor,onDeleteTextures}:any){
   function deleteSelected(){
     if(!selected.size)return;
     if(!confirm(`Delete ${selected.size} selected texture${selected.size!==1?'s':''}?`))return;
-    onDeleteTextures?.([...selected]);
+    onDeleteTextures?.(Array.from(selected));
     setSelected(new Set());
   }
 
