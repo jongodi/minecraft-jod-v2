@@ -20,8 +20,7 @@ export interface PlayerStat {
 export interface StatsResponse {
   players:  PlayerStat[];
   source:   'live' | 'cached' | 'unavailable';
-  cachedAt: string | null; // ISO timestamp of last successful fetch
-  reason?:  string; // why unavailable (debug aid)
+  cachedAt: string | null;
 }
 
 const KV_KEY = 'stats:snapshot';
@@ -93,38 +92,24 @@ export async function GET() {
         players: cached.players, source: 'cached', cachedAt: cached.cachedAt,
       } satisfies StatsResponse);
     }
-    return NextResponse.json({ players: [], source: 'unavailable', cachedAt: null, reason: 'EXAROTON_API_KEY not configured' } satisfies StatsResponse);
+    return NextResponse.json({ players: [], source: 'unavailable', cachedAt: null } satisfies StatsResponse);
   }
 
   try {
     const id = await getServerId(token);
 
-    // First, list the world directory to find the stats folder
-    const worldRes = await fetch(
-      `https://api.exaroton.com/v1/servers/${id}/files/info/world`,
-      { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' }
-    );
-    if (!worldRes.ok) {
-      const body = await worldRes.text().catch(() => '');
-      throw new Error(`World dir HTTP ${worldRes.status}: ${body.slice(0, 300)}`);
-    }
-    const worldData = await worldRes.json();
-    const worldChildren: string[] = (worldData.data?.children ?? []).map((f: any) => f.name as string);
-
-    // Fetch the list of stat files via /files/info/{path}
+    // Fetch the list of stat files (path is a URL segment in the Exaroton API)
     const listRes = await fetch(
       `https://api.exaroton.com/v1/servers/${id}/files/info/world/stats`,
       { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' }
     );
-    if (!listRes.ok) {
-      const body = await listRes.text().catch(() => '');
-      throw new Error(`File list HTTP ${listRes.status} (world children: ${worldChildren.join(', ')}): ${body.slice(0, 200)}`);
-    }
+    if (!listRes.ok) throw new Error('stats folder not found');
 
     const listData = await listRes.json();
     const children: any[] = listData.data?.children ?? [];
-    const files: string[] = children.map((f: any) => f.name as string);
-    const uuidFiles = files.filter(f => /^[0-9a-f-]{36}\.json$/i.test(f));
+    const uuidFiles = children
+      .map((f: any) => f.name as string)
+      .filter(f => /^[0-9a-f-]{36}\.json$/i.test(f));
 
     // Resolve UUID → username via Mojang API
     const crewUuids: Record<string, string> = {};
@@ -142,11 +127,9 @@ export async function GET() {
     );
 
     // Fetch each crew member's stat file
-    const debugInfo: Record<string, any> = { rawListData: listData, uuidFiles, allFiles: files, crewUuids };
     const players: PlayerStat[] = await Promise.all(
       Object.entries(crewUuids).map(async ([uuid, username]) => {
         if (!uuidFiles.includes(`${uuid}.json`)) {
-          debugInfo[username] = { matched: false, uuid };
           return { username, deaths: 0, mobKills: 0, playerKills: 0, playTimeTicks: 0, playTimeHours: 0, distanceWalked: 0, itemsCrafted: 0 };
         }
         try {
@@ -154,36 +137,30 @@ export async function GET() {
             `https://api.exaroton.com/v1/servers/${id}/files/data/world/stats/${uuid}.json`,
             { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' }
           );
-          if (!res.ok) {
-            debugInfo[username] = { matched: true, uuid, fetchStatus: res.status };
-            throw new Error('file fetch failed');
-          }
-          const raw = await res.json();
-          debugInfo[username] = { matched: true, uuid, rawKeys: Object.keys(raw ?? {}), statsKeys: Object.keys(raw?.stats ?? {}) };
-          return { username, ...extractStats(raw) };
+          if (!res.ok) throw new Error('file fetch failed');
+          return { username, ...extractStats(await res.json()) };
         } catch {
           return { username, deaths: 0, mobKills: 0, playerKills: 0, playTimeTicks: 0, playTimeHours: 0, distanceWalked: 0, itemsCrafted: 0 };
         }
       })
     );
 
-    // Save to KV only if we got meaningful data
+    // Only cache if we got meaningful data
     const now = new Date().toISOString();
     if (players.some(p => p.playTimeTicks > 0 || p.deaths > 0 || p.mobKills > 0)) {
       await setCachedStats(players);
     }
 
     return NextResponse.json({
-      players, source: 'live', cachedAt: now, _debug: debugInfo,
-    } as any, {
+      players, source: 'live', cachedAt: now,
+    } satisfies StatsResponse, {
       headers: { 'Cache-Control': 's-maxage=300, stale-while-revalidate=60' },
     });
 
   } catch (err) {
-    const reason = err instanceof Error ? err.message : String(err);
-    console.error('Stats fetch failed:', reason);
+    console.error('Stats fetch failed:', err instanceof Error ? err.message : err);
 
-    // Serve last known snapshot (skip cache if all zeros — not useful)
+    // Serve last known snapshot if it has real data
     const cached = await getCachedStats();
     if (cached && cached.players.some(p => p.playTimeTicks > 0 || p.deaths > 0 || p.mobKills > 0)) {
       return NextResponse.json({
@@ -191,6 +168,6 @@ export async function GET() {
       } satisfies StatsResponse);
     }
 
-    return NextResponse.json({ players: [], source: 'unavailable', cachedAt: null, reason } satisfies StatsResponse);
+    return NextResponse.json({ players: [], source: 'unavailable', cachedAt: null } satisfies StatsResponse);
   }
 }
