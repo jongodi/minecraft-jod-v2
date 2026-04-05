@@ -130,7 +130,7 @@ export async function GET() {
     );
 
     // Fetch each crew member's stat file
-    const debugInfo: Record<string, any> = { uuidFiles, crewUuids };
+    const debugInfo: Record<string, any> = { rawListData: listData, uuidFiles, allFiles: files, crewUuids };
     const players: PlayerStat[] = await Promise.all(
       Object.entries(crewUuids).map(async ([uuid, username]) => {
         if (!uuidFiles.includes(`${uuid}.json`)) {
