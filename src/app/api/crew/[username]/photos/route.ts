@@ -4,6 +4,10 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { randomUUID } from 'crypto';
 
+function hasBlob(): boolean {
+  return !!process.env.BLOB_READ_WRITE_TOKEN;
+}
+
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ username: string }> }
@@ -23,16 +27,30 @@ export async function POST(
   if (!file.type.startsWith('image/'))  return NextResponse.json({ error: 'Images only' }, { status: 400 });
   if (file.size > 10 * 1024 * 1024)    return NextResponse.json({ error: 'Max 10 MB' }, { status: 400 });
 
-  const ext      = file.name.split('.').pop()?.toLowerCase() ?? 'png';
-  const filename = `crew-${username.toLowerCase()}-${randomUUID()}.${ext}`;
-  const savePath = path.join(process.cwd(), 'public', 'screenshots', filename);
+  const ext = file.name.split('.').pop()?.toLowerCase() ?? 'png';
+  const id  = randomUUID();
+  let fileUrl: string;
 
-  await fs.mkdir(path.dirname(savePath), { recursive: true });
-  await fs.writeFile(savePath, Buffer.from(await file.arrayBuffer()));
+  if (hasBlob()) {
+    const { put } = await import('@vercel/blob');
+    const blob = await put(
+      `crew/${username.toLowerCase()}/${id}.${ext}`,
+      file,
+      { access: 'public' }
+    );
+    fileUrl = blob.url;
+  } else {
+    // Filesystem fallback (local dev)
+    const filename = `crew-${username.toLowerCase()}-${id}.${ext}`;
+    const savePath = path.join(process.cwd(), 'public', 'screenshots', filename);
+    await fs.mkdir(path.dirname(savePath), { recursive: true });
+    await fs.writeFile(savePath, Buffer.from(await file.arrayBuffer()));
+    fileUrl = `/screenshots/${filename}`;
+  }
 
   const photo: CrewPhoto = {
-    id:         randomUUID(),
-    filename:   `/screenshots/${filename}`,
+    id:         id,
+    filename:   fileUrl,
     caption:    caption.slice(0, 200),
     uploadedAt: new Date().toISOString(),
   };

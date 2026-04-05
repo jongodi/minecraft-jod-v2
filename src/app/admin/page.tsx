@@ -261,6 +261,7 @@ function GalleryManagerSection() {
       body:    JSON.stringify({ active: !photo.active }),
     });
     if (res.ok) setPhotos(ps => ps.map(p => p.id === photo.id ? { ...p, active: !p.active } : p));
+    else setStatusMsg('✗ Failed to update — try again');
   }
 
   async function saveTitle(photo: GalleryPhoto) {
@@ -272,6 +273,9 @@ function GalleryManagerSection() {
     if (res.ok) {
       setPhotos(ps => ps.map(p => p.id === photo.id ? { ...p, title: editTitle.toUpperCase(), sublabel: editSublabel.toUpperCase() } : p));
       setEditingId(null);
+      setStatusMsg('✓ Title saved');
+    } else {
+      setStatusMsg('✗ Failed to save title — try again');
     }
   }
 
@@ -279,6 +283,7 @@ function GalleryManagerSection() {
     if (!confirm('Delete this photo? This cannot be undone.')) return;
     const res = await fetch(`/api/admin/gallery/${id}`, { method: 'DELETE' });
     if (res.ok) setPhotos(ps => ps.filter(p => p.id !== id));
+    else setStatusMsg('✗ Failed to delete — try again');
   }
 
   // Drag-and-drop reorder
@@ -296,11 +301,12 @@ function GalleryManagerSection() {
     setPhotos(newPhotos);
     setDragId(null);
     setDragOverId(null);
-    await fetch('/api/admin/gallery/reorder', {
+    const res = await fetch('/api/admin/gallery/reorder', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ ids: newPhotos.map(p => p.id) }),
     });
+    if (!res.ok) setStatusMsg('✗ Failed to save order — try again');
   }
 
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
