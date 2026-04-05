@@ -161,9 +161,25 @@ async function checkGitHub(pack: DatapackMeta): Promise<DatapackUpdateResult> {
 
 // ─── Route handler ────────────────────────────────────────────────────────────
 
+async function getVersionOverrides(): Promise<Record<number, string>> {
+  if (!process.env.REDIS_URL) return {};
+  try {
+    const { rGet } = await import('@/lib/redis');
+    return (await rGet<Record<number, string>>('datapacks:versions')) ?? {};
+  } catch { return {}; }
+}
+
 export async function GET() {
+  const overrides = await getVersionOverrides();
+
+  // Merge Redis version overrides into the static pack definitions
+  const packs = DATAPACKS.map(p => ({
+    ...p,
+    currentVersion: overrides[p.id] ?? p.currentVersion,
+  }));
+
   const results = await Promise.all(
-    DATAPACKS.map(async (pack): Promise<DatapackUpdateResult> => {
+    packs.map(async (pack): Promise<DatapackUpdateResult> => {
       if (pack.source === 'modrinth' && pack.modrinthSlug) {
         return checkModrinth(pack);
       }

@@ -222,6 +222,8 @@ export default function ModelViewer3D({
       cache.forEach(t => t.dispose());
       if (el.contains(renderer.domElement)) el.removeChild(renderer.domElement);
     };
+  // modelContent and revision are the only values that should trigger a full
+  // Three.js scene rebuild; other refs (containerRef, cameraRef, etc.) are stable.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [modelContent, revision]);
 

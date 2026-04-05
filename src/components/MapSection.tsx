@@ -1,30 +1,12 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import type { MapLocation } from '@/lib/map-types';
+import { DEFAULT_LOCATIONS } from '@/lib/map-types';
 
-interface Location {
-  id: number;
-  label: string;
-  sublabel: string;
-  x: number;
-  y: number;
-  type: 'surface' | 'underground' | 'island' | 'aerial';
-}
-
-const LOCATIONS: Location[] = [
-  { id: 1,  label: 'GOÐI CASTLE',      sublabel: 'FAR AWAY LANDS',         x: 162, y: 345, type: 'surface'     },
-  { id: 2,  label: 'JOÐ VILLE',        sublabel: 'OLD BASE · SPAWN',        x: 262, y: 172, type: 'surface'     },
-  { id: 3,  label: 'PINK ESTATE',      sublabel: 'OLD BASE',                x: 258, y: 210, type: 'surface'     },
-  { id: 4,  label: 'J CLUB',           sublabel: 'SECRET UNDERGROUND CLUB', x: 306, y: 210, type: 'underground' },
-  { id: 5,  label: 'MUSHROOM ISLAND',  sublabel: 'SHROOMY HEAVEN',          x: 872, y: 260, type: 'island'      },
-  { id: 6,  label: 'POTIONS TOWER',    sublabel: 'NEW BASE',                x: 408, y: 488, type: 'surface'     },
-  { id: 7,  label: 'VENICE',           sublabel: 'NEW BASE · COASTAL',      x: 568, y: 415, type: 'surface'     },
-  { id: 8,  label: 'TOWN HALL',        sublabel: 'NEW BASE',                x: 438, y: 448, type: 'surface'     },
-  { id: 9,  label: 'THE VILLAGE',      sublabel: 'NEW BASE · MAIN STREET',  x: 472, y: 502, type: 'surface'     },
-  { id: 10, label: 'BALLOON PARADISE', sublabel: 'NEW BASE · FROM ABOVE',   x: 426, y: 472, type: 'aerial'      },
-  { id: 11, label: 'NEW TOWN',         sublabel: 'NEW BASE · NIGHT',        x: 405, y: 508, type: 'surface'     },
-];
+// Re-export as Location for local use
+type Location = MapLocation;
 
 const TYPE_COLOR: Record<string, string> = {
   surface:     '#00ff41',
@@ -33,7 +15,14 @@ const TYPE_COLOR: Record<string, string> = {
   aerial:      '#38bdf8',
 };
 
-function Pin({ loc, index }: { loc: Location; index: number }) {
+const TYPE_LABEL: Record<string, string> = {
+  surface:     'SURFACE',
+  underground: 'UNDERGROUND',
+  island:      'ISLAND',
+  aerial:      'AERIAL',
+};
+
+function Pin({ loc, index, total, selected, onClick }: { loc: Location; index: number; total: number; selected: boolean; onClick: () => void }) {
   const [hovered, setHovered] = useState(false);
   const color = TYPE_COLOR[loc.type];
 
@@ -45,8 +34,14 @@ function Pin({ loc, index }: { loc: Location; index: number }) {
     <g
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      style={{ cursor: 'none' }}
+      onClick={onClick}
+      style={{ cursor: 'pointer' }}
     >
+      {/* Selected ring */}
+      {selected && (
+        <circle cx={loc.x} cy={loc.y} r={14} fill="none" stroke={color} strokeWidth={1.5} opacity={0.7}/>
+      )}
+
       {/* Pulse ring (always animating) */}
       <circle cx={loc.x} cy={loc.y} r={10} fill="none" stroke={color} strokeWidth={0.8} opacity={0.2}>
         <animate attributeName="r"       values="8;18;8"    dur="3s" repeatCount="indefinite" begin={`${index * 0.4}s`}/>
@@ -110,7 +105,7 @@ function Pin({ loc, index }: { loc: Location; index: number }) {
             letterSpacing={1.5}
             opacity={0.6}
           >
-            {String(loc.id).padStart(2, '0')} / {String(LOCATIONS.length).padStart(2, '0')}
+            {String(loc.id).padStart(2, '0')} / {String(total).padStart(2, '0')}
           </text>
           {/* Name */}
           <text
@@ -142,6 +137,19 @@ function Pin({ loc, index }: { loc: Location; index: number }) {
 }
 
 export default function MapSection() {
+  const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
+  const [locations, setLocations] = useState<Location[]>(DEFAULT_LOCATIONS);
+
+  // Fetch live map config; fall back to defaults on error
+  useEffect(() => {
+    fetch('/api/map')
+      .then(r => r.ok ? r.json() : null)
+      .then((cfg: { locations?: Location[] } | null) => {
+        if (cfg?.locations?.length) setLocations(cfg.locations);
+      })
+      .catch(() => { /* keep defaults */ });
+  }, []);
+
   return (
     <section
       id="map"
@@ -202,7 +210,7 @@ export default function MapSection() {
           marginBottom: '2.5rem',
         }}
       >
-        HOVER LOCATIONS TO EXPLORE
+        CLICK LOCATIONS TO EXPLORE
       </motion.p>
 
       {/* Map container */}
@@ -347,8 +355,15 @@ export default function MapSection() {
           ))}
 
           {/* ── Location pins ── */}
-          {LOCATIONS.map((loc, i) => (
-            <Pin key={loc.id} loc={loc} index={i} />
+          {locations.map((loc, i) => (
+            <Pin
+              key={loc.id}
+              loc={loc}
+              index={i}
+              total={locations.length}
+              selected={selectedLocation?.id === loc.id}
+              onClick={() => setSelectedLocation(prev => prev?.id === loc.id ? null : loc)}
+            />
           ))}
 
           {/* ── Compass rose (bottom right) ── */}
@@ -368,7 +383,7 @@ export default function MapSection() {
 
           {/* ── Map title ── */}
           <text x={28} y={38} fill="rgba(0,255,65,0.5)" fontFamily="'Space Grotesk',sans-serif" fontSize={13} fontWeight={700} letterSpacing={3}>JOD WORLD MAP</text>
-          <text x={28} y={52} fill="rgba(0,255,65,0.2)" fontFamily="'JetBrains Mono',monospace" fontSize={7} letterSpacing={2}>11 LOCATIONS · SURVIVAL WORLD</text>
+          <text x={28} y={52} fill="rgba(0,255,65,0.2)" fontFamily="'JetBrains Mono',monospace" fontSize={7} letterSpacing={2}>{locations.length} LOCATIONS · SURVIVAL WORLD</text>
 
           {/* ── Legend ── */}
           <g transform="translate(28, 590)">
@@ -387,6 +402,110 @@ export default function MapSection() {
         </svg>
       </motion.div>
 
+      {/* Location detail panel */}
+      {selectedLocation && (() => {
+        const loc = selectedLocation;
+        const color = TYPE_COLOR[loc.type];
+        return (
+          <motion.div
+            key={loc.id}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            transition={{ duration: 0.25 }}
+            style={{
+              marginTop: '1rem',
+              padding: '1.25rem 1.5rem',
+              border: `1px solid ${color}33`,
+              background: '#070707',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '1.5rem',
+              flexWrap: 'wrap',
+            }}
+          >
+            {/* ID badge */}
+            <div style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: '0.6rem',
+              letterSpacing: '0.2em',
+              color,
+              opacity: 0.6,
+              minWidth: '2.5rem',
+              paddingTop: '0.1rem',
+            }}>
+              {String(loc.id).padStart(2, '0')}<br/>/{String(locations.length).padStart(2, '0')}
+            </div>
+
+            {/* Name + sublabel */}
+            <div style={{ flex: 1 }}>
+              <p style={{
+                fontFamily: "'Space Grotesk', sans-serif",
+                fontSize: '1.1rem',
+                fontWeight: 700,
+                letterSpacing: '0.04em',
+                color: '#f0f0f0',
+                margin: 0,
+              }}>
+                {loc.label}
+              </p>
+              <p style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: '0.6rem',
+                letterSpacing: '0.15em',
+                color: '#555',
+                marginTop: '0.25rem',
+              }}>
+                {loc.sublabel}
+              </p>
+            </div>
+
+            {/* Type badge */}
+            <div style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: '0.55rem',
+              letterSpacing: '0.2em',
+              color,
+              border: `1px solid ${color}55`,
+              padding: '0.25rem 0.6rem',
+              alignSelf: 'center',
+            }}>
+              {TYPE_LABEL[loc.type]}
+            </div>
+
+            {/* Coordinates */}
+            <div style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: '0.6rem',
+              letterSpacing: '0.1em',
+              color: '#333',
+              alignSelf: 'center',
+              whiteSpace: 'nowrap',
+            }}>
+              X {loc.x} · Z {loc.y}
+            </div>
+
+            {/* Close button */}
+            <button
+              onClick={() => setSelectedLocation(null)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#333',
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: '0.7rem',
+                cursor: 'pointer',
+                padding: '0.1rem 0.3rem',
+                alignSelf: 'center',
+                letterSpacing: '0.1em',
+              }}
+            >
+              ✕
+            </button>
+          </motion.div>
+        );
+      })()}
+
       {/* Location count */}
       <motion.p
         initial={{ opacity: 0 }}
@@ -402,7 +521,7 @@ export default function MapSection() {
           textTransform: 'uppercase',
         }}
       >
-        {LOCATIONS.length} LOCATIONS MAPPED · JOD SURVIVAL WORLD
+        {locations.length} LOCATIONS MAPPED · JOD SURVIVAL WORLD
       </motion.p>
     </section>
   );

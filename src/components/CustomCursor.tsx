@@ -26,6 +26,9 @@ export default function CustomCursor() {
   const rafId     = useRef<number>(0);
 
   useEffect(() => {
+    // Touch devices have no cursor — skip the rAF loop entirely
+    if ('ontouchstart' in window) return;
+
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -141,6 +144,8 @@ export default function CustomCursor() {
       window.removeEventListener('mouseover', onMouseOver);
       cancelAnimationFrame(rafId.current);
     };
+  // Intentionally runs once on mount — the animate loop reads isHovering/isClicking
+  // via refs captured at setup time; re-running on state changes would restart rAF.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
