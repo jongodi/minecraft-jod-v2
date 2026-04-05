@@ -20,7 +20,7 @@ export interface PlayerStat {
 export interface StatsResponse {
   players:  PlayerStat[];
   source:   'live' | 'cached' | 'unavailable';
-  cachedAt: string | null; // ISO timestamp of last successful fetch
+  cachedAt: string | null;
 }
 
 const KV_KEY = 'stats:snapshot';
@@ -98,16 +98,18 @@ export async function GET() {
   try {
     const id = await getServerId(token);
 
-    // Fetch the list of stat files — this will fail if server is offline
+    // Fetch the list of stat files
     const listRes = await fetch(
-      `https://api.exaroton.com/v1/servers/${id}/files/list/?path=world/stats/`,
+      `https://api.exaroton.com/v1/servers/${id}/files/info/world/players/stats`,
       { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' }
     );
-    if (!listRes.ok) throw new Error('Server offline or stat files unavailable');
+    if (!listRes.ok) throw new Error('stats folder not found');
 
     const listData = await listRes.json();
-    const files: string[] = (listData.data as any[])?.map((f: any) => f.name as string) ?? [];
-    const uuidFiles = files.filter(f => /^[0-9a-f-]{36}\.json$/i.test(f));
+    const children: any[] = listData.data?.children ?? [];
+    const uuidFiles = children
+      .map((f: any) => f.name as string)
+      .filter(f => /^[0-9a-f-]{36}\.json$/i.test(f));
 
     // Resolve UUID → username via Mojang API
     const crewUuids: Record<string, string> = {};
@@ -132,7 +134,7 @@ export async function GET() {
         }
         try {
           const res = await fetch(
-            `https://api.exaroton.com/v1/servers/${id}/files/data/?path=world/stats/${uuid}.json`,
+            `https://api.exaroton.com/v1/servers/${id}/files/data/world/players/stats/${uuid}.json`,
             { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' }
           );
           if (!res.ok) throw new Error('file fetch failed');
@@ -143,9 +145,11 @@ export async function GET() {
       })
     );
 
-    // Save to KV so we have a snapshot for when server is offline
+    // Only cache if we got meaningful data
     const now = new Date().toISOString();
-    await setCachedStats(players);
+    if (players.some(p => p.playTimeTicks > 0 || p.deaths > 0 || p.mobKills > 0)) {
+      await setCachedStats(players);
+    }
 
     return NextResponse.json({
       players, source: 'live', cachedAt: now,
@@ -154,11 +158,11 @@ export async function GET() {
     });
 
   } catch (err) {
-    console.error('Stats fetch failed (server likely offline):', err);
+    console.error('Stats fetch failed:', err instanceof Error ? err.message : err);
 
-    // Serve last known snapshot
+    // Serve last known snapshot if it has real data
     const cached = await getCachedStats();
-    if (cached) {
+    if (cached && cached.players.some(p => p.playTimeTicks > 0 || p.deaths > 0 || p.mobKills > 0)) {
       return NextResponse.json({
         players: cached.players, source: 'cached', cachedAt: cached.cachedAt,
       } satisfies StatsResponse);

@@ -140,7 +140,7 @@ export default function StatsSection() {
       )}
 
       {/* Source indicator */}
-      {!loading && stats && (
+      {!loading && stats && stats.source !== 'unavailable' && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
           {stats.source === 'live' && (
             <>
@@ -156,16 +156,23 @@ export default function StatsSection() {
               </span>
             </>
           )}
-          {stats.source === 'unavailable' && (
-            <span style={{ fontFamily: mono, fontSize: '0.5rem', color: '#2a2a2a', letterSpacing: '0.1em' }}>
-              No data yet — stats will appear after the server has been online at least once.
-            </span>
-          )}
+        </div>
+      )}
+
+      {/* Unavailable state */}
+      {!loading && stats?.source === 'unavailable' && (
+        <div style={{ maxWidth: '480px' }}>
+          <p style={{ fontFamily: mono, fontSize: '0.65rem', color: '#2a2a2a', letterSpacing: '0.1em', lineHeight: 1.8, margin: 0 }}>
+            LEADERBOARD COMING SOON
+          </p>
+          <p style={{ fontFamily: sans, fontSize: '0.95rem', color: '#333', marginTop: '0.5rem', lineHeight: 1.6 }}>
+            Stats tracking is being set up. Check back after the crew has been playing for a while.
+          </p>
         </div>
       )}
 
       {/* Tab switcher */}
-      {(sorted.length > 0 || stats?.source === 'cached') && (
+      {sorted.length > 0 && (
         <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid #1a1a1a', marginBottom: '1.5rem', overflowX: 'auto' }}>
           {TABS.map(t => (
             <button
@@ -186,16 +193,12 @@ export default function StatsSection() {
       )}
 
       {/* Leaderboard */}
-      {sorted.length > 0 ? (
+      {sorted.length > 0 && (
         <div style={{ maxWidth: '600px', display: 'flex', flexDirection: 'column', gap: '1px' }}>
           {sorted.map((player, i) => (
             <LeaderboardRow key={player.username} player={player} rank={i + 1} tab={tab} maxVal={maxVal} />
           ))}
         </div>
-      ) : (
-        !loading && stats?.source === 'unavailable' && (
-          <p style={{ fontFamily: mono, fontSize: '0.65rem', color: '#2a2a2a' }}>No data yet.</p>
-        )
       )}
     </section>
   );
