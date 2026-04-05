@@ -2,6 +2,8 @@
 import { NextResponse } from 'next/server';
 import { readGallery } from '@/lib/gallery';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   const all    = await readGallery();
   const active = all
