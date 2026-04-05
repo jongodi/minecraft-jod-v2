@@ -14,7 +14,7 @@ export interface GalleryPhoto {
 const KV_KEY = 'gallery:photos';
 
 function hasKV(): boolean {
-  return !!process.env.KV_REST_API_URL;
+  return !!process.env.REDIS_URL;
 }
 
 function galleryPath(): string {
@@ -42,12 +42,12 @@ async function readFromDisk(): Promise<GalleryPhoto[]> {
 export async function readGallery(): Promise<GalleryPhoto[]> {
   if (hasKV()) {
     try {
-      const { kv } = await import('@vercel/kv');
-      const data = await kv.get<GalleryPhoto[]>(KV_KEY);
+      const { rGet, rSet } = await import('./redis');
+      const data = await rGet<GalleryPhoto[]>(KV_KEY);
       if (data) return data;
-      // First run: seed KV from the committed gallery.json
+      // First run: seed Redis from the committed gallery.json
       const seed = await readFromDisk();
-      if (seed.length > 0) await kv.set(KV_KEY, seed);
+      if (seed.length > 0) await rSet(KV_KEY, seed);
       return seed;
     } catch {
       return readFromDisk();
@@ -59,11 +59,11 @@ export async function readGallery(): Promise<GalleryPhoto[]> {
 export async function writeGallery(photos: GalleryPhoto[]): Promise<void> {
   if (hasKV()) {
     try {
-      const { kv } = await import('@vercel/kv');
-      await kv.set(KV_KEY, photos);
+      const { rSet } = await import('./redis');
+      await rSet(KV_KEY, photos);
       return;
     } catch (e) {
-      console.error('KV writeGallery error:', e);
+      console.error('Redis writeGallery error:', e);
       throw new Error('Storage error: failed to save gallery');
     }
   }

@@ -25,14 +25,14 @@ const KV_KEY = 'stats:snapshot';
 const SERVER_HOST = 'stebbias.exaroton.me';
 
 function hasKV(): boolean {
-  return !!process.env.KV_REST_API_URL;
+  return !!process.env.REDIS_URL;
 }
 
 async function getCachedStats(): Promise<{ players: PlayerStat[]; cachedAt: string } | null> {
   if (!hasKV()) return null;
   try {
-    const { kv } = await import('@vercel/kv');
-    return await kv.get<{ players: PlayerStat[]; cachedAt: string }>(KV_KEY);
+    const { rGet } = await import('@/lib/redis');
+    return await rGet<{ players: PlayerStat[]; cachedAt: string }>(KV_KEY);
   } catch {
     return null;
   }
@@ -41,8 +41,8 @@ async function getCachedStats(): Promise<{ players: PlayerStat[]; cachedAt: stri
 async function setCachedStats(players: PlayerStat[]): Promise<void> {
   if (!hasKV()) return;
   try {
-    const { kv } = await import('@vercel/kv');
-    await kv.set(KV_KEY, { players, cachedAt: new Date().toISOString() });
+    const { rSet } = await import('@/lib/redis');
+    await rSet(KV_KEY, { players, cachedAt: new Date().toISOString() });
   } catch { /* non-fatal */ }
 }
 
