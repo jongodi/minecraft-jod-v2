@@ -130,9 +130,11 @@ export async function GET() {
     );
 
     // Fetch each crew member's stat file
+    const debugInfo: Record<string, any> = { uuidFiles, crewUuids };
     const players: PlayerStat[] = await Promise.all(
       Object.entries(crewUuids).map(async ([uuid, username]) => {
         if (!uuidFiles.includes(`${uuid}.json`)) {
+          debugInfo[username] = { matched: false, uuid };
           return { username, deaths: 0, mobKills: 0, playerKills: 0, playTimeTicks: 0, playTimeHours: 0, distanceWalked: 0, itemsCrafted: 0 };
         }
         try {
@@ -140,8 +142,13 @@ export async function GET() {
             `https://api.exaroton.com/v1/servers/${id}/files/data/?path=world/stats/${uuid}.json`,
             { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' }
           );
-          if (!res.ok) throw new Error('file fetch failed');
-          return { username, ...extractStats(await res.json()) };
+          if (!res.ok) {
+            debugInfo[username] = { matched: true, uuid, fetchStatus: res.status };
+            throw new Error('file fetch failed');
+          }
+          const raw = await res.json();
+          debugInfo[username] = { matched: true, uuid, rawKeys: Object.keys(raw ?? {}), statsKeys: Object.keys(raw?.stats ?? {}) };
+          return { username, ...extractStats(raw) };
         } catch {
           return { username, deaths: 0, mobKills: 0, playerKills: 0, playTimeTicks: 0, playTimeHours: 0, distanceWalked: 0, itemsCrafted: 0 };
         }
@@ -153,8 +160,8 @@ export async function GET() {
     await setCachedStats(players);
 
     return NextResponse.json({
-      players, source: 'live', cachedAt: now,
-    } satisfies StatsResponse, {
+      players, source: 'live', cachedAt: now, _debug: debugInfo,
+    } as any, {
       headers: { 'Cache-Control': 's-maxage=300, stale-while-revalidate=60' },
     });
 
