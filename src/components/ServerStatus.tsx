@@ -3,7 +3,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import type { StatusResponse } from '@/app/api/server-status/route';
 
@@ -195,7 +195,17 @@ export default function ServerStatus() {
   useEffect(() => {
     fetchStatus();
     const id = setInterval(fetchStatus, 60_000);
-    return () => clearInterval(id);
+
+    // Pause polling when the tab is hidden to avoid wasting Exaroton API credits
+    function onVisibility() {
+      if (document.visibilityState === 'visible') fetchStatus();
+    }
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      clearInterval(id);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   }, [fetchStatus]);
 
   const isOnline = data?.online ?? false;
@@ -204,8 +214,9 @@ export default function ServerStatus() {
   const motd = data?.motd?.clean?.[0] ?? '';
 
   // Build a set of online player names (lowercase) for fast lookup
-  const onlineNames = new Set(
-    (data?.players?.list ?? []).map((p) => p.name.toLowerCase())
+  const onlineNames = useMemo(
+    () => new Set((data?.players?.list ?? []).map((p) => p.name.toLowerCase())),
+    [data?.players?.list]
   );
 
   return (

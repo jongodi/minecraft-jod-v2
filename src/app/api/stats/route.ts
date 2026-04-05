@@ -3,6 +3,7 @@
 // When offline, serves the last cached snapshot with a timestamp.
 import { NextResponse } from 'next/server';
 import { CREW_USERNAMES } from '@/lib/crew';
+import { getExarotonServerId } from '@/lib/exaroton';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,7 +25,6 @@ export interface StatsResponse {
 }
 
 const KV_KEY = 'stats:snapshot';
-const SERVER_HOST = 'stebbias.exaroton.me';
 
 function hasKV(): boolean {
   return !!process.env.REDIS_URL;
@@ -48,22 +48,14 @@ async function setCachedStats(players: PlayerStat[]): Promise<void> {
   } catch { /* non-fatal */ }
 }
 
-async function getServerId(token: string): Promise<string> {
-  const envId = process.env.EXAROTON_SERVER_ID;
-  if (envId) return envId;
-
-  const res = await fetch('https://api.exaroton.com/v1/servers/', {
-    headers: { Authorization: `Bearer ${token}` },
-    cache: 'no-store',
-  });
-  if (!res.ok) throw new Error('Exaroton list failed');
-  const data = await res.json();
-  const match = (data.data as any[]).find((s) => s.address === SERVER_HOST);
-  if (!match) throw new Error('Server not found');
-  return match.id as string;
+interface MinecraftStatsJson {
+  stats?: {
+    'minecraft:custom'?:  Record<string, number>;
+    'minecraft:crafted'?: Record<string, number>;
+  };
 }
 
-function extractStats(statsJson: any): Omit<PlayerStat, 'username'> {
+function extractStats(statsJson: MinecraftStatsJson): Omit<PlayerStat, 'username'> {
   const custom  = statsJson?.stats?.['minecraft:custom'] ?? {};
   const crafted = statsJson?.stats?.['minecraft:crafted'] ?? {};
 
@@ -96,7 +88,7 @@ export async function GET() {
   }
 
   try {
-    const id = await getServerId(token);
+    const id = await getExarotonServerId(token);
 
     // Fetch the list of stat files
     const listRes = await fetch(
@@ -105,11 +97,11 @@ export async function GET() {
     );
     if (!listRes.ok) throw new Error('stats folder not found');
 
-    const listData = await listRes.json();
-    const children: any[] = listData.data?.children ?? [];
+    const listData = await listRes.json() as { data?: { children?: Array<{ name: string }> } };
+    const children = listData.data?.children ?? [];
     const uuidFiles = children
-      .map((f: any) => f.name as string)
-      .filter(f => /^[0-9a-f-]{36}\.json$/i.test(f));
+      .map((f) => f.name)
+      .filter((f) => /^[0-9a-f-]{36}\.json$/i.test(f));
 
     // Resolve UUID → username via Mojang API
     const crewUuids: Record<string, string> = {};
@@ -138,7 +130,7 @@ export async function GET() {
             { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' }
           );
           if (!res.ok) throw new Error('file fetch failed');
-          return { username, ...extractStats(await res.json()) };
+          return { username, ...extractStats(await res.json() as MinecraftStatsJson) };
         } catch {
           return { username, deaths: 0, mobKills: 0, playerKills: 0, playTimeTicks: 0, playTimeHours: 0, distanceWalked: 0, itemsCrafted: 0 };
         }

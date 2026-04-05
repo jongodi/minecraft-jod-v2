@@ -15,6 +15,11 @@ export interface DatapackUpdateResult {
   error?:          string;
 }
 
+/** Strip leading v/V prefixes so "v1.1" and "1.1" compare equal. */
+function normalizeVersion(v: string): string {
+  return v.replace(/^[vV]\.?/, '');
+}
+
 // ─── Modrinth ────────────────────────────────────────────────────────────────
 
 async function checkModrinth(pack: DatapackMeta): Promise<DatapackUpdateResult> {
@@ -66,21 +71,29 @@ async function checkModrinth(pack: DatapackMeta): Promise<DatapackUpdateResult> 
   }
 }
 
+interface ModrinthVersion {
+  version_number: string;
+  changelog:      string | null;
+  files?: Array<{ primary: boolean; url: string }>;
+}
+
 function extractModrinthVersion(
   base: DatapackUpdateResult,
   pack: DatapackMeta,
-  versions: any[]
+  versions: ModrinthVersion[]
 ): DatapackUpdateResult {
   if (!Array.isArray(versions) || versions.length === 0) {
     return { ...base, error: 'No versions found on Modrinth' };
   }
 
   // Modrinth returns versions sorted by date descending — first is latest
-  const latest = versions[0];
-  const latestVersion = latest.version_number as string;
-  const downloadFile = latest.files?.find((f: { primary: boolean }) => f.primary) ?? latest.files?.[0];
+  const latest        = versions[0];
+  const latestVersion = latest.version_number;
+  const downloadFile  = latest.files?.find((f) => f.primary) ?? latest.files?.[0];
 
-  const updateAvailable = !!pack.currentVersion && pack.currentVersion !== latestVersion;
+  const updateAvailable =
+    !!pack.currentVersion &&
+    normalizeVersion(pack.currentVersion) !== normalizeVersion(latestVersion);
 
   return {
     ...base,
@@ -123,12 +136,14 @@ async function checkGitHub(pack: DatapackMeta): Promise<DatapackUpdateResult> {
 
     if (!res.ok) return { ...base, error: `GitHub returned ${res.status}` };
 
-    const release = await res.json();
-    const latestVersion = (release.tag_name as string).replace(/^v/, '');
-    const updateAvailable = !!pack.currentVersion && pack.currentVersion !== latestVersion;
+    const release       = await res.json() as { tag_name: string; assets?: Array<{ name: string; browser_download_url: string }>; html_url: string; body?: string };
+    const latestVersion = normalizeVersion(release.tag_name);
+    const updateAvailable =
+      !!pack.currentVersion &&
+      normalizeVersion(pack.currentVersion) !== latestVersion;
 
     // Find first .zip asset (datapack downloads)
-    const asset = release.assets?.find((a: { name: string }) =>
+    const asset = release.assets?.find((a) =>
       a.name.endsWith('.zip') || a.name.endsWith('.jar')
     );
 

@@ -50,7 +50,7 @@ export const DATAPACKS: DatapackMeta[] = [
     category:       'COMBAT',
     source:         'modrinth',
     modrinthSlug:   'call-of-the-king',
-    currentVersion: 'v1.1',
+    currentVersion: '1.1',
     gameVersion:    '1.21.11',
   },
   {
@@ -100,7 +100,7 @@ export const DATAPACKS: DatapackMeta[] = [
     category:       'SURVIVAL',
     source:         'modrinth',
     modrinthSlug:   'ly-graves',
-    currentVersion: 'v3.0.0',
+    currentVersion: '3.0.0',
     gameVersion:    '26.1',
   },
   {
@@ -140,7 +140,7 @@ export const DATAPACKS: DatapackMeta[] = [
     category:       'QOL',
     source:         'modrinth',
     modrinthSlug:   'waystones-data-pack',
-    currentVersion: 'V.3.5.1',
+    currentVersion: '3.5.1',
     gameVersion:    '26.1',
   },
   {

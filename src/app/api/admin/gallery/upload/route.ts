@@ -1,13 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { readGallery, writeGallery, type GalleryPhoto } from '@/lib/gallery';
+import { readGallery, writeGallery, hasBlob, type GalleryPhoto } from '@/lib/gallery';
 import { requireAdmin, unauthorizedResponse } from '@/lib/auth';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { randomUUID } from 'crypto';
-
-function hasBlob(): boolean {
-  return !!process.env.BLOB_READ_WRITE_TOKEN;
-}
 
 export async function POST(req: NextRequest) {
   if (!(await requireAdmin())) return unauthorizedResponse();

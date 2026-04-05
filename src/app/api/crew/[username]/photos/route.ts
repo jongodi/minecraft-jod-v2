@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { readProfile, writeProfile, getCrewSession, type CrewPhoto } from '@/lib/crew';
+import { hasBlob } from '@/lib/gallery';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { randomUUID } from 'crypto';
-
-function hasBlob(): boolean {
-  return !!process.env.BLOB_READ_WRITE_TOKEN;
-}
 
 export async function POST(
   req: NextRequest,
