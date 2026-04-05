@@ -1,83 +1,208 @@
 'use client';
 
-import { motion } from 'framer-motion';
-import { useCallback, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useCallback, useState, useEffect, useRef } from 'react';
+import type { GalleryPhoto } from '@/lib/gallery';
 
-interface GalleryItem {
-  id:       number;
-  label:    string;
-  sublabel: string;
-  gradient: string;
-  photo:    string;
+// ─── Lightbox ─────────────────────────────────────────────────────────────────
+
+function Lightbox({
+  photos,
+  currentIndex,
+  onClose,
+  onPrev,
+  onNext,
+}: {
+  photos:       GalleryPhoto[];
+  currentIndex: number;
+  onClose:      () => void;
+  onPrev:       () => void;
+  onNext:       () => void;
+}) {
+  const photo = photos[currentIndex];
+  const touchStartX = useRef<number | null>(null);
+
+  // Keyboard navigation
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape')      onClose();
+      if (e.key === 'ArrowLeft')   onPrev();
+      if (e.key === 'ArrowRight')  onNext();
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose, onPrev, onNext]);
+
+  // Prevent body scroll while lightbox is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
+
+  function onTouchStart(e: React.TouchEvent) {
+    touchStartX.current = e.touches[0].clientX;
+  }
+  function onTouchEnd(e: React.TouchEvent) {
+    if (touchStartX.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    if (dx > 60)       onPrev();
+    else if (dx < -60) onNext();
+    touchStartX.current = null;
+  }
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        key="lightbox-overlay"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+        style={{
+          position:       'fixed',
+          inset:          0,
+          zIndex:         9999,
+          background:     'rgba(0,0,0,0.95)',
+          display:        'flex',
+          alignItems:     'center',
+          justifyContent: 'center',
+          flexDirection:  'column',
+          gap:            '1rem',
+        }}
+        onClick={onClose}
+      >
+        {/* Image */}
+        <motion.div
+          key={currentIndex}
+          initial={{ opacity: 0, scale: 0.96 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.25 }}
+          onClick={e => e.stopPropagation()}
+          style={{
+            position:  'relative',
+            maxWidth:  'min(95vw, 1400px)',
+            maxHeight: '80vh',
+            width:     '100%',
+          }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={photo.filename}
+            alt={photo.title}
+            style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', maxHeight: '80vh' }}
+          />
+
+          {/* Previous button */}
+          <button
+            onClick={(e) => { e.stopPropagation(); onPrev(); }}
+            style={{
+              position:  'absolute',
+              left:      '-3.5rem',
+              top:       '50%',
+              transform: 'translateY(-50%)',
+              background: '#0d0d0d',
+              border:    '1px solid #2a2a2a',
+              color:     '#ccc',
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize:  '1.2rem',
+              width:     '2.5rem',
+              height:    '2.5rem',
+              cursor:    'pointer',
+              display:   'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            ‹
+          </button>
+
+          {/* Next button */}
+          <button
+            onClick={(e) => { e.stopPropagation(); onNext(); }}
+            style={{
+              position:  'absolute',
+              right:     '-3.5rem',
+              top:       '50%',
+              transform: 'translateY(-50%)',
+              background: '#0d0d0d',
+              border:    '1px solid #2a2a2a',
+              color:     '#ccc',
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize:  '1.2rem',
+              width:     '2.5rem',
+              height:    '2.5rem',
+              cursor:    'pointer',
+              display:   'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            ›
+          </button>
+        </motion.div>
+
+        {/* Caption */}
+        <div onClick={e => e.stopPropagation()} style={{ textAlign: 'center' }}>
+          {photo.sublabel && (
+            <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.55rem', letterSpacing: '0.3em', color: '#00ff4166', textTransform: 'uppercase', marginBottom: '0.2rem' }}>
+              {photo.sublabel}
+            </p>
+          )}
+          <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 'clamp(0.9rem, 2vw, 1.2rem)', fontWeight: 700, color: '#f0f0f0', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+            {photo.title}
+          </p>
+          <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.5rem', color: '#333', marginTop: '0.4rem', letterSpacing: '0.2em' }}>
+            {currentIndex + 1} / {photos.length} · ESC to close · ← → to navigate
+          </p>
+        </div>
+
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          style={{
+            position:   'fixed',
+            top:        '1rem',
+            right:      '1rem',
+            background: '#0d0d0d',
+            border:     '1px solid #2a2a2a',
+            color:      '#666',
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize:   '0.7rem',
+            padding:    '0.4rem 0.7rem',
+            cursor:     'pointer',
+            letterSpacing: '0.1em',
+          }}
+        >
+          ESC ✕
+        </button>
+      </motion.div>
+    </AnimatePresence>
+  );
 }
 
-const GALLERY_ITEMS: GalleryItem[] = [
-  {
-    id: 1, label: 'GOÐI CASTLE', sublabel: 'FAR AWAY LANDS',
-    gradient: 'linear-gradient(160deg, #87ceeb 0%, #6ba8d4 20%, #4a7a5a 45%, #3a5a3a 65%, #555a55 85%, #404040 100%)',
-    photo: '/screenshots/the-castle.png',
-  },
-  {
-    id: 2, label: 'JOÐ VILLE', sublabel: 'OLD BASE',
-    gradient: 'linear-gradient(160deg, #87ceeb 0%, #6ba8d4 20%, #c8a0b8 45%, #5a9a6a 65%, #7a7a6a 85%, #555045 100%)',
-    photo: '/screenshots/spawn-hill.png',
-  },
-  {
-    id: 3, label: 'PINK ESTATE', sublabel: 'OLD BASE',
-    gradient: 'linear-gradient(160deg, #87ceeb 0%, #c8a0b8 20%, #d4789a 45%, #c06888 65%, #a85878 85%, #903060 100%)',
-    photo: '/screenshots/cherry-estate.png',
-  },
-  {
-    id: 4, label: 'J CLUB', sublabel: 'SECRET UNDERGROUND CLUB',
-    gradient: 'linear-gradient(160deg, #050308 0%, #120820 25%, #1e0a30 50%, #2d1048 70%, #1a0828 100%)',
-    photo: '/screenshots/j-club.png',
-  },
-  {
-    id: 5, label: 'MUSHROOM ISLAND', sublabel: 'SHROOMY HEAVEN',
-    gradient: 'linear-gradient(160deg, #87ceeb 0%, #6ba8d4 20%, #cc2222 45%, #aa1818 65%, #1a3860 80%, #081828 100%)',
-    photo: '/screenshots/mushroom-isle.png',
-  },
-  {
-    id: 6, label: 'POTIONS TOWER', sublabel: 'NEW BASE',
-    gradient: 'linear-gradient(160deg, #1e1810 0%, #302820 25%, #483828 50%, #605040 70%, #786858 100%)',
-    photo: '/screenshots/the-hall.png',
-  },
-  {
-    id: 7, label: 'VENICE', sublabel: 'NEW BASE',
-    gradient: 'linear-gradient(160deg, #87ceeb 0%, #c87840 25%, #a86030 45%, #284e78 65%, #183060 85%, #0a1828 100%)',
-    photo: '/screenshots/waterfront.png',
-  },
-  {
-    id: 8, label: 'CITY HALL', sublabel: 'NEW BASE',
-    gradient: 'linear-gradient(160deg, #87ceeb 0%, #6ba8d4 20%, #7a5a30 45%, #504020 65%, #3a3018 85%, #252010 100%)',
-    photo: '/screenshots/the-tavern.png',
-  },
-  {
-    id: 9, label: 'THE VILLAGE', sublabel: 'NEW BASE',
-    gradient: 'linear-gradient(160deg, #87ceeb 0%, #6ba8d4 20%, #6a8a40 40%, #4a6a28 60%, #7a5a30 80%, #503818 100%)',
-    photo: '/screenshots/the-village.png',
-  },
-  {
-    id: 10, label: 'BALLOON PARADISE', sublabel: 'NEW BASE',
-    gradient: 'linear-gradient(160deg, #87ceeb 0%, #a8d4f0 20%, #6bc8f0 40%, #4a9a6a 65%, #387850 85%, #204830 100%)',
-    photo: '/screenshots/balloon-island.png',
-  },
-  {
-    id: 11, label: 'NEW TOWN', sublabel: 'NEW BASE',
-    gradient: 'linear-gradient(160deg, #020408 0%, #080d18 20%, #0d1525 40%, #1a2a40 60%, #102030 80%, #050a12 100%)',
-    photo: '/screenshots/night-sky.png',
-  },
-];
+// ─── Single gallery card ──────────────────────────────────────────────────────
 
-/* ── Single card with 3D tilt + green spotlight ─────────────── */
-function GalleryCard({ item, index }: { item: GalleryItem; index: number }) {
+function GalleryCard({
+  item,
+  index,
+  totalCount,
+  onClick,
+}: {
+  item:       GalleryPhoto;
+  index:      number;
+  totalCount: number;
+  onClick:    () => void;
+}) {
   const [hovered,  setHovered]  = useState(false);
   const [tilt,     setTilt]     = useState({ x: 0, y: 0 });
   const [glow,     setGlow]     = useState({ x: 50, y: 50 });
 
   const onMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    const rx   = (e.clientX - rect.left) / rect.width  - 0.5; // −0.5 … +0.5
+    const rx   = (e.clientX - rect.left) / rect.width  - 0.5;
     const ry   = (e.clientY - rect.top)  / rect.height - 0.5;
     setTilt({ x: rx * 14, y: ry * -14 });
     setGlow({
@@ -101,9 +226,9 @@ function GalleryCard({ item, index }: { item: GalleryItem; index: number }) {
       onMouseEnter={() => setHovered(true)}
       onMouseMove={onMove}
       onMouseLeave={onLeave}
+      onClick={onClick}
       data-cursor="hover"
       style={{
-        /* Force every card to identical 16:9 size */
         position:       'relative',
         aspectRatio:    '16 / 9',
         overflow:       'hidden',
@@ -117,13 +242,14 @@ function GalleryCard({ item, index }: { item: GalleryItem; index: number }) {
           : '0 4px 16px rgba(0,0,0,0.4)',
         willChange:     'transform',
         transformStyle: 'preserve-3d',
+        cursor:         'pointer',
       }}
     >
-      {/* Photo — hidden by default, revealed on hover */}
+      {/* Photo */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={item.photo}
-        alt={item.label}
+        src={item.filename}
+        alt={item.title}
         style={{
           position:       'absolute',
           inset:          0,
@@ -138,70 +264,60 @@ function GalleryCard({ item, index }: { item: GalleryItem; index: number }) {
         }}
       />
 
-      {/* Gradient color layer — shown by default, fades on hover */}
-      <div
-        style={{
-          position:      'absolute',
-          inset:         0,
-          background:    item.gradient,
-          opacity:       hovered ? 0 : 1,
-          transition:    'opacity 0.45s ease',
-          pointerEvents: 'none',
-        }}
-      />
+      {/* Gradient color layer */}
+      <div style={{
+        position:      'absolute',
+        inset:         0,
+        background:    item.gradient,
+        opacity:       hovered ? 0 : 1,
+        transition:    'opacity 0.45s ease',
+        pointerEvents: 'none',
+      }} />
 
-      {/* Green spotlight glow (follows mouse) */}
-      <div
-        style={{
-          position:      'absolute',
-          inset:         0,
-          background:    `radial-gradient(circle at ${glow.x}% ${glow.y}%, rgba(0,255,65,0.10) 0%, transparent 62%)`,
-          opacity:       hovered ? 1 : 0,
-          transition:    'opacity 0.3s ease',
-          pointerEvents: 'none',
-          zIndex:        2,
-        }}
-      />
+      {/* Green spotlight glow */}
+      <div style={{
+        position:      'absolute',
+        inset:         0,
+        background:    `radial-gradient(circle at ${glow.x}% ${glow.y}%, rgba(0,255,65,0.10) 0%, transparent 62%)`,
+        opacity:       hovered ? 1 : 0,
+        transition:    'opacity 0.3s ease',
+        pointerEvents: 'none',
+        zIndex:        2,
+      }} />
 
       {/* Noise texture */}
-      <div
-        style={{
-          position:           'absolute',
-          inset:              0,
-          backgroundImage:    "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 128 128' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
-          opacity:            hovered ? 0 : 0.06,
-          transition:         'opacity 0.45s ease',
-          pointerEvents:      'none',
-          zIndex:             3,
-        }}
-      />
+      <div style={{
+        position:        'absolute',
+        inset:           0,
+        backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 128 128' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
+        opacity:         hovered ? 0 : 0.06,
+        transition:      'opacity 0.45s ease',
+        pointerEvents:   'none',
+        zIndex:          3,
+      }} />
 
       {/* Bottom gradient for label legibility */}
-      <div
-        style={{
-          position:      'absolute',
-          bottom:        0, left: 0, right: 0,
-          height:        '65%',
-          background:    'linear-gradient(to top, rgba(8,8,8,0.92) 0%, rgba(8,8,8,0.4) 50%, transparent 100%)',
-          pointerEvents: 'none',
-          zIndex:        4,
-        }}
-      />
+      <div style={{
+        position:      'absolute',
+        bottom: 0, left: 0, right: 0,
+        height:        '65%',
+        background:    'linear-gradient(to top, rgba(8,8,8,0.92) 0%, rgba(8,8,8,0.4) 50%, transparent 100%)',
+        pointerEvents: 'none',
+        zIndex:        4,
+      }} />
 
       {/* Labels */}
-      <div
-        style={{
-          position:   'absolute',
-          bottom:     '1rem',
-          left:       '1rem',
-          right:      '1rem',
-          zIndex:     5,
-          transform:  hovered ? 'translateY(0)' : 'translateY(4px)',
-          transition: 'transform 0.4s cubic-bezier(0.16,1,0.3,1)',
-        }}
-      >
-        <p
-          style={{
+      <div style={{
+        position:   'absolute',
+        bottom:     '1rem',
+        left:       '1rem',
+        right:      '1rem',
+        zIndex:     5,
+        transform:  hovered ? 'translateY(0)' : 'translateY(4px)',
+        transition: 'transform 0.4s cubic-bezier(0.16,1,0.3,1)',
+      }}>
+        {item.sublabel && (
+          <p style={{
             fontFamily:    "'JetBrains Mono', monospace",
             fontSize:      '0.5rem',
             letterSpacing: '0.25em',
@@ -209,149 +325,208 @@ function GalleryCard({ item, index }: { item: GalleryItem; index: number }) {
             textTransform: 'uppercase',
             marginBottom:  '0.2rem',
             transition:    'color 0.4s ease',
-          }}
-        >
-          {item.sublabel}
-        </p>
-        <p
-          style={{
-            fontFamily:    "'Space Grotesk', sans-serif",
-            fontSize:      'clamp(0.8rem, 1.6vw, 1rem)',
-            fontWeight:    700,
-            letterSpacing: '0.05em',
-            color:         '#f0f0f0',
-            textTransform: 'uppercase',
-          }}
-        >
-          {item.label}
+          }}>
+            {item.sublabel}
+          </p>
+        )}
+        <p style={{
+          fontFamily:    "'Space Grotesk', sans-serif",
+          fontSize:      'clamp(0.8rem, 1.6vw, 1rem)',
+          fontWeight:    700,
+          letterSpacing: '0.05em',
+          color:         '#f0f0f0',
+          textTransform: 'uppercase',
+        }}>
+          {item.title}
         </p>
       </div>
 
       {/* Index top-right */}
-      <div
-        style={{
-          position:      'absolute',
-          top:           '0.75rem',
-          right:         '0.75rem',
-          fontFamily:    "'JetBrains Mono', monospace",
-          fontSize:      '0.5rem',
-          color:         'rgba(255,255,255,0.2)',
-          letterSpacing: '0.1em',
-          zIndex:        5,
-        }}
-      >
-        {String(item.id).padStart(2, '0')} / {String(GALLERY_ITEMS.length).padStart(2, '0')}
+      <div style={{
+        position:      'absolute',
+        top:           '0.75rem',
+        right:         '0.75rem',
+        fontFamily:    "'JetBrains Mono', monospace",
+        fontSize:      '0.5rem',
+        color:         'rgba(255,255,255,0.2)',
+        letterSpacing: '0.1em',
+        zIndex:        5,
+      }}>
+        {String(index + 1).padStart(2, '0')} / {String(totalCount).padStart(2, '0')}
+      </div>
+
+      {/* Expand hint on hover */}
+      <div style={{
+        position:      'absolute',
+        top:           '0.75rem',
+        left:          '0.75rem',
+        fontFamily:    "'JetBrains Mono', monospace",
+        fontSize:      '0.45rem',
+        color:         hovered ? 'rgba(0,255,65,0.5)' : 'transparent',
+        letterSpacing: '0.2em',
+        zIndex:        5,
+        transition:    'color 0.3s ease',
+      }}>
+        CLICK TO EXPAND
       </div>
 
       {/* Green border glow inset */}
-      <div
-        style={{
-          position:      'absolute',
-          inset:         0,
-          border:        `1px solid rgba(0,255,65,${hovered ? 0.28 : 0})`,
-          transition:    'border-color 0.4s ease',
-          pointerEvents: 'none',
-          zIndex:        6,
-        }}
-      />
+      <div style={{
+        position:      'absolute',
+        inset:         0,
+        border:        `1px solid rgba(0,255,65,${hovered ? 0.28 : 0})`,
+        transition:    'border-color 0.4s ease',
+        pointerEvents: 'none',
+        zIndex:        6,
+      }} />
     </motion.div>
   );
 }
 
+// ─── Section ──────────────────────────────────────────────────────────────────
+
+// Static fallback data so the gallery works even without the API (e.g. static export)
+const STATIC_FALLBACK: GalleryPhoto[] = [
+  { id:'1',  filename:'/screenshots/the-castle.png',    title:'GOÐI CASTLE',       sublabel:'FAR AWAY LANDS',          gradient:'linear-gradient(160deg,#87ceeb 0%,#6ba8d4 20%,#4a7a5a 45%,#3a5a3a 65%,#555a55 85%,#404040 100%)',          active:true, order:1  },
+  { id:'2',  filename:'/screenshots/spawn-hill.png',    title:'JOÐ VILLE',         sublabel:'OLD BASE',                gradient:'linear-gradient(160deg,#87ceeb 0%,#6ba8d4 20%,#c8a0b8 45%,#5a9a6a 65%,#7a7a6a 85%,#555045 100%)',          active:true, order:2  },
+  { id:'3',  filename:'/screenshots/cherry-estate.png', title:'PINK ESTATE',       sublabel:'OLD BASE',                gradient:'linear-gradient(160deg,#87ceeb 0%,#c8a0b8 20%,#d4789a 45%,#c06888 65%,#a85878 85%,#903060 100%)',           active:true, order:3  },
+  { id:'4',  filename:'/screenshots/j-club.png',        title:'J CLUB',            sublabel:'SECRET UNDERGROUND CLUB', gradient:'linear-gradient(160deg,#050308 0%,#120820 25%,#1e0a30 50%,#2d1048 70%,#1a0828 100%)',                        active:true, order:4  },
+  { id:'5',  filename:'/screenshots/mushroom-isle.png', title:'MUSHROOM ISLAND',   sublabel:'SHROOMY HEAVEN',          gradient:'linear-gradient(160deg,#87ceeb 0%,#6ba8d4 20%,#cc2222 45%,#aa1818 65%,#1a3860 80%,#081828 100%)',           active:true, order:5  },
+  { id:'6',  filename:'/screenshots/the-hall.png',      title:'POTIONS TOWER',     sublabel:'NEW BASE',                gradient:'linear-gradient(160deg,#1e1810 0%,#302820 25%,#483828 50%,#605040 70%,#786858 100%)',                        active:true, order:6  },
+  { id:'7',  filename:'/screenshots/waterfront.png',    title:'VENICE',            sublabel:'NEW BASE',                gradient:'linear-gradient(160deg,#87ceeb 0%,#c87840 25%,#a86030 45%,#284e78 65%,#183060 85%,#0a1828 100%)',           active:true, order:7  },
+  { id:'8',  filename:'/screenshots/the-tavern.png',    title:'CITY HALL',         sublabel:'NEW BASE',                gradient:'linear-gradient(160deg,#87ceeb 0%,#6ba8d4 20%,#7a5a30 45%,#504020 65%,#3a3018 85%,#252010 100%)',           active:true, order:8  },
+  { id:'9',  filename:'/screenshots/the-village.png',   title:'THE VILLAGE',       sublabel:'NEW BASE',                gradient:'linear-gradient(160deg,#87ceeb 0%,#6ba8d4 20%,#6a8a40 40%,#4a6a28 60%,#7a5a30 80%,#503818 100%)',           active:true, order:9  },
+  { id:'10', filename:'/screenshots/balloon-island.png',title:'BALLOON PARADISE',  sublabel:'NEW BASE',                gradient:'linear-gradient(160deg,#87ceeb 0%,#a8d4f0 20%,#6bc8f0 40%,#4a9a6a 65%,#387850 85%,#204830 100%)',           active:true, order:10 },
+  { id:'11', filename:'/screenshots/night-sky.png',     title:'NEW TOWN',          sublabel:'NEW BASE',                gradient:'linear-gradient(160deg,#020408 0%,#080d18 20%,#0d1525 40%,#1a2a40 60%,#102030 80%,#050a12 100%)',            active:true, order:11 },
+];
+
 export default function GallerySection() {
+  const [photos,       setPhotos]       = useState<GalleryPhoto[]>(STATIC_FALLBACK);
+  const [lightboxIdx,  setLightboxIdx]  = useState<number | null>(null);
+
+  useEffect(() => {
+    fetch('/api/gallery')
+      .then(r => r.ok ? r.json() : null)
+      .then((data: GalleryPhoto[] | null) => { if (data?.length) setPhotos(data); })
+      .catch(() => {/* keep fallback */});
+  }, []);
+
+  const openLightbox = useCallback((index: number) => setLightboxIdx(index), []);
+  const closeLightbox = useCallback(() => setLightboxIdx(null), []);
+  const prevPhoto = useCallback(() => setLightboxIdx(i => i !== null ? (i - 1 + photos.length) % photos.length : null), [photos.length]);
+  const nextPhoto = useCallback(() => setLightboxIdx(i => i !== null ? (i + 1) % photos.length : null), [photos.length]);
+
   return (
-    <section
-      style={{
-        padding:      'clamp(4rem, 10vw, 8rem) clamp(1.5rem, 6vw, 5rem)',
-        borderBottom: '1px solid #1a1a1a',
-        overflow:     'hidden',
-        background:   '#080808',
-      }}
-    >
-      {/* Header */}
-      <div style={{ marginBottom: 'clamp(2rem, 4vw, 3rem)' }}>
-        <motion.p
-          initial={{ opacity: 0, x: -16 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          style={{
-            fontFamily:    "'JetBrains Mono', monospace",
-            fontSize:      '0.65rem',
-            letterSpacing: '0.3em',
-            color:         '#00ff41',
-            textTransform: 'uppercase',
-            marginBottom:  '0.75rem',
-          }}
-        >
-          02 — THE WORLD
-        </motion.p>
+    <>
+      {/* Lightbox */}
+      {lightboxIdx !== null && (
+        <Lightbox
+          photos={photos}
+          currentIndex={lightboxIdx}
+          onClose={closeLightbox}
+          onPrev={prevPhoto}
+          onNext={nextPhoto}
+        />
+      )}
 
-        <motion.h2
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-          style={{
-            fontFamily:    "'Space Grotesk', sans-serif",
-            fontSize:      'clamp(2.5rem, 6vw, 5rem)',
-            fontWeight:    900,
-            letterSpacing: '-0.03em',
-            color:         '#f0f0f0',
-            lineHeight:    1,
-          }}
-        >
-          THE WORLD
-        </motion.h2>
+      <section
+        id="gallery"
+        style={{
+          padding:      'clamp(4rem, 10vw, 8rem) clamp(1.5rem, 6vw, 5rem)',
+          borderBottom: '1px solid #1a1a1a',
+          overflow:     'hidden',
+          background:   '#080808',
+        }}
+      >
+        {/* Header */}
+        <div style={{ marginBottom: 'clamp(2rem, 4vw, 3rem)' }}>
+          <motion.p
+            initial={{ opacity: 0, x: -16 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            style={{
+              fontFamily:    "'JetBrains Mono', monospace",
+              fontSize:      '0.65rem',
+              letterSpacing: '0.3em',
+              color:         '#00ff41',
+              textTransform: 'uppercase',
+              marginBottom:  '0.75rem',
+            }}
+          >
+            02 — THE WORLD
+          </motion.p>
 
-        <motion.p
+          <motion.h2
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+            style={{
+              fontFamily:    "'Space Grotesk', sans-serif",
+              fontSize:      'clamp(2.5rem, 6vw, 5rem)',
+              fontWeight:    900,
+              letterSpacing: '-0.03em',
+              color:         '#f0f0f0',
+              lineHeight:    1,
+            }}
+          >
+            THE WORLD
+          </motion.h2>
+
+          <motion.p
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.25 }}
+            style={{
+              marginTop:     '0.75rem',
+              fontFamily:    "'JetBrains Mono', monospace",
+              fontSize:      '0.65rem',
+              color:         '#333',
+              letterSpacing: '0.15em',
+              textTransform: 'uppercase',
+            }}
+          >
+            HOVER TO REVEAL · CLICK TO EXPAND · {photos.length} LOCATIONS
+          </motion.p>
+        </div>
+
+        {/* Grid */}
+        <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.25 }}
+          transition={{ duration: 0.5, delay: 0.15 }}
           style={{
-            marginTop:     '0.75rem',
-            fontFamily:    "'JetBrains Mono', monospace",
-            fontSize:      '0.65rem',
-            color:         '#333',
-            letterSpacing: '0.15em',
-            textTransform: 'uppercase',
+            display:             'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(min(340px, 100%), 1fr))',
+            gap:                 'clamp(0.5rem, 1.2vw, 1rem)',
           }}
         >
-          HOVER TO REVEAL · 11 LOCATIONS
-        </motion.p>
-      </div>
+          {photos.map((item, i) => (
+            <GalleryCard
+              key={item.id}
+              item={item}
+              index={i}
+              totalCount={photos.length}
+              onClick={() => openLightbox(i)}
+            />
+          ))}
+        </motion.div>
 
-      {/* Grid — all cards at 16:9 (same size) */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.5, delay: 0.15 }}
-        style={{
-          display:             'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(min(340px, 100%), 1fr))',
-          gap:                 'clamp(0.5rem, 1.2vw, 1rem)',
-        }}
-      >
-        {GALLERY_ITEMS.map((item, i) => (
-          <GalleryCard key={item.id} item={item} index={i} />
-        ))}
-      </motion.div>
-
-      {/* Bottom label */}
-      <p
-        style={{
+        {/* Bottom label */}
+        <p style={{
           paddingTop:    '1.5rem',
           fontFamily:    "'JetBrains Mono', monospace",
           fontSize:      '0.55rem',
           color:         '#2a2a2a',
           letterSpacing: '0.15em',
           textTransform: 'uppercase',
-        }}
-      >
-        SCREENSHOTS FROM JOD — play.jodcraft.world
-      </p>
-    </section>
+        }}>
+          SCREENSHOTS FROM JOD — play.jodcraft.world
+        </p>
+      </section>
+    </>
   );
 }

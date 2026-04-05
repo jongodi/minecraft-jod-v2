@@ -87,6 +87,7 @@ export default function HeroSection() {
   /* ── Render ─────────────────────────────────────────────────── */
   return (
     <section
+      id="hero"
       style={{
         position:       'relative',
         height:         '100vh',

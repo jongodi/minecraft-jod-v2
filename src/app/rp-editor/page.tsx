@@ -234,8 +234,10 @@ function buildTree(paths:string[]){
   return root;
 }
 
-const TreeNode=memo(function TreeNode({name,node,path,depth,selected,onSelect}:any){
+const TreeNode=memo(function TreeNode({name,node,path,depth,selected,onSelect,onRename}:any){
   const[open,setOpen]=useState(depth<2);
+  const[editing,setEditing]=useState(false);
+  const[editName,setEditName]=useState(name);
   const isDir=node!==null&&typeof node==='object';
   const full=path?`${path}/${name}`:name;
   const ext=name.split('.').pop().toLowerCase();
@@ -247,12 +249,38 @@ const TreeNode=memo(function TreeNode({name,node,path,depth,selected,onSelect}:a
         <span style={{color:TEXT2}}>{name}</span>
       </div>
       {open&&Object.entries(node).sort(([,a],[,b]:any)=>(typeof a==='object'&&a!==null?-1:0)-(typeof b==='object'&&b!==null?-1:0)).map(([k,v])=>(
-        <TreeNode key={k} name={k} node={v} path={full} depth={depth+1} selected={selected} onSelect={onSelect}/>
+        <TreeNode key={k} name={k} node={v} path={full} depth={depth+1} selected={selected} onSelect={onSelect} onRename={onRename}/>
       ))}
     </div>
   );
+  if(editing){
+    return(
+      <div className="tree-node" style={{"--depth":depth} as any}>
+        <input
+          autoFocus
+          value={editName}
+          onChange={e=>setEditName(e.target.value)}
+          onBlur={()=>{
+            const newName=editName.trim();
+            if(newName&&newName!==name)onRename?.(full,path?`${path}/${newName}`:newName);
+            setEditing(false);
+          }}
+          onKeyDown={e=>{
+            if(e.key==='Enter'){e.currentTarget.blur();}
+            if(e.key==='Escape'){setEditName(name);setEditing(false);}
+          }}
+          style={{background:BG3,border:`1px solid ${ACCENT}`,color:TEXT,fontFamily:'inherit',fontSize:12,padding:'1px 4px',outline:'none',width:'calc(100% - 20px)',flex:1}}
+          onClick={e=>e.stopPropagation()}
+        />
+      </div>
+    );
+  }
   return(
-    <div className={`tree-node${selected===full?' selected':''}`} style={{"--depth":depth} as any} onClick={()=>onSelect(full)}>
+    <div className={`tree-node${selected===full?' selected':''}`} style={{"--depth":depth} as any}
+      onClick={()=>onSelect(full)}
+      onDoubleClick={e=>{e.stopPropagation();setEditName(name);setEditing(true);}}
+      title="Double-click to rename"
+    >
       <span style={{color:ext==='png'?ACCENT2:ext==='ogg'?'#a78bfa':ext==='json'?WARN:DIM,fontSize:11,flexShrink:0}}>{icon}</span>
       <span>{name}</span>
     </div>
@@ -297,10 +325,22 @@ const TOOLS=[
   {id:"picker",label:"✦ Pick"},
   {id:"select",label:"▣ Select"},
 ];
+const PALETTE_KEY='jod_rp_palette';
+const PALETTE_SIZE=16;
+function loadPalette():string[]{
+  try{const s=localStorage.getItem(PALETTE_KEY);if(s)return JSON.parse(s);}catch{}
+  return Array(PALETTE_SIZE).fill('');
+}
+function savePaletteStorage(p:string[]){try{localStorage.setItem(PALETTE_KEY,JSON.stringify(p));}catch{}}
+
 function PixelPainter({dataUrl,onSave,compact}:any){
   const canvasRef=useRef<any>();const overlayRef=useRef<any>();
   const[scale,setScale]=useState(8);const[color,setColor]=useState("#4ade80");
   const[tool,setTool]=useState("pen");const[painting,setPainting]=useState(false);
+  const[palette,setPalette]=useState<string[]>(()=>loadPalette());
+  const[showHistory,setShowHistory]=useState(false);
+  const[showShortcuts,setShowShortcuts]=useState(false);
+  const historyLabelsRef=useRef<string[]>([]);
 
   // Undo/redo
   const historyRef=useRef<ImageData[]>([]);
@@ -361,11 +401,13 @@ function PixelPainter({dataUrl,onSave,compact}:any){
     setCanRedo(historyIdxRef.current<historyRef.current.length-1);
   },[]);
 
-  const pushHistory=useCallback(()=>{
+  const pushHistory=useCallback((label='Edit')=>{
     const c=canvasRef.current;if(!c)return;
     const snap=c.getContext("2d")!.getImageData(0,0,c.width,c.height);
     historyRef.current=historyRef.current.slice(0,historyIdxRef.current+1);
+    historyLabelsRef.current=historyLabelsRef.current.slice(0,historyIdxRef.current+1);
     historyRef.current.push(snap);
+    historyLabelsRef.current.push(label);
     historyIdxRef.current=historyRef.current.length-1;
     syncButtons();
   },[syncButtons]);
@@ -403,12 +445,27 @@ function PixelPainter({dataUrl,onSave,compact}:any){
 
   useEffect(()=>{
     const h=(e:KeyboardEvent)=>{
+      // Ignore if typing in an input/textarea
+      const tag=(e.target as HTMLElement).tagName;
+      if(tag==='INPUT'||tag==='TEXTAREA')return;
       if((e.ctrlKey||e.metaKey)&&e.key==='z'&&!e.shiftKey){e.preventDefault();undo();}
       if((e.ctrlKey||e.metaKey)&&(e.key==='y'||(e.key==='z'&&e.shiftKey))){e.preventDefault();redo();}
       if(e.key==='Escape'){selectionRef.current=null;setSelection(null);drawOverlayRef.current();}
+      // Tool hotkeys
+      const k=e.key.toLowerCase();
+      if(!e.ctrlKey&&!e.metaKey&&!e.altKey){
+        if(k==='b'){setTool('pen');selectionRef.current=null;setSelection(null);}
+        if(k==='e'){setTool('eraser');selectionRef.current=null;setSelection(null);}
+        if(k==='f'){setTool('fill');selectionRef.current=null;setSelection(null);}
+        if(k==='l'){setTool('line');selectionRef.current=null;setSelection(null);}
+        if(k==='r'){setTool('rect');selectionRef.current=null;setSelection(null);}
+        if(k==='p'){setTool('picker');selectionRef.current=null;setSelection(null);}
+        if(k==='s'&&!e.shiftKey){e.preventDefault();const c=canvasRef.current;if(c)onSave(c.toDataURL("image/png"));}
+        if(k==='?'||k=='/'){setShowShortcuts(v=>!v);}
+      }
     };
     window.addEventListener('keydown',h);return()=>window.removeEventListener('keydown',h);
-  },[undo,redo]);
+  },[undo,redo,onSave]);
 
   // ── Import helpers ──────────────────────────────────────────────────────────
   const renderImportPreview=useCallback((img:HTMLImageElement,block:number)=>{
@@ -471,7 +528,7 @@ function PixelPainter({dataUrl,onSave,compact}:any){
     } else if(tool==="fill"){
       if(px<0||py<0||px>=c.width||py>=c.height)return;
       floodFill(ctx,px,py,color,c.width,c.height);
-      pushHistory();drawOverlayRef.current();
+      pushHistory('Fill');drawOverlayRef.current();
     } else if(tool==="line"||tool==="rect"){
       if(px<0||py<0||px>=c.width||py>=c.height)return;
       dragStartRef.current={x:px,y:py};
@@ -514,10 +571,10 @@ function PixelPainter({dataUrl,onSave,compact}:any){
     const[px,py]=getPixel(e);
     const c=canvasRef.current;if(!c)return;
     if(tool==="pen"||tool==="eraser"){
-      if(paintedRef.current)pushHistory();
+      if(paintedRef.current)pushHistory(tool==="eraser"?"Erase":"Pen stroke");
       paintedRef.current=false;setPainting(false);
     } else if((tool==="line"||tool==="rect")&&dragStartRef.current){
-      pushHistory();dragStartRef.current=null;baseSnapRef.current=null;
+      pushHistory(tool==="line"?"Line":"Rectangle");dragStartRef.current=null;baseSnapRef.current=null;
     } else if(tool==="select"&&dragStartRef.current){
       const{x:sx,y:sy}=dragStartRef.current;
       const ex=Math.max(0,Math.min(c.width-1,px)),ey=Math.max(0,Math.min(c.height-1,py));
@@ -541,7 +598,7 @@ function PixelPainter({dataUrl,onSave,compact}:any){
     const ctx=c.getContext("2d")!;ctx.fillStyle=fillColor;
     const w=selection.x2-selection.x1+1,h=selection.y2-selection.y1+1;
     ctx.fillRect(selection.x1,selection.y1,w,h);
-    pushHistory();drawOverlayRef.current();
+    pushHistory('Fill selection');drawOverlayRef.current();
   },[selection,pushHistory]);
 
   const selClear=useCallback(()=>{
@@ -549,7 +606,7 @@ function PixelPainter({dataUrl,onSave,compact}:any){
     const ctx=c.getContext("2d")!;
     const w=selection.x2-selection.x1+1,h=selection.y2-selection.y1+1;
     ctx.clearRect(selection.x1,selection.y1,w,h);
-    pushHistory();drawOverlayRef.current();
+    pushHistory('Erase selection');drawOverlayRef.current();
   },[selection,pushHistory]);
 
   const selReplaceColor=useCallback(()=>{
@@ -563,7 +620,7 @@ function PixelPainter({dataUrl,onSave,compact}:any){
       if(d[i]===fr&&d[i+1]===fg&&d[i+2]===fb&&d[i+3]>0){d[i]=tr;d[i+1]=tg;d[i+2]=tb;d[i+3]=255;}
     }
     ctx.putImageData(img,selection.x1,selection.y1);
-    pushHistory();drawOverlayRef.current();
+    pushHistory('Replace color');drawOverlayRef.current();
   },[selection,replaceFrom,replaceTo,pushHistory]);
 
   const pickFromCanvas=(setter:(c:string)=>void)=>{
@@ -605,6 +662,31 @@ function PixelPainter({dataUrl,onSave,compact}:any){
         <div style={{marginLeft:"auto",display:"flex",gap:3}}>
           {[2,4,8,16].map(s=><button key={s} className={`btn sm${scale===s?" active":""}`} onClick={()=>changeScale(s)}>{s}x</button>)}
         </div>
+      </div>
+
+      {/* Color palette swatches */}
+      <div style={{display:'flex',alignItems:'center',gap:4,flexWrap:'wrap'}}>
+        <span style={{fontSize:9,color:DIM,letterSpacing:'2px',textTransform:'uppercase',flexShrink:0}}>Palette</span>
+        <div style={{display:'flex',gap:2,flexWrap:'wrap',flex:1}}>
+          {palette.map((c,i)=>(
+            <div key={i}
+              title={c||'Empty — click active color to save'}
+              onClick={()=>{if(c)setColor(c);}}
+              onContextMenu={e=>{e.preventDefault();if(c){const np=[...palette];np[i]='';setPalette(np);savePaletteStorage(np);}}}
+              style={{
+                width:16,height:16,background:c||BG3,border:`1px solid ${c?c+' ':BORDER}`,cursor:c?'pointer':'default',
+                flexShrink:0,boxSizing:'border-box',
+                outline:c===color?`1px solid ${ACCENT}`:'none',outlineOffset:1,
+              }}
+            />
+          ))}
+        </div>
+        <button className="btn sm" title="Save current color to palette" onClick={()=>{
+          const empty=palette.findIndex(c=>!c);
+          const idx=empty>=0?empty:palette.length-1;
+          const np=[...palette];np[idx]=color;
+          setPalette(np);savePaletteStorage(np);
+        }}>+ Save</button>
       </div>
 
       {/* Import panel */}
@@ -680,12 +762,60 @@ function PixelPainter({dataUrl,onSave,compact}:any){
         </div>
       )}
 
-      {/* Undo/redo */}
-      <div style={{display:"flex",gap:4,alignItems:"center"}}>
+      {/* Undo/redo + history panel */}
+      <div style={{display:"flex",gap:4,alignItems:"center",flexWrap:'wrap'}}>
         <button className="btn sm" onClick={undo} disabled={!canUndo} title="Undo (Ctrl+Z)" style={{opacity:canUndo?1:0.3,cursor:canUndo?'pointer':'default'}}>← Undo</button>
         <button className="btn sm" onClick={redo} disabled={!canRedo} title="Redo (Ctrl+Shift+Z)" style={{opacity:canRedo?1:0.3,cursor:canRedo?'pointer':'default'}}>Redo →</button>
-        <span style={{fontSize:9,color:DIM,marginLeft:2,letterSpacing:'1px'}}>{historyIdxRef.current}/{historyRef.current.length-1}</span>
+        <span style={{fontSize:9,color:DIM,marginLeft:2,letterSpacing:'1px'}}>{historyIdxRef.current+1}/{historyRef.current.length}</span>
+        <button className={`btn sm${showHistory?' active':''}`} style={{marginLeft:'auto'}} onClick={()=>setShowHistory(v=>!v)} title="History">⏱ History</button>
+        <button className={`btn sm${showShortcuts?' active':''}`} onClick={()=>setShowShortcuts(v=>!v)} title="Keyboard shortcuts (?)">? Keys</button>
       </div>
+
+      {/* History panel */}
+      {showHistory&&(
+        <div style={{background:BG2,border:`1px solid ${BORDER}`,maxHeight:160,overflowY:'auto',padding:'4px 0'}}>
+          <div style={{fontSize:9,color:DIM,letterSpacing:'2px',textTransform:'uppercase',padding:'4px 10px',borderBottom:`1px solid ${BORDER}`}}>
+            Action History ({historyRef.current.length})
+          </div>
+          {historyRef.current.map((_,i)=>(
+            <div key={i}
+              onClick={()=>{
+                const c=canvasRef.current;if(!c)return;
+                historyIdxRef.current=i;
+                c.getContext("2d")!.putImageData(historyRef.current[i],0,0);
+                drawOverlayRef.current();syncButtons();
+              }}
+              style={{
+                padding:'3px 10px',fontSize:10,cursor:'pointer',
+                background:historyIdxRef.current===i?'#0a1a0a':'transparent',
+                color:historyIdxRef.current===i?ACCENT:DIM,
+                borderLeft:historyIdxRef.current===i?`2px solid ${ACCENT}`:'2px solid transparent',
+              }}
+            >
+              {i===0?'Initial state':historyLabelsRef.current[i]||`Step ${i}`}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Keyboard shortcuts panel */}
+      {showShortcuts&&(
+        <div style={{background:BG2,border:`1px solid ${BORDER}`,padding:'10px 12px'}}>
+          <div style={{fontSize:9,color:DIM,letterSpacing:'2px',textTransform:'uppercase',marginBottom:8}}>Keyboard Shortcuts</div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'2px 16px',fontSize:10}}>
+            {[
+              ['B','Pen/Brush'],['E','Eraser'],['F','Fill'],['L','Line'],
+              ['R','Rectangle'],['P','Color Picker'],['S','Save to pack'],
+              ['Ctrl+Z','Undo'],['Ctrl+Shift+Z','Redo'],['Esc','Deselect'],['?','Toggle shortcuts'],
+            ].map(([k,v])=>(
+              <div key={k} style={{display:'flex',gap:8,alignItems:'center',padding:'2px 0'}}>
+                <kbd style={{background:BG3,border:`1px solid ${BORDER}`,padding:'1px 5px',fontSize:9,color:ACCENT,minWidth:24,textAlign:'center',flexShrink:0}}>{k}</kbd>
+                <span style={{color:TEXT2}}>{v}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <canvas ref={canvasRef} style={{display:"none"}}/>
       <div style={{overflow:"auto",maxHeight:compact?"calc(100vh - 280px)":"calc(100vh - 360px)",display:"inline-block",maxWidth:"100%",border:`1px solid ${BORDER}`,background:"#070910"}}>
@@ -820,10 +950,13 @@ function OverviewTab({analysis,fileCount,setMainTab}:any){
 }
 
 // ── TextureGrid ────────────────────────────────────────────────────────────────
-function TextureGrid({analysis,fileData,onOpenInEditor}:any){
+function TextureGrid({analysis,fileData,onOpenInEditor,onDeleteTextures}:any){
   const{textures,textureStatus,textureLinkedBy}=analysis;
   const[filter,setFilter]=useState('all');
   const[search,setSearch]=useState('');
+  const[selected,setSelected]=useState<Set<string>>(()=>new Set());
+  const[lastClicked,setLastClicked]=useState<string|null>(null);
+  const[selectMode,setSelectMode]=useState(false);
 
   const counts=useMemo(()=>({
     all:textures.length,
@@ -841,6 +974,31 @@ function TextureGrid({analysis,fileData,onOpenInEditor}:any){
 
   const LABELS:{[k:string]:string}={linked:'Linked by model',vanilla:'Vanilla name — uses MC default',unlinked:'Not linked to any model'};
 
+  function toggleSelect(path:string,e:React.MouseEvent){
+    if(e.shiftKey&&lastClicked){
+      const fromIdx=filtered.indexOf(lastClicked),toIdx=filtered.indexOf(path);
+      const lo=Math.min(fromIdx,toIdx),hi=Math.max(fromIdx,toIdx);
+      setSelected(s=>{const n=new Set(s);for(let i=lo;i<=hi;i++)n.add(filtered[i]);return n;});
+    }else{
+      setSelected(s=>{const n=new Set(s);if(n.has(path))n.delete(path);else n.add(path);return n;});
+    }
+    setLastClicked(path);
+  }
+
+  function deleteUnlinked(){
+    const unlinkedPaths=textures.filter((t:string)=>textureStatus[t]==='unlinked');
+    if(!unlinkedPaths.length)return;
+    if(!confirm(`Delete ${unlinkedPaths.length} unlinked texture${unlinkedPaths.length!==1?'s':''}? This cannot be undone.`))return;
+    onDeleteTextures?.(unlinkedPaths);
+  }
+
+  function deleteSelected(){
+    if(!selected.size)return;
+    if(!confirm(`Delete ${selected.size} selected texture${selected.size!==1?'s':''}?`))return;
+    onDeleteTextures?.([...selected]);
+    setSelected(new Set());
+  }
+
   return(
     <div style={{display:'flex',flexDirection:'column',height:'100%',overflow:'hidden'}}>
       <div className="filter-row">
@@ -851,7 +1009,30 @@ function TextureGrid({analysis,fileData,onOpenInEditor}:any){
           </button>
         ))}
         <input className="search" placeholder="Search textures…" value={search} onChange={e=>setSearch(e.target.value)}/>
+        <button className={`btn sm${selectMode?' active':''}`} onClick={()=>{setSelectMode(v=>!v);setSelected(new Set());}}>☑ Select</button>
+        {counts.unlinked>0&&(
+          <button className="btn sm danger" style={{borderColor:WARN+'44',color:WARN}} onClick={deleteUnlinked}
+            title={`Delete all ${counts.unlinked} unlinked textures`}>
+            Del unlinked ({counts.unlinked})
+          </button>
+        )}
       </div>
+
+      {/* Batch action bar */}
+      {selectMode&&selected.size>0&&(
+        <div style={{padding:'6px 12px',background:'#0a100a',borderBottom:`1px solid ${ACCENT}33`,display:'flex',gap:8,alignItems:'center',flexShrink:0}}>
+          <span style={{fontSize:10,color:ACCENT,letterSpacing:'1px'}}>{selected.size} selected</span>
+          <button className="btn sm danger" style={{borderColor:ERR+'44',color:ERR}} onClick={deleteSelected}>Delete selected</button>
+          <button className="btn sm" onClick={()=>{
+            selected.forEach(path=>{
+              const a=document.createElement('a');a.href=fileData[path];
+              a.download=path.split('/').pop()||'texture.png';a.click();
+            });
+          }}>Export selected</button>
+          <button className="btn sm" style={{marginLeft:'auto'}} onClick={()=>setSelected(new Set())}>Clear selection</button>
+        </div>
+      )}
+
       <div className="scroll-area">
         {filtered.length===0?(
           <div className="empty-state">No textures match the current filter</div>
@@ -860,9 +1041,18 @@ function TextureGrid({analysis,fileData,onOpenInEditor}:any){
             {filtered.map((path:string)=>{
               const st=textureStatus[path];
               const linkedBy=textureLinkedBy[path];
+              const isSel=selected.has(path);
               return(
-                <div key={path} className={`tex-card ${st}`} onClick={()=>onOpenInEditor(path)}
-                  title={`${path}\n${LABELS[st]}${linkedBy?.length?`\nUsed by: ${linkedBy.map((m:string)=>m.split('/').pop()).join(', ')}`:''}` }>
+                <div key={path} className={`tex-card ${st}`}
+                  onClick={e=>{
+                    if(selectMode){toggleSelect(path,e);}
+                    else onOpenInEditor(path);
+                  }}
+                  style={isSel?{outline:`2px solid ${ACCENT}`,outlineOffset:-2}:{}}
+                  title={`${path}\n${LABELS[st]}${linkedBy?.length?`\nUsed by: ${linkedBy.map((m:string)=>m.split('/').pop()).join(', ')}`:''}${selectMode?'\nClick to select, Shift+click for range':''}`}>
+                  {selectMode&&(
+                    <div style={{position:'absolute',top:4,left:4,width:12,height:12,background:isSel?ACCENT:BG3,border:`1px solid ${BORDER}`,zIndex:2,pointerEvents:'none'}}/>
+                  )}
                   <div className="tex-thumb">
                     <img src={fileData[path]} alt={path.split('/').pop()}/>
                   </div>
@@ -1147,6 +1337,121 @@ function IssuesView({analysis,fileData,onApplyFix,onApplyAllFixes,onOpenInEditor
   );
 }
 
+// ── PackDiffView ───────────────────────────────────────────────────────────────
+function PackDiffView({fileDataA,filePathsA}:any){
+  const[fileDataB,setFileDataB]=useState<Record<string,string>>({});
+  const[filePathsB,setFilePathsB]=useState<string[]>([]);
+  const[loadingB,setLoadingB]=useState(false);
+  const[nameB,setNameB]=useState('');
+  const fileInputRef2=useRef<any>();
+
+  const loadZipB=async(file:File)=>{
+    setLoadingB(true);setNameB(file.name);
+    const JSZipLib=await import('jszip');
+    const zip=await JSZipLib.default.loadAsync(file);
+    const newData:Record<string,string>={};const promises:Promise<void>[]=[];
+    zip.forEach((relPath:string,zipEntry:any)=>{
+      if(zipEntry.dir)return;
+      const ext=relPath.split('.').pop()!.toLowerCase();
+      if(['png','jpg','jpeg'].includes(ext)){
+        promises.push(zipEntry.async('base64').then((b64:string)=>{newData[relPath]=`data:image/${ext};base64,${b64}`;}));
+      }else if(['json','mcmeta','txt'].includes(ext)){
+        promises.push(zipEntry.async('string').then((s:string)=>{newData[relPath]=s;}));
+      }
+    });
+    await Promise.all(promises);
+    setFileDataB(newData);setFilePathsB(Object.keys(newData));setLoadingB(false);
+  };
+
+  const setA=new Set(filePathsA);
+  const setB=new Set(filePathsB);
+  const added=filePathsB.filter((p:string)=>!setA.has(p));
+  const removed=filePathsA.filter((p:string)=>!setB.has(p));
+  const common=filePathsA.filter((p:string)=>setB.has(p));
+  const modified=common.filter((p:string)=>fileDataA[p]!==fileDataB[p]);
+
+  return(
+    <div style={{display:'flex',flexDirection:'column',height:'100%',overflow:'hidden'}}>
+      {filePathsB.length===0?(
+        <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',padding:32}}>
+          <div style={{textAlign:'center',display:'flex',flexDirection:'column',gap:12,maxWidth:380}}>
+            <div style={{fontSize:9,color:DIM,letterSpacing:'3px',textTransform:'uppercase'}}>Pack A: {filePathsA.length} files loaded</div>
+            <div style={{fontSize:14,color:TEXT,marginBottom:4}}>Load a comparison pack (Pack B)</div>
+            <div style={{fontSize:11,color:DIM,marginBottom:12}}>Compare the currently loaded pack against another version to see what changed.</div>
+            <input ref={fileInputRef2} type="file" accept=".zip" style={{display:'none'}} onChange={e=>{const f=e.target.files?.[0];if(f)loadZipB(f);}}/>
+            <button className="btn" onClick={()=>fileInputRef2.current?.click()}>{loadingB?'Loading…':'Browse Pack B .zip'}</button>
+          </div>
+        </div>
+      ):(
+        <div className="scroll-area">
+          <div style={{display:'flex',gap:24,marginBottom:20,flexWrap:'wrap'}}>
+            <div style={{fontSize:9,color:DIM,letterSpacing:'2px'}}>PACK A: {filePathsA.length} files</div>
+            <div style={{fontSize:9,color:DIM,letterSpacing:'2px'}}>PACK B: {nameB} — {filePathsB.length} files</div>
+            <button className="btn sm" style={{marginLeft:'auto'}} onClick={()=>{setFileDataB({});setFilePathsB([]);setNameB('');}}>✕ Reset B</button>
+          </div>
+
+          {/* Summary */}
+          <div style={{display:'flex',gap:8,marginBottom:20,flexWrap:'wrap'}}>
+            <div style={{background:ACCENT+'18',border:`1px solid ${ACCENT}44`,padding:'6px 12px',fontSize:10,color:ACCENT}}>{added.length} ADDED</div>
+            <div style={{background:ERR+'18',border:`1px solid ${ERR}44`,padding:'6px 12px',fontSize:10,color:ERR}}>{removed.length} REMOVED</div>
+            <div style={{background:WARN+'18',border:`1px solid ${WARN}44`,padding:'6px 12px',fontSize:10,color:WARN}}>{modified.length} MODIFIED</div>
+            <div style={{background:BG3,border:`1px solid ${BORDER}`,padding:'6px 12px',fontSize:10,color:DIM}}>{common.length-modified.length} UNCHANGED</div>
+          </div>
+
+          {added.length>0&&(<>
+            <div className="sh" style={{color:ACCENT}}>ADDED in Pack B <span className="cnt">{added.length}</span></div>
+            {added.map((p:string)=>(
+              <div key={p} style={{display:'flex',alignItems:'center',gap:8,padding:'3px 0',borderBottom:`1px solid ${BORDER}22`}}>
+                <span style={{fontSize:10,color:ACCENT}}>+</span>
+                <span style={{fontSize:11,color:TEXT2,flex:1}}>{p}</span>
+                {/\.(png|jpg|jpeg)$/i.test(p)&&<img src={fileDataB[p]} style={{width:24,height:24,imageRendering:'pixelated',background:'#070910',border:`1px solid ${BORDER}`}} alt=""/>}
+              </div>
+            ))}
+          </>)}
+
+          {removed.length>0&&(<>
+            <div className="sh" style={{color:ERR,marginTop:16}}>REMOVED from Pack A <span className="cnt">{removed.length}</span></div>
+            {removed.map((p:string)=>(
+              <div key={p} style={{display:'flex',alignItems:'center',gap:8,padding:'3px 0',borderBottom:`1px solid ${BORDER}22`}}>
+                <span style={{fontSize:10,color:ERR}}>−</span>
+                <span style={{fontSize:11,color:TEXT2,flex:1}}>{p}</span>
+                {/\.(png|jpg|jpeg)$/i.test(p)&&<img src={fileDataA[p]} style={{width:24,height:24,imageRendering:'pixelated',background:'#070910',border:`1px solid ${BORDER}`,opacity:0.5}} alt=""/>}
+              </div>
+            ))}
+          </>)}
+
+          {modified.length>0&&(<>
+            <div className="sh" style={{color:WARN,marginTop:16}}>MODIFIED <span className="cnt">{modified.length}</span></div>
+            {modified.map((p:string)=>{
+              const isImg=/\.(png|jpg|jpeg)$/i.test(p);
+              return(
+                <div key={p} style={{marginBottom:8,borderBottom:`1px solid ${BORDER}22`,paddingBottom:8}}>
+                  <div style={{fontSize:11,color:WARN,marginBottom:4}}>{p}</div>
+                  {isImg?(
+                    <div style={{display:'flex',gap:8,alignItems:'center'}}>
+                      <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:2}}>
+                        <span style={{fontSize:8,color:DIM,letterSpacing:'1px'}}>PACK A</span>
+                        <img src={fileDataA[p]} style={{width:48,height:48,imageRendering:'pixelated',background:'#070910',border:`1px solid ${BORDER}`}} alt=""/>
+                      </div>
+                      <span style={{color:DIM,fontSize:16}}>→</span>
+                      <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:2}}>
+                        <span style={{fontSize:8,color:DIM,letterSpacing:'1px'}}>PACK B</span>
+                        <img src={fileDataB[p]} style={{width:48,height:48,imageRendering:'pixelated',background:'#070910',border:`1px solid ${BORDER}`}} alt=""/>
+                      </div>
+                    </div>
+                  ):(
+                    <div style={{fontSize:10,color:DIM,fontFamily:'monospace'}}>Content changed (JSON/text)</div>
+                  )}
+                </div>
+              );
+            })}
+          </>)}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main App ───────────────────────────────────────────────────────────────────
 export default function App(){
   const fileDataRef=useRef<Record<string,string>>({});
@@ -1284,6 +1589,50 @@ export default function App(){
     fileDataRef.current={};setFilePaths([]);setSelected(null);setSelectedContent(null);setStatus('No pack loaded');setRevision(0);
   },[]);
 
+  const deleteTextures=useCallback((paths:string[])=>{
+    for(const p of paths)delete fileDataRef.current[p];
+    const updatedPaths=Object.keys(fileDataRef.current);
+    setFilePaths(updatedPaths);
+    if(selected&&paths.includes(selected)){setSelected(null);setSelectedContent(null);}
+    setRevision(r=>r+1);
+    setStatus(`Deleted ${paths.length} texture${paths.length!==1?'s':''}`);
+  },[selected]);
+
+  // Rename a file: update key in fileDataRef, update all JSON model texture refs
+  const renameFile=useCallback((oldPath:string,newPath:string)=>{
+    if(!oldPath||!newPath||oldPath===newPath)return;
+    const data=fileDataRef.current;
+    if(!data[oldPath])return;
+    // Move the data
+    data[newPath]=data[oldPath];
+    delete data[oldPath];
+    // Update model JSON references that point to this texture
+    const oldNorm=oldPath.replace(/^.*?textures\//,'').replace(/\.(png|jpg|jpeg)$/i,'').toLowerCase();
+    const newNorm=newPath.replace(/^.*?textures\//,'').replace(/\.(png|jpg|jpeg)$/i,'').toLowerCase();
+    if(oldNorm!==newNorm){
+      for(const p of Object.keys(data)){
+        if(!p.endsWith('.json'))continue;
+        try{
+          const json=JSON.parse(data[p]);
+          let changed=false;
+          if(json.textures){
+            for(const k of Object.keys(json.textures)){
+              const v:string=json.textures[k];
+              const vn=v.replace(/^minecraft:/,'').toLowerCase();
+              if(vn===oldNorm||vn==='textures/'+oldNorm){json.textures[k]=newNorm;changed=true;}
+            }
+            if(changed)data[p]=JSON.stringify(json,null,2);
+          }
+        }catch{}
+      }
+    }
+    const updatedPaths=Object.keys(data);
+    setFilePaths(updatedPaths);
+    if(selected===oldPath){setSelected(newPath);setSelectedContent(data[newPath]);}
+    setRevision(r=>r+1);
+    setStatus(`Renamed: ${oldPath.split('/').pop()} → ${newPath.split('/').pop()}`);
+  },[selected]);
+
   const exportZip=async()=>{
     try{
       const zip=new JSZip();
@@ -1312,6 +1661,7 @@ export default function App(){
     {id:'models',label:'Models',badge:issueCount},
     {id:'issues',label:'Issues',badge:issueCount},
     {id:'editor',label:'Editor'},
+    {id:'diff',label:'Diff'},
   ];
 
   return(
@@ -1364,16 +1714,18 @@ export default function App(){
           ):analysis?(
             <>
               {mainTab==='overview'&&<OverviewTab analysis={analysis} fileCount={fileCount} setMainTab={setMainTab}/>}
-              {mainTab==='textures'&&<TextureGrid analysis={analysis} fileData={fileDataRef.current} onOpenInEditor={openInEditor}/>}
+              {mainTab==='textures'&&<TextureGrid analysis={analysis} fileData={fileDataRef.current} onOpenInEditor={openInEditor} onDeleteTextures={deleteTextures}/>}
               {mainTab==='models'&&<ModelsView analysis={analysis} fileData={fileDataRef.current} onApplyFix={applyFix} onOpenInEditor={openInEditor}/>}
               {mainTab==='issues'&&<IssuesView analysis={analysis} fileData={fileDataRef.current} onApplyFix={applyFix} onApplyAllFixes={applyAllFixes} onOpenInEditor={openInEditor}/>}
+              {mainTab==='diff'&&<PackDiffView fileDataA={fileDataRef.current} filePathsA={filePaths}/>}
               {mainTab==='editor'&&(
                 <div className="editor-layout">
                   <div className="sidebar">
                     <div className="sidebar-title">Pack files</div>
                     <div className="tree">
+                      <div style={{padding:'2px 8px 4px',fontSize:9,color:DIM,letterSpacing:'1px'}}>double-click to rename</div>
                       {Object.entries(tree).sort(([,a],[,b]:any)=>(typeof a==='object'&&a!==null?-1:0)-(typeof b==='object'&&b!==null?-1:0)).map(([k,v])=>(
-                        <TreeNode key={k} name={k} node={v} path="" depth={0} selected={selected} onSelect={openInEditor}/>
+                        <TreeNode key={k} name={k} node={v} path="" depth={0} selected={selected} onSelect={openInEditor} onRename={renameFile}/>
                       ))}
                     </div>
                   </div>
