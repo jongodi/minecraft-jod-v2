@@ -99,12 +99,15 @@ export async function GET() {
   try {
     const id = await getServerId(token);
 
-    // Fetch the list of stat files — this will fail if server is offline
+    // Fetch the list of stat files
     const listRes = await fetch(
-      `https://api.exaroton.com/v1/servers/${id}/files/list/?path=world/stats/`,
+      `https://api.exaroton.com/v1/servers/${id}/files/list/?path=world/stats`,
       { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' }
     );
-    if (!listRes.ok) throw new Error('Server offline or stat files unavailable');
+    if (!listRes.ok) {
+      const body = await listRes.text().catch(() => '');
+      throw new Error(`File list HTTP ${listRes.status}: ${body.slice(0, 300)}`);
+    }
 
     const listData = await listRes.json();
     const files: string[] = (listData.data as any[])?.map((f: any) => f.name as string) ?? [];
