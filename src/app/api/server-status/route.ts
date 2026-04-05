@@ -39,7 +39,6 @@ async function fromExaroton(): Promise<NextResponse<StatusResponse>> {
     });
     if (!listRes.ok) throw new Error('Exaroton list failed');
     const listData = await listRes.json();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const match = (listData.data as any[]).find(
       (s) => s.address === SERVER_HOST
     );
