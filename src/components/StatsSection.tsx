@@ -158,7 +158,11 @@ export default function StatsSection() {
           )}
           {stats.source === 'unavailable' && (
             <span style={{ fontFamily: mono, fontSize: '0.5rem', color: '#2a2a2a', letterSpacing: '0.1em' }}>
-              No data yet — stats will appear after the server has been online at least once.
+              {stats.reason === 'EXAROTON_API_KEY not configured'
+                ? 'Stats unavailable — EXAROTON_API_KEY not set in environment.'
+                : stats.reason
+                  ? `Stats unavailable — ${stats.reason}`
+                  : 'No data yet — stats will appear after the server has been online at least once.'}
             </span>
           )}
         </div>

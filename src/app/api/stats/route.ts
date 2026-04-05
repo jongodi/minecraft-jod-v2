@@ -21,6 +21,7 @@ export interface StatsResponse {
   players:  PlayerStat[];
   source:   'live' | 'cached' | 'unavailable';
   cachedAt: string | null; // ISO timestamp of last successful fetch
+  reason?:  string; // why unavailable (debug aid)
 }
 
 const KV_KEY = 'stats:snapshot';
@@ -92,7 +93,7 @@ export async function GET() {
         players: cached.players, source: 'cached', cachedAt: cached.cachedAt,
       } satisfies StatsResponse);
     }
-    return NextResponse.json({ players: [], source: 'unavailable', cachedAt: null } satisfies StatsResponse);
+    return NextResponse.json({ players: [], source: 'unavailable', cachedAt: null, reason: 'EXAROTON_API_KEY not configured' } satisfies StatsResponse);
   }
 
   try {
@@ -154,7 +155,8 @@ export async function GET() {
     });
 
   } catch (err) {
-    console.error('Stats fetch failed (server likely offline):', err);
+    const reason = err instanceof Error ? err.message : String(err);
+    console.error('Stats fetch failed:', reason);
 
     // Serve last known snapshot
     const cached = await getCachedStats();
@@ -164,6 +166,6 @@ export async function GET() {
       } satisfies StatsResponse);
     }
 
-    return NextResponse.json({ players: [], source: 'unavailable', cachedAt: null } satisfies StatsResponse);
+    return NextResponse.json({ players: [], source: 'unavailable', cachedAt: null, reason } satisfies StatsResponse);
   }
 }
