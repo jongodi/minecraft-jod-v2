@@ -16,7 +16,6 @@ async function getServerId(token: string): Promise<string> {
   });
   if (!res.ok) throw new Error(`Exaroton list failed: ${res.status}`);
   const data = await res.json();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const match = (data.data as any[]).find((s) => s.address === SERVER_HOST);
   if (!match) throw new Error('Server not found in Exaroton account');
   return match.id as string;

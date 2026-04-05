@@ -31,13 +31,11 @@ async function getServerId(token: string): Promise<string> {
   });
   if (!res.ok) throw new Error('Exaroton list failed');
   const data = await res.json();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const match = (data.data as any[]).find((s) => s.address === SERVER_HOST);
   if (!match) throw new Error('Server not found');
   return match.id as string;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function extractStats(statsJson: any): Omit<PlayerStat, 'username'> {
   const custom = statsJson?.stats?.['minecraft:custom'] ?? {};
   const crafted = statsJson?.stats?.['minecraft:crafted'] ?? {};
@@ -76,7 +74,6 @@ export async function GET() {
     });
     if (!listRes.ok) throw new Error('Could not list stat files');
     const listData = await listRes.json();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const files: string[] = (listData.data as any[])?.map((f: any) => f.name as string) ?? [];
 
     // Filter to UUID-named json files

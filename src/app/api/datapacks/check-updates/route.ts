@@ -69,7 +69,6 @@ async function checkModrinth(pack: DatapackMeta): Promise<DatapackUpdateResult> 
 function extractModrinthVersion(
   base: DatapackUpdateResult,
   pack: DatapackMeta,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   versions: any[]
 ): DatapackUpdateResult {
   if (!Array.isArray(versions) || versions.length === 0) {
