@@ -22,9 +22,14 @@ export async function POST(
     createdAt: new Date().toISOString(),
   };
 
-  const profile = await readProfile(username);
-  profile.posts.unshift(post); // newest first
-  if (profile.posts.length > 50) profile.posts = profile.posts.slice(0, 50);
-  await writeProfile(profile);
-  return NextResponse.json(post, { status: 201 });
+  try {
+    const profile = await readProfile(username);
+    profile.posts.unshift(post);
+    if (profile.posts.length > 50) profile.posts = profile.posts.slice(0, 50);
+    await writeProfile(profile);
+    return NextResponse.json(post, { status: 201 });
+  } catch (e) {
+    console.error('POST /api/crew/[username]/posts error:', e);
+    return NextResponse.json({ error: 'Failed to save post — storage error' }, { status: 500 });
+  }
 }
