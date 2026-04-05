@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, FormEvent } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import type { CrewProfile, CrewPost } from '@/lib/crew';
+import type { PlayerStat, StatsResponse } from '@/app/api/stats/route';
 
 const mono = "'JetBrains Mono', monospace";
 const sans = "'Space Grotesk', sans-serif";
@@ -12,6 +13,25 @@ const green = '#00ff41';
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
+
+function formatAge(iso: string): string {
+  const diff  = Date.now() - new Date(iso).getTime();
+  const mins  = Math.floor(diff / 60000);
+  const hours = Math.floor(mins / 60);
+  const days  = Math.floor(hours / 24);
+  if (days > 0)  return `${days}d ago`;
+  if (hours > 0) return `${hours}h ago`;
+  if (mins > 0)  return `${mins}m ago`;
+  return 'just now';
+}
+
+const STAT_LABELS: { key: keyof PlayerStat; label: string; format: (v: number) => string }[] = [
+  { key: 'playTimeHours',  label: 'PLAYTIME',  format: v => `${v}h`  },
+  { key: 'mobKills',       label: 'MOB KILLS', format: v => v.toLocaleString() },
+  { key: 'deaths',         label: 'DEATHS',    format: v => v.toLocaleString() },
+  { key: 'itemsCrafted',   label: 'CRAFTED',   format: v => v.toLocaleString() },
+  { key: 'distanceWalked', label: 'WALKED',    format: v => `${(v / 100000).toFixed(1)} km` },
+];
 
 // ─── Login modal ─────────────────────────────────────────────────────────────
 
@@ -73,16 +93,18 @@ function LoginModal({
 
 export default function CrewProfilePage({ params }: { params: { username: string } }) {
   const { username } = params;
-  const [profile,    setProfile]    = useState<CrewProfile | null>(null);
-  const [session,    setSession]    = useState<string | null>(null);
-  const [showLogin,  setShowLogin]  = useState(false);
-  const [editingBio, setEditingBio] = useState(false);
-  const [bioText,    setBioText]    = useState('');
-  const [newPost,    setNewPost]    = useState('');
-  const [posting,    setPosting]    = useState(false);
-  const [postError,  setPostError]  = useState('');
-  const [bioError,   setBioError]   = useState('');
-  const [photoError, setPhotoError] = useState('');
+  const [profile,      setProfile]      = useState<CrewProfile | null>(null);
+  const [session,      setSession]      = useState<string | null>(null);
+  const [showLogin,    setShowLogin]    = useState(false);
+  const [editingBio,   setEditingBio]   = useState(false);
+  const [bioText,      setBioText]      = useState('');
+  const [newPost,      setNewPost]      = useState('');
+  const [posting,      setPosting]      = useState(false);
+  const [postError,    setPostError]    = useState('');
+  const [bioError,     setBioError]     = useState('');
+  const [photoError,   setPhotoError]   = useState('');
+  const [playerStats,  setPlayerStats]  = useState<PlayerStat | null>(null);
+  const [statsMeta,    setStatsMeta]    = useState<{ source: string; cachedAt: string | null } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const isOwner = !!session && session.toLowerCase() === username.toLowerCase();
@@ -120,6 +142,17 @@ export default function CrewProfilePage({ params }: { params: { username: string
   useEffect(() => {
     loadProfile();
     checkSession();
+    // Fetch stats and find this player's row
+    fetch('/api/stats')
+      .then(r => r.json())
+      .then((data: StatsResponse) => {
+        const row = data.players.find(
+          p => p.username.toLowerCase() === username.toLowerCase()
+        );
+        setPlayerStats(row ?? null);
+        setStatsMeta({ source: data.source, cachedAt: data.cachedAt });
+      })
+      .catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [username]);
 
@@ -292,6 +325,40 @@ export default function CrewProfilePage({ params }: { params: { username: string
           )}
         </div>
       </div>
+
+      {/* Stats */}
+      {(playerStats || statsMeta?.source === 'unavailable') && (
+        <div style={{ marginBottom: '3rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+            <p style={{ fontFamily: mono, fontSize: '0.6rem', letterSpacing: '0.25em', color: green, textTransform: 'uppercase' }}>
+              STATS
+            </p>
+            {statsMeta?.source === 'cached' && statsMeta.cachedAt && (
+              <span style={{ fontFamily: mono, fontSize: '0.45rem', color: '#333', letterSpacing: '0.1em' }}>
+                LAST UPDATED {formatAge(statsMeta.cachedAt).toUpperCase()}
+              </span>
+            )}
+          </div>
+          {playerStats ? (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '1px', background: '#1a1a1a', maxWidth: '640px' }}>
+              {STAT_LABELS.map(({ key, label, format }) => (
+                <div key={key} style={{ background: '#0d0d0d', padding: '0.75rem 1rem' }}>
+                  <p style={{ fontFamily: sans, fontSize: '1.1rem', fontWeight: 700, color: '#f0f0f0', marginBottom: '0.15rem' }}>
+                    {format(playerStats[key] as number)}
+                  </p>
+                  <p style={{ fontFamily: mono, fontSize: '0.45rem', color: '#333', letterSpacing: '0.15em', textTransform: 'uppercase' }}>
+                    {label}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p style={{ fontFamily: mono, fontSize: '0.55rem', color: '#2a2a2a', fontStyle: 'italic' }}>
+              No stat data yet.
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Posts */}
       <div style={{ maxWidth: '640px', marginBottom: '3rem' }}>
