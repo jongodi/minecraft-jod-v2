@@ -99,10 +99,9 @@ export async function GET() {
   try {
     const id = await getServerId(token);
 
-    // Fetch the list of stat files via /files/info/ (returns directory children)
-    // Exaroton paths must start with /
+    // Fetch the list of stat files via /files/info/{path} (path is a URL segment, not query param)
     const listRes = await fetch(
-      `https://api.exaroton.com/v1/servers/${id}/files/info/?path=/world/stats`,
+      `https://api.exaroton.com/v1/servers/${id}/files/info/world/stats`,
       { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' }
     );
     if (!listRes.ok) {
@@ -140,7 +139,7 @@ export async function GET() {
         }
         try {
           const res = await fetch(
-            `https://api.exaroton.com/v1/servers/${id}/files/data/?path=/world/stats/${uuid}.json`,
+            `https://api.exaroton.com/v1/servers/${id}/files/data/world/stats/${uuid}.json`,
             { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' }
           );
           if (!res.ok) {
