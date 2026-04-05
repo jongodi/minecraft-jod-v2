@@ -98,9 +98,9 @@ export async function GET() {
   try {
     const id = await getServerId(token);
 
-    // Fetch the list of stat files (path is a URL segment in the Exaroton API)
+    // Fetch the list of stat files
     const listRes = await fetch(
-      `https://api.exaroton.com/v1/servers/${id}/files/info/world/stats`,
+      `https://api.exaroton.com/v1/servers/${id}/files/info/world/players/stats`,
       { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' }
     );
     if (!listRes.ok) throw new Error('stats folder not found');
@@ -134,7 +134,7 @@ export async function GET() {
         }
         try {
           const res = await fetch(
-            `https://api.exaroton.com/v1/servers/${id}/files/data/world/stats/${uuid}.json`,
+            `https://api.exaroton.com/v1/servers/${id}/files/data/world/players/stats/${uuid}.json`,
             { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' }
           );
           if (!res.ok) throw new Error('file fetch failed');
