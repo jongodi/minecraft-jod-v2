@@ -155,9 +155,11 @@ export async function GET() {
       })
     );
 
-    // Save to KV so we have a snapshot for when server is offline
+    // Save to KV only if we got meaningful data
     const now = new Date().toISOString();
-    await setCachedStats(players);
+    if (players.some(p => p.playTimeTicks > 0 || p.deaths > 0 || p.mobKills > 0)) {
+      await setCachedStats(players);
+    }
 
     return NextResponse.json({
       players, source: 'live', cachedAt: now, _debug: debugInfo,
@@ -169,9 +171,9 @@ export async function GET() {
     const reason = err instanceof Error ? err.message : String(err);
     console.error('Stats fetch failed:', reason);
 
-    // Serve last known snapshot
+    // Serve last known snapshot (skip cache if all zeros — not useful)
     const cached = await getCachedStats();
-    if (cached) {
+    if (cached && cached.players.some(p => p.playTimeTicks > 0 || p.deaths > 0 || p.mobKills > 0)) {
       return NextResponse.json({
         players: cached.players, source: 'cached', cachedAt: cached.cachedAt,
       } satisfies StatsResponse);
