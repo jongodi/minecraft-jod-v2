@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { readGallery, writeGallery } from '@/lib/gallery';
 import { requireAdmin, unauthorizedResponse } from '@/lib/auth';
 
+export const dynamic = 'force-dynamic';
+
+
 // POST body: { ids: string[] } — ordered array of photo IDs
 export async function POST(req: NextRequest) {
   if (!(await requireAdmin())) return unauthorizedResponse();

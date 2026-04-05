@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getCrewSession } from '@/lib/crew';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   const session = await getCrewSession();
   if (!session) {

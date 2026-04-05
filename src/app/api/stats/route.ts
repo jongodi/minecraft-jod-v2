@@ -4,6 +4,8 @@
 import { NextResponse } from 'next/server';
 import { CREW_USERNAMES } from '@/lib/crew';
 
+export const dynamic = 'force-dynamic';
+
 export interface PlayerStat {
   username:      string;
   deaths:        number;

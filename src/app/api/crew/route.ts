@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { CREW_USERNAMES, readProfile } from '@/lib/crew';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   const profiles = await Promise.all(
     CREW_USERNAMES.map(async (username) => {

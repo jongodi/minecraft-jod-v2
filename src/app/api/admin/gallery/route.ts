@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server';
 import { readGallery } from '@/lib/gallery';
 import { requireAdmin, unauthorizedResponse } from '@/lib/auth';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   if (!(await requireAdmin())) return unauthorizedResponse();
   const all = await readGallery();
