@@ -3,6 +3,7 @@
 import { motion, useInView } from 'framer-motion';
 import { useRef, useState, useEffect } from 'react';
 import type { PlayerStat, StatsResponse } from '@/app/api/stats/route';
+import { formatAge } from '@/lib/format';
 
 type StatKey = 'deaths' | 'mobKills' | 'playTimeHours' | 'distanceWalked' | 'itemsCrafted';
 
@@ -15,17 +16,6 @@ const TABS: Tab[] = [
   { id: 'itemsCrafted',   label: 'CRAFTED',  unit: 'items',format: v => v.toLocaleString() },
   { id: 'distanceWalked', label: 'WALKED',   unit: 'km',   format: v => `${(v / 100000).toFixed(1)} km` },
 ];
-
-function formatAge(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins  = Math.floor(diff / 60000);
-  const hours = Math.floor(mins / 60);
-  const days  = Math.floor(hours / 24);
-  if (days > 0)  return `${days}d ago`;
-  if (hours > 0) return `${hours}h ago`;
-  if (mins > 0)  return `${mins}m ago`;
-  return 'just now';
-}
 
 function LeaderboardRow({
   player, rank, tab, maxVal,

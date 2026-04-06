@@ -4,6 +4,10 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import type { DatapackUpdateResult } from '@/app/api/datapacks/check-updates/route';
 import type { GalleryPhoto } from '@/lib/gallery';
+import type { MapConfig } from '@/lib/map-types';
+import dynamic from 'next/dynamic';
+
+const AdminMapEditor = dynamic(() => import('@/components/AdminMapEditor'), { ssr: false });
 
 // ─── Shared styles ────────────────────────────────────────────────────────────
 
@@ -228,6 +232,103 @@ function DatapacksSection() {
   );
 }
 
+// ─── Datapack Version Manager ─────────────────────────────────────────────────
+
+interface PackVersionRow { id: number; name: string; source: string; currentVersion: string | null; isOverridden: boolean }
+
+function DatapackVersionsSection() {
+  const [packs,   setPacks]   = useState<PackVersionRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [edits,   setEdits]   = useState<Record<number, string>>({});
+  const [saving,  setSaving]  = useState(false);
+  const [msg,     setMsg]     = useState('');
+
+  const fetchPacks = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/admin/datapacks');
+      if (res.ok) {
+        const data = await res.json() as PackVersionRow[];
+        setPacks(data);
+        const initial: Record<number, string> = {};
+        data.forEach(p => { initial[p.id] = p.currentVersion ?? ''; });
+        setEdits(initial);
+      }
+    } finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { fetchPacks(); }, [fetchPacks]);
+
+  async function save() {
+    setSaving(true); setMsg('');
+    try {
+      const res = await fetch('/api/admin/datapacks', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ versions: Object.fromEntries(Object.entries(edits).map(([k, v]) => [k, v])) }),
+      });
+      setMsg(res.ok ? '✓ Versions saved — update checker will use these next run' : '✗ Save failed');
+      if (res.ok) fetchPacks();
+    } catch { setMsg('✗ Network error'); }
+    finally   { setSaving(false); }
+  }
+
+  const hasChanges = packs.some(p => (edits[p.id] ?? '') !== (p.currentVersion ?? ''));
+
+  return (
+    <div style={card}>
+      <SectionHeader label="DATAPACK VERSIONS" sub="Installed versions" />
+      <p style={{ fontFamily: mono, fontSize: '0.6rem', color: '#444', marginBottom: '1.25rem', lineHeight: 1.6 }}>
+        Edit the installed version for each pack. The update checker uses these values to detect when a newer version is available on Modrinth or GitHub.
+      </p>
+
+      {loading ? <p style={{ fontFamily: mono, fontSize: '0.65rem', color: '#444' }}>Loading...</p> : (
+        <>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            {packs.map(p => (
+              <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.45rem 0', borderBottom: '1px solid #111', flexWrap: 'wrap' }}>
+                <span style={{ fontFamily: mono, fontSize: '0.55rem', color: '#2a2a2a', width: '1.5rem', flexShrink: 0 }}>{String(p.id).padStart(2,'0')}</span>
+                <span style={{ fontFamily: sans, fontSize: '0.85rem', fontWeight: 600, color: '#ccc', flex: 1, minWidth: '140px' }}>{p.name}</span>
+                <span style={{ fontFamily: mono, fontSize: '0.5rem', color: '#2a2a2a', width: '60px', letterSpacing: '0.1em' }}>{p.source.toUpperCase()}</span>
+                <input
+                  value={edits[p.id] ?? ''}
+                  onChange={e => setEdits(prev => ({ ...prev, [p.id]: e.target.value }))}
+                  placeholder="e.g. 1.2.3"
+                  style={{
+                    background:  '#0d0d0d',
+                    border:      `1px solid ${edits[p.id] !== (p.currentVersion ?? '') ? '#f0a50055' : '#1a1a1a'}`,
+                    color:       '#f0f0f0',
+                    fontFamily:  mono,
+                    fontSize:    '0.65rem',
+                    padding:     '0.25rem 0.5rem',
+                    outline:     'none',
+                    width:       '110px',
+                    letterSpacing: '0.05em',
+                  }}
+                />
+                {p.isOverridden && (
+                  <span style={{ fontFamily: mono, fontSize: '0.45rem', color: '#f0a500', letterSpacing: '0.1em' }}>OVERRIDDEN</span>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginTop: '1.25rem' }}>
+            <button
+              onClick={save}
+              disabled={saving || !hasChanges}
+              style={{ fontFamily: mono, fontSize: '0.6rem', letterSpacing: '0.15em', textTransform: 'uppercase', padding: '0.5rem 1rem', cursor: saving || !hasChanges ? 'not-allowed' : 'pointer', border: `1px solid ${green}44`, background: hasChanges ? green + '18' : 'transparent', color: hasChanges ? green : '#333', transition: 'all 0.2s' }}
+            >
+              {saving ? 'SAVING...' : 'SAVE VERSIONS'}
+            </button>
+            {msg && <span style={{ fontFamily: mono, fontSize: '0.6rem', color: msg.startsWith('✓') ? green : '#ff4466' }}>{msg}</span>}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ─── Gallery Manager ──────────────────────────────────────────────────────────
 
 function GalleryManagerSection() {
@@ -443,9 +544,39 @@ function GalleryManagerSection() {
   );
 }
 
+// ─── Map Editor Section ───────────────────────────────────────────────────────
+
+function MapEditorSection() {
+  const [config,  setConfig]  = useState<MapConfig | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/admin/map')
+      .then(r => r.ok ? r.json() : null)
+      .then((cfg: MapConfig | null) => { if (cfg) setConfig(cfg); })
+      .finally(() => setLoading(false));
+  }, []);
+
+  return (
+    <div style={card}>
+      <SectionHeader label="MAP EDITOR" sub="World locations & zones" />
+      <p style={{ fontFamily: mono, fontSize: '0.6rem', color: '#444', marginBottom: '1.25rem', lineHeight: 1.6 }}>
+        Drag pins to reposition them. Click a pin to edit its label, sublabel, and type. Drag zone ellipses to move them; drag the handles to resize. Click &quot;Save Map&quot; when done.
+      </p>
+      {loading ? (
+        <p style={{ fontFamily: mono, fontSize: '0.65rem', color: '#444' }}>Loading map...</p>
+      ) : config ? (
+        <AdminMapEditor initialConfig={config} />
+      ) : (
+        <p style={{ fontFamily: mono, fontSize: '0.65rem', color: '#ff4466' }}>Failed to load map config.</p>
+      )}
+    </div>
+  );
+}
+
 // ─── Main admin page ──────────────────────────────────────────────────────────
 
-type Tab = 'server' | 'datapacks' | 'gallery';
+type Tab = 'server' | 'datapacks' | 'versions' | 'gallery' | 'map';
 
 export default function AdminPage() {
   const router = useRouter();
@@ -460,7 +591,9 @@ export default function AdminPage() {
   const tabs: { id: Tab; label: string }[] = [
     { id: 'server',    label: 'SERVER' },
     { id: 'datapacks', label: 'DATAPACKS' },
+    { id: 'versions',  label: 'VERSIONS' },
     { id: 'gallery',   label: 'GALLERY' },
+    { id: 'map',       label: 'MAP' },
   ];
 
   return (
@@ -505,7 +638,9 @@ export default function AdminPage() {
         {/* Tab content */}
         {tab === 'server'    && <ServerControlSection />}
         {tab === 'datapacks' && <DatapacksSection />}
+        {tab === 'versions'  && <DatapackVersionsSection />}
         {tab === 'gallery'   && <GalleryManagerSection />}
+        {tab === 'map'       && <MapEditorSection />}
       </div>
     </div>
   );

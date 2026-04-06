@@ -17,6 +17,10 @@ function hasKV(): boolean {
   return !!process.env.REDIS_URL;
 }
 
+export function hasBlob(): boolean {
+  return !!process.env.BLOB_READ_WRITE_TOKEN;
+}
+
 function galleryPath(): string {
   if (process.env.VERCEL && !hasKV()) return '/tmp/jod-gallery.json';
   return path.join(process.cwd(), 'src', 'data', 'gallery.json');

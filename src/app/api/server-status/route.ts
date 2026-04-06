@@ -1,9 +1,5 @@
 import { NextResponse } from 'next/server';
-
-// Set these in Vercel → Project Settings → Environment Variables:
-//   EXAROTON_API_KEY   — your token from exaroton.com/account
-//   EXAROTON_SERVER_ID — your server ID (optional, auto-discovered if omitted)
-const SERVER_HOST = 'stebbias.exaroton.me';
+import { getExarotonServerId, getServerHost, type ExarotonServer } from '@/lib/exaroton';
 
 export interface StatusResponse {
   online: boolean;
@@ -28,35 +24,24 @@ export async function GET() {
   return await fromMcsrvstat();
 }
 
+interface ExarotonServerDetail extends ExarotonServer {
+  players?: { count: number; max: number; list?: string[] };
+}
+
 async function fromExaroton(): Promise<NextResponse<StatusResponse>> {
   const token = process.env.EXAROTON_API_KEY!;
-  let id = process.env.EXAROTON_SERVER_ID ?? '';
-
-  if (!id) {
-    const listRes = await fetch('https://api.exaroton.com/v1/servers/', {
-      headers: { Authorization: `Bearer ${token}` },
-      cache: 'no-store',
-    });
-    if (!listRes.ok) throw new Error('Exaroton list failed');
-    const listData = await listRes.json();
-    const match = (listData.data as any[]).find(
-      (s) => s.address === SERVER_HOST
-    );
-    if (!match) throw new Error('Server not found in account');
-    id = match.id as string;
-  }
+  const id    = await getExarotonServerId(token);
 
   const res = await fetch(`https://api.exaroton.com/v1/servers/${id}/`, {
     headers: { Authorization: `Bearer ${token}` },
     cache: 'no-store',
   });
   if (!res.ok) throw new Error('Exaroton server fetch failed');
-  const data = await res.json();
-  const server = data.data;
+  const { data: server } = await res.json() as { data: ExarotonServerDetail };
 
   // Exaroton status: 0=offline 1=online 2=starting 3=stopping 4=restarting 5=saving 6=loading 7=crashed
-  const isOnline = server.status === 1;
-  const nameList: string[] = server.players?.list ?? [];
+  const isOnline  = server.status === 1;
+  const nameList  = server.players?.list ?? [];
 
   const payload: StatusResponse = {
     online: isOnline,
@@ -64,8 +49,8 @@ async function fromExaroton(): Promise<NextResponse<StatusResponse>> {
     ...(isOnline && {
       players: {
         online: server.players?.count ?? 0,
-        max: server.players?.max ?? 20,
-        list: nameList.map((name) => ({ name, uuid: '' })),
+        max:    server.players?.max ?? 20,
+        list:   nameList.map((name) => ({ name, uuid: '' })),
       },
     }),
   };
@@ -75,7 +60,7 @@ async function fromExaroton(): Promise<NextResponse<StatusResponse>> {
 
 async function fromMcsrvstat(): Promise<NextResponse<StatusResponse>> {
   try {
-    const res = await fetch(`https://api.mcsrvstat.us/3/${SERVER_HOST}`, {
+    const res = await fetch(`https://api.mcsrvstat.us/3/${getServerHost()}`, {
       cache: 'no-store',
     });
     const data = await res.json();

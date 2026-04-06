@@ -1,6 +1,7 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import { cookies } from 'next/headers';
+import { CREW_COOKIE } from '@/lib/auth';
 
 export const CREW_USERNAMES = [
   'stebbias',
@@ -103,7 +104,7 @@ export async function writeProfile(profile: CrewProfile): Promise<void> {
 
 // ─── Crew auth ────────────────────────────────────────────────────────────────
 
-export const CREW_COOKIE = 'jod_crew_session';
+export { CREW_COOKIE } from '@/lib/auth';
 
 export interface CrewSession { username: string }
 

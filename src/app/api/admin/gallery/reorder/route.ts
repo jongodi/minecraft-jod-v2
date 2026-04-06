@@ -4,8 +4,7 @@ import { requireAdmin, unauthorizedResponse } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
-
-// POST body: { ids: string[] } — ordered array of photo IDs
+// POST body: { ids: string[] } — complete ordered array of all photo IDs
 export async function POST(req: NextRequest) {
   if (!(await requireAdmin())) return unauthorizedResponse();
 
@@ -15,13 +14,24 @@ export async function POST(req: NextRequest) {
   }
 
   const gallery = await readGallery();
-  const photoMap = Object.fromEntries(gallery.map(p => [p.id, p]));
 
-  // Apply new order to the specified IDs
+  // Validate: submitted IDs must be a complete, non-duplicate set matching all photos
+  if (new Set(ids).size !== ids.length) {
+    return NextResponse.json({ error: 'ids contains duplicates' }, { status: 400 });
+  }
+  const existingIds = new Set(gallery.map(p => p.id));
+  const missing = gallery.filter(p => !ids.includes(p.id)).map(p => p.id);
+  if (missing.length > 0) {
+    return NextResponse.json({ error: `Missing photo ids: ${missing.join(', ')}` }, { status: 400 });
+  }
+  const unknown = ids.filter(id => !existingIds.has(id));
+  if (unknown.length > 0) {
+    return NextResponse.json({ error: `Unknown photo ids: ${unknown.join(', ')}` }, { status: 400 });
+  }
+
+  const photoMap = Object.fromEntries(gallery.map(p => [p.id, p]));
   for (let i = 0; i < ids.length; i++) {
-    if (photoMap[ids[i]]) {
-      photoMap[ids[i]].order = i + 1;
-    }
+    photoMap[ids[i]].order = i + 1;
   }
 
   await writeGallery(Object.values(photoMap));
