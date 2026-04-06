@@ -25,17 +25,17 @@ const STAT_LABELS: { key: keyof PlayerStat; label: string; format: (v: number) =
 interface BadgeDef { id: string; label: string; category: string; check: (s: PlayerStat) => boolean }
 
 const BADGE_DEFS: BadgeDef[] = [
-  { id: 'played-10h',    label: '10h Played',       category: 'playtime', check: s => s.playTimeHours  >= 10    },
-  { id: 'played-100h',   label: '100h Played',      category: 'playtime', check: s => s.playTimeHours  >= 100   },
-  { id: 'played-500h',   label: '500h Played',      category: 'playtime', check: s => s.playTimeHours  >= 500   },
+  { id: 'played-10h',    label: 'Newbie',           category: 'playtime', check: s => s.playTimeHours  >= 10    },
+  { id: 'played-100h',   label: 'Active Player',    category: 'playtime', check: s => s.playTimeHours  >= 100   },
+  { id: 'played-500h',   label: 'MVP player!',      category: 'playtime', check: s => s.playTimeHours  >= 500   },
   { id: 'kills-100',     label: '100 Mob Kills',    category: 'kills',    check: s => s.mobKills       >= 100   },
-  { id: 'kills-1k',      label: '1K Mob Kills',     category: 'kills',    check: s => s.mobKills       >= 1000  },
-  { id: 'kills-5k',      label: '5K Mob Kills',     category: 'kills',    check: s => s.mobKills       >= 5000  },
-  { id: 'walked-100km',  label: '100km Walked',     category: 'distance', check: s => s.distanceWalked >= 100 * 100_000 },
-  { id: 'walked-500km',  label: '500km Walked',     category: 'distance', check: s => s.distanceWalked >= 500 * 100_000 },
-  { id: 'deaths-10',     label: '10 Deaths',        category: 'deaths',   check: s => s.deaths         >= 10    },
-  { id: 'deaths-50',     label: '50 Deaths',        category: 'deaths',   check: s => s.deaths         >= 50    },
-  { id: 'crafted-1k',    label: '1K Items Crafted', category: 'crafted',  check: s => s.itemsCrafted   >= 1000  },
+  { id: 'kills-1k',      label: 'Mob Slayer',       category: 'kills',    check: s => s.mobKills       >= 1000  },
+  { id: 'kills-5k',      label: 'Mob Butcher',      category: 'kills',    check: s => s.mobKills       >= 5000  },
+  { id: 'walked-100km',  label: 'Map Explorer',     category: 'distance', check: s => s.distanceWalked >= 100 * 100_000 },
+  { id: 'walked-500km',  label: 'World Traveller',  category: 'distance', check: s => s.distanceWalked >= 500 * 100_000 },
+  { id: 'deaths-10',     label: 'Clumsy',           category: 'deaths',   check: s => s.deaths         >= 10    },
+  { id: 'deaths-50',     label: 'Not So Lucky',     category: 'deaths',   check: s => s.deaths         >= 50    },
+  { id: 'crafted-1k',    label: 'Crafter',          category: 'crafted',  check: s => s.itemsCrafted   >= 1000  },
   { id: 'pvp',           label: 'PvP',              category: 'pvp',      check: s => s.playerKills    >= 1     },
 ];
 
