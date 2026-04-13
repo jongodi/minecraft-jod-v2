@@ -481,7 +481,7 @@ export default function DatapacksSection() {
             maxWidth:      '400px',
           }}
         >
-          {DATAPACKS.length} datapacks — combat, structure, social, and more.
+          {packs.length || ''} datapacks — combat, structure, social, and more.
         </motion.p>
       </div>
 
