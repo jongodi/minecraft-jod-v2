@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { DATAPACKS, type DatapackMeta } from '@/data/datapacks';
+import { type DatapackMeta } from '@/data/datapacks';
+import { getAllPacks } from '@/lib/custom-datapacks';
 
 export interface DatapackUpdateResult {
   id:              number;
@@ -170,10 +171,10 @@ async function getVersionOverrides(): Promise<Record<number, string>> {
 }
 
 export async function GET() {
-  const overrides = await getVersionOverrides();
+  const [all, overrides] = await Promise.all([getAllPacks(), getVersionOverrides()]);
 
-  // Merge Redis version overrides into the static pack definitions
-  const packs = DATAPACKS.map(p => ({
+  // Merge Redis version overrides into all packs (static + custom)
+  const packs = all.map(p => ({
     ...p,
     currentVersion: overrides[p.id] ?? p.currentVersion,
   }));

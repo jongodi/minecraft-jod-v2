@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin, unauthorizedResponse } from '@/lib/auth';
-import { DATAPACKS } from '@/data/datapacks';
+import { getAllPacks } from '@/lib/custom-datapacks';
 
 const KV_KEY = 'datapacks:versions';
 
@@ -19,17 +19,18 @@ async function writeOverrides(overrides: Record<number, string>): Promise<void> 
   await rSet(KV_KEY, overrides);
 }
 
-// GET — return all packs with effective currentVersion (override → static default)
+// GET — return all packs (static + custom) with effective currentVersion (override → default)
 export async function GET(_req: NextRequest) {
   if (!(await requireAdmin())) return unauthorizedResponse();
-  const overrides = await readOverrides();
+  const [all, overrides] = await Promise.all([getAllPacks(), readOverrides()]);
   return NextResponse.json(
-    DATAPACKS.map(p => ({
+    all.map(p => ({
       id:             p.id,
       name:           p.name,
       source:         p.source,
       currentVersion: overrides[p.id] ?? p.currentVersion ?? null,
       isOverridden:   overrides[p.id] !== undefined,
+      isCustom:       p.id >= 1000,
     }))
   );
 }
@@ -42,8 +43,8 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: 'versions object required' }, { status: 400 });
   }
 
-  // Only keep entries for known pack IDs and non-empty values
-  const validIds = new Set(DATAPACKS.map(p => String(p.id)));
+  // Only keep entries for known pack IDs (static + custom) and non-empty values
+  const validIds = new Set((await getAllPacks()).map(p => String(p.id)));
   const cleaned: Record<number, string> = {};
   for (const [id, ver] of Object.entries(versions)) {
     if (validIds.has(id) && typeof ver === 'string' && ver.trim()) {

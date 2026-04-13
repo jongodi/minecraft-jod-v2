@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, type FormEvent, type CSSProperties } from 'react';
 import { useRouter } from 'next/navigation';
 import type { DatapackUpdateResult } from '@/app/api/datapacks/check-updates/route';
+import type { RefreshResult } from '@/app/api/admin/datapacks/refresh/route';
 import type { GalleryPhoto } from '@/lib/gallery';
 import type { MapConfig } from '@/lib/map-types';
 import dynamic from 'next/dynamic';
@@ -232,16 +233,135 @@ function DatapacksSection() {
   );
 }
 
+// ─── Add Custom Pack Modal ────────────────────────────────────────────────────
+
+const PACK_CATEGORIES = ['BUILD', 'COMBAT', 'SURVIVAL', 'QOL', 'STRUCTURE', 'SOCIAL', 'LOOT', 'TRADE', 'CRAFT', 'WORLD'];
+
+function AddPackModal({ filename, onClose, onSaved }: { filename: string; onClose: () => void; onSaved: () => void }) {
+  const [name,       setName]       = useState('');
+  const [desc,       setDesc]       = useState('');
+  const [category,   setCategory]   = useState('QOL');
+  const [source,     setSource]     = useState<'modrinth' | 'github' | 'manual'>('modrinth');
+  const [slug,       setSlug]       = useState('');
+  const [repo,       setRepo]       = useState('');
+  const [gameVer,    setGameVer]    = useState('26.1');
+  const [serverFile, setServerFile] = useState(filename);
+  const [saving,     setSaving]     = useState(false);
+  const [error,      setError]      = useState('');
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    setSaving(true); setError('');
+    try {
+      const res = await fetch('/api/admin/datapacks/custom', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name, description: desc, category, source,
+          modrinthSlug: source === 'modrinth' ? slug : undefined,
+          githubRepo:   source === 'github'   ? repo : undefined,
+          gameVersion: gameVer,
+          serverFile:  serverFile || undefined,
+        }),
+      });
+      const data = await res.json() as { error?: string };
+      if (!res.ok) { setError(data.error ?? 'Save failed'); return; }
+      onSaved();
+    } catch { setError('Network error'); }
+    finally   { setSaving(false); }
+  }
+
+  const inp: CSSProperties = { background: '#0a0a0a', border: '1px solid #2a2a2a', color: '#f0f0f0', fontFamily: mono, fontSize: '0.7rem', padding: '0.4rem 0.6rem', outline: 'none', width: '100%' };
+  const lbl: CSSProperties = { fontFamily: mono, fontSize: '0.5rem', color: '#444', letterSpacing: '0.2em', textTransform: 'uppercase', display: 'block', marginBottom: '0.3rem' };
+  const row: CSSProperties = { marginBottom: '0.85rem' };
+
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.88)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: '#0d0d0d', border: '1px solid #2a2a2a', padding: '1.75rem', width: 'min(520px, 100%)', maxHeight: '90vh', overflowY: 'auto' }}>
+        <div style={{ marginBottom: '1.25rem', borderBottom: '1px solid #1a1a1a', paddingBottom: '0.75rem' }}>
+          <p style={{ fontFamily: mono, fontSize: '0.5rem', letterSpacing: '0.3em', color: green, marginBottom: '0.25rem' }}>NEW DATAPACK</p>
+          <h2 style={{ fontFamily: sans, fontSize: '1.2rem', fontWeight: 900, color: '#f0f0f0', letterSpacing: '-0.02em', margin: 0 }}>Add custom pack</h2>
+          <p style={{ fontFamily: mono, fontSize: '0.5rem', color: '#333', marginTop: '0.4rem', wordBreak: 'break-all' }}>{filename}</p>
+        </div>
+        <form onSubmit={submit}>
+          <div style={row}>
+            <label style={lbl}>Name *</label>
+            <input value={name} onChange={e => setName(e.target.value)} required style={inp} placeholder="Herobrine DP" />
+          </div>
+          <div style={row}>
+            <label style={lbl}>Description *</label>
+            <input value={desc} onChange={e => setDesc(e.target.value)} required style={inp} placeholder="One sentence description" />
+          </div>
+          <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '0.85rem' }}>
+            <div style={{ flex: 1 }}>
+              <label style={lbl}>Category *</label>
+              <select value={category} onChange={e => setCategory(e.target.value)} style={{ ...inp, cursor: 'pointer' }}>
+                {PACK_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={lbl}>Source *</label>
+              <select value={source} onChange={e => setSource(e.target.value as typeof source)} style={{ ...inp, cursor: 'pointer' }}>
+                <option value="modrinth">Modrinth</option>
+                <option value="github">GitHub</option>
+                <option value="manual">Manual</option>
+              </select>
+            </div>
+          </div>
+          {source === 'modrinth' && (
+            <div style={row}>
+              <label style={lbl}>Modrinth slug</label>
+              <input value={slug} onChange={e => setSlug(e.target.value)} style={inp} placeholder="my-datapack-slug" />
+            </div>
+          )}
+          {source === 'github' && (
+            <div style={row}>
+              <label style={lbl}>GitHub repo</label>
+              <input value={repo} onChange={e => setRepo(e.target.value)} style={inp} placeholder="owner/repo" />
+            </div>
+          )}
+          <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '0.85rem' }}>
+            <div style={{ flex: 1 }}>
+              <label style={lbl}>Game version</label>
+              <input value={gameVer} onChange={e => setGameVer(e.target.value)} style={inp} placeholder="26.1" />
+            </div>
+            <div style={{ flex: 2 }}>
+              <label style={lbl}>Server file identifier</label>
+              <input value={serverFile} onChange={e => setServerFile(e.target.value)} style={inp} />
+            </div>
+          </div>
+          <p style={{ fontFamily: mono, fontSize: '0.5rem', color: '#2a2a2a', marginBottom: '1rem', lineHeight: 1.6 }}>
+            Trim server file to the distinctive part before the version — e.g. &quot;Herobrine DP&quot; from &quot;Herobrine DP 1.21.9 - 26.1.2 v7.3.3&quot;
+          </p>
+          {error && <p style={{ fontFamily: mono, fontSize: '0.6rem', color: '#ff4466', marginBottom: '0.75rem' }}>✗ {error}</p>}
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button type="submit" disabled={saving} style={{ fontFamily: mono, fontSize: '0.6rem', letterSpacing: '0.15em', textTransform: 'uppercase', padding: '0.5rem 1rem', cursor: saving ? 'not-allowed' : 'pointer', border: `1px solid ${green}44`, background: green + '18', color: green }}>
+              {saving ? 'SAVING...' : 'ADD PACK'}
+            </button>
+            <button type="button" onClick={onClose} style={{ fontFamily: mono, fontSize: '0.6rem', letterSpacing: '0.15em', textTransform: 'uppercase', padding: '0.5rem 1rem', cursor: 'pointer', border: '1px solid #2a2a2a', background: 'transparent', color: '#444' }}>
+              CANCEL
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 // ─── Datapack Version Manager ─────────────────────────────────────────────────
 
-interface PackVersionRow { id: number; name: string; source: string; currentVersion: string | null; isOverridden: boolean }
+interface PackVersionRow { id: number; name: string; source: string; currentVersion: string | null; isOverridden: boolean; isCustom?: boolean }
 
 function DatapackVersionsSection() {
-  const [packs,   setPacks]   = useState<PackVersionRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [edits,   setEdits]   = useState<Record<number, string>>({});
-  const [saving,  setSaving]  = useState(false);
-  const [msg,     setMsg]     = useState('');
+  const [packs,      setPacks]      = useState<PackVersionRow[]>([]);
+  const [loading,    setLoading]    = useState(true);
+  const [edits,      setEdits]      = useState<Record<number, string>>({});
+  const [saving,     setSaving]     = useState(false);
+  const [msg,        setMsg]        = useState('');
+  const [syncing,    setSyncing]    = useState(false);
+  const [syncResult, setSyncResult] = useState<RefreshResult | null>(null);
+  const [syncError,  setSyncError]  = useState('');
+  const [addingFor,  setAddingFor]  = useState<string | null>(null);
 
   const fetchPacks = useCallback(async () => {
     setLoading(true);
@@ -271,6 +391,17 @@ function DatapackVersionsSection() {
       if (res.ok) fetchPacks();
     } catch { setMsg('✗ Network error'); }
     finally   { setSaving(false); }
+  }
+
+  async function sync() {
+    setSyncing(true); setSyncResult(null); setSyncError('');
+    try {
+      const res  = await fetch('/api/admin/datapacks/refresh', { method: 'POST' });
+      const data = await res.json() as RefreshResult & { error?: string };
+      if (!res.ok) { setSyncError(data.error ?? 'Sync failed'); }
+      else         { setSyncResult(data); await fetchPacks(); }
+    } catch { setSyncError('Network error'); }
+    finally  { setSyncing(false); }
   }
 
   const hasChanges = packs.some(p => (edits[p.id] ?? '') !== (p.currentVersion ?? ''));
@@ -313,7 +444,14 @@ function DatapackVersionsSection() {
             ))}
           </div>
 
-          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginTop: '1.25rem' }}>
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginTop: '1.25rem', flexWrap: 'wrap' }}>
+            <button
+              onClick={sync}
+              disabled={syncing || saving}
+              style={{ fontFamily: mono, fontSize: '0.6rem', letterSpacing: '0.15em', textTransform: 'uppercase', padding: '0.5rem 1rem', cursor: syncing || saving ? 'not-allowed' : 'pointer', border: '1px solid #4ecdc444', background: 'transparent', color: '#4ecdc4', transition: 'all 0.2s' }}
+            >
+              {syncing ? 'SYNCING...' : 'SYNC FROM SERVER'}
+            </button>
             <button
               onClick={save}
               disabled={saving || !hasChanges}
@@ -323,7 +461,61 @@ function DatapackVersionsSection() {
             </button>
             {msg && <span style={{ fontFamily: mono, fontSize: '0.6rem', color: msg.startsWith('✓') ? green : '#ff4466' }}>{msg}</span>}
           </div>
+
+          {syncError && (
+            <p style={{ fontFamily: mono, fontSize: '0.6rem', color: '#ff4466', marginTop: '0.75rem' }}>
+              ✗ {syncError}
+            </p>
+          )}
+          {syncResult && (
+            <div style={{ marginTop: '0.75rem', border: '1px solid #1a2a1a', background: '#0a120a', padding: '0.75rem 1rem' }}>
+              <p style={{ fontFamily: mono, fontSize: '0.6rem', color: green, marginBottom: '0.5rem' }}>
+                ✓ Scanned {syncResult.scanned.length} file{syncResult.scanned.length !== 1 ? 's' : ''} — {syncResult.updated} version{syncResult.updated !== 1 ? 's' : ''} updated, {syncResult.matched.length} matched, {syncResult.unmatched.length} unrecognised
+              </p>
+              {syncResult.matched.map(m => (
+                <div key={m.id} style={{ display: 'flex', gap: '0.75rem', padding: '0.2rem 0', fontFamily: mono, fontSize: '0.55rem' }}>
+                  <span style={{ color: '#2a2a2a', width: '1.5rem', flexShrink: 0 }}>{String(m.id).padStart(2, '0')}</span>
+                  <span style={{ color: '#888', flex: 1 }}>{m.name}</span>
+                  {m.version
+                    ? <span style={{ color: green }}>v{m.version}</span>
+                    : <span style={{ color: '#333' }}>detected — set version manually</span>}
+                </div>
+              ))}
+              {syncResult.unmatched.length > 0 && (
+                <div style={{ marginTop: '0.5rem', borderTop: '1px solid #1a1a1a', paddingTop: '0.5rem' }}>
+                  <p style={{ fontFamily: mono, fontSize: '0.5rem', color: '#444', letterSpacing: '0.15em', marginBottom: '0.4rem' }}>UNRECOGNISED</p>
+                  {syncResult.unmatched.map(f => (
+                    <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.2rem 0' }}>
+                      <span style={{ fontFamily: mono, fontSize: '0.5rem', color: '#333', flex: 1, wordBreak: 'break-all' }}>{f}</span>
+                      <button
+                        onClick={() => setAddingFor(f)}
+                        style={{ fontFamily: mono, fontSize: '0.45rem', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '0.2rem 0.5rem', cursor: 'pointer', border: '1px solid #2a2a2a', background: 'transparent', color: '#555', flexShrink: 0 }}
+                      >
+                        + ADD
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </>
+      )}
+
+      {addingFor && (
+        <AddPackModal
+          filename={addingFor}
+          onClose={() => setAddingFor(null)}
+          onSaved={() => {
+            setAddingFor(null);
+            fetchPacks();
+            // Remove the newly-added filename from the unrecognised list
+            setSyncResult(prev => prev
+              ? { ...prev, unmatched: prev.unmatched.filter(f => f !== addingFor) }
+              : prev
+            );
+          }}
+        />
       )}
     </div>
   );
