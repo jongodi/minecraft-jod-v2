@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import type { DatapackUpdateResult } from '@/app/api/datapacks/check-updates/route';
+import type { RefreshResult } from '@/app/api/admin/datapacks/refresh/route';
 import type { GalleryPhoto } from '@/lib/gallery';
 import type { MapConfig } from '@/lib/map-types';
 import dynamic from 'next/dynamic';
@@ -237,11 +238,14 @@ function DatapacksSection() {
 interface PackVersionRow { id: number; name: string; source: string; currentVersion: string | null; isOverridden: boolean }
 
 function DatapackVersionsSection() {
-  const [packs,   setPacks]   = useState<PackVersionRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [edits,   setEdits]   = useState<Record<number, string>>({});
-  const [saving,  setSaving]  = useState(false);
-  const [msg,     setMsg]     = useState('');
+  const [packs,      setPacks]      = useState<PackVersionRow[]>([]);
+  const [loading,    setLoading]    = useState(true);
+  const [edits,      setEdits]      = useState<Record<number, string>>({});
+  const [saving,     setSaving]     = useState(false);
+  const [msg,        setMsg]        = useState('');
+  const [syncing,    setSyncing]    = useState(false);
+  const [syncResult, setSyncResult] = useState<RefreshResult | null>(null);
+  const [syncError,  setSyncError]  = useState('');
 
   const fetchPacks = useCallback(async () => {
     setLoading(true);
@@ -271,6 +275,17 @@ function DatapackVersionsSection() {
       if (res.ok) fetchPacks();
     } catch { setMsg('✗ Network error'); }
     finally   { setSaving(false); }
+  }
+
+  async function sync() {
+    setSyncing(true); setSyncResult(null); setSyncError('');
+    try {
+      const res  = await fetch('/api/admin/datapacks/refresh', { method: 'POST' });
+      const data = await res.json() as RefreshResult & { error?: string };
+      if (!res.ok) { setSyncError(data.error ?? 'Sync failed'); }
+      else         { setSyncResult(data); await fetchPacks(); }
+    } catch { setSyncError('Network error'); }
+    finally  { setSyncing(false); }
   }
 
   const hasChanges = packs.some(p => (edits[p.id] ?? '') !== (p.currentVersion ?? ''));
@@ -313,7 +328,14 @@ function DatapackVersionsSection() {
             ))}
           </div>
 
-          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginTop: '1.25rem' }}>
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginTop: '1.25rem', flexWrap: 'wrap' }}>
+            <button
+              onClick={sync}
+              disabled={syncing || saving}
+              style={{ fontFamily: mono, fontSize: '0.6rem', letterSpacing: '0.15em', textTransform: 'uppercase', padding: '0.5rem 1rem', cursor: syncing || saving ? 'not-allowed' : 'pointer', border: '1px solid #4ecdc444', background: 'transparent', color: '#4ecdc4', transition: 'all 0.2s' }}
+            >
+              {syncing ? 'SYNCING...' : 'SYNC FROM SERVER'}
+            </button>
             <button
               onClick={save}
               disabled={saving || !hasChanges}
@@ -323,6 +345,34 @@ function DatapackVersionsSection() {
             </button>
             {msg && <span style={{ fontFamily: mono, fontSize: '0.6rem', color: msg.startsWith('✓') ? green : '#ff4466' }}>{msg}</span>}
           </div>
+
+          {syncError && (
+            <p style={{ fontFamily: mono, fontSize: '0.6rem', color: '#ff4466', marginTop: '0.75rem' }}>
+              ✗ {syncError}
+            </p>
+          )}
+          {syncResult && (
+            <div style={{ marginTop: '0.75rem', border: '1px solid #1a2a1a', background: '#0a120a', padding: '0.75rem 1rem' }}>
+              <p style={{ fontFamily: mono, fontSize: '0.6rem', color: green, marginBottom: '0.5rem' }}>
+                ✓ Scanned {syncResult.scanned.length} file{syncResult.scanned.length !== 1 ? 's' : ''} — {syncResult.updated} version{syncResult.updated !== 1 ? 's' : ''} updated, {syncResult.matched.length} matched, {syncResult.unmatched.length} unrecognised
+              </p>
+              {syncResult.matched.map(m => (
+                <div key={m.id} style={{ display: 'flex', gap: '0.75rem', padding: '0.2rem 0', fontFamily: mono, fontSize: '0.55rem' }}>
+                  <span style={{ color: '#2a2a2a', width: '1.5rem', flexShrink: 0 }}>{String(m.id).padStart(2, '0')}</span>
+                  <span style={{ color: '#888', flex: 1 }}>{m.name}</span>
+                  <span style={{ color: green }}>v{m.version}</span>
+                </div>
+              ))}
+              {syncResult.unmatched.length > 0 && (
+                <div style={{ marginTop: '0.5rem', borderTop: '1px solid #1a1a1a', paddingTop: '0.5rem' }}>
+                  <p style={{ fontFamily: mono, fontSize: '0.5rem', color: '#444', letterSpacing: '0.15em', marginBottom: '0.25rem' }}>UNRECOGNISED</p>
+                  {syncResult.unmatched.map(f => (
+                    <p key={f} style={{ fontFamily: mono, fontSize: '0.5rem', color: '#333' }}>{f}</p>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </>
       )}
     </div>
