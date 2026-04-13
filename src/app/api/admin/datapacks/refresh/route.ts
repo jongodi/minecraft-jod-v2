@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireAdmin, unauthorizedResponse } from '@/lib/auth';
 import { getExarotonServerId } from '@/lib/exaroton';
-import { DATAPACKS } from '@/data/datapacks';
+import { getAllPacks } from '@/lib/custom-datapacks';
 
 export const dynamic = 'force-dynamic';
 
@@ -93,6 +93,7 @@ export async function POST() {
       .filter(f => f.name.endsWith('.zip') || f.isDirectory)
       .map(f => f.name);
 
+    const allPacks = await getAllPacks();
     const matched:   RefreshResult['matched'] = [];
     const unmatched: string[]                 = [];
 
@@ -100,7 +101,7 @@ export async function POST() {
       const lower = filename.toLowerCase();
 
       // 1. Try serverFile substring match (case-insensitive)
-      let matchedPack = DATAPACKS.find(
+      let matchedPack = allPacks.find(
         p => p.serverFile && lower.includes(p.serverFile.toLowerCase())
       );
       let matchedServerFile = matchedPack?.serverFile;
@@ -110,8 +111,8 @@ export async function POST() {
         const parsed = parseSlugVersion(filename);
         if (parsed) {
           matchedPack =
-            DATAPACKS.find(p => p.modrinthSlug === parsed.slug) ??
-            DATAPACKS.find(p => normalizeForMatch(p.name) === parsed.slug);
+            allPacks.find(p => p.modrinthSlug === parsed.slug) ??
+            allPacks.find(p => normalizeForMatch(p.name) === parsed.slug);
         }
       }
 

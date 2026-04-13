@@ -2,7 +2,7 @@
 
 import { motion, useInView, AnimatePresence } from 'framer-motion';
 import { useRef, useState, useCallback, useEffect } from 'react';
-import { DATAPACKS, CATEGORY_COLORS, type DatapackMeta } from '@/data/datapacks';
+import { CATEGORY_COLORS, type DatapackMeta } from '@/data/datapacks';
 import type { DatapackUpdateResult } from '@/app/api/datapacks/check-updates/route';
 
 // ─── Update badge ─────────────────────────────────────────────────────────────
@@ -378,8 +378,17 @@ function UpdateSummaryBar({ results }: { results: DatapackUpdateResult[] | null 
 export default function DatapacksSection() {
   const headerRef = useRef<HTMLDivElement>(null);
   const isInView  = useInView(headerRef, { once: true, margin: '-80px' });
+  const [packs,         setPacks]         = useState<DatapackMeta[]>([]);
   const [updateResults, setUpdateResults] = useState<DatapackUpdateResult[] | null>(null);
   const [loadingUpdates, setLoadingUpdates] = useState(false);
+
+  // Fetch full pack list (static + custom) on mount
+  useEffect(() => {
+    fetch('/api/datapacks')
+      .then(r => r.json())
+      .then((data: DatapackMeta[]) => setPacks(data))
+      .catch(() => {});
+  }, []);
 
   // Fetch update status once section comes into view
   useEffect(() => {
@@ -500,7 +509,7 @@ export default function DatapacksSection() {
           border:              '1px solid #1a1a1a',
         }}
       >
-        {DATAPACKS.map((pack, i) => (
+        {packs.map((pack, i) => (
           <DatapackCard
             key={pack.id}
             pack={pack}
