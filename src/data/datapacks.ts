@@ -20,6 +20,10 @@ export interface DatapackMeta {
   currentVersion?: string;
   // Minecraft game version to filter update checks against
   gameVersion:  string;
+  // Unique substring of the actual filename/folder in /world/datapacks — used by the
+  // auto-sync feature to identify this pack regardless of naming conventions.
+  // Set to a distinctive part of the name that won't match other packs.
+  serverFile?:  string;
 }
 
 export const DATAPACKS: DatapackMeta[] = [
@@ -32,6 +36,7 @@ export const DATAPACKS: DatapackMeta[] = [
     modrinthSlug:   'mvp',
     currentVersion: '1.0',
     gameVersion:    '26.1',
+    serverFile:     'More Vanilla Paintings',   // "[1.20.x] More Vanilla Paintings v1.0"
   },
   {
     id:             2,
@@ -42,6 +47,7 @@ export const DATAPACKS: DatapackMeta[] = [
     modrinthSlug:   'banner-flags',
     currentVersion: '3.0.1',
     gameVersion:    '26.1',
+    serverFile:     'banner-flags',             // "banner-flags-v3-0-1"
   },
   {
     id:             3,
@@ -52,6 +58,7 @@ export const DATAPACKS: DatapackMeta[] = [
     modrinthSlug:   'call-of-the-king',
     currentVersion: '1.1',
     gameVersion:    '1.21.11',
+    serverFile:     'call_of_the_king',         // "call_of_the_king-1.21.9-10"
   },
   {
     id:             4,
@@ -62,6 +69,7 @@ export const DATAPACKS: DatapackMeta[] = [
     modrinthSlug:   'colorednameteams',
     currentVersion: '1.0.3',
     gameVersion:    '1.21.11',
+    serverFile:     'ColeredNameTeams',         // "ColeredNameTeams (1.0.3)" — typo is in the folder
   },
   {
     id:             5,
@@ -72,6 +80,7 @@ export const DATAPACKS: DatapackMeta[] = [
     modrinthSlug:   'dungeons-and-taverns',
     currentVersion: '5.2.0',
     gameVersion:    '26.1',
+    serverFile:     'Dungeons and Taverns',     // "Dungeons and Taverns v5.2.0"
   },
   {
     id:             6,
@@ -82,6 +91,7 @@ export const DATAPACKS: DatapackMeta[] = [
     modrinthSlug:   'ghast-mayhem',
     currentVersion: '1.3',
     gameVersion:    '26.1',
+    serverFile:     'GM-',                      // "GM-1_3" — hyphen makes it distinct from "gm4_"
   },
   {
     id:             7,
@@ -92,6 +102,7 @@ export const DATAPACKS: DatapackMeta[] = [
     modrinthSlug:   'gm4-holographic-tags',
     currentVersion: '1.6.1',
     gameVersion:    '26.1',
+    serverFile:     'gm4_holographic_tags',     // "gm4_holographic_tags_26_1"
   },
   {
     id:             8,
@@ -102,6 +113,7 @@ export const DATAPACKS: DatapackMeta[] = [
     modrinthSlug:   'ly-graves',
     currentVersion: '3.0.0',
     gameVersion:    '26.1',
+    serverFile:     'Graves',                   // "Graves v3.0.0 [1.21.11]"
   },
   {
     id:             9,
@@ -112,6 +124,7 @@ export const DATAPACKS: DatapackMeta[] = [
     modrinthSlug:   'show-player-health',
     currentVersion: '2.2.0',
     gameVersion:    '26.1',
+    serverFile:     'Health',                   // "Health-2.2.0"
   },
   {
     id:             10,
@@ -122,6 +135,7 @@ export const DATAPACKS: DatapackMeta[] = [
     modrinthSlug:   'hopo-better-mineshaft',
     currentVersion: '1.3.6-datapack',
     gameVersion:    '26.1',
+    serverFile:     'hopobettermineshaft',       // "hopobettermineshaft-26-1-1-3-6"
   },
   {
     id:             11,
@@ -132,6 +146,7 @@ export const DATAPACKS: DatapackMeta[] = [
     modrinthSlug:   'mc-paint',
     currentVersion: '1.7.0',
     gameVersion:    '1.21.11',
+    serverFile:     'mc_paint',                 // "mc_paint_v1.7.0_data_pack"
   },
   {
     id:             12,
@@ -142,6 +157,7 @@ export const DATAPACKS: DatapackMeta[] = [
     modrinthSlug:   'waystones-data-pack',
     currentVersion: '3.5.1',
     gameVersion:    '26.1',
+    serverFile:     'pk_waystones',             // "pk_waystones_V.3.5.1_mc_26.1"
   },
   {
     id:             13,
@@ -162,6 +178,7 @@ export const DATAPACKS: DatapackMeta[] = [
     modrinthSlug:   'wabi-sabi-structures',
     currentVersion: '3.0.5',
     gameVersion:    '1.21.11',
+    serverFile:     'Wabi-Sabi Structures',     // "Wabi-Sabi Structures-3.0.5-1.21.11 Datapack"
   },
 ];
 

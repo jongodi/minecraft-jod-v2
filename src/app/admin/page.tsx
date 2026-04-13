@@ -360,7 +360,9 @@ function DatapackVersionsSection() {
                 <div key={m.id} style={{ display: 'flex', gap: '0.75rem', padding: '0.2rem 0', fontFamily: mono, fontSize: '0.55rem' }}>
                   <span style={{ color: '#2a2a2a', width: '1.5rem', flexShrink: 0 }}>{String(m.id).padStart(2, '0')}</span>
                   <span style={{ color: '#888', flex: 1 }}>{m.name}</span>
-                  <span style={{ color: green }}>v{m.version}</span>
+                  {m.version
+                    ? <span style={{ color: green }}>v{m.version}</span>
+                    : <span style={{ color: '#333' }}>detected — set version manually</span>}
                 </div>
               ))}
               {syncResult.unmatched.length > 0 && (
