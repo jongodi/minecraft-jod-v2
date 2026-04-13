@@ -51,16 +51,17 @@ export async function POST() {
     }
 
     const listData = await listRes.json() as {
-      data?: { children?: Array<{ name: string; isDirectory: boolean }> }
+      data?: { children?: Array<{ name: string; isDirectory?: boolean }> }
     };
-    const zipFiles = (listData.data?.children ?? [])
-      .filter(f => !f.isDirectory && f.name.endsWith('.zip'))
+    // Include both .zip files and extracted folders — both can carry version info in the name
+    const entries = (listData.data?.children ?? [])
+      .filter(f => f.name.endsWith('.zip') || f.isDirectory)
       .map(f => f.name);
 
     const matched:   RefreshResult['matched'] = [];
     const unmatched: string[]                 = [];
 
-    for (const filename of zipFiles) {
+    for (const filename of entries) {
       const parsed = parseFilename(filename);
       if (!parsed) { unmatched.push(filename); continue; }
 
@@ -92,7 +93,7 @@ export async function POST() {
       await rSet(KV_KEY, newOverrides);
     }
 
-    return NextResponse.json({ scanned: zipFiles, matched, unmatched, updated } satisfies RefreshResult);
+    return NextResponse.json({ scanned: entries, matched, unmatched, updated } satisfies RefreshResult);
 
   } catch (err) {
     console.error('Datapack refresh failed:', err instanceof Error ? err.message : err);
