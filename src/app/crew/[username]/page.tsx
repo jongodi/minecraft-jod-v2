@@ -2,11 +2,14 @@
 
 import { useEffect, useState, useRef, useCallback, FormEvent } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import type { CrewProfile, CrewPost } from '@/lib/crew';
 import type { PlayerStat, StatsResponse } from '@/app/api/stats/route';
 import { formatDate, formatAge } from '@/lib/format';
 import Lightbox from '@/components/Lightbox';
+import StatRadarChart from '@/components/StatRadarChart';
+import PhotoReactions from '@/components/PhotoReactions';
 
 const mono  = "'JetBrains Mono', monospace";
 const sans  = "'Space Grotesk', sans-serif";
@@ -132,6 +135,8 @@ export default function CrewProfilePage({ params }: { params: { username: string
   const [bioError,      setBioError]      = useState('');
   const [photoError,    setPhotoError]    = useState('');
   const [playerStats,   setPlayerStats]   = useState<PlayerStat | null>(null);
+  const [allStats,      setAllStats]      = useState<PlayerStat[]>([]);
+  const [compareWith,   setCompareWith]   = useState<string>('');
   const [statsMeta,     setStatsMeta]     = useState<{ source: string; cachedAt: string | null } | null>(null);
   // Post editing
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
@@ -174,6 +179,7 @@ export default function CrewProfilePage({ params }: { params: { username: string
       .then((data: StatsResponse) => {
         const row = data.players.find(p => p.username.toLowerCase() === username.toLowerCase());
         setPlayerStats(row ?? null);
+        setAllStats(data.players);
         setStatsMeta({ source: data.source, cachedAt: data.cachedAt });
       })
       .catch(() => {});
@@ -286,11 +292,14 @@ export default function CrewProfilePage({ params }: { params: { username: string
 
       {/* Profile header */}
       <div style={{ display: 'flex', gap: '2rem', alignItems: 'flex-start', marginBottom: '3rem', flexWrap: 'wrap' }}>
-        <div style={{ width: '96px', height: '96px', flexShrink: 0, border: '1px solid #2a2a2a', overflow: 'hidden', imageRendering: 'pixelated' }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={`https://crafatar.com/renders/head/${username}?size=96&overlay`} alt={username}
-            style={{ width: '100%', height: '100%', objectFit: 'cover', imageRendering: 'pixelated' }}
-            onError={e => { (e.target as HTMLImageElement).src = `https://mc-heads.net/head/${username}/128`; }} />
+        <div style={{ width: '96px', height: '96px', flexShrink: 0, border: '1px solid #2a2a2a', overflow: 'hidden', imageRendering: 'pixelated', position: 'relative' }}>
+          <Image
+            src={`https://crafatar.com/renders/head/${username}?size=96&overlay`}
+            alt={username}
+            fill
+            unoptimized
+            style={{ objectFit: 'cover', imageRendering: 'pixelated' }}
+          />
         </div>
 
         <div style={{ flex: 1 }}>
@@ -334,16 +343,91 @@ export default function CrewProfilePage({ params }: { params: { username: string
             )}
           </div>
           {playerStats ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '1px', background: '#1a1a1a', maxWidth: '640px' }}>
-              {STAT_LABELS.map(({ key, label, format }) => (
-                <div key={key} style={{ background: '#0d0d0d', padding: '0.75rem 1rem' }}>
-                  <p style={{ fontFamily: sans, fontSize: '1.1rem', fontWeight: 700, color: '#f0f0f0', marginBottom: '0.15rem' }}>{format(playerStats[key] as number)}</p>
-                  <p style={{ fontFamily: mono, fontSize: '0.45rem', color: '#333', letterSpacing: '0.15em', textTransform: 'uppercase' }}>{label}</p>
+            <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
+              {/* Stat grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '1px', background: '#1a1a1a', flex: '1 1 300px', maxWidth: '480px' }}>
+                {STAT_LABELS.map(({ key, label, format }) => (
+                  <div key={key} style={{ background: '#0d0d0d', padding: '0.75rem 1rem' }}>
+                    <p style={{ fontFamily: sans, fontSize: '1.1rem', fontWeight: 700, color: '#f0f0f0', marginBottom: '0.15rem' }}>{format(playerStats[key] as number)}</p>
+                    <p style={{ fontFamily: mono, fontSize: '0.45rem', color: '#333', letterSpacing: '0.15em', textTransform: 'uppercase' }}>{label}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Radar chart */}
+              {allStats.length > 0 && (
+                <div style={{ flexShrink: 0, border: '1px solid #1a1a1a', background: '#0d0d0d', padding: '1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+                  <StatRadarChart stat={playerStats} allStats={allStats} size={200} />
+                  <p style={{ fontFamily: mono, fontSize: '0.42rem', color: '#2a2a2a', letterSpacing: '0.15em', textTransform: 'uppercase' }}>VS SERVER LEADERS</p>
                 </div>
-              ))}
+              )}
             </div>
           ) : (
             <p style={{ fontFamily: mono, fontSize: '0.55rem', color: '#2a2a2a', fontStyle: 'italic' }}>No stat data yet.</p>
+          )}
+
+          {/* Compare mode */}
+          {playerStats && allStats.length > 1 && (
+            <div style={{ marginTop: '1.25rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                <p style={{ fontFamily: mono, fontSize: '0.5rem', letterSpacing: '0.2em', color: '#333', textTransform: 'uppercase' }}>COMPARE WITH</p>
+                <select
+                  value={compareWith}
+                  onChange={e => setCompareWith(e.target.value)}
+                  style={{ background: '#111', border: '1px solid #2a2a2a', color: '#888', fontFamily: mono, fontSize: '0.55rem', padding: '0.3rem 0.5rem', outline: 'none', cursor: 'pointer' }}
+                >
+                  <option value="">— select player —</option>
+                  {allStats
+                    .filter(p => p.username.toLowerCase() !== username.toLowerCase())
+                    .map(p => (
+                      <option key={p.username} value={p.username}>{p.username}</option>
+                    ))}
+                </select>
+              </div>
+
+              {compareWith && (() => {
+                const other = allStats.find(p => p.username === compareWith);
+                if (!other) return null;
+                return (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1px', background: '#1a1a1a', maxWidth: '640px' }}>
+                    {STAT_LABELS.map(({ key, label, format }) => {
+                      const myVal    = playerStats[key] as number;
+                      const theirVal = other[key]       as number;
+                      const maxVal   = Math.max(myVal, theirVal, 1);
+                      const myPct    = (myVal    / maxVal) * 100;
+                      const theirPct = (theirVal / maxVal) * 100;
+                      return (
+                        <div key={key} style={{ background: '#0a0a0a', padding: '0.75rem 1rem' }}>
+                          <p style={{ fontFamily: mono, fontSize: '0.45rem', color: '#333', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '0.5rem' }}>{label}</p>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                            {/* My bar */}
+                            <div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.15rem' }}>
+                                <span style={{ fontFamily: mono, fontSize: '0.42rem', color: green }}>{username}</span>
+                                <span style={{ fontFamily: mono, fontSize: '0.42rem', color: green }}>{format(myVal)}</span>
+                              </div>
+                              <div style={{ height: 4, background: '#111', borderRadius: 2 }}>
+                                <div style={{ height: '100%', width: `${myPct}%`, background: green, borderRadius: 2, transition: 'width 0.6s ease' }} />
+                              </div>
+                            </div>
+                            {/* Their bar */}
+                            <div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.15rem' }}>
+                                <span style={{ fontFamily: mono, fontSize: '0.42rem', color: '#888' }}>{compareWith}</span>
+                                <span style={{ fontFamily: mono, fontSize: '0.42rem', color: '#888' }}>{format(theirVal)}</span>
+                              </div>
+                              <div style={{ height: 4, background: '#111', borderRadius: 2 }}>
+                                <div style={{ height: '100%', width: `${theirPct}%`, background: '#555', borderRadius: 2, transition: 'width 0.6s ease' }} />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </div>
           )}
         </div>
       )}
@@ -357,9 +441,16 @@ export default function CrewProfilePage({ params }: { params: { username: string
 
         {isOwner && (
           <form onSubmit={submitPost} style={{ marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <textarea value={newPost} onChange={e => { setNewPost(e.target.value); setPostError(''); }} placeholder="What's happening on the server..." maxLength={1000} rows={2}
+            <textarea value={newPost} onChange={e => { setNewPost(e.target.value.slice(0, 280)); setPostError(''); }} placeholder="What's happening on the server..." maxLength={280} rows={2}
               style={{ background: '#111', border: `1px solid ${postError ? '#ff4466' : '#2a2a2a'}`, color: '#ccc', fontFamily: mono, fontSize: '0.7rem', padding: '0.6rem', outline: 'none', resize: 'vertical', lineHeight: 1.5 }} />
-            {postError && <p style={{ fontFamily: mono, fontSize: '0.55rem', color: '#ff4466' }}>{postError}</p>}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              {postError
+                ? <p style={{ fontFamily: mono, fontSize: '0.55rem', color: '#ff4466', margin: 0 }}>{postError}</p>
+                : <span />}
+              <span style={{ fontFamily: mono, fontSize: '0.48rem', letterSpacing: '0.1em', color: newPost.length >= 260 ? (newPost.length >= 280 ? '#ff4466' : '#f0a500') : '#333' }}>
+                {newPost.length}/280
+              </span>
+            </div>
             <button type="submit" disabled={posting || !newPost.trim()} style={{ alignSelf: 'flex-end', fontFamily: mono, fontSize: '0.55rem', letterSpacing: '0.15em', textTransform: 'uppercase', background: newPost.trim() ? green + '22' : 'none', color: newPost.trim() ? green : '#333', border: `1px solid ${newPost.trim() ? green + '44' : '#1a1a1a'}`, padding: '0.35rem 0.8rem', cursor: newPost.trim() ? 'pointer' : 'not-allowed' }}>
               {posting ? 'POSTING...' : 'POST →'}
             </button>
@@ -441,18 +532,31 @@ export default function CrewProfilePage({ params }: { params: { username: string
             {profile.photos.map((photo, idx) => (
               <div
                 key={photo.id}
-                onClick={() => setLightboxIdx(idx)}
-                style={{ aspectRatio: '16/9', overflow: 'hidden', border: '1px solid #1a1a1a', background: '#0d0d0d', position: 'relative', cursor: 'pointer' }}
+                style={{ aspectRatio: '16/9', overflow: 'hidden', border: '1px solid #1a1a1a', background: '#0d0d0d', position: 'relative' }}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={photo.filename} alt={photo.caption || ''} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.3s ease' }}
-                  onMouseEnter={e => { (e.target as HTMLImageElement).style.transform = 'scale(1.04)'; }}
-                  onMouseLeave={e => { (e.target as HTMLImageElement).style.transform = 'scale(1)'; }} />
-                {photo.caption && (
-                  <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(0,0,0,0.7)', padding: '0.3rem 0.5rem' }}>
-                    <p style={{ fontFamily: mono, fontSize: '0.5rem', color: '#ccc' }}>{photo.caption}</p>
-                  </div>
-                )}
+                <div
+                  onClick={() => setLightboxIdx(idx)}
+                  style={{ width: '100%', height: '100%', cursor: 'pointer', transition: 'transform 0.3s ease' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'scale(1.04)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = 'scale(1)'; }}
+                >
+                  <Image
+                    src={photo.filename}
+                    alt={photo.caption || ''}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 33vw"
+                    style={{ objectFit: 'cover', display: 'block' }}
+                  />
+                  {photo.caption && (
+                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, background: 'rgba(0,0,0,0.7)', padding: '0.3rem 0.5rem', zIndex: 1 }}>
+                      <p style={{ fontFamily: mono, fontSize: '0.5rem', color: '#ccc' }}>{photo.caption}</p>
+                    </div>
+                  )}
+                </div>
+                {/* Reactions */}
+                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}>
+                  <PhotoReactions photoId={photo.id} isLoggedIn={!!session} />
+                </div>
               </div>
             ))}
           </div>

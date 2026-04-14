@@ -1,9 +1,11 @@
 // Player stats from Exaroton's file API (reads Minecraft world/stats/*.json)
 // When the server is online, fetches live data and caches it to Vercel KV.
 // When offline, serves the last cached snapshot with a timestamp.
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { CREW_USERNAMES } from '@/lib/crew';
 import { getExarotonServerId } from '@/lib/exaroton';
+import { checkRateLimit } from '@/lib/rateLimit';
+import { trackHit } from '@/lib/analytics';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,16 +20,24 @@ export interface PlayerStat {
   itemsCrafted:  number;
 }
 
+// Weekly growth: username → { statKey: delta }
+export type StatGrowth = Record<string, Partial<Record<keyof PlayerStat, number>>>;
+
 export interface StatsResponse {
   players:  PlayerStat[];
   source:   'live' | 'cached' | 'unavailable';
   cachedAt: string | null;
+  growth?:  StatGrowth;
 }
 
 const KV_KEY = 'stats:snapshot';
 
 function hasKV(): boolean {
   return !!process.env.REDIS_URL;
+}
+
+function todayKey(): string {
+  return `stats:snapshot:${new Date().toISOString().slice(0, 10)}`;
 }
 
 async function getCachedStats(): Promise<{ players: PlayerStat[]; cachedAt: string } | null> {
@@ -40,11 +50,50 @@ async function getCachedStats(): Promise<{ players: PlayerStat[]; cachedAt: stri
   }
 }
 
+function weekAgoKey(): string {
+  const d = new Date();
+  d.setDate(d.getDate() - 7);
+  return `stats:snapshot:${d.toISOString().slice(0, 10)}`;
+}
+
+async function getWeeklyGrowth(current: PlayerStat[]): Promise<StatGrowth | undefined> {
+  if (!hasKV()) return undefined;
+  try {
+    const { rGet } = await import('@/lib/redis');
+    const old = await rGet<{ players: PlayerStat[] }>(weekAgoKey());
+    if (!old) return undefined;
+    const oldMap: Record<string, PlayerStat> = {};
+    for (const p of old.players) oldMap[p.username.toLowerCase()] = p;
+    const STAT_KEYS: Array<keyof PlayerStat> = ['deaths','mobKills','playTimeHours','distanceWalked','itemsCrafted'];
+    const growth: StatGrowth = {};
+    for (const p of current) {
+      const prev = oldMap[p.username.toLowerCase()];
+      if (!prev) continue;
+      growth[p.username] = {};
+      for (const k of STAT_KEYS) {
+        const delta = (p[k] as number) - (prev[k] as number);
+        if (delta !== 0) growth[p.username]![k] = delta;
+      }
+    }
+    return growth;
+  } catch { return undefined; }
+}
+
 async function setCachedStats(players: PlayerStat[]): Promise<void> {
   if (!hasKV()) return;
   try {
-    const { rSet } = await import('@/lib/redis');
-    await rSet(KV_KEY, { players, cachedAt: new Date().toISOString() });
+    const { rSet, getRedis } = await import('@/lib/redis');
+    const now = new Date().toISOString();
+    const snapshot = { players, cachedAt: now };
+    // Always update the latest snapshot
+    await rSet(KV_KEY, snapshot);
+    // Store a daily keyed snapshot for historical comparisons (90 day TTL)
+    const redis = getRedis();
+    const dayKey = todayKey();
+    const existing = await redis.exists(dayKey);
+    if (!existing) {
+      await redis.set(dayKey, JSON.stringify(snapshot), 'EX', 90 * 24 * 3600);
+    }
   } catch { /* non-fatal */ }
 }
 
@@ -73,7 +122,14 @@ function extractStats(statsJson: MinecraftStatsJson): Omit<PlayerStat, 'username
   };
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+  const { limited } = await checkRateLimit(ip, 'stats', { max: 20, windowSeconds: 60 });
+  if (limited) {
+    return NextResponse.json({ players: [], source: 'unavailable', cachedAt: null } satisfies StatsResponse, { status: 429 });
+  }
+
+  void trackHit('stats');
   const token = process.env.EXAROTON_API_KEY;
 
   // No API key — try cache, then give up
@@ -143,8 +199,9 @@ export async function GET() {
       await setCachedStats(players);
     }
 
+    const growth = await getWeeklyGrowth(players);
     return NextResponse.json({
-      players, source: 'live', cachedAt: now,
+      players, source: 'live', cachedAt: now, growth,
     } satisfies StatsResponse, {
       headers: { 'Cache-Control': 's-maxage=300, stale-while-revalidate=60' },
     });
@@ -155,8 +212,9 @@ export async function GET() {
     // Serve last known snapshot if it has real data
     const cached = await getCachedStats();
     if (cached && cached.players.some(p => p.playTimeTicks > 0 || p.deaths > 0 || p.mobKills > 0)) {
+      const growth = await getWeeklyGrowth(cached.players);
       return NextResponse.json({
-        players: cached.players, source: 'cached', cachedAt: cached.cachedAt,
+        players: cached.players, source: 'cached', cachedAt: cached.cachedAt, growth,
       } satisfies StatsResponse);
     }
 

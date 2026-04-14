@@ -9,6 +9,8 @@ const NAV_LINKS = [
   { label: 'GALLERY',   href: '/#gallery'   },
   { label: 'MAP',       href: '/#map'       },
   { label: 'DATAPACKS', href: '/#datapacks' },
+  { label: 'STATS',     href: '/#stats'     },
+  { label: 'CREW',      href: '/crew'       },
   { label: 'RP EDITOR', href: '/rp-editor'  },
 ];
 
@@ -30,7 +32,7 @@ export default function NavHeader() {
   // Track active section via IntersectionObserver (home page only)
   useEffect(() => {
     if (pathname !== '/') return;
-    const sections = ['hero', 'gallery', 'map', 'datapacks'];
+    const sections = ['hero', 'gallery', 'map', 'datapacks', 'stats'];
     const observers: IntersectionObserver[] = [];
 
     sections.forEach(id => {

@@ -18,11 +18,13 @@ function scrambleText(target: string, progress: number, chars: string): string {
 }
 
 export default function HeroSection() {
-  const [ipDisplay,   setIpDisplay]   = useState(IP);
-  const [copied,      setCopied]      = useState(false);
-  const [isAnimating, setIsAnimating] = useState(false);
-  const [magOffset,   setMagOffset]   = useState({ x: 0, y: 0 });
-  const [mouse,       setMouse]       = useState({ x: 0, y: 0 });
+  const [ipDisplay,    setIpDisplay]    = useState(IP);
+  const [copied,       setCopied]       = useState(false);
+  const [isAnimating,  setIsAnimating]  = useState(false);
+  const [magOffset,    setMagOffset]    = useState({ x: 0, y: 0 });
+  const [mouse,        setMouse]        = useState({ x: 0, y: 0 });
+  const [playerCount,  setPlayerCount]  = useState<number | null>(null);
+  const [serverOnline, setServerOnline] = useState<boolean | null>(null);
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timeoutRef  = useRef<ReturnType<typeof setTimeout>  | null>(null);
@@ -38,6 +40,17 @@ export default function HeroSection() {
     };
     window.addEventListener('mousemove', onMove, { passive: true });
     return () => window.removeEventListener('mousemove', onMove);
+  }, []);
+
+  /* ── Live server stats ─────────────────────────────────────── */
+  useEffect(() => {
+    fetch('/api/server-status', { cache: 'no-store' })
+      .then(r => r.json())
+      .then((d: { online?: boolean; players?: { online?: number } }) => {
+        setServerOnline(d.online ?? false);
+        setPlayerCount(d.players?.online ?? 0);
+      })
+      .catch(() => { setServerOnline(false); });
   }, []);
 
   /* ── Magnetic button ───────────────────────────────────────── */
@@ -229,6 +242,38 @@ export default function HeroSection() {
         >
           private survival&nbsp;&nbsp;·&nbsp;&nbsp;custom datapacks&nbsp;&nbsp;·&nbsp;&nbsp;resource pack
         </motion.p>
+
+        {/* Live server stats */}
+        {serverOnline !== null && (
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 1.05 }}
+            style={{
+              fontFamily:    "'JetBrains Mono', monospace",
+              fontSize:      '0.6rem',
+              letterSpacing: '0.2em',
+              textTransform: 'uppercase',
+              display:       'flex',
+              alignItems:    'center',
+              gap:           '0.5rem',
+            }}
+          >
+            <span style={{
+              width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
+              background:  serverOnline ? '#00ff41' : '#ff3333',
+              boxShadow:   serverOnline ? '0 0 6px rgba(0,255,65,0.8)' : 'none',
+              display:     'inline-block',
+            }} />
+            <span style={{ color: serverOnline ? '#00ff41' : '#444' }}>
+              {serverOnline
+                ? `${playerCount} player${playerCount !== 1 ? 's' : ''} online`
+                : 'server offline'}
+            </span>
+            <span style={{ color: '#2a2a2a' }}>·</span>
+            <span style={{ color: '#333' }}>est. 2024</span>
+          </motion.p>
+        )}
 
         {/* Magnetic IP terminal box */}
         <motion.div

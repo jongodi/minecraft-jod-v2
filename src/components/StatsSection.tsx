@@ -2,7 +2,7 @@
 
 import { motion, useInView } from 'framer-motion';
 import { useRef, useState, useEffect } from 'react';
-import type { PlayerStat, StatsResponse } from '@/app/api/stats/route';
+import type { PlayerStat, StatsResponse, StatGrowth } from '@/app/api/stats/route';
 import { formatAge } from '@/lib/format';
 
 type StatKey = 'deaths' | 'mobKills' | 'playTimeHours' | 'distanceWalked' | 'itemsCrafted';
@@ -17,12 +17,37 @@ const TABS: Tab[] = [
   { id: 'distanceWalked', label: 'WALKED',   unit: 'km',   format: v => `${(v / 100000).toFixed(1)} km` },
 ];
 
+function GrowthBadge({ delta, tab }: { delta: number; tab: Tab }) {
+  if (delta === 0) return null;
+  const positive = delta > 0;
+  const label    = positive
+    ? `+${tab.format(delta)}`
+    : tab.format(delta);
+  return (
+    <span style={{
+      fontFamily: "'JetBrains Mono', monospace",
+      fontSize: '0.48rem',
+      color: positive ? '#00ff41' : '#ff4444',
+      background: positive ? 'rgba(0,255,65,0.07)' : 'rgba(255,68,68,0.07)',
+      border: `1px solid ${positive ? 'rgba(0,255,65,0.2)' : 'rgba(255,68,68,0.2)'}`,
+      padding: '0.1rem 0.35rem',
+      borderRadius: 2,
+      letterSpacing: '0.05em',
+      whiteSpace: 'nowrap',
+      flexShrink: 0,
+    }}>
+      {positive ? '↑' : '↓'}{label.replace(/^[+-]/, '')}
+    </span>
+  );
+}
+
 function LeaderboardRow({
-  player, rank, tab, maxVal,
-}: { player: PlayerStat; rank: number; tab: Tab; maxVal: number }) {
+  player, rank, tab, maxVal, growth,
+}: { player: PlayerStat; rank: number; tab: Tab; maxVal: number; growth?: StatGrowth }) {
   const value    = player[tab.id] as number;
   const barWidth = maxVal > 0 ? (value / maxVal) * 100 : 0;
   const isGold   = rank === 1;
+  const delta    = growth?.[player.username]?.[tab.id] as number | undefined;
 
   return (
     <motion.div
@@ -64,6 +89,9 @@ function LeaderboardRow({
       }}>
         {player.username}
       </span>
+
+      {/* Weekly growth badge */}
+      {delta !== undefined && <GrowthBadge delta={delta} tab={tab} />}
 
       {/* Value */}
       <span style={{
@@ -124,9 +152,30 @@ export default function StatsSection() {
       </div>
 
       {loading && (
-        <p style={{ fontFamily: mono, fontSize: '0.65rem', color: '#333', letterSpacing: '0.2em', marginBottom: '1.5rem' }}>
-          LOADING STATS...
-        </p>
+        <div style={{ maxWidth: '600px' }}>
+          {/* Tab skeleton */}
+          <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid #1a1a1a', marginBottom: '1.5rem' }}>
+            {[80, 60, 70, 75, 65].map((w, i) => (
+              <div key={i} style={{ width: w, height: 28, margin: '0 2px', background: '#111', animation: 'skeleton-pulse 1.4s ease-in-out infinite', animationDelay: `${i * 0.1}s` }} />
+            ))}
+          </div>
+          {/* Row skeletons */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+            {[1,2,3,4,5,6,7,8].map(i => (
+              <div key={i} style={{ height: 44, background: '#0d0d0d', border: '1px solid #1a1a1a', display: 'flex', alignItems: 'center', padding: '0 1rem', gap: '0.75rem' }}>
+                <div style={{ width: 18, height: 8, background: '#111', borderRadius: 2, animation: 'skeleton-pulse 1.4s ease-in-out infinite', animationDelay: `${i * 0.07}s` }} />
+                <div style={{ width: `${55 + (i % 3) * 20}px`, height: 8, background: '#111', borderRadius: 2, animation: 'skeleton-pulse 1.4s ease-in-out infinite', animationDelay: `${i * 0.07 + 0.1}s` }} />
+                <div style={{ marginLeft: 'auto', width: 48, height: 8, background: '#111', borderRadius: 2, animation: 'skeleton-pulse 1.4s ease-in-out infinite', animationDelay: `${i * 0.07 + 0.2}s` }} />
+              </div>
+            ))}
+          </div>
+          <style>{`
+            @keyframes skeleton-pulse {
+              0%, 100% { opacity: 0.4; }
+              50%       { opacity: 0.9; }
+            }
+          `}</style>
+        </div>
       )}
 
       {/* Source indicator */}
@@ -186,7 +235,7 @@ export default function StatsSection() {
       {sorted.length > 0 && (
         <div style={{ maxWidth: '600px', display: 'flex', flexDirection: 'column', gap: '1px' }}>
           {sorted.map((player, i) => (
-            <LeaderboardRow key={player.username} player={player} rank={i + 1} tab={tab} maxVal={maxVal} />
+            <LeaderboardRow key={player.username} player={player} rank={i + 1} tab={tab} maxVal={maxVal} growth={stats?.growth} />
           ))}
         </div>
       )}

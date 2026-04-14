@@ -11,7 +11,7 @@ export async function PATCH(
 ) {
   if (!(await requireAdmin())) return unauthorizedResponse();
   const { id } = await params;
-  const body = await req.json() as Partial<{ title: string; sublabel: string; active: boolean; order: number }>;
+  const body = await req.json() as Partial<{ title: string; sublabel: string; altText: string; active: boolean; order: number }>;
 
   const gallery = await readGallery();
   const idx = gallery.findIndex(p => p.id === id);

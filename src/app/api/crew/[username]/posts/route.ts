@@ -18,7 +18,7 @@ export async function POST(
 
   const post: CrewPost = {
     id:        randomUUID(),
-    text:      text.trim().slice(0, 1000),
+    text:      text.trim().slice(0, 280),
     createdAt: new Date().toISOString(),
   };
 

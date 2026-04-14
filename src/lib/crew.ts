@@ -3,18 +3,8 @@ import path from 'path';
 import { cookies } from 'next/headers';
 import { CREW_COOKIE } from '@/lib/auth';
 
-export const CREW_USERNAMES = [
-  'stebbias',
-  'AmmaGaur',
-  'joenana',
-  'ingunnbirta',
-  'Gamla123',
-  'fafnir1994',
-  'IMlonely',
-  'eikibleiki',
-] as const;
-
-export type CrewUsername = typeof CREW_USERNAMES[number];
+export { CREW_USERNAMES } from '@/lib/crew-list';
+export type { CrewUsername } from '@/lib/crew-list';
 
 export interface CrewPost {
   id:        string;

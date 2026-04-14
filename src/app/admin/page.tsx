@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback, type FormEvent, type CSSProperties } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import type { DatapackUpdateResult } from '@/app/api/datapacks/check-updates/route';
 import type { RefreshResult } from '@/app/api/admin/datapacks/refresh/route';
 import type { GalleryPhoto } from '@/lib/gallery';
@@ -531,6 +532,7 @@ function GalleryManagerSection() {
   const [editingId,   setEditingId]   = useState<string | null>(null);
   const [editTitle,   setEditTitle]   = useState('');
   const [editSublabel,setEditSublabel]= useState('');
+  const [editAltText, setEditAltText] = useState('');
   const [uploading,   setUploading]   = useState(false);
   const [statusMsg,   setStatusMsg]   = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -561,14 +563,14 @@ function GalleryManagerSection() {
     const res = await fetch(`/api/admin/gallery/${photo.id}`, {
       method:  'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ title: editTitle.toUpperCase(), sublabel: editSublabel.toUpperCase() }),
+      body:    JSON.stringify({ title: editTitle.toUpperCase(), sublabel: editSublabel.toUpperCase(), altText: editAltText }),
     });
     if (res.ok) {
-      setPhotos(ps => ps.map(p => p.id === photo.id ? { ...p, title: editTitle.toUpperCase(), sublabel: editSublabel.toUpperCase() } : p));
+      setPhotos(ps => ps.map(p => p.id === photo.id ? { ...p, title: editTitle.toUpperCase(), sublabel: editSublabel.toUpperCase(), altText: editAltText } : p));
       setEditingId(null);
-      setStatusMsg('✓ Title saved');
+      setStatusMsg('✓ Saved');
     } else {
-      setStatusMsg('✗ Failed to save title — try again');
+      setStatusMsg('✗ Failed to save — try again');
     }
   }
 
@@ -673,8 +675,7 @@ function GalleryManagerSection() {
             >
               {/* Thumbnail */}
               <div style={{ position: 'relative', aspectRatio: '16/9', overflow: 'hidden', background: '#080808' }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={photo.filename} alt={photo.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                <Image src={photo.filename} alt={photo.title} fill style={{ objectFit: 'cover' }} />
                 {!photo.active && (
                   <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <span style={{ fontFamily: mono, fontSize: '0.5rem', letterSpacing: '0.2em', color: '#666', background: '#0008', padding: '0.2rem 0.5rem' }}>HIDDEN</span>
@@ -702,6 +703,12 @@ function GalleryManagerSection() {
                       placeholder="Sublabel (e.g. NEW BASE)"
                       style={{ background: '#0d0d0d', border: '1px solid #2a2a2a', color: '#f0f0f0', fontFamily: mono, fontSize: '0.6rem', padding: '0.3rem 0.4rem', outline: 'none' }}
                     />
+                    <input
+                      value={editAltText}
+                      onChange={e => setEditAltText(e.target.value)}
+                      placeholder="Alt text (accessibility)"
+                      style={{ background: '#0d0d0d', border: '1px solid #2a2a2a', color: '#f0f0f0', fontFamily: mono, fontSize: '0.6rem', padding: '0.3rem 0.4rem', outline: 'none' }}
+                    />
                     <div style={{ display: 'flex', gap: '0.3rem' }}>
                       <button onClick={() => saveTitle(photo)} style={{ flex: 1, fontFamily: mono, fontSize: '0.5rem', letterSpacing: '0.1em', background: green + '22', color: green, border: `1px solid ${green}44`, padding: '0.25rem', cursor: 'pointer' }}>SAVE</button>
                       <button onClick={() => setEditingId(null)} style={{ fontFamily: mono, fontSize: '0.5rem', background: 'none', color: '#444', border: '1px solid #2a2a2a', padding: '0.25rem 0.5rem', cursor: 'pointer' }}>✕</button>
@@ -710,10 +717,11 @@ function GalleryManagerSection() {
                 ) : (
                   <>
                     <p style={{ fontFamily: sans, fontSize: '0.75rem', fontWeight: 700, color: '#ccc', marginBottom: '0.1rem' }}>{photo.title}</p>
-                    <p style={{ fontFamily: mono, fontSize: '0.5rem', color: '#444', marginBottom: '0.5rem' }}>{photo.sublabel || '—'}</p>
+                    <p style={{ fontFamily: mono, fontSize: '0.5rem', color: '#444', marginBottom: '0.2rem' }}>{photo.sublabel || '—'}</p>
+                    {photo.altText && <p style={{ fontFamily: mono, fontSize: '0.45rem', color: '#2a2a2a', marginBottom: '0.3rem', fontStyle: 'italic' }}>{photo.altText}</p>}
                     <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap' }}>
                       <button
-                        onClick={() => { setEditingId(photo.id); setEditTitle(photo.title); setEditSublabel(photo.sublabel); }}
+                        onClick={() => { setEditingId(photo.id); setEditTitle(photo.title); setEditSublabel(photo.sublabel); setEditAltText(photo.altText ?? ''); }}
                         style={{ fontFamily: mono, fontSize: '0.45rem', letterSpacing: '0.1em', background: 'none', color: '#444', border: '1px solid #222', padding: '0.2rem 0.4rem', cursor: 'pointer' }}
                       >EDIT</button>
                       <button
@@ -766,9 +774,165 @@ function MapEditorSection() {
   );
 }
 
+// ─── Crew Management Section ──────────────────────────────────────────────────
+
+interface CrewSummary {
+  username:   string;
+  bio:        string;
+  postCount:  number;
+  photoCount: number;
+  tokenKey:   string;
+  hasToken:   boolean;
+}
+
+function CrewManagementSection() {
+  const [crew,    setCrew]    = useState<CrewSummary[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [msg,     setMsg]     = useState('');
+
+  const fetchCrew = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/admin/crew');
+      if (res.ok) setCrew(await res.json());
+    } finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { fetchCrew(); }, [fetchCrew]);
+
+  async function clearProfile(username: string) {
+    if (!confirm(`Clear bio and posts for ${username}? Photos will be kept.`)) return;
+    setMsg('');
+    const res = await fetch(`/api/admin/crew?username=${encodeURIComponent(username)}`, { method: 'DELETE' });
+    if (res.ok) {
+      setCrew(c => c.map(m => m.username === username ? { ...m, bio: '', postCount: 0 } : m));
+      setMsg(`✓ Cleared profile for ${username}`);
+    } else {
+      setMsg(`✗ Failed to clear ${username}`);
+    }
+  }
+
+  return (
+    <div style={card}>
+      <SectionHeader label="CREW MANAGEMENT" sub="Members" />
+      <p style={{ fontFamily: mono, fontSize: '0.6rem', color: '#444', marginBottom: '1.25rem', lineHeight: 1.6 }}>
+        Manage crew member profiles. Tokens are set via environment variables. To add a new crew member, update <code style={{ color: green }}>src/lib/crew-list.ts</code> and set the corresponding env var.
+      </p>
+
+      {loading ? <p style={{ fontFamily: mono, fontSize: '0.65rem', color: '#444' }}>Loading...</p> : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+          {crew.map(member => (
+            <div key={member.username} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.6rem 0', borderBottom: '1px solid #111', flexWrap: 'wrap' }}>
+              <Image
+                src={`https://mc-heads.net/head/${member.username}/32`}
+                alt={member.username}
+                width={24}
+                height={24}
+                unoptimized
+                style={{ imageRendering: 'pixelated', flexShrink: 0, border: '1px solid #1a1a1a' }}
+              />
+              <span style={{ fontFamily: sans, fontSize: '0.9rem', fontWeight: 700, color: '#ccc', minWidth: '100px' }}>{member.username}</span>
+              <span style={{ fontFamily: mono, fontSize: '0.45rem', color: '#333', letterSpacing: '0.1em', flex: 1 }}>
+                {member.postCount} post{member.postCount !== 1 ? 's' : ''} · {member.photoCount} photo{member.photoCount !== 1 ? 's' : ''}
+                {member.bio && ` · bio set`}
+              </span>
+              <span style={{
+                fontFamily: mono, fontSize: '0.42rem', letterSpacing: '0.08em',
+                color: member.hasToken ? '#00ff4166' : '#ff446666',
+                background: member.hasToken ? '#00ff4108' : '#ff446608',
+                border: `1px solid ${member.hasToken ? '#00ff4122' : '#ff446622'}`,
+                padding: '0.15rem 0.4rem',
+              }}>
+                {member.tokenKey} {member.hasToken ? '✓' : '✗'}
+              </span>
+              <button
+                onClick={() => clearProfile(member.username)}
+                style={{ fontFamily: mono, fontSize: '0.45rem', letterSpacing: '0.1em', textTransform: 'uppercase', background: 'none', color: '#444', border: '1px solid #2a2a2a', padding: '0.2rem 0.5rem', cursor: 'pointer' }}
+              >
+                CLEAR
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+      {msg && <p style={{ fontFamily: mono, fontSize: '0.6rem', marginTop: '1rem', color: msg.startsWith('✓') ? green : '#ff4466' }}>{msg}</p>}
+    </div>
+  );
+}
+
+// ─── Analytics Section ────────────────────────────────────────────────────────
+
+interface SectionAnalytics { section: string; days: { date: string; hits: number }[]; total: number }
+
+function AnalyticsDashboard() {
+  const [data,    setData]    = useState<SectionAnalytics[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/admin/analytics')
+      .then(r => r.json())
+      .then((d: SectionAnalytics[]) => setData(d))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const SECTION_LABELS: Record<string, string> = {
+    'server-status': 'Server / Hero',
+    'stats':         'Leaderboard',
+    'gallery':       'Gallery',
+    'map':           'Map',
+    'datapacks':     'Datapacks',
+  };
+
+  const maxTotal = Math.max(...data.map(d => d.total), 1);
+
+  return (
+    <div style={card}>
+      <SectionHeader label="ANALYTICS" sub="7-day API hit counts" />
+      <p style={{ fontFamily: mono, fontSize: '0.6rem', color: '#444', marginBottom: '1.25rem', lineHeight: 1.6 }}>
+        API calls to each public section, aggregated daily. Resets when no Redis is available.
+      </p>
+      {loading ? <p style={{ fontFamily: mono, fontSize: '0.65rem', color: '#444' }}>Loading analytics...</p> : data.length === 0 ? (
+        <p style={{ fontFamily: mono, fontSize: '0.65rem', color: '#2a2a2a' }}>No analytics data — requires Redis connection.</p>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {data.map(({ section, days, total }) => (
+            <div key={section}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.35rem' }}>
+                <span style={{ fontFamily: sans, fontSize: '0.85rem', fontWeight: 700, color: '#ccc', minWidth: '120px' }}>
+                  {SECTION_LABELS[section] ?? section}
+                </span>
+                <span style={{ fontFamily: mono, fontSize: '0.5rem', color: '#444', letterSpacing: '0.1em' }}>
+                  {total.toLocaleString()} total (7d)
+                </span>
+              </div>
+              {/* Mini bar chart */}
+              <div style={{ display: 'flex', gap: '2px', alignItems: 'flex-end', height: 32 }}>
+                {days.map(({ date, hits }) => {
+                  const height = maxTotal > 0 ? Math.max((hits / maxTotal) * 32, hits > 0 ? 2 : 0) : 0;
+                  return (
+                    <div key={date} title={`${date}: ${hits}`} style={{ flex: 1, height, background: green + '55', minHeight: hits > 0 ? 2 : 0, transition: 'height 0.3s ease', position: 'relative', bottom: 0, alignSelf: 'flex-end' }} />
+                  );
+                })}
+              </div>
+              <div style={{ display: 'flex', gap: '2px', marginTop: '0.2rem' }}>
+                {days.map(({ date, hits }) => (
+                  <div key={date} style={{ flex: 1, fontFamily: mono, fontSize: '0.38rem', color: '#2a2a2a', textAlign: 'center' }}>
+                    {hits > 0 ? hits : '·'}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main admin page ──────────────────────────────────────────────────────────
 
-type Tab = 'server' | 'datapacks' | 'versions' | 'gallery' | 'map';
+type Tab = 'server' | 'datapacks' | 'versions' | 'gallery' | 'map' | 'crew' | 'analytics';
 
 export default function AdminPage() {
   const router = useRouter();
@@ -786,6 +950,8 @@ export default function AdminPage() {
     { id: 'versions',  label: 'VERSIONS' },
     { id: 'gallery',   label: 'GALLERY' },
     { id: 'map',       label: 'MAP' },
+    { id: 'crew',      label: 'CREW' },
+    { id: 'analytics', label: 'ANALYTICS' },
   ];
 
   return (
@@ -833,6 +999,8 @@ export default function AdminPage() {
         {tab === 'versions'  && <DatapackVersionsSection />}
         {tab === 'gallery'   && <GalleryManagerSection />}
         {tab === 'map'       && <MapEditorSection />}
+        {tab === 'crew'      && <CrewManagementSection />}
+        {tab === 'analytics' && <AnalyticsDashboard />}
       </div>
     </div>
   );

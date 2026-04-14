@@ -6,6 +6,7 @@ export interface GalleryPhoto {
   filename:  string;
   title:     string;
   sublabel:  string;
+  altText?:  string;
   gradient:  string;
   active:    boolean;
   order:     number;

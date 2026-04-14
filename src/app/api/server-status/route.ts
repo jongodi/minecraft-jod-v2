@@ -1,5 +1,7 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getExarotonServerId, getServerHost, type ExarotonServer } from '@/lib/exaroton';
+import { checkRateLimit } from '@/lib/rateLimit';
+import { trackHit } from '@/lib/analytics';
 
 export interface StatusResponse {
   online: boolean;
@@ -13,7 +15,28 @@ export interface StatusResponse {
   source: 'exaroton' | 'mcsrvstat' | 'error';
 }
 
-export async function GET() {
+async function updateLastSeen(playerNames: string[]): Promise<void> {
+  if (!process.env.REDIS_URL || playerNames.length === 0) return;
+  try {
+    const { getRedis } = await import('@/lib/redis');
+    const redis = getRedis();
+    const now = new Date().toISOString();
+    const pipeline = redis.pipeline();
+    for (const name of playerNames) {
+      pipeline.set(`crew:lastseen:${name.toLowerCase()}`, now);
+    }
+    await pipeline.exec();
+  } catch { /* non-fatal */ }
+}
+
+export async function GET(req: NextRequest) {
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+  const { limited } = await checkRateLimit(ip, 'server-status', { max: 30, windowSeconds: 60 });
+  if (limited) {
+    return NextResponse.json({ online: false, source: 'error' } satisfies StatusResponse, { status: 429 });
+  }
+
+  void trackHit('server-status');
   if (process.env.EXAROTON_API_KEY) {
     try {
       return await fromExaroton();
@@ -42,6 +65,10 @@ async function fromExaroton(): Promise<NextResponse<StatusResponse>> {
   // Exaroton status: 0=offline 1=online 2=starting 3=stopping 4=restarting 5=saving 6=loading 7=crashed
   const isOnline  = server.status === 1;
   const nameList  = server.players?.list ?? [];
+
+  if (isOnline && nameList.length > 0) {
+    await updateLastSeen(nameList);
+  }
 
   const payload: StatusResponse = {
     online: isOnline,

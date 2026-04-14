@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/datapack-updates",
+      "schedule": "0 */6 * * *"
+    }
+  ]
+}

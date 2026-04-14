@@ -6,33 +6,39 @@ import { motion } from 'framer-motion';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import type { StatusResponse } from '@/app/api/server-status/route';
+import { CREW_USERNAMES } from '@/lib/crew-list';
 
 // ─── Static crew list ────────────────────────────────────────────────────────
-const CREW = [
-  'stebbias',
-  'AmmaGaur',
-  'joenana',
-  'ingunnbirta',
-  'Gamla123',
-  'fafnir1994',
-  'IMlonely',
-  'eikibleiki',
-];
+const CREW = [...CREW_USERNAMES];
 
 const HEAD_SOURCES = (name: string) => [
   `https://mc-heads.net/head/${name}/128`,
   `https://minotar.net/helm/${name}/128`,
 ];
 
+// ─── Relative time helper ─────────────────────────────────────────────────────
+function relativeTime(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 2)   return 'just now';
+  if (mins < 60)  return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs  < 24)  return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  return `${days}d ago`;
+}
+
 // ─── Crew card ───────────────────────────────────────────────────────────────
 function CrewCard({
   name,
   isOnline,
   index,
+  lastSeen,
 }: {
   name: string;
   isOnline: boolean;
   index: number;
+  lastSeen?: string;
 }) {
   const [hovered, setHovered] = useState(false);
   const [srcIndex, setSrcIndex] = useState(0);
@@ -151,8 +157,8 @@ function CrewCard({
         {name}
       </p>
 
-      {/* ONLINE label */}
-      {isOnline && (
+      {/* IN GAME / last-seen label */}
+      {isOnline ? (
         <span
           style={{
             fontFamily: "'JetBrains Mono', monospace",
@@ -165,7 +171,21 @@ function CrewCard({
         >
           IN GAME
         </span>
-      )}
+      ) : lastSeen ? (
+        <span
+          style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: '0.38rem',
+            letterSpacing: '0.1em',
+            color: '#222',
+            textTransform: 'uppercase',
+            marginTop: '-0.25rem',
+            textAlign: 'center',
+          }}
+        >
+          {relativeTime(lastSeen)}
+        </span>
+      ) : null}
     </motion.div>
     </Link>
   );
@@ -176,6 +196,7 @@ export default function ServerStatus() {
   const [data, setData] = useState<StatusResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState('');
+  const [lastSeenMap, setLastSeenMap] = useState<Record<string, string>>({});
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -207,6 +228,14 @@ export default function ServerStatus() {
       document.removeEventListener('visibilitychange', onVisibility);
     };
   }, [fetchStatus]);
+
+  // Fetch last-seen timestamps once on mount
+  useEffect(() => {
+    fetch('/api/crew/last-seen')
+      .then(r => r.json())
+      .then((d: Record<string, string>) => setLastSeenMap(d))
+      .catch(() => {});
+  }, []);
 
   const isOnline = data?.online ?? false;
   const playerCount = data?.players?.online ?? 0;
@@ -509,6 +538,7 @@ export default function ServerStatus() {
                 name={name}
                 isOnline={onlineNames.has(name.toLowerCase())}
                 index={i}
+                lastSeen={lastSeenMap[name.toLowerCase()]}
               />
             ))}
           </div>
