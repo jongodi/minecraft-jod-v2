@@ -14,6 +14,6 @@ export async function PUT(req: NextRequest) {
   if (!Array.isArray(body.locations) || !Array.isArray(body.zones)) {
     return NextResponse.json({ error: 'locations and zones arrays required' }, { status: 400 });
   }
-  await writeMap({ locations: body.locations, zones: body.zones });
+  await writeMap({ locations: body.locations, zones: body.zones, paths: body.paths ?? [] });
   return NextResponse.json({ ok: true });
 }

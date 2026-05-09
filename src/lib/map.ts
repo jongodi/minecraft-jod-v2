@@ -3,17 +3,19 @@ import { join } from 'path';
 import {
   DEFAULT_LOCATIONS,
   DEFAULT_ZONES,
+  DEFAULT_PATHS,
   type MapConfig,
   type MapLocation,
   type MapZone,
+  type MapPath,
 } from '@/lib/map-types';
 
-export type { MapConfig, MapLocation, MapZone };
-export { DEFAULT_LOCATIONS, DEFAULT_ZONES };
+export type { MapConfig, MapLocation, MapZone, MapPath };
+export { DEFAULT_LOCATIONS, DEFAULT_ZONES, DEFAULT_PATHS };
 
 const KV_KEY = 'map:config';
 
-const DEFAULT_CONFIG: MapConfig = { locations: DEFAULT_LOCATIONS, zones: DEFAULT_ZONES };
+const DEFAULT_CONFIG: MapConfig = { locations: DEFAULT_LOCATIONS, zones: DEFAULT_ZONES, paths: DEFAULT_PATHS };
 
 /** Read the full map config (Redis override → filesystem → hardcoded defaults). */
 export async function readMap(): Promise<MapConfig> {

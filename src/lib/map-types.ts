@@ -12,8 +12,8 @@ export interface MapLocation {
 export interface MapZone {
   id:       string;
   label:    string;
-  /** 'zone' = named region (dashed ring). 'land' = solid terrain patch. */
-  kind:     'zone' | 'land';
+  /** 'zone' = named region (dashed ring). 'land' = solid terrain patch. 'lake' = water ellipse. 'mountain' = peak triangle. */
+  kind:     'zone' | 'land' | 'lake' | 'mountain';
   cx:       number;
   cy:       number;
   rx:       number;
@@ -21,9 +21,19 @@ export interface MapZone {
   colorKey: 'purple' | 'blue' | 'orange' | 'green';
 }
 
+/** Freeform polyline drawn on the map (rivers, roads, borders). */
+export interface MapPath {
+  id:       string;
+  label:    string;
+  kind:     'river' | 'road' | 'border';
+  points:   [number, number][];
+  colorKey: 'blue' | 'orange' | 'green' | 'purple';
+}
+
 export interface MapConfig {
   locations: MapLocation[];
   zones:     MapZone[];
+  paths?:    MapPath[];
 }
 
 export const DEFAULT_LOCATIONS: MapLocation[] = [
@@ -46,7 +56,13 @@ export const DEFAULT_ZONES: MapZone[] = [
   { id: 'newbase', label: 'NEW BASE',      kind: 'zone', cx: 488, cy: 466, rx: 200, ry: 112, colorKey: 'blue'   },
 ];
 
+export const DEFAULT_PATHS: MapPath[] = [
+  { id: 'river-main', label: 'RIVER', kind: 'river', colorKey: 'blue',
+    points: [[520, 390], [512, 418], [528, 452], [516, 488], [505, 522], [514, 562]] },
+];
+
 export const DEFAULT_CONFIG: MapConfig = {
   locations: DEFAULT_LOCATIONS,
   zones:     DEFAULT_ZONES,
+  paths:     DEFAULT_PATHS,
 };

@@ -2,8 +2,8 @@
 
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
-import type { MapLocation, MapZone } from '@/lib/map-types';
-import { DEFAULT_LOCATIONS, DEFAULT_ZONES } from '@/lib/map-types';
+import type { MapLocation, MapZone, MapPath } from '@/lib/map-types';
+import { DEFAULT_LOCATIONS, DEFAULT_ZONES, DEFAULT_PATHS } from '@/lib/map-types';
 
 type Location = MapLocation;
 
@@ -146,13 +146,15 @@ export default function MapSection() {
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
   const [locations, setLocations] = useState<Location[]>(DEFAULT_LOCATIONS);
   const [zones,     setZones]     = useState<MapZone[]>(DEFAULT_ZONES);
+  const [paths,     setPaths]     = useState<MapPath[]>(DEFAULT_PATHS);
 
   useEffect(() => {
     fetch('/api/map')
       .then(r => r.ok ? r.json() : null)
-      .then((cfg: { locations?: Location[]; zones?: MapZone[] } | null) => {
+      .then((cfg: { locations?: Location[]; zones?: MapZone[]; paths?: MapPath[] } | null) => {
         if (cfg?.locations?.length) setLocations(cfg.locations);
         if (cfg?.zones?.length)     setZones(cfg.zones);
+        if (cfg?.paths)             setPaths(cfg.paths);
       })
       .catch(() => { /* keep defaults */ });
   }, []);
@@ -277,6 +279,22 @@ export default function MapSection() {
             />
           ))}
 
+          {/* ── Lakes (water ellipses) ── */}
+          {zones.filter(z => z.kind === 'lake').map(z => (
+            <g key={z.id}>
+              <ellipse cx={z.cx} cy={z.cy} rx={z.rx} ry={z.ry} fill="#061828" stroke="none"/>
+              <ellipse cx={z.cx} cy={z.cy} rx={Math.max(1, z.rx - 3)} ry={Math.max(1, z.ry - 3)} fill="#0d2e52" stroke="none"/>
+              <ellipse cx={z.cx} cy={z.cy} rx={Math.max(1, z.rx - 6)} ry={Math.max(1, z.ry - 6)} fill="rgba(22,90,165,0.5)" stroke="none"/>
+              {z.label && (
+                <text x={z.cx} y={z.cy + z.ry + 12}
+                  fill="rgba(56,189,248,0.35)" fontFamily="'JetBrains Mono',monospace"
+                  fontSize={7} letterSpacing={1.5} textAnchor="middle">
+                  {z.label}
+                </text>
+              )}
+            </g>
+          ))}
+
           {/* ── Main landmass ── */}
           <path
             d="M 435 60
@@ -317,19 +335,45 @@ export default function MapSection() {
             );
           })}
 
-          {/* ── Lake / river — vertical, between VENICE (east) and TOWN HALL/VILLAGE (west) ── */}
-          <path
-            d="M 520 390 C 512 418, 528 452, 516 488 C 505 522, 520 542, 514 562"
-            fill="none" stroke="#061828" strokeWidth={11}
-          />
-          <path
-            d="M 520 390 C 512 418, 528 452, 516 488 C 505 522, 520 542, 514 562"
-            fill="none" stroke="#0d2e52" strokeWidth={6}
-          />
-          <path
-            d="M 520 390 C 512 418, 528 452, 516 488 C 505 522, 520 542, 514 562"
-            fill="none" stroke="rgba(22,90,165,0.5)" strokeWidth={2.5}
-          />
+          {/* ── Freeform paths (rivers, roads, borders) ── */}
+          {paths.map(p => {
+            if (p.points.length < 2) return null;
+            const pts = p.points.map(([x, y]) => `${x},${y}`).join(' ');
+            const pathColors: Record<string, { outer: string; mid: string; inner: string }> = {
+              blue:   { outer: '#061828', mid: '#0d2e52', inner: 'rgba(22,90,165,0.5)' },
+              orange: { outer: '#180808', mid: '#3d1508', inner: 'rgba(200,80,20,0.4)' },
+              green:  { outer: '#061208', mid: '#0a2210', inner: 'rgba(20,120,40,0.4)' },
+              purple: { outer: '#10081a', mid: '#1e0c38', inner: 'rgba(100,40,180,0.4)' },
+            };
+            const c = pathColors[p.colorKey] ?? pathColors.blue;
+            return (
+              <g key={p.id}>
+                <polyline points={pts} fill="none" stroke={c.outer} strokeWidth={11} strokeLinecap="round" strokeLinejoin="round"/>
+                <polyline points={pts} fill="none" stroke={c.mid}   strokeWidth={6}  strokeLinecap="round" strokeLinejoin="round"/>
+                <polyline points={pts} fill="none" stroke={c.inner} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"/>
+              </g>
+            );
+          })}
+
+          {/* ── Mountains (triangle peaks) ── */}
+          {zones.filter(z => z.kind === 'mountain').map(z => {
+            const pts = `${z.cx},${z.cy - z.ry} ${z.cx - z.rx},${z.cy + z.ry} ${z.cx + z.rx},${z.cy + z.ry}`;
+            const snowLine = z.ry * 0.35;
+            const snowPts  = `${z.cx},${z.cy - z.ry} ${z.cx - z.rx * 0.35},${z.cy - z.ry + snowLine} ${z.cx + z.rx * 0.35},${z.cy - z.ry + snowLine}`;
+            return (
+              <g key={z.id}>
+                <polygon points={pts} fill="rgba(80,60,40,0.35)" stroke="rgba(150,120,80,0.4)" strokeWidth={0.8}/>
+                <polygon points={snowPts} fill="rgba(220,220,220,0.25)" stroke="none"/>
+                {z.label && (
+                  <text x={z.cx} y={z.cy + z.ry + 12}
+                    fill="rgba(150,120,80,0.5)" fontFamily="'JetBrains Mono',monospace"
+                    fontSize={7} letterSpacing={1.5} textAnchor="middle">
+                    {z.label}
+                  </text>
+                )}
+              </g>
+            );
+          })}
 
           {/* ── Mushroom Island (separate, east) ── */}
           <ellipse cx={872} cy={260} rx={56} ry={44} fill="#100814" stroke="rgba(249,115,22,0.22)" strokeWidth={1.2}/>
