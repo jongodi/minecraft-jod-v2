@@ -2,7 +2,7 @@ export const BG="#0d0f12",BG2="#13161b",BG3="#1a1e26",BORDER="#2a3040";
 export const ACCENT="#4ade80",ACCENT2="#22d3ee",DIM="#4a5568",TEXT="#e2e8f0",TEXT2="#94a3b8",WARN="#f59e0b",ERR="#f87171";
 export const PX=`font-family:'Courier New',monospace`;
 export const VANILLA_PREFIXES=["block/","item/","entity/","gui/","environment/","font/","map/","misc/","mob_effect/","painting/","particle/","colormap/","effect/","models/","textures/","sounds/"];
-export function isLikelyVanilla(p:string){return VANILLA_PREFIXES.some(v=>p.toLowerCase().includes(v));}
+export function isLikelyVanilla(p:string){const norm=p.toLowerCase().replace(/^minecraft:/,'').replace(/^assets\/[^/]+\/textures\//,'').replace(/\.(png|jpg|jpeg)$/i,'');return VANILLA_PREFIXES.some(v=>norm.startsWith(v));}
 
 export const css=`
 *{box-sizing:border-box;margin:0;padding:0}
