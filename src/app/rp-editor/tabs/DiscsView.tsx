@@ -63,14 +63,24 @@ function detectAudioDuration(dataUrl: string): Promise<number | null> {
 const texPath    = (id: string) => `assets/minecraft/textures/item/music_disc_${id}.png`;
 const modelPath  = (id: string) => `assets/minecraft/models/item/music_disc_${id}.json`;
 const nameKey    = (id: string) => `item.minecraft.music_disc_${id}`;
-const descKey    = (id: string) => `item.minecraft.music_disc_${id}.desc`;
+// Minecraft uses .description; also try legacy .desc as fallback
+const descKey    = (id: string) => `item.minecraft.music_disc_${id}.description`;
+const descKeyAlt = (id: string) => `item.minecraft.music_disc_${id}.desc`;
 const jukeKey    = (id: string) => `jukebox_song.minecraft.${id}`;
 const sndKey     = (id: string) => `music_disc.${id}`;
 const sndOggPath = (ref: string) => `assets/minecraft/sounds/${ref}.ogg`;
 
+// Minecraft and most MC tooling allow // and /* */ comments in JSON files —
+// strip them before passing to JSON.parse so we don't silently return {}
+function stripJsonComments(s: string): string {
+  return s
+    .replace(/\/\/[^\n\r]*/g, '')
+    .replace(/\/\*[\s\S]*?\*\//g, '');
+}
+
 function parseSoundsJson(fileData: Record<string,string>, filePaths: string[]): Record<string,any> {
   for (const p of ['assets/minecraft/sounds.json', ...filePaths.filter(f => f.endsWith('/sounds.json'))]) {
-    if (fileData[p]) { try { return JSON.parse(fileData[p]); } catch {} }
+    if (fileData[p]) { try { return JSON.parse(stripJsonComments(fileData[p])); } catch {} }
   }
   return {};
 }
@@ -83,7 +93,7 @@ function parseLangFile(fileData: Record<string,string>, filePaths: string[]): Re
     ...filePaths.filter(p => /\/lang\/en_us\.json$/i.test(p)),
   ];
   for (const p of candidates) {
-    if (fileData[p]) { try { return JSON.parse(fileData[p]); } catch {} }
+    if (fileData[p]) { try { return JSON.parse(stripJsonComments(fileData[p])); } catch {} }
   }
   return {};
 }
@@ -249,16 +259,41 @@ function MCPreview({ text, fallback }: { text: string; fallback?: string }) {
 
 function ColorTextField({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
   const [open, setOpen] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const applyColor = (code: string) => {
-    // Replace any leading §X color code, keep formatting codes intact
-    const stripped = value.replace(/^[§&][0-9a-f]/i, '');
-    onChange(`§${code}${stripped}`);
-  };
+  // Insert §code at cursor, or wrap selected text — called from palette buttons.
+  // Buttons use onMouseDown+preventDefault so the input keeps focus and selection.
+  const insertCode = (code: string) => {
+    const el = inputRef.current;
+    const sel0 = el?.selectionStart ?? value.length;
+    const sel1 = el?.selectionEnd   ?? value.length;
+    const hasSel = sel0 !== sel1;
 
-  const applyFormat = (code: string) => {
-    if (code === 'r') { onChange(value.replace(/[§&][0-9a-fk-or]/gi, '')); return; }
-    onChange(value + `§${code}`);
+    let next: string;
+    let cursorAfter: number;
+
+    if (code === 'r' && !hasSel) {
+      // Reset with no selection: strip all codes
+      next = value.replace(/[§&][0-9a-fk-or]/gi, '');
+      cursorAfter = sel0;
+    } else if (hasSel) {
+      // Wrap selected text: insert §code before, keep rest
+      next = value.slice(0, sel0) + `§${code}` + value.slice(sel0, sel1) + value.slice(sel1);
+      cursorAfter = sel1 + 2; // after inserted §code + selected text
+    } else {
+      // No selection: insert at cursor position
+      next = value.slice(0, sel0) + `§${code}` + value.slice(sel0);
+      cursorAfter = sel0 + 2;
+    }
+
+    onChange(next);
+    // Restore cursor after React re-render
+    setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.focus();
+        inputRef.current.setSelectionRange(cursorAfter, cursorAfter);
+      }
+    }, 0);
   };
 
   const currentColor = (() => {
@@ -277,8 +312,8 @@ function ColorTextField({ value, onChange, placeholder }: { value: string; onCha
         <span style={{ fontSize: 9, color: DIM, letterSpacing: '1px', flexShrink: 0 }}>PREVIEW</span>
         <MCPreview text={value} fallback={placeholder}/>
         <button
-          onClick={() => setOpen(o => !o)}
-          title="Color & formatting codes"
+          onMouseDown={e => { e.preventDefault(); setOpen(o => !o); }}
+          title="Color & formatting palette"
           style={{
             marginLeft: 'auto', background: currentColor ? currentColor.hex : BG3,
             border: `1px solid ${BORDER}`, width: 16, height: 16, cursor: 'pointer',
@@ -287,16 +322,19 @@ function ColorTextField({ value, onChange, placeholder }: { value: string; onCha
         />
       </div>
 
-      {/* Color picker */}
+      {/* Color palette */}
       {open && (
         <div style={{ padding: '7px 8px', background: '#0a0c10', border: `1px solid ${BORDER}`, borderBottom: 'none', display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ fontSize: 9, color: DIM, marginBottom: 2 }}>
+            Select text in the input below, then click a color/format to apply it to only that part
+          </div>
           {/* Color swatches */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
             {MC_COLORS.map(c => (
               <button
                 key={c.code}
                 title={`§${c.code} ${c.name}`}
-                onClick={() => applyColor(c.code)}
+                onMouseDown={e => { e.preventDefault(); insertCode(c.code); }}
                 style={{
                   width: 22, height: 22, background: c.hex, border: `2px solid ${currentColor?.code === c.code ? '#fff' : 'transparent'}`,
                   cursor: 'pointer', outline: 'none', flexShrink: 0,
@@ -305,13 +343,13 @@ function ColorTextField({ value, onChange, placeholder }: { value: string; onCha
             ))}
           </div>
           {/* Formatting codes */}
-          <div style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
-            <span style={{ fontSize: 9, color: DIM, marginRight: 4 }}>FORMAT</span>
+          <div style={{ display: 'flex', gap: 3, alignItems: 'center', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 9, color: DIM, marginRight: 2 }}>FORMAT</span>
             {MC_FORMAT.map(f => (
               <button
                 key={f.code}
                 title={`§${f.code} ${f.title}`}
-                onClick={() => applyFormat(f.code)}
+                onMouseDown={e => { e.preventDefault(); insertCode(f.code); }}
                 style={{
                   padding: '2px 7px', background: BG3, border: `1px solid ${BORDER}`,
                   color: TEXT2, cursor: 'pointer', fontFamily: 'monospace', fontSize: 10,
@@ -321,19 +359,20 @@ function ColorTextField({ value, onChange, placeholder }: { value: string; onCha
             ))}
             <button
               title="Remove all §-codes from this field"
-              onClick={() => onChange(value.replace(/[§&][0-9a-fk-or]/gi, ''))}
-              style={{ marginLeft: 4, padding: '2px 7px', background: BG3, border: `1px solid ${BORDER}44`, color: DIM, cursor: 'pointer', fontSize: 9, outline: 'none' }}>
-              clear codes
+              onMouseDown={e => { e.preventDefault(); onChange(value.replace(/[§&][0-9a-fk-or]/gi, '')); }}
+              style={{ padding: '2px 7px', background: BG3, border: `1px solid ${BORDER}44`, color: DIM, cursor: 'pointer', fontSize: 9, outline: 'none' }}>
+              clear all codes
             </button>
           </div>
           <div style={{ fontSize: 9, color: DIM }}>
-            Raw value: <span style={{ color: TEXT2, fontFamily: 'monospace' }}>{value || '(empty)'}</span>
+            Raw: <span style={{ color: TEXT2, fontFamily: 'monospace' }}>{value || '(empty)'}</span>
           </div>
         </div>
       )}
 
       {/* Text input */}
       <input
+        ref={inputRef}
         value={value}
         onChange={e => onChange((e.target as HTMLInputElement).value)}
         placeholder={placeholder}
@@ -457,7 +496,8 @@ export default function DiscsView({ fileData, filePaths, onUpdateFiles, onDelete
   // Override checks
   const hasTexture  = useCallback((id: string) => !!fileData[texPath(id)],          [fileData]);
   const hasSound    = useCallback((id: string) => !!soundsJson[sndKey(id)],          [soundsJson]);
-  const hasLang     = useCallback((id: string) => !!(langJson[nameKey(id)] || langJson[descKey(id)] || langJson[jukeKey(id)]), [langJson]);
+  const getDesc     = useCallback((id: string) => langJson[descKey(id)] ?? langJson[descKeyAlt(id)] ?? null, [langJson]);
+  const hasLang     = useCallback((id: string) => !!(langJson[nameKey(id)] || getDesc(id) || langJson[jukeKey(id)]), [langJson, getDesc]);
   const hasOverride = useCallback((id: string) => hasTexture(id) || hasSound(id) || hasLang(id), [hasTexture, hasSound, hasLang]);
 
   const overrideCount = useMemo(() => allDiscs.filter(d => hasOverride(d.id)).length, [allDiscs, hasOverride]);
@@ -477,7 +517,7 @@ export default function DiscsView({ fileData, filePaths, onUpdateFiles, onDelete
     if (filter === 'vanilla')    list = list.filter(d => !hasOverride(d.id));
     if (search.trim()) {
       const q = search.toLowerCase();
-      list = list.filter(d => d.id.toLowerCase().includes(q) || d.vanillaDesc.toLowerCase().includes(q) || (langJson[descKey(d.id)] ?? '').toLowerCase().includes(q));
+      list = list.filter(d => d.id.toLowerCase().includes(q) || d.vanillaDesc.toLowerCase().includes(q) || (getDesc(d.id) ?? '').toLowerCase().includes(q));
     }
     return list;
   }, [allDiscs, filter, search, hasOverride, langJson]);
@@ -491,10 +531,10 @@ export default function DiscsView({ fileData, filePaths, onUpdateFiles, onDelete
     setEditSoundDuration(null);
     const disc = allDiscs.find(d => d.id === id);
     setEditName(langJson[nameKey(id)]  ?? disc?.vanillaName ?? 'Music Disc');
-    setEditDesc(langJson[descKey(id)]  ?? disc?.vanillaDesc ?? '');
+    setEditDesc(getDesc(id) ?? disc?.vanillaDesc ?? '');
     setEditJukeTitle(langJson[jukeKey(id)] ?? '');
     setEditSoundRef(getSoundRef(id, soundsJson) ?? `records/${id}`);
-  }, [allDiscs, langJson, soundsJson]);
+  }, [allDiscs, langJson, soundsJson, getDesc]);
 
   // Texture file upload
   const handleTexUpload = (e: any) => {
@@ -579,6 +619,7 @@ export default function DiscsView({ fileData, filePaths, onUpdateFiles, onDelete
     const lang = { ...langJson };
     delete lang[nameKey(selectedId)];
     delete lang[descKey(selectedId)];
+    delete lang[descKeyAlt(selectedId)];
     delete lang[jukeKey(selectedId)];
 
     const lp = getLangPath(fileData, filePaths) || 'assets/minecraft/lang/en_us.json';
@@ -673,7 +714,7 @@ export default function DiscsView({ fileData, filePaths, onUpdateFiles, onDelete
                   </div>
                   <div style={{ fontSize: 9, color: DIM, display: 'flex', gap: 5, alignItems: 'center' }}>
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
-                      {langJson[descKey(d.id)] ?? d.vanillaDesc}
+                      {getDesc(d.id) ?? d.vanillaDesc}
                     </span>
                     {d.duration != null && (
                       <span style={{ flexShrink: 0, color: DIM, fontFamily: 'monospace', fontSize: 9 }}>{fmtDur(d.duration)}</span>
