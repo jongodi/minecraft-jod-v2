@@ -68,23 +68,31 @@ const jukeKey    = (id: string) => `jukebox_song.minecraft.${id}`;
 const sndKey     = (id: string) => `music_disc.${id}`;
 const sndOggPath = (ref: string) => `assets/minecraft/sounds/${ref}.ogg`;
 
-function getLangPath(fileData: Record<string,string>): string {
-  return 'assets/minecraft/lang/en_us.json' in fileData
-    ? 'assets/minecraft/lang/en_us.json'
-    : 'assets/minecraft/lang/en_US.json';
-}
-
-function parseSoundsJson(fileData: Record<string,string>): Record<string,any> {
-  const c = fileData['assets/minecraft/sounds.json'];
-  if (!c) return {};
-  try { return JSON.parse(c); } catch { return {}; }
-}
-
-function parseLangFile(fileData: Record<string,string>): Record<string,string> {
-  for (const p of ['assets/minecraft/lang/en_us.json', 'assets/minecraft/lang/en_US.json']) {
+function parseSoundsJson(fileData: Record<string,string>, filePaths: string[]): Record<string,any> {
+  for (const p of ['assets/minecraft/sounds.json', ...filePaths.filter(f => f.endsWith('/sounds.json'))]) {
     if (fileData[p]) { try { return JSON.parse(fileData[p]); } catch {} }
   }
   return {};
+}
+
+function parseLangFile(fileData: Record<string,string>, filePaths: string[]): Record<string,string> {
+  // Try known paths first, then scan filePaths for any matching lang file
+  const candidates = [
+    'assets/minecraft/lang/en_us.json',
+    'assets/minecraft/lang/en_US.json',
+    ...filePaths.filter(p => /\/lang\/en_us\.json$/i.test(p)),
+  ];
+  for (const p of candidates) {
+    if (fileData[p]) { try { return JSON.parse(fileData[p]); } catch {} }
+  }
+  return {};
+}
+
+function getLangPath(fileData: Record<string,string>, filePaths: string[]): string {
+  if (fileData['assets/minecraft/lang/en_us.json']) return 'assets/minecraft/lang/en_us.json';
+  if (fileData['assets/minecraft/lang/en_US.json']) return 'assets/minecraft/lang/en_US.json';
+  const found = filePaths.find(p => /\/lang\/en_us\.json$/i.test(p) && fileData[p]);
+  return found ?? 'assets/minecraft/lang/en_us.json';
 }
 
 function getSoundRef(id: string, sounds: Record<string,any>): string | null {
@@ -159,6 +167,181 @@ function TxtIn({ value, onChange, placeholder, mono }: { value: string; onChange
       onFocus={e => { (e.target as HTMLInputElement).style.borderColor = ACCENT; }}
       onBlur={e  => { (e.target as HTMLInputElement).style.borderColor = BORDER; }}
     />
+  );
+}
+
+// ─── Minecraft color system ───────────────────────────────────────────────────
+
+const MC_COLORS = [
+  { code: '0', hex: '#000000', name: 'Black' },
+  { code: '1', hex: '#0000AA', name: 'Dark Blue' },
+  { code: '2', hex: '#00AA00', name: 'Dark Green' },
+  { code: '3', hex: '#00AAAA', name: 'Dark Aqua' },
+  { code: '4', hex: '#AA0000', name: 'Dark Red' },
+  { code: '5', hex: '#AA00AA', name: 'Dark Purple' },
+  { code: '6', hex: '#FFAA00', name: 'Gold' },
+  { code: '7', hex: '#AAAAAA', name: 'Gray' },
+  { code: '8', hex: '#555555', name: 'Dark Gray' },
+  { code: '9', hex: '#5555FF', name: 'Blue' },
+  { code: 'a', hex: '#55FF55', name: 'Green' },
+  { code: 'b', hex: '#55FFFF', name: 'Aqua' },
+  { code: 'c', hex: '#FF5555', name: 'Red' },
+  { code: 'd', hex: '#FF55FF', name: 'Light Purple' },
+  { code: 'e', hex: '#FFFF55', name: 'Yellow' },
+  { code: 'f', hex: '#FFFFFF', name: 'White' },
+] as const;
+
+const MC_FORMAT = [
+  { code: 'l', label: 'B', title: 'Bold',          style: { fontWeight: 700 } },
+  { code: 'o', label: 'I', title: 'Italic',         style: { fontStyle: 'italic' } },
+  { code: 'n', label: 'U', title: 'Underline',      style: { textDecoration: 'underline' } },
+  { code: 'm', label: 'S', title: 'Strikethrough',  style: { textDecoration: 'line-through' } },
+  { code: 'r', label: '↩', title: 'Reset all',      style: {} },
+] as const;
+
+// Parse §-code string into styled spans for preview
+function MCPreview({ text, fallback }: { text: string; fallback?: string }) {
+  const display = text || fallback || '';
+  if (!display) return <span style={{ color: DIM, fontStyle: 'italic', fontSize: 11 }}>empty</span>;
+
+  const parts: { text: string; color: string; bold: boolean; italic: boolean; underline: boolean; strike: boolean }[] = [];
+  let cur = { color: '#FFFFFF', bold: false, italic: false, underline: false, strike: false };
+  let i = 0;
+  let buf = '';
+
+  const flush = () => { if (buf) { parts.push({ text: buf, ...cur }); buf = ''; } };
+
+  while (i < display.length) {
+    if ((display[i] === '§' || display[i] === '&') && i + 1 < display.length) {
+      flush();
+      const c = display[i + 1].toLowerCase();
+      const col = MC_COLORS.find(x => x.code === c);
+      if (col) { cur = { ...cur, color: col.hex }; }
+      else if (c === 'l') cur = { ...cur, bold: true };
+      else if (c === 'o') cur = { ...cur, italic: true };
+      else if (c === 'n') cur = { ...cur, underline: true };
+      else if (c === 'm') cur = { ...cur, strike: true };
+      else if (c === 'r') cur = { color: '#FFFFFF', bold: false, italic: false, underline: false, strike: false };
+      i += 2;
+    } else {
+      buf += display[i++];
+    }
+  }
+  flush();
+
+  if (parts.length === 0) return <span style={{ color: '#FFFFFF', fontSize: 11 }}>{display}</span>;
+
+  return (
+    <>
+      {parts.map((p, idx) => (
+        <span key={idx} style={{
+          color: p.color,
+          fontWeight: p.bold ? 700 : undefined,
+          fontStyle: p.italic ? 'italic' : undefined,
+          textDecoration: [p.underline ? 'underline' : '', p.strike ? 'line-through' : ''].filter(Boolean).join(' ') || undefined,
+          fontSize: 11,
+          textShadow: '1px 1px 2px rgba(0,0,0,0.8)',
+        }}>{p.text}</span>
+      ))}
+    </>
+  );
+}
+
+function ColorTextField({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
+  const [open, setOpen] = useState(false);
+
+  const applyColor = (code: string) => {
+    // Replace any leading §X color code, keep formatting codes intact
+    const stripped = value.replace(/^[§&][0-9a-f]/i, '');
+    onChange(`§${code}${stripped}`);
+  };
+
+  const applyFormat = (code: string) => {
+    if (code === 'r') { onChange(value.replace(/[§&][0-9a-fk-or]/gi, '')); return; }
+    onChange(value + `§${code}`);
+  };
+
+  const currentColor = (() => {
+    const m = value.match(/^[§&]([0-9a-f])/i);
+    return m ? MC_COLORS.find(c => c.code === m[1].toLowerCase()) ?? null : null;
+  })();
+
+  return (
+    <div>
+      {/* Preview bar */}
+      <div style={{
+        padding: '5px 8px', background: '#070910', border: `1px solid ${BORDER}`,
+        borderBottom: 'none', display: 'flex', alignItems: 'center', gap: 8,
+        minHeight: 26,
+      }}>
+        <span style={{ fontSize: 9, color: DIM, letterSpacing: '1px', flexShrink: 0 }}>PREVIEW</span>
+        <MCPreview text={value} fallback={placeholder}/>
+        <button
+          onClick={() => setOpen(o => !o)}
+          title="Color & formatting codes"
+          style={{
+            marginLeft: 'auto', background: currentColor ? currentColor.hex : BG3,
+            border: `1px solid ${BORDER}`, width: 16, height: 16, cursor: 'pointer',
+            flexShrink: 0, outline: 'none',
+          }}
+        />
+      </div>
+
+      {/* Color picker */}
+      {open && (
+        <div style={{ padding: '7px 8px', background: '#0a0c10', border: `1px solid ${BORDER}`, borderBottom: 'none', display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {/* Color swatches */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+            {MC_COLORS.map(c => (
+              <button
+                key={c.code}
+                title={`§${c.code} ${c.name}`}
+                onClick={() => applyColor(c.code)}
+                style={{
+                  width: 22, height: 22, background: c.hex, border: `2px solid ${currentColor?.code === c.code ? '#fff' : 'transparent'}`,
+                  cursor: 'pointer', outline: 'none', flexShrink: 0,
+                }}
+              />
+            ))}
+          </div>
+          {/* Formatting codes */}
+          <div style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
+            <span style={{ fontSize: 9, color: DIM, marginRight: 4 }}>FORMAT</span>
+            {MC_FORMAT.map(f => (
+              <button
+                key={f.code}
+                title={`§${f.code} ${f.title}`}
+                onClick={() => applyFormat(f.code)}
+                style={{
+                  padding: '2px 7px', background: BG3, border: `1px solid ${BORDER}`,
+                  color: TEXT2, cursor: 'pointer', fontFamily: 'monospace', fontSize: 10,
+                  outline: 'none', ...f.style,
+                }}
+              >{f.label}</button>
+            ))}
+            <button
+              title="Remove all §-codes from this field"
+              onClick={() => onChange(value.replace(/[§&][0-9a-fk-or]/gi, ''))}
+              style={{ marginLeft: 4, padding: '2px 7px', background: BG3, border: `1px solid ${BORDER}44`, color: DIM, cursor: 'pointer', fontSize: 9, outline: 'none' }}>
+              clear codes
+            </button>
+          </div>
+          <div style={{ fontSize: 9, color: DIM }}>
+            Raw value: <span style={{ color: TEXT2, fontFamily: 'monospace' }}>{value || '(empty)'}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Text input */}
+      <input
+        value={value}
+        onChange={e => onChange((e.target as HTMLInputElement).value)}
+        placeholder={placeholder}
+        style={{ ...inputCss }}
+        onFocus={e => { (e.target as HTMLInputElement).style.borderColor = ACCENT; }}
+        onBlur={e  => { (e.target as HTMLInputElement).style.borderColor = BORDER; }}
+      />
+    </div>
   );
 }
 
@@ -254,9 +437,10 @@ export default function DiscsView({ fileData, filePaths, onUpdateFiles, onDelete
   const texInputRef   = useRef<HTMLInputElement>(null);
   const soundInputRef = useRef<HTMLInputElement>(null);
 
-  // Derived pack state (memoised to avoid re-parsing on every render)
-  const soundsJson = useMemo(() => parseSoundsJson(fileData), [fileData]);
-  const langJson   = useMemo(() => parseLangFile(fileData),   [fileData]);
+  // Derived pack state — filePaths is included so the memo recomputes when files change
+  // (fileData is passed as a mutable ref value; the reference alone isn't reliable)
+  const soundsJson = useMemo(() => parseSoundsJson(fileData, filePaths), [fileData, filePaths]);
+  const langJson   = useMemo(() => parseLangFile(fileData, filePaths),   [fileData, filePaths]);
 
   // Full disc list = vanilla + any custom ones detected in pack
   const allDiscs = useMemo<DiscDef[]>(() => {
@@ -353,7 +537,7 @@ export default function DiscsView({ fileData, filePaths, onUpdateFiles, onDelete
     }
 
     // 3. Lang file
-    const lp = getLangPath(fileData) || 'assets/minecraft/lang/en_us.json';
+    const lp = getLangPath(fileData, filePaths) || 'assets/minecraft/lang/en_us.json';
     const lang: Record<string,string> = { ...langJson };
     if (editName.trim())      lang[nameKey(selectedId)]  = editName.trim();
     if (editDesc.trim())      lang[descKey(selectedId)]  = editDesc.trim();
@@ -397,7 +581,7 @@ export default function DiscsView({ fileData, filePaths, onUpdateFiles, onDelete
     delete lang[descKey(selectedId)];
     delete lang[jukeKey(selectedId)];
 
-    const lp = getLangPath(fileData) || 'assets/minecraft/lang/en_us.json';
+    const lp = getLangPath(fileData, filePaths) || 'assets/minecraft/lang/en_us.json';
     const updates: Record<string,string> = {
       'assets/minecraft/sounds.json': JSON.stringify(newSounds, null, 2),
       [lp]: JSON.stringify(lang, null, 2),
@@ -423,7 +607,7 @@ export default function DiscsView({ fileData, filePaths, onUpdateFiles, onDelete
     const items: { path: string; kind: string }[] = [];
     if (editTexUrl)                               items.push({ path: texPath(selectedId),                       kind: 'new' });
     if (disc.isCustom && !fileData[modelPath(selectedId)]) items.push({ path: modelPath(selectedId),            kind: 'generated' });
-    const lp = getLangPath(fileData) || 'assets/minecraft/lang/en_us.json';
+    const lp = getLangPath(fileData, filePaths) || 'assets/minecraft/lang/en_us.json';
     items.push({ path: lp,                                                                                       kind: 'patch' });
     items.push({ path: 'assets/minecraft/sounds.json',                                                          kind: 'patch' });
     if (editSoundData) items.push({ path: sndOggPath(editSoundRef || `records/${selectedId}`),                  kind: 'new' });
@@ -597,19 +781,19 @@ export default function DiscsView({ fileData, filePaths, onUpdateFiles, onDelete
           {/* ── NAMES & TEXT ── */}
           <Sec title="Names & Display Text">
             <Fld label="Item display name" hint={`Lang key: ${nameKey(disc.id)}`}>
-              <TxtIn value={editName} onChange={v => { setEditName(v); setSaved(false); }} placeholder={disc.vanillaName}/>
+              <ColorTextField value={editName} onChange={v => { setEditName(v); setSaved(false); }} placeholder={disc.vanillaName}/>
             </Fld>
             <Fld label="Tooltip / description (shown when holding the disc)" hint={`Lang key: ${descKey(disc.id)}`}>
-              <TxtIn value={editDesc} onChange={v => { setEditDesc(v); setSaved(false); }} placeholder={disc.vanillaDesc}/>
+              <ColorTextField value={editDesc} onChange={v => { setEditDesc(v); setSaved(false); }} placeholder={disc.vanillaDesc}/>
             </Fld>
             <Fld
               label={`Jukebox "Now Playing" title (1.21+)`}
               hint={`Lang key: ${jukeKey(disc.id)} — leave blank to keep vanilla / not override`}>
-              <TxtIn value={editJukeTitle} onChange={v => { setEditJukeTitle(v); setSaved(false); }} placeholder="e.g. Artist Name - Song Title"/>
+              <ColorTextField value={editJukeTitle} onChange={v => { setEditJukeTitle(v); setSaved(false); }} placeholder="e.g. Artist Name - Song Title"/>
             </Fld>
             <div style={{ fontSize: 10, color: DIM, background: BG3, padding: '7px 10px', border: `1px solid ${BORDER}`, lineHeight: 1.7 }}>
-              All text is written to <span style={{ color: TEXT2 }}>{getLangPath(fileData) || 'assets/minecraft/lang/en_us.json'}</span>
-              {!fileData[getLangPath(fileData)] && !fileData['assets/minecraft/lang/en_US.json'] && (
+              All text is written to <span style={{ color: TEXT2 }}>{getLangPath(fileData, filePaths) || 'assets/minecraft/lang/en_us.json'}</span>
+              {!fileData[getLangPath(fileData, filePaths)] && !fileData['assets/minecraft/lang/en_US.json'] && (
                 <span style={{ color: WARN }}> · lang file will be created</span>
               )}
             </div>
