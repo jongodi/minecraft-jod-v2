@@ -55,7 +55,7 @@ export const yieldToMain=()=>new Promise<void>(r=>setTimeout(r,0));
 
 export async function analyzepackAsync(filePaths:string[],fileData:Record<string,string>){
   const textures=filePaths.filter(f=>/\.(png|jpg|jpeg)$/i.test(f));
-  const models=filePaths.filter(f=>f.endsWith('.json')&&!f.includes('pack.mcmeta'));
+  const models=filePaths.filter(f=>f.endsWith('.json')&&!f.includes('pack.mcmeta')&&!f.endsWith('/sounds.json')&&!/\/lang\/[^/]+\.json$/.test(f));
 
   const texNorm=new Map<string,string>();
   for(const t of textures){
@@ -64,7 +64,7 @@ export async function analyzepackAsync(filePaths:string[],fileData:Record<string
   }
   const resolveRef=(v:string):string|null=>{const n=normTexPath(v);return texNorm.get(n)??texNorm.get('textures/'+n)??null;};
 
-  const modelData:Record<string,{refs:{key:string,value:string,status:string,resolvedPath:string|null}[],broken:number}>={};
+  const modelData:Record<string,{refs:{key:string,value:string,status:string,resolvedPath:string|null}[],broken:number,parseError?:boolean}>={};
   // Process in chunks of 40, yielding between chunks so the UI never freezes
   const CHUNK=40;
   for(let i=0;i<models.length;i+=CHUNK){
@@ -82,7 +82,7 @@ export async function analyzepackAsync(filePaths:string[],fileData:Record<string
           refs.push({key,value,status,resolvedPath});
         }
         modelData[mp]={refs,broken:refs.filter(r=>r.status==='broken').length};
-      }catch{modelData[mp]={refs:[],broken:0};}
+      }catch{modelData[mp]={refs:[],broken:0,parseError:true};}
     }
     if(i+CHUNK<models.length)await yieldToMain();
   }
@@ -100,7 +100,11 @@ export async function analyzepackAsync(filePaths:string[],fileData:Record<string
   for(const t of textures)textureStatus[t]=(textureLinkedBy[t]?.length>0)?'linked':isLikelyVanilla(t)?'vanilla':'unlinked';
   const issues:any[]=[];
   for(const[mp,{refs}] of Object.entries(modelData))for(const r of refs.filter(x=>x.status==='broken'))issues.push({modelPath:mp,...r});
-  return{textures,models,modelData,textureLinkedBy,textureStatus,issues};
+  const validationIssues:{kind:string,path:string,message:string}[]=[];
+  for(const[mp,d] of Object.entries(modelData)){
+    if(d.parseError)validationIssues.push({kind:'invalid-json',path:mp,message:'Invalid JSON — file cannot be parsed'});
+  }
+  return{textures,models,modelData,textureLinkedBy,textureStatus,issues,validationIssues};
 }
 
 export type Analysis = Awaited<ReturnType<typeof analyzepackAsync>>;

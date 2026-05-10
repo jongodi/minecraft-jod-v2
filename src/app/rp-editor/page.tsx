@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState, useRef, useCallback, useMemo, memo, useEffect } from "react";
 import JSZip from "jszip";
 import dynamic from 'next/dynamic';
+import DiscsView from './tabs/DiscsView';
 
 const ModelViewer3D = dynamic(() => import('./model-viewer-3d'), { ssr: false,
   loading: () => <div style={{height:380,display:'flex',alignItems:'center',justifyContent:'center',color:'#4a5568',fontSize:12,border:'1px solid #2a3040',background:'#0d0f12'}}>Loading 3D viewer…</div>
@@ -13,7 +14,7 @@ const BG="#0d0f12",BG2="#13161b",BG3="#1a1e26",BORDER="#2a3040";
 const ACCENT="#4ade80",ACCENT2="#22d3ee",DIM="#4a5568",TEXT="#e2e8f0",TEXT2="#94a3b8",WARN="#f59e0b",ERR="#f87171";
 const PX=`font-family:'Courier New',monospace`;
 const VANILLA_PREFIXES=["block/","item/","entity/","gui/","environment/","font/","map/","misc/","mob_effect/","painting/","particle/","colormap/","effect/","models/","textures/","sounds/"];
-function isLikelyVanilla(p:string){return VANILLA_PREFIXES.some(v=>p.toLowerCase().includes(v));}
+function isLikelyVanilla(p:string){const norm=p.toLowerCase().replace(/^minecraft:/,'').replace(/^assets\/[^/]+\/textures\//,'').replace(/\.(png|jpg|jpeg)$/i,'');return VANILLA_PREFIXES.some(v=>norm.startsWith(v));}
 
 const css=`
 *{box-sizing:border-box;margin:0;padding:0}
@@ -172,7 +173,8 @@ const yieldToMain=()=>new Promise<void>(r=>setTimeout(r,0));
 
 async function analyzepackAsync(filePaths:string[],fileData:Record<string,string>){
   const textures=filePaths.filter(f=>/\.(png|jpg|jpeg)$/i.test(f));
-  const models=filePaths.filter(f=>f.endsWith('.json')&&!f.includes('pack.mcmeta'));
+  // Exclude non-model JSON: sounds.json, lang files, pack.mcmeta
+  const models=filePaths.filter(f=>f.endsWith('.json')&&!f.includes('pack.mcmeta')&&!f.endsWith('/sounds.json')&&!/\/lang\/[^/]+\.json$/.test(f));
 
   const texNorm=new Map<string,string>();
   for(const t of textures){
@@ -181,7 +183,7 @@ async function analyzepackAsync(filePaths:string[],fileData:Record<string,string
   }
   const resolveRef=(v:string):string|null=>{const n=normTexPath(v);return texNorm.get(n)??texNorm.get('textures/'+n)??null;};
 
-  const modelData:Record<string,{refs:{key:string,value:string,status:string,resolvedPath:string|null}[],broken:number}>={};
+  const modelData:Record<string,{refs:{key:string,value:string,status:string,resolvedPath:string|null}[],broken:number,parseError?:boolean}>={};
   // Process in chunks of 40, yielding between chunks so the UI never freezes
   const CHUNK=40;
   for(let i=0;i<models.length;i+=CHUNK){
@@ -199,7 +201,7 @@ async function analyzepackAsync(filePaths:string[],fileData:Record<string,string
           refs.push({key,value,status,resolvedPath});
         }
         modelData[mp]={refs,broken:refs.filter(r=>r.status==='broken').length};
-      }catch{modelData[mp]={refs:[],broken:0};}
+      }catch{modelData[mp]={refs:[],broken:0,parseError:true};}
     }
     if(i+CHUNK<models.length)await yieldToMain();
   }
@@ -217,7 +219,51 @@ async function analyzepackAsync(filePaths:string[],fileData:Record<string,string
   for(const t of textures)textureStatus[t]=(textureLinkedBy[t]?.length>0)?'linked':isLikelyVanilla(t)?'vanilla':'unlinked';
   const issues:any[]=[];
   for(const[mp,{refs}] of Object.entries(modelData))for(const r of refs.filter(x=>x.status==='broken'))issues.push({modelPath:mp,...r});
-  return{textures,models,modelData,textureLinkedBy,textureStatus,issues};
+
+  // Validation issues: invalid JSON, sounds.json OGG references, pack.mcmeta
+  const validationIssues:{kind:string,path:string,message:string}[]=[];
+  for(const[mp,d] of Object.entries(modelData)){
+    if(d.parseError)validationIssues.push({kind:'invalid-json',path:mp,message:'Invalid JSON — file cannot be parsed'});
+  }
+  const soundsFiles=filePaths.filter(f=>f.endsWith('/sounds.json')||f==='sounds.json');
+  for(const sf of soundsFiles){
+    const ns=sf.match(/^assets\/([^/]+)\/sounds\.json$/)?.[1]??'minecraft';
+    const content=fileData[sf];
+    if(!content)continue;
+    try{
+      const snd=JSON.parse(content);
+      for(const[event,val] of Object.entries(snd)){
+        if(!val||typeof val!=='object')continue;
+        const sounds=(val as any).sounds??[];
+        for(const s of sounds){
+          const name=typeof s==='string'?s:(s as any)?.name??'';
+          if(!name)continue;
+          const bare=name.replace(/^[^:]+:/,'');
+          const oggPath=`assets/${ns}/sounds/${bare}.ogg`;
+          if(!filePaths.includes(oggPath))validationIssues.push({kind:'missing-sound',path:sf,message:`Event "${event}" → missing ${oggPath}`});
+        }
+      }
+    }catch{validationIssues.push({kind:'invalid-json',path:sf,message:'sounds.json has invalid JSON'});}
+  }
+  const mcmeta=filePaths.find(f=>f==='pack.mcmeta'||f.endsWith('/pack.mcmeta'));
+  if(!mcmeta){
+    validationIssues.push({kind:'mcmeta',path:'pack.mcmeta',message:'pack.mcmeta not found — pack may not load in-game'});
+  }else{
+    const mc=fileData[mcmeta];
+    if(!mc){
+      validationIssues.push({kind:'invalid-json',path:mcmeta,message:'pack.mcmeta is empty'});
+    }else{
+      try{
+        const meta=JSON.parse(mc);
+        if(!meta?.pack)validationIssues.push({kind:'mcmeta',path:mcmeta,message:'Missing required "pack" key in pack.mcmeta'});
+        else{
+          if(typeof meta.pack.pack_format!=='number')validationIssues.push({kind:'mcmeta',path:mcmeta,message:'"pack_format" must be a number (e.g. 34 for 1.21)'});
+          if(meta.pack.description===undefined)validationIssues.push({kind:'mcmeta',path:mcmeta,message:'Missing "description" field in pack.mcmeta'});
+        }
+      }catch{validationIssues.push({kind:'invalid-json',path:mcmeta,message:'pack.mcmeta has invalid JSON'});}
+    }
+  }
+  return{textures,models,modelData,textureLinkedBy,textureStatus,issues,validationIssues};
 }
 
 // ── Tree helpers ───────────────────────────────────────────────────────────────
@@ -892,11 +938,11 @@ function PackMetaEditor({content,onChange}:any){
 
 // ── OverviewTab ────────────────────────────────────────────────────────────────
 function OverviewTab({analysis,fileCount,setMainTab}:any){
-  const{textures,models,issues,textureStatus,modelData}=analysis;
+  const{textures,models,issues,textureStatus,modelData,validationIssues=[]}=analysis;
   const linked=textures.filter((t:string)=>textureStatus[t]==='linked').length;
   const vanilla=textures.filter((t:string)=>textureStatus[t]==='vanilla').length;
   const unlinked=textures.filter((t:string)=>textureStatus[t]==='unlinked').length;
-  const modelsWithIssues=models.filter((m:string)=>modelData[m]?.broken>0).length;
+  const modelsWithIssues=models.filter((m:string)=>modelData[m]?.broken>0||modelData[m]?.parseError).length;
   return(
     <div className="scroll-area">
       <div className="stat-grid">
@@ -932,12 +978,22 @@ function OverviewTab({analysis,fileCount,setMainTab}:any){
         </div>
       )}
 
-      {issues.length===0&&unlinked===0&&models.length>0&&(
+      {validationIssues.length>0&&(
+        <div style={{marginBottom:24}}>
+          <div className="sh">Validation issues <span className="cnt" style={{background:WARN+'22',color:WARN,borderColor:WARN+'44'}}>{validationIssues.length}</span></div>
+          <p style={{color:TEXT2,fontSize:12,marginBottom:12,lineHeight:1.6}}>
+            Structural problems: invalid JSON files, missing sound references, or pack.mcmeta issues.
+          </p>
+          <button className="btn" style={{borderColor:WARN+'66',color:WARN}} onClick={()=>setMainTab('issues')}>View validation issues →</button>
+        </div>
+      )}
+
+      {issues.length===0&&unlinked===0&&validationIssues.length===0&&models.length>0&&(
         <div style={{display:'flex',alignItems:'center',gap:10,color:ACCENT,padding:'16px 0'}}>
           <span style={{fontSize:22}}>✓</span>
           <div>
             <div style={{fontSize:13,fontWeight:600}}>Pack looks clean</div>
-            <div style={{fontSize:11,color:DIM,marginTop:2}}>All texture references resolve correctly</div>
+            <div style={{fontSize:11,color:DIM,marginTop:2}}>All texture references resolve correctly and the pack structure is valid</div>
           </div>
         </div>
       )}
@@ -972,7 +1028,7 @@ function TextureGrid({analysis,fileData,onOpenInEditor,onDeleteTextures}:any){
     return list;
   },[textures,textureStatus,filter,search]);
 
-  const LABELS:{[k:string]:string}={linked:'Linked by model',vanilla:'Vanilla name — uses MC default',unlinked:'Not linked to any model'};
+  const LABELS:{[k:string]:string}={linked:'Linked by model',vanilla:'Override — replaces vanilla texture',unlinked:'Not linked to any model'};
 
   function toggleSelect(path:string,e:React.MouseEvent){
     if(e.shiftKey&&lastClicked){
@@ -1116,12 +1172,12 @@ function ModelsView({analysis,fileData,onApplyFix,onOpenInEditor}:any){
   const[search,setSearch]=useState('');
   const[expanded,setExpanded]=useState<Set<string>>(()=>new Set());
 
-  const issueCount=models.filter((m:string)=>modelData[m]?.broken>0).length;
+  const issueCount=models.filter((m:string)=>modelData[m]?.broken>0||modelData[m]?.parseError).length;
 
   const filtered=useMemo(()=>{
     let list:string[]=models;
-    if(filter==='issues')list=list.filter((m:string)=>modelData[m]?.broken>0);
-    if(filter==='ok')list=list.filter((m:string)=>modelData[m]?.broken===0);
+    if(filter==='issues')list=list.filter((m:string)=>modelData[m]?.broken>0||modelData[m]?.parseError);
+    if(filter==='ok')list=list.filter((m:string)=>modelData[m]?.broken===0&&!modelData[m]?.parseError);
     if(search.trim())list=list.filter((m:string)=>m.toLowerCase().includes(search.toLowerCase()));
     return list;
   },[models,modelData,filter,search]);
@@ -1143,14 +1199,14 @@ function ModelsView({analysis,fileData,onApplyFix,onOpenInEditor}:any){
         {filtered.length===0?<div className="empty-state">No models match the filter</div>:(
           <div className="model-list">
             {filtered.map((mp:string)=>{
-              const{refs,broken}=modelData[mp]??{refs:[],broken:0};
+              const{refs,broken,parseError}=modelData[mp]??{refs:[],broken:0};
               const isOpen=expanded.has(mp);
               return(
-                <div key={mp} className={`mc${broken>0?' has-issues':''}`}>
+                <div key={mp} className={`mc${(broken>0||parseError)?' has-issues':''}`}>
                   <div className="mc-head" onClick={()=>toggle(mp)}>
                     <span style={{color:DIM,fontSize:10,flexShrink:0}}>{isOpen?'▼':'►'}</span>
                     <span className="mc-name" title={mp}>{mp.split('/').slice(-2).join('/')}</span>
-                    {broken>0?<span className="mc-badge err">{broken} broken</span>:refs.length>0?<span className="mc-badge ok">✓ OK</span>:<span className="mc-badge none">no refs</span>}
+                    {parseError?<span className="mc-badge err">invalid JSON</span>:broken>0?<span className="mc-badge err">{broken} broken</span>:refs.length>0?<span className="mc-badge ok">✓ OK</span>:<span className="mc-badge none">no refs</span>}
                     <button className="btn sm" style={{flexShrink:0}} onClick={e=>{e.stopPropagation();onOpenInEditor(mp);}}>Edit</button>
                   </div>
                   {isOpen&&(
@@ -1174,7 +1230,7 @@ function ModelsView({analysis,fileData,onApplyFix,onOpenInEditor}:any){
 
 // ── IssuesView ─────────────────────────────────────────────────────────────────
 function IssuesView({analysis,fileData,onApplyFix,onApplyAllFixes,onOpenInEditor}:any){
-  const{issues,textures}=analysis;
+  const{issues,textures,validationIssues=[]}=analysis;
   const[fixState,setFixState]=useState<Record<string,string>>({});
   const[showFixAll,setShowFixAll]=useState(false);
 
@@ -1205,15 +1261,27 @@ function IssuesView({analysis,fileData,onApplyFix,onApplyAllFixes,onOpenInEditor
   const[fixAllVals,setFixAllVals]=useState<Record<string,string>>({});
   const effectiveFAVals=showFixAll?{...suggestions,...fixAllVals}:{};
 
-  if(issues.length===0)return(
+  if(issues.length===0&&validationIssues.length===0)return(
     <div className="scroll-area">
       <div style={{display:'flex',alignItems:'center',gap:12,color:ACCENT,padding:'20px 0'}}>
         <span style={{fontSize:28}}>✓</span>
         <div>
-          <div style={{fontSize:14,fontWeight:600}}>No broken references</div>
-          <div style={{fontSize:11,color:DIM,marginTop:4}}>All texture references in your models resolve correctly</div>
+          <div style={{fontSize:14,fontWeight:600}}>No issues found</div>
+          <div style={{fontSize:11,color:DIM,marginTop:4}}>All texture references resolve correctly and the pack structure is valid</div>
         </div>
       </div>
+    </div>
+  );
+  if(issues.length===0&&validationIssues.length>0)return(
+    <div className="scroll-area">
+      <div style={{display:'flex',alignItems:'center',gap:12,color:ACCENT,padding:'20px 0'}}>
+        <span style={{fontSize:28}}>✓</span>
+        <div>
+          <div style={{fontSize:14,fontWeight:600}}>No broken texture references</div>
+          <div style={{fontSize:11,color:DIM,marginTop:4}}>All texture references resolve correctly — see validation issues below</div>
+        </div>
+      </div>
+      <ValidationIssuesSection validationIssues={validationIssues}/>
     </div>
   );
 
@@ -1332,6 +1400,33 @@ function IssuesView({analysis,fileData,onApplyFix,onApplyAllFixes,onOpenInEditor
             );
           })}
         </div>
+        {validationIssues.length>0&&<ValidationIssuesSection validationIssues={validationIssues}/>}
+      </div>
+    </div>
+  );
+}
+
+// ── ValidationIssuesSection ────────────────────────────────────────────────────
+const KIND_ICONS:{[k:string]:string}={'invalid-json':'{ }','missing-sound':'♪','mcmeta':'⚙'};
+const KIND_LABELS:{[k:string]:string}={'invalid-json':'Invalid JSON','missing-sound':'Missing sound file','mcmeta':'pack.mcmeta'};
+function ValidationIssuesSection({validationIssues}:any){
+  return(
+    <div style={{marginTop:20}}>
+      <div className="sh" style={{borderColor:WARN+'55'}}>
+        <span style={{color:WARN}}>Validation</span>
+        <span className="cnt" style={{background:WARN+'22',color:WARN,borderColor:WARN+'44'}}>{validationIssues.length}</span>
+      </div>
+      <div style={{display:'flex',flexDirection:'column',gap:4}}>
+        {validationIssues.map((vi:any,i:number)=>(
+          <div key={i} style={{background:BG2,border:`1px solid ${WARN}33`,padding:'8px 12px',display:'flex',gap:10,alignItems:'flex-start'}}>
+            <div style={{width:28,height:28,background:WARN+'11',border:`1px solid ${WARN}44`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,color:WARN,flexShrink:0}}>{KIND_ICONS[vi.kind]??'!'}</div>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:9,color:WARN,letterSpacing:1,textTransform:'uppercase',marginBottom:2}}>{KIND_LABELS[vi.kind]??vi.kind}</div>
+              <div style={{fontSize:10,color:DIM,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',marginBottom:2}}>{vi.path}</div>
+              <div style={{fontSize:11,color:TEXT2}}>{vi.message}</div>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -1598,6 +1693,24 @@ export default function App(){
     setStatus(`Deleted ${paths.length} texture${paths.length!==1?'s':''}`);
   },[selected]);
 
+  // Generic file update — used by DiscsView to write textures, lang, sounds.json etc.
+  const updateFiles=useCallback((updates:Record<string,string>)=>{
+    for(const[path,content] of Object.entries(updates))fileDataRef.current[path]=content;
+    setFilePaths(Object.keys(fileDataRef.current));
+    setRevision(r=>r+1);
+    const n=Object.keys(updates).length;
+    setStatus(`Updated ${n} file${n!==1?'s':''}`);
+  },[]);
+
+  // Generic file delete — used by DiscsView to remove override files
+  const deleteFiles=useCallback((paths:string[])=>{
+    for(const p of paths)delete fileDataRef.current[p];
+    setFilePaths(Object.keys(fileDataRef.current));
+    if(selected&&paths.includes(selected)){setSelected(null);setSelectedContent(null);}
+    setRevision(r=>r+1);
+    setStatus(`Removed ${paths.length} file${paths.length!==1?'s':''}`);
+  },[selected]);
+
   // Rename a file: update key in fileDataRef, update all JSON model texture refs
   const renameFile=useCallback((oldPath:string,newPath:string)=>{
     if(!oldPath||!newPath||oldPath===newPath)return;
@@ -1653,13 +1766,14 @@ export default function App(){
   const isAudio=['ogg','mp3','wav'].includes(ext);
   const isMeta=!!selected?.includes('pack.mcmeta');
   const isJson=ext==='json'&&!isMeta;
-  const issueCount=analysis?.issues?.length??0;
+  const issueCount=(analysis?.issues?.length??0)+(analysis?.validationIssues?.length??0);
 
   const NAV_TABS=[
     {id:'overview',label:'Overview'},
     {id:'textures',label:'Textures'},
     {id:'models',label:'Models',badge:issueCount},
     {id:'issues',label:'Issues',badge:issueCount},
+    {id:'discs',label:'💿 Discs'},
     {id:'editor',label:'Editor'},
     {id:'diff',label:'Diff'},
   ];
@@ -1718,6 +1832,7 @@ export default function App(){
               {mainTab==='models'&&<ModelsView analysis={analysis} fileData={fileDataRef.current} onApplyFix={applyFix} onOpenInEditor={openInEditor}/>}
               {mainTab==='issues'&&<IssuesView analysis={analysis} fileData={fileDataRef.current} onApplyFix={applyFix} onApplyAllFixes={applyAllFixes} onOpenInEditor={openInEditor}/>}
               {mainTab==='diff'&&<PackDiffView fileDataA={fileDataRef.current} filePathsA={filePaths}/>}
+              {mainTab==='discs'&&<DiscsView fileData={fileDataRef.current} filePaths={filePaths} onUpdateFiles={updateFiles} onDeleteFiles={deleteFiles} onOpenInEditor={openInEditor}/>}
               {mainTab==='editor'&&(
                 <div className="editor-layout">
                   <div className="sidebar">
