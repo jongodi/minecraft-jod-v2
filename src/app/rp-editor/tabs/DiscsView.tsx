@@ -5,27 +5,28 @@ import { BG, BG2, BG3, BORDER, ACCENT, ACCENT2, DIM, TEXT, TEXT2, WARN, ERR } fr
 
 // ─── All vanilla music discs ──────────────────────────────────────────────────
 
+// duration = vanilla track length in seconds (used to warn when upload is longer)
 const VANILLA_DISCS = [
-  { id: '13',               vanillaName: 'Music Disc',  vanillaDesc: 'C418 - 13',                         color: '#f97316' },
-  { id: 'cat',              vanillaName: 'Music Disc',  vanillaDesc: 'C418 - cat',                        color: '#eab308' },
-  { id: 'blocks',           vanillaName: 'Music Disc',  vanillaDesc: 'C418 - blocks',                     color: '#22c55e' },
-  { id: 'chirp',            vanillaName: 'Music Disc',  vanillaDesc: 'C418 - chirp',                      color: '#f87171' },
-  { id: 'far',              vanillaName: 'Music Disc',  vanillaDesc: 'C418 - far',                        color: '#6366f1' },
-  { id: 'mall',             vanillaName: 'Music Disc',  vanillaDesc: 'C418 - mall',                       color: '#ec4899' },
-  { id: 'mellohi',          vanillaName: 'Music Disc',  vanillaDesc: 'C418 - mellohi',                    color: '#8b5cf6' },
-  { id: 'stal',             vanillaName: 'Music Disc',  vanillaDesc: 'C418 - stal',                       color: '#a78bfa' },
-  { id: 'strad',            vanillaName: 'Music Disc',  vanillaDesc: 'C418 - strad',                      color: '#34d399' },
-  { id: 'ward',             vanillaName: 'Music Disc',  vanillaDesc: 'C418 - ward',                       color: '#22d3ee' },
-  { id: '11',               vanillaName: 'Music Disc',  vanillaDesc: 'C418 - 11',                         color: '#94a3b8' },
-  { id: 'wait',             vanillaName: 'Music Disc',  vanillaDesc: 'C418 - wait',                       color: '#38bdf8' },
-  { id: 'otherside',        vanillaName: 'Music Disc',  vanillaDesc: 'Lena Raine - otherside',            color: '#c084fc' },
-  { id: '5',                vanillaName: 'Music Disc',  vanillaDesc: 'Samuel Åberg - 5',                  color: '#fb923c' },
-  { id: 'pigstep',          vanillaName: 'Music Disc',  vanillaDesc: 'Lena Raine - Pigstep',              color: '#f472b6' },
-  { id: 'relic',            vanillaName: 'Music Disc',  vanillaDesc: 'Aaron Cherof - Relic',              color: '#a3e635' },
-  { id: 'precipice',        vanillaName: 'Music Disc',  vanillaDesc: 'Aaron Cherof - Precipice',          color: '#4ade80' },
-  { id: 'creator',          vanillaName: 'Music Disc',  vanillaDesc: 'Lena Raine - Creator',              color: '#e879f9' },
-  { id: 'creator_music_box',vanillaName: 'Music Disc',  vanillaDesc: 'Lena Raine - Creator (Music Box)',  color: '#f0abfc' },
-  { id: 'tears',            vanillaName: 'Music Disc',  vanillaDesc: 'Lena Raine - Tears',               color: '#67e8f9' },
+  { id: '13',               vanillaName: 'Music Disc',  vanillaDesc: 'C418 - 13',                         color: '#f97316', duration: 178 },
+  { id: 'cat',              vanillaName: 'Music Disc',  vanillaDesc: 'C418 - cat',                        color: '#eab308', duration: 185 },
+  { id: 'blocks',           vanillaName: 'Music Disc',  vanillaDesc: 'C418 - blocks',                     color: '#22c55e', duration: 345 },
+  { id: 'chirp',            vanillaName: 'Music Disc',  vanillaDesc: 'C418 - chirp',                      color: '#f87171', duration: 185 },
+  { id: 'far',              vanillaName: 'Music Disc',  vanillaDesc: 'C418 - far',                        color: '#6366f1', duration: 174 },
+  { id: 'mall',             vanillaName: 'Music Disc',  vanillaDesc: 'C418 - mall',                       color: '#ec4899', duration: 197 },
+  { id: 'mellohi',          vanillaName: 'Music Disc',  vanillaDesc: 'C418 - mellohi',                    color: '#8b5cf6', duration:  96 },
+  { id: 'stal',             vanillaName: 'Music Disc',  vanillaDesc: 'C418 - stal',                       color: '#a78bfa', duration: 150 },
+  { id: 'strad',            vanillaName: 'Music Disc',  vanillaDesc: 'C418 - strad',                      color: '#34d399', duration: 188 },
+  { id: 'ward',             vanillaName: 'Music Disc',  vanillaDesc: 'C418 - ward',                       color: '#22d3ee', duration: 251 },
+  { id: '11',               vanillaName: 'Music Disc',  vanillaDesc: 'C418 - 11',                         color: '#94a3b8', duration:  71 },
+  { id: 'wait',             vanillaName: 'Music Disc',  vanillaDesc: 'C418 - wait',                       color: '#38bdf8', duration: 238 },
+  { id: 'otherside',        vanillaName: 'Music Disc',  vanillaDesc: 'Lena Raine - otherside',            color: '#c084fc', duration: 195 },
+  { id: '5',                vanillaName: 'Music Disc',  vanillaDesc: 'Samuel Åberg - 5',                  color: '#fb923c', duration: 178 },
+  { id: 'pigstep',          vanillaName: 'Music Disc',  vanillaDesc: 'Lena Raine - Pigstep',              color: '#f472b6', duration: 148 },
+  { id: 'relic',            vanillaName: 'Music Disc',  vanillaDesc: 'Aaron Cherof - Relic',              color: '#a3e635', duration: 218 },
+  { id: 'precipice',        vanillaName: 'Music Disc',  vanillaDesc: 'Aaron Cherof - Precipice',          color: '#4ade80', duration: 299 },
+  { id: 'creator',          vanillaName: 'Music Disc',  vanillaDesc: 'Lena Raine - Creator',              color: '#e879f9', duration: 176 },
+  { id: 'creator_music_box',vanillaName: 'Music Disc',  vanillaDesc: 'Lena Raine - Creator (Music Box)',  color: '#f0abfc', duration:  74 },
+  { id: 'tears',            vanillaName: 'Music Disc',  vanillaDesc: 'Lena Raine - Tears',                color: '#67e8f9', duration: 287 },
 ] as const;
 
 type VanillaDiscId = typeof VANILLA_DISCS[number]['id'];
@@ -36,7 +37,25 @@ interface DiscDef {
   vanillaName: string;
   vanillaDesc: string;
   color: string;
+  duration?: number; // vanilla track length in seconds; undefined for custom discs
   isCustom?: boolean;
+}
+
+function fmtDur(s: number): string {
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60);
+  return `${m}:${sec.toString().padStart(2, '0')}`;
+}
+
+function detectAudioDuration(dataUrl: string): Promise<number | null> {
+  return new Promise(resolve => {
+    const audio = new Audio(dataUrl);
+    const done = () => resolve(isFinite(audio.duration) ? audio.duration : null);
+    audio.addEventListener('loadedmetadata', done, { once: true });
+    audio.addEventListener('error', () => resolve(null), { once: true });
+    // Fallback in case the event never fires
+    setTimeout(() => resolve(null), 8000);
+  });
 }
 
 // ─── Path / lang key helpers ──────────────────────────────────────────────────
@@ -227,9 +246,10 @@ export default function DiscsView({ fileData, filePaths, onUpdateFiles, onDelete
   const [editDesc,      setEditDesc]      = useState('');
   const [editJukeTitle, setEditJukeTitle] = useState('');
   const [editTexUrl,    setEditTexUrl]    = useState<string | null>(null);  // null = no pending change
-  const [editSoundRef,  setEditSoundRef]  = useState('');                   // e.g. "records/custom_song"
-  const [editSoundData, setEditSoundData] = useState<{ url: string; filename: string } | null>(null);
-  const [saved,         setSaved]         = useState(false);
+  const [editSoundRef,      setEditSoundRef]      = useState('');                   // e.g. "records/custom_song"
+  const [editSoundData,     setEditSoundData]     = useState<{ url: string; filename: string } | null>(null);
+  const [editSoundDuration, setEditSoundDuration] = useState<number | null>(null); // detected duration of uploaded OGG
+  const [saved,             setSaved]             = useState(false);
 
   const texInputRef   = useRef<HTMLInputElement>(null);
   const soundInputRef = useRef<HTMLInputElement>(null);
@@ -244,7 +264,7 @@ export default function DiscsView({ fileData, filePaths, onUpdateFiles, onDelete
     for (const p of filePaths) {
       const m = p.match(/assets\/minecraft\/textures\/item\/music_disc_(.+?)\.png$/i);
       if (m && !VANILLA_IDS.has(m[1])) {
-        list.push({ id: m[1], vanillaName: 'Music Disc', vanillaDesc: `Custom · ${m[1]}`, color: '#4ade80', isCustom: true });
+        list.push({ id: m[1], vanillaName: 'Music Disc', vanillaDesc: `Custom · ${m[1]}`, color: '#4ade80', isCustom: true, duration: undefined });
       }
     }
     return list;
@@ -284,6 +304,7 @@ export default function DiscsView({ fileData, filePaths, onUpdateFiles, onDelete
     setSaved(false);
     setEditTexUrl(null);
     setEditSoundData(null);
+    setEditSoundDuration(null);
     const disc = allDiscs.find(d => d.id === id);
     setEditName(langJson[nameKey(id)]  ?? disc?.vanillaName ?? 'Music Disc');
     setEditDesc(langJson[descKey(id)]  ?? disc?.vanillaDesc ?? '');
@@ -300,7 +321,7 @@ export default function DiscsView({ fileData, filePaths, onUpdateFiles, onDelete
     e.target.value = '';
   };
 
-  // Sound file upload
+  // Sound file upload — also detects duration asynchronously
   const handleSoundUpload = (e: any) => {
     const f = e.target.files?.[0]; if (!f) return;
     const reader = new FileReader();
@@ -309,7 +330,9 @@ export default function DiscsView({ fileData, filePaths, onUpdateFiles, onDelete
       const cleanName = f.name.replace(/\.ogg$/i, '').replace(/[^a-z0-9_\-]/gi, '_').toLowerCase();
       setEditSoundData({ url, filename: cleanName });
       setEditSoundRef(`records/${cleanName}`);
+      setEditSoundDuration(null);
       setSaved(false);
+      detectAudioDuration(url).then(dur => setEditSoundDuration(dur));
     };
     reader.readAsDataURL(f);
     e.target.value = '';
@@ -464,8 +487,13 @@ export default function DiscsView({ fileData, filePaths, onUpdateFiles, onDelete
                   <div style={{ fontSize: 11, color: isSel ? ACCENT : over ? TEXT : TEXT2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {d.id}{d.isCustom ? ' ✦' : ''}
                   </div>
-                  <div style={{ fontSize: 9, color: DIM, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {langJson[descKey(d.id)] ?? d.vanillaDesc}
+                  <div style={{ fontSize: 9, color: DIM, display: 'flex', gap: 5, alignItems: 'center' }}>
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+                      {langJson[descKey(d.id)] ?? d.vanillaDesc}
+                    </span>
+                    {d.duration != null && (
+                      <span style={{ flexShrink: 0, color: DIM, fontFamily: 'monospace', fontSize: 9 }}>{fmtDur(d.duration)}</span>
+                    )}
                   </div>
                 </div>
                 {over && (
@@ -589,6 +617,36 @@ export default function DiscsView({ fileData, filePaths, onUpdateFiles, onDelete
 
           {/* ── SOUND ── */}
           <Sec title="Sound / Music">
+
+            {/* Duration info bar */}
+            {disc.duration != null && (
+              <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginBottom: 14, padding: '8px 12px', background: BG3, border: `1px solid ${BORDER}`, flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 9, color: DIM, letterSpacing: '1px', textTransform: 'uppercase' }}>Vanilla length</span>
+                  <span style={{ fontSize: 13, fontFamily: 'monospace', color: ACCENT2, fontWeight: 700 }}>{fmtDur(disc.duration)}</span>
+                </div>
+                {editSoundDuration != null && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontSize: 9, color: DIM, letterSpacing: '1px', textTransform: 'uppercase' }}>Uploaded</span>
+                    <span style={{ fontSize: 13, fontFamily: 'monospace', fontWeight: 700, color: editSoundDuration > disc.duration ? ERR : ACCENT }}>
+                      {fmtDur(editSoundDuration)}
+                    </span>
+                  </div>
+                )}
+                {editSoundDuration == null && editSoundData && (
+                  <span style={{ fontSize: 9, color: DIM }}>detecting length…</span>
+                )}
+              </div>
+            )}
+
+            {/* Over-length warning */}
+            {disc.duration != null && editSoundDuration != null && editSoundDuration > disc.duration && (
+              <div style={{ marginBottom: 12, padding: '8px 12px', background: `${ERR}0d`, border: `1px solid ${ERR}44`, fontSize: 10, color: ERR, lineHeight: 1.6 }}>
+                ⚠ Your song ({fmtDur(editSoundDuration)}) is longer than the vanilla track ({fmtDur(disc.duration)}).
+                Minecraft will cut playback at {fmtDur(disc.duration)} because the sound event length is defined by the vanilla game data.
+                Choose a different (shorter) disc to override, or trim your song to fit.
+              </div>
+            )}
 
             {/* Current playback */}
             {curSoundUrl && (
