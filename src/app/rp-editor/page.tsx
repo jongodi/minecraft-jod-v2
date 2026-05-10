@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState, useRef, useCallback, useMemo, memo, useEffect } from "react";
 import JSZip from "jszip";
 import dynamic from 'next/dynamic';
+import DiscsView from './tabs/DiscsView';
 
 const ModelViewer3D = dynamic(() => import('./model-viewer-3d'), { ssr: false,
   loading: () => <div style={{height:380,display:'flex',alignItems:'center',justifyContent:'center',color:'#4a5568',fontSize:12,border:'1px solid #2a3040',background:'#0d0f12'}}>Loading 3D viewer…</div>
@@ -1598,6 +1599,24 @@ export default function App(){
     setStatus(`Deleted ${paths.length} texture${paths.length!==1?'s':''}`);
   },[selected]);
 
+  // Generic file update — used by DiscsView to write textures, lang, sounds.json etc.
+  const updateFiles=useCallback((updates:Record<string,string>)=>{
+    for(const[path,content] of Object.entries(updates))fileDataRef.current[path]=content;
+    setFilePaths(Object.keys(fileDataRef.current));
+    setRevision(r=>r+1);
+    const n=Object.keys(updates).length;
+    setStatus(`Updated ${n} file${n!==1?'s':''}`);
+  },[]);
+
+  // Generic file delete — used by DiscsView to remove override files
+  const deleteFiles=useCallback((paths:string[])=>{
+    for(const p of paths)delete fileDataRef.current[p];
+    setFilePaths(Object.keys(fileDataRef.current));
+    if(selected&&paths.includes(selected)){setSelected(null);setSelectedContent(null);}
+    setRevision(r=>r+1);
+    setStatus(`Removed ${paths.length} file${paths.length!==1?'s':''}`);
+  },[selected]);
+
   // Rename a file: update key in fileDataRef, update all JSON model texture refs
   const renameFile=useCallback((oldPath:string,newPath:string)=>{
     if(!oldPath||!newPath||oldPath===newPath)return;
@@ -1660,6 +1679,7 @@ export default function App(){
     {id:'textures',label:'Textures'},
     {id:'models',label:'Models',badge:issueCount},
     {id:'issues',label:'Issues',badge:issueCount},
+    {id:'discs',label:'💿 Discs'},
     {id:'editor',label:'Editor'},
     {id:'diff',label:'Diff'},
   ];
@@ -1718,6 +1738,7 @@ export default function App(){
               {mainTab==='models'&&<ModelsView analysis={analysis} fileData={fileDataRef.current} onApplyFix={applyFix} onOpenInEditor={openInEditor}/>}
               {mainTab==='issues'&&<IssuesView analysis={analysis} fileData={fileDataRef.current} onApplyFix={applyFix} onApplyAllFixes={applyAllFixes} onOpenInEditor={openInEditor}/>}
               {mainTab==='diff'&&<PackDiffView fileDataA={fileDataRef.current} filePathsA={filePaths}/>}
+              {mainTab==='discs'&&<DiscsView fileData={fileDataRef.current} filePaths={filePaths} onUpdateFiles={updateFiles} onDeleteFiles={deleteFiles} onOpenInEditor={openInEditor}/>}
               {mainTab==='editor'&&(
                 <div className="editor-layout">
                   <div className="sidebar">
