@@ -27,6 +27,12 @@ export default function HeroSection() {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timeoutRef  = useRef<ReturnType<typeof setTimeout>  | null>(null);
   const btnWrapRef  = useRef<HTMLDivElement>(null);
+  const imgRef      = useRef<HTMLImageElement>(null);
+
+  useEffect(() => {
+    // Handle cached images: onLoad won't fire if already complete
+    if (imgRef.current?.complete) setImgLoaded(true);
+  }, []);
 
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
@@ -95,7 +101,8 @@ export default function HeroSection() {
       {/* Full-bleed background screenshot */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/screenshots/night-sky.png"
+        ref={imgRef}
+        src="/screenshots/the-castle.png"
         alt=""
         aria-hidden="true"
         onLoad={() => setImgLoaded(true)}

@@ -18,6 +18,12 @@ export default function JoinSection() {
   const timeoutRef  = useRef<ReturnType<typeof setTimeout>  | null>(null);
   const glitchTimer = useRef<ReturnType<typeof setTimeout>  | null>(null);
   const btnAreaRef  = useRef<HTMLDivElement>(null);
+  const imgRef      = useRef<HTMLImageElement>(null);
+
+  useEffect(() => {
+    // Handle cached images: onLoad won't fire if already complete
+    if (imgRef.current?.complete) setImgLoaded(true);
+  }, []);
 
   useEffect(() => {
     const scheduleGlitch = () => {
@@ -101,7 +107,8 @@ export default function JoinSection() {
       {/* Full-bleed night sky background */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/screenshots/the-castle.png"
+        ref={imgRef}
+        src="/screenshots/night-sky.png"
         alt=""
         aria-hidden="true"
         onLoad={() => setImgLoaded(true)}
