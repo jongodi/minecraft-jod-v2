@@ -108,7 +108,7 @@ export default function JoinSection() {
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         ref={imgRef}
-        src="/screenshots/night-sky.png"
+        src="/screenshots/the-castle.png"
         alt=""
         aria-hidden="true"
         onLoad={() => setImgLoaded(true)}

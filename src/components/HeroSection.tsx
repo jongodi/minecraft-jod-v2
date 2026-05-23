@@ -102,7 +102,7 @@ export default function HeroSection() {
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         ref={imgRef}
-        src="/screenshots/the-castle.png"
+        src="/screenshots/night-sky.png"
         alt=""
         aria-hidden="true"
         onLoad={() => setImgLoaded(true)}
@@ -112,8 +112,8 @@ export default function HeroSection() {
           width:           '100%',
           height:          '100%',
           objectFit:       'cover',
-          objectPosition:  'center 40%',
-          opacity:         imgLoaded ? 0.8 : 0,
+          objectPosition:  'center 35%',
+          opacity:         imgLoaded ? 0.92 : 0,
           transform:       `scale(1.12) translate(${mouse.x * -7}px, ${mouse.y * -5}px)`,
           transformOrigin: 'center center',
           transition:      imgLoaded ? 'opacity 1.2s ease' : 'none',
@@ -121,11 +121,11 @@ export default function HeroSection() {
         }}
       />
 
-      {/* Bottom-heavy cinematic gradient */}
+      {/* Bottom gradient — dark enough for text, light enough to see night sky */}
       <div style={{
         position:      'absolute',
         inset:         0,
-        background:    'linear-gradient(to top, #06080c 0%, rgba(6,8,12,0.88) 18%, rgba(6,8,12,0.45) 50%, rgba(6,8,12,0.25) 100%)',
+        background:    'linear-gradient(to top, #06080c 0%, rgba(6,8,12,0.82) 20%, rgba(6,8,12,0.28) 50%, rgba(6,8,12,0.08) 100%)',
         pointerEvents: 'none',
         zIndex:        1,
       }} />
@@ -134,7 +134,7 @@ export default function HeroSection() {
       <div style={{
         position:      'absolute',
         inset:         0,
-        background:    'linear-gradient(to right, rgba(6,8,12,0.8) 0%, rgba(6,8,12,0.25) 55%, transparent 100%)',
+        background:    'linear-gradient(to right, rgba(6,8,12,0.72) 0%, rgba(6,8,12,0.18) 50%, transparent 100%)',
         pointerEvents: 'none',
         zIndex:        1,
       }} />
