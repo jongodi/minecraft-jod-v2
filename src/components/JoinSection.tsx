@@ -112,7 +112,7 @@ export default function JoinSection() {
           height:         '100%',
           objectFit:      'cover',
           objectPosition: 'center',
-          opacity:        imgLoaded ? 0.38 : 0,
+          opacity:        imgLoaded ? 0.52 : 0,
           transition:     'opacity 1.4s ease',
           pointerEvents:  'none',
         }}
