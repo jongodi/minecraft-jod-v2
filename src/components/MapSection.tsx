@@ -150,7 +150,7 @@ export default function MapSection() {
     <section
       id="map"
       style={{
-        padding:      'clamp(5rem, 12vw, 9rem) clamp(1.5rem, 6vw, 5rem)',
+        padding:      'clamp(1.5rem, 3vw, 3rem) clamp(1.5rem, 6vw, 5rem)',
         borderBottom: '1px solid #1c2030',
         position:     'relative',
         overflow:     'hidden',
@@ -175,12 +175,12 @@ export default function MapSection() {
         transition={{ duration: 0.65, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
         style={{
           fontFamily:    "'Space Grotesk', sans-serif",
-          fontSize:      'clamp(3rem, 7vw, 6rem)',
+          fontSize:      'clamp(1.5rem, 3.5vw, 2.5rem)',
           fontWeight:    900,
           letterSpacing: '-0.03em',
           color:         '#dde1ec',
           lineHeight:    0.95,
-          marginBottom:  '0.8rem',
+          marginBottom:  '0.5rem',
         }}
       >
         THE REALM
@@ -197,7 +197,7 @@ export default function MapSection() {
           color:         '#1e2230',
           letterSpacing: '0.18em',
           textTransform: 'uppercase',
-          marginBottom:  '2.5rem',
+          marginBottom:  '0.75rem',
         }}
       >
         CLICK LOCATIONS TO EXPLORE

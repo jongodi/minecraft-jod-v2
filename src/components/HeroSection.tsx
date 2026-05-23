@@ -95,20 +95,20 @@ export default function HeroSection() {
       {/* Full-bleed background screenshot */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/screenshots/the-castle.png"
+        src="/screenshots/night-sky.png"
         alt=""
         aria-hidden="true"
         onLoad={() => setImgLoaded(true)}
         style={{
           position:       'absolute',
-          inset:          0,
-          width:          '100%',
-          height:         '112%',
           top:            '-6%',
+          left:           '-5%',
+          width:          '110%',
+          height:         '112%',
           objectFit:      'cover',
           objectPosition: 'center 40%',
           opacity:        imgLoaded ? 0.8 : 0,
-          transform:      `translate(${mouse.x * -14}px, ${mouse.y * -8}px)`,
+          transform:      `translate(${mouse.x * -8}px, ${mouse.y * -8}px)`,
           transition:     imgLoaded ? 'opacity 1.2s ease' : 'none',
           pointerEvents:  'none',
         }}

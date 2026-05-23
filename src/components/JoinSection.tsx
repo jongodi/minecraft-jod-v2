@@ -101,7 +101,7 @@ export default function JoinSection() {
       {/* Full-bleed night sky background */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/screenshots/night-sky.png"
+        src="/screenshots/the-castle.png"
         alt=""
         aria-hidden="true"
         onLoad={() => setImgLoaded(true)}

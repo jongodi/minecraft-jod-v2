@@ -359,3 +359,37 @@ body::after {
   transform-style: preserve-3d;
   will-change: transform;
 }
+
+/* ─── Gallery editorial grid ─────────────────────────────────── */
+/* Defined here (not in JSX <style>) to avoid React hydration mismatch
+   caused by HTML-escaping of > and < in JSX style tag content. */
+.gr {
+  display: grid;
+  gap: 0.4rem;
+}
+.gr-1 { height: 55vh; }
+.gr-2 { height: 36vh; }
+.gr-3 { height: 30vh; }
+.gr-4 { height: 38vh; }
+.gr-5 { height: 36vh; }
+.gr-6 { height: 44vh; }
+
+@media (min-width: 640px) and (max-width: 899px) {
+  .gr-3 {
+    grid-template-columns: 1fr 1fr !important;
+  }
+  .gr-3 > *:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 639px) {
+  .gr {
+    grid-template-columns: 1fr !important;
+    height: auto !important;
+  }
+  .gr-1 { height: 50vh !important; }
+  .gr-6 { height: 42vh !important; }
+  .gr-2 > *, .gr-4 > *, .gr-5 > * { height: 34vh; }
+  .gr-3 > * { height: 30vh; }
+}

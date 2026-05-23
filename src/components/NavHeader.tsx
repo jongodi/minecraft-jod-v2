@@ -64,9 +64,8 @@ export default function NavHeader() {
           style={{
             position:   'fixed',
             inset:      0,
-            zIndex:     998,
-            background: 'rgba(6,8,12,0.7)',
-            backdropFilter: 'blur(4px)',
+            zIndex:     996,
+            background: 'rgba(6,8,12,0.5)',
           }}
         />
       )}
@@ -200,16 +199,16 @@ export default function NavHeader() {
           left:          0,
           right:         0,
           zIndex:        997,
-          background:    'rgba(6,8,12,0.98)',
+          background:    '#06080c',
           borderBottom:  '1px solid #1c2030',
-          transform:     menuOpen ? 'translateY(0)' : 'translateY(-8px)',
+          transform:     menuOpen ? 'translateY(0)' : 'translateY(-12px)',
           opacity:       menuOpen ? 1 : 0,
-          transition:    'transform 0.3s cubic-bezier(0.16,1,0.3,1), opacity 0.25s ease',
+          transition:    'transform 0.35s cubic-bezier(0.16,1,0.3,1), opacity 0.25s ease',
           pointerEvents: menuOpen ? 'auto' : 'none',
-          padding:       '0.75rem 0 1.25rem',
+          padding:       '0.5rem 0 1rem',
         }}
       >
-        {NAV_LINKS.map(link => {
+        {NAV_LINKS.map((link, i) => {
           const active = isActive(link.href);
           return (
             <Link
@@ -217,22 +216,49 @@ export default function NavHeader() {
               href={link.href}
               onClick={() => setMenuOpen(false)}
               style={{
-                display:        'block',
-                fontFamily:     "'JetBrains Mono', monospace",
-                fontSize:       '0.65rem',
-                letterSpacing:  '0.25em',
+                display:        'flex',
+                alignItems:     'center',
+                gap:            '1rem',
+                fontFamily:     "'Space Grotesk', sans-serif",
+                fontSize:       '1.05rem',
+                fontWeight:     700,
+                letterSpacing:  '-0.01em',
                 textTransform:  'uppercase',
-                color:          active ? '#00ff41' : '#505770',
+                color:          active ? '#00ff41' : '#dde1ec',
                 textDecoration: 'none',
-                padding:        '0.65rem clamp(1rem, 4vw, 2rem)',
+                padding:        '0.7rem clamp(1.25rem, 5vw, 2rem)',
                 borderLeft:     `2px solid ${active ? '#00ff41' : 'transparent'}`,
                 transition:     'color 0.2s, border-color 0.2s',
               }}
             >
+              <span style={{
+                fontFamily:    "'JetBrains Mono', monospace",
+                fontSize:      '0.5rem',
+                letterSpacing: '0.1em',
+                color:         active ? '#00ff41' : '#2a3045',
+                fontWeight:    400,
+                minWidth:      '1.4rem',
+              }}>
+                {String(i + 1).padStart(2, '0')}
+              </span>
               {link.label}
             </Link>
           );
         })}
+
+        {/* Server IP at bottom */}
+        <div style={{
+          margin:        '0.5rem clamp(1.25rem, 5vw, 2rem) 0',
+          paddingTop:    '0.75rem',
+          borderTop:     '1px solid #131722',
+          fontFamily:    "'JetBrains Mono', monospace",
+          fontSize:      '0.5rem',
+          letterSpacing: '0.18em',
+          color:         '#2a3045',
+          textTransform: 'uppercase',
+        }}>
+          play.jodcraft.world
+        </div>
       </div>
 
       <style>{`

@@ -306,47 +306,6 @@ export default function GallerySection() {
         </p>
       </section>
 
-      <style>{`
-        /* ── Row grid base ── */
-        .gr {
-          display: grid;
-          gap: 0.4rem;
-        }
-
-        /* ── Desktop row heights ── */
-        /* Each row has a fixed height. All cells in the row are the same height.
-           Photos fill cells with object-fit: cover regardless of column width. */
-        .gr-1 { height: 55vh; }
-        .gr-2 { height: 36vh; }
-        .gr-3 { height: 30vh; }
-        .gr-4 { height: 38vh; }
-        .gr-5 { height: 36vh; }
-        .gr-6 { height: 44vh; }
-
-        /* ── Tablet (640px–899px): collapse 3-col to 2-col ── */
-        @media (min-width: 640px) and (max-width: 899px) {
-          .gr-3 {
-            grid-template-columns: 1fr 1fr !important;
-          }
-          .gr-3 > *:last-child {
-            grid-column: 1 / -1;
-          }
-        }
-
-        /* ── Mobile (<640px): all rows become single column ── */
-        @media (max-width: 639px) {
-          .gr {
-            grid-template-columns: 1fr !important;
-            height: auto !important;
-          }
-          /* Single-photo rows keep a tall fixed height */
-          .gr-1 { height: 50vh !important; }
-          .gr-6 { height: 42vh !important; }
-          /* Multi-photo rows: each CELL gets its own height */
-          .gr-2 > *, .gr-4 > *, .gr-5 > * { height: 34vh; }
-          .gr-3 > * { height: 30vh; }
-        }
-      `}</style>
     </>
   );
 }
