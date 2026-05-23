@@ -4,17 +4,39 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ─── Reset & Base ──────────────────────────────────────────── */
+/* ─── Design Tokens ──────────────────────────────────────────── */
 :root {
-  --bg: #080808;
-  --accent: #00ff41;
-  --accent-dim: #00cc33;
-  --card: #111111;
-  --border: #1a1a1a;
-  --text: #f0f0f0;
-  --muted: #666666;
+  /* Surfaces */
+  --bg:            #06080c;
+  --bg-elevated:   #0d1018;
+  --bg-card:       #131722;
+
+  /* Accent */
+  --accent:        #00ff41;
+  --accent-dim:    #00cc33;
+  --accent-glow:   rgba(0, 255, 65, 0.12);
+  --accent-faint:  rgba(0, 255, 65, 0.05);
+  --accent-trace:  rgba(0, 255, 65, 0.02);
+
+  /* Text */
+  --text:          #dde1ec;
+  --muted:         #505770;
+  --faint:         #1e2230;
+
+  /* Borders */
+  --border:        #1c2030;
+  --border-strong: #2a3045;
+
+  /* Status */
+  --status-online:  #00ff41;
+  --status-offline: #ff3355;
+  --status-gold:    #f0a500;
+
+  /* Legacy compat */
+  --card: var(--bg-card);
 }
 
+/* ─── Reset & Base ──────────────────────────────────────────── */
 *,
 *::before,
 *::after {
@@ -23,7 +45,6 @@
   padding: 0;
 }
 
-/* Hide default cursor everywhere */
 * {
   cursor: none !important;
 }
@@ -49,69 +70,79 @@ body::after {
   position: fixed;
   inset: 0;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-  opacity: 0.025;
+  opacity: 0.022;
   pointer-events: none;
   z-index: 9998;
 }
 
 /* ─── Custom Scrollbar ──────────────────────────────────────── */
 ::-webkit-scrollbar {
-  width: 4px;
+  width: 3px;
 }
 ::-webkit-scrollbar-track {
-  background: #080808;
+  background: var(--bg);
 }
 ::-webkit-scrollbar-thumb {
-  background: #00ff41;
+  background: var(--border-strong);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #00cc33;
+  background: var(--accent);
+}
+
+/* ─── Focus States ──────────────────────────────────────────── */
+:focus-visible {
+  outline: 1.5px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* ─── Selection ─────────────────────────────────────────────── */
+::selection {
+  background: var(--accent);
+  color: var(--bg);
 }
 
 /* ─── Glitch Animation ──────────────────────────────────────── */
 @keyframes glitch {
-  0%,
-  89%,
-  100% {
+  0%, 91%, 100% {
     transform: translate(0);
     text-shadow: none;
     clip-path: none;
-  }
-  90% {
-    transform: translate(-4px, 0);
-    text-shadow: 4px 0 #00ff41, -4px 0 #ff003c;
-    clip-path: inset(0 0 70% 0);
-  }
-  91% {
-    transform: translate(4px, 0);
-    text-shadow: -4px 0 #00ff41, 4px 0 #ff003c;
-    clip-path: inset(0 0 70% 0);
   }
   92% {
-    transform: translate(-2px, 0);
-    clip-path: inset(30% 0 50% 0);
-    text-shadow: 4px 0 #00ff41;
+    transform: translate(-3px, 0);
+    text-shadow: 3px 0 var(--accent), -3px 0 #ff003c;
+    clip-path: inset(0 0 68% 0);
   }
   93% {
+    transform: translate(3px, 0);
+    text-shadow: -3px 0 var(--accent), 3px 0 #ff003c;
+    clip-path: inset(0 0 68% 0);
+  }
+  94% {
+    transform: translate(-2px, 0);
+    clip-path: inset(32% 0 48% 0);
+    text-shadow: 3px 0 var(--accent);
+  }
+  95% {
     transform: translate(0);
     text-shadow: none;
     clip-path: none;
   }
-  94% {
-    transform: translate(4px, 1px);
-    text-shadow: -4px 0 #00ff41, 4px 0 #ff003c;
-    clip-path: inset(60% 0 20% 0);
-  }
-  95% {
-    transform: translate(-2px, -1px);
-    clip-path: inset(60% 0 20% 0);
-  }
   96% {
-    transform: translate(2px, 0);
-    clip-path: inset(10% 0 80% 0);
-    text-shadow: -4px 0 #ff003c;
+    transform: translate(3px, 1px);
+    text-shadow: -3px 0 var(--accent), 3px 0 #ff003c;
+    clip-path: inset(60% 0 22% 0);
   }
   97% {
+    transform: translate(-2px, -1px);
+    clip-path: inset(60% 0 22% 0);
+  }
+  98% {
+    transform: translate(2px, 0);
+    clip-path: inset(10% 0 80% 0);
+    text-shadow: -3px 0 #ff003c;
+  }
+  99% {
     transform: translate(0);
     clip-path: none;
     text-shadow: none;
@@ -119,7 +150,7 @@ body::after {
 }
 
 .glitch {
-  animation: glitch 7s infinite;
+  animation: glitch 9s infinite;
   position: relative;
 }
 
@@ -131,101 +162,44 @@ body::after {
   pointer-events: none;
 }
 
+@keyframes glitch-before {
+  0%, 91%, 100% { transform: translate(0); opacity: 0; }
+  92% { transform: translate(-2px, 1px); opacity: 0.6; clip-path: inset(0 0 68% 0); }
+  93% { transform: translate(2px, -1px); opacity: 0.4; clip-path: inset(40% 0 40% 0); }
+  94% { transform: translate(-1px, 0); opacity: 0; clip-path: none; }
+  96% { transform: translate(2px, 1px); opacity: 0.5; clip-path: inset(60% 0 22% 0); }
+  99% { transform: translate(0); opacity: 0; }
+}
+
+@keyframes glitch-after {
+  0%, 91%, 100% { transform: translate(0); opacity: 0; }
+  92% { transform: translate(2px, -1px); opacity: 0.4; clip-path: inset(20% 0 60% 0); }
+  94% { transform: translate(-2px, 1px); opacity: 0.6; clip-path: inset(50% 0 32% 0); }
+  95% { transform: translate(0); opacity: 0; }
+  96% { transform: translate(-3px, 2px); opacity: 0.5; clip-path: inset(70% 0 10% 0); }
+  99% { transform: translate(0); opacity: 0; }
+}
+
 .glitch::before {
-  animation: glitch-before 7s infinite;
-  color: #00ff41;
+  animation: glitch-before 9s infinite;
+  color: var(--accent);
   z-index: -1;
 }
 
 .glitch::after {
-  animation: glitch-after 7s infinite;
+  animation: glitch-after 9s infinite;
   color: #ff003c;
   z-index: -2;
 }
 
-@keyframes glitch-before {
-  0%,
-  89%,
-  100% {
-    transform: translate(0);
-    opacity: 0;
-  }
-  90% {
-    transform: translate(-2px, 1px);
-    opacity: 0.7;
-    clip-path: inset(0 0 70% 0);
-  }
-  91% {
-    transform: translate(2px, -1px);
-    opacity: 0.5;
-    clip-path: inset(40% 0 40% 0);
-  }
-  92% {
-    transform: translate(-1px, 0);
-    opacity: 0;
-    clip-path: none;
-  }
-  94% {
-    transform: translate(3px, 1px);
-    opacity: 0.6;
-    clip-path: inset(60% 0 20% 0);
-  }
-  97% {
-    transform: translate(0);
-    opacity: 0;
-  }
-}
-
-@keyframes glitch-after {
-  0%,
-  89%,
-  100% {
-    transform: translate(0);
-    opacity: 0;
-  }
-  90% {
-    transform: translate(3px, -1px);
-    opacity: 0.5;
-    clip-path: inset(20% 0 60% 0);
-  }
-  92% {
-    transform: translate(-3px, 1px);
-    opacity: 0.7;
-    clip-path: inset(50% 0 30% 0);
-  }
-  94% {
-    transform: translate(0);
-    opacity: 0;
-  }
-  95% {
-    transform: translate(-4px, 2px);
-    opacity: 0.6;
-    clip-path: inset(70% 0 10% 0);
-  }
-  97% {
-    transform: translate(0);
-    opacity: 0;
-  }
-}
-
-/* ─── Scroll Reveal Base ────────────────────────────────────── */
-.reveal-hidden {
-  opacity: 0;
-  transform: translateY(24px);
-}
-
 /* ─── Ticker ────────────────────────────────────────────────── */
 @keyframes ticker-scroll {
-  0% {
-    transform: translateX(0);
-  }
-  100% {
-    transform: translateX(-50%);
-  }
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
 }
 
 .ticker-track {
-  animation: ticker-scroll 30s linear infinite;
+  animation: ticker-scroll 36s linear infinite;
   white-space: nowrap;
 }
 
@@ -233,16 +207,14 @@ body::after {
   animation-play-state: paused;
 }
 
-/* ─── Gallery Scrollbar Hide ────────────────────────────────── */
-.gallery-scroll::-webkit-scrollbar {
-  display: none;
-}
+/* ─── Gallery scrollbar hide ────────────────────────────────── */
+.gallery-scroll::-webkit-scrollbar { display: none; }
 .gallery-scroll {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
 
-/* ─── Button Hover Fill ─────────────────────────────────────── */
+/* ─── Button fill (sweep up) ────────────────────────────────── */
 .btn-fill {
   position: relative;
   overflow: hidden;
@@ -255,7 +227,7 @@ body::after {
   inset: 0;
   background: var(--accent);
   transform: translateY(100%);
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 0;
 }
 
@@ -264,7 +236,7 @@ body::after {
 }
 
 .btn-fill:hover {
-  color: #080808;
+  color: var(--bg);
 }
 
 .btn-fill span {
@@ -272,85 +244,49 @@ body::after {
   z-index: 1;
 }
 
-/* ─── Server Status Pulse ───────────────────────────────────── */
+/* ─── Server status pulse ───────────────────────────────────── */
 @keyframes status-ring {
-  0% {
-    transform: scale(1);
-    opacity: 0.55;
-  }
-  100% {
-    transform: scale(3.5);
-    opacity: 0;
-  }
+  0%   { transform: scale(1); opacity: 0.5; }
+  100% { transform: scale(3.5); opacity: 0; }
 }
 
 .status-ring {
-  animation: status-ring 2.2s ease-out infinite;
+  animation: status-ring 2.4s ease-out infinite;
 }
 
 .status-ring-delay {
-  animation-delay: 0.9s;
+  animation-delay: 1s;
 }
 
-/* ─── Section Divider ───────────────────────────────────────── */
-.section-divider {
-  width: 100%;
-  height: 1px;
-  background: var(--border);
-}
-
-/* ─── Terminal Cursor Blink ─────────────────────────────────── */
-@keyframes blink {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0;
-  }
-}
-
-.cursor-blink {
-  animation: blink 1s step-end infinite;
-}
-
-/* ─── Scan Line Effect ──────────────────────────────────────── */
-@keyframes scan {
-  0% {
-    transform: translateY(-100%);
-  }
-  100% {
-    transform: translateY(100vh);
-  }
-}
-
-/* ─── CRT Scanlines overlay ─────────────────────────────────── */
+/* ─── CRT scanlines (hero only) ─────────────────────────────── */
 .scanlines {
   position: absolute;
   inset: 0;
   background: repeating-linear-gradient(
     0deg,
     transparent,
-    transparent 2px,
-    rgba(0, 0, 0, 0.18) 2px,
-    rgba(0, 0, 0, 0.18) 4px
+    transparent 3px,
+    rgba(0, 0, 0, 0.12) 3px,
+    rgba(0, 0, 0, 0.12) 4px
   );
   pointer-events: none;
   z-index: 3;
 }
 
-/* ─── Letter reveal (clip-path slide up) ────────────────────── */
-@keyframes letter-reveal {
-  0% {
-    clip-path: inset(100% 0 0 0);
-    transform: translateY(12px);
-    opacity: 0;
-  }
-  100% {
-    clip-path: inset(0% 0 0 0);
-    transform: translateY(0);
-    opacity: 1;
-  }
+/* ─── Terminal cursor blink ─────────────────────────────────── */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+.cursor-blink {
+  animation: blink 1.1s step-end infinite;
+}
+
+/* ─── Scroll reveal base ────────────────────────────────────── */
+.reveal-hidden {
+  opacity: 0;
+  transform: translateY(20px);
 }
 
 /* ─── Green shimmer sweep ────────────────────────────────────── */
@@ -360,48 +296,117 @@ body::after {
 }
 
 .text-green-shimmer {
-  background: linear-gradient(90deg, #00ff41 0%, #ccffdd 40%, #00ff41 80%);
+  background: linear-gradient(90deg, var(--accent) 0%, #ccffdd 40%, var(--accent) 80%);
   background-size: 200% auto;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: green-shimmer 4s linear infinite;
+  animation: green-shimmer 4.5s linear infinite;
 }
 
-/* ─── Tilt card (3-D) ───────────────────────────────────────── */
+/* ─── Card top accent reveal ────────────────────────────────── */
+.card-accent-line {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(to right, var(--accent), transparent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card-accent-line-right {
+  transform-origin: right;
+  background: linear-gradient(to left, var(--accent), transparent);
+}
+
+/* ─── Section label ─────────────────────────────────────────── */
+.section-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.32em;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin-bottom: 0.8rem;
+  display: block;
+}
+
+/* ─── Mobile: restore cursor ────────────────────────────────── */
+@media (max-width: 768px) {
+  .custom-cursor { display: none !important; }
+  * { cursor: auto !important; }
+}
+
+/* ─── Prefers-reduced-motion ────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .ticker-track,
+  .glitch,
+  .glitch::before,
+  .glitch::after,
+  .status-ring,
+  .status-ring-delay,
+  .cursor-blink {
+    animation: none !important;
+  }
+
+  * {
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ─── Tilt card ─────────────────────────────────────────────── */
 .tilt-card {
   transform-style: preserve-3d;
   will-change: transform;
-  transition: transform 0.55s cubic-bezier(0.03, 0.98, 0.52, 0.99),
-              box-shadow 0.45s ease,
-              border-color 0.3s ease;
 }
 
-/* ─── Floating pulse (decorative) ───────────────────────────── */
-@keyframes float-y {
-  0%, 100% { transform: translateY(0); }
-  50%       { transform: translateY(-10px); }
+/* ─── Gallery editorial grid ─────────────────────────────────── */
+/* Defined here (not in JSX <style>) to avoid React hydration mismatch
+   caused by HTML-escaping of > and < in JSX style tag content. */
+.gr {
+  display: grid;
+  gap: 0.4rem;
 }
+.gr-1 { height: 55vh; }
+.gr-2 { height: 36vh; }
+.gr-3 { height: 30vh; }
+.gr-4 { height: 38vh; }
+.gr-5 { height: 36vh; }
+.gr-6 { height: 44vh; }
 
-/* ─── Accent glow line sweep ─────────────────────────────────── */
-@keyframes glow-sweep {
-  0%   { opacity: 0; transform: scaleX(0); }
-  15%  { opacity: 1; }
-  100% { opacity: 0; transform: scaleX(1); }
-}
-
-/* ─── Mobile cursor hide ────────────────────────────────────── */
-@media (max-width: 768px) {
-  .custom-cursor {
-    display: none !important;
+@media (min-width: 640px) and (max-width: 899px) {
+  .gr-3 {
+    grid-template-columns: 1fr 1fr !important;
   }
-  * {
-    cursor: auto !important;
+  .gr-3 > *:last-child {
+    grid-column: 1 / -1;
   }
 }
 
-/* ─── Selection ─────────────────────────────────────────────── */
-::selection {
-  background: #00ff41;
-  color: #080808;
+@media (max-width: 639px) {
+  .gr {
+    grid-template-columns: 1fr !important;
+    height: auto !important;
+  }
+  .gr-1 { height: 50vh !important; }
+  .gr-6 { height: 42vh !important; }
+  .gr-2 > *, .gr-4 > *, .gr-5 > * { height: 34vh; }
+  .gr-3 > * { height: 30vh; }
+}
+
+/* ─── Footer link ────────────────────────────────────────────── */
+/* Defined here to avoid React hydration mismatch from
+   single-quote escaping (') → &#x27; in JSX style tags. */
+.footer-link {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.46rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #2a3045;
+  text-decoration: none;
+  transition: color 0.2s;
+  padding: 0.35rem 0.55rem;
+}
+.footer-link:hover {
+  color: #00ff41;
 }

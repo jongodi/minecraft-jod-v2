@@ -1,40 +1,45 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
-const SERVER_IP    = 'play.jodcraft.world';
+const SERVER_IP      = 'play.jodcraft.world';
 const SCRAMBLE_CHARS = '!<>-_\\/[]{}—=+*^?#@$%&ABCDEFabcdef0123456789';
 
 export default function JoinSection() {
-  const [copied,     setCopied]     = useState(false);
-  const [btnText,    setBtnText]    = useState('COPY IP');
-  const [isAnimating,setIsAnimating]= useState(false);
-  const [magOffset,  setMagOffset]  = useState({ x: 0, y: 0 });
-  const [glitching,  setGlitching]  = useState(false);
+  const [copied,      setCopied]      = useState(false);
+  const [btnText,     setBtnText]     = useState('COPY IP');
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [magOffset,   setMagOffset]   = useState({ x: 0, y: 0 });
+  const [glitching,   setGlitching]   = useState(false);
+  const [imgLoaded,   setImgLoaded]   = useState(false);
 
-  const intervalRef  = useRef<ReturnType<typeof setInterval> | null>(null);
-  const timeoutRef   = useRef<ReturnType<typeof setTimeout>  | null>(null);
-  const glitchTimer  = useRef<ReturnType<typeof setTimeout>  | null>(null);
-  const btnAreaRef   = useRef<HTMLDivElement>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timeoutRef  = useRef<ReturnType<typeof setTimeout>  | null>(null);
+  const glitchTimer = useRef<ReturnType<typeof setTimeout>  | null>(null);
+  const btnAreaRef  = useRef<HTMLDivElement>(null);
+  const imgRef      = useRef<HTMLImageElement>(null);
 
-  /* ── Occasional IP heading glitch ─────────────────────────── */
+  useEffect(() => {
+    // Handle cached images: onLoad won't fire if already complete
+    if (imgRef.current?.complete) setImgLoaded(true);
+  }, []);
+
   useEffect(() => {
     const scheduleGlitch = () => {
-      const delay = 4000 + Math.random() * 5000; // 4–9 s
+      const delay = 4500 + Math.random() * 5500;
       glitchTimer.current = setTimeout(() => {
         setGlitching(true);
         setTimeout(() => {
           setGlitching(false);
           scheduleGlitch();
-        }, 350);
+        }, 320);
       }, delay);
     };
     scheduleGlitch();
     return () => { if (glitchTimer.current) clearTimeout(glitchTimer.current); };
   }, []);
 
-  /* ── Magnetic button ───────────────────────────────────────── */
   const handleMagMove = useCallback((e: React.MouseEvent) => {
     if (!btnAreaRef.current) return;
     const rect = btnAreaRef.current.getBoundingClientRect();
@@ -46,14 +51,14 @@ export default function JoinSection() {
     const max  = 90;
     if (dist < max) {
       const s = (max - dist) / max;
-      setMagOffset({ x: dx * s * 0.48, y: dy * s * 0.48 });
+      setMagOffset({ x: dx * s * 0.45, y: dy * s * 0.45 });
     } else {
       setMagOffset({ x: 0, y: 0 });
     }
   }, []);
+
   const handleMagLeave = useCallback(() => setMagOffset({ x: 0, y: 0 }), []);
 
-  /* ── Copy ──────────────────────────────────────────────────── */
   const handleCopy = useCallback(() => {
     if (isAnimating) return;
     setIsAnimating(true);
@@ -79,7 +84,7 @@ export default function JoinSection() {
           if (ch === ' ') return ' ';
           if (i < Math.floor('COPY IP'.length * p)) return ch;
           return SCRAMBLE_CHARS[Math.floor(Math.random() * SCRAMBLE_CHARS.length)];
-        }).join(''),
+        }).join('')
       );
     }, 40);
   }, [isAnimating]);
@@ -87,95 +92,113 @@ export default function JoinSection() {
   return (
     <section
       style={{
-        minHeight:      '80vh',
-        display:        'flex',
-        flexDirection:  'column',
-        alignItems:     'center',
+        minHeight:  '100vh',
+        display:    'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
         justifyContent: 'center',
-        padding:        'clamp(4rem, 10vw, 8rem) clamp(1.5rem, 6vw, 5rem)',
-        background:     '#080808',
-        position:       'relative',
-        overflow:       'hidden',
-        textAlign:      'center',
+        padding:    'clamp(5rem, 12vw, 9rem) clamp(1.5rem, 6vw, 5rem)',
+        background: '#040508',
+        position:   'relative',
+        overflow:   'hidden',
+        textAlign:  'center',
       }}
     >
-      {/* Layered background glow — more dramatic */}
+      {/* Full-bleed night sky background */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        ref={imgRef}
+        src="/screenshots/the-castle.png"
+        alt=""
+        aria-hidden="true"
+        onLoad={() => setImgLoaded(true)}
+        style={{
+          position:       'absolute',
+          inset:          0,
+          width:          '100%',
+          height:         '100%',
+          objectFit:      'cover',
+          objectPosition: 'center',
+          opacity:        imgLoaded ? 0.52 : 0,
+          transition:     'opacity 1.4s ease',
+          pointerEvents:  'none',
+        }}
+      />
+
+      {/* Radial vignette — darker at edges */}
       <div style={{
-        position: 'absolute', top: '50%', left: '50%',
-        transform: 'translate(-50%, -50%)',
-        width: '85vw', height: '65vh',
-        background: 'radial-gradient(ellipse 70% 55% at 50% 50%, rgba(0,255,65,0.06) 0%, transparent 70%)',
+        position:      'absolute',
+        inset:         0,
+        background:    'radial-gradient(ellipse 80% 70% at 50% 50%, rgba(4,5,8,0.45) 0%, rgba(4,5,8,0.88) 100%)',
         pointerEvents: 'none',
-      }} />
-      <div style={{
-        position: 'absolute', top: '50%', left: '30%',
-        transform: 'translate(-50%, -60%)',
-        width: '40vw', height: '40vh',
-        background: 'radial-gradient(ellipse, rgba(0,255,65,0.04) 0%, transparent 70%)',
-        pointerEvents: 'none',
-      }} />
-      <div style={{
-        position: 'absolute', top: '55%', left: '70%',
-        transform: 'translate(-50%, -40%)',
-        width: '35vw', height: '35vh',
-        background: 'radial-gradient(ellipse, rgba(0,204,51,0.03) 0%, transparent 70%)',
-        pointerEvents: 'none',
+        zIndex:        1,
       }} />
 
-      {/* Scanlines */}
-      <div className="scanlines" style={{ zIndex: 1 }} />
+      {/* Top and bottom fades */}
+      <div style={{
+        position:      'absolute',
+        top:           0, left: 0, right: 0,
+        height:        '25%',
+        background:    'linear-gradient(to bottom, #040508 0%, transparent 100%)',
+        pointerEvents: 'none',
+        zIndex:        1,
+      }} />
+      <div style={{
+        position:      'absolute',
+        bottom:        0, left: 0, right: 0,
+        height:        '25%',
+        background:    'linear-gradient(to top, #040508 0%, transparent 100%)',
+        pointerEvents: 'none',
+        zIndex:        1,
+      }} />
 
       {/* Section label */}
       <motion.p
-        initial={{ opacity: 0, y: -12 }}
+        initial={{ opacity: 0, y: -10 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.5 }}
-        style={{
-          fontFamily:    "'JetBrains Mono', monospace",
-          fontSize:      '0.65rem',
-          letterSpacing: '0.3em',
-          color:         '#00ff41',
-          textTransform: 'uppercase',
-          marginBottom:  '2rem',
-          position:      'relative',
-          zIndex:        2,
-        }}
+        className="section-label"
+        style={{ position: 'relative', zIndex: 2 }}
       >
-        05 — JOIN
+        06 — JOIN
       </motion.p>
 
-      {/* Big IP address — occasional glitch */}
+      {/* Billboard IP address */}
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
+        initial={{ opacity: 0, scale: 0.94 }}
         whileInView={{ opacity: 1, scale: 1 }}
         viewport={{ once: true }}
-        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        style={{ position: 'relative', zIndex: 2 }}
+        transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+        style={{ position: 'relative', zIndex: 2, marginTop: '0.75rem' }}
       >
         <button
           onClick={handleCopy}
           data-cursor="hover"
-          style={{ background: 'transparent', border: 'none', padding: 0, display: 'block' }}
+          style={{
+            background:  'transparent',
+            border:      'none',
+            padding:     0,
+            display:     'block',
+          }}
         >
           <motion.h2
             animate={{
-              color:      copied ? '#00ff41' : '#f0f0f0',
+              color:      copied ? '#00ff41' : '#ffffff',
               textShadow: copied
-                ? '0 0 60px rgba(0,255,65,0.5), 0 0 120px rgba(0,255,65,0.2)'
-                : '0 0 0 transparent',
+                ? '0 0 80px rgba(0,255,65,0.5), 0 0 160px rgba(0,255,65,0.2)'
+                : '0 4px 60px rgba(0,0,0,0.8), 0 0 80px rgba(255,255,255,0.04)',
             }}
             transition={{ duration: 0.4 }}
             className={glitching ? 'glitch' : ''}
             data-text={SERVER_IP}
             style={{
               fontFamily:    "'Space Grotesk', sans-serif",
-              fontSize:      'clamp(2rem, 8.5vw, 9rem)',
+              fontSize:      'clamp(2rem, 9vw, 10rem)',
               fontWeight:    900,
               letterSpacing: '-0.04em',
               lineHeight:    0.9,
               userSelect:    'none',
-              transition:    'color 0.3s ease',
             }}
           >
             {SERVER_IP}
@@ -183,18 +206,18 @@ export default function JoinSection() {
         </button>
       </motion.div>
 
-      {/* Subtext */}
+      {/* Sub-label */}
       <motion.p
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
         viewport={{ once: true }}
         transition={{ duration: 0.5, delay: 0.3 }}
         style={{
-          marginTop:     '1.5rem',
+          marginTop:     '1.75rem',
           fontFamily:    "'JetBrains Mono', monospace",
-          fontSize:      '0.7rem',
-          color:         '#444',
-          letterSpacing: '0.2em',
+          fontSize:      '0.65rem',
+          color:         '#505770',
+          letterSpacing: '0.22em',
           textTransform: 'uppercase',
           position:      'relative',
           zIndex:        2,
@@ -205,10 +228,10 @@ export default function JoinSection() {
 
       {/* Magnetic copy button */}
       <motion.div
-        initial={{ opacity: 0, y: 16 }}
+        initial={{ opacity: 0, y: 14 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        transition={{ duration: 0.5, delay: 0.45 }}
+        transition={{ duration: 0.5, delay: 0.44 }}
         style={{ marginTop: '3rem', position: 'relative', zIndex: 2 }}
         onMouseMove={handleMagMove}
         onMouseLeave={handleMagLeave}
@@ -224,9 +247,9 @@ export default function JoinSection() {
             className="btn-fill"
             style={{
               fontFamily:    "'JetBrains Mono', monospace",
-              fontSize:      '0.75rem',
-              letterSpacing: '0.25em',
-              color:         copied ? '#080808' : '#00ff41',
+              fontSize:      '0.72rem',
+              letterSpacing: '0.28em',
+              color:         copied ? '#040508' : '#00ff41',
               border:        '1px solid #00ff41',
               padding:       '0.9rem 2.5rem',
               background:    copied ? '#00ff41' : 'transparent',
@@ -239,18 +262,18 @@ export default function JoinSection() {
         </motion.div>
       </motion.div>
 
-      {/* Invite-only note */}
+      {/* Whitelist note */}
       <motion.p
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
         viewport={{ once: true }}
         transition={{ duration: 0.5, delay: 0.6 }}
         style={{
-          marginTop:     '2rem',
+          marginTop:     '2.25rem',
           fontFamily:    "'JetBrains Mono', monospace",
-          fontSize:      '0.55rem',
-          color:         '#2a2a2a',
-          letterSpacing: '0.2em',
+          fontSize:      '0.5rem',
+          color:         '#1e2230',
+          letterSpacing: '0.22em',
           textTransform: 'uppercase',
           position:      'relative',
           zIndex:        2,

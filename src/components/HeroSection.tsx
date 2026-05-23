@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import ParticleCanvas from './ParticleCanvas';
 
 const IP = 'play.jodcraft.world';
 const SCRAMBLE_CHARS = '!<>-_\\/[]{}—=+*^?#@$%&';
@@ -23,12 +22,18 @@ export default function HeroSection() {
   const [isAnimating, setIsAnimating] = useState(false);
   const [magOffset,   setMagOffset]   = useState({ x: 0, y: 0 });
   const [mouse,       setMouse]       = useState({ x: 0, y: 0 });
+  const [imgLoaded,   setImgLoaded]   = useState(false);
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timeoutRef  = useRef<ReturnType<typeof setTimeout>  | null>(null);
   const btnWrapRef  = useRef<HTMLDivElement>(null);
+  const imgRef      = useRef<HTMLImageElement>(null);
 
-  /* ── Mouse parallax ────────────────────────────────────────── */
+  useEffect(() => {
+    // Handle cached images: onLoad won't fire if already complete
+    if (imgRef.current?.complete) setImgLoaded(true);
+  }, []);
+
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
       setMouse({
@@ -40,7 +45,6 @@ export default function HeroSection() {
     return () => window.removeEventListener('mousemove', onMove);
   }, []);
 
-  /* ── Magnetic button ───────────────────────────────────────── */
   const handleMagMove = useCallback((e: React.MouseEvent) => {
     if (!btnWrapRef.current) return;
     const rect = btnWrapRef.current.getBoundingClientRect();
@@ -57,9 +61,9 @@ export default function HeroSection() {
       setMagOffset({ x: 0, y: 0 });
     }
   }, []);
+
   const handleMagLeave = useCallback(() => setMagOffset({ x: 0, y: 0 }), []);
 
-  /* ── IP copy ────────────────────────────────────────────────── */
   const handleCopy = useCallback(async () => {
     if (isAnimating) return;
     setIsAnimating(true);
@@ -84,276 +88,256 @@ export default function HeroSection() {
     }, 40);
   }, [isAnimating]);
 
-  /* ── Render ─────────────────────────────────────────────────── */
   return (
     <section
       id="hero"
       style={{
-        position:       'relative',
-        height:         '100vh',
-        overflow:       'hidden',
-        display:        'flex',
-        flexDirection:  'column',
-        alignItems:     'center',
-        justifyContent: 'center',
-        background:     '#080808',
+        position:   'relative',
+        height:     '100vh',
+        overflow:   'hidden',
+        background: '#06080c',
       }}
     >
-      {/* Particle layer — subtle parallax */}
-      <div
+      {/* Full-bleed background screenshot */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        ref={imgRef}
+        src="/screenshots/night-sky.png"
+        alt=""
+        aria-hidden="true"
+        onLoad={() => setImgLoaded(true)}
         style={{
-          position:   'absolute',
-          inset:      '-5%',
-          transform:  `translate(${mouse.x * 22}px, ${mouse.y * 12}px)`,
-          transition: 'transform 0.12s linear',
-          zIndex:     0,
-        }}
-      >
-        <ParticleCanvas />
-      </div>
-
-      {/* CRT scanlines */}
-      <div className="scanlines" style={{ zIndex: 1 }} />
-
-      {/* Radial vignette */}
-      <div
-        style={{
-          position:      'absolute',
-          inset:         0,
-          background:    'radial-gradient(ellipse at center, transparent 40%, #080808 100%)',
-          pointerEvents: 'none',
-          zIndex:        2,
+          position:        'absolute',
+          inset:           0,
+          width:           '100%',
+          height:          '100%',
+          objectFit:       'cover',
+          objectPosition:  'center 35%',
+          opacity:         imgLoaded ? 0.92 : 0,
+          transform:       `scale(1.12) translate(${mouse.x * -7}px, ${mouse.y * -5}px)`,
+          transformOrigin: 'center center',
+          transition:      imgLoaded ? 'opacity 1.2s ease' : 'none',
+          pointerEvents:   'none',
         }}
       />
 
-      {/* Content */}
+      {/* Bottom gradient — dark enough for text, light enough to see night sky */}
+      <div style={{
+        position:      'absolute',
+        inset:         0,
+        background:    'linear-gradient(to top, #06080c 0%, rgba(6,8,12,0.82) 20%, rgba(6,8,12,0.28) 50%, rgba(6,8,12,0.08) 100%)',
+        pointerEvents: 'none',
+        zIndex:        1,
+      }} />
+
+      {/* Left vignette */}
+      <div style={{
+        position:      'absolute',
+        inset:         0,
+        background:    'linear-gradient(to right, rgba(6,8,12,0.72) 0%, rgba(6,8,12,0.18) 50%, transparent 100%)',
+        pointerEvents: 'none',
+        zIndex:        1,
+      }} />
+
+      {/* CRT scanlines */}
+      <div className="scanlines" style={{ zIndex: 2 }} />
+
+      {/* Bottom fade into next section */}
+      <div style={{
+        position:      'absolute',
+        bottom:        0, left: 0, right: 0,
+        height:        '28vh',
+        background:    'linear-gradient(to top, #06080c 0%, transparent 100%)',
+        pointerEvents: 'none',
+        zIndex:        2,
+      }} />
+
+      {/* Content — anchored bottom-left */}
       <div
         style={{
-          position:      'relative',
-          zIndex:        4,
-          display:       'flex',
-          flexDirection: 'column',
-          alignItems:    'center',
-          textAlign:     'center',
-          gap:           '2rem',
-          padding:       '0 1.5rem',
-          transform:     `translate(${mouse.x * 7}px, ${mouse.y * 4}px)`,
-          transition:    'transform 0.18s linear',
+          position:  'absolute',
+          bottom:    'clamp(3rem, 8vh, 7rem)',
+          left:      'clamp(1.5rem, 6vw, 5rem)',
+          right:     'clamp(1.5rem, 6vw, 5rem)',
+          zIndex:    4,
+          transform: `translate(${mouse.x * 5}px, ${mouse.y * 2.5}px)`,
+          transition:'transform 0.2s linear',
         }}
       >
-        {/* Server label */}
+        {/* Label */}
         <motion.p
-          initial={{ opacity: 0, y: -12 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, x: -18 }}
+          animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
           style={{
             fontFamily:    "'JetBrains Mono', monospace",
-            fontSize:      '0.7rem',
-            letterSpacing: '0.35em',
+            fontSize:      '0.62rem',
+            letterSpacing: '0.38em',
             color:         '#00ff41',
             textTransform: 'uppercase',
+            marginBottom:  '1.25rem',
           }}
         >
-          PRIVATE MINECRAFT SERVER
+          PRIVATE MINECRAFT SERVER — JAVA EDITION
         </motion.p>
 
-        {/* Giant title — letter-by-letter stagger */}
-        <div style={{ position: 'relative' }}>
-          <div
-            style={{
-              display:    'flex',
-              gap:        'clamp(0.05rem, 0.4vw, 0.25rem)',
-              transform:  `translate(${mouse.x * -3}px, ${mouse.y * -1.5}px)`,
-              transition: 'transform 0.22s linear',
-            }}
-          >
+        {/* Title — letter stagger */}
+        <div style={{ overflow: 'visible', marginBottom: '2rem' }}>
+          <div style={{ display: 'flex', gap: 'clamp(0rem, 0.3vw, 0.2rem)' }}>
             {['J', 'O', 'D'].map((letter, i) => (
               <motion.span
                 key={letter}
-                initial={{ opacity: 0, y: 70, rotateX: -50 }}
+                initial={{ opacity: 0, y: 80, rotateX: -40 }}
                 animate={{ opacity: 1, y: 0,  rotateX: 0   }}
                 transition={{
-                  duration: 0.85,
-                  delay:    0.35 + i * 0.14,
+                  duration: 0.95,
+                  delay:    0.35 + i * 0.12,
                   ease:     [0.16, 1, 0.3, 1],
                 }}
                 style={{
                   display:       'inline-block',
                   fontFamily:    "'Space Grotesk', sans-serif",
-                  fontSize:      'clamp(8rem, 22vw, 22rem)',
+                  fontSize:      'clamp(7rem, 20vw, 20rem)',
                   fontWeight:    900,
                   lineHeight:    0.85,
-                  letterSpacing: '-0.03em',
-                  color:         '#f0f0f0',
+                  letterSpacing: '-0.04em',
+                  color:         '#ffffff',
                   userSelect:    'none',
-                  textShadow:    '0 0 80px rgba(0,255,65,0.07)',
+                  textShadow:    '0 8px 60px rgba(0,0,0,0.9), 0 2px 8px rgba(0,0,0,0.8)',
                 }}
               >
                 {letter}
               </motion.span>
             ))}
           </div>
-
-          {/* Glitch pseudo-element overlay (transparent, just triggers animation) */}
-          <span
-            aria-hidden="true"
-            className="glitch"
-            data-text="JOD"
-            style={{
-              position:      'absolute',
-              inset:         0,
-              fontFamily:    "'Space Grotesk', sans-serif",
-              fontSize:      'clamp(8rem, 22vw, 22rem)',
-              fontWeight:    900,
-              lineHeight:    0.85,
-              letterSpacing: '-0.03em',
-              color:         'transparent',
-              userSelect:    'none',
-              pointerEvents: 'none',
-            }}
-          />
         </div>
 
-        {/* Subtitle */}
-        <motion.p
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0  }}
-          transition={{ duration: 0.6, delay: 0.77 }}
-          style={{
-            fontFamily:    "'JetBrains Mono', monospace",
-            fontSize:      'clamp(0.65rem, 1.5vw, 0.85rem)',
-            letterSpacing: '0.2em',
-            color:         '#666666',
-            textTransform: 'uppercase',
-          }}
-        >
-          private survival&nbsp;&nbsp;·&nbsp;&nbsp;custom datapacks&nbsp;&nbsp;·&nbsp;&nbsp;resource pack
-        </motion.p>
-
-        {/* Magnetic IP terminal box */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0  }}
-          transition={{ duration: 0.6, delay: 0.95 }}
-          onMouseMove={handleMagMove}
-          onMouseLeave={handleMagLeave}
-          style={{ paddingTop: '0.5rem' }}
-        >
-          <motion.div
-            ref={btnWrapRef}
-            animate={{ x: magOffset.x, y: magOffset.y }}
-            transition={{ type: 'spring', stiffness: 200, damping: 18, mass: 0.8 }}
-          >
-            <button
-              onClick={handleCopy}
-              data-cursor="hover"
-              style={{
-                display:        'flex',
-                alignItems:     'center',
-                gap:            '0.75rem',
-                background:     '#111111',
-                border:         `1px solid ${copied ? '#00ff41' : '#1a1a1a'}`,
-                padding:        '0.875rem 1.5rem',
-                fontFamily:     "'JetBrains Mono', monospace",
-                fontSize:       'clamp(0.8rem, 2vw, 1rem)',
-                color:          copied ? '#00ff41' : '#f0f0f0',
-                letterSpacing:  '0.08em',
-                transition:     'border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease',
-                boxShadow:      copied
-                  ? '0 0 24px rgba(0,255,65,0.25), inset 0 0 24px rgba(0,255,65,0.05)'
-                  : '0 0 0 transparent',
-                minWidth:       '280px',
-                justifyContent: 'space-between',
-              }}
-              onMouseEnter={e => {
-                if (!copied) {
-                  const el = e.currentTarget;
-                  el.style.borderColor = '#333';
-                  el.style.boxShadow   = '0 0 20px rgba(0,255,65,0.12)';
-                }
-              }}
-              onMouseLeave={e => {
-                if (!copied) {
-                  const el = e.currentTarget;
-                  el.style.borderColor = '#1a1a1a';
-                  el.style.boxShadow   = '0 0 0 transparent';
-                }
-              }}
-            >
-              <span style={{ color: '#00ff41', marginRight: '0.25rem' }}>$</span>
-              <span style={{ flex: 1, textAlign: 'left', fontVariantNumeric: 'tabular-nums', letterSpacing: '0.12em' }}>
-                {copied ? 'COPIED ✓' : ipDisplay}
-              </span>
-              <span className="cursor-blink" style={{ color: '#00ff41', fontSize: '1.1em', opacity: copied ? 0 : 1 }}>
-                █
-              </span>
-            </button>
-
-            <p style={{
-              marginTop:     '0.5rem',
+        {/* Bottom row: tagline + IP terminal */}
+        <div style={{
+          display:    'flex',
+          alignItems: 'flex-end',
+          gap:        'clamp(1.5rem, 5vw, 4rem)',
+          flexWrap:   'wrap',
+        }}>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.9 }}
+            style={{
               fontFamily:    "'JetBrains Mono', monospace",
-              fontSize:      '0.6rem',
-              letterSpacing: '0.15em',
-              color:         '#444',
+              fontSize:      'clamp(0.55rem, 1.15vw, 0.68rem)',
+              letterSpacing: '0.2em',
+              color:         'rgba(221,225,236,0.4)',
               textTransform: 'uppercase',
-              textAlign:     'center',
-            }}>
-              click to copy
-            </p>
+              lineHeight:    1.9,
+            }}
+          >
+            private survival<br />
+            custom datapacks · resource pack
+          </motion.p>
+
+          {/* IP copy terminal */}
+          <motion.div
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 1.05 }}
+            onMouseMove={handleMagMove}
+            onMouseLeave={handleMagLeave}
+          >
+            <motion.div
+              ref={btnWrapRef}
+              animate={{ x: magOffset.x, y: magOffset.y }}
+              transition={{ type: 'spring', stiffness: 200, damping: 18, mass: 0.8 }}
+            >
+              <button
+                onClick={handleCopy}
+                data-cursor="hover"
+                style={{
+                  display:        'flex',
+                  alignItems:     'center',
+                  gap:            '0.75rem',
+                  background:     'rgba(6,8,12,0.65)',
+                  border:         `1px solid ${copied ? '#00ff41' : 'rgba(255,255,255,0.2)'}`,
+                  backdropFilter: 'blur(12px)',
+                  WebkitBackdropFilter: 'blur(12px)',
+                  padding:        '0.85rem 1.5rem',
+                  fontFamily:     "'JetBrains Mono', monospace",
+                  fontSize:       'clamp(0.72rem, 1.6vw, 0.9rem)',
+                  color:          copied ? '#00ff41' : '#dde1ec',
+                  letterSpacing:  '0.1em',
+                  transition:     'border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease',
+                  boxShadow:      copied
+                    ? '0 0 28px rgba(0,255,65,0.25), inset 0 0 20px rgba(0,255,65,0.04)'
+                    : '0 0 0 transparent',
+                  minWidth:       '280px',
+                  justifyContent: 'space-between',
+                }}
+                onMouseEnter={e => {
+                  if (!copied) {
+                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.45)';
+                    e.currentTarget.style.boxShadow   = '0 0 20px rgba(0,255,65,0.1)';
+                  }
+                }}
+                onMouseLeave={e => {
+                  if (!copied) {
+                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)';
+                    e.currentTarget.style.boxShadow   = '0 0 0 transparent';
+                  }
+                }}
+              >
+                <span style={{ color: '#00ff41', marginRight: '0.2rem', opacity: 0.8 }}>$</span>
+                <span style={{ flex: 1, textAlign: 'left', fontVariantNumeric: 'tabular-nums', letterSpacing: '0.12em' }}>
+                  {copied ? 'COPIED ✓' : ipDisplay}
+                </span>
+                <span className="cursor-blink" style={{ color: '#00ff41', fontSize: '1em', opacity: copied ? 0 : 0.7 }}>
+                  █
+                </span>
+              </button>
+
+              <p style={{
+                marginTop:     '0.5rem',
+                fontFamily:    "'JetBrains Mono', monospace",
+                fontSize:      '0.48rem',
+                letterSpacing: '0.15em',
+                color:         'rgba(255,255,255,0.18)',
+                textTransform: 'uppercase',
+              }}>
+                click to copy server address
+              </p>
+            </motion.div>
           </motion.div>
-        </motion.div>
+        </div>
       </div>
 
-      {/* Scroll chevron */}
+      {/* Scroll hint — bottom right */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 1.5, duration: 0.6 }}
+        transition={{ delay: 1.8, duration: 0.7 }}
         style={{
           position:      'absolute',
-          bottom:        '2rem',
-          left:          '50%',
-          transform:     'translateX(-50%)',
+          bottom:        '2.25rem',
+          right:         'clamp(1.5rem, 6vw, 5rem)',
           zIndex:        4,
           display:       'flex',
           flexDirection: 'column',
-          alignItems:    'center',
-          gap:           '0.25rem',
+          alignItems:    'flex-end',
+          gap:           '0.35rem',
         }}
       >
-        <span
-          className="animate-chevron-bounce"
-          style={{
-            fontFamily:    "'JetBrains Mono', monospace",
-            fontSize:      '0.55rem',
-            letterSpacing: '0.3em',
-            color:         '#333',
-            textTransform: 'uppercase',
-            display:       'block',
-            marginBottom:  '0.25rem',
-          }}
-        >
+        <span style={{
+          fontFamily:    "'JetBrains Mono', monospace",
+          fontSize:      '0.48rem',
+          letterSpacing: '0.32em',
+          color:         'rgba(255,255,255,0.22)',
+          textTransform: 'uppercase',
+        }}>
           SCROLL
         </span>
-        <svg
-          className="animate-chevron-bounce"
-          width="18" height="18" viewBox="0 0 18 18" fill="none"
-          style={{ color: '#444' }}
-        >
-          <path d="M3 6L9 12L15 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="square"/>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ color: 'rgba(255,255,255,0.22)' }}>
+          <path d="M2 5L8 11L14 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="square"/>
         </svg>
       </motion.div>
-
-      {/* Bottom border line — faint green gradient */}
-      <div
-        style={{
-          position:  'absolute',
-          bottom:    0, left: 0, right: 0,
-          height:    '1px',
-          background: 'linear-gradient(to right, transparent, rgba(0,255,65,0.35) 30%, rgba(0,255,65,0.35) 70%, transparent)',
-          zIndex:    4,
-        }}
-      />
     </section>
   );
 }

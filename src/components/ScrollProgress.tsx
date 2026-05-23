@@ -7,10 +7,9 @@ export default function ScrollProgress() {
 
   useEffect(() => {
     const onScroll = () => {
-      const scrollTop  = window.scrollY;
-      const docHeight  = document.documentElement.scrollHeight - window.innerHeight;
-      const pct        = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
-      setProgress(pct);
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      setProgress(docHeight > 0 ? (scrollTop / docHeight) * 100 : 0);
     };
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
@@ -22,13 +21,13 @@ export default function ScrollProgress() {
         position:      'fixed',
         top:           0,
         left:          0,
-        height:        2,
+        height:        '1.5px',
         width:         `${progress}%`,
         background:    '#00ff41',
         zIndex:        9997,
         pointerEvents: 'none',
         transition:    'width 0.05s linear',
-        boxShadow:     '0 0 12px rgba(0,255,65,0.9), 0 0 4px rgba(0,255,65,1)',
+        boxShadow:     '0 0 8px rgba(0,255,65,0.8)',
       }}
     />
   );
