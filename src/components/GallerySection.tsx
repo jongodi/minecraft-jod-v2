@@ -20,6 +20,10 @@ const STATIC_FALLBACK: GalleryPhoto[] = [
   { id:'11', filename:'/screenshots/night-sky.png',     title:'NEW TOWN',         sublabel:'NEW BASE',                gradient:'linear-gradient(160deg,#020408 0%,#080d18 20%,#0d1525 40%,#1a2a40 60%,#102030 80%,#050a12 100%)',       active:true, order:11 },
 ];
 
+// Editorial column spans across a 12-column grid (10 photos after featured)
+// Pattern: 7/5, 4/4/4, 5/7, 4/4/4
+const SPANS = [7, 5, 4, 4, 4, 5, 7, 4, 4, 4];
+
 // ─── Featured (first) card ────────────────────────────────────────────────────
 function FeaturedCard({
   item,
@@ -31,15 +35,6 @@ function FeaturedCard({
   onClick:    () => void;
 }) {
   const [hovered, setHovered] = useState(false);
-  const [glow,    setGlow]    = useState({ x: 50, y: 50 });
-
-  const onMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    setGlow({
-      x: ((e.clientX - rect.left) / rect.width)  * 100,
-      y: ((e.clientY - rect.top)  / rect.height) * 100,
-    });
-  }, []);
 
   return (
     <motion.div
@@ -48,23 +43,20 @@ function FeaturedCard({
       viewport={{ once: true, margin: '-40px' }}
       transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
       onMouseEnter={() => setHovered(true)}
-      onMouseMove={onMove}
-      onMouseLeave={() => { setHovered(false); setGlow({ x: 50, y: 50 }); }}
+      onMouseLeave={() => setHovered(false)}
       onClick={onClick}
       data-cursor="hover"
-      className="gallery-featured"
       style={{
-        position:    'relative',
-        overflow:    'hidden',
-        border:      `1px solid ${hovered ? 'rgba(0,255,65,0.3)' : '#1c2030'}`,
-        transform:   hovered ? 'translateY(-2px)' : 'none',
-        transition:  'border-color 0.35s ease, transform 0.4s ease, box-shadow 0.4s ease',
-        boxShadow:   hovered ? '0 20px 60px rgba(0,0,0,0.7), 0 0 40px rgba(0,255,65,0.06)' : '0 4px 20px rgba(0,0,0,0.4)',
-        cursor:      'pointer',
-        aspectRatio: '16 / 9',
+        position:   'relative',
+        overflow:   'hidden',
+        height:     'clamp(40vh, 50vw, 62vh)',
+        border:     `1px solid ${hovered ? 'rgba(0,255,65,0.35)' : '#1c2030'}`,
+        transition: 'border-color 0.4s ease, box-shadow 0.4s ease',
+        boxShadow:  hovered ? '0 24px 80px rgba(0,0,0,0.7), 0 0 50px rgba(0,255,65,0.08)' : '0 4px 28px rgba(0,0,0,0.55)',
+        cursor:     'pointer',
       }}
     >
-      {/* Photo */}
+      {/* Photo — always visible */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={item.filename}
@@ -76,119 +68,116 @@ function FeaturedCard({
           height:         '100%',
           objectFit:      'cover',
           objectPosition: 'center',
-          opacity:        hovered ? 1 : 0,
-          transform:      hovered ? 'scale(1.04)' : 'scale(1.08)',
-          transition:     'opacity 0.6s ease, transform 0.8s cubic-bezier(0.16,1,0.3,1)',
+          transform:      hovered ? 'scale(1.05)' : 'scale(1.0)',
+          transition:     'transform 0.9s cubic-bezier(0.16,1,0.3,1)',
           pointerEvents:  'none',
         }}
       />
 
-      {/* Color gradient placeholder */}
+      {/* Permanent bottom scrim */}
       <div style={{
         position:      'absolute',
-        inset:         0,
-        background:    item.gradient,
-        opacity:       hovered ? 0 : 1,
-        transition:    'opacity 0.5s ease',
-        pointerEvents: 'none',
-      }} />
-
-      {/* Cursor glow */}
-      <div style={{
-        position:      'absolute',
-        inset:         0,
-        background:    `radial-gradient(circle at ${glow.x}% ${glow.y}%, rgba(0,255,65,0.09) 0%, transparent 55%)`,
-        opacity:       hovered ? 1 : 0,
-        transition:    'opacity 0.3s ease',
+        bottom: 0, left: 0, right: 0,
+        height:        '75%',
+        background:    'linear-gradient(to top, rgba(6,8,12,0.97) 0%, rgba(6,8,12,0.55) 45%, transparent 100%)',
         pointerEvents: 'none',
         zIndex:        2,
       }} />
 
-      {/* Bottom scrim */}
+      {/* FEATURED badge — top left */}
       <div style={{
         position:      'absolute',
-        bottom: 0, left: 0, right: 0,
-        height:        '70%',
-        background:    'linear-gradient(to top, rgba(6,8,12,0.95) 0%, rgba(6,8,12,0.35) 55%, transparent 100%)',
-        pointerEvents: 'none',
-        zIndex:        3,
-      }} />
-
-      {/* "FEATURED" label */}
-      <div style={{
-        position:      'absolute',
-        top:           '1rem',
-        left:          '1rem',
+        top:           '1.25rem',
+        left:          '1.25rem',
         fontFamily:    "'JetBrains Mono', monospace",
-        fontSize:      '0.48rem',
-        letterSpacing: '0.28em',
-        color:         'rgba(0,255,65,0.5)',
+        fontSize:      '0.46rem',
+        letterSpacing: '0.3em',
+        color:         '#00ff41',
         textTransform: 'uppercase',
-        zIndex:        4,
-        transition:    'opacity 0.3s ease',
-        opacity:       hovered ? 1 : 0,
+        zIndex:        3,
       }}>
-        CLICK TO EXPAND
+        FEATURED
       </div>
 
-      {/* Counter */}
+      {/* Counter — top right */}
       <div style={{
         position:      'absolute',
-        top:           '1rem',
-        right:         '1rem',
+        top:           '1.25rem',
+        right:         '1.25rem',
         fontFamily:    "'JetBrains Mono', monospace",
-        fontSize:      '0.48rem',
-        color:         'rgba(255,255,255,0.18)',
+        fontSize:      '0.46rem',
+        color:         'rgba(255,255,255,0.2)',
         letterSpacing: '0.1em',
-        zIndex:        4,
+        zIndex:        3,
       }}>
         01 / {String(totalCount).padStart(2, '0')}
       </div>
 
-      {/* Labels */}
+      {/* Title — large editorial */}
       <div style={{
         position:   'absolute',
-        bottom:     '1.25rem',
-        left:       '1.25rem',
-        right:      '1.25rem',
-        zIndex:     4,
-        transform:  hovered ? 'translateY(0)' : 'translateY(4px)',
-        transition: 'transform 0.4s cubic-bezier(0.16,1,0.3,1)',
+        bottom:     '1.75rem',
+        left:       '1.5rem',
+        right:      '1.5rem',
+        zIndex:     3,
+        transform:  hovered ? 'translateY(-5px)' : 'none',
+        transition: 'transform 0.45s cubic-bezier(0.16,1,0.3,1)',
       }}>
         {item.sublabel && (
           <p style={{
             fontFamily:    "'JetBrains Mono', monospace",
-            fontSize:      '0.52rem',
-            letterSpacing: '0.28em',
-            color:         hovered ? '#00ff41' : '#505770',
+            fontSize:      '0.56rem',
+            letterSpacing: '0.3em',
+            color:         '#00ff41',
             textTransform: 'uppercase',
-            marginBottom:  '0.3rem',
-            transition:    'color 0.4s ease',
+            marginBottom:  '0.6rem',
           }}>
             {item.sublabel}
           </p>
         )}
         <p style={{
           fontFamily:    "'Space Grotesk', sans-serif",
-          fontSize:      'clamp(1.1rem, 2.5vw, 1.6rem)',
-          fontWeight:    800,
-          letterSpacing: '-0.01em',
-          color:         '#dde1ec',
+          fontSize:      'clamp(2rem, 5vw, 4.5rem)',
+          fontWeight:    900,
+          letterSpacing: '-0.03em',
+          color:         '#ffffff',
           textTransform: 'uppercase',
-          lineHeight:    1,
+          lineHeight:    0.9,
+          textShadow:    '0 2px 24px rgba(0,0,0,0.6)',
         }}>
           {item.title}
         </p>
       </div>
 
-      {/* Accent border inset */}
+      {/* Hover CTA — bottom right */}
+      <div style={{
+        position:   'absolute',
+        bottom:     '1.75rem',
+        right:      '1.5rem',
+        zIndex:     3,
+        opacity:    hovered ? 1 : 0,
+        transform:  hovered ? 'translateY(0)' : 'translateY(5px)',
+        transition: 'opacity 0.3s ease, transform 0.35s ease',
+      }}>
+        <span style={{
+          fontFamily:    "'JetBrains Mono', monospace",
+          fontSize:      '0.5rem',
+          letterSpacing: '0.22em',
+          color:         'rgba(0,255,65,0.7)',
+          textTransform: 'uppercase',
+        }}>
+          EXPAND ↗
+        </span>
+      </div>
+
+      {/* Inset accent border on hover */}
       <div style={{
         position:      'absolute',
         inset:         0,
-        border:        `1px solid rgba(0,255,65,${hovered ? 0.22 : 0})`,
+        border:        `1px solid rgba(0,255,65,${hovered ? 0.2 : 0})`,
         transition:    'border-color 0.4s ease',
         pointerEvents: 'none',
-        zIndex:        5,
+        zIndex:        4,
       }} />
     </motion.div>
   );
@@ -207,39 +196,29 @@ function GalleryCard({
   onClick:    () => void;
 }) {
   const [hovered, setHovered] = useState(false);
-  const [glow,    setGlow]    = useState({ x: 50, y: 50 });
-
-  const onMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    setGlow({
-      x: ((e.clientX - rect.left) / rect.width)  * 100,
-      y: ((e.clientY - rect.top)  / rect.height) * 100,
-    });
-  }, []);
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 28 }}
+      initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-30px' }}
-      transition={{ duration: 0.55, delay: Math.min(index * 0.045, 0.3), ease: [0.16, 1, 0.3, 1] }}
+      viewport={{ once: true, margin: '-20px' }}
+      transition={{ duration: 0.55, delay: Math.min(index * 0.04, 0.25), ease: [0.16, 1, 0.3, 1] }}
       onMouseEnter={() => setHovered(true)}
-      onMouseMove={onMove}
-      onMouseLeave={() => { setHovered(false); setGlow({ x: 50, y: 50 }); }}
+      onMouseLeave={() => setHovered(false)}
       onClick={onClick}
       data-cursor="hover"
       style={{
         position:    'relative',
         aspectRatio: '16 / 9',
         overflow:    'hidden',
-        border:      `1px solid ${hovered ? 'rgba(0,255,65,0.28)' : '#1c2030'}`,
-        transform:   hovered ? 'translateY(-2px)' : 'none',
+        border:      `1px solid ${hovered ? 'rgba(0,255,65,0.32)' : '#1c2030'}`,
+        transform:   hovered ? 'translateY(-3px)' : 'none',
         transition:  'border-color 0.3s ease, transform 0.35s ease, box-shadow 0.35s ease',
-        boxShadow:   hovered ? '0 12px 40px rgba(0,0,0,0.6), 0 0 24px rgba(0,255,65,0.07)' : '0 2px 12px rgba(0,0,0,0.3)',
+        boxShadow:   hovered ? '0 14px 44px rgba(0,0,0,0.65), 0 0 28px rgba(0,255,65,0.07)' : '0 2px 14px rgba(0,0,0,0.38)',
         cursor:      'pointer',
       }}
     >
-      {/* Photo */}
+      {/* Photo — always visible */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={item.filename}
@@ -251,88 +230,54 @@ function GalleryCard({
           height:         '100%',
           objectFit:      'cover',
           objectPosition: 'center',
-          opacity:        hovered ? 1 : 0,
-          transform:      hovered ? 'scale(1.05)' : 'scale(1.1)',
-          transition:     'opacity 0.5s ease, transform 0.7s cubic-bezier(0.16,1,0.3,1)',
+          transform:      hovered ? 'scale(1.06)' : 'scale(1.0)',
+          transition:     'transform 0.75s cubic-bezier(0.16,1,0.3,1)',
           pointerEvents:  'none',
         }}
       />
 
-      <div style={{
-        position:      'absolute',
-        inset:         0,
-        background:    item.gradient,
-        opacity:       hovered ? 0 : 1,
-        transition:    'opacity 0.45s ease',
-        pointerEvents: 'none',
-      }} />
-
-      <div style={{
-        position:      'absolute',
-        inset:         0,
-        background:    `radial-gradient(circle at ${glow.x}% ${glow.y}%, rgba(0,255,65,0.1) 0%, transparent 60%)`,
-        opacity:       hovered ? 1 : 0,
-        transition:    'opacity 0.25s ease',
-        pointerEvents: 'none',
-        zIndex:        2,
-      }} />
-
+      {/* Permanent bottom scrim */}
       <div style={{
         position:      'absolute',
         bottom: 0, left: 0, right: 0,
-        height:        '65%',
-        background:    'linear-gradient(to top, rgba(6,8,12,0.92) 0%, rgba(6,8,12,0.3) 55%, transparent 100%)',
+        height:        '68%',
+        background:    'linear-gradient(to top, rgba(6,8,12,0.92) 0%, rgba(6,8,12,0.35) 55%, transparent 100%)',
         pointerEvents: 'none',
-        zIndex:        3,
+        zIndex:        2,
       }} />
 
       {/* Index */}
       <div style={{
         position:      'absolute',
-        top:           '0.65rem',
-        right:         '0.65rem',
-        fontFamily:    "'JetBrains Mono', monospace",
-        fontSize:      '0.44rem',
-        color:         'rgba(255,255,255,0.15)',
-        letterSpacing: '0.08em',
-        zIndex:        4,
-      }}>
-        {String(index + 1).padStart(2, '0')} / {String(totalCount).padStart(2, '0')}
-      </div>
-
-      {/* Hover hint */}
-      <div style={{
-        position:      'absolute',
-        top:           '0.65rem',
-        left:          '0.65rem',
+        top:           '0.6rem',
+        right:         '0.6rem',
         fontFamily:    "'JetBrains Mono', monospace",
         fontSize:      '0.42rem',
-        color:         hovered ? 'rgba(0,255,65,0.5)' : 'transparent',
-        letterSpacing: '0.2em',
-        zIndex:        4,
-        transition:    'color 0.25s ease',
+        color:         'rgba(255,255,255,0.2)',
+        letterSpacing: '0.08em',
+        zIndex:        3,
       }}>
-        EXPAND
+        {String(index + 1).padStart(2, '0')} / {String(totalCount).padStart(2, '0')}
       </div>
 
       {/* Labels */}
       <div style={{
         position:   'absolute',
-        bottom:     '0.75rem',
-        left:       '0.75rem',
-        right:      '0.75rem',
-        zIndex:     4,
-        transform:  hovered ? 'translateY(0)' : 'translateY(3px)',
-        transition: 'transform 0.4s cubic-bezier(0.16,1,0.3,1)',
+        bottom:     '0.65rem',
+        left:       '0.65rem',
+        right:      '0.65rem',
+        zIndex:     3,
+        transform:  hovered ? 'translateY(-2px)' : 'none',
+        transition: 'transform 0.35s cubic-bezier(0.16,1,0.3,1)',
       }}>
         {item.sublabel && (
           <p style={{
             fontFamily:    "'JetBrains Mono', monospace",
-            fontSize:      '0.44rem',
+            fontSize:      '0.42rem',
             letterSpacing: '0.24em',
-            color:         hovered ? '#00ff41' : '#505770',
+            color:         hovered ? '#00ff41' : 'rgba(0,255,65,0.55)',
             textTransform: 'uppercase',
-            marginBottom:  '0.18rem',
+            marginBottom:  '0.15rem',
             transition:    'color 0.3s ease',
           }}>
             {item.sublabel}
@@ -340,9 +285,9 @@ function GalleryCard({
         )}
         <p style={{
           fontFamily:    "'Space Grotesk', sans-serif",
-          fontSize:      'clamp(0.72rem, 1.4vw, 0.9rem)',
+          fontSize:      'clamp(0.7rem, 1.3vw, 0.9rem)',
           fontWeight:    700,
-          letterSpacing: '0.03em',
+          letterSpacing: '-0.01em',
           color:         '#dde1ec',
           textTransform: 'uppercase',
           lineHeight:    1,
@@ -351,14 +296,14 @@ function GalleryCard({
         </p>
       </div>
 
-      {/* Accent inset border */}
+      {/* Inset accent border on hover */}
       <div style={{
         position:      'absolute',
         inset:         0,
-        border:        `1px solid rgba(0,255,65,${hovered ? 0.2 : 0})`,
+        border:        `1px solid rgba(0,255,65,${hovered ? 0.18 : 0})`,
         transition:    'border-color 0.35s ease',
         pointerEvents: 'none',
-        zIndex:        5,
+        zIndex:        4,
       }} />
     </motion.div>
   );
@@ -447,13 +392,13 @@ export default function GallerySection() {
               textTransform: 'uppercase',
             }}
           >
-            HOVER TO REVEAL · CLICK TO EXPAND · {photos.length} LOCATIONS
+            {photos.length} LOCATIONS · CLICK TO EXPAND
           </motion.p>
         </div>
 
         {/* Featured photo */}
         {featured && (
-          <div style={{ marginBottom: '0.75rem' }}>
+          <div style={{ marginBottom: '0.5rem' }}>
             <FeaturedCard
               item={featured}
               totalCount={photos.length}
@@ -462,31 +407,24 @@ export default function GallerySection() {
           </div>
         )}
 
-        {/* Grid — remaining photos */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.12 }}
-        >
-          <div className="gallery-grid">
-            {rest.map((item, i) => (
+        {/* Editorial grid — 12-column layout */}
+        <div className="gallery-editorial">
+          {rest.map((item, i) => (
+            <div key={item.id} className={`ge-span-${SPANS[i] ?? 4}`}>
               <GalleryCard
-                key={item.id}
                 item={item}
                 index={i + 1}
                 totalCount={photos.length}
                 onClick={() => openLightbox(i + 1)}
               />
-            ))}
-          </div>
-        </motion.div>
+            </div>
+          ))}
+        </div>
 
-        {/* Footer attribution */}
         <p style={{
           paddingTop:    '1.25rem',
           fontFamily:    "'JetBrains Mono', monospace",
-          fontSize:      '0.48rem',
+          fontSize:      '0.46rem',
           color:         '#131722',
           letterSpacing: '0.15em',
           textTransform: 'uppercase',
@@ -496,21 +434,25 @@ export default function GallerySection() {
       </section>
 
       <style>{`
-        .gallery-grid {
+        .gallery-editorial {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
-          gap: 0.75rem;
+          grid-template-columns: repeat(12, 1fr);
+          gap: 0.5rem;
         }
-        @media (min-width: 900px) {
-          .gallery-grid {
-            grid-template-columns: repeat(4, 1fr);
-            gap: 0.75rem;
-          }
-        }
-        @media (min-width: 640px) and (max-width: 899px) {
-          .gallery-grid {
+        .ge-span-7 { grid-column: span 7; }
+        .ge-span-5 { grid-column: span 5; }
+        .ge-span-4 { grid-column: span 4; }
+        @media (max-width: 899px) {
+          .gallery-editorial {
             grid-template-columns: repeat(2, 1fr);
           }
+          .ge-span-7, .ge-span-5, .ge-span-4 { grid-column: span 1; }
+        }
+        @media (max-width: 599px) {
+          .gallery-editorial {
+            grid-template-columns: 1fr;
+          }
+          .ge-span-7, .ge-span-5, .ge-span-4 { grid-column: span 1; }
         }
       `}</style>
     </>
