@@ -8,81 +8,77 @@ export default function TickerStrip() {
     'CUSTOM RESOURCE PACK',
     'PLAY.JODCRAFT.WORLD',
     'SINCE 2024',
-    'SURVIVAL',
-    'COMMUNITY',
-    'CUSTOM DATAPACKS',
-    'CUSTOM RESOURCE PACK',
-    'PLAY.JODCRAFT.WORLD',
-    'SINCE 2024',
   ];
+
+  const doubled = [...items, ...items, ...items, ...items];
 
   return (
     <div
       style={{
-        borderTop: '1px solid #1a1a1a',
-        borderBottom: '1px solid #1a1a1a',
-        background: '#0a0a0a',
-        overflow: 'hidden',
-        padding: '0.75rem 0',
-        position: 'relative',
-        zIndex: 10,
+        borderTop:    '1px solid #1c2030',
+        borderBottom: '1px solid #1c2030',
+        background:   '#0a0c12',
+        overflow:     'hidden',
+        padding:      '0.6rem 0',
+        position:     'relative',
+        zIndex:       10,
       }}
     >
       {/* Fade edges */}
       <div
         style={{
-          position: 'absolute',
-          left: 0,
-          top: 0,
-          bottom: 0,
-          width: '80px',
-          background: 'linear-gradient(to right, #080808, transparent)',
-          zIndex: 2,
+          position:      'absolute',
+          left:          0, top: 0, bottom: 0,
+          width:         '100px',
+          background:    'linear-gradient(to right, #06080c, transparent)',
+          zIndex:        2,
           pointerEvents: 'none',
         }}
       />
       <div
         style={{
-          position: 'absolute',
-          right: 0,
-          top: 0,
-          bottom: 0,
-          width: '80px',
-          background: 'linear-gradient(to left, #080808, transparent)',
-          zIndex: 2,
+          position:      'absolute',
+          right:         0, top: 0, bottom: 0,
+          width:         '100px',
+          background:    'linear-gradient(to left, #06080c, transparent)',
+          zIndex:        2,
           pointerEvents: 'none',
         }}
       />
 
       <div className="ticker-track" style={{ display: 'inline-flex', alignItems: 'center' }}>
-        {[...items, ...items].map((item, idx) => (
-          <span
-            key={idx}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0',
-              fontFamily: "'JetBrains Mono', monospace",
-              fontSize: '0.65rem',
-              letterSpacing: '0.25em',
-              textTransform: 'uppercase',
-              color: idx % 6 === 4 ? '#00ff41' : '#444444',
-              fontWeight: idx % 6 === 4 ? 600 : 400,
-            }}
-          >
-            {item}
+        {doubled.map((item, idx) => {
+          const isIP = item === 'PLAY.JODCRAFT.WORLD';
+          return (
             <span
+              key={idx}
               style={{
-                display: 'inline-block',
-                margin: '0 1.5rem',
-                color: '#1a1a1a',
-                fontSize: '0.5rem',
+                display:        'inline-flex',
+                alignItems:     'center',
+                fontFamily:     "'JetBrains Mono', monospace",
+                fontSize:       '0.58rem',
+                letterSpacing:  '0.28em',
+                textTransform:  'uppercase',
+                color:          isIP ? '#00ff41' : '#1e2230',
+                fontWeight:     isIP ? 600 : 400,
+                whiteSpace:     'nowrap',
               }}
             >
-              ◆
+              {item}
+              <span
+                style={{
+                  display:      'inline-block',
+                  margin:       '0 1.6rem',
+                  color:        '#1c2030',
+                  fontSize:     '0.4rem',
+                  verticalAlign: 'middle',
+                }}
+              >
+                ◆
+              </span>
             </span>
-          </span>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

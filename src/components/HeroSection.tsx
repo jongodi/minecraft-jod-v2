@@ -28,7 +28,6 @@ export default function HeroSection() {
   const timeoutRef  = useRef<ReturnType<typeof setTimeout>  | null>(null);
   const btnWrapRef  = useRef<HTMLDivElement>(null);
 
-  /* ── Mouse parallax ────────────────────────────────────────── */
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
       setMouse({
@@ -40,7 +39,6 @@ export default function HeroSection() {
     return () => window.removeEventListener('mousemove', onMove);
   }, []);
 
-  /* ── Magnetic button ───────────────────────────────────────── */
   const handleMagMove = useCallback((e: React.MouseEvent) => {
     if (!btnWrapRef.current) return;
     const rect = btnWrapRef.current.getBoundingClientRect();
@@ -57,9 +55,9 @@ export default function HeroSection() {
       setMagOffset({ x: 0, y: 0 });
     }
   }, []);
+
   const handleMagLeave = useCallback(() => setMagOffset({ x: 0, y: 0 }), []);
 
-  /* ── IP copy ────────────────────────────────────────────────── */
   const handleCopy = useCallback(async () => {
     if (isAnimating) return;
     setIsAnimating(true);
@@ -84,7 +82,6 @@ export default function HeroSection() {
     }, 40);
   }, [isAnimating]);
 
-  /* ── Render ─────────────────────────────────────────────────── */
   return (
     <section
       id="hero"
@@ -96,15 +93,15 @@ export default function HeroSection() {
         flexDirection:  'column',
         alignItems:     'center',
         justifyContent: 'center',
-        background:     '#080808',
+        background:     '#06080c',
       }}
     >
-      {/* Particle layer — subtle parallax */}
+      {/* Particle layer */}
       <div
         style={{
           position:   'absolute',
           inset:      '-5%',
-          transform:  `translate(${mouse.x * 22}px, ${mouse.y * 12}px)`,
+          transform:  `translate(${mouse.x * 20}px, ${mouse.y * 10}px)`,
           transition: 'transform 0.12s linear',
           zIndex:     0,
         }}
@@ -115,12 +112,12 @@ export default function HeroSection() {
       {/* CRT scanlines */}
       <div className="scanlines" style={{ zIndex: 1 }} />
 
-      {/* Radial vignette */}
+      {/* Vignette */}
       <div
         style={{
           position:      'absolute',
           inset:         0,
-          background:    'radial-gradient(ellipse at center, transparent 40%, #080808 100%)',
+          background:    'radial-gradient(ellipse at center, transparent 35%, #06080c 95%)',
           pointerEvents: 'none',
           zIndex:        2,
         }}
@@ -135,21 +132,21 @@ export default function HeroSection() {
           flexDirection: 'column',
           alignItems:    'center',
           textAlign:     'center',
-          gap:           '2rem',
+          gap:           '1.75rem',
           padding:       '0 1.5rem',
-          transform:     `translate(${mouse.x * 7}px, ${mouse.y * 4}px)`,
-          transition:    'transform 0.18s linear',
+          transform:     `translate(${mouse.x * 6}px, ${mouse.y * 3}px)`,
+          transition:    'transform 0.2s linear',
         }}
       >
-        {/* Server label */}
+        {/* Label */}
         <motion.p
-          initial={{ opacity: 0, y: -12 }}
+          initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
+          transition={{ duration: 0.6, delay: 0.15 }}
           style={{
             fontFamily:    "'JetBrains Mono', monospace",
-            fontSize:      '0.7rem',
-            letterSpacing: '0.35em',
+            fontSize:      '0.62rem',
+            letterSpacing: '0.38em',
             color:         '#00ff41',
             textTransform: 'uppercase',
           }}
@@ -157,24 +154,24 @@ export default function HeroSection() {
           PRIVATE MINECRAFT SERVER
         </motion.p>
 
-        {/* Giant title — letter-by-letter stagger */}
+        {/* Title — letter stagger */}
         <div style={{ position: 'relative' }}>
           <div
             style={{
               display:    'flex',
               gap:        'clamp(0.05rem, 0.4vw, 0.25rem)',
-              transform:  `translate(${mouse.x * -3}px, ${mouse.y * -1.5}px)`,
-              transition: 'transform 0.22s linear',
+              transform:  `translate(${mouse.x * -2.5}px, ${mouse.y * -1.2}px)`,
+              transition: 'transform 0.24s linear',
             }}
           >
             {['J', 'O', 'D'].map((letter, i) => (
               <motion.span
                 key={letter}
-                initial={{ opacity: 0, y: 70, rotateX: -50 }}
+                initial={{ opacity: 0, y: 60, rotateX: -45 }}
                 animate={{ opacity: 1, y: 0,  rotateX: 0   }}
                 transition={{
-                  duration: 0.85,
-                  delay:    0.35 + i * 0.14,
+                  duration: 0.9,
+                  delay:    0.3 + i * 0.13,
                   ease:     [0.16, 1, 0.3, 1],
                 }}
                 style={{
@@ -184,9 +181,9 @@ export default function HeroSection() {
                   fontWeight:    900,
                   lineHeight:    0.85,
                   letterSpacing: '-0.03em',
-                  color:         '#f0f0f0',
+                  color:         '#dde1ec',
                   userSelect:    'none',
-                  textShadow:    '0 0 80px rgba(0,255,65,0.07)',
+                  textShadow:    '0 0 120px rgba(0,255,65,0.05)',
                 }}
               >
                 {letter}
@@ -194,7 +191,7 @@ export default function HeroSection() {
             ))}
           </div>
 
-          {/* Glitch pseudo-element overlay (transparent, just triggers animation) */}
+          {/* Glitch overlay */}
           <span
             aria-hidden="true"
             className="glitch"
@@ -216,28 +213,28 @@ export default function HeroSection() {
 
         {/* Subtitle */}
         <motion.p
-          initial={{ opacity: 0, y: 12 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0  }}
-          transition={{ duration: 0.6, delay: 0.77 }}
+          transition={{ duration: 0.6, delay: 0.72 }}
           style={{
             fontFamily:    "'JetBrains Mono', monospace",
-            fontSize:      'clamp(0.65rem, 1.5vw, 0.85rem)',
-            letterSpacing: '0.2em',
-            color:         '#666666',
+            fontSize:      'clamp(0.6rem, 1.4vw, 0.78rem)',
+            letterSpacing: '0.22em',
+            color:         '#505770',
             textTransform: 'uppercase',
           }}
         >
           private survival&nbsp;&nbsp;·&nbsp;&nbsp;custom datapacks&nbsp;&nbsp;·&nbsp;&nbsp;resource pack
         </motion.p>
 
-        {/* Magnetic IP terminal box */}
+        {/* IP copy terminal */}
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0  }}
-          transition={{ duration: 0.6, delay: 0.95 }}
+          transition={{ duration: 0.6, delay: 0.9 }}
           onMouseMove={handleMagMove}
           onMouseLeave={handleMagLeave}
-          style={{ paddingTop: '0.5rem' }}
+          style={{ paddingTop: '0.25rem' }}
         >
           <motion.div
             ref={btnWrapRef}
@@ -251,40 +248,38 @@ export default function HeroSection() {
                 display:        'flex',
                 alignItems:     'center',
                 gap:            '0.75rem',
-                background:     '#111111',
-                border:         `1px solid ${copied ? '#00ff41' : '#1a1a1a'}`,
-                padding:        '0.875rem 1.5rem',
+                background:     '#0d1018',
+                border:         `1px solid ${copied ? '#00ff41' : '#1c2030'}`,
+                padding:        '0.85rem 1.5rem',
                 fontFamily:     "'JetBrains Mono', monospace",
-                fontSize:       'clamp(0.8rem, 2vw, 1rem)',
-                color:          copied ? '#00ff41' : '#f0f0f0',
-                letterSpacing:  '0.08em',
+                fontSize:       'clamp(0.75rem, 1.8vw, 0.95rem)',
+                color:          copied ? '#00ff41' : '#dde1ec',
+                letterSpacing:  '0.1em',
                 transition:     'border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease',
                 boxShadow:      copied
-                  ? '0 0 24px rgba(0,255,65,0.25), inset 0 0 24px rgba(0,255,65,0.05)'
+                  ? '0 0 28px rgba(0,255,65,0.2), inset 0 0 20px rgba(0,255,65,0.04)'
                   : '0 0 0 transparent',
-                minWidth:       '280px',
+                minWidth:       '290px',
                 justifyContent: 'space-between',
               }}
               onMouseEnter={e => {
                 if (!copied) {
-                  const el = e.currentTarget;
-                  el.style.borderColor = '#333';
-                  el.style.boxShadow   = '0 0 20px rgba(0,255,65,0.12)';
+                  e.currentTarget.style.borderColor = '#2a3045';
+                  e.currentTarget.style.boxShadow   = '0 0 20px rgba(0,255,65,0.1)';
                 }
               }}
               onMouseLeave={e => {
                 if (!copied) {
-                  const el = e.currentTarget;
-                  el.style.borderColor = '#1a1a1a';
-                  el.style.boxShadow   = '0 0 0 transparent';
+                  e.currentTarget.style.borderColor = '#1c2030';
+                  e.currentTarget.style.boxShadow   = '0 0 0 transparent';
                 }
               }}
             >
-              <span style={{ color: '#00ff41', marginRight: '0.25rem' }}>$</span>
+              <span style={{ color: '#00ff41', marginRight: '0.2rem', opacity: 0.8 }}>$</span>
               <span style={{ flex: 1, textAlign: 'left', fontVariantNumeric: 'tabular-nums', letterSpacing: '0.12em' }}>
                 {copied ? 'COPIED ✓' : ipDisplay}
               </span>
-              <span className="cursor-blink" style={{ color: '#00ff41', fontSize: '1.1em', opacity: copied ? 0 : 1 }}>
+              <span className="cursor-blink" style={{ color: '#00ff41', fontSize: '1em', opacity: copied ? 0 : 0.7 }}>
                 █
               </span>
             </button>
@@ -292,9 +287,9 @@ export default function HeroSection() {
             <p style={{
               marginTop:     '0.5rem',
               fontFamily:    "'JetBrains Mono', monospace",
-              fontSize:      '0.6rem',
+              fontSize:      '0.52rem',
               letterSpacing: '0.15em',
-              color:         '#444',
+              color:         '#1e2230',
               textTransform: 'uppercase',
               textAlign:     'center',
             }}>
@@ -304,11 +299,11 @@ export default function HeroSection() {
         </motion.div>
       </div>
 
-      {/* Scroll chevron */}
+      {/* Scroll hint */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 1.5, duration: 0.6 }}
+        transition={{ delay: 1.6, duration: 0.7 }}
         style={{
           position:      'absolute',
           bottom:        '2rem',
@@ -318,40 +313,37 @@ export default function HeroSection() {
           display:       'flex',
           flexDirection: 'column',
           alignItems:    'center',
-          gap:           '0.25rem',
+          gap:           '0.3rem',
         }}
       >
         <span
-          className="animate-chevron-bounce"
           style={{
             fontFamily:    "'JetBrains Mono', monospace",
-            fontSize:      '0.55rem',
-            letterSpacing: '0.3em',
-            color:         '#333',
+            fontSize:      '0.5rem',
+            letterSpacing: '0.32em',
+            color:         '#1e2230',
             textTransform: 'uppercase',
             display:       'block',
-            marginBottom:  '0.25rem',
           }}
         >
           SCROLL
         </span>
         <svg
-          className="animate-chevron-bounce"
-          width="18" height="18" viewBox="0 0 18 18" fill="none"
-          style={{ color: '#444' }}
+          width="16" height="16" viewBox="0 0 16 16" fill="none"
+          style={{ color: '#1e2230' }}
         >
-          <path d="M3 6L9 12L15 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="square"/>
+          <path d="M2 5L8 11L14 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="square"/>
         </svg>
       </motion.div>
 
-      {/* Bottom border line — faint green gradient */}
+      {/* Bottom gradient line */}
       <div
         style={{
-          position:  'absolute',
-          bottom:    0, left: 0, right: 0,
-          height:    '1px',
-          background: 'linear-gradient(to right, transparent, rgba(0,255,65,0.35) 30%, rgba(0,255,65,0.35) 70%, transparent)',
-          zIndex:    4,
+          position:   'absolute',
+          bottom:     0, left: 0, right: 0,
+          height:     '1px',
+          background: 'linear-gradient(to right, transparent, rgba(0,255,65,0.3) 25%, rgba(0,255,65,0.3) 75%, transparent)',
+          zIndex:     4,
         }}
       />
     </section>

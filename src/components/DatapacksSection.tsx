@@ -5,57 +5,52 @@ import { useRef, useState, useCallback, useEffect } from 'react';
 import { CATEGORY_COLORS, type DatapackMeta } from '@/data/datapacks';
 import type { DatapackUpdateResult } from '@/app/api/datapacks/check-updates/route';
 
-// ─── Update badge ─────────────────────────────────────────────────────────────
-
-function UpdateBadge({
-  result,
-  onClose,
-}: {
-  result: DatapackUpdateResult;
-  onClose: () => void;
-}) {
+// ─── Update popup ─────────────────────────────────────────────────────────────
+function UpdateBadge({ result, onClose }: { result: DatapackUpdateResult; onClose: () => void }) {
   return (
     <AnimatePresence>
       <motion.div
-        initial={{ opacity: 0, y: 8, scale: 0.96 }}
+        initial={{ opacity: 0, y: 6, scale: 0.97 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: 8, scale: 0.96 }}
-        transition={{ duration: 0.2 }}
+        exit={{ opacity: 0, y: 6, scale: 0.97 }}
+        transition={{ duration: 0.18 }}
         style={{
-          position:     'absolute',
-          bottom:       'calc(100% + 8px)',
-          left:         0,
-          right:        0,
-          background:   '#111',
-          border:       '1px solid #333',
-          padding:      '0.75rem',
-          zIndex:       50,
-          boxShadow:    '0 8px 32px rgba(0,0,0,0.8)',
+          position:  'absolute',
+          bottom:    'calc(100% + 8px)',
+          left:      0,
+          right:     0,
+          background: '#0d1018',
+          border:    '1px solid #2a3045',
+          padding:   '0.75rem',
+          zIndex:    50,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.8)',
         }}
       >
-        {/* Close */}
         <button
-          onClick={(e) => { e.stopPropagation(); onClose(); }}
+          onClick={e => { e.stopPropagation(); onClose(); }}
           style={{
-            position:   'absolute',
-            top:        '0.4rem',
-            right:      '0.4rem',
-            background: 'none',
-            border:     'none',
-            color:      '#666',
-            cursor:     'pointer',
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize:   '0.6rem',
+            position:      'absolute',
+            top:           '0.4rem',
+            right:         '0.4rem',
+            background:    'none',
+            border:        'none',
+            color:         '#505770',
+            fontFamily:    "'JetBrains Mono', monospace",
+            fontSize:      '0.6rem',
+            cursor:        'pointer',
+            transition:    'color 0.2s',
           }}
+          onMouseEnter={e => (e.currentTarget.style.color = '#dde1ec')}
+          onMouseLeave={e => (e.currentTarget.style.color = '#505770')}
         >
           ✕
         </button>
 
         {result.latestVersion && (
-          <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.65rem', color: '#00ff41', marginBottom: '0.4rem' }}>
+          <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.62rem', color: '#f0a500', marginBottom: '0.4rem' }}>
             v{result.latestVersion} available
             {result.currentVersion && (
-              <span style={{ color: '#444' }}> (current: v{result.currentVersion})</span>
+              <span style={{ color: '#1e2230' }}> (current: v{result.currentVersion})</span>
             )}
           </p>
         )}
@@ -63,13 +58,13 @@ function UpdateBadge({
         {result.changelog && (
           <p style={{
             fontFamily:  "'JetBrains Mono', monospace",
-            fontSize:    '0.6rem',
-            color:       '#555',
+            fontSize:    '0.58rem',
+            color:       '#505770',
             lineHeight:  1.5,
             marginBottom: '0.5rem',
-            maxHeight:   '80px',
+            maxHeight:   '70px',
             overflow:    'hidden',
-            maskImage:   'linear-gradient(to bottom, black 60%, transparent)',
+            maskImage:   'linear-gradient(to bottom, black 55%, transparent)',
           }}>
             {result.changelog.slice(0, 200)}
           </p>
@@ -81,16 +76,19 @@ function UpdateBadge({
               href={result.modrinthUrl}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
+              onClick={e => e.stopPropagation()}
               style={{
-                fontFamily:    "'JetBrains Mono', monospace",
-                fontSize:      '0.55rem',
-                letterSpacing: '0.15em',
-                color:         '#00ff41',
-                border:        '1px solid #00ff4133',
-                padding:       '0.2rem 0.5rem',
+                fontFamily:     "'JetBrains Mono', monospace",
+                fontSize:       '0.52rem',
+                letterSpacing:  '0.15em',
+                color:          '#00ff41',
+                border:         '1px solid rgba(0,255,65,0.2)',
+                padding:        '0.18rem 0.5rem',
                 textDecoration: 'none',
+                transition:     'background 0.2s',
               }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(0,255,65,0.06)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
             >
               VIEW ON MODRINTH →
             </a>
@@ -100,16 +98,19 @@ function UpdateBadge({
               href={result.downloadUrl}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
+              onClick={e => e.stopPropagation()}
               style={{
-                fontFamily:    "'JetBrains Mono', monospace",
-                fontSize:      '0.55rem',
-                letterSpacing: '0.15em',
-                color:         '#f0a500',
-                border:        '1px solid #f0a50033',
-                padding:       '0.2rem 0.5rem',
+                fontFamily:     "'JetBrains Mono', monospace",
+                fontSize:       '0.52rem',
+                letterSpacing:  '0.15em',
+                color:          '#f0a500',
+                border:         '1px solid rgba(240,165,0,0.2)',
+                padding:        '0.18rem 0.5rem',
                 textDecoration: 'none',
+                transition:     'background 0.2s',
               }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(240,165,0,0.06)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
             >
               DOWNLOAD ↓
             </a>
@@ -121,66 +122,46 @@ function UpdateBadge({
 }
 
 // ─── Card ─────────────────────────────────────────────────────────────────────
-
 function DatapackCard({
   pack,
   index,
   updateResult,
 }: {
-  pack: DatapackMeta;
-  index: number;
+  pack:         DatapackMeta;
+  index:        number;
   updateResult?: DatapackUpdateResult;
 }) {
-  const categoryColor = CATEGORY_COLORS[pack.category] ?? '#00ff41';
-  const [tilt, setTilt] = useState({ x: 0, y: 0 });
-  const [isHov, setIsHov] = useState(false);
+  const categoryColor   = CATEGORY_COLORS[pack.category] ?? '#00ff41';
+  const [isHov,         setIsHov]         = useState(false);
   const [showUpdatePopup, setShowUpdatePopup] = useState(false);
 
-  const onMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const rx   = (e.clientX - rect.left) / rect.width  - 0.5;
-    const ry   = (e.clientY - rect.top)  / rect.height - 0.5;
-    setTilt({ x: rx * 8, y: ry * -8 });
-  }, []);
-
-  const onLeave = useCallback(() => {
-    setIsHov(false);
-    setTilt({ x: 0, y: 0 });
-  }, []);
-
-  // Determine update status badge
-  const hasUpdate    = updateResult?.updateAvailable === true;
-  const isUpToDate   = updateResult && !updateResult.updateAvailable && updateResult.latestVersion;
-  const isManaged    = updateResult?.source === 'manual' || !updateResult;
+  const hasUpdate  = updateResult?.updateAvailable === true;
+  const isUpToDate = updateResult && !updateResult.updateAvailable && updateResult.latestVersion;
+  const isManaged  = !updateResult || updateResult.source === 'manual';
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 32 }}
+      initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-50px' }}
-      transition={{ duration: 0.5, delay: index * 0.06, ease: [0.16, 1, 0.3, 1] }}
+      viewport={{ once: true, margin: '-40px' }}
+      transition={{ duration: 0.5, delay: Math.min(index * 0.05, 0.4), ease: [0.16, 1, 0.3, 1] }}
       onMouseEnter={() => setIsHov(true)}
-      onMouseMove={onMove}
-      onMouseLeave={onLeave}
+      onMouseLeave={() => { setIsHov(false); }}
       data-cursor="hover"
       style={{
-        background:     '#111111',
-        border:         `1px solid ${isHov ? 'rgba(0,255,65,0.4)' : '#1a1a1a'}`,
-        padding:        '1.25rem',
-        display:        'flex',
-        flexDirection:  'column',
-        gap:            '0.75rem',
-        position:       'relative',
-        overflow:       'visible',
-        transform:      `perspective(800px) rotateY(${tilt.x}deg) rotateX(${tilt.y}deg) translateY(${isHov ? -4 : 0}px)`,
-        transition:     isHov
-          ? 'border-color 0.25s ease, box-shadow 0.25s ease'
-          : 'transform 0.5s cubic-bezier(0.03,0.98,0.52,0.99), border-color 0.3s ease, box-shadow 0.4s ease',
-        boxShadow:      isHov
-          ? `0 12px 40px rgba(0,0,0,0.6), 0 0 24px rgba(0,255,65,0.08)`
+        background:    '#131722',
+        border:        `1px solid ${isHov ? '#2a3045' : '#1c2030'}`,
+        padding:       '1.25rem',
+        display:       'flex',
+        flexDirection: 'column',
+        gap:           '0.7rem',
+        position:      'relative',
+        overflow:      'visible',
+        transform:     isHov ? 'translateY(-2px)' : 'none',
+        transition:    'border-color 0.25s ease, transform 0.3s ease, box-shadow 0.3s ease',
+        boxShadow:     isHov
+          ? `0 10px 36px rgba(0,0,0,0.5), 0 0 0 1px ${categoryColor}18`
           : 'none',
-        willChange:     'transform',
-        transformStyle: 'preserve-3d',
       }}
     >
       {/* Update popup */}
@@ -188,45 +169,41 @@ function DatapackCard({
         <UpdateBadge result={updateResult} onClose={() => setShowUpdatePopup(false)} />
       )}
 
-      {/* Top accent line */}
+      {/* Top accent line (slides in on hover) */}
       <div
         style={{
           position:        'absolute',
           top:             0, left: 0, right: 0,
-          height:          '2px',
+          height:          '1px',
           background:      `linear-gradient(to right, ${categoryColor}, transparent)`,
           transform:       `scaleX(${isHov ? 1 : 0})`,
           transformOrigin: 'left',
-          transition:      'transform 0.35s cubic-bezier(0.16,1,0.3,1)',
+          transition:      'transform 0.4s cubic-bezier(0.16,1,0.3,1)',
         }}
       />
-
-      {/* Corner accent */}
-      <div style={{
-        position:    'absolute',
-        top: 0, right: 0,
-        width: 0, height: 0,
-        borderLeft:  '20px solid transparent',
-        borderTop:   `20px solid ${categoryColor}22`,
-      }} />
 
       {/* Category tag + index */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span
           style={{
             fontFamily:    "'JetBrains Mono', monospace",
-            fontSize:      '0.55rem',
-            letterSpacing: '0.3em',
+            fontSize:      '0.5rem',
+            letterSpacing: '0.28em',
             color:         categoryColor,
             textTransform: 'uppercase',
-            background:    `${categoryColor}12`,
-            padding:       '0.2rem 0.5rem',
-            border:        `1px solid ${categoryColor}33`,
+            background:    `${categoryColor}0f`,
+            padding:       '0.18rem 0.45rem',
+            border:        `1px solid ${categoryColor}2a`,
           }}
         >
           {pack.category}
         </span>
-        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.5rem', color: '#333', letterSpacing: '0.1em' }}>
+        <span style={{
+          fontFamily:    "'JetBrains Mono', monospace",
+          fontSize:      '0.45rem',
+          color:         '#1e2230',
+          letterSpacing: '0.08em',
+        }}>
           #{String(pack.id).padStart(2, '0')}
         </span>
       </div>
@@ -235,9 +212,9 @@ function DatapackCard({
       <h3
         style={{
           fontFamily:    "'Space Grotesk', sans-serif",
-          fontSize:      '1rem',
+          fontSize:      '0.95rem',
           fontWeight:    700,
-          color:         '#f0f0f0',
+          color:         '#dde1ec',
           letterSpacing: '-0.01em',
           lineHeight:    1.2,
         }}
@@ -249,20 +226,26 @@ function DatapackCard({
       <p
         style={{
           fontFamily:    "'JetBrains Mono', monospace",
-          fontSize:      '0.7rem',
-          color:         '#555',
-          lineHeight:    1.6,
+          fontSize:      '0.65rem',
+          color:         '#505770',
+          lineHeight:    1.65,
           letterSpacing: '0.02em',
           marginTop:     'auto',
+          flexGrow:      1,
         }}
       >
         {pack.description}
       </p>
 
-      {/* Version / update status row */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.25rem' }}>
+      {/* Version / status row */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.15rem' }}>
         {pack.currentVersion && (
-          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.55rem', color: '#333' }}>
+          <span style={{
+            fontFamily:    "'JetBrains Mono', monospace",
+            fontSize:      '0.5rem',
+            color:         '#1e2230',
+            letterSpacing: '0.05em',
+          }}>
             v{pack.currentVersion}
           </span>
         )}
@@ -272,19 +255,22 @@ function DatapackCard({
               onClick={() => setShowUpdatePopup(v => !v)}
               style={{
                 fontFamily:    "'JetBrains Mono', monospace",
-                fontSize:      '0.5rem',
+                fontSize:      '0.46rem',
                 letterSpacing: '0.2em',
                 color:         '#f0a500',
-                background:    '#f0a50015',
-                border:        '1px solid #f0a50044',
-                padding:       '0.15rem 0.4rem',
+                background:    'rgba(240,165,0,0.08)',
+                border:        '1px solid rgba(240,165,0,0.3)',
+                padding:       '0.14rem 0.4rem',
                 cursor:        'pointer',
                 display:       'flex',
                 alignItems:    'center',
                 gap:           '0.3rem',
+                transition:    'background 0.2s',
               }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(240,165,0,0.14)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'rgba(240,165,0,0.08)')}
             >
-              <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#f0a500', display: 'inline-block' }} />
+              <span style={{ width: 4, height: 4, borderRadius: '50%', background: '#f0a500', display: 'inline-block' }} />
               UPDATE AVAILABLE
             </button>
           )}
@@ -292,18 +278,18 @@ function DatapackCard({
             <span
               style={{
                 fontFamily:    "'JetBrains Mono', monospace",
-                fontSize:      '0.5rem',
+                fontSize:      '0.46rem',
                 letterSpacing: '0.2em',
-                color:         '#00ff4166',
-                background:    '#00ff4108',
-                border:        '1px solid #00ff4120',
-                padding:       '0.15rem 0.4rem',
+                color:         'rgba(0,255,65,0.5)',
+                background:    'rgba(0,255,65,0.05)',
+                border:        '1px solid rgba(0,255,65,0.15)',
+                padding:       '0.14rem 0.4rem',
                 display:       'flex',
                 alignItems:    'center',
                 gap:           '0.3rem',
               }}
             >
-              <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#00ff41', display: 'inline-block' }} />
+              <span style={{ width: 4, height: 4, borderRadius: '50%', background: '#00ff41', display: 'inline-block' }} />
               UP TO DATE
             </span>
           )}
@@ -311,10 +297,9 @@ function DatapackCard({
             <span
               style={{
                 fontFamily:    "'JetBrains Mono', monospace",
-                fontSize:      '0.5rem',
-                letterSpacing: '0.2em',
-                color:         '#333',
-                padding:       '0.15rem 0',
+                fontSize:      '0.46rem',
+                letterSpacing: '0.18em',
+                color:         '#1e2230',
               }}
             >
               MANUAL
@@ -327,46 +312,43 @@ function DatapackCard({
 }
 
 // ─── Summary bar ─────────────────────────────────────────────────────────────
-
 function UpdateSummaryBar({ results }: { results: DatapackUpdateResult[] | null }) {
   if (!results) return null;
-
-  const checked    = results.filter(r => r.source !== 'manual');
-  const updates    = results.filter(r => r.updateAvailable);
-  const upToDate   = checked.filter(r => !r.updateAvailable && r.latestVersion);
-
+  const checked  = results.filter(r => r.source !== 'manual');
+  const updates  = results.filter(r => r.updateAvailable);
+  const upToDate = checked.filter(r => !r.updateAvailable && r.latestVersion);
   if (checked.length === 0) return null;
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: -8 }}
+      initial={{ opacity: 0, y: -6 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
+      transition={{ duration: 0.35 }}
       style={{
         display:       'flex',
         alignItems:    'center',
         gap:           '1.5rem',
         padding:       '0.6rem 1rem',
-        background:    updates.length > 0 ? '#f0a50008' : '#00ff4106',
-        border:        `1px solid ${updates.length > 0 ? '#f0a50030' : '#00ff4120'}`,
+        background:    updates.length > 0 ? 'rgba(240,165,0,0.04)' : 'rgba(0,255,65,0.03)',
+        border:        `1px solid ${updates.length > 0 ? 'rgba(240,165,0,0.18)' : 'rgba(0,255,65,0.12)'}`,
         marginBottom:  '1.5rem',
         flexWrap:      'wrap',
       }}
     >
-      <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.6rem', letterSpacing: '0.1em', color: '#444' }}>
+      <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.55rem', letterSpacing: '0.1em', color: '#1e2230' }}>
         UPDATE STATUS
       </span>
       {upToDate.length > 0 && (
-        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.6rem', color: '#00ff4166' }}>
+        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.55rem', color: 'rgba(0,255,65,0.5)' }}>
           ● {upToDate.length} up to date
         </span>
       )}
       {updates.length > 0 && (
-        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.6rem', color: '#f0a500' }}>
+        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.55rem', color: '#f0a500' }}>
           ● {updates.length} update{updates.length !== 1 ? 's' : ''} available
         </span>
       )}
-      <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.55rem', color: '#2a2a2a', marginLeft: 'auto' }}>
+      <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.5rem', color: '#131722', marginLeft: 'auto' }}>
         {results.filter(r => r.source === 'manual').length} manually managed
       </span>
     </motion.div>
@@ -374,15 +356,13 @@ function UpdateSummaryBar({ results }: { results: DatapackUpdateResult[] | null 
 }
 
 // ─── Section ──────────────────────────────────────────────────────────────────
-
 export default function DatapacksSection() {
-  const headerRef = useRef<HTMLDivElement>(null);
-  const isInView  = useInView(headerRef, { once: true, margin: '-80px' });
-  const [packs,         setPacks]         = useState<DatapackMeta[]>([]);
-  const [updateResults, setUpdateResults] = useState<DatapackUpdateResult[] | null>(null);
+  const headerRef                   = useRef<HTMLDivElement>(null);
+  const isInView                    = useInView(headerRef, { once: true, margin: '-80px' });
+  const [packs,          setPacks]  = useState<DatapackMeta[]>([]);
+  const [updateResults,  setUpdateResults]  = useState<DatapackUpdateResult[] | null>(null);
   const [loadingUpdates, setLoadingUpdates] = useState(false);
 
-  // Fetch full pack list (static + custom) on mount
   useEffect(() => {
     fetch('/api/datapacks')
       .then(r => r.json())
@@ -390,7 +370,6 @@ export default function DatapacksSection() {
       .catch(() => {});
   }, []);
 
-  // Fetch update status once section comes into view
   useEffect(() => {
     if (!isInView || loadingUpdates || updateResults) return;
     setLoadingUpdates(true);
@@ -401,7 +380,6 @@ export default function DatapacksSection() {
       .finally(() => setLoadingUpdates(false));
   }, [isInView, loadingUpdates, updateResults]);
 
-  // Map results by id for fast lookup
   const updateMap = updateResults
     ? Object.fromEntries(updateResults.map(r => [r.id, r]))
     : {};
@@ -412,40 +390,33 @@ export default function DatapacksSection() {
     <section
       id="datapacks"
       style={{
-        padding:      'clamp(4rem, 10vw, 8rem) clamp(1.5rem, 6vw, 5rem)',
-        borderBottom: '1px solid #1a1a1a',
-        background:   '#080808',
+        padding:      'clamp(5rem, 12vw, 9rem) clamp(1.5rem, 6vw, 5rem)',
+        borderBottom: '1px solid #1c2030',
+        background:   '#0d1018',
       }}
     >
       {/* Header */}
-      <div ref={headerRef} style={{ marginBottom: '3rem' }}>
+      <div ref={headerRef} style={{ marginBottom: 'clamp(2.5rem, 5vw, 4rem)' }}>
         <motion.p
-          initial={{ opacity: 0, x: -16 }}
+          initial={{ opacity: 0, x: -14 }}
           animate={isInView ? { opacity: 1, x: 0 } : {}}
           transition={{ duration: 0.5 }}
-          style={{
-            fontFamily:    "'JetBrains Mono', monospace",
-            fontSize:      '0.65rem',
-            letterSpacing: '0.3em',
-            color:         '#00ff41',
-            textTransform: 'uppercase',
-            marginBottom:  '0.75rem',
-          }}
+          className="section-label"
         >
           04 — DATAPACKS
         </motion.p>
 
         <motion.h2
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 0, y: 14 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 0.65, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
           style={{
             fontFamily:    "'Space Grotesk', sans-serif",
-            fontSize:      'clamp(2.5rem, 6vw, 5rem)',
+            fontSize:      'clamp(3rem, 7vw, 6rem)',
             fontWeight:    900,
             letterSpacing: '-0.03em',
-            color:         '#f0f0f0',
-            lineHeight:    1,
+            color:         '#dde1ec',
+            lineHeight:    0.95,
           }}
         >
           DATAPACKS
@@ -453,14 +424,14 @@ export default function DatapacksSection() {
             <span
               style={{
                 marginLeft:    '1rem',
-                fontSize:      'clamp(0.8rem, 2vw, 1.2rem)',
+                fontSize:      'clamp(0.75rem, 1.8vw, 1.1rem)',
                 fontFamily:    "'JetBrains Mono', monospace",
                 color:         '#f0a500',
-                background:    '#f0a50015',
-                border:        '1px solid #f0a50033',
-                padding:       '0.2rem 0.6rem',
+                background:    'rgba(240,165,0,0.08)',
+                border:        '1px solid rgba(240,165,0,0.25)',
+                padding:       '0.18rem 0.55rem',
                 verticalAlign: 'middle',
-                letterSpacing: '0.05em',
+                letterSpacing: '0.06em',
               }}
             >
               {updateCount} UPDATE{updateCount !== 1 ? 'S' : ''}
@@ -471,42 +442,44 @@ export default function DatapacksSection() {
         <motion.p
           initial={{ opacity: 0 }}
           animate={isInView ? { opacity: 1 } : {}}
-          transition={{ duration: 0.5, delay: 0.3 }}
+          transition={{ duration: 0.5, delay: 0.25 }}
           style={{
             marginTop:     '1rem',
             fontFamily:    "'JetBrains Mono', monospace",
-            fontSize:      '0.75rem',
-            color:         '#444',
-            letterSpacing: '0.05em',
-            maxWidth:      '400px',
+            fontSize:      '0.68rem',
+            color:         '#505770',
+            letterSpacing: '0.04em',
+            lineHeight:    1.6,
           }}
         >
-          {packs.length || ''} datapacks — combat, structure, social, and more.
+          {packs.length > 0 ? `${packs.length} datapacks` : ''}{packs.length > 0 ? ' — combat, structure, social, and more.' : ''}
         </motion.p>
       </div>
 
-      {/* Summary bar */}
+      {/* Loading indicator */}
       {loadingUpdates && (
         <div style={{
-          fontFamily:   "'JetBrains Mono', monospace",
-          fontSize:     '0.6rem',
-          color:        '#333',
-          letterSpacing: '0.2em',
-          marginBottom: '1.5rem',
+          fontFamily:    "'JetBrains Mono', monospace",
+          fontSize:      '0.55rem',
+          color:         '#1e2230',
+          letterSpacing: '0.22em',
+          marginBottom:  '1.5rem',
+          textTransform: 'uppercase',
         }}>
           CHECKING FOR UPDATES...
         </div>
       )}
+
       <UpdateSummaryBar results={updateResults} />
 
       {/* Grid */}
       <div
         style={{
           display:             'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(min(240px, 100%), 1fr))',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(min(230px, 100%), 1fr))',
           gap:                 '1px',
-          background:          '#1a1a1a',
-          border:              '1px solid #1a1a1a',
+          background:          '#1c2030',
+          border:              '1px solid #1c2030',
         }}
       >
         {packs.map((pack, i) => (

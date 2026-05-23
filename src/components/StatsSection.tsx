@@ -7,69 +7,91 @@ import { formatAge } from '@/lib/format';
 
 type StatKey = 'deaths' | 'mobKills' | 'playTimeHours' | 'distanceWalked' | 'itemsCrafted';
 
-interface Tab { id: StatKey; label: string; unit: string; format: (v: number) => string }
+interface Tab { id: StatKey; label: string; format: (v: number) => string }
 
 const TABS: Tab[] = [
-  { id: 'playTimeHours',  label: 'PLAYTIME', unit: 'hrs',  format: v => `${v}h`  },
-  { id: 'mobKills',       label: 'KILLS',    unit: 'mobs', format: v => v.toLocaleString() },
-  { id: 'deaths',         label: 'DEATHS',   unit: '',     format: v => v.toLocaleString() },
-  { id: 'itemsCrafted',   label: 'CRAFTED',  unit: 'items',format: v => v.toLocaleString() },
-  { id: 'distanceWalked', label: 'WALKED',   unit: 'km',   format: v => `${(v / 100000).toFixed(1)} km` },
+  { id: 'playTimeHours',  label: 'PLAYTIME', format: v => `${v}h`  },
+  { id: 'mobKills',       label: 'KILLS',    format: v => v.toLocaleString() },
+  { id: 'deaths',         label: 'DEATHS',   format: v => v.toLocaleString() },
+  { id: 'itemsCrafted',   label: 'CRAFTED',  format: v => v.toLocaleString() },
+  { id: 'distanceWalked', label: 'WALKED',   format: v => `${(v / 100000).toFixed(1)} km` },
 ];
 
-function LeaderboardRow({
-  player, rank, tab, maxVal,
-}: { player: PlayerStat; rank: number; tab: Tab; maxVal: number }) {
+function LeaderboardRow({ player, rank, tab, maxVal }: { player: PlayerStat; rank: number; tab: Tab; maxVal: number }) {
   const value    = player[tab.id] as number;
   const barWidth = maxVal > 0 ? (value / maxVal) * 100 : 0;
   const isGold   = rank === 1;
+  const isSilver = rank === 2;
+  const isBronze = rank === 3;
+
+  const rankColor = isGold ? '#f0a500' : isSilver ? '#9aa0b0' : isBronze ? '#c0785a' : '#1e2230';
+  const nameColor = isGold ? '#f0a500' : isSilver ? '#9aa0b0' : '#dde1ec';
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: -16 }}
+      initial={{ opacity: 0, x: -14 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.35, delay: (rank - 1) * 0.07 }}
+      transition={{ duration: 0.35, delay: Math.min((rank - 1) * 0.07, 0.4) }}
       style={{
-        display: 'flex', alignItems: 'center', gap: '0.75rem',
-        padding: '0.7rem 1rem',
-        background: isGold ? '#f0a50008' : '#0d0d0d',
-        border: `1px solid ${isGold ? '#f0a50033' : '#1a1a1a'}`,
-        position: 'relative', overflow: 'hidden',
+        display:    'flex',
+        alignItems: 'center',
+        gap:        '0.75rem',
+        padding:    '0.7rem 1rem',
+        background: isGold ? 'rgba(240,165,0,0.05)' : '#0d1018',
+        border:     `1px solid ${isGold ? 'rgba(240,165,0,0.18)' : '#1c2030'}`,
+        position:   'relative',
+        overflow:   'hidden',
       }}
     >
       {/* Bar fill */}
       <div style={{
-        position: 'absolute', left: 0, top: 0, bottom: 0,
-        width: `${barWidth}%`,
-        background: isGold ? 'rgba(240,165,0,0.04)' : 'rgba(0,255,65,0.03)',
-        transition: 'width 0.6s ease',
+        position:   'absolute',
+        left: 0, top: 0, bottom: 0,
+        width:      `${barWidth}%`,
+        background: isGold ? 'rgba(240,165,0,0.04)' : 'rgba(0,255,65,0.025)',
+        transition: 'width 0.7s ease',
         pointerEvents: 'none',
       }} />
 
       {/* Rank */}
       <span style={{
-        fontFamily: "'JetBrains Mono', monospace", fontSize: '0.55rem',
-        color: isGold ? '#f0a500' : '#333', letterSpacing: '0.05em',
-        width: '1.2rem', textAlign: 'center', flexShrink: 0, position: 'relative',
+        fontFamily:    "'JetBrains Mono', monospace",
+        fontSize:      '0.55rem',
+        color:         rankColor,
+        letterSpacing: '0.05em',
+        width:         '1.5rem',
+        textAlign:     'center',
+        flexShrink:    0,
+        position:      'relative',
+        fontWeight:    isGold ? 700 : 400,
       }}>
         {isGold ? '★' : `#${rank}`}
       </span>
 
       {/* Username */}
       <span style={{
-        fontFamily: "'Space Grotesk', sans-serif", fontSize: '0.85rem',
-        fontWeight: isGold ? 700 : 500, color: isGold ? '#f0a500' : '#ccc',
-        flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-        position: 'relative',
+        fontFamily:    "'Space Grotesk', sans-serif",
+        fontSize:      '0.88rem',
+        fontWeight:    isGold ? 700 : 500,
+        color:         nameColor,
+        flex:          1,
+        overflow:      'hidden',
+        textOverflow:  'ellipsis',
+        whiteSpace:    'nowrap',
+        position:      'relative',
       }}>
         {player.username}
       </span>
 
       {/* Value */}
       <span style={{
-        fontFamily: "'JetBrains Mono', monospace", fontSize: '0.75rem',
-        color: isGold ? '#f0a500' : '#555', position: 'relative',
-        fontWeight: isGold ? 700 : 400, letterSpacing: '0.02em',
+        fontFamily:    "'JetBrains Mono', monospace",
+        fontSize:      '0.72rem',
+        color:         isGold ? '#f0a500' : '#505770',
+        position:      'relative',
+        fontWeight:    isGold ? 600 : 400,
+        letterSpacing: '0.02em',
+        flexShrink:    0,
       }}>
         {tab.format(value)}
       </span>
@@ -78,8 +100,8 @@ function LeaderboardRow({
 }
 
 export default function StatsSection() {
-  const headerRef  = useRef<HTMLDivElement>(null);
-  const isInView   = useInView(headerRef, { once: true, margin: '-80px' });
+  const headerRef               = useRef<HTMLDivElement>(null);
+  const isInView                = useInView(headerRef, { once: true, margin: '-80px' });
   const [stats,    setStats]    = useState<StatsResponse | null>(null);
   const [loading,  setLoading]  = useState(false);
   const [activeTab,setActiveTab]= useState<StatKey>('playTimeHours');
@@ -98,33 +120,50 @@ export default function StatsSection() {
   const sorted = [...(stats?.players ?? [])].sort((a, b) => (b[tab.id] as number) - (a[tab.id] as number));
   const maxVal = sorted[0] ? (sorted[0][tab.id] as number) : 0;
 
-  const mono  = "'JetBrains Mono', monospace";
-  const sans  = "'Space Grotesk', sans-serif";
-  const green = '#00ff41';
-
   return (
-    <section id="stats" style={{ padding: 'clamp(4rem, 10vw, 8rem) clamp(1.5rem, 6vw, 5rem)', borderBottom: '1px solid #1a1a1a', background: '#080808' }}>
-      {/* Header */}
-      <div ref={headerRef} style={{ marginBottom: '2.5rem' }}>
+    <section
+      id="stats"
+      style={{
+        padding:      'clamp(5rem, 12vw, 9rem) clamp(1.5rem, 6vw, 5rem)',
+        borderBottom: '1px solid #1c2030',
+        background:   '#06080c',
+      }}
+    >
+      <div ref={headerRef} style={{ marginBottom: 'clamp(2.5rem, 5vw, 4rem)' }}>
         <motion.p
-          initial={{ opacity: 0, x: -16 }}
+          initial={{ opacity: 0, x: -14 }}
           animate={isInView ? { opacity: 1, x: 0 } : {}}
-          style={{ fontFamily: mono, fontSize: '0.65rem', letterSpacing: '0.3em', color: green, textTransform: 'uppercase', marginBottom: '0.75rem' }}
+          transition={{ duration: 0.5 }}
+          className="section-label"
         >
           05 — LEADERBOARD
         </motion.p>
         <motion.h2
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 0, y: 14 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ delay: 0.1 }}
-          style={{ fontFamily: sans, fontSize: 'clamp(2.5rem, 6vw, 5rem)', fontWeight: 900, letterSpacing: '-0.03em', color: '#f0f0f0', lineHeight: 1 }}
+          transition={{ duration: 0.65, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
+          style={{
+            fontFamily:    "'Space Grotesk', sans-serif",
+            fontSize:      'clamp(3rem, 7vw, 6rem)',
+            fontWeight:    900,
+            letterSpacing: '-0.03em',
+            color:         '#dde1ec',
+            lineHeight:    0.95,
+          }}
         >
           STATS
         </motion.h2>
       </div>
 
       {loading && (
-        <p style={{ fontFamily: mono, fontSize: '0.65rem', color: '#333', letterSpacing: '0.2em', marginBottom: '1.5rem' }}>
+        <p style={{
+          fontFamily:    "'JetBrains Mono', monospace",
+          fontSize:      '0.58rem',
+          color:         '#1e2230',
+          letterSpacing: '0.22em',
+          textTransform: 'uppercase',
+          marginBottom:  '1.5rem',
+        }}>
           LOADING STATS...
         </p>
       )}
@@ -134,14 +173,14 @@ export default function StatsSection() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
           {stats.source === 'live' && (
             <>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: green, boxShadow: `0 0 6px ${green}`, display: 'inline-block' }} />
-              <span style={{ fontFamily: mono, fontSize: '0.5rem', color: '#444', letterSpacing: '0.15em' }}>LIVE DATA</span>
+              <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#00ff41', boxShadow: '0 0 5px rgba(0,255,65,0.8)', display: 'inline-block' }} />
+              <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.5rem', color: '#505770', letterSpacing: '0.15em' }}>LIVE DATA</span>
             </>
           )}
           {stats.source === 'cached' && stats.cachedAt && (
             <>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#f0a500', display: 'inline-block' }} />
-              <span style={{ fontFamily: mono, fontSize: '0.5rem', color: '#444', letterSpacing: '0.15em' }}>
+              <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#f0a500', display: 'inline-block' }} />
+              <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.5rem', color: '#505770', letterSpacing: '0.15em' }}>
                 LAST UPDATED {formatAge(stats.cachedAt).toUpperCase()} — SERVER OFFLINE
               </span>
             </>
@@ -152,29 +191,57 @@ export default function StatsSection() {
       {/* Unavailable state */}
       {!loading && stats?.source === 'unavailable' && (
         <div style={{ maxWidth: '480px' }}>
-          <p style={{ fontFamily: mono, fontSize: '0.65rem', color: '#2a2a2a', letterSpacing: '0.1em', lineHeight: 1.8, margin: 0 }}>
+          <p style={{
+            fontFamily:    "'JetBrains Mono', monospace",
+            fontSize:      '0.62rem',
+            color:         '#1e2230',
+            letterSpacing: '0.12em',
+            lineHeight:    1.8,
+            margin:        0,
+          }}>
             LEADERBOARD COMING SOON
           </p>
-          <p style={{ fontFamily: sans, fontSize: '0.95rem', color: '#333', marginTop: '0.5rem', lineHeight: 1.6 }}>
+          <p style={{
+            fontFamily: "'Space Grotesk', sans-serif",
+            fontSize:   '0.95rem',
+            color:      '#505770',
+            marginTop:  '0.5rem',
+            lineHeight: 1.6,
+          }}>
             Stats tracking is being set up. Check back after the crew has been playing for a while.
           </p>
         </div>
       )}
 
-      {/* Tab switcher */}
+      {/* Tabs */}
       {sorted.length > 0 && (
-        <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid #1a1a1a', marginBottom: '1.5rem', overflowX: 'auto' }}>
+        <div style={{
+          display:       'flex',
+          gap:           0,
+          borderBottom:  '1px solid #1c2030',
+          marginBottom:  '1.25rem',
+          overflowX:     'auto',
+        }}>
           {TABS.map(t => (
             <button
               key={t.id}
               onClick={() => setActiveTab(t.id)}
               style={{
-                fontFamily: mono, fontSize: '0.55rem', letterSpacing: '0.2em', textTransform: 'uppercase',
-                padding: '0.5rem 0.9rem', background: 'none', border: 'none',
-                borderBottom: `2px solid ${activeTab === t.id ? green : 'transparent'}`,
-                color: activeTab === t.id ? green : '#333',
-                cursor: 'pointer', whiteSpace: 'nowrap', transition: 'color 0.2s, border-color 0.2s',
+                fontFamily:     "'JetBrains Mono', monospace",
+                fontSize:       '0.5rem',
+                letterSpacing:  '0.22em',
+                textTransform:  'uppercase',
+                padding:        '0.5rem 0.9rem',
+                background:     'none',
+                border:         'none',
+                borderBottom:   `2px solid ${activeTab === t.id ? '#00ff41' : 'transparent'}`,
+                color:          activeTab === t.id ? '#00ff41' : '#1e2230',
+                cursor:         'pointer',
+                whiteSpace:     'nowrap',
+                transition:     'color 0.2s, border-color 0.2s',
               }}
+              onMouseEnter={e => { if (activeTab !== t.id) e.currentTarget.style.color = '#505770'; }}
+              onMouseLeave={e => { if (activeTab !== t.id) e.currentTarget.style.color = '#1e2230'; }}
             >
               {t.label}
             </button>
@@ -184,9 +251,15 @@ export default function StatsSection() {
 
       {/* Leaderboard */}
       {sorted.length > 0 && (
-        <div style={{ maxWidth: '600px', display: 'flex', flexDirection: 'column', gap: '1px' }}>
+        <div style={{ maxWidth: '560px', display: 'flex', flexDirection: 'column', gap: '1px' }}>
           {sorted.map((player, i) => (
-            <LeaderboardRow key={player.username} player={player} rank={i + 1} tab={tab} maxVal={maxVal} />
+            <LeaderboardRow
+              key={player.username}
+              player={player}
+              rank={i + 1}
+              tab={tab}
+              maxVal={maxVal}
+            />
           ))}
         </div>
       )}
