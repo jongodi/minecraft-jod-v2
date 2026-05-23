@@ -9,8 +9,15 @@ interface Particle {
   size: number; color: string;
 }
 
-// Longer trail: green → white gradient
-const TRAIL_COLORS = ['#00ff41', '#00ff41', '#00cc33', '#39ff5a', '#88ffaa', '#ccffdd', '#ffffff'];
+function getAccentColor(): string {
+  if (typeof window === 'undefined') return '#00ff41';
+  return getComputedStyle(document.documentElement)
+    .getPropertyValue('--accent').trim() || '#00ff41';
+}
+
+function buildTrailColors(accent: string): string[] {
+  return [accent, accent, accent, accent, '#ffffff', '#ffffff', '#ffffff'];
+}
 
 export default function CustomCursor() {
   const dotRef    = useRef<HTMLDivElement>(null);
@@ -26,7 +33,6 @@ export default function CustomCursor() {
   const rafId     = useRef<number>(0);
 
   useEffect(() => {
-    // Touch devices have no cursor — skip the rAF loop entirely
     if ('ontouchstart' in window) return;
 
     const canvas = canvasRef.current;
@@ -42,11 +48,11 @@ export default function CustomCursor() {
     window.addEventListener('resize', resize);
 
     const spawnParticle = (x: number, y: number) => {
-      // Allow more particles for a longer, denser trail
       if (particles.current.length >= 90) return;
+      const trailColors = buildTrailColors(getAccentColor());
       const count = Math.random() < 0.5 ? 2 : 1;
       for (let i = 0; i < count; i++) {
-        const maxL = Math.floor(Math.random() * 22 + 24); // slightly longer life
+        const maxL = Math.floor(Math.random() * 22 + 24);
         particles.current.push({
           x:       x + (Math.random() - 0.5) * 4,
           y:       y + (Math.random() - 0.5) * 4,
@@ -55,7 +61,7 @@ export default function CustomCursor() {
           life:    maxL,
           maxLife: maxL,
           size:    Math.random() < 0.25 ? 3.5 : 2,
-          color:   TRAIL_COLORS[Math.floor(Math.random() * TRAIL_COLORS.length)],
+          color:   trailColors[Math.floor(Math.random() * trailColors.length)],
         });
       }
     };
@@ -84,11 +90,9 @@ export default function CustomCursor() {
     };
 
     const animate = () => {
-      // Smooth ring follow
       ringPos.current.x += (mousePos.current.x - ringPos.current.x) * 0.12;
       ringPos.current.y += (mousePos.current.y - ringPos.current.y) * 0.12;
 
-      // Dot (instant)
       if (dotRef.current) {
         const s = isClicking ? 12 : 8;
         dotRef.current.style.width  = `${s}px`;
@@ -97,7 +101,6 @@ export default function CustomCursor() {
           `translate(${mousePos.current.x - s / 2}px, ${mousePos.current.y - s / 2}px)`;
       }
 
-      // Ring
       if (ringRef.current) {
         const s = isClicking ? 24 : isHovering ? 52 : 36;
         ringRef.current.style.width  = `${s}px`;
@@ -106,14 +109,13 @@ export default function CustomCursor() {
           `translate(${ringPos.current.x - s / 2}px, ${ringPos.current.y - s / 2}px)`;
       }
 
-      // Particles
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       particles.current = particles.current.filter(p => p.life > 0);
 
       for (const p of particles.current) {
         p.x    += p.vx;
         p.y    += p.vy;
-        p.vy   += 0.02; // faint gravity
+        p.vy   += 0.02;
         p.life -= 1;
 
         const alpha = (p.life / p.maxLife) * 0.85;
@@ -144,14 +146,11 @@ export default function CustomCursor() {
       window.removeEventListener('mouseover', onMouseOver);
       cancelAnimationFrame(rafId.current);
     };
-  // Intentionally runs once on mount — the animate loop reads isHovering/isClicking
-  // via refs captured at setup time; re-running on state changes would restart rAF.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <>
-      {/* Particle canvas */}
       <canvas
         ref={canvasRef}
         className="custom-cursor"
@@ -164,42 +163,42 @@ export default function CustomCursor() {
         }}
       />
 
-      {/* Dot — instant follow, screen blend for "glow through" effect */}
+      {/* Dot */}
       <div
         ref={dotRef}
         className="custom-cursor"
         style={{
-          position:       'fixed',
+          position:     'fixed',
           top: 0, left: 0,
-          width:          8,
-          height:         8,
-          background:     '#00ff41',
-          borderRadius:   '50%',
-          pointerEvents:  'none',
-          zIndex:         9999,
-          mixBlendMode:   'screen',
-          willChange:     'transform',
-          transition:     'width 0.1s, height 0.1s',
-          boxShadow:      '0 0 10px rgba(0,255,65,0.9), 0 0 20px rgba(0,255,65,0.45)',
+          width:        8,
+          height:       8,
+          background:   'var(--accent)',
+          borderRadius: '50%',
+          pointerEvents:'none',
+          zIndex:       9999,
+          mixBlendMode: 'screen',
+          willChange:   'transform',
+          transition:   'width 0.1s, height 0.1s',
+          boxShadow:    'var(--cursor-glow)',
         }}
       />
 
-      {/* Ring — lagging follow */}
+      {/* Ring */}
       <div
         ref={ringRef}
         className="custom-cursor"
         style={{
-          position:      'fixed',
+          position:     'fixed',
           top: 0, left: 0,
-          width:          36,
-          height:         36,
-          border:         '1px solid #00ff41',
-          borderRadius:   '50%',
-          pointerEvents:  'none',
-          zIndex:         9998,
-          mixBlendMode:   'difference',
-          willChange:     'transform',
-          transition:     'width 0.2s ease, height 0.2s ease',
+          width:        36,
+          height:       36,
+          border:       '1px solid var(--accent)',
+          borderRadius: '50%',
+          pointerEvents:'none',
+          zIndex:       9998,
+          mixBlendMode: 'difference',
+          willChange:   'transform',
+          transition:   'width 0.2s ease, height 0.2s ease',
         }}
       />
     </>

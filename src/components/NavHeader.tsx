@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import ThemeSwitcher from '@/components/ThemeSwitcher';
 
 const NAV_LINKS = [
   { label: 'SERVER',    href: '/#server'    },
@@ -65,7 +66,7 @@ export default function NavHeader() {
             position:   'fixed',
             inset:      0,
             zIndex:     996,
-            background: 'rgba(6,8,12,0.5)',
+            background: 'rgba(var(--bg-rgb), 0.5)',
           }}
         />
       )}
@@ -81,10 +82,10 @@ export default function NavHeader() {
           display:        'flex',
           alignItems:     'center',
           padding:        '0 clamp(1rem, 4vw, 2rem)',
-          gap:            '2rem',
-          background:     scrolled || menuOpen ? 'rgba(6,8,12,0.96)' : 'rgba(6,8,12,0)',
+          gap:            '1.5rem',
+          background:     scrolled || menuOpen ? 'rgba(var(--bg-rgb), 0.96)' : 'rgba(var(--bg-rgb), 0)',
           backdropFilter: scrolled ? 'blur(16px) saturate(180%)' : 'none',
-          borderBottom:   scrolled ? '1px solid #1c2030' : '1px solid transparent',
+          borderBottom:   scrolled ? '1px solid var(--border)' : '1px solid transparent',
           transition:     'background 0.4s ease, backdrop-filter 0.4s ease, border-color 0.4s ease',
         }}
       >
@@ -92,10 +93,10 @@ export default function NavHeader() {
         <Link href="/" style={{ textDecoration: 'none', flexShrink: 0 }}>
           <span
             style={{
-              fontFamily:    "'Space Grotesk', sans-serif",
+              fontFamily:    'var(--font-display)',
               fontSize:      '1.05rem',
               fontWeight:    900,
-              color:         '#00ff41',
+              color:         'var(--accent)',
               letterSpacing: '-0.04em',
               lineHeight:    1,
             }}
@@ -116,21 +117,21 @@ export default function NavHeader() {
                 key={link.href}
                 href={link.href}
                 style={{
-                  fontFamily:     "'JetBrains Mono', monospace",
+                  fontFamily:     'var(--font-mono)',
                   fontSize:       '0.5rem',
                   letterSpacing:  '0.22em',
                   textTransform:  'uppercase',
-                  color:          active ? '#00ff41' : '#505770',
+                  color:          active ? 'var(--accent)' : 'var(--muted)',
                   textDecoration: 'none',
                   padding:        '0.35rem 0.65rem',
-                  borderBottom:   `1px solid ${active ? '#00ff41' : 'transparent'}`,
+                  borderBottom:   `1px solid ${active ? 'var(--accent)' : 'transparent'}`,
                   transition:     'color 0.2s ease, border-color 0.2s ease',
                 }}
                 onMouseEnter={e => {
-                  if (!active) e.currentTarget.style.color = '#dde1ec';
+                  if (!active) e.currentTarget.style.color = 'var(--text)';
                 }}
                 onMouseLeave={e => {
-                  if (!active) e.currentTarget.style.color = '#505770';
+                  if (!active) e.currentTarget.style.color = 'var(--muted)';
                 }}
               >
                 {link.label}
@@ -139,14 +140,19 @@ export default function NavHeader() {
           })}
         </nav>
 
+        {/* Theme switcher — desktop */}
+        <div className="nav-theme-switcher">
+          <ThemeSwitcher />
+        </div>
+
         {/* Server IP — desktop only */}
         <span
           className="nav-ip"
           style={{
-            fontFamily:    "'JetBrains Mono', monospace",
+            fontFamily:    'var(--font-mono)',
             fontSize:      '0.45rem',
             letterSpacing: '0.14em',
-            color:         '#1e2230',
+            color:         'var(--faint)',
             display:       'none',
             flexShrink:    0,
           }}
@@ -176,7 +182,7 @@ export default function NavHeader() {
                 display:         'block',
                 width:           '20px',
                 height:          '1px',
-                background:      menuOpen ? '#00ff41' : '#505770',
+                background:      menuOpen ? 'var(--accent)' : 'var(--muted)',
                 transformOrigin: 'center',
                 transform:       menuOpen
                   ? i === 0 ? 'translateY(6px) rotate(45deg)'
@@ -199,8 +205,8 @@ export default function NavHeader() {
           left:          0,
           right:         0,
           zIndex:        997,
-          background:    '#06080c',
-          borderBottom:  '1px solid #1c2030',
+          background:    'var(--bg)',
+          borderBottom:  '1px solid var(--border)',
           transform:     menuOpen ? 'translateY(0)' : 'translateY(-12px)',
           opacity:       menuOpen ? 1 : 0,
           transition:    'transform 0.35s cubic-bezier(0.16,1,0.3,1), opacity 0.25s ease',
@@ -219,23 +225,23 @@ export default function NavHeader() {
                 display:        'flex',
                 alignItems:     'center',
                 gap:            '1rem',
-                fontFamily:     "'Space Grotesk', sans-serif",
+                fontFamily:     'var(--font-display)',
                 fontSize:       '1.05rem',
                 fontWeight:     700,
                 letterSpacing:  '-0.01em',
                 textTransform:  'uppercase',
-                color:          active ? '#00ff41' : '#dde1ec',
+                color:          active ? 'var(--accent)' : 'var(--text)',
                 textDecoration: 'none',
                 padding:        '0.7rem clamp(1.25rem, 5vw, 2rem)',
-                borderLeft:     `2px solid ${active ? '#00ff41' : 'transparent'}`,
+                borderLeft:     `2px solid ${active ? 'var(--accent)' : 'transparent'}`,
                 transition:     'color 0.2s, border-color 0.2s',
               }}
             >
               <span style={{
-                fontFamily:    "'JetBrains Mono', monospace",
+                fontFamily:    'var(--font-mono)',
                 fontSize:      '0.5rem',
                 letterSpacing: '0.1em',
-                color:         active ? '#00ff41' : '#2a3045',
+                color:         active ? 'var(--accent)' : 'var(--border-strong)',
                 fontWeight:    400,
                 minWidth:      '1.4rem',
               }}>
@@ -246,15 +252,24 @@ export default function NavHeader() {
           );
         })}
 
+        {/* Theme switcher in mobile menu */}
+        <div style={{
+          margin:     '0.75rem clamp(1.25rem, 5vw, 2rem) 0',
+          paddingTop: '0.75rem',
+          borderTop:  '1px solid var(--border)',
+        }}>
+          <ThemeSwitcher />
+        </div>
+
         {/* Server IP at bottom */}
         <div style={{
           margin:        '0.5rem clamp(1.25rem, 5vw, 2rem) 0',
           paddingTop:    '0.75rem',
-          borderTop:     '1px solid #131722',
-          fontFamily:    "'JetBrains Mono', monospace",
+          borderTop:     '1px solid var(--border)',
+          fontFamily:    'var(--font-mono)',
           fontSize:      '0.5rem',
           letterSpacing: '0.18em',
-          color:         '#2a3045',
+          color:         'var(--border-strong)',
           textTransform: 'uppercase',
         }}>
           play.jodcraft.world
@@ -263,14 +278,16 @@ export default function NavHeader() {
 
       <style>{`
         @media (min-width: 640px) {
-          .nav-desktop   { display: flex !important; }
-          .nav-ip        { display: block !important; }
-          .nav-hamburger { display: none !important; }
-          .nav-mobile-menu { display: none !important; }
+          .nav-desktop        { display: flex !important; }
+          .nav-ip             { display: block !important; }
+          .nav-hamburger      { display: none !important; }
+          .nav-mobile-menu    { display: none !important; }
+          .nav-theme-switcher { display: flex !important; }
         }
         @media (max-width: 639px) {
-          .nav-desktop   { display: none !important; }
-          .nav-hamburger { display: flex !important; }
+          .nav-desktop        { display: none !important; }
+          .nav-hamburger      { display: flex !important; }
+          .nav-theme-switcher { display: none !important; }
         }
       `}</style>
     </>

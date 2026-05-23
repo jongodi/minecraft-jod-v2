@@ -19,7 +19,7 @@ const FOOTER_LINKS = [
 
 export default function Home() {
   return (
-    <main style={{ background: '#06080c', minHeight: '100vh' }}>
+    <main style={{ background: 'var(--bg)', minHeight: '100vh' }}>
       <HeroSection />
       <TickerStrip />
       <ServerStatus />
@@ -31,8 +31,8 @@ export default function Home() {
 
       <footer
         style={{
-          background:     '#06080c',
-          borderTop:      '1px solid #1c2030',
+          background:     'var(--bg)',
+          borderTop:      '1px solid var(--border)',
           padding:        '1.25rem clamp(1.5rem, 6vw, 5rem)',
           display:        'flex',
           alignItems:     'center',
@@ -44,11 +44,11 @@ export default function Home() {
         {/* Brand mark */}
         <span
           style={{
-            fontFamily:    "'Space Grotesk', sans-serif",
+            fontFamily:    'var(--font-display)',
             fontSize:      '0.95rem',
             fontWeight:    900,
             letterSpacing: '-0.04em',
-            color:         '#00ff41',
+            color:         'var(--accent)',
             lineHeight:    1,
             flexShrink:    0,
           }}
@@ -72,10 +72,10 @@ export default function Home() {
         {/* Attribution */}
         <span
           style={{
-            fontFamily:    "'JetBrains Mono', monospace",
+            fontFamily:    'var(--font-mono)',
             fontSize:      '0.42rem',
             letterSpacing: '0.18em',
-            color:         '#1e2230',
+            color:         'var(--faint)',
             textTransform: 'uppercase',
             flexShrink:    0,
           }}

@@ -21,7 +21,6 @@ export default function JoinSection() {
   const imgRef      = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
-    // Handle cached images: onLoad won't fire if already complete
     if (imgRef.current?.complete) setImgLoaded(true);
   }, []);
 
@@ -92,19 +91,19 @@ export default function JoinSection() {
   return (
     <section
       style={{
-        minHeight:  '100vh',
-        display:    'flex',
+        minHeight:     '100vh',
+        display:       'flex',
         flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding:    'clamp(5rem, 12vw, 9rem) clamp(1.5rem, 6vw, 5rem)',
-        background: '#040508',
-        position:   'relative',
-        overflow:   'hidden',
-        textAlign:  'center',
+        alignItems:    'center',
+        justifyContent:'center',
+        padding:       'clamp(5rem, 12vw, 9rem) clamp(1.5rem, 6vw, 5rem)',
+        background:    'var(--bg)',
+        position:      'relative',
+        overflow:      'hidden',
+        textAlign:     'center',
       }}
     >
-      {/* Full-bleed night sky background */}
+      {/* Full-bleed background */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         ref={imgRef}
@@ -125,11 +124,11 @@ export default function JoinSection() {
         }}
       />
 
-      {/* Radial vignette — darker at edges */}
+      {/* Radial vignette */}
       <div style={{
         position:      'absolute',
         inset:         0,
-        background:    'radial-gradient(ellipse 80% 70% at 50% 50%, rgba(4,5,8,0.45) 0%, rgba(4,5,8,0.88) 100%)',
+        background:    'radial-gradient(ellipse 80% 70% at 50% 50%, rgba(var(--bg-rgb), 0.45) 0%, rgba(var(--bg-rgb), 0.88) 100%)',
         pointerEvents: 'none',
         zIndex:        1,
       }} />
@@ -139,7 +138,7 @@ export default function JoinSection() {
         position:      'absolute',
         top:           0, left: 0, right: 0,
         height:        '25%',
-        background:    'linear-gradient(to bottom, #040508 0%, transparent 100%)',
+        background:    'linear-gradient(to bottom, var(--bg) 0%, transparent 100%)',
         pointerEvents: 'none',
         zIndex:        1,
       }} />
@@ -147,7 +146,7 @@ export default function JoinSection() {
         position:      'absolute',
         bottom:        0, left: 0, right: 0,
         height:        '25%',
-        background:    'linear-gradient(to top, #040508 0%, transparent 100%)',
+        background:    'linear-gradient(to top, var(--bg) 0%, transparent 100%)',
         pointerEvents: 'none',
         zIndex:        1,
       }} />
@@ -176,24 +175,24 @@ export default function JoinSection() {
           onClick={handleCopy}
           data-cursor="hover"
           style={{
-            background:  'transparent',
-            border:      'none',
-            padding:     0,
-            display:     'block',
+            background: 'transparent',
+            border:     'none',
+            padding:    0,
+            display:    'block',
           }}
         >
           <motion.h2
             animate={{
-              color:      copied ? '#00ff41' : '#ffffff',
+              color:      copied ? 'var(--accent)' : '#ffffff',
               textShadow: copied
-                ? '0 0 80px rgba(0,255,65,0.5), 0 0 160px rgba(0,255,65,0.2)'
+                ? `0 0 80px rgba(var(--accent-rgb), 0.5), 0 0 160px rgba(var(--accent-rgb), 0.2)`
                 : '0 4px 60px rgba(0,0,0,0.8), 0 0 80px rgba(255,255,255,0.04)',
             }}
             transition={{ duration: 0.4 }}
             className={glitching ? 'glitch' : ''}
             data-text={SERVER_IP}
             style={{
-              fontFamily:    "'Space Grotesk', sans-serif",
+              fontFamily:    'var(--font-display)',
               fontSize:      'clamp(2rem, 9vw, 10rem)',
               fontWeight:    900,
               letterSpacing: '-0.04em',
@@ -214,9 +213,9 @@ export default function JoinSection() {
         transition={{ duration: 0.5, delay: 0.3 }}
         style={{
           marginTop:     '1.75rem',
-          fontFamily:    "'JetBrains Mono', monospace",
+          fontFamily:    'var(--font-mono)',
           fontSize:      '0.65rem',
-          color:         '#505770',
+          color:         'var(--muted)',
           letterSpacing: '0.22em',
           textTransform: 'uppercase',
           position:      'relative',
@@ -246,13 +245,13 @@ export default function JoinSection() {
             data-cursor="hover"
             className="btn-fill"
             style={{
-              fontFamily:    "'JetBrains Mono', monospace",
+              fontFamily:    'var(--font-mono)',
               fontSize:      '0.72rem',
               letterSpacing: '0.28em',
-              color:         copied ? '#040508' : '#00ff41',
-              border:        '1px solid #00ff41',
+              color:         copied ? 'var(--bg)' : 'var(--accent)',
+              border:        '1px solid var(--accent)',
               padding:       '0.9rem 2.5rem',
-              background:    copied ? '#00ff41' : 'transparent',
+              background:    copied ? 'var(--accent)' : 'transparent',
               transition:    'background 0.3s ease, color 0.3s ease',
               minWidth:      '180px',
             }}
@@ -270,9 +269,9 @@ export default function JoinSection() {
         transition={{ duration: 0.5, delay: 0.6 }}
         style={{
           marginTop:     '2.25rem',
-          fontFamily:    "'JetBrains Mono', monospace",
+          fontFamily:    'var(--font-mono)',
           fontSize:      '0.5rem',
-          color:         '#1e2230',
+          color:         'var(--faint)',
           letterSpacing: '0.22em',
           textTransform: 'uppercase',
           position:      'relative',

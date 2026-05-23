@@ -30,7 +30,6 @@ export default function HeroSection() {
   const imgRef      = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
-    // Handle cached images: onLoad won't fire if already complete
     if (imgRef.current?.complete) setImgLoaded(true);
   }, []);
 
@@ -95,7 +94,7 @@ export default function HeroSection() {
         position:   'relative',
         height:     '100vh',
         overflow:   'hidden',
-        background: '#06080c',
+        background: 'var(--bg)',
       }}
     >
       {/* Full-bleed background screenshot */}
@@ -121,11 +120,11 @@ export default function HeroSection() {
         }}
       />
 
-      {/* Bottom gradient — dark enough for text, light enough to see night sky */}
+      {/* Bottom gradient */}
       <div style={{
         position:      'absolute',
         inset:         0,
-        background:    'linear-gradient(to top, #06080c 0%, rgba(6,8,12,0.82) 20%, rgba(6,8,12,0.28) 50%, rgba(6,8,12,0.08) 100%)',
+        background:    'linear-gradient(to top, var(--bg) 0%, rgba(var(--bg-rgb), 0.82) 20%, rgba(var(--bg-rgb), 0.28) 50%, rgba(var(--bg-rgb), 0.08) 100%)',
         pointerEvents: 'none',
         zIndex:        1,
       }} />
@@ -134,7 +133,7 @@ export default function HeroSection() {
       <div style={{
         position:      'absolute',
         inset:         0,
-        background:    'linear-gradient(to right, rgba(6,8,12,0.72) 0%, rgba(6,8,12,0.18) 50%, transparent 100%)',
+        background:    'linear-gradient(to right, rgba(var(--bg-rgb), 0.72) 0%, rgba(var(--bg-rgb), 0.18) 50%, transparent 100%)',
         pointerEvents: 'none',
         zIndex:        1,
       }} />
@@ -147,7 +146,7 @@ export default function HeroSection() {
         position:      'absolute',
         bottom:        0, left: 0, right: 0,
         height:        '28vh',
-        background:    'linear-gradient(to top, #06080c 0%, transparent 100%)',
+        background:    'linear-gradient(to top, var(--bg) 0%, transparent 100%)',
         pointerEvents: 'none',
         zIndex:        2,
       }} />
@@ -170,10 +169,10 @@ export default function HeroSection() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
           style={{
-            fontFamily:    "'JetBrains Mono', monospace",
+            fontFamily:    'var(--font-mono)',
             fontSize:      '0.62rem',
             letterSpacing: '0.38em',
-            color:         '#00ff41',
+            color:         'var(--accent)',
             textTransform: 'uppercase',
             marginBottom:  '1.25rem',
           }}
@@ -196,7 +195,7 @@ export default function HeroSection() {
                 }}
                 style={{
                   display:       'inline-block',
-                  fontFamily:    "'Space Grotesk', sans-serif",
+                  fontFamily:    'var(--font-display)',
                   fontSize:      'clamp(7rem, 20vw, 20rem)',
                   fontWeight:    900,
                   lineHeight:    0.85,
@@ -224,10 +223,10 @@ export default function HeroSection() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.9 }}
             style={{
-              fontFamily:    "'JetBrains Mono', monospace",
+              fontFamily:    'var(--font-mono)',
               fontSize:      'clamp(0.55rem, 1.15vw, 0.68rem)',
               letterSpacing: '0.2em',
-              color:         'rgba(221,225,236,0.4)',
+              color:         'rgba(var(--text-rgb), 0.4)',
               textTransform: 'uppercase',
               lineHeight:    1.9,
             }}
@@ -256,18 +255,18 @@ export default function HeroSection() {
                   display:        'flex',
                   alignItems:     'center',
                   gap:            '0.75rem',
-                  background:     'rgba(6,8,12,0.65)',
-                  border:         `1px solid ${copied ? '#00ff41' : 'rgba(255,255,255,0.2)'}`,
+                  background:     'rgba(var(--bg-rgb), 0.65)',
+                  border:         `1px solid ${copied ? 'var(--accent)' : 'rgba(255,255,255,0.2)'}`,
                   backdropFilter: 'blur(12px)',
                   WebkitBackdropFilter: 'blur(12px)',
                   padding:        '0.85rem 1.5rem',
-                  fontFamily:     "'JetBrains Mono', monospace",
+                  fontFamily:     'var(--font-mono)',
                   fontSize:       'clamp(0.72rem, 1.6vw, 0.9rem)',
-                  color:          copied ? '#00ff41' : '#dde1ec',
+                  color:          copied ? 'var(--accent)' : 'var(--text)',
                   letterSpacing:  '0.1em',
                   transition:     'border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease',
                   boxShadow:      copied
-                    ? '0 0 28px rgba(0,255,65,0.25), inset 0 0 20px rgba(0,255,65,0.04)'
+                    ? `0 0 28px rgba(var(--accent-rgb), 0.25), inset 0 0 20px rgba(var(--accent-rgb), 0.04)`
                     : '0 0 0 transparent',
                   minWidth:       '280px',
                   justifyContent: 'space-between',
@@ -275,7 +274,7 @@ export default function HeroSection() {
                 onMouseEnter={e => {
                   if (!copied) {
                     e.currentTarget.style.borderColor = 'rgba(255,255,255,0.45)';
-                    e.currentTarget.style.boxShadow   = '0 0 20px rgba(0,255,65,0.1)';
+                    e.currentTarget.style.boxShadow   = `0 0 20px rgba(var(--accent-rgb), 0.1)`;
                   }
                 }}
                 onMouseLeave={e => {
@@ -285,18 +284,18 @@ export default function HeroSection() {
                   }
                 }}
               >
-                <span style={{ color: '#00ff41', marginRight: '0.2rem', opacity: 0.8 }}>$</span>
+                <span style={{ color: 'var(--accent)', marginRight: '0.2rem', opacity: 0.8 }}>$</span>
                 <span style={{ flex: 1, textAlign: 'left', fontVariantNumeric: 'tabular-nums', letterSpacing: '0.12em' }}>
                   {copied ? 'COPIED ✓' : ipDisplay}
                 </span>
-                <span className="cursor-blink" style={{ color: '#00ff41', fontSize: '1em', opacity: copied ? 0 : 0.7 }}>
+                <span className="cursor-blink" style={{ color: 'var(--accent)', fontSize: '1em', opacity: copied ? 0 : 0.7 }}>
                   █
                 </span>
               </button>
 
               <p style={{
                 marginTop:     '0.5rem',
-                fontFamily:    "'JetBrains Mono', monospace",
+                fontFamily:    'var(--font-mono)',
                 fontSize:      '0.48rem',
                 letterSpacing: '0.15em',
                 color:         'rgba(255,255,255,0.18)',
@@ -326,7 +325,7 @@ export default function HeroSection() {
         }}
       >
         <span style={{
-          fontFamily:    "'JetBrains Mono', monospace",
+          fontFamily:    'var(--font-mono)',
           fontSize:      '0.48rem',
           letterSpacing: '0.32em',
           color:         'rgba(255,255,255,0.22)',

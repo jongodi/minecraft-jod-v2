@@ -45,11 +45,11 @@ function TickerRow({
               style={{
                 display:       'inline-flex',
                 alignItems:    'center',
-                fontFamily:    "'JetBrains Mono', monospace",
+                fontFamily:    'var(--font-mono)',
                 fontSize:      '0.56rem',
                 letterSpacing: '0.28em',
                 textTransform: 'uppercase',
-                color:         isIP ? '#00ff41' : '#3a4260',
+                color:         isIP ? 'var(--accent)' : 'var(--muted)',
                 fontWeight:    isIP ? 600 : 400,
                 whiteSpace:    'nowrap',
               }}
@@ -58,7 +58,7 @@ function TickerRow({
               <span style={{
                 display:       'inline-block',
                 margin:        '0 1.4rem',
-                color:         isIP ? 'rgba(0,255,65,0.35)' : '#252a3a',
+                color:         isIP ? `rgba(var(--accent-rgb), 0.35)` : 'var(--border)',
                 fontSize:      '0.38rem',
                 verticalAlign: 'middle',
               }}>
@@ -76,9 +76,9 @@ export default function TickerStrip() {
   return (
     <div
       style={{
-        borderTop:    '1px solid #181e2c',
-        borderBottom: '1px solid #181e2c',
-        background:   '#080b12',
+        borderTop:    '1px solid var(--border)',
+        borderBottom: '1px solid var(--border)',
+        background:   'var(--bg-elevated)',
         overflow:     'hidden',
         position:     'relative',
         zIndex:       10,
@@ -89,7 +89,7 @@ export default function TickerStrip() {
         position:      'absolute',
         left:          0, top: 0, bottom: 0,
         width:         '80px',
-        background:    'linear-gradient(to right, #06080c, transparent)',
+        background:    'linear-gradient(to right, var(--bg), transparent)',
         zIndex:        2,
         pointerEvents: 'none',
       }} />
@@ -99,7 +99,7 @@ export default function TickerStrip() {
         position:      'absolute',
         right:         0, top: 0, bottom: 0,
         width:         '80px',
-        background:    'linear-gradient(to left, #06080c, transparent)',
+        background:    'linear-gradient(to left, var(--bg), transparent)',
         zIndex:        2,
         pointerEvents: 'none',
       }} />
@@ -112,7 +112,7 @@ export default function TickerStrip() {
       {/* Thin divider between rows */}
       <div style={{
         height:     '1px',
-        background: 'linear-gradient(to right, transparent, #1c2030 20%, #1c2030 80%, transparent)',
+        background: `linear-gradient(to right, transparent, var(--border) 20%, var(--border) 80%, transparent)`,
         margin:     '0 2rem',
       }} />
 
