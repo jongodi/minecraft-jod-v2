@@ -6,6 +6,7 @@ import MapSection from '@/components/MapSection';
 import DatapacksSection from '@/components/DatapacksSection';
 import StatsSection from '@/components/StatsSection';
 import JoinSection from '@/components/JoinSection';
+import ThemedPage from '@/components/ThemedPage';
 import Link from 'next/link';
 
 const FOOTER_LINKS = [
@@ -17,7 +18,7 @@ const FOOTER_LINKS = [
   { label: 'RP Editor', href: '/rp-editor'  },
 ];
 
-export default function Home() {
+function MatrixContent() {
   return (
     <main style={{ background: 'var(--bg)', minHeight: '100vh' }}>
       <HeroSection />
@@ -41,7 +42,6 @@ export default function Home() {
           flexWrap:       'wrap',
         }}
       >
-        {/* Brand mark */}
         <span
           style={{
             fontFamily:    'var(--font-display)',
@@ -55,21 +55,13 @@ export default function Home() {
         >
           JOD
         </span>
-
-        {/* Nav links */}
         <nav style={{ display: 'flex', gap: '0.1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
           {FOOTER_LINKS.map(link => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="footer-link"
-            >
+            <Link key={link.href} href={link.href} className="footer-link">
               {link.label}
             </Link>
           ))}
         </nav>
-
-        {/* Attribution */}
         <span
           style={{
             fontFamily:    'var(--font-mono)',
@@ -83,7 +75,10 @@ export default function Home() {
           PRIVATE · SINCE 2024
         </span>
       </footer>
-
     </main>
   );
+}
+
+export default function Home() {
+  return <ThemedPage matrixContent={<MatrixContent />} />;
 }

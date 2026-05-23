@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import ThemeSwitcher from '@/components/ThemeSwitcher';
+import { useTheme } from '@/lib/theme';
 
 const NAV_LINKS = [
   { label: 'SERVER',    href: '/#server'    },
@@ -16,11 +17,12 @@ const NAV_LINKS = [
 
 export default function NavHeader() {
   const pathname             = usePathname();
+  const { theme }            = useTheme();
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeId, setActiveId] = useState('');
 
-  const hidden = pathname.startsWith('/rp-editor') || pathname.startsWith('/admin');
+  const hidden = pathname.startsWith('/rp-editor') || pathname.startsWith('/admin') || theme === 'western';
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
