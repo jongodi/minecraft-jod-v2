@@ -84,21 +84,6 @@ export default function Home() {
         </span>
       </footer>
 
-      <style>{`
-        .footer-link {
-          font-family: 'JetBrains Mono', monospace;
-          font-size: 0.46rem;
-          letter-spacing: 0.22em;
-          text-transform: uppercase;
-          color: #2a3045;
-          text-decoration: none;
-          transition: color 0.2s;
-          padding: 0.35rem 0.55rem;
-        }
-        .footer-link:hover {
-          color: #00ff41;
-        }
-      `}</style>
     </main>
   );
 }

@@ -210,17 +210,21 @@ export default function MapSection() {
         viewport={{ once: true }}
         transition={{ duration: 0.8, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
         style={{
-          position:   'relative',
-          border:     '1px solid #1c2030',
-          overflow:   'hidden',
-          background: '#040d18',
-          boxShadow:  '0 4px 40px rgba(0,0,0,0.6)',
+          position:    'relative',
+          border:      '1px solid #1c2030',
+          overflow:    'hidden',
+          background:  '#040d18',
+          boxShadow:   '0 4px 40px rgba(0,0,0,0.6)',
+          aspectRatio: '1000 / 650',
+          maxHeight:   'calc(100vh - 16rem)',
+          margin:      '0 auto',
+          width:       '100%',
         }}
       >
         <svg
           viewBox="0 0 1000 650"
           xmlns="http://www.w3.org/2000/svg"
-          style={{ width: '100%', display: 'block', fontFamily: "'JetBrains Mono', monospace" }}
+          style={{ width: '100%', height: '100%', display: 'block', fontFamily: "'JetBrains Mono', monospace" }}
         >
           <defs>
             <radialGradient id="vignette" cx="50%" cy="50%" r="65%">

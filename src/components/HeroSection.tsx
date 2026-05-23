@@ -102,9 +102,9 @@ export default function HeroSection() {
         style={{
           position:       'absolute',
           top:            '-6%',
+          bottom:         '-6%',
           left:           '-5%',
-          width:          '110%',
-          height:         '112%',
+          right:          '-5%',
           objectFit:      'cover',
           objectPosition: 'center 40%',
           opacity:        imgLoaded ? 0.8 : 0,
