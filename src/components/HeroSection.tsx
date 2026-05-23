@@ -107,17 +107,17 @@ export default function HeroSection() {
         aria-hidden="true"
         onLoad={() => setImgLoaded(true)}
         style={{
-          position:       'absolute',
-          top:            '-6%',
-          left:           '-5%',
-          width:          '110%',
-          height:         '112%',
-          objectFit:      'cover',
-          objectPosition: 'center 40%',
-          opacity:        imgLoaded ? 0.8 : 0,
-          transform:      `translate(${mouse.x * -8}px, ${mouse.y * -8}px)`,
-          transition:     imgLoaded ? 'opacity 1.2s ease' : 'none',
-          pointerEvents:  'none',
+          position:        'absolute',
+          inset:           0,
+          width:           '100%',
+          height:          '100%',
+          objectFit:       'cover',
+          objectPosition:  'center 40%',
+          opacity:         imgLoaded ? 0.8 : 0,
+          transform:       `scale(1.12) translate(${mouse.x * -7}px, ${mouse.y * -5}px)`,
+          transformOrigin: 'center center',
+          transition:      imgLoaded ? 'opacity 1.2s ease' : 'none',
+          pointerEvents:   'none',
         }}
       />
 
