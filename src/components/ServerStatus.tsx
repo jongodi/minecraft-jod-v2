@@ -42,14 +42,14 @@ function CrewCard({ name, isOnline, index }: { name: string; isOnline: boolean; 
           alignItems:    'center',
           gap:           '0.45rem',
           padding:       '0.85rem 0.6rem 0.75rem',
-          background:    isOnline ? 'rgba(0,255,65,0.04)' : '#090b10',
+          background:    isOnline ? `rgba(var(--accent-rgb), 0.04)` : 'var(--bg-card)',
           border:        `1px solid ${
             isOnline
-              ? hovered ? 'rgba(0,255,65,0.55)' : 'rgba(0,255,65,0.15)'
-              : hovered ? '#2a3045' : '#131722'
+              ? hovered ? `rgba(var(--accent-rgb), 0.55)` : `rgba(var(--accent-rgb), 0.15)`
+              : hovered ? 'var(--border-strong)' : 'var(--border)'
           }`,
           boxShadow:     isOnline && hovered
-            ? '0 8px 28px rgba(0,0,0,0.6), 0 0 16px rgba(0,255,65,0.12)'
+            ? `0 8px 28px rgba(0,0,0,0.6), 0 0 16px rgba(var(--accent-rgb), 0.12)`
             : 'none',
           transform:     hovered ? 'translateY(-3px)' : 'none',
           transition:    'all 0.22s ease',
@@ -66,8 +66,8 @@ function CrewCard({ name, isOnline, index }: { name: string; isOnline: boolean; 
             width:        5,
             height:       5,
             borderRadius: '50%',
-            background:   '#00ff41',
-            boxShadow:    '0 0 6px rgba(0,255,65,0.9)',
+            background:   'var(--accent)',
+            boxShadow:    `0 0 6px rgba(var(--accent-rgb), 0.9)`,
           }} />
         )}
 
@@ -88,7 +88,7 @@ function CrewCard({ name, isOnline, index }: { name: string; isOnline: boolean; 
               transform:      hovered ? 'scale(1.08) translateY(-2px)' : 'scale(1)',
               transition:     'transform 0.28s ease',
               filter:         isOnline && hovered
-                ? 'drop-shadow(0 3px 8px rgba(0,255,65,0.25))'
+                ? `drop-shadow(0 3px 8px rgba(var(--accent-rgb), 0.25))`
                 : !isOnline
                 ? 'grayscale(0.5) brightness(0.6)'
                 : 'none',
@@ -98,15 +98,15 @@ function CrewCard({ name, isOnline, index }: { name: string; isOnline: boolean; 
           <div style={{
             width:          44,
             height:         44,
-            background:     '#131722',
-            border:         '1px solid #1c2030',
+            background:     'var(--bg-card)',
+            border:         '1px solid var(--border)',
             display:        'flex',
             alignItems:     'center',
             justifyContent: 'center',
-            fontFamily:     "'Space Grotesk', sans-serif",
+            fontFamily:     'var(--font-display)',
             fontSize:       '1.1rem',
             fontWeight:     900,
-            color:          isOnline ? '#00ff41' : '#1e2230',
+            color:          isOnline ? 'var(--accent)' : 'var(--faint)',
           }}>
             {name.charAt(0).toUpperCase()}
           </div>
@@ -114,13 +114,13 @@ function CrewCard({ name, isOnline, index }: { name: string; isOnline: boolean; 
 
         {/* Name */}
         <p style={{
-          fontFamily:    "'JetBrains Mono', monospace",
+          fontFamily:    'var(--font-mono)',
           fontSize:      '0.44rem',
           fontWeight:    600,
           letterSpacing: '0.06em',
           color:         isOnline
-            ? hovered ? '#00ff41' : 'rgba(0,255,65,0.65)'
-            : hovered ? '#505770' : '#1e2230',
+            ? hovered ? 'var(--accent)' : `rgba(var(--accent-rgb), 0.65)`
+            : hovered ? 'var(--muted)' : 'var(--faint)',
           textTransform: 'uppercase',
           textAlign:     'center',
           wordBreak:     'break-all',
@@ -180,7 +180,7 @@ export default function ServerStatus() {
         padding:    'clamp(5rem, 12vw, 9rem) clamp(1.5rem, 6vw, 5rem)',
         position:   'relative',
         overflow:   'hidden',
-        background: '#0d1018',
+        background: 'var(--bg-elevated)',
       }}
     >
       {/* Online ambient glow — left edge */}
@@ -191,7 +191,7 @@ export default function ServerStatus() {
           left:          '-5%',
           width:         '50%',
           height:        '100%',
-          background:    'radial-gradient(ellipse at 0% 50%, rgba(0,255,65,0.06) 0%, transparent 60%)',
+          background:    `radial-gradient(ellipse at 0% 50%, rgba(var(--accent-rgb), 0.06) 0%, transparent 60%)`,
           pointerEvents: 'none',
         }} />
       )}
@@ -221,16 +221,16 @@ export default function ServerStatus() {
           >
             {isOnline && !loading && (
               <>
-                <span className="status-ring" style={{ position: 'absolute', inset: -1, borderRadius: '50%', background: '#00ff41' }} />
-                <span className="status-ring status-ring-delay" style={{ position: 'absolute', inset: -1, borderRadius: '50%', background: '#00ff41' }} />
+                <span className="status-ring" style={{ position: 'absolute', inset: -1, borderRadius: '50%', background: 'var(--accent)' }} />
+                <span className="status-ring status-ring-delay" style={{ position: 'absolute', inset: -1, borderRadius: '50%', background: 'var(--accent)' }} />
               </>
             )}
             <span style={{
               position:     'absolute',
               inset:        0,
               borderRadius: '50%',
-              background:   loading ? '#1e2230' : isOnline ? '#00ff41' : '#ff3355',
-              boxShadow:    isOnline && !loading ? '0 0 12px rgba(0,255,65,0.7)' : 'none',
+              background:   loading ? 'var(--faint)' : isOnline ? 'var(--accent)' : 'var(--status-offline)',
+              boxShadow:    isOnline && !loading ? `0 0 12px rgba(var(--accent-rgb), 0.7)` : 'none',
               transition:   'background 0.5s ease, box-shadow 0.5s ease',
               zIndex:       1,
             }} />
@@ -244,13 +244,13 @@ export default function ServerStatus() {
             transition={{ duration: 0.65, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
           >
             <h2 style={{
-              fontFamily:    "'Space Grotesk', sans-serif",
+              fontFamily:    'var(--font-display)',
               fontSize:      'clamp(4rem, 11vw, 11rem)',
               fontWeight:    900,
               letterSpacing: '-0.04em',
               lineHeight:    0.88,
-              color:         loading ? '#1e2230' : isOnline ? '#00ff41' : '#ff3355',
-              textShadow:    isOnline && !loading ? '0 0 120px rgba(0,255,65,0.2), 0 0 40px rgba(0,255,65,0.12)' : 'none',
+              color:         loading ? 'var(--faint)' : isOnline ? 'var(--accent)' : 'var(--status-offline)',
+              textShadow:    isOnline && !loading ? `0 0 120px rgba(var(--accent-rgb), 0.2), 0 0 40px rgba(var(--accent-rgb), 0.12)` : 'none',
               transition:    'color 0.5s ease, text-shadow 0.5s ease',
               marginBottom:  '2rem',
             }}>
@@ -269,7 +269,7 @@ export default function ServerStatus() {
               {/* Server icon + address */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 {data?.icon && (
-                  <div style={{ flexShrink: 0, border: '1px solid #1c2030', lineHeight: 0 }}>
+                  <div style={{ flexShrink: 0, border: '1px solid var(--border)', lineHeight: 0 }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={data.icon}
@@ -282,19 +282,19 @@ export default function ServerStatus() {
                 )}
                 <div>
                   <p style={{
-                    fontFamily:    "'JetBrains Mono', monospace",
+                    fontFamily:    'var(--font-mono)',
                     fontSize:      '0.72rem',
                     letterSpacing: '0.08em',
-                    color:         '#505770',
+                    color:         'var(--muted)',
                     lineHeight:    1,
                   }}>
                     play.jodcraft.world
                   </p>
                   {motd && (
                     <p style={{
-                      fontFamily:    "'JetBrains Mono', monospace",
+                      fontFamily:    'var(--font-mono)',
                       fontSize:      '0.52rem',
-                      color:         '#2a3045',
+                      color:         'var(--border-strong)',
                       letterSpacing: '0.08em',
                       marginTop:     '0.25rem',
                     }}>
@@ -308,19 +308,19 @@ export default function ServerStatus() {
               {isOnline && (
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', marginTop: '0.25rem' }}>
                   <span style={{
-                    fontFamily:    "'Space Grotesk', sans-serif",
+                    fontFamily:    'var(--font-display)',
                     fontSize:      'clamp(1.8rem, 3.5vw, 3rem)',
                     fontWeight:    800,
                     letterSpacing: '-0.02em',
-                    color:         '#dde1ec',
+                    color:         'var(--text)',
                     lineHeight:    1,
                   }}>
                     {playerCount}
                   </span>
                   <span style={{
-                    fontFamily:    "'JetBrains Mono', monospace",
+                    fontFamily:    'var(--font-mono)',
                     fontSize:      '0.6rem',
-                    color:         '#1e2230',
+                    color:         'var(--faint)',
                     letterSpacing: '0.1em',
                   }}>
                     / {playerMax} players
@@ -336,8 +336,8 @@ export default function ServerStatus() {
                 style={{
                   height:          '1px',
                   background:      isOnline
-                    ? 'linear-gradient(to right, rgba(0,255,65,0.7), rgba(0,255,65,0.15) 50%, transparent)'
-                    : 'linear-gradient(to right, rgba(255,51,85,0.5), transparent)',
+                    ? `linear-gradient(to right, rgba(var(--accent-rgb), 0.7), rgba(var(--accent-rgb), 0.15) 50%, transparent)`
+                    : 'linear-gradient(to right, rgba(var(--status-offline-rgb, 255,51,85), 0.5), transparent)',
                   transformOrigin: 'left',
                   marginTop:       '0.5rem',
                 }}
@@ -345,9 +345,9 @@ export default function ServerStatus() {
 
               {lastUpdated && (
                 <p style={{
-                  fontFamily:    "'JetBrains Mono', monospace",
+                  fontFamily:    'var(--font-mono)',
                   fontSize:      '0.44rem',
-                  color:         '#131722',
+                  color:         'var(--border)',
                   letterSpacing: '0.2em',
                   textTransform: 'uppercase',
                 }}>
@@ -360,7 +360,7 @@ export default function ServerStatus() {
 
         {/* RIGHT — Crew */}
         <div style={{
-          borderLeft:  '1px solid #1c2030',
+          borderLeft:  '1px solid var(--border)',
           paddingLeft: 'clamp(2rem, 5vw, 4rem)',
         }}>
           {!loading && (
@@ -370,31 +370,31 @@ export default function ServerStatus() {
               transition={{ duration: 0.55, delay: 0.2 }}
             >
               <p style={{
-                fontFamily:    "'JetBrains Mono', monospace",
+                fontFamily:    'var(--font-mono)',
                 fontSize:      '0.5rem',
                 letterSpacing: '0.3em',
-                color:         '#1e2230',
+                color:         'var(--faint)',
                 textTransform: 'uppercase',
                 marginBottom:  '0.4rem',
               }}>
                 WHO&apos;S IN
               </p>
               <h3 style={{
-                fontFamily:    "'Space Grotesk', sans-serif",
+                fontFamily:    'var(--font-display)',
                 fontSize:      'clamp(1.5rem, 3.5vw, 2.5rem)',
                 fontWeight:    800,
                 letterSpacing: '-0.02em',
-                color:         '#dde1ec',
+                color:         'var(--text)',
                 lineHeight:    1,
                 marginBottom:  '1.5rem',
               }}>
                 THE CREW
                 <span style={{
-                  fontFamily:    "'JetBrains Mono', monospace",
+                  fontFamily:    'var(--font-mono)',
                   fontSize:      '0.52rem',
                   fontWeight:    400,
                   letterSpacing: '0.2em',
-                  color:         '#1e2230',
+                  color:         'var(--faint)',
                   marginLeft:    '0.85rem',
                   verticalAlign: 'middle',
                 }}>
@@ -420,9 +420,9 @@ export default function ServerStatus() {
                   transition={{ duration: 0.4, delay: 0.55 }}
                   style={{
                     marginTop:     '1rem',
-                    fontFamily:    "'JetBrains Mono', monospace",
+                    fontFamily:    'var(--font-mono)',
                     fontSize:      '0.46rem',
-                    color:         '#1e2230',
+                    color:         'var(--faint)',
                     letterSpacing: '0.2em',
                     textTransform: 'uppercase',
                   }}

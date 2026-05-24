@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Rye&family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=Special+Elite&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&family=Smokum&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -32,8 +32,102 @@
   --status-offline: #ff3355;
   --status-gold:    #f0a500;
 
+  /* RGB helpers for rgba() usage */
+  --accent-rgb:    0, 255, 65;
+  --bg-rgb:        6, 8, 12;
+  --text-rgb:      221, 225, 236;
+
+  /* Typography */
+  --font-display:  'Space Grotesk', sans-serif;
+  --font-body:     'Space Grotesk', sans-serif;
+  --font-mono:     'JetBrains Mono', monospace;
+
+  /* Cursor glow */
+  --cursor-glow:   0 0 10px rgba(0, 255, 65, 0.9), 0 0 20px rgba(0, 255, 65, 0.45);
+
   /* Legacy compat */
   --card: var(--bg-card);
+}
+
+/* ─── Wild West Theme ────────────────────────────────────────── */
+[data-theme="western"] {
+  /* Surfaces */
+  --bg:            #160c04;
+  --bg-elevated:   #1f1208;
+  --bg-card:       #291809;
+
+  /* Accent — burnished gold */
+  --accent:        #c8960c;
+  --accent-dim:    #a67a0a;
+  --accent-glow:   rgba(200, 150, 12, 0.14);
+  --accent-faint:  rgba(200, 150, 12, 0.06);
+  --accent-trace:  rgba(200, 150, 12, 0.025);
+
+  /* Text — warm parchment */
+  --text:          #e8d5b0;
+  --muted:         #7a5c3a;
+  --faint:         #3d2410;
+
+  /* Borders — warm brown */
+  --border:        #3d2410;
+  --border-strong: #5a3820;
+
+  /* Status */
+  --status-online:  #c8960c;
+  --status-offline: #c04020;
+  --status-gold:    #c8960c;
+
+  /* RGB helpers */
+  --accent-rgb:    200, 150, 12;
+  --bg-rgb:        22, 12, 4;
+  --text-rgb:      232, 213, 176;
+
+  /* Typography — western fonts */
+  --font-display:  'Rye', serif;
+  --font-body:     'Lora', serif;
+  --font-mono:     'Special Elite', monospace;
+
+  /* Cursor glow */
+  --cursor-glow:   0 0 10px rgba(200, 150, 12, 0.9), 0 0 20px rgba(200, 150, 12, 0.45);
+}
+
+/* ─── Western-specific overrides ────────────────────────────── */
+[data-theme="western"] .section-label {
+  letter-spacing: 0.22em;
+}
+
+[data-theme="western"] .section-label::before {
+  content: '✦ ';
+  opacity: 0.6;
+}
+
+[data-theme="western"] .glitch {
+  animation: none;
+}
+
+[data-theme="western"] .glitch::before,
+[data-theme="western"] .glitch::after {
+  display: none;
+}
+
+[data-theme="western"] body::after {
+  opacity: 0.038;
+}
+
+[data-theme="western"] .text-green-shimmer {
+  background: linear-gradient(90deg, var(--accent) 0%, #f0e0a0 40%, var(--accent) 80%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+[data-theme="western"] .footer-link {
+  color: #5a3820;
+}
+
+[data-theme="western"] .footer-link:hover {
+  color: var(--accent);
 }
 
 /* ─── Reset & Base ──────────────────────────────────────────── */
@@ -58,7 +152,7 @@ html {
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: var(--font-body);
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -322,7 +416,7 @@ body::after {
 
 /* ─── Section label ─────────────────────────────────────────── */
 .section-label {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.62rem;
   letter-spacing: 0.32em;
   color: var(--accent);
@@ -398,7 +492,7 @@ body::after {
 /* Defined here to avoid React hydration mismatch from
    single-quote escaping (') → &#x27; in JSX style tags. */
 .footer-link {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.46rem;
   letter-spacing: 0.22em;
   text-transform: uppercase;
