@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useTheme } from '@/lib/theme';
 import { DATAPACKS } from '@/data/datapacks';
+import WesternMap from './WesternMap';
 
 /* ─── static data ─────────────────────────────────────────────────────────── */
 const CREW = ['stebbias','AmmaGaur','joenana','ingunnbirta','Gamla123','fafnir1994','IMlonely','eikibleiki'];
@@ -133,10 +134,6 @@ export default function WesternHome() {
   const qdTimer    = useRef<ReturnType<typeof setTimeout>>();
   const qdStart    = useRef(0);
   const qdFired    = useRef(false);
-
-  /* map */
-  const [mapError, setMapError]   = useState(false);
-  const mapRef = useRef<HTMLIFrameElement>(null);
 
   /* refs for effects */
   const joinRef    = useRef<HTMLElement>(null);
@@ -635,61 +632,7 @@ export default function WesternHome() {
           </p>
         </header>
 
-        <div className="w-map__wrap w-reveal">
-          <div className="w-map__frame">
-            {mapError ? (
-              <div className="w-map__fallback">
-                <div className="w-map__fallback-inner">
-                  <div className="w-map__fallback-icon">
-                    <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" width="80" height="80">
-                      <rect x="8" y="8" width="64" height="64" rx="2" stroke="currentColor" strokeWidth="3" fill="none"/>
-                      <path d="M8 28 L28 18 L52 32 L72 22" stroke="currentColor" strokeWidth="2.5" strokeLinejoin="round"/>
-                      <circle cx="28" cy="18" r="5" fill="currentColor"/>
-                      <circle cx="52" cy="32" r="5" fill="currentColor"/>
-                      <circle cx="72" cy="22" r="5" fill="currentColor"/>
-                      <path d="M16 52 L40 40 L64 54" stroke="currentColor" strokeWidth="2" strokeDasharray="4 3" opacity="0.5"/>
-                    </svg>
-                  </div>
-                  <div className="w-map__fallback-title">Surveyor&apos;s Chart</div>
-                  <div className="w-map__fallback-sub">The live map runs on a separate post — open it to explore the frontier.</div>
-                  <a
-                    href="https://map.jodcraft.world"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-map__fallback-btn"
-                    data-no-shoot=""
-                  >
-                    ★ OPEN LIVE MAP ★
-                  </a>
-                </div>
-              </div>
-            ) : (
-              <iframe
-                ref={mapRef}
-                src="https://map.jodcraft.world"
-                title="JOÐ Live World Map"
-                loading="lazy"
-                allowFullScreen
-                onError={() => setMapError(true)}
-                onLoad={() => {
-                  try {
-                    /* accessing contentDocument throws for cross-origin that blocked framing */
-                    const doc = mapRef.current?.contentDocument;
-                    if (!doc) setMapError(true);
-                  } catch {
-                    setMapError(true);
-                  }
-                }}
-              />
-            )}
-          </div>
-          <div className="w-map__legend">
-            <div><span style={{ width: 14, height: 14, background: 'var(--cactus)', display: 'inline-block', border: '1.5px solid var(--ink)' }} />Surface</div>
-            <div><span style={{ width: 14, height: 14, background: 'var(--sky)', display: 'inline-block', border: '1.5px solid var(--ink)' }} />Underground</div>
-            <div><span style={{ width: 14, height: 14, background: 'var(--terra)', display: 'inline-block', border: '1.5px solid var(--ink)' }} />Island</div>
-            <div><span style={{ width: 14, height: 14, background: 'var(--dust)', display: 'inline-block', border: '1.5px solid var(--ink)' }} />Aerial</div>
-          </div>
-        </div>
+        <WesternMap />
       </section>
 
       {/* ══ IV — DATAPACKS ═══════════════════════════════════════════ */}

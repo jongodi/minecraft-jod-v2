@@ -29,7 +29,8 @@
   font-size: 17px;
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
+  /* overflow-x:hidden breaks position:sticky — use clip instead */
+  overflow-x: clip;
   position: relative;
 }
 
@@ -602,57 +603,58 @@
 .w-map { background:var(--terra); color:var(--ink); border-top:6px double var(--ink); border-bottom:6px double var(--ink); }
 .w-map .w-section__title { color:var(--paper); text-shadow:3px 0 0 var(--ink),6px 0 0 var(--paper); }
 .w-map__wrap { max-width:1280px; margin:0 auto 60px; padding:0 28px; }
-.w-map__frame {
+
+/* ─── WESTERN SVG MAP ─────────────────────────────────────────────────── */
+.w-wmap { max-width:1280px; margin:0 auto 60px; padding:0 28px; }
+.w-wmap__frame {
   background:var(--paper); border:4px solid var(--ink);
   outline:12px solid var(--paper); outline-offset:4px;
-  box-shadow:0 0 0 3px var(--ink),10px 10px 0 rgba(0,0,0,0.3);
+  box-shadow:0 0 0 3px var(--ink),10px 10px 0 rgba(42,20,16,0.3);
   position:relative; overflow:hidden;
   aspect-ratio:1000/650; width:100%;
+  cursor:crosshair;
 }
-.w-map__frame iframe { width:100%; height:100%; display:block; border:none; }
-.w-map__fallback {
-  width:100%; height:100%;
-  background:var(--paper);
-  display:flex; align-items:center; justify-content:center;
+.w-wmap__detail {
+  display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+  margin-top:16px; padding:16px 20px;
+  background:var(--cream); border:3px solid var(--ink);
+  box-shadow:5px 5px 0 var(--ink-soft);
 }
-.w-map__fallback-inner {
-  text-align:center; padding:40px 28px;
-  display:flex; flex-direction:column; align-items:center; gap:16px;
+.w-wmap__detail-no {
+  font-family:"Special Elite",monospace; font-size:11px;
+  letter-spacing:0.14em; color:var(--burnt);
+  line-height:1.4; min-width:2.5rem;
 }
-.w-map__fallback-icon { color:var(--burnt); opacity:0.7; }
-.w-map__fallback-title {
-  font-family:"Rye",serif; font-size:clamp(28px,4vw,44px);
-  color:var(--ink); letter-spacing:0.04em; line-height:1;
-  text-shadow:2px 0 0 var(--terra),4px 0 0 var(--ink);
+.w-wmap__detail-body { flex:1; }
+.w-wmap__detail-label {
+  font-family:"Rye",serif; font-size:22px; letter-spacing:0.02em;
+  color:var(--ink); text-transform:uppercase; line-height:1;
 }
-.w-map__fallback-sub {
+.w-wmap__detail-sub {
   font-family:"IM Fell English",serif; font-style:italic;
-  font-size:17px; color:var(--ink-soft); max-width:420px; line-height:1.5;
+  font-size:14px; color:var(--ink-soft); margin-top:4px;
 }
-.w-map__fallback-btn {
-  display:inline-block; padding:14px 36px; margin-top:8px;
-  background:var(--burnt); color:var(--paper);
-  font-family:"Rye",serif; font-size:18px; letter-spacing:0.06em;
-  text-transform:uppercase; text-decoration:none;
-  border:3px solid var(--ink); box-shadow:6px 6px 0 var(--ink);
-  transition:transform .1s,box-shadow .1s;
+.w-wmap__detail-type {
+  font-family:"IM Fell English SC",serif; font-size:11px;
+  letter-spacing:0.22em; text-transform:uppercase;
+  padding:4px 10px; border:1.5px solid; align-self:center;
 }
-.w-map__fallback-btn:hover { transform:translate(-2px,-2px); box-shadow:8px 8px 0 var(--ink); color:var(--gold); }
-.w-map__legend {
-  display:grid; grid-template-columns:repeat(4,1fr);
-  gap:0; border:3px solid var(--ink); background:var(--paper); margin-top:18px;
+.w-wmap__detail-coords {
+  font-family:"Special Elite",monospace; font-size:12px;
+  letter-spacing:0.1em; color:var(--ink-soft);
+  white-space:nowrap; align-self:center;
 }
-.w-map__legend>div {
-  padding:14px 16px; border-right:2px solid var(--ink);
-  font-family:"IM Fell English SC",serif; font-size:13px;
-  letter-spacing:0.18em; text-transform:uppercase; color:var(--ink);
-  display:flex; align-items:center; gap:12px;
+.w-wmap__detail-close {
+  font-family:"Special Elite",monospace; font-size:14px;
+  color:var(--ink-soft); transition:color .18s; align-self:center;
+  padding:4px 8px;
 }
-.w-map__legend>div:last-child{border-right:none;}
-@media(max-width:700px){
-  .w-map__legend{grid-template-columns:repeat(2,1fr);}
-  .w-map__legend>div:nth-child(2n){border-right:none;}
-  .w-map__legend>div:nth-child(-n+2){border-bottom:2px solid var(--ink);}
+.w-wmap__detail-close:hover { color:var(--burnt); }
+.w-wmap__foot {
+  margin-top:18px; text-align:center;
+  font-family:"IM Fell English SC",serif; font-size:12px;
+  letter-spacing:0.28em; color:var(--ink); opacity:0.45;
+  text-transform:uppercase;
 }
 
 /* ─── DATAPACKS — bounty board ───────────────────────────────────────── */
