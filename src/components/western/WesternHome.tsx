@@ -134,6 +134,10 @@ export default function WesternHome() {
   const qdStart    = useRef(0);
   const qdFired    = useRef(false);
 
+  /* map */
+  const [mapError, setMapError]   = useState(false);
+  const mapRef = useRef<HTMLIFrameElement>(null);
+
   /* refs for effects */
   const joinRef    = useRef<HTMLElement>(null);
   const statsRef   = useRef<HTMLDivElement>(null);
@@ -158,7 +162,15 @@ export default function WesternHome() {
   useEffect(() => {
     fetch('/api/stats')
       .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data?.players) setStatsData(data.players); })
+      .then(data => {
+        if (!data?.players) return;
+        const record: Record<string, Record<string, number>> = {};
+        for (const p of data.players as Array<Record<string, number> & { username: string }>) {
+          const { username, ...stats } = p;
+          record[username] = stats;
+        }
+        setStatsData(record);
+      })
       .catch(() => {});
   }, []);
 
@@ -203,7 +215,7 @@ export default function WesternHome() {
       const hole = document.createElement('div');
       hole.className = 'w-bullet-hole';
       hole.style.left = `${e.clientX}px`;
-      hole.style.top  = `${e.clientY + window.scrollY}px`;
+      hole.style.top  = `${e.clientY}px`;
       hole.style.setProperty('--r', `${(Math.random() - 0.5) * 40}deg`);
       hole.innerHTML = `<svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
         <circle cx="22" cy="22" r="8" fill="#1a0a04" stroke="#5C3A28" stroke-width="1"/>
@@ -625,12 +637,51 @@ export default function WesternHome() {
 
         <div className="w-map__wrap w-reveal">
           <div className="w-map__frame">
-            <iframe
-              src="https://map.jodcraft.world"
-              title="JOÐ Live World Map"
-              loading="lazy"
-              allowFullScreen
-            />
+            {mapError ? (
+              <div className="w-map__fallback">
+                <div className="w-map__fallback-inner">
+                  <div className="w-map__fallback-icon">
+                    <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" width="80" height="80">
+                      <rect x="8" y="8" width="64" height="64" rx="2" stroke="currentColor" strokeWidth="3" fill="none"/>
+                      <path d="M8 28 L28 18 L52 32 L72 22" stroke="currentColor" strokeWidth="2.5" strokeLinejoin="round"/>
+                      <circle cx="28" cy="18" r="5" fill="currentColor"/>
+                      <circle cx="52" cy="32" r="5" fill="currentColor"/>
+                      <circle cx="72" cy="22" r="5" fill="currentColor"/>
+                      <path d="M16 52 L40 40 L64 54" stroke="currentColor" strokeWidth="2" strokeDasharray="4 3" opacity="0.5"/>
+                    </svg>
+                  </div>
+                  <div className="w-map__fallback-title">Surveyor&apos;s Chart</div>
+                  <div className="w-map__fallback-sub">The live map runs on a separate post — open it to explore the frontier.</div>
+                  <a
+                    href="https://map.jodcraft.world"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-map__fallback-btn"
+                    data-no-shoot=""
+                  >
+                    ★ OPEN LIVE MAP ★
+                  </a>
+                </div>
+              </div>
+            ) : (
+              <iframe
+                ref={mapRef}
+                src="https://map.jodcraft.world"
+                title="JOÐ Live World Map"
+                loading="lazy"
+                allowFullScreen
+                onError={() => setMapError(true)}
+                onLoad={() => {
+                  try {
+                    /* accessing contentDocument throws for cross-origin that blocked framing */
+                    const doc = mapRef.current?.contentDocument;
+                    if (!doc) setMapError(true);
+                  } catch {
+                    setMapError(true);
+                  }
+                }}
+              />
+            )}
           </div>
           <div className="w-map__legend">
             <div><span style={{ width: 14, height: 14, background: 'var(--cactus)', display: 'inline-block', border: '1.5px solid var(--ink)' }} />Surface</div>
