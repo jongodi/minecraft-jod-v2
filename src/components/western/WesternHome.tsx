@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useTheme } from '@/lib/theme';
 import { DATAPACKS } from '@/data/datapacks';
+import WesternMap from './WesternMap';
 
 /* ─── static data ─────────────────────────────────────────────────────────── */
 const CREW = ['stebbias','AmmaGaur','joenana','ingunnbirta','Gamla123','fafnir1994','IMlonely','eikibleiki'];
@@ -158,7 +159,15 @@ export default function WesternHome() {
   useEffect(() => {
     fetch('/api/stats')
       .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data?.players) setStatsData(data.players); })
+      .then(data => {
+        if (!data?.players) return;
+        const record: Record<string, Record<string, number>> = {};
+        for (const p of data.players as Array<Record<string, number> & { username: string }>) {
+          const { username, ...stats } = p;
+          record[username] = stats;
+        }
+        setStatsData(record);
+      })
       .catch(() => {});
   }, []);
 
@@ -203,7 +212,7 @@ export default function WesternHome() {
       const hole = document.createElement('div');
       hole.className = 'w-bullet-hole';
       hole.style.left = `${e.clientX}px`;
-      hole.style.top  = `${e.clientY + window.scrollY}px`;
+      hole.style.top  = `${e.clientY}px`;
       hole.style.setProperty('--r', `${(Math.random() - 0.5) * 40}deg`);
       hole.innerHTML = `<svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
         <circle cx="22" cy="22" r="8" fill="#1a0a04" stroke="#5C3A28" stroke-width="1"/>
@@ -623,22 +632,7 @@ export default function WesternHome() {
           </p>
         </header>
 
-        <div className="w-map__wrap w-reveal">
-          <div className="w-map__frame">
-            <iframe
-              src="https://map.jodcraft.world"
-              title="JOÐ Live World Map"
-              loading="lazy"
-              allowFullScreen
-            />
-          </div>
-          <div className="w-map__legend">
-            <div><span style={{ width: 14, height: 14, background: 'var(--cactus)', display: 'inline-block', border: '1.5px solid var(--ink)' }} />Surface</div>
-            <div><span style={{ width: 14, height: 14, background: 'var(--sky)', display: 'inline-block', border: '1.5px solid var(--ink)' }} />Underground</div>
-            <div><span style={{ width: 14, height: 14, background: 'var(--terra)', display: 'inline-block', border: '1.5px solid var(--ink)' }} />Island</div>
-            <div><span style={{ width: 14, height: 14, background: 'var(--dust)', display: 'inline-block', border: '1.5px solid var(--ink)' }} />Aerial</div>
-          </div>
-        </div>
+        <WesternMap />
       </section>
 
       {/* ══ IV — DATAPACKS ═══════════════════════════════════════════ */}
