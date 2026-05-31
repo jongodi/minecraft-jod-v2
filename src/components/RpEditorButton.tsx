@@ -11,6 +11,7 @@ export default function RpEditorButton() {
   if (pathname === '/rp-editor') return null;
 
   return (
+    <div className="hidden md:block">
     <Link href="/rp-editor" style={{ textDecoration: 'none' }}>
       <div
         onMouseEnter={() => setHov(true)}
@@ -61,5 +62,6 @@ export default function RpEditorButton() {
         />
       </div>
     </Link>
+    </div>
   );
 }
