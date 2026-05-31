@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     sameSite: 'strict',
     path:     '/',
     // Expire after 7 days
-    maxAge:   60 * 60 * 24 * 7,
+    maxAge:   60 * 60 * 8,
     secure:   process.env.NODE_ENV === 'production',
   });
   return res;

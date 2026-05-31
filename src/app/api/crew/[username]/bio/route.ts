@@ -17,8 +17,15 @@ export async function PATCH(
     return NextResponse.json({ error: 'bio must be a string' }, { status: 400 });
   }
 
+  const escaped = bio
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+
   const profile = await readProfile(username);
-  profile.bio = bio.slice(0, 500); // max 500 chars
+  profile.bio = escaped.slice(0, 500); // max 500 chars
   await writeProfile(profile);
   return NextResponse.json({ ok: true });
 }

@@ -1,5 +1,5 @@
 // IP-based sliding-window rate limiter backed by Redis.
-// Falls back gracefully (no limiting) when Redis is unavailable (local dev).
+// Falls back to in-memory limiting when Redis is unavailable (local dev).
 
 const MAX_ATTEMPTS   = 5;
 const WINDOW_SECONDS = 15 * 60; // 15 minutes
@@ -9,16 +9,24 @@ export interface RateLimitResult {
   remaining: number;
 }
 
-/**
- * Check and increment the rate-limit counter for a given IP + action key.
- * Returns { limited: true } once the caller has exceeded MAX_ATTEMPTS within the window.
- */
+// In-memory fallback for environments without Redis
+const memHits = new Map<string, number[]>();
+
 export async function checkRateLimit(ip: string, action: string): Promise<RateLimitResult> {
+  const key = `ratelimit:${action}:${ip}`;
+
   if (!process.env.REDIS_URL) {
-    return { limited: false, remaining: MAX_ATTEMPTS };
+    const now = Date.now();
+    const windowStart = now - WINDOW_SECONDS * 1000;
+    const hits = (memHits.get(key) ?? []).filter(t => t > windowStart);
+    hits.push(now);
+    memHits.set(key, hits);
+    return {
+      limited:   hits.length > MAX_ATTEMPTS,
+      remaining: Math.max(0, MAX_ATTEMPTS - hits.length),
+    };
   }
 
-  const key = `ratelimit:${action}:${ip}`;
   try {
     const { getRedis } = await import('./redis');
     const redis = getRedis();

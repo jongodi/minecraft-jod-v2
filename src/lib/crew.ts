@@ -1,6 +1,7 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import { cookies } from 'next/headers';
+import { randomUUID } from 'crypto';
 import { CREW_COOKIE } from '@/lib/auth';
 
 export const CREW_USERNAMES = [
@@ -113,19 +114,55 @@ export function getCrewToken(username: string): string | undefined {
   return process.env[key];
 }
 
+// ─── Session store ────────────────────────────────────────────────────────────
+// Redis in production, in-memory map in local dev (no Redis).
+
+const SESSION_TTL = 60 * 60 * 24 * 30; // 30 days in seconds
+
+// In-memory fallback for dev
+const memSessions = new Map<string, { username: string; expires: number }>();
+
+export async function createCrewSession(username: string): Promise<string> {
+  const sessionId = randomUUID();
+  if (hasKV()) {
+    const { getRedis } = await import('./redis');
+    await getRedis().set(`crew-session:${sessionId}`, JSON.stringify({ username }), 'EX', SESSION_TTL);
+  } else {
+    memSessions.set(sessionId, { username, expires: Date.now() + SESSION_TTL * 1000 });
+  }
+  return sessionId;
+}
+
+export async function deleteCrewSession(sessionId: string): Promise<void> {
+  if (hasKV()) {
+    const { getRedis } = await import('./redis');
+    await getRedis().del(`crew-session:${sessionId}`);
+  } else {
+    memSessions.delete(sessionId);
+  }
+}
+
 export async function getCrewSession(): Promise<CrewSession | null> {
   try {
     const cookieStore = await cookies();
-    const value = cookieStore.get(CREW_COOKIE)?.value;
-    if (!value) return null;
-    const colonIdx = value.indexOf(':');
-    if (colonIdx === -1) return null;
-    const username = value.slice(0, colonIdx);
-    const token    = value.slice(colonIdx + 1);
-    if (!username || !token) return null;
-    const expected = getCrewToken(username);
-    if (!expected || expected !== token) return null;
-    return { username };
+    const sessionId = cookieStore.get(CREW_COOKIE)?.value;
+    if (!sessionId) return null;
+
+    if (hasKV()) {
+      const { getRedis } = await import('./redis');
+      const raw = await getRedis().get(`crew-session:${sessionId}`);
+      if (!raw) return null;
+      const data = JSON.parse(raw) as { username: string };
+      if (!data?.username) return null;
+      return { username: data.username };
+    } else {
+      const session = memSessions.get(sessionId);
+      if (!session || Date.now() > session.expires) {
+        memSessions.delete(sessionId);
+        return null;
+      }
+      return { username: session.username };
+    }
   } catch {
     return null;
   }

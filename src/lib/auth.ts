@@ -1,14 +1,15 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { timingSafeEqual } from 'crypto';
 
 export const ADMIN_COOKIE = 'jod_admin_session';
 export const CREW_COOKIE  = 'jod_crew_session';
 
-// Validate admin token from env and return true/false
 export function isValidAdminToken(token: string): boolean {
   const expected = process.env.ADMIN_TOKEN;
   if (!expected || expected.length < 8) return false;
-  return token === expected;
+  if (token.length !== expected.length) return false;
+  return timingSafeEqual(Buffer.from(token), Buffer.from(expected));
 }
 
 // Check if incoming request has a valid admin cookie (server-side)
