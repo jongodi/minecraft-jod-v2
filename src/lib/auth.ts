@@ -4,11 +4,16 @@ import { NextResponse } from 'next/server';
 export const ADMIN_COOKIE = 'jod_admin_session';
 export const CREW_COOKIE  = 'jod_crew_session';
 
-// Validate admin token from env and return true/false
 export function isValidAdminToken(token: string): boolean {
   const expected = process.env.ADMIN_TOKEN;
   if (!expected || expected.length < 8) return false;
-  return token === expected;
+  if (token.length !== expected.length) return false;
+  // XOR all chars without early exit — timing-safe, works in Edge Runtime
+  let mismatch = 0;
+  for (let i = 0; i < expected.length; i++) {
+    mismatch |= token.charCodeAt(i) ^ expected.charCodeAt(i);
+  }
+  return mismatch === 0;
 }
 
 // Check if incoming request has a valid admin cookie (server-side)

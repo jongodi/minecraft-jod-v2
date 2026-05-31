@@ -11,13 +11,20 @@ export async function PATCH(
 ) {
   if (!(await requireAdmin())) return unauthorizedResponse();
   const { id } = await params;
-  const body = await req.json() as Partial<{ title: string; sublabel: string; active: boolean; order: number }>;
+  const body = await req.json() as Record<string, unknown>;
 
   const gallery = await readGallery();
   const idx = gallery.findIndex(p => p.id === id);
   if (idx === -1) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-  gallery[idx] = { ...gallery[idx], ...body };
+  const { title, sublabel, active, order } = body;
+  gallery[idx] = {
+    ...gallery[idx],
+    ...(typeof title === 'string'    && { title:    title.trim().toUpperCase().slice(0, 100) }),
+    ...(typeof sublabel === 'string' && { sublabel: sublabel.trim().toUpperCase().slice(0, 100) }),
+    ...(typeof active === 'boolean'  && { active }),
+    ...(typeof order === 'number' && Number.isFinite(order) && { order: Math.floor(order) }),
+  };
   await writeGallery(gallery);
   return NextResponse.json(gallery[idx]);
 }
@@ -37,10 +44,13 @@ export async function DELETE(
   const remaining = gallery.filter(p => p.id !== id);
   await writeGallery(remaining);
 
-  // Remove the actual file if it's in /public/screenshots/
+  // Remove the actual file if it's a local /public/screenshots/ path
   try {
-    const absPath = path.join(process.cwd(), 'public', photo.filename.replace(/^\//, ''));
-    await fs.unlink(absPath);
+    const safeBase = path.join(process.cwd(), 'public', 'screenshots');
+    const absPath  = path.resolve(process.cwd(), 'public', photo.filename.replace(/^\//, ''));
+    if (absPath.startsWith(safeBase + path.sep)) {
+      await fs.unlink(absPath);
+    }
   } catch {
     // File may not exist — not a fatal error
   }

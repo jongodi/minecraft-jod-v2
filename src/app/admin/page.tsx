@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback, type FormEvent, type CSSProperties } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import type { DatapackUpdateResult } from '@/app/api/datapacks/check-updates/route';
 import type { RefreshResult } from '@/app/api/admin/datapacks/refresh/route';
 import type { GalleryPhoto } from '@/lib/gallery';
@@ -795,7 +796,7 @@ export default function AdminPage() {
         <span style={{ fontFamily: sans, fontSize: '1rem', fontWeight: 900, color: green, letterSpacing: '-0.02em' }}>JOD</span>
         <span style={{ fontFamily: mono, fontSize: '0.5rem', letterSpacing: '0.3em', color: '#2a2a2a', textTransform: 'uppercase' }}>ADMIN PANEL</span>
         <div style={{ flex: 1 }} />
-        <a href="/" style={{ fontFamily: mono, fontSize: '0.55rem', letterSpacing: '0.15em', color: '#444', textDecoration: 'none', textTransform: 'uppercase' }}>← SITE</a>
+        <Link href="/" style={{ fontFamily: mono, fontSize: '0.55rem', letterSpacing: '0.15em', color: '#444', textDecoration: 'none', textTransform: 'uppercase' }}>← SITE</Link>
         <button onClick={logout} style={{ fontFamily: mono, fontSize: '0.55rem', letterSpacing: '0.15em', textTransform: 'uppercase', background: 'none', color: '#ff4466', border: '1px solid #ff446633', padding: '0.3rem 0.6rem', cursor: 'pointer' }}>
           LOGOUT
         </button>

@@ -473,9 +473,9 @@ export default function WesternHome() {
         {/* Top row — scrolls left */}
         <div className="w-ticker__row">
           <div className="w-ticker__track">
-            {[...Array(4)].flatMap(() =>
+            {[...Array(4)].flatMap((_, repeat) =>
               ['SURVIVAL','COMMUNITY','CUSTOM DATAPACKS','CUSTOM RESOURCE PACK','PLAY.JODCRAFT.WORLD','SINCE 2024'].map((item, i) => (
-                <span key={`${item}-${i}`} className="w-ticker__item">
+                <span key={`${repeat}-${item}-${i}`} className="w-ticker__item">
                   {item}<span className="w-ticker__sep" />
                 </span>
               ))
@@ -485,9 +485,9 @@ export default function WesternHome() {
         {/* Bottom row — scrolls right */}
         <div className="w-ticker__row w-ticker__row--alt">
           <div className="w-ticker__track">
-            {[...Array(4)].flatMap(() =>
+            {[...Array(4)].flatMap((_, repeat) =>
               ['PRIVATE SERVER','WHITELIST ONLY','JAVA EDITION','JOD · 2024','PLAY.JODCRAFT.WORLD','INVITE ONLY'].map((item, i) => (
-                <span key={`${item}-${i}`} className="w-ticker__item">
+                <span key={`${repeat}-${item}-${i}`} className="w-ticker__item">
                   {item}<span className="w-ticker__sep" />
                 </span>
               ))
