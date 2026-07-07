@@ -10,12 +10,13 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { AnalysisResult, RawFile } from './engine/types';
+import type { AnalysisResult, DatapackInput, RawFile } from './engine/types';
 
 export interface AnalyzerResult {
   packName: string;
   fileData: Record<string, string>;
   rawFiles: RawFile[];
+  datapacks: DatapackInput[];
   analysis: AnalysisResult;
 }
 
@@ -67,7 +68,7 @@ export function useAnalyzer() {
           setState((s) => ({ ...s, phase: m.phase, progress: m.total ? m.done / m.total : s.progress }));
         } else if (m.type === 'result') {
           setState({ status: 'done', phase: 'Complete', progress: 1,
-            result: { packName: m.packName, fileData: m.fileData, rawFiles: m.rawFiles, analysis: m.analysis },
+            result: { packName: m.packName, fileData: m.fileData, rawFiles: m.rawFiles, datapacks: m.datapacks ?? [], analysis: m.analysis },
             error: null });
         } else if (m.type === 'error') {
           setState({ status: 'error', phase: '', progress: 0, result: null, error: m.message });
@@ -95,7 +96,7 @@ export function useAnalyzer() {
       setState((s) => ({ ...s, phase: 'Analysing dependency graph' }));
       const analysis = analyze({ files: pack.rawFiles, datapacks: dps });
       setState({ status: 'done', phase: 'Complete', progress: 1,
-        result: { packName: packFile.name, fileData: pack.fileData, rawFiles: pack.rawFiles, analysis },
+        result: { packName: packFile.name, fileData: pack.fileData, rawFiles: pack.rawFiles, datapacks: dps, analysis },
         error: null });
     } catch (e: any) {
       setState({ status: 'error', phase: '', progress: 0, result: null, error: e?.message ?? 'Analysis failed.' });

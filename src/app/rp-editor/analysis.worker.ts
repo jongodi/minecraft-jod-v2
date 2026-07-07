@@ -45,6 +45,7 @@ ctx.onmessage = async (e: MessageEvent<InMsg>) => {
       packName: msg.packName,
       fileData: pack.fileData,
       rawFiles: pack.rawFiles,
+      datapacks: datapackInputs,
       analysis,
     });
   } catch (err: any) {
