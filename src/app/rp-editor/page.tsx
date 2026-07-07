@@ -18,6 +18,7 @@ import { useAnalyzer } from './use-analyzer';
 import { analyze } from './engine/analyze';
 import { extractZip } from './engine/extract';
 import { classify } from './engine/resloc';
+import { replaceRefsInJson } from './engine/apply';
 import type { RawFile, AnalysisResult, DatapackInput } from './engine/types';
 import { buildTree, TreeNode, PixelPainter, AudioPlayer, JsonEditor, PackMetaEditor } from './editor-tools';
 import { generateReportMarkdown, generateCleanupJson, download } from './ui/export';
@@ -126,19 +127,35 @@ export default function App() {
     setStatus(`Saved edits to ${selected.split('/').pop()}`);
   }, [selected]);
 
-  const applyFix = useCallback((modelPath: string, key: string, value: string) => {
-    const content = fileDataRef.current[modelPath];
+  // Repoint one broken reference: replace every occurrence of `oldValue` in the
+  // file with `newValue` (structural, so keys/partials are never touched).
+  const applyFix = useCallback((file: string, oldValue: string, newValue: string) => {
+    const content = fileDataRef.current[file];
     if (!content) return;
-    try {
-      const json = JSON.parse(content);
-      if (!json.textures) json.textures = {};
-      json.textures[key] = value;
-      const updated = JSON.stringify(json, null, 2);
-      setFile(modelPath, updated, true);
-      if (selected === modelPath) setSelectedContent(updated);
-      reanalyze();
-      setStatus(`Repointed "${key}" → "${value}" in ${modelPath.split('/').pop()}`);
-    } catch (e: any) { setStatus('Fix failed: ' + e.message); }
+    const { text, applied } = replaceRefsInJson(content, [{ from: oldValue, to: newValue }]);
+    if (!applied) { setStatus(`No occurrence of "${oldValue}" found in ${file.split('/').pop()}`); return; }
+    setFile(file, text, true);
+    if (selected === file) setSelectedContent(text);
+    reanalyze();
+    setStatus(`Repointed "${oldValue}" → "${newValue}" in ${file.split('/').pop()}`);
+  }, [selected, reanalyze]);
+
+  // Apply many repoints at once, grouped per file so each file is parsed once.
+  const applyManyFixes = useCallback((fixes: Array<{ file: string; from: string; to: string }>) => {
+    const byFile = new Map<string, Array<{ from: string; to: string }>>();
+    for (const f of fixes) {
+      if (!f.to.trim()) continue;
+      (byFile.get(f.file) ?? byFile.set(f.file, []).get(f.file)!).push({ from: f.from, to: f.to.trim() });
+    }
+    let total = 0; let files = 0;
+    for (const [file, repl] of byFile) {
+      const content = fileDataRef.current[file];
+      if (!content) continue;
+      const { text, applied } = replaceRefsInJson(content, repl);
+      if (applied > 0) { setFile(file, text, true); if (selected === file) setSelectedContent(text); total += applied; files++; }
+    }
+    reanalyze();
+    setStatus(total ? `Repointed ${total} reference${total !== 1 ? 's' : ''} across ${files} file${files !== 1 ? 's' : ''}` : 'No references were changed');
   }, [selected, reanalyze]);
 
   const deleteFiles = useCallback((paths: string[]) => {
@@ -314,7 +331,7 @@ export default function App() {
         ) : analysis ? (
           <>
             {tab === 'overview' && <OverviewView analysis={analysis} packName={packName} onGo={setTab} />}
-            {tab === 'report' && <ReportView analysis={analysis} onOpen={openInEditor} onApplyFix={applyFix} onExport={exportReport} />}
+            {tab === 'report' && <ReportView analysis={analysis} fileData={fileDataRef.current} onOpen={openInEditor} onApplyFix={applyFix} onApplyManyFixes={applyManyFixes} onDelete={deleteFiles} onExport={exportReport} />}
             {tab === 'assets' && <AssetsView analysis={analysis} fileData={fileDataRef.current} onOpen={openInEditor} onDelete={deleteFiles} />}
             {tab === 'graph' && <GraphView analysis={analysis} onOpen={openInEditor} />}
             {tab === 'datapacks' && <DatapacksView analysis={analysis} onAddDatapacks={addDatapacks} onOpen={openInEditor} />}

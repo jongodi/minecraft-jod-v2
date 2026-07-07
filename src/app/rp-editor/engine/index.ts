@@ -2,6 +2,8 @@
 export * from './types';
 export { analyze } from './analyze';
 export { fmtBytes } from './verdict';
+export { suggestReplacements, bestReplacement } from './suggest';
+export { replaceRefsInJson } from './apply';
 export { versionLabel, ITEM_DEFINITION_FORMAT } from './mcmeta';
 export {
   classify, parseLoc, textureLocToPath, modelLocToPath, itemDefLocToPath,

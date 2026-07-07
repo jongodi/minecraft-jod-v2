@@ -41,7 +41,7 @@ export interface RawIssue {
   detail: string;
   path?: string;
   refs?: string[];
-  fix?: { modelPath: string; key: string; value: string; reason: string };
+  fix?: import('./types').BrokenRef;
 }
 
 export interface Graph {
@@ -270,7 +270,7 @@ export function buildGraph(files: RawFile[]): Graph {
           title: 'Model references a missing texture',
           detail: `Texture variable "${t.key}" → "${t.value}" is a custom-namespace texture that does not exist in the pack.`,
           path: mp,
-          fix: { modelPath: mp, key: t.key, value: t.value, reason: 'custom-namespace texture missing from pack' } });
+          fix: { file: mp, value: t.value, targetKind: 'texture', context: `texture "${t.key}"`, reason: 'custom-namespace texture missing from pack' } });
       } else if (t.status === 'unresolved-var') {
         issues.push({ severity: 'warning', category: 'unresolved-variable',
           title: 'Texture variable has no definition',
@@ -313,7 +313,8 @@ export function buildGraph(files: RawFile[]): Graph {
       else if (mr.status === 'broken') {
         issues.push({ severity: 'error', category: 'broken-reference',
           title: 'Blockstate references a missing model',
-          detail: `"${ref}" is a custom-namespace model not present in the pack.`, path: bp });
+          detail: `"${ref}" is a custom-namespace model not present in the pack.`, path: bp,
+          fix: { file: bp, value: ref, targetKind: 'model', context: 'blockstate model', reason: 'custom-namespace model missing from pack' } });
       }
     }
   }
@@ -344,7 +345,8 @@ export function buildGraph(files: RawFile[]): Graph {
       else if (mr.status === 'broken') {
         issues.push({ severity: 'error', category: 'broken-reference',
           title: 'Item definition references a missing model',
-          detail: `"${ref}" is a custom-namespace model not present in the pack.`, path: ip });
+          detail: `"${ref}" is a custom-namespace model not present in the pack.`, path: ip,
+          fix: { file: ip, value: ref, targetKind: 'model', context: 'item-definition model', reason: 'custom-namespace model missing from pack' } });
       }
     }
     if (cmdEntries.length > 1) {
@@ -379,7 +381,8 @@ export function buildGraph(files: RawFile[]): Graph {
         issues.push({ severity: 'error', category: 'broken-reference',
           title: 'Override references a missing model',
           detail: `custom_model_data override in "${baseItem}" points at "${ov.model}", which is not in the pack.`,
-          path: mp });
+          path: mp,
+          fix: { file: mp, value: ov.model, targetKind: 'model', context: 'override model', reason: 'custom-namespace model missing from pack' } });
       }
       const cmdv = ov.predicate?.custom_model_data;
       // Key by the FULL predicate: two overrides only collide when their entire
@@ -441,7 +444,8 @@ export function buildGraph(files: RawFile[]): Graph {
         else if (tr.status === 'broken') {
           issues.push({ severity: 'error', category: 'broken-reference',
             title: 'Font references a missing bitmap',
-            detail: `bitmap provider file "${prov.file}" is not present in the pack.`, path: fp });
+            detail: `bitmap provider file "${prov.file}" is not present in the pack.`, path: fp,
+            fix: { file: fp, value: prov.file, targetKind: 'font', context: 'font bitmap', reason: 'bitmap texture missing from pack' } });
         }
       } else if ((prov.type === 'ttf' || prov.type === 'unihex') &&
                  typeof (prov.file ?? prov.hex_file ?? prov.sizes) === 'string') {
@@ -483,7 +487,8 @@ export function buildGraph(files: RawFile[]): Graph {
       else if (parseLoc(t).namespace !== 'minecraft') {
         issues.push({ severity: 'error', category: 'broken-reference',
           title: 'Particle references a missing texture',
-          detail: `"${t}" → ${target} is not present in the pack.`, path: pp });
+          detail: `"${t}" → ${target} is not present in the pack.`, path: pp,
+          fix: { file: pp, value: t, targetKind: 'texture', context: 'particle texture', reason: 'particle texture missing from pack' } });
       }
     }
   }
@@ -515,7 +520,8 @@ export function buildGraph(files: RawFile[]): Graph {
         else if (parseLoc(layer.texture).namespace !== 'minecraft') {
           issues.push({ severity: 'error', category: 'broken-reference',
             title: 'Equipment references a missing texture',
-            detail: `layer "${layerType}" texture "${layer.texture}" → ${target} is not present.`, path: ep });
+            detail: `layer "${layerType}" texture "${layer.texture}" → ${target} is not present.`, path: ep,
+            fix: { file: ep, value: layer.texture, targetKind: 'texture', context: `equipment layer "${layerType}"`, reason: 'equipment texture missing from pack' } });
         }
       }
     }
