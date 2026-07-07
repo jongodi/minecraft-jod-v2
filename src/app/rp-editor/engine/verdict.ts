@@ -168,6 +168,9 @@ export function computeAnalysis(input: VerdictInput): AnalysisResult {
   };
 
   const blindSpots = buildBlindSpots(datapackRefs, datapacks, graph);
+  if (meta.overlays.length > 0) {
+    blindSpots.push(`This pack declares ${meta.overlays.length} overlay directory(ies) (${meta.overlays.join(', ')}). Overlay assets load on specific versions and are analysed separately — files inside them are surfaced for review, never flagged for removal.`);
+  }
 
   const brokenRefs = graph.issues
     .filter((i) => i.fix)
@@ -263,14 +266,19 @@ function classifyUnreferenced(node: AssetNode) {
   const ev: Evidence[] = [{ kind: 'no-reference', detail: 'Nothing in the resource pack, no vanilla path, and no supplied datapack references this file.' }];
   if (node.kind === 'texture') {
     const loc = texturePathToLoc(node.path);
-    const custom = loc && loc.namespace !== 'minecraft';
-    if (custom) {
+    if (!loc) {
+      // Non-standard path: not under assets/<ns>/textures/. Most often a pack
+      // overlay directory, whose internal references we do not resolve. Never
+      // flag these for removal — keep for review.
+      node.verdict = 'review'; node.confidence = 'low';
+      ev.push({ kind: 'ambiguity', detail: 'This texture is not under a standard assets/<ns>/textures/ path — it may live in a pack overlay directory whose references are resolved separately in-game. Kept for review, not flagged for removal.' });
+    } else if (loc.namespace !== 'minecraft') {
       node.verdict = 'safe-remove'; node.confidence = 'high';
-      ev.push({ kind: 'note', detail: `Custom namespace "${loc!.namespace}" — cannot be a vanilla override, so nothing loads it by convention.` });
-    } else if (loc && isStrongOverridePath(loc.path)) {
+      ev.push({ kind: 'note', detail: `Custom namespace "${loc.namespace}" — cannot be a vanilla override, so nothing loads it by convention.` });
+    } else if (isStrongOverridePath(loc.path)) {
       // Shouldn't reach here (handled as convention), but guard anyway.
       node.verdict = 'used'; node.confidence = 'certain';
-    } else if (loc && isKnownVanillaTexture(loc.path)) {
+    } else if (isKnownVanillaTexture(loc.path)) {
       node.verdict = 'used'; node.confidence = 'high'; node.vanillaOverride = true;
     } else {
       node.verdict = 'safe-remove'; node.confidence = 'medium';
