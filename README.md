@@ -14,7 +14,7 @@ Built with Next.js 14, TypeScript, Tailwind CSS, and Framer Motion.
 - **Interactive map** : embedded Dynmap
 - **Crew profiles** : per-player pages with bio, posts, and photo uploads; login via crew token
 - **Player stats leaderboard** : playtime, kills, deaths, crafted items, distance walked (read from world stats files via Exaroton)
-- **Resource Pack Editor** : browser-based tool for inspecting and editing Minecraft resource packs (.zip), with texture viewer, 3D model preview, issue checker, pixel painter, pack diff tool, and more
+- **Resource Pack Editor** (`/rp-editor`) : browser-based resource-pack analyser and editor. A Minecraft-accurate dependency engine (run in a Web Worker) resolves parent chains, blockstates, item definitions (1.21.4+) and legacy overrides, fonts, particles, equipment, atlases and datapacks, then reports broken references and provably-unused files with a full evidence trail and confidence tier — it never suggests removing anything a reference (in the pack, at a vanilla path, or in a datapack) still points at. Includes a who-uses-this inspector, an interactive dependency graph, custom_model_data collision + duplicate-texture detection, shareable Markdown/JSON reports, plus the 3D model preview, pixel painter, pack diff and music-disc tools.
 - **Admin panel** (`/admin`) : server control (start/stop/restart), datapack update manager, gallery management
 
 ---
