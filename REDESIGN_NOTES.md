@@ -69,8 +69,8 @@ The 3D perspective tilt effect was removed from gallery cards. It was visually e
 ### Not Changed: Admin Panel
 The admin panel (`/admin`) is a functional tool used by one person. Its design was deliberately not touched — it doesn't need to be beautiful, it needs to be fast and functional. Applying the redesign's spacing to admin CRUD panels would have been unnecessary churn.
 
-### Not Changed: RP Editor
-The resource pack editor is a developer tool with its own interaction paradigm (tabs, Three.js model viewer, file upload). Redesigning it would require understanding the full Three.js integration and testing across the tab views — separate work that belongs in its own iteration.
+### RP Editor — redesigned in its own iteration
+This note originally deferred the resource pack editor as "separate work that belongs in its own iteration." That iteration has since happened: `/rp-editor` was rebuilt on a Minecraft-accurate dependency-analysis engine (run in a Web Worker) and adopts the site's design language — Space Grotesk + JetBrains Mono, the cool-dark palette, and a theme-aware liquid-glass surface system. It uses its own scoped token layer (`rp-editor/ui/tokens`) rather than the public-site section components, but reads from the same CSS variables so it flips with the matrix/western themes.
 
 ### Hover Handlers in Server Components
 The original `page.tsx` footer used inline `onMouseEnter`/`onMouseLeave` handlers, which don't work in Next.js server components. These were replaced with CSS class-based hover states (`.footer-link:hover`), which is the correct approach and has no functional difference.
