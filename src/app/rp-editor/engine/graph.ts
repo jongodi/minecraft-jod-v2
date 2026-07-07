@@ -53,6 +53,8 @@ export interface Graph {
   issues: RawIssue[];
   /** Texture path → the reason(s) it counts as used-by-convention (leaf roots). */
   conventionTextures: Map<string, string>;
+  /** True if any model carries a legacy `overrides` array (pre-1.21.4 system). */
+  hasLegacyOverrides: boolean;
 }
 
 const ALL_KINDS: AssetKind[] = [
@@ -355,9 +357,11 @@ export function buildGraph(files: RawFile[]): Graph {
   }
 
   // ── Legacy item/block overrides (pre-1.21.4) ────────────────────────────────
+  let hasLegacyOverrides = false;
   for (const mp of byKind.model) {
     const json = textParsed.get(mp);
-    if (!json || !Array.isArray(json.overrides)) continue;
+    if (!json || !Array.isArray(json.overrides) || json.overrides.length === 0) continue;
+    hasLegacyOverrides = true;
     const loc = modelPathToLoc(mp);
     const baseItem = loc?.path?.replace(/^item\//, '').replace(/^block\//, '') ?? mp;
     const isBaseVanilla = loc?.namespace === 'minecraft' &&
@@ -641,7 +645,7 @@ export function buildGraph(files: RawFile[]): Graph {
     }
   }
 
-  return { nodes, byKind, roots, models, cmd, issues, conventionTextures };
+  return { nodes, byKind, roots, models, cmd, issues, conventionTextures, hasLegacyOverrides };
 }
 
 /**

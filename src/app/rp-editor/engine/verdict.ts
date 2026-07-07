@@ -71,15 +71,21 @@ export function computeAnalysis(input: VerdictInput): AnalysisResult {
       title: 'pack.mcmeta problem', detail: err, path: 'pack.mcmeta',
       evidence: [{ kind: 'note', detail: err, source: 'pack.mcmeta' }], confidence: 'certain' });
   }
-  // System / format mismatch.
+  // System / format mismatch — either system used against the wrong format.
   const hasItemDefs = graph.byKind.item_definition.length > 0;
-  const hasLegacyOverrides = graph.byKind.model.some((m) => nodes[m] && graph.models[m]);
   if (meta.itemSystem === 'legacy-overrides' && hasItemDefs) {
     findings.push({ id: nextId(), severity: 'warning', category: 'system-mismatch',
       title: 'Item definitions present but pack_format predates them',
       detail: `This pack declares pack_format ${meta.packFormat} (${meta.versionLabel}), but ships assets/<ns>/items/ definitions, which Minecraft only reads from 1.21.4 (format 46) onward. Those files will be ignored on the declared version.`,
       path: 'pack.mcmeta', confidence: 'high',
       evidence: [{ kind: 'note', detail: `${graph.byKind.item_definition.length} item definition file(s) found.` }] });
+  }
+  if (meta.itemSystem === 'item-definition' && graph.hasLegacyOverrides && !hasItemDefs) {
+    findings.push({ id: nextId(), severity: 'warning', category: 'system-mismatch',
+      title: 'Legacy custom_model_data overrides on a version that ignores them',
+      detail: `This pack declares pack_format ${meta.packFormat} (${meta.versionLabel}), where item model "overrides" with custom_model_data predicates no longer work — Minecraft 1.21.4+ reads item models from assets/<ns>/items/ instead. These overrides render nothing; migrate them to item definitions.`,
+      path: 'pack.mcmeta', confidence: 'high',
+      evidence: [{ kind: 'note', detail: 'Models with an "overrides" array were found, but no assets/<ns>/items/ definitions exist.' }] });
   }
 
   // Graph issues → findings.
