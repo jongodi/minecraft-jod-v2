@@ -135,6 +135,20 @@ export function buildGraph(files: RawFile[]): Graph {
     if (!conventionTextures.has(texPath)) conventionTextures.set(texPath, reason);
   }
 
+  const casingSeen = new Set<string>();
+  /** A reference resolved only by ignoring case — breaks on case-sensitive (Linux) servers. */
+  function casingIssue(referrer: string, ref: string, actual: string) {
+    const k = referrer + '|' + ref;
+    if (casingSeen.has(k)) return;
+    casingSeen.add(k);
+    issues.push({
+      severity: 'warning', category: 'casing-mismatch',
+      title: 'Reference casing does not match the file',
+      detail: `"${ref}" only resolves to ${actual} when case is ignored. Minecraft is case-sensitive on Linux servers, so this will render as missing there even though it may work on Windows.`,
+      path: referrer, refs: [actual],
+    });
+  }
+
   // ── Texture reference resolution ────────────────────────────────────────────
   type TexResult =
     | { status: 'found'; path: string; casing: boolean }
@@ -194,6 +208,7 @@ export function buildGraph(files: RawFile[]): Graph {
         if (seen.has(pr.path)) break; // cycle guard
         seen.add(pr.path);
         addEdge(modelPath, pr.path); // depends on the in-pack parent
+        if (pr.casing) casingIssue(modelPath, parent, pr.path);
         cur = pr.path;
         continue;
       }
@@ -220,6 +235,7 @@ export function buildGraph(files: RawFile[]): Graph {
       if (tr.status === 'found') {
         res.textures.push({ key, value, status: 'found', resolvedPath: tr.path });
         addEdge(modelPath, tr.path);
+        if (tr.casing) casingIssue(modelPath, value, tr.path);
       } else if (tr.status === 'vanilla') {
         res.textures.push({ key, value, status: 'vanilla' });
       } else {
@@ -291,7 +307,7 @@ export function buildGraph(files: RawFile[]): Graph {
     }
     for (const ref of modelRefs) {
       const mr = resolveModelRef(ref);
-      if (mr.status === 'found') addEdge(bp, mr.path);
+      if (mr.status === 'found') { addEdge(bp, mr.path); if (mr.casing) casingIssue(bp, ref, mr.path); }
       else if (mr.status === 'broken') {
         issues.push({ severity: 'error', category: 'broken-reference',
           title: 'Blockstate references a missing model',
@@ -318,11 +334,11 @@ export function buildGraph(files: RawFile[]): Graph {
         : `Custom item model "${loc?.namespace}:${name}" — used only if a datapack/plugin sets it via the item_model component.`,
     });
     const modelRefs: string[] = [];
-    const cmdEntries: Array<{ threshold: string | number; model: string }> = [];
+    const cmdEntries: CmdEntry[] = [];
     walkItemModel(json?.model, modelRefs, cmdEntries);
     for (const ref of modelRefs) {
       const mr = resolveModelRef(ref);
-      if (mr.status === 'found') addEdge(ip, mr.path);
+      if (mr.status === 'found') { addEdge(ip, mr.path); if (mr.casing) casingIssue(ip, ref, mr.path); }
       else if (mr.status === 'broken') {
         issues.push({ severity: 'error', category: 'broken-reference',
           title: 'Item definition references a missing model',
@@ -350,11 +366,11 @@ export function buildGraph(files: RawFile[]): Graph {
       roots.set(mp, { path: mp, kind: 'certain',
         reason: `Base model for vanilla item/block "${baseItem}" (overrides the default).` });
     }
-    const cmdEntries: Array<{ threshold: string | number; model: string }> = [];
+    const cmdEntries: CmdEntry[] = [];
     for (const ov of json.overrides) {
       if (!ov || typeof ov !== 'object' || typeof ov.model !== 'string') continue;
       const mr = resolveModelRef(ov.model);
-      if (mr.status === 'found') addEdge(mp, mr.path);
+      if (mr.status === 'found') { addEdge(mp, mr.path); if (mr.casing) casingIssue(mp, ov.model, mr.path); }
       else if (mr.status === 'broken') {
         issues.push({ severity: 'error', category: 'broken-reference',
           title: 'Override references a missing model',
@@ -362,7 +378,10 @@ export function buildGraph(files: RawFile[]): Graph {
           path: mp });
       }
       const cmdv = ov.predicate?.custom_model_data;
-      if (cmdv !== undefined) cmdEntries.push({ threshold: cmdv, model: ov.model });
+      // Key by the FULL predicate: two overrides only collide when their entire
+      // predicate is identical. Distinct predicates that share a
+      // custom_model_data value (bow pulling/pull, compass angle) are not a bug.
+      if (cmdv !== undefined) cmdEntries.push({ key: predicateSig(ov.predicate), value: cmdv, model: ov.model });
     }
     if (cmdEntries.length > 1) {
       const dupes = findThresholdDupes(cmdEntries);
@@ -370,6 +389,25 @@ export function buildGraph(files: RawFile[]): Graph {
         cmd.push({ baseItem, value: d.value, system: 'legacy-overrides',
           entries: d.entries.map((e) => ({ source: mp, model: e })) });
       }
+    }
+  }
+
+  // ── Vanilla model overrides (convention roots) ──────────────────────────────
+  // A minecraft-namespace model at models/block|item/<vanilla-name> overrides a
+  // vanilla model that vanilla's own blockstate/item still points at — so it is
+  // used even with NO in-pack reference. Rooting these prevents a false-unused
+  // for packs that replace vanilla models directly (a classic trap).
+  for (const mp of byKind.model) {
+    if (roots.has(mp)) continue;
+    const loc = modelPathToLoc(mp);
+    if (loc?.namespace !== 'minecraft') continue;
+    const isItem = loc.path.startsWith('item/');
+    const isBlock = loc.path.startsWith('block/');
+    if (!isItem && !isBlock) continue;
+    const base = loc.path.replace(/^item\//, '').replace(/^block\//, '');
+    if (isVanillaItem(base)) {
+      roots.set(mp, { path: mp, kind: 'certain',
+        reason: `Overrides the vanilla ${isItem ? 'item' : 'block'} model "${base}" (vanilla still renders it).` });
     }
   }
 
@@ -606,11 +644,26 @@ export function buildGraph(files: RawFile[]): Graph {
   return { nodes, byKind, roots, models, cmd, issues, conventionTextures };
 }
 
+/**
+ * A candidate custom_model_data mapping. `key` is the collision grouping key:
+ * for item-definition range_dispatch it is the threshold; for legacy overrides
+ * it is the FULL predicate signature (so a bow's pulling/pull stages, which
+ * share one custom_model_data value, are NOT flagged as a collision).
+ */
+interface CmdEntry { key: string; value: string | number; model: string }
+
+/** Stable signature of a predicate object (keys sorted). */
+function predicateSig(pred: any): string {
+  if (!pred || typeof pred !== 'object') return '{}';
+  const keys = Object.keys(pred).sort();
+  return JSON.stringify(keys.map((k) => [k, pred[k]]));
+}
+
 // ── Item-model tree walker (1.21.4+ + generic) ────────────────────────────────
 function walkItemModel(
   node: any,
   out: string[],
-  cmdEntries: Array<{ threshold: string | number; model: string }>,
+  cmdEntries: CmdEntry[],
   depth = 0,
 ) {
   if (!node || depth > 40) return;
@@ -628,7 +681,7 @@ function walkItemModel(
         else if (typeof e?.model === 'string') out.push(e.model);
         if (prop === 'custom_model_data' && e?.threshold !== undefined && typeof e?.model !== 'undefined') {
           const m = typeof e.model === 'string' ? e.model : (e.model?.model ?? JSON.stringify(e.model));
-          cmdEntries.push({ threshold: e.threshold, model: typeof m === 'string' ? m : JSON.stringify(m) });
+          cmdEntries.push({ key: String(e.threshold), value: e.threshold, model: typeof m === 'string' ? m : JSON.stringify(m) });
         }
       }
     }
@@ -668,18 +721,22 @@ function walkItemModel(
   walkItemModel(node.on_false, out, cmdEntries, depth + 1);
 }
 
-/** Find custom_model_data thresholds mapped to more than one distinct model. */
+/**
+ * Find collisions: the same grouping key mapped to more than one distinct model.
+ * For item definitions the key is the threshold; for legacy overrides it is the
+ * full predicate, so distinct predicates that merely share a custom_model_data
+ * value (bow pull stages, compass angles) are correctly NOT reported.
+ */
 function findThresholdDupes(
-  entries: Array<{ threshold: string | number; model: string }>,
+  entries: CmdEntry[],
 ): Array<{ value: string | number; entries: string[] }> {
-  const byVal = new Map<string, { value: string | number; models: Set<string> }>();
+  const byKey = new Map<string, { value: string | number; models: Set<string> }>();
   for (const e of entries) {
-    const key = String(e.threshold);
-    if (!byVal.has(key)) byVal.set(key, { value: e.threshold, models: new Set() });
-    byVal.get(key)!.models.add(e.model);
+    if (!byKey.has(e.key)) byKey.set(e.key, { value: e.value, models: new Set() });
+    byKey.get(e.key)!.models.add(e.model);
   }
   const out: Array<{ value: string | number; entries: string[] }> = [];
-  for (const { value, models } of byVal.values()) {
+  for (const { value, models } of byKey.values()) {
     if (models.size > 1) out.push({ value, entries: [...models] });
   }
   return out;
