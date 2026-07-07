@@ -116,12 +116,22 @@ export interface DatapackRef {
   context?: string;
 }
 
-/** A broken texture reference inside a model (kept for the fix UI). */
+/**
+ * A broken reference that can be repointed. Applying a fix replaces every
+ * occurrence of the exact `value` string inside `file` with a new resource
+ * location — safe because `value` is a concrete, missing resource location, so
+ * all its occurrences in that file point at the same broken target.
+ */
 export interface BrokenRef {
-  modelPath: string;
-  key: string;
+  /** The file to edit. */
+  file: string;
+  /** The exact broken resource-location string to replace. */
   value: string;
-  /** Why it's broken: the custom namespace has no such asset. */
+  /** What the reference should resolve to — drives the suggestion pool. */
+  targetKind: 'texture' | 'model' | 'font';
+  /** Human label for the reference site, e.g. "texture 'layer0'". */
+  context: string;
+  /** Why it's broken (the custom namespace has no such asset). */
   reason: string;
 }
 
