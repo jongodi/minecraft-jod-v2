@@ -21,7 +21,7 @@ import {
   itemDefPathToLoc, texturePathToLoc,
 } from './resloc';
 import {
-  isVanillaModelRef, isStrongOverridePath, isVanillaItem, isKnownVanillaTexture,
+  isVanillaModelRef, isStrongOverridePath, isVanillaItem, isVanillaBlock, isKnownVanillaTexture,
   VANILLA_FONTS, VANILLA_PARTICLES, VANILLA_EQUIPMENT,
 } from './vanilla';
 
@@ -412,7 +412,11 @@ export function buildGraph(files: RawFile[]): Graph {
     const isBlock = loc.path.startsWith('block/');
     if (!isItem && !isBlock) continue;
     const base = loc.path.replace(/^item\//, '').replace(/^block\//, '');
-    if (isVanillaItem(base)) {
+    // A vanilla-named model (by the block/item registry, or a multi-variant name
+    // whose base block exists, e.g. oak_stairs_inner) overrides a default that
+    // vanilla still renders — used-by-convention even with no in-pack reference.
+    const baseBlock = base.replace(/_(inner|outer|top|bottom|side|open|on|lit|horizontal|vertical|\d+)$/g, '');
+    if ((isItem && isVanillaItem(base)) || (isBlock && (isVanillaBlock(base) || isVanillaBlock(baseBlock)))) {
       roots.set(mp, { path: mp, kind: 'certain',
         reason: `Overrides the vanilla ${isItem ? 'item' : 'block'} model "${base}" (vanilla still renders it).` });
     }

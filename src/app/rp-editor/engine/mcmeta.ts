@@ -39,6 +39,10 @@ const FORMAT_TABLE: Array<{ fmt: number; label: string }> = [
   { fmt: 55, label: '1.21.5' },
   { fmt: 63, label: '1.21.6' },
   { fmt: 64, label: '1.21.7–1.21.8' },
+  { fmt: 69, label: '1.21.9–1.21.10' },
+  { fmt: 75, label: '1.21.11' },
+  { fmt: 84, label: '26.1–26.1.2' },
+  { fmt: 88, label: '26.2' },
 ];
 
 /** First format that uses the assets/<ns>/items/ item-definition system. */
@@ -99,21 +103,41 @@ export function parsePackMeta(
     info.errors.push('pack.mcmeta is missing its required "pack" object.');
     return info;
   }
-  if (typeof pack.pack_format === 'number') {
-    info.packFormat = pack.pack_format;
-    info.versionLabel = versionLabel(pack.pack_format);
-    info.itemSystem = itemSystemFor(pack.pack_format);
+  // Since 1.21.9 (format 69) the single pack_format was replaced by a
+  // min_format / max_format pair, each a number or a [major, minor] array.
+  // pack_format is still accepted for older packs. Read whichever is present.
+  const asMajor = (v: any): number | undefined => {
+    if (typeof v === 'number') return v;
+    if (Array.isArray(v) && typeof v[0] === 'number') return v[0];
+    return undefined;
+  };
+  const minF = asMajor(pack.min_format);
+  const maxF = asMajor(pack.max_format);
+  const legacy = asMajor(pack.pack_format);
+  // The pack's "target" is the newest format it declares support for.
+  const primary = maxF ?? legacy ?? minF;
+  if (primary != null) {
+    info.packFormat = primary;
+    info.itemSystem = itemSystemFor(primary);
+    if (minF != null && maxF != null && minF !== maxF) {
+      info.versionLabel = `${versionLabel(minF)} → ${versionLabel(maxF)}`;
+      info.supportedFormats = { min: minF, max: maxF };
+    } else {
+      info.versionLabel = versionLabel(primary);
+    }
   } else {
-    info.errors.push('"pack.pack_format" is missing or not a number.');
+    info.errors.push('pack.mcmeta declares no pack_format, min_format, or max_format.');
   }
-  // supported_formats can be a number, [min,max], or {min_inclusive,max_inclusive}.
+  // supported_formats can also appear as a number, [min,max], or {min_inclusive,max_inclusive}.
   const sf = pack.supported_formats;
-  if (Array.isArray(sf) && sf.length === 2 && sf.every((x) => typeof x === 'number')) {
-    info.supportedFormats = { min: sf[0], max: sf[1] };
-  } else if (sf && typeof sf === 'object' && typeof sf.min_inclusive === 'number') {
-    info.supportedFormats = { min: sf.min_inclusive, max: sf.max_inclusive ?? sf.min_inclusive };
-  } else if (typeof sf === 'number') {
-    info.supportedFormats = { min: sf, max: sf };
+  if (!info.supportedFormats) {
+    if (Array.isArray(sf) && sf.length === 2 && sf.every((x) => typeof x === 'number')) {
+      info.supportedFormats = { min: sf[0], max: sf[1] };
+    } else if (sf && typeof sf === 'object' && typeof sf.min_inclusive === 'number') {
+      info.supportedFormats = { min: sf.min_inclusive, max: sf.max_inclusive ?? sf.min_inclusive };
+    } else if (typeof sf === 'number') {
+      info.supportedFormats = { min: sf, max: sf };
+    }
   }
   if (pack.description === undefined) {
     info.errors.push('pack.mcmeta has no "description" — the pack shows a blank line in the selection menu.');

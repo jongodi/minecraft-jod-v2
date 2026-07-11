@@ -592,7 +592,7 @@ export function PackMetaEditor({ content, onChange }: any) {
     <div style={{ maxWidth: 480 }}>
       <div className="rp-field"><label>Pack format</label><input type="number" value={fmt} onChange={(e) => upd('pack_format', parseInt(e.target.value) || 34)} /></div>
       <div className="rp-field"><label>Description</label><textarea value={desc} onChange={(e) => upd('description', e.target.value)} /></div>
-      <div style={{ fontSize: 11, color: DIM }}>Format 34 = 1.21–1.21.1 · 46 = 1.21.4 (item definitions) · 55 = 1.21.5</div>
+      <div style={{ fontSize: 11, color: DIM }}>34 = 1.21 · 46 = 1.21.4 (item definitions) · 84 = 26.1 · 88 = 26.2. From 1.21.9 packs use min_format/max_format — edit those in the JSON tab.</div>
     </div>
   );
 }
