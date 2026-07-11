@@ -10,6 +10,17 @@ function normPath(p: string) {
   return p.replace(/^minecraft:/,'').replace(/^assets\/[^/]+\/textures\//,'').replace(/\.(png|jpg|jpeg)$/i,'').toLowerCase();
 }
 
+// Namespace-aware: a texture ref `ns:foo/bar` resolves to
+// assets/ns/textures/foo/bar.png (bare refs default to the minecraft namespace).
+// This is how Minecraft actually resolves refs, so custom-namespace textures
+// (the common case in real packs) render instead of showing as missing.
+function refToPackPath(ref: string): string {
+  const i = ref.indexOf(':');
+  const ns = i < 0 ? 'minecraft' : ref.slice(0, i);
+  const p = (i < 0 ? ref : ref.slice(i + 1)).replace(/^textures\//, '').replace(/\.(png|jpg|jpeg)$/i, '');
+  return `assets/${ns}/textures/${p}.png`;
+}
+
 export default function ModelViewer3D({
   modelContent,
   fileData,
@@ -30,13 +41,25 @@ export default function ModelViewer3D({
   const elements: any[] = model?.elements ?? [];
   const modelTex: Record<string,string> = model?.textures ?? {};
 
-  // Build normalized pack texture lookup
+  // Build a normalized pack texture lookup (fallback for odd/legacy refs).
   const texLookup = new Map<string,string>();
+  const ciLookup = new Map<string,string>();
   for (const p of texturePaths) {
+    ciLookup.set(p.toLowerCase(), p);
     const n = normPath(p);
     texLookup.set(n, p);
     if (n.startsWith('textures/')) texLookup.set(n.slice(9), p);
     else texLookup.set('textures/'+n, p);
+  }
+
+  // Resolve a texture ref to a real pack path (namespace-aware, then fallbacks).
+  function refToPath(ref: string): string | null {
+    const target = refToPackPath(ref);
+    if (fileData[target] != null) return target;
+    const ci = ciLookup.get(target.toLowerCase());
+    if (ci) return ci;
+    const n = normPath(ref);
+    return texLookup.get(n) ?? texLookup.get('textures/'+n) ?? null;
   }
 
   function resolveRef(ref: string, depth = 0): string | null {
@@ -45,19 +68,17 @@ export default function ModelViewer3D({
       const next = modelTex[ref.slice(1)];
       return next ? resolveRef(next, depth+1) : null;
     }
-    const n = normPath(ref);
-    const path = texLookup.get(n) ?? texLookup.get('textures/'+n) ?? null;
+    const path = refToPath(ref);
     return path ? (fileData[path] ?? null) : null;
   }
 
   // Texture slots for the "edit" strip below the viewer
-  const texSlots: {key: string; value: string; dataUrl: string | null; packPath: string | null}[] = 
+  const texSlots: {key: string; value: string; dataUrl: string | null; packPath: string | null}[] =
     Object.entries(modelTex)
       .filter(([, v]) => typeof v === 'string' && !v.startsWith('#'))
       .map(([k, v]) => {
-        const dataUrl = resolveRef(v);
-        const n = normPath(v);
-        const packPath = texLookup.get(n) ?? texLookup.get('textures/'+n) ?? null;
+        const packPath = refToPath(v);
+        const dataUrl = packPath ? (fileData[packPath] ?? null) : null;
         return { key: k, value: v, dataUrl, packPath };
       });
 

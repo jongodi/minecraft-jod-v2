@@ -12,12 +12,13 @@ import { Glass } from './ui/Glass';
 import { OverviewView } from './ui/OverviewView';
 import { ReportView } from './ui/ReportView';
 import { AssetsView } from './ui/AssetsView';
+import { TexturesView } from './ui/TexturesView';
 import { GraphView } from './ui/GraphView';
 import { DatapacksView } from './ui/DatapacksView';
 import { useAnalyzer } from './use-analyzer';
 import { analyze } from './engine/analyze';
 import { extractZip } from './engine/extract';
-import { classify } from './engine/resloc';
+import { classify, texturePathToLoc } from './engine/resloc';
 import { replaceRefsInJson } from './engine/apply';
 import type { RawFile, AnalysisResult, DatapackInput } from './engine/types';
 import { buildTree, TreeNode, PixelPainter, AudioPlayer, JsonEditor, PackMetaEditor } from './editor-tools';
@@ -29,6 +30,23 @@ const ModelViewer3D = dynamic(() => import('./model-viewer-3d'), {
 });
 
 const IMG = /\.(png|jpg|jpeg)$/i;
+
+/** Native pixel size of a data-URL image (defaults to 16×16 if it can't load). */
+function getImageSize(dataUrl: string): Promise<{ w: number; h: number }> {
+  return new Promise((resolve) => {
+    if (!dataUrl) return resolve({ w: 16, h: 16 });
+    const im = new Image();
+    im.onload = () => resolve({ w: im.naturalWidth || 16, h: im.naturalHeight || 16 });
+    im.onerror = () => resolve({ w: 16, h: 16 });
+    im.src = dataUrl;
+  });
+}
+/** A fully-transparent PNG data URL of the given size. */
+function transparentPng(w: number, h: number): string {
+  const c = document.createElement('canvas');
+  c.width = Math.max(1, w); c.height = Math.max(1, h);
+  return c.toDataURL('image/png');
+}
 
 export default function App() {
   const { state, run } = useAnalyzer();
@@ -220,6 +238,68 @@ export default function App() {
     setStatus(`Loaded ${files.length} datapack(s) — coverage updated`);
   }, [reanalyze]);
 
+  // Save painted pixels to an arbitrary texture path (used by the Textures studio).
+  const saveTextureAt = useCallback((path: string, dataUrl: string) => {
+    fileDataRef.current[path] = dataUrl;
+    if (selected === path) setSelectedContent(dataUrl);
+    setRevision((r) => r + 1);
+    setStatus(`Saved ${path.split('/').pop()}`);
+  }, [selected]);
+
+  // Add an overlay layer (layer1+) to a generated item model: create a
+  // transparent texture matching the base, and wire it into the model JSON.
+  const addOverlayLayer = useCallback(async (modelPath: string, baseTexPath: string | null): Promise<string | null> => {
+    const content = fileDataRef.current[modelPath];
+    if (!content) return null;
+    let json: any;
+    try { json = JSON.parse(content); } catch { setStatus('Cannot add overlay: model JSON is invalid'); return null; }
+    const tex = (json.textures && typeof json.textures === 'object') ? json.textures : {};
+    const ns = modelPath.match(/^assets\/([^/]+)\//)?.[1] ?? 'minecraft';
+    const layerKeys = Object.keys(tex).filter((k) => /^layer\d+$/.test(k));
+    const nextIdx = layerKeys.length ? Math.max(...layerKeys.map((k) => parseInt(k.slice(5), 10))) + 1 : 1;
+    const baseName = (typeof tex.layer0 === 'string' ? tex.layer0 : '').replace(/^.*:/, '').split('/').pop()
+      || modelPath.split('/').pop()!.replace(/\.json$/, '');
+    const rel = `item/${baseName}_overlay${nextIdx > 1 ? nextIdx : ''}`;
+    const overlayPath = `assets/${ns}/textures/${rel}.png`;
+    const overlayLoc = `${ns}:${rel}`;
+    const dims = await getImageSize(baseTexPath ? fileDataRef.current[baseTexPath] : '');
+    fileDataRef.current[overlayPath] = transparentPng(dims.w, dims.h);
+    rawFilesRef.current[overlayPath] = { path: overlayPath, kind: 'texture', isImage: true, bytes: 256, image: { width: dims.w, height: dims.h, hash: 'ov:' + overlayPath, ahash: '' } };
+    json.textures = { ...tex, [`layer${nextIdx}`]: overlayLoc };
+    const updated = JSON.stringify(json, null, 2);
+    fileDataRef.current[modelPath] = updated;
+    if (rawFilesRef.current[modelPath]) rawFilesRef.current[modelPath] = { ...rawFilesRef.current[modelPath], text: updated };
+    if (selected === modelPath) setSelectedContent(updated);
+    setFilePaths(Object.keys(fileDataRef.current));
+    reanalyze();
+    setStatus(`Added overlay layer${nextIdx} to ${modelPath.split('/').pop()} — paint it now`);
+    return overlayPath;
+  }, [selected, reanalyze]);
+
+  // Remove an overlay layer from a model; delete its texture only if nothing
+  // else still references it (safe — a shared overlay is kept).
+  const removeOverlayLayer = useCallback((modelPath: string, layerKey: string, texPath: string | null) => {
+    const content = fileDataRef.current[modelPath];
+    if (!content) return;
+    let json: any;
+    try { json = JSON.parse(content); } catch { return; }
+    if (json.textures) delete json.textures[layerKey];
+    const updated = JSON.stringify(json, null, 2);
+    fileDataRef.current[modelPath] = updated;
+    if (rawFilesRef.current[modelPath]) rawFilesRef.current[modelPath] = { ...rawFilesRef.current[modelPath], text: updated };
+    if (texPath && fileDataRef.current[texPath]) {
+      const loc = texturePathToLoc(texPath);
+      const stillUsed = loc != null && Object.entries(fileDataRef.current).some(([p, c]) =>
+        p !== modelPath && p.endsWith('.json') && typeof c === 'string' &&
+        (c.includes(`${loc.namespace}:${loc.path}`) || c.includes(`"${loc.path}"`)));
+      if (!stillUsed) { delete fileDataRef.current[texPath]; delete rawFilesRef.current[texPath]; }
+    }
+    if (selected === modelPath) setSelectedContent(updated);
+    setFilePaths(Object.keys(fileDataRef.current));
+    reanalyze();
+    setStatus(`Removed ${layerKey} from ${modelPath.split('/').pop()}`);
+  }, [selected, reanalyze]);
+
   const exportZip = useCallback(async () => {
     try {
       const zip = new JSZip();
@@ -257,6 +337,7 @@ export default function App() {
     { id: 'overview', label: 'Overview' },
     { id: 'report', label: 'Report', badge: issueCount + (analysis?.summary.safeRemove ?? 0) },
     { id: 'assets', label: 'Assets' },
+    { id: 'textures', label: 'Textures' },
     { id: 'graph', label: 'Graph' },
     { id: 'datapacks', label: 'Datapacks' },
     { id: 'editor', label: 'Editor' },
@@ -333,6 +414,7 @@ export default function App() {
             {tab === 'overview' && <OverviewView analysis={analysis} packName={packName} onGo={setTab} />}
             {tab === 'report' && <ReportView analysis={analysis} fileData={fileDataRef.current} onOpen={openInEditor} onApplyFix={applyFix} onApplyManyFixes={applyManyFixes} onDelete={deleteFiles} onExport={exportReport} />}
             {tab === 'assets' && <AssetsView analysis={analysis} fileData={fileDataRef.current} onOpen={openInEditor} onDelete={deleteFiles} />}
+            {tab === 'textures' && <TexturesView analysis={analysis} fileData={fileDataRef.current} revision={revision} onSaveTexture={saveTextureAt} onAddOverlay={addOverlayLayer} onRemoveOverlay={removeOverlayLayer} onOpenInEditor={openInEditor} />}
             {tab === 'graph' && <GraphView analysis={analysis} onOpen={openInEditor} />}
             {tab === 'datapacks' && <DatapacksView analysis={analysis} onAddDatapacks={addDatapacks} onOpen={openInEditor} />}
             {tab === 'diff' && <PackDiffView fileDataA={fileDataRef.current} filePathsA={filePaths} />}
