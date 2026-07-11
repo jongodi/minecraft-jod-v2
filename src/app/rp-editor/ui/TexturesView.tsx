@@ -6,6 +6,8 @@ import type { AnalysisResult } from '../engine/types';
 import { PixelPainter } from '../editor-tools';
 import { LayeredPreview, type PreviewLayer } from './LayeredPreview';
 import { overlayForTexture, modelForTexture } from './overlays';
+import { entityTemplateFor } from '../engine/entity-models';
+import { normTex } from '../engine/resloc';
 import { Chip } from './bits';
 
 const ModelViewer3D = dynamic(() => import('../model-viewer-3d'), {
@@ -59,8 +61,11 @@ export function TexturesView({
 
   const overlay = sel ? overlayForTexture(sel, analysis) : null;
   const model = sel ? modelForTexture(sel, analysis) : null;
-  const modelJson = model ? safeParse(fileData[model]) : null;
-  const modelHasElements = Array.isArray(modelJson?.elements) && modelJson.elements.length > 0;
+  const isLayeredItem = !!overlay;                 // generated item — edit via 2D layers
+  const entityTpl = sel && !isLayeredItem ? entityTemplateFor(normTex(sel)) : null;
+  // Show the editable 3D view for block textures (any model — the viewer resolves
+  // the parent chain) and for entity textures (bed/boat/chest via templates).
+  const show3D = !isLayeredItem && (!!model || !!entityTpl);
   const baseTexPath = overlay?.layers.find((l) => l.index === 0)?.path ?? sel;
 
   // Layers for the preview: the model's layer stack, or just the texture itself.
@@ -117,9 +122,14 @@ export function TexturesView({
           </div>
           <div className="rp-drawer-body">
             {/* Preview */}
-            <div className="rp-label" style={{ marginBottom: 8 }}>{modelHasElements ? '3D model' : overlay ? 'Item (stacked layers)' : 'Preview'}</div>
-            {modelHasElements && model ? (
-              <ModelViewer3D modelContent={fileData[model] ?? ''} fileData={fileData} texturePaths={textures} revision={revision} />
+            <div className="rp-label" style={{ marginBottom: 8 }}>{show3D ? (entityTpl ? `${entityTpl.name} · 3D` : '3D model — paint on it') : isLayeredItem ? 'Item (stacked layers)' : 'Preview'}</div>
+            {show3D ? (
+              <ModelViewer3D
+                modelContent={model ? (fileData[model] ?? '{}') : '{}'}
+                entityTexture={entityTpl ? sel : null}
+                fileData={fileData} texturePaths={textures} revision={revision}
+                editable onPaint={onSaveTexture} onSelectTexture={(p) => select(p)}
+              />
             ) : (
               <LayeredPreview layers={previewLayers} size={220} />
             )}
