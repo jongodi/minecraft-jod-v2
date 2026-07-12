@@ -18,8 +18,8 @@ export function ReportView({
   analysis: AnalysisResult;
   fileData: Record<string, string>;
   onOpen: (path: string) => void;
-  onApplyFix: (file: string, oldValue: string, newValue: string) => void;
-  onApplyManyFixes: (fixes: Array<{ file: string; from: string; to: string }>) => void;
+  onApplyFix: (file: string, oldValue: string, newValue: string, kind?: BrokenRef['targetKind']) => void;
+  onApplyManyFixes: (fixes: Array<{ file: string; from: string; to: string; kind?: BrokenRef['targetKind'] }>) => void;
   onDelete: (paths: string[]) => void;
   onExport: (kind: 'report' | 'cleanup') => void;
 }) {
@@ -192,7 +192,7 @@ export function ReportView({
 }
 
 // ── Inline single-reference fix ───────────────────────────────────────────────
-function FixControl({ fix, analysis, onApplyFix }: { fix: BrokenRef; analysis: AnalysisResult; onApplyFix: (f: string, o: string, n: string) => void }) {
+function FixControl({ fix, analysis, onApplyFix }: { fix: BrokenRef; analysis: AnalysisResult; onApplyFix: (f: string, o: string, n: string, kind?: BrokenRef['targetKind']) => void }) {
   const suggestions = useMemo(() => suggestReplacements(fix.value, fix.targetKind, analysis, 12), [fix, analysis]);
   const [val, setVal] = useState(() => bestReplacement(fix.value, fix.targetKind, analysis) ?? '');
   const dl = `fx-${fix.file}-${fix.value}`.replace(/[^a-z0-9]/gi, '');
@@ -201,7 +201,7 @@ function FixControl({ fix, analysis, onApplyFix }: { fix: BrokenRef; analysis: A
       <span style={{ fontSize: '0.55rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-faint)' }}>Repoint {fix.context}</span>
       <input className="rp-search" list={dl} value={val} onChange={(e) => setVal(e.target.value)} placeholder={suggestions[0] ?? (fix.targetKind === 'model' ? 'namespace:item/foo' : 'namespace:item/foo')} style={{ minWidth: 180, flex: '0 1 260px' }} />
       <datalist id={dl}>{suggestions.map((s) => <option key={s} value={s} />)}</datalist>
-      <button className="rp-btn sm apply" disabled={!val.trim()} onClick={() => val.trim() && onApplyFix(fix.file, fix.value, val.trim())}>Apply</button>
+      <button className="rp-btn sm apply" disabled={!val.trim()} onClick={() => val.trim() && onApplyFix(fix.file, fix.value, val.trim(), fix.targetKind)}>Apply</button>
     </div>
   );
 }
@@ -212,7 +212,7 @@ function FixAllPanel({
 }: {
   fixables: Fixable[];
   analysis: AnalysisResult;
-  onApply: (fixes: Array<{ file: string; from: string; to: string }>) => void;
+  onApply: (fixes: Array<{ file: string; from: string; to: string; kind?: BrokenRef['targetKind'] }>) => void;
   onCancel: () => void;
 }) {
   const suggestionMap = useMemo(() => {
@@ -238,7 +238,7 @@ function FixAllPanel({
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
           <button className="rp-btn sm apply" disabled={applyCount === 0}
-            onClick={() => onApply(fixables.filter((f) => vals[f.id]?.trim()).map((f) => ({ file: f.fix.file, from: f.fix.value, to: vals[f.id].trim() })))}>
+            onClick={() => onApply(fixables.filter((f) => vals[f.id]?.trim()).map((f) => ({ file: f.fix.file, from: f.fix.value, to: vals[f.id].trim(), kind: f.fix.targetKind })))}>
             Apply {applyCount} fix{applyCount !== 1 ? 'es' : ''}
           </button>
           <button className="rp-btn sm" onClick={onCancel}>Cancel</button>

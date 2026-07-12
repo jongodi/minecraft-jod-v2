@@ -18,8 +18,8 @@ import { DatapacksView } from './ui/DatapacksView';
 import { useAnalyzer } from './use-analyzer';
 import { analyze } from './engine/analyze';
 import { extractZip } from './engine/extract';
-import { classify, texturePathToLoc } from './engine/resloc';
-import { replaceRefsInJson } from './engine/apply';
+import { classify, texturePathToLoc, modelPathToLoc, textureLocToPath, modelLocToPath } from './engine/resloc';
+import { replaceRefsInJson, rewriteRefsInJson, isTextureSlot, isModelSlot, type RefKind } from './engine/apply';
 import type { RawFile, AnalysisResult, DatapackInput } from './engine/types';
 import { buildTree, TreeNode, PixelPainter, AudioPlayer, JsonEditor, PackMetaEditor } from './editor-tools';
 import { generateReportMarkdown, generateCleanupJson, download } from './ui/export';
@@ -171,12 +171,14 @@ export default function App() {
     setStatus(`Saved edits to ${selected.split('/').pop()}`);
   }, [selected]);
 
-  // Repoint one broken reference: replace every occurrence of `oldValue` in the
-  // file with `newValue` (structural, so keys/partials are never touched).
-  const applyFix = useCallback((file: string, oldValue: string, newValue: string) => {
+  // Repoint one broken reference: replace occurrences of `oldValue` in the file
+  // with `newValue` — structural, and constrained to positions matching the
+  // reference kind, so fixing a broken texture can never rewrite a working
+  // model parent that happens to share the same string.
+  const applyFix = useCallback((file: string, oldValue: string, newValue: string, kind?: RefKind) => {
     const content = fileDataRef.current[file];
     if (!content) return;
-    const { text, applied } = replaceRefsInJson(content, [{ from: oldValue, to: newValue }]);
+    const { text, applied } = replaceRefsInJson(content, [{ from: oldValue, to: newValue, kind }]);
     if (!applied) { setStatus(`No occurrence of "${oldValue}" found in ${file.split('/').pop()}`); return; }
     setFile(file, text, true);
     if (selected === file) setSelectedContent(text);
@@ -185,11 +187,11 @@ export default function App() {
   }, [selected, reanalyze]);
 
   // Apply many repoints at once, grouped per file so each file is parsed once.
-  const applyManyFixes = useCallback((fixes: Array<{ file: string; from: string; to: string }>) => {
-    const byFile = new Map<string, Array<{ from: string; to: string }>>();
+  const applyManyFixes = useCallback((fixes: Array<{ file: string; from: string; to: string; kind?: RefKind }>) => {
+    const byFile = new Map<string, Array<{ from: string; to: string; kind?: RefKind }>>();
     for (const f of fixes) {
       if (!f.to.trim()) continue;
-      (byFile.get(f.file) ?? byFile.set(f.file, []).get(f.file)!).push({ from: f.from, to: f.to.trim() });
+      (byFile.get(f.file) ?? byFile.set(f.file, []).get(f.file)!).push({ from: f.from, to: f.to.trim(), kind: f.kind });
     }
     let total = 0; let files = 0;
     for (const [file, repl] of byFile) {
@@ -221,29 +223,46 @@ export default function App() {
     setStatus(`Updated ${Object.keys(updates).length} file(s)`);
   }, [reanalyze]);
 
+  // Rename a file and repoint every reference to it. References are matched by
+  // where they RESOLVE (namespace-aware, case-insensitive), rewritten with the
+  // new location case-preserved, and constrained to the right kind of slot —
+  // texture refs for texture renames, model/parent refs for model renames.
   const renameFile = useCallback((oldPath: string, newPath: string) => {
     if (!oldPath || !newPath || oldPath === newPath) return;
     const data = fileDataRef.current, raw = rawFilesRef.current;
     if (!data[oldPath]) return;
     data[newPath] = data[oldPath]; delete data[oldPath];
     if (raw[oldPath]) { raw[newPath] = { ...raw[oldPath], path: newPath }; delete raw[oldPath]; }
-    const oldNorm = oldPath.replace(/^.*?textures\//, '').replace(IMG, '').toLowerCase();
-    const newNorm = newPath.replace(/^.*?textures\//, '').replace(IMG, '').toLowerCase();
-    if (oldNorm !== newNorm) {
+    // A texture's animation .mcmeta belongs with it — move it too.
+    if (IMG.test(oldPath) && data[oldPath + '.mcmeta'] != null) {
+      data[newPath + '.mcmeta'] = data[oldPath + '.mcmeta']; delete data[oldPath + '.mcmeta'];
+      if (raw[oldPath + '.mcmeta']) { raw[newPath + '.mcmeta'] = { ...raw[oldPath + '.mcmeta'], path: newPath + '.mcmeta' }; delete raw[oldPath + '.mcmeta']; }
+    }
+
+    const oldTex = texturePathToLoc(oldPath), newTex = texturePathToLoc(newPath);
+    const oldMod = modelPathToLoc(oldPath), newMod = modelPathToLoc(newPath);
+    // Preserve the reference style: keep bare (no namespace) when the original
+    // was bare and the new location is in the minecraft namespace.
+    const render = (orig: string, loc: { namespace: string; path: string }) =>
+      loc.namespace === 'minecraft' && !orig.includes(':') ? loc.path : `${loc.namespace}:${loc.path}`;
+
+    if ((oldTex && newTex) || (oldMod && newMod)) {
       for (const p of Object.keys(data)) {
-        if (!p.endsWith('.json')) continue;
-        try {
-          const json = JSON.parse(data[p]); let changed = false;
-          if (json.textures) {
-            for (const k of Object.keys(json.textures)) {
-              const v: string = json.textures[k];
-              if (typeof v !== 'string') continue;
-              const vn = v.replace(/^minecraft:/, '').toLowerCase();
-              if (vn === oldNorm || vn === 'textures/' + oldNorm) { json.textures[k] = newNorm; changed = true; }
-            }
-            if (changed) { const s = JSON.stringify(json, null, 2); data[p] = s; if (raw[p]) raw[p] = { ...raw[p], text: s }; }
+        if (!p.endsWith('.json') && !p.endsWith('.mcmeta')) continue;
+        const content = data[p];
+        if (typeof content !== 'string' || content.startsWith('data:')) continue;
+        const { text, applied } = rewriteRefsInJson(content, (value, { key, parentKey }) => {
+          if (oldTex && newTex && isTextureSlot(key, parentKey) &&
+              textureLocToPath(value).toLowerCase() === oldPath.toLowerCase()) {
+            return render(value, newTex);
           }
-        } catch {}
+          if (oldMod && newMod && isModelSlot(key, parentKey) &&
+              modelLocToPath(value).toLowerCase() === oldPath.toLowerCase()) {
+            return render(value, newMod);
+          }
+          return null;
+        });
+        if (applied > 0) { data[p] = text; if (raw[p]) raw[p] = { ...raw[p], text }; }
       }
     }
     setFilePaths(Object.keys(data));
@@ -359,16 +378,20 @@ export default function App() {
   const isMeta = !!selected?.includes('pack.mcmeta');
   const isJson = ext === 'json' && !isMeta;
 
-  const TABS = [
+  // Navigation: the four everyday destinations up front, everything else under
+  // "More" — every option stays one click away without a 9-tab wall.
+  const PRIMARY_TABS = [
     { id: 'overview', label: 'Overview' },
     { id: 'report', label: 'Report', badge: issueCount + (analysis?.summary.safeRemove ?? 0) },
-    { id: 'assets', label: 'Assets' },
     { id: 'textures', label: 'Textures' },
-    { id: 'graph', label: 'Graph' },
-    { id: 'datapacks', label: 'Datapacks' },
-    { id: 'editor', label: 'Editor' },
-    { id: 'diff', label: 'Diff' },
-    { id: 'discs', label: 'Discs' },
+    { id: 'editor', label: 'Files' },
+  ];
+  const MORE_TABS = [
+    { id: 'assets', label: 'Assets', hint: 'every file + verdicts' },
+    { id: 'datapacks', label: 'Datapacks', hint: 'load for coverage' },
+    { id: 'graph', label: 'Graph', hint: 'dependency map' },
+    { id: 'diff', label: 'Diff', hint: 'compare two packs' },
+    { id: 'discs', label: 'Discs', hint: 'custom music' },
   ];
 
   const busy = state.status === 'running';
@@ -403,12 +426,13 @@ export default function App() {
       {/* Tabs */}
       {fileCount > 0 && analysis && (
         <div className="rp-tabs">
-          {TABS.map((t) => (
+          {PRIMARY_TABS.map((t) => (
             <div key={t.id} className={`rp-tab${tab === t.id ? ' active' : ''}`} onClick={() => setTab(t.id)}>
               {t.label}
               {t.badge != null && t.badge > 0 && <span className={`tabnum${t.id === 'report' && (analysis?.summary.errors ?? 0) > 0 ? ' err' : ''}`}>{t.badge}</span>}
             </div>
           ))}
+          <MoreTabs items={MORE_TABS} tab={tab} setTab={setTab} />
         </div>
       )}
 
@@ -495,6 +519,39 @@ export default function App() {
   );
 }
 
+// ── "More" tab dropdown — secondary destinations, one click away ──────────────
+function MoreTabs({ items, tab, setTab }: {
+  items: Array<{ id: string; label: string; hint?: string }>;
+  tab: string; setTab: (id: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    window.addEventListener('mousedown', close);
+    return () => window.removeEventListener('mousedown', close);
+  }, [open]);
+  const active = items.find((t) => t.id === tab);
+  return (
+    <div ref={ref} className="rp-more">
+      <div className={`rp-tab${active ? ' active' : ''}`} onClick={() => setOpen((o) => !o)}>
+        {active ? active.label : 'More'} <span style={{ fontSize: 8 }}>▾</span>
+      </div>
+      {open && (
+        <div className="rp-more-menu rp-rise">
+          {items.map((t) => (
+            <div key={t.id} className={`rp-more-item${tab === t.id ? ' active' : ''}`} onClick={() => { setTab(t.id); setOpen(false); }}>
+              {t.label}
+              {t.hint && <span className="hint">{t.hint}</span>}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Editor pane (tree + preview/paint/audio/json/meta/3d) ─────────────────────
 function EditorPane({
   tree, selected, selectedContent, editorTab, setEditorTab, openInEditor, renameFile,
@@ -557,7 +614,13 @@ function EditorPane({
                 {editorTab === 'audio' && isAudio && <AudioPlayer dataUrl={selectedContent} name={selected.split('/').pop()} />}
                 {editorTab === 'meta' && isMeta && <PackMetaEditor content={selectedContent} onChange={updateContent} />}
                 {editorTab === 'editor' && (isJson || isMeta) && <JsonEditor content={selectedContent} onChange={updateContent} />}
-                {editorTab === 'editor' && !isJson && !isMeta && !isImage && !isAudio && <textarea className="rp-code" value={selectedContent || ''} onChange={(e) => updateContent(e.target.value)} spellCheck={false} />}
+                {editorTab === 'editor' && !isJson && !isMeta && !isImage && !isAudio && (
+                  selectedContent?.startsWith('data:application/octet-stream')
+                    ? <div style={{ padding: 20, fontSize: '0.72rem', color: 'var(--ink-dim)', lineHeight: 1.7 }}>
+                        Binary file — kept as-is and included unchanged when you export the pack.
+                      </div>
+                    : <textarea className="rp-code" value={selectedContent || ''} onChange={(e) => updateContent(e.target.value)} spellCheck={false} />
+                )}
               </div>
             )}
           </>

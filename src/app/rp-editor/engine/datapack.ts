@@ -16,12 +16,15 @@
 import type { DatapackInput, DatapackRef } from './types';
 
 const ITEM_MODEL_RE = /(?:minecraft:)?item_model\s*[=:]\s*"?([a-z0-9_.-]+:[a-z0-9_./-]+|[a-z0-9_./-]+)"?/gi;
-const FONT_RE = /"font"\s*:\s*"([a-z0-9_.-]+:[a-z0-9_./-]+|[a-z0-9_./-]+)"/gi;
+// JSON text components quote the key; SNBT components (tellraw, item names) may
+// not quote either side — accept both.
+const FONT_RE = /"?font"?\s*:\s*["']?([a-z0-9_.-]+:[a-z0-9_./-]+|[a-z0-9_./-]+)["']?/gi;
 // custom_model_data as a component: int (legacy) or object (1.21.4+).
 const CMD_INT_RE = /(?:minecraft:)?custom_model_data\s*[=:]\s*(\d+)\b/gi;
 const CMD_OBJ_RE = /(?:minecraft:)?custom_model_data\s*[=:]\s*\{/gi;
-// Base item preceding a component block: `minecraft:diamond_sword[` or `diamond_sword[`.
-const ITEM_WITH_COMPONENTS_RE = /\b(?:minecraft:)?([a-z_]+)\s*\[/gi;
+// Base item preceding a component block: `minecraft:diamond_sword[` or
+// `music_disc_13[` — item ids can contain digits.
+const ITEM_WITH_COMPONENTS_RE = /\b(?:minecraft:)?([a-z0-9_]+)\s*\[/gi;
 
 /** A single deduped external reference plus its provenance. */
 export interface ExtractedRefs {

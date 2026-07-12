@@ -4,6 +4,7 @@ import { useRef, useEffect, useState } from 'react';
 import * as THREE from 'three';
 import { resolveModelGeometry, makeModelLookup } from './engine/model-geometry';
 import { entityTemplateFor } from './engine/entity-models';
+import { isVanillaTexturePath } from './engine/vanilla-manifest';
 
 // Three.js BoxGeometry face order: +X(east), -X(west), +Y(up), -Y(down), +Z(south), -Z(north)
 const FACE_ORDER = ['east', 'west', 'up', 'down', 'south', 'north'];
@@ -108,6 +109,23 @@ export default function ModelViewer3D({
     return resolveTexPath(ref);
   }
 
+  // Resolve a texture variable to its concrete resource location (no pack check).
+  function resolveVarToRef(ref: string, depth = 0): string | null {
+    if (depth > 8 || !ref) return null;
+    if (ref.startsWith('#')) {
+      const next = modelTex[ref.slice(1)];
+      return next ? resolveVarToRef(next, depth + 1) : null;
+    }
+    return ref;
+  }
+
+  // Is this ref a vanilla texture the pack just doesn't override (vs. broken)?
+  function isVanillaTextureRef(ref: string): boolean {
+    const i = ref.indexOf(':');
+    if (i >= 0 && ref.slice(0, i) !== 'minecraft') return false;
+    return isVanillaTexturePath((i >= 0 ? ref.slice(i + 1) : ref).replace(/^textures\//, ''));
+  }
+
   // Texture slots for the edit strip.
   const texSlots = Object.entries(modelTex)
     .filter(([, v]) => typeof v === 'string' && !(v as string).startsWith('#'))
@@ -137,9 +155,24 @@ export default function ModelViewer3D({
     el.appendChild(renderer.domElement);
 
     // ── Per-texture editable canvases (shared across faces) ───────────────────
-    interface TexEntry { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D; tex: THREE.CanvasTexture; path: string; loaded: boolean }
+    // `strip` holds the full frame strip for animated textures: the visible canvas
+    // shows (and paints) only frame 0 — how the game maps model UVs — and saves
+    // composite the edited frame back into the strip so no frames are lost.
+    interface TexEntry { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D; tex: THREE.CanvasTexture; path: string; loaded: boolean; strip?: HTMLCanvasElement }
     const texCache = new Map<string, TexEntry>();
     const emitTimers = new Map<string, any>();
+    // First-frame height for an animated texture (mcmeta-driven only, so tall
+    // non-animated art like paintings is never cropped).
+    function frameHeightFor(path: string, w: number, h: number): number {
+      const meta = fileData[path + '.mcmeta'];
+      if (!meta || typeof meta !== 'string') return h;
+      try {
+        const anim = JSON.parse(meta)?.animation;
+        if (!anim || typeof anim !== 'object') return h;
+        const fh = typeof anim.height === 'number' && anim.height > 0 ? anim.height : w;
+        return fh < h ? fh : h;
+      } catch { return h; }
+    }
     function getTexEntry(path: string): TexEntry {
       const hit = texCache.get(path);
       if (hit) return hit;
@@ -155,9 +188,18 @@ export default function ModelViewer3D({
         const img = new Image();
         img.onload = () => {
           const w = img.naturalWidth || 16, h = img.naturalHeight || 16;
-          const resized = w !== canvas.width || h !== canvas.height;
-          canvas.width = w; canvas.height = h;
-          ctx.imageSmoothingEnabled = false; ctx.clearRect(0, 0, w, h); ctx.drawImage(img, 0, 0);
+          const fh = frameHeightFor(path, w, h);
+          const resized = w !== canvas.width || fh !== canvas.height;
+          canvas.width = w; canvas.height = fh;
+          ctx.imageSmoothingEnabled = false; ctx.clearRect(0, 0, w, fh);
+          ctx.drawImage(img, 0, 0, w, fh, 0, 0, w, fh);
+          if (fh !== h) {
+            const strip = document.createElement('canvas');
+            strip.width = w; strip.height = h;
+            const sctx = strip.getContext('2d')!;
+            sctx.imageSmoothingEnabled = false; sctx.drawImage(img, 0, 0);
+            entry.strip = strip;
+          }
           entry.loaded = true;
           // A canvas resize needs a full GPU re-upload, or three.js keeps the old
           // (blank) dimensions and the surface samples as transparent.
@@ -172,16 +214,31 @@ export default function ModelViewer3D({
       if (!onPaint) return;
       clearTimeout(emitTimers.get(path));
       emitTimers.set(path, setTimeout(() => {
-        const e = texCache.get(path); if (e) onPaint(path, e.canvas.toDataURL('image/png'));
+        const e = texCache.get(path); if (!e) return;
+        let out = e.canvas;
+        if (e.strip) {
+          const sctx = e.strip.getContext('2d')!;
+          sctx.imageSmoothingEnabled = false;
+          sctx.clearRect(0, 0, e.canvas.width, e.canvas.height);
+          sctx.drawImage(e.canvas, 0, 0);
+          out = e.strip;
+        }
+        onPaint(path, out.toDataURL('image/png'));
       }, 260));
     }
 
     const MISSING = new THREE.MeshLambertMaterial({ color: 0xee44ee, transparent: true, opacity: 0.75 });
     const EMPTY = new THREE.MeshLambertMaterial({ color: 0x111318, transparent: true, opacity: 0.12 });
+    // A face whose texture is a vanilla asset the pack simply doesn't override —
+    // neutral wood-grey, not the magenta "broken reference" alarm.
+    const VANILLA = new THREE.MeshLambertMaterial({ color: 0x8a8378 });
     function makeMat(face: any): THREE.MeshLambertMaterial {
       if (!face?.texture) return EMPTY;
       const path = resolveVarToPath(face.texture);
-      if (!path || fileData[path] == null) return MISSING;
+      if (!path || fileData[path] == null) {
+        const ref = resolveVarToRef(face.texture);
+        return ref && isVanillaTextureRef(ref) ? VANILLA : MISSING;
+      }
       const entry = getTexEntry(path);
       const mat = new THREE.MeshLambertMaterial({ map: entry.tex, transparent: true, alphaTest: 0.02 });
       if (typeof face.tintindex === 'number' && face.tintindex >= 0) mat.color = TINT.clone();
@@ -197,7 +254,10 @@ export default function ModelViewer3D({
       const [fx, fy, fz] = e.from as number[];
       const [tx, ty, tz] = e.to as number[];
       const [w, h, d] = [tx - fx, ty - fy, tz - fz];
-      if (w <= 0 || h <= 0 || d <= 0) continue;
+      // Zero-thickness elements are real geometry (cross-plants, crops, chains
+      // are flat planes) — only inverted or fully-degenerate boxes are skipped.
+      if (w < 0 || h < 0 || d < 0) continue;
+      if ([w, h, d].filter((v) => v === 0).length >= 2) continue;
       const geo = new THREE.BoxGeometry(w, h, d);
       const uvA = geo.attributes.uv as THREE.BufferAttribute;
       FACE_ORDER.forEach((fn, fi) => {
@@ -226,6 +286,14 @@ export default function ModelViewer3D({
         // through with no axis flip.
         pivot.rotation.set(
           THREE.MathUtils.degToRad(rx), THREE.MathUtils.degToRad(ry), THREE.MathUtils.degToRad(rz));
+        // Vanilla `rescale` stretches the element so its rotated span still fills
+        // the block — how crossed plants reach corner to corner.
+        if (er.rescale && er.axis && er.angle) {
+          const f = 1 / Math.cos(THREE.MathUtils.degToRad(Math.min(Math.abs(er.angle), 45)));
+          if (er.axis === 'x') pivot.scale.set(1, f, f);
+          else if (er.axis === 'y') pivot.scale.set(f, 1, f);
+          else pivot.scale.set(f, f, 1);
+        }
         pivot.add(mesh); group.add(pivot);
       } else {
         mesh.position.set(cx, cy, cz); group.add(mesh);
@@ -385,14 +453,16 @@ export default function ModelViewer3D({
 }
 
 // Normalize an element `rotation` into euler degrees + origin, accepting both the
-// vanilla single-axis form `{ axis, angle, origin }` and the Blockbench free-rotation
-// form `{ x, y, z, origin }`. Returns null when there is no actual rotation.
-function elementRotation(rot: any): { origin: number[]; rx: number; ry: number; rz: number } | null {
+// vanilla single-axis form `{ axis, angle, origin, rescale? }` and the Blockbench
+// free-rotation form `{ x, y, z, origin }`. Returns null when there is no rotation.
+function elementRotation(rot: any): { origin: number[]; rx: number; ry: number; rz: number; axis?: string; angle?: number; rescale?: boolean } | null {
   if (!rot || typeof rot !== 'object') return null;
   const origin = Array.isArray(rot.origin) ? rot.origin : [8, 8, 8];
   let rx = 0, ry = 0, rz = 0;
+  let axis: string | undefined, angle: number | undefined;
   if (typeof rot.axis === 'string') {
     const a = typeof rot.angle === 'number' ? rot.angle : 0;
+    axis = rot.axis; angle = a;
     if (rot.axis === 'x') rx = a; else if (rot.axis === 'y') ry = a; else if (rot.axis === 'z') rz = a;
   } else {
     if (typeof rot.x === 'number') rx = rot.x;
@@ -400,7 +470,7 @@ function elementRotation(rot: any): { origin: number[]; rx: number; ry: number; 
     if (typeof rot.z === 'number') rz = rot.z;
   }
   if (rx === 0 && ry === 0 && rz === 0) return null;
-  return { origin, rx, ry, rz };
+  return { origin, rx, ry, rz, axis, angle, rescale: rot.rescale === true };
 }
 
 // Default UV for a face when the model omits `uv`, derived from element bounds.

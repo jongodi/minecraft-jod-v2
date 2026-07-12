@@ -103,12 +103,15 @@ export function classify(path: string): AssetKind {
   if (p.endsWith('.fsh') || p.endsWith('.vsh') || p.endsWith('.glsl') || /\/shaders\//.test(p)) return 'shader';
   if (p.endsWith('.mcmeta')) return 'texture_meta';
   if (p.endsWith('.json')) {
-    if (/\/blockstates\/.+\.json$/.test(p)) return 'blockstate';
-    if (/\/items\/.+\.json$/.test(p)) return 'item_definition';
-    if (/\/font\/.+\.json$/.test(p)) return 'font';
-    if (/\/particles\/.+\.json$/.test(p)) return 'particle';
-    if (/\/atlases\/.+\.json$/.test(p)) return 'atlas';
-    if (/\/equipment\/.+\.json$/.test(p)) return 'equipment';
+    // Entry-point kinds are anchored to the namespace root: `models/items/x.json`
+    // is a MODEL in an items/ subfolder, not an item definition — matching it
+    // loosely would skip its texture resolution and orphan everything it uses.
+    if (/^assets\/[^/]+\/blockstates\/.+\.json$/.test(p)) return 'blockstate';
+    if (/^assets\/[^/]+\/items\/.+\.json$/.test(p)) return 'item_definition';
+    if (/^assets\/[^/]+\/font\/.+\.json$/.test(p)) return 'font';
+    if (/^assets\/[^/]+\/particles\/.+\.json$/.test(p)) return 'particle';
+    if (/^assets\/[^/]+\/atlases\/.+\.json$/.test(p)) return 'atlas';
+    if (/^assets\/[^/]+\/equipment\/.+\.json$/.test(p)) return 'equipment';
     if (/\/models\/.+\.json$/.test(p)) return 'model';
     return 'other';
   }

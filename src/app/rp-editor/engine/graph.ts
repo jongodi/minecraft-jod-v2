@@ -14,16 +14,23 @@
 // those here so they are never mis-flagged.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import type { AssetKind, AssetNode, CmdCollision, Evidence, RawFile } from './types';
+import type { AssetKind, AssetNode, CmdCollision, RawFile } from './types';
 import {
   classify, namespaceOf, parseLoc, textureLocToPath, modelLocToPath,
-  fontBitmapPath, particleTexturePath, equipmentTexturePath, modelPathToLoc,
+  particleTexturePath, equipmentTexturePath, modelPathToLoc,
   itemDefPathToLoc, texturePathToLoc,
 } from './resloc';
 import {
-  isVanillaModelRef, isStrongOverridePath, isVanillaItem, isVanillaBlock, isKnownVanillaTexture,
+  isStrongOverridePath, isVanillaItem, isVanillaBlock, isKnownVanillaTexture,
   VANILLA_FONTS, VANILLA_PARTICLES, VANILLA_EQUIPMENT,
 } from './vanilla';
+
+// Vanilla atlas names extend the game's built-in atlases → certain roots.
+const VANILLA_ATLASES = new Set(['blocks', 'particles', 'mob_effects', 'paintings',
+  'gui', 'banner_patterns', 'beds', 'chests', 'shield_patterns', 'shulker_boxes',
+  'signs', 'armor_trims', 'decorated_pot', 'map_decorations']);
+
+const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /** Where a "used" signal originates. */
 export type RootKind = 'certain' | 'uncertain';
@@ -151,6 +158,26 @@ export function buildGraph(files: RawFile[]): Graph {
     });
   }
 
+  // ── Atlas-generated sprite names ────────────────────────────────────────────
+  // A paletted_permutations source synthesizes "<texture>_<suffix>" sprites at
+  // runtime with no file on disk (armor trims work this way). References to
+  // those names are valid, not broken.
+  const generatedSprites = new Set<string>();
+  for (const ap of byKind.atlas) {
+    const json = textParsed.get(ap);
+    const sources = Array.isArray(json?.sources) ? json.sources : [];
+    for (const src of sources) {
+      if (!src || src.type !== 'paletted_permutations') continue;
+      const texs = Array.isArray(src.textures) ? src.textures : [];
+      const suffixes = src.permutations && typeof src.permutations === 'object' ? Object.keys(src.permutations) : [];
+      for (const t of texs) {
+        if (typeof t !== 'string') continue;
+        const { namespace, path } = parseLoc(t);
+        for (const suf of suffixes) generatedSprites.add(`${namespace}:${path}_${suf}`);
+      }
+    }
+  }
+
   // ── Texture reference resolution ────────────────────────────────────────────
   type TexResult =
     | { status: 'found'; path: string; casing: boolean }
@@ -159,10 +186,12 @@ export function buildGraph(files: RawFile[]): Graph {
 
   function resolveTextureRef(value: string): TexResult {
     if (typeof value !== 'string' || value.startsWith('#')) return { status: 'vanilla' };
-    const { namespace } = parseLoc(value);
+    const { namespace, path } = parseLoc(value);
     const target = textureLocToPath(value);
     const hit = findFile(target);
     if (hit) return { status: 'found', path: hit.path, casing: hit.casing };
+    // Synthesized at runtime by a paletted_permutations atlas source — valid.
+    if (generatedSprites.has(`${namespace}:${path.replace(/^textures\//, '')}`)) return { status: 'vanilla' };
     // Absent: minecraft namespace → vanilla default (inherited, not broken).
     if (namespace === 'minecraft') return { status: 'vanilla' };
     return { status: 'broken' };
@@ -430,7 +459,6 @@ export function buildGraph(files: RawFile[]): Graph {
         detail: parseErrors.get(fp)!, path: fp });
       continue;
     }
-    const loc = itemDefPathToLoc(fp) ?? modelPathToLoc(fp);
     const fname = fp.match(/\/font\/(.+?)\.json$/)?.[1] ?? '';
     const vanillaFont = (namespaceOf(fp) === 'minecraft') && VANILLA_FONTS.has(fname);
     roots.set(fp, {
@@ -452,7 +480,7 @@ export function buildGraph(files: RawFile[]): Graph {
             fix: { file: fp, value: prov.file, targetKind: 'font', context: 'font bitmap', reason: 'bitmap texture missing from pack' } });
         }
       } else if ((prov.type === 'ttf' || prov.type === 'unihex') &&
-                 typeof (prov.file ?? prov.hex_file ?? prov.sizes) === 'string') {
+                 typeof (prov.file ?? prov.hex_file) === 'string') {
         const file = (prov.file ?? prov.hex_file) as string;
         const { namespace, path } = parseLoc(file);
         const target = `assets/${namespace}/font/${path}`;
@@ -541,11 +569,6 @@ export function buildGraph(files: RawFile[]): Graph {
       continue;
     }
     const aname = ap.match(/\/atlases\/(.+?)\.json$/)?.[1] ?? '';
-    const ans = namespaceOf(ap) ?? 'minecraft';
-    // Vanilla atlas names extend the game's built-in atlases → certain.
-    const VANILLA_ATLASES = new Set(['blocks', 'particles', 'mob_effects', 'paintings',
-      'gui', 'banner_patterns', 'beds', 'chests', 'shield_patterns', 'shulker_boxes',
-      'signs', 'armor_trims', 'decorated_pot', 'map_decorations']);
     roots.set(ap, {
       path: ap, kind: VANILLA_ATLASES.has(aname) ? 'certain' : 'uncertain',
       reason: VANILLA_ATLASES.has(aname)
@@ -556,10 +579,12 @@ export function buildGraph(files: RawFile[]): Graph {
     for (const src of sources) {
       if (!src || typeof src !== 'object') continue;
       if (src.type === 'directory' && typeof src.source === 'string') {
-        // Stitches EVERY texture under assets/<ns>/textures/<source>/ — used.
-        const prefix = `assets/${ans}/textures/${src.source.replace(/\/$/, '')}/`;
+        // Stitches EVERY texture under textures/<source>/ in EVERY namespace —
+        // the game's resource listing spans namespaces, so restricting this to
+        // the atlas file's own namespace would falsely orphan cross-ns sprites.
+        const dirRe = new RegExp(`^assets/[^/]+/textures/${escapeRe(src.source.replace(/\/$/, ''))}/`);
         for (const tf of textureFiles) {
-          if (tf.startsWith(prefix)) {
+          if (dirRe.test(tf)) {
             addEdge(ap, tf);
             markConvention(tf, `Stitched into the "${aname}" atlas by a directory source ("${src.source}").`);
           }
@@ -581,6 +606,13 @@ export function buildGraph(files: RawFile[]): Graph {
           const tr = resolveTextureRef(src.palette_key);
           if (tr.status === 'found') { addEdge(ap, tr.path); markConvention(tr.path, `Palette key for the "${aname}" atlas.`); }
         }
+        // The permutation VALUES are real palette texture files too.
+        const perms = src.permutations && typeof src.permutations === 'object' ? Object.values(src.permutations) : [];
+        for (const p of perms) {
+          if (typeof p !== 'string') continue;
+          const tr = resolveTextureRef(p);
+          if (tr.status === 'found') { addEdge(ap, tr.path); markConvention(tr.path, `Colour palette for the "${aname}" atlas permutations.`); }
+        }
       } else if (src.type === 'unstitch' && typeof src.resource === 'string') {
         const tr = resolveTextureRef(src.resource);
         if (tr.status === 'found') { addEdge(ap, tr.path); markConvention(tr.path, `Unstitched by the "${aname}" atlas.`); }
@@ -593,7 +625,10 @@ export function buildGraph(files: RawFile[]): Graph {
     const texPath = mp.replace(/\.mcmeta$/, '');
     const hit = findFile(texPath);
     if (hit) {
-      addEdge(mp, hit.path); // the mcmeta "belongs to" its texture
+      // texture → mcmeta: a used texture PULLS its animation metadata into the
+      // used set. (The reverse direction left every paired mcmeta unreachable
+      // and falsely safe-remove.)
+      addEdge(hit.path, mp);
     } else {
       issues.push({ severity: 'warning', category: 'orphan-mcmeta',
         title: 'Orphaned .mcmeta file',
@@ -619,14 +654,21 @@ export function buildGraph(files: RawFile[]): Graph {
         const name = typeof s === 'string' ? s : s?.name;
         const type = typeof s === 'object' ? s?.type : undefined;
         if (typeof name !== 'string' || type === 'event') continue;
-        const bare = name.replace(/^[^:]+:/, '');
-        const target = `assets/${ns}/sounds/${bare}.ogg`;
-        const hit = findFile(target);
+        // A namespaced name resolves in ITS namespace; a bare name is looked up
+        // in this file's namespace and then minecraft (safe direction — never
+        // report an error for a sound that actually resolves).
+        const soundNs = name.includes(':') ? parseLoc(name).namespace : null;
+        const candidates = soundNs
+          ? [`assets/${soundNs}/sounds/${parseLoc(name).path}.ogg`]
+          : [...new Set([`assets/${ns}/sounds/${name}.ogg`, `assets/minecraft/sounds/${name}.ogg`])];
+        const hit = candidates.map((c) => findFile(c)).find(Boolean);
         if (hit) addEdge(sp, hit.path);
-        else {
+        else if (soundNs && soundNs !== 'minecraft') {
+          // Only a custom namespace is provably broken — vanilla ships the
+          // minecraft-namespace sounds, so those may resolve outside the pack.
           issues.push({ severity: 'error', category: 'missing-sound',
             title: 'sounds.json points at a missing file',
-            detail: `Event "${event}" references ${target}, which is not in the pack.`, path: sp });
+            detail: `Event "${event}" references ${candidates[0]}, which is not in the pack.`, path: sp });
         }
       }
     }
@@ -674,46 +716,51 @@ function predicateSig(pred: any): string {
 }
 
 // ── Item-model tree walker (1.21.4+ + generic) ────────────────────────────────
+// `dctx` numbers each range_dispatch node so collision keys never cross two
+// different dispatches (an item can legally dispatch on several custom_model_data
+// indices, each with its own threshold space).
 function walkItemModel(
   node: any,
   out: string[],
   cmdEntries: CmdEntry[],
   depth = 0,
+  dctx: { n: number } = { n: 0 },
 ) {
   if (!node || depth > 40) return;
   if (typeof node === 'string') { out.push(node); return; }
-  if (Array.isArray(node)) { node.forEach((n) => walkItemModel(n, out, cmdEntries, depth + 1)); return; }
+  if (Array.isArray(node)) { node.forEach((n) => walkItemModel(n, out, cmdEntries, depth + 1, dctx)); return; }
   if (typeof node !== 'object') return;
   const type = typeof node.type === 'string' ? node.type.replace(/^minecraft:/, '') : undefined;
 
   // range_dispatch on custom_model_data → collision candidates.
   if (type === 'range_dispatch') {
-    const prop = (node.property ?? '').replace(/^minecraft:/, '');
+    const prop = (typeof node.property === 'string' ? node.property : '').replace(/^minecraft:/, '');
+    const dispatchId = dctx.n++;
     if (Array.isArray(node.entries)) {
       for (const e of node.entries) {
-        if (typeof e?.model === 'object') walkItemModel(e.model, out, cmdEntries, depth + 1);
+        if (typeof e?.model === 'object') walkItemModel(e.model, out, cmdEntries, depth + 1, dctx);
         else if (typeof e?.model === 'string') out.push(e.model);
         if (prop === 'custom_model_data' && e?.threshold !== undefined && typeof e?.model !== 'undefined') {
           const m = typeof e.model === 'string' ? e.model : (e.model?.model ?? JSON.stringify(e.model));
-          cmdEntries.push({ key: String(e.threshold), value: e.threshold, model: typeof m === 'string' ? m : JSON.stringify(m) });
+          cmdEntries.push({ key: `d${dispatchId}|${String(e.threshold)}`, value: e.threshold, model: typeof m === 'string' ? m : JSON.stringify(m) });
         }
       }
     }
-    walkItemModel(node.fallback, out, cmdEntries, depth + 1);
+    walkItemModel(node.fallback, out, cmdEntries, depth + 1, dctx);
     return;
   }
   if (type === 'select') {
-    if (Array.isArray(node.cases)) for (const c of node.cases) walkItemModel(c?.model, out, cmdEntries, depth + 1);
-    walkItemModel(node.fallback, out, cmdEntries, depth + 1);
+    if (Array.isArray(node.cases)) for (const c of node.cases) walkItemModel(c?.model, out, cmdEntries, depth + 1, dctx);
+    walkItemModel(node.fallback, out, cmdEntries, depth + 1, dctx);
     return;
   }
   if (type === 'condition') {
-    walkItemModel(node.on_true, out, cmdEntries, depth + 1);
-    walkItemModel(node.on_false, out, cmdEntries, depth + 1);
+    walkItemModel(node.on_true, out, cmdEntries, depth + 1, dctx);
+    walkItemModel(node.on_false, out, cmdEntries, depth + 1, dctx);
     return;
   }
   if (type === 'composite') {
-    if (Array.isArray(node.models)) node.models.forEach((m: any) => walkItemModel(m, out, cmdEntries, depth + 1));
+    if (Array.isArray(node.models)) node.models.forEach((m: any) => walkItemModel(m, out, cmdEntries, depth + 1, dctx));
     return;
   }
   if (type === 'model') {
@@ -726,13 +773,13 @@ function walkItemModel(
   }
   // Generic fallback sweep for any shape we didn't special-case.
   if (typeof node.model === 'string') out.push(node.model);
-  else if (typeof node.model === 'object') walkItemModel(node.model, out, cmdEntries, depth + 1);
-  if (Array.isArray(node.models)) node.models.forEach((m: any) => walkItemModel(m, out, cmdEntries, depth + 1));
-  if (Array.isArray(node.entries)) node.entries.forEach((e: any) => walkItemModel(e?.model, out, cmdEntries, depth + 1));
-  if (Array.isArray(node.cases)) node.cases.forEach((c: any) => walkItemModel(c?.model, out, cmdEntries, depth + 1));
-  walkItemModel(node.fallback, out, cmdEntries, depth + 1);
-  walkItemModel(node.on_true, out, cmdEntries, depth + 1);
-  walkItemModel(node.on_false, out, cmdEntries, depth + 1);
+  else if (typeof node.model === 'object') walkItemModel(node.model, out, cmdEntries, depth + 1, dctx);
+  if (Array.isArray(node.models)) node.models.forEach((m: any) => walkItemModel(m, out, cmdEntries, depth + 1, dctx));
+  if (Array.isArray(node.entries)) node.entries.forEach((e: any) => walkItemModel(e?.model, out, cmdEntries, depth + 1, dctx));
+  if (Array.isArray(node.cases)) node.cases.forEach((c: any) => walkItemModel(c?.model, out, cmdEntries, depth + 1, dctx));
+  walkItemModel(node.fallback, out, cmdEntries, depth + 1, dctx);
+  walkItemModel(node.on_true, out, cmdEntries, depth + 1, dctx);
+  walkItemModel(node.on_false, out, cmdEntries, depth + 1, dctx);
 }
 
 /**

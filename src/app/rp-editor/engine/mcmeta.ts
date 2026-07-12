@@ -139,6 +139,14 @@ export function parsePackMeta(
       info.supportedFormats = { min: sf, max: sf };
     }
   }
+  // A pack declaring support up to a newer format (supported_formats) targets
+  // that newer game too — judge the item system by the newest supported format,
+  // so packs shipping both systems for a version range aren't warned wrongly.
+  const sfMax = info.supportedFormats && !Array.isArray(info.supportedFormats)
+    ? info.supportedFormats.max : undefined;
+  if (sfMax != null && info.packFormat != null && sfMax > info.packFormat) {
+    info.itemSystem = itemSystemFor(sfMax);
+  }
   if (pack.description === undefined) {
     info.errors.push('pack.mcmeta has no "description" — the pack shows a blank line in the selection menu.');
   } else {
