@@ -63,19 +63,37 @@ export default function ModelViewer3D({
   let root: any = null;
   try { root = JSON.parse(modelContent); } catch {}
   const lookup = makeModelLookup(fileData);
-  let geom = root ? resolveModelGeometry(root, lookup) : { elements: null, textures: {}, parentRef: null, isGenerated: false };
+  let geom = root ? resolveModelGeometry(root, lookup) : { elements: null, textures: {}, parentRef: null, isGenerated: false, textureSize: [16, 16] as [number, number] };
   let entityMode: { name: string; texPath: string } | null = null;
 
   if ((!geom.elements || geom.elements.length === 0)) {
     // No geometry from the model — try an entity template for the selected texture.
     const et = entityTexture ? entityTemplateFor(entityTexture) : null;
     if (et && entityTexture) {
-      geom = { elements: et.elements, textures: { t: entityTexture }, parentRef: null, isGenerated: false };
+      // Entity template UVs are already authored in the 0-16 model space.
+      geom = { elements: et.elements, textures: { t: entityTexture }, parentRef: null, isGenerated: false, textureSize: [16, 16] };
       entityMode = { name: et.name, texPath: entityTexture };
     }
   }
   const elements = geom.elements ?? [];
   const modelTex: Record<string, string> = geom.textures ?? {};
+
+  // UV normalization. Vanilla UVs live in a fixed 0-16 space no matter the texture
+  // resolution; Blockbench can instead export them in the texture's pixel space
+  // alongside `texture_size`. Detect the latter only when a UV actually exceeds 16,
+  // so standard 0-16 models (incl. this pack's) always divide by 16 unchanged.
+  const [tsW, tsH] = geom.textureSize ?? [16, 16];
+  let maxUv = 0;
+  for (const e of elements) {
+    if (!e?.faces) continue;
+    for (const fn of FACE_ORDER) {
+      const uv = e.faces[fn]?.uv;
+      if (Array.isArray(uv)) for (const n of uv) if (typeof n === 'number' && n > maxUv) maxUv = n;
+    }
+  }
+  const pixelSpace = maxUv > 16.0001 && (tsW !== 16 || tsH !== 16);
+  const uDiv = pixelSpace ? tsW : 16;
+  const vDiv = pixelSpace ? tsH : 16;
 
   // Resolve a texture variable (#ref chain) to a pack path.
   function resolveVarToPath(ref: string, depth = 0): string | null {
@@ -187,7 +205,7 @@ export default function ModelViewer3D({
         // Default UVs derived from element geometry when a face omits uv.
         const defUv = defaultFaceUv(fn, fx, fy, fz, tx, ty, tz);
         const [mu1, mv1, mu2, mv2]: number[] = face?.uv ?? defUv;
-        const u1 = mu1 / 16, u2 = mu2 / 16, v1 = 1 - mv2 / 16, v2 = 1 - mv1 / 16;
+        const u1 = mu1 / uDiv, u2 = mu2 / uDiv, v1 = 1 - mv2 / vDiv, v2 = 1 - mv1 / vDiv;
         let pts: [number, number][] = [[u1, v2], [u2, v2], [u1, v1], [u2, v1]];
         const rot = (((face?.rotation ?? 0) / 90) % 4 + 4) % 4;
         for (let r = 0; r < rot; r++) { const [tl, tr, bl, br] = pts; pts = [bl, tl, br, tr]; }
@@ -197,13 +215,17 @@ export default function ModelViewer3D({
       uvA.needsUpdate = true;
       const mesh = new THREE.Mesh(geo, FACE_ORDER.map((fn) => makeMat(e.faces?.[fn])));
       const cx = (fx + tx) / 2, cy = (fy + ty) / 2, cz = (fz + tz) / 2;
-      if (e.rotation) {
-        const { origin, axis, angle } = e.rotation as any;
+      const er = elementRotation(e.rotation);
+      if (er) {
+        const { origin, rx, ry, rz } = er;
         const pivot = new THREE.Group();
         pivot.position.set(origin[0], origin[1], origin[2]);
         mesh.position.set(cx - origin[0], cy - origin[1], cz - origin[2]);
-        const rad = THREE.MathUtils.degToRad(angle);
-        if (axis === 'x') pivot.rotation.x = rad; else if (axis === 'y') pivot.rotation.y = -rad; else if (axis === 'z') pivot.rotation.z = rad;
+        // Minecraft and three.js share handedness (right-handed, +X east/+Y up/+Z
+        // south) under this direct coordinate mapping, so degrees map straight
+        // through with no axis flip.
+        pivot.rotation.set(
+          THREE.MathUtils.degToRad(rx), THREE.MathUtils.degToRad(ry), THREE.MathUtils.degToRad(rz));
         pivot.add(mesh); group.add(pivot);
       } else {
         mesh.position.set(cx, cy, cz); group.add(mesh);
@@ -360,6 +382,25 @@ export default function ModelViewer3D({
       )}
     </div>
   );
+}
+
+// Normalize an element `rotation` into euler degrees + origin, accepting both the
+// vanilla single-axis form `{ axis, angle, origin }` and the Blockbench free-rotation
+// form `{ x, y, z, origin }`. Returns null when there is no actual rotation.
+function elementRotation(rot: any): { origin: number[]; rx: number; ry: number; rz: number } | null {
+  if (!rot || typeof rot !== 'object') return null;
+  const origin = Array.isArray(rot.origin) ? rot.origin : [8, 8, 8];
+  let rx = 0, ry = 0, rz = 0;
+  if (typeof rot.axis === 'string') {
+    const a = typeof rot.angle === 'number' ? rot.angle : 0;
+    if (rot.axis === 'x') rx = a; else if (rot.axis === 'y') ry = a; else if (rot.axis === 'z') rz = a;
+  } else {
+    if (typeof rot.x === 'number') rx = rot.x;
+    if (typeof rot.y === 'number') ry = rot.y;
+    if (typeof rot.z === 'number') rz = rot.z;
+  }
+  if (rx === 0 && ry === 0 && rz === 0) return null;
+  return { origin, rx, ry, rz };
 }
 
 // Default UV for a face when the model omits `uv`, derived from element bounds.

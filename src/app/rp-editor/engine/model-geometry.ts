@@ -20,6 +20,8 @@ export interface ResolvedGeometry {
   /** The chain includes item/generated or builtin/generated (a flat sprite item). */
   isGenerated: boolean;
   guiLight?: string;
+  /** Blockbench `texture_size` from the model that defines the elements (default [16,16]). */
+  textureSize: [number, number];
 }
 
 /** Resolve a model ref to its JSON: pack model first, then bundled vanilla. */
@@ -64,12 +66,21 @@ export function resolveModelGeometry(
     if (t && typeof t === 'object') Object.assign(textures, t);
   }
 
-  // Elements: nearest (child-first) definition wins.
+  // Elements: nearest (child-first) definition wins. Its model also carries the
+  // texture_size that its UVs are authored against.
   let elements: any[] | null = null;
+  let textureSize: [number, number] = [16, 16];
   for (const m of chain) {
-    if (Array.isArray(m.elements)) { elements = m.elements; break; }
+    if (Array.isArray(m.elements)) {
+      elements = m.elements;
+      if (Array.isArray(m.texture_size) && m.texture_size.length === 2) {
+        const [w, h] = m.texture_size;
+        if (typeof w === 'number' && typeof h === 'number' && w > 0 && h > 0) textureSize = [w, h];
+      }
+      break;
+    }
   }
 
   const guiLight = chain.map((m) => m.gui_light).find((g) => typeof g === 'string');
-  return { elements, textures, parentRef, isGenerated, guiLight };
+  return { elements, textures, parentRef, isGenerated, guiLight, textureSize };
 }
