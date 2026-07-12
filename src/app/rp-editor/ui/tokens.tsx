@@ -114,6 +114,12 @@ export const RP_CSS = `
 .rp-tab.active{color:var(--ink); border-bottom-color:var(--accent);}
 .rp-tab .tabnum{font-size:0.6rem; padding:1px 6px; border-radius:20px; background:rgba(var(--text-rgb),0.06); color:var(--ink-dim); letter-spacing:0;}
 .rp-tab .tabnum.err{background:rgba(255,87,115,0.14); color:var(--sev-error);}
+.rp-more{position:relative;}
+.rp-more-menu{position:absolute; top:calc(100% + 4px); right:0; min-width:230px; background:var(--bg-card); border:1px solid var(--hair-strong); border-radius:10px; padding:5px; z-index:60; box-shadow:0 14px 40px rgba(0,0,0,0.5);}
+.rp-more-item{display:flex; align-items:baseline; gap:10px; padding:8px 11px; border-radius:7px; cursor:pointer; font-size:0.6rem; letter-spacing:0.16em; text-transform:uppercase; color:var(--ink-dim); transition:background 0.15s, color 0.15s;}
+.rp-more-item:hover{background:rgba(var(--text-rgb),0.05); color:var(--ink);}
+.rp-more-item.active{color:var(--accent);}
+.rp-more-item .hint{margin-left:auto; font-size:0.52rem; letter-spacing:0.04em; text-transform:none; color:var(--ink-faint);}
 .rp-body{flex:1; overflow:hidden; display:flex; flex-direction:column; position:relative; z-index:2;}
 .rp-scroll{flex:1; overflow-y:auto; padding:var(--s6) clamp(16px, 4vw, 40px);}
 .rp-status{display:flex; gap:16px; align-items:center; padding:6px 16px; border-top:1px solid var(--hair); font-size:0.6rem; color:var(--ink-faint); letter-spacing:0.05em; flex-shrink:0; flex-wrap:wrap; position:relative; z-index:5;}

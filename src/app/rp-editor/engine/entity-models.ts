@@ -191,12 +191,117 @@ function chestBoat(): any[] {
   return [...boatHull(uv), lid, body];
 }
 
+// ── Double chest halves — 64×64 each ──────────────────────────────────────────
+// Each half is a 15-wide box; the seam face has no art in the texture (it butts
+// against the other half), so that face is simply omitted. Layout read off the
+// vanilla normal_left/normal_right textures: lid unwrap at (0,0) 15×5×14, body
+// at (0,19) 15×10×14; `left` halves are missing the east face, `right` the west.
+function chestHalf(side: 'left' | 'right'): any[] {
+  const uv = uvFn(64, 64);
+  const omit = side === 'left' ? 'east' : 'west';
+  const half = (v0: number, w: number, h: number, d: number, from: number[], to: number[]) => {
+    const faces: Record<string, any> = {
+      up: { texture: '#t', uv: uv(d, v0, d + w, v0 + d) },
+      down: { texture: '#t', uv: uv(d + w, v0, d + 2 * w, v0 + d) },
+      east: { texture: '#t', uv: uv(0, v0 + d, d, v0 + d + h) },
+      north: { texture: '#t', uv: uv(d, v0 + d, d + w, v0 + d + h) },
+      west: { texture: '#t', uv: uv(d + w, v0 + d, d + w + d, v0 + d + h) },
+      south: { texture: '#t', uv: uv(2 * d + w, v0 + d, 2 * d + 2 * w, v0 + d + h) },
+    };
+    delete faces[omit];
+    return { from, to, faces };
+  };
+  return [
+    half(19, 15, 10, 14, [0.5, 0, 1], [15.5, 10, 15]),  // body
+    half(0, 15, 5, 14, [0.5, 9, 1], [15.5, 14, 15]),    // lid
+  ];
+}
+
+// ── Minecart — 64×32 ──────────────────────────────────────────────────────────
+// Floor 20×16×2 at (0,10) laid flat; four walls 16×8×2 sharing the art at (0,0).
+function minecart(): any[] {
+  const uv = uvFn(64, 32);
+  const S = 0.55, cx = 8, cz = 8;
+  const part = (u: number, v: number, w: number, h: number, d: number, c: [number, number, number], rot?: [number, number, number]) => {
+    const hw = (w * S) / 2, hh = (h * S) / 2, hd = (d * S) / 2;
+    const el: any = { from: [c[0] - hw, c[1] - hh, c[2] - hd], to: [c[0] + hw, c[1] + hh, c[2] + hd], faces: boxUv(uv, u, v, w, h, d) };
+    if (rot && (rot[0] || rot[1] || rot[2])) el.rotation = { origin: c, x: rot[0], y: rot[1], z: rot[2] };
+    return el;
+  };
+  return [
+    part(0, 10, 20, 16, 2, [cx, 1.6, cz], [-90, 0, 0]),                 // floor
+    part(0, 0, 16, 8, 2, [cx, 3.8, cz + 4.4 - 0.55], [0, 0, 0]),        // +Z wall
+    part(0, 0, 16, 8, 2, [cx, 3.8, cz - 4.4 + 0.55], [0, 180, 0]),      // −Z wall
+    part(0, 0, 16, 8, 2, [cx + 5.5 - 0.55, 3.8, cz], [0, 90, 0]),       // +X end
+    part(0, 0, 16, 8, 2, [cx - 5.5 + 0.55, 3.8, cz], [0, -90, 0]),      // −X end
+  ];
+}
+
+// ── Bell — 32×32 (bell_body.png) ─────────────────────────────────────────────
+// Body 6×7×6 at (0,0); the wider bottom lip 8×2×8 at (0,13).
+function bell(): any[] {
+  const uv = uvFn(32, 32);
+  return [
+    { from: [5, 7, 5], to: [11, 14, 11], faces: boxUv(uv, 0, 0, 6, 7, 6) },
+    { from: [4, 5, 4], to: [12, 7, 12], faces: boxUv(uv, 0, 13, 8, 2, 8) },
+  ];
+}
+
+// ── Banner — 64×64 (banner/base.png holds only the cloth, 20×40×1) ───────────
+function banner(): any[] {
+  const uv = uvFn(64, 64);
+  const S = 0.36, w = 20 * S, h = 40 * S, d = Math.max(1 * S, 0.3);
+  const cx = 8, cz = 8;
+  return [
+    { from: [cx - w / 2, 15.5 - h, cz - d / 2], to: [cx + w / 2, 15.5, cz + d / 2], faces: boxUv(uv, 0, 0, 20, 40, 1) },
+  ];
+}
+
+// ── Legacy standing sign — 64×32 (entity/signs/<wood>.png, pre-26.x packs) ───
+// Board 24×12×2 at (0,0); post 2×14×2 at (0,14). (26.x signs are block models.)
+function legacySign(): any[] {
+  const uv = uvFn(64, 32);
+  const S = 0.6;
+  const board = { w: 24 * S, h: 12 * S, d: 2 * S };
+  return [
+    { from: [8 - board.w / 2, 8.4, 8 - board.d / 2], to: [8 + board.w / 2, 8.4 + board.h, 8 + board.d / 2], faces: boxUv(uv, 0, 0, 24, 12, 2) },
+    { from: [7.4, 0, 7.4], to: [8.6, 8.4, 8.6], faces: boxUv(uv, 0, 14, 2, 14, 2) },
+  ];
+}
+
+// ── Legacy hanging sign — 64×32 (entity/signs/hanging/<wood>.png) ─────────────
+// Top plank 16×2×4 at (0,0); two flat chains 3×6 at (0,6) and (6,6); board
+// 14×10×2 at (0,12). Chains are zero-thickness planes, like vanilla's model.
+function legacyHangingSign(): any[] {
+  const uv = uvFn(64, 32);
+  const chain = (u: number, x: number) => ({
+    from: [x, 10, 8], to: [x + 3, 16, 8],
+    faces: {
+      north: { texture: '#t', uv: uv(u, 6, u + 3, 12) },
+      south: { texture: '#t', uv: uv(u, 6, u + 3, 12) },
+    },
+  });
+  return [
+    { from: [0, 14, 6], to: [16, 16, 10], faces: boxUv(uv, 0, 0, 16, 2, 4) },
+    chain(0, 3.5), chain(6, 9.5),
+    { from: [1, 0, 7], to: [15, 10, 9], faces: boxUv(uv, 0, 12, 14, 10, 2) },
+  ];
+}
+
 export const ENTITY_TEMPLATES: EntityTemplate[] = [
+  // Double-chest halves must match before the generic chest rule.
+  { match: /(^|\/)entity\/chest\/[a-z0-9_]*_left(\.|$)/i, name: 'double chest (left)', texSize: [64, 64], elements: chestHalf('left') },
+  { match: /(^|\/)entity\/chest\/[a-z0-9_]*_right(\.|$)/i, name: 'double chest (right)', texSize: [64, 64], elements: chestHalf('right') },
   { match: /(^|\/)entity\/chest\//i, name: 'chest', texSize: [64, 64], elements: chest() },
   { match: /(^|\/)entity\/bed\//i, name: 'bed', texSize: [64, 64], elements: bed() },
   { match: /(^|\/)entity\/shulker\//i, name: 'shulker box', texSize: [64, 64], elements: shulker() },
   { match: /(^|\/)entity\/chest_boat\//i, name: 'chest boat', texSize: [128, 128], elements: chestBoat() },
   { match: /(^|\/)entity\/boat\//i, name: 'boat', texSize: [128, 64], elements: boat() },
+  { match: /(^|\/)entity\/minecart(\/|\.|$)/i, name: 'minecart', texSize: [64, 32], elements: minecart() },
+  { match: /(^|\/)entity\/bell\//i, name: 'bell', texSize: [32, 32], elements: bell() },
+  { match: /(^|\/)entity\/banner(\/|_|\.)/i, name: 'banner', texSize: [64, 64], elements: banner() },
+  { match: /(^|\/)entity\/signs\/hanging\//i, name: 'hanging sign', texSize: [64, 32], elements: legacyHangingSign() },
+  { match: /(^|\/)entity\/signs\//i, name: 'sign', texSize: [64, 32], elements: legacySign() },
 ];
 
 /** An entity template for a texture path, or null. */

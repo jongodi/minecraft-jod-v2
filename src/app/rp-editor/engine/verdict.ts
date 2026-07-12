@@ -16,7 +16,7 @@ import type {
   DuplicateGroup, CmdCollision, DatapackRef, AssetKind,
 } from './types';
 import type { Graph } from './graph';
-import { texturePathToLoc } from './resloc';
+import { texturePathToLoc, modelPathToLoc } from './resloc';
 import { isStrongOverridePath, isKnownVanillaTexture } from './vanilla';
 
 interface VerdictInput {
@@ -58,6 +58,21 @@ export function computeAnalysis(input: VerdictInput): AnalysisResult {
       usedAny: usedAny.has(node.path),
       conventionReason: conventionTextures.get(node.path),
     });
+  }
+
+  // An .mcmeta is exactly as removable as the texture it animates — mirror the
+  // paired texture's verdict (a used texture already pulled its mcmeta into the
+  // used set via the texture→mcmeta edge; this covers the unused/review cases).
+  for (const node of Object.values(nodes)) {
+    if (node.kind !== 'texture_meta' || node.verdict === 'used' || node.verdict === 'error') continue;
+    const tex = nodes[node.path.replace(/\.mcmeta$/i, '')];
+    if (!tex) continue; // orphaned mcmeta — already surfaced as its own warning
+    node.verdict = tex.verdict === 'error' ? 'review' : tex.verdict;
+    node.confidence = tex.confidence;
+    node.evidence = [
+      { kind: 'note', detail: `Animation metadata for ${tex.path.split('/').pop()} — follows its texture's verdict (${tex.verdict}).` },
+      ...tex.evidence.slice(0, 2),
+    ];
   }
 
   // ── Findings ────────────────────────────────────────────────────────────────
@@ -118,12 +133,12 @@ export function computeAnalysis(input: VerdictInput): AnalysisResult {
         ? `${g.members.length} identical textures`
         : `${g.members.length} near-identical textures (aHash distance ${g.distance})`,
       detail: g.kind === 'exact'
-        ? `These files are byte-for-byte (pixel) identical. You can collapse them to one and repoint references.`
+        ? `These are identical copies of the same file. You can collapse them to one and repoint references.`
         : `These look almost the same. Review whether they should be a single texture.`,
       refs: g.members, path: keep, confidence: g.kind === 'exact' ? 'high' : 'low',
       evidence: g.members.map((m) => ({ kind: 'note' as const, detail: m === keep ? `${m} (keep)` : `${m} (duplicate of keep)`, source: m })),
       consequence: g.kind === 'exact'
-        ? 'Identical pixels — safe to merge, but confirm nothing depends on the exact path.'
+        ? 'Identical files — safe to merge, but confirm nothing depends on the exact path.'
         : 'Near-duplicate — do NOT auto-merge; the difference may be intentional.' });
   }
 
@@ -151,7 +166,7 @@ export function computeAnalysis(input: VerdictInput): AnalysisResult {
   }
 
   // ── Summary + sort ──────────────────────────────────────────────────────────
-  findings.sort((a, b) => sevRank(a.severity) - sevRank(b.severity) || confRank(b.confidence) - confRank(a.confidence));
+  findings.sort(compareFindings);
 
   const textures = graph.byKind.texture;
   const reclaimable = safeRemove.reduce((s, n) => s + (n.bytes ?? 0), 0);
@@ -188,9 +203,8 @@ function bfs(seeds: string[], nodes: Record<string, AssetNode>): Set<string> {
   const seen = new Set<string>();
   const queue: string[] = [];
   for (const s of seeds) if (nodes[s] && !seen.has(s)) { seen.add(s); queue.push(s); }
-  while (queue.length) {
-    const cur = queue.shift()!;
-    for (const to of nodes[cur]?.refs ?? []) {
+  for (let i = 0; i < queue.length; i++) {  // index cursor — shift() is O(n²) on big packs
+    for (const to of nodes[queue[i]]?.refs ?? []) {
       if (!seen.has(to)) { seen.add(to); queue.push(to); }
     }
   }
@@ -230,6 +244,11 @@ function assignVerdict(node: AssetNode, ctx: VerdictCtx) {
     if (ctx.root.kind === 'certain') {
       node.verdict = 'used'; node.confidence = 'certain';
       ev.push({ kind: 'convention', detail: ctx.root.reason });
+    } else if (ctx.usedCertain) {
+      // Also reachable from a certain root (e.g. a custom font pulled in by the
+      // default font's reference provider) — provably used, don't demote it.
+      node.verdict = 'used'; node.confidence = 'certain';
+      ev.push({ kind: 'referenced-by', detail: 'Reachable from a certainly-loaded file, in addition to being an entry point itself.' });
     } else {
       // Uncertain root: an entry point we cannot confirm is invoked.
       const dpUsed = node.datapackRefs.length > 0;
@@ -281,18 +300,35 @@ function classifyUnreferenced(node: AssetNode) {
     } else if (isKnownVanillaTexture(loc.path)) {
       node.verdict = 'used'; node.confidence = 'high'; node.vanillaOverride = true;
     } else {
-      node.verdict = 'safe-remove'; node.confidence = 'medium';
-      ev.push({ kind: 'ambiguity', detail: 'This is under block/ or item/ in the minecraft namespace. If it overrides a vanilla texture whose name we do not recognise, keep it — vanilla’s own model would still load it.' });
+      // A minecraft-namespace texture whose name we don't positively recognise.
+      // Our vanilla manifest has known holes (multi-frame item sprites like
+      // clock_04, pre-1.13 blocks/ items/ layouts), and if the name IS vanilla,
+      // vanilla's own model still loads it — so this must never be safe-remove.
+      node.verdict = 'review'; node.confidence = 'medium';
+      ev.push({ kind: 'ambiguity', detail: 'Minecraft-namespace texture not in our vanilla manifest — but if it overrides a vanilla texture by a name we do not recognise (animation frames, older layouts), vanilla still loads it. Kept for review, never flagged for removal.' });
     }
   } else if (node.kind === 'texture_meta') {
-    node.verdict = 'safe-remove'; node.confidence = 'high';
-    ev.push({ kind: 'note', detail: 'Animation metadata for a texture that is itself unused.' });
+    // Mirrored to its paired texture in a post-pass; this default only applies
+    // to unpaired edge cases. Keep, never remove blindly.
+    node.verdict = 'review'; node.confidence = 'medium';
+    ev.push({ kind: 'note', detail: 'Animation metadata — follows its paired texture.' });
   } else if (node.kind === 'model') {
-    const custom = node.namespace && node.namespace !== 'minecraft';
-    node.verdict = 'safe-remove'; node.confidence = custom ? 'high' : 'medium';
-    ev.push({ kind: 'note', detail: custom
-      ? 'Custom-namespace model reached by no blockstate, item definition, override, or parent link.'
-      : 'Minecraft-namespace model not referenced by any blockstate/override and not at a recognised vanilla model path.' });
+    const loc = modelPathToLoc(node.path);
+    if (!loc) {
+      // Not under a standard assets/<ns>/models/ path — most often a pack
+      // overlay directory. Never flag those for removal.
+      node.verdict = 'review'; node.confidence = 'low';
+      ev.push({ kind: 'ambiguity', detail: 'This model is not under a standard assets/<ns>/models/ path — it may live in a pack overlay directory whose references are resolved separately in-game. Kept for review, not flagged for removal.' });
+    } else if (loc.namespace !== 'minecraft') {
+      node.verdict = 'safe-remove'; node.confidence = 'high';
+      ev.push({ kind: 'note', detail: 'Custom-namespace model reached by no blockstate, item definition, override, or parent link.' });
+    } else {
+      // Vanilla model names our registry-derived heuristic can miss (door
+      // left/right variants, pulling_0 frames, template_*) would still be
+      // rendered by vanilla's own blockstates — never safe-remove on a guess.
+      node.verdict = 'review'; node.confidence = 'medium';
+      ev.push({ kind: 'ambiguity', detail: 'Minecraft-namespace model not referenced inside the pack and not at a vanilla model name we positively recognise. If it overrides a vanilla model (multi-part or animation-frame names are easy to miss), vanilla still renders it — kept for review.' });
+    }
   } else if (node.kind === 'sound') {
     node.verdict = 'review'; node.confidence = 'medium';
     ev.push({ kind: 'ambiguity', detail: 'Not listed in any sounds.json. It may be played by a datapack /playsound using its path directly, which we cannot fully verify.' });
@@ -366,6 +402,10 @@ function sevRank(s: Finding['severity']): number {
 }
 function confRank(c: Confidence): number {
   return { certain: 3, high: 2, medium: 1, low: 0 }[c];
+}
+/** Canonical findings ordering: severity first, then confidence. */
+export function compareFindings(a: Finding, b: Finding): number {
+  return sevRank(a.severity) - sevRank(b.severity) || confRank(b.confidence) - confRank(a.confidence);
 }
 export function fmtBytes(b: number): string {
   if (b < 1024) return `${b} B`;

@@ -1,7 +1,9 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Duplicate + near-duplicate texture detection
 //
-// Exact:  identical decoded-pixel hash (content hash from the worker).
+// Exact:  identical file-content hash, cross-checked against byte length,
+//         dimensions and perceptual hash so a 32-bit hash collision can never
+//         group two different textures as "identical".
 // Near:   perceptual average-hash (aHash) within a small Hamming distance.
 //
 // Near-duplicates are reported but NEVER auto-merged — a 1px difference can be
@@ -30,12 +32,15 @@ export function findDuplicates(nodes: Record<string, AssetNode>): {
 } {
   const textures = Object.values(nodes).filter((n) => n.kind === 'texture' && n.image);
 
-  // ── Exact groups by content hash ────────────────────────────────────────────
+  // ── Exact groups by content hash + corroborating fingerprint ────────────────
+  // The content hash is 32-bit; folding in byte length, dimensions and the
+  // 64-bit aHash makes an accidental "identical" grouping practically impossible.
   const byHash = new Map<string, string[]>();
   for (const t of textures) {
     const h = t.image?.hash;
     if (!h) continue;
-    (byHash.get(h) ?? byHash.set(h, []).get(h)!).push(t.path);
+    const key = `${h}|${t.bytes ?? 0}|${t.image?.width}x${t.image?.height}|${t.image?.ahash ?? ''}`;
+    (byHash.get(key) ?? byHash.set(key, []).get(key)!).push(t.path);
   }
   const groups: DuplicateGroup[] = [];
   const exactMembers = new Set<string>();

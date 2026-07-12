@@ -7,8 +7,9 @@
 //                 editable snapshot)
 //   • rawFiles  — the engine's input: text for JSON, {w,h,hash,ahash} for images
 //
-// Exact-dup hash is FNV-1a over the compressed bytes (fast, truly identical for
-// copy-pasted files). aHash is an 8×8 grayscale average hash for near-dupes.
+// Exact-dup hash is FNV-1a over the decompressed file bytes (so identical files
+// group together; identical *pixels* re-encoded differently do not — the report
+// wording reflects that). aHash is an 8×8 grayscale average hash for near-dupes.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import JSZip from 'jszip';
@@ -108,20 +109,23 @@ export async function extractZip(
           fileData[path] = `data:image/${ext === 'jpg' ? 'jpeg' : ext};base64,${bytesToBase64(bytes)}`;
           const hash = fnv1a(bytes);
           const { ahash, width, height } = await aHash(new Blob([bytes as unknown as BlobPart]));
-          rawFiles.push({ path, kind: 'texture', isImage: true, bytes: bytes.length,
+          // Keep classify()'s kind: pack.png must stay pack_png, not texture.
+          rawFiles.push({ path, kind, isImage: true, bytes: bytes.length,
             image: { width, height, hash, ahash } });
         } else if (AUDIO_EXT.test(path)) {
           const bytes = await entry.async('uint8array');
           const ext = path.split('.').pop()!.toLowerCase();
           fileData[path] = `data:audio/${ext};base64,${bytesToBase64(bytes)}`;
           rawFiles.push({ path, kind, isImage: false, bytes: bytes.length });
-        } else if (TEXT_EXT.test(path) || path.endsWith('.mcmeta') || path.includes('pack')) {
+        } else if (TEXT_EXT.test(path)) {
           const text = await entry.async('string');
           fileData[path] = text;
           rawFiles.push({ path, kind, isImage: false, bytes: text.length, text });
         } else {
-          // Unknown binary — keep a placeholder node so it appears in the tree/size.
+          // Unknown binary (unihex zips, ttf fonts, …) — carry the bytes as a data
+          // URL so the file survives a round-trip through Export .zip unchanged.
           const bytes = await entry.async('uint8array');
+          fileData[path] = `data:application/octet-stream;base64,${bytesToBase64(bytes)}`;
           rawFiles.push({ path, kind, isImage: false, bytes: bytes.length });
         }
       } catch {

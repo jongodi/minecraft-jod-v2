@@ -14,7 +14,7 @@ import { parsePackMeta } from './mcmeta';
 import { buildGraph, type Graph } from './graph';
 import { extractDatapackRefs } from './datapack';
 import { findDuplicates } from './duplicates';
-import { computeAnalysis } from './verdict';
+import { computeAnalysis, compareFindings } from './verdict';
 
 export function analyze(input: EngineInput): AnalysisResult {
   const files = input.files;
@@ -46,7 +46,7 @@ export function analyze(input: EngineInput): AnalysisResult {
 
   // Prepend datapack-link findings (missing targets) and coverage notes.
   result.findings.unshift(...extraFindings);
-  result.findings.sort((a, b) => sevRank(a.severity) - sevRank(b.severity));
+  result.findings.sort(compareFindings);
   result.summary.errors = result.findings.filter((f) => f.severity === 'error').length;
   result.summary.warnings = result.findings.filter((f) => f.severity === 'warning').length;
 
@@ -118,6 +118,3 @@ function resolveDatapackRefs(graph: Graph, refs: DatapackRef[]): Finding[] {
   return findings;
 }
 
-function sevRank(s: Finding['severity']): number {
-  return { error: 0, warning: 1, cleanup: 2, info: 3 }[s];
-}

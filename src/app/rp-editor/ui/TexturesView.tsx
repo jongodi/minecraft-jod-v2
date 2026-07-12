@@ -17,6 +17,49 @@ const ModelViewer3D = dynamic(() => import('../model-viewer-3d'), {
 
 type Filter = 'all' | 'overlay' | 'layered' | 'no-model';
 
+/**
+ * A synthesized model for a texture nothing in the pack references — so
+ * texture-only overrides still get a 3D view. Signs, hanging signs and beds map
+ * to their real vanilla geometry (26.x turned them into block models); any other
+ * block texture falls back to a plain cube.
+ */
+function synthModelFor(sel: string): { json: any; note: string } | null {
+  let m = sel.match(/^assets\/([^/]+)\/textures\/(block\/[a-z0-9_]+_hanging_sign)\.png$/i);
+  if (m) return { json: { parent: 'minecraft:block/template_hanging_sign_rot_0', textures: { all: `${m[1]}:${m[2]}` } }, note: 'vanilla hanging-sign model' };
+  m = sel.match(/^assets\/([^/]+)\/textures\/(block\/[a-z0-9_]+_sign)\.png$/i);
+  if (m) return { json: { parent: 'minecraft:block/template_sign_rot_0', textures: { all: `${m[1]}:${m[2]}` } }, note: 'vanilla sign model' };
+  m = sel.match(/^assets\/([^/]+)\/textures\/block\/([a-z0-9_]+_bed_(head|foot))_(up|east|west)\.png$/i);
+  if (m) {
+    const base = `${m[1]}:block/${m[2]}`;
+    return {
+      json: { parent: `minecraft:block/template_bed_${m[3]}`, textures: { up: `${base}_up`, east: `${base}_east`, west: `${base}_west` } },
+      note: 'vanilla bed model',
+    };
+  }
+  m = sel.match(/^assets\/([^/]+)\/textures\/(block\/[a-z0-9_]+)\.png$/i);
+  if (m) return { json: { parent: 'minecraft:block/cube_all', textures: { all: `${m[1]}:${m[2]}` } }, note: 'no model in pack — shown on a cube' };
+  return null;
+}
+
+/** Collapsible drawer section with a hairline header. */
+function Fold({ title, chip, defaultOpen = true, children }: {
+  title: string; chip?: React.ReactNode; defaultOpen?: boolean; children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <button onClick={() => setOpen((o) => !o)}
+        style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0', marginBottom: open ? 8 : 0 }}>
+        <span aria-hidden style={{ fontSize: 8, color: 'var(--ink-faint)', transform: open ? 'rotate(90deg)' : 'none', transition: 'transform .15s' }}>▶</span>
+        <span className="rp-label" style={{ marginBottom: 0 }}>{title}</span>
+        {chip}
+        <span style={{ flex: 1, height: 1, background: 'var(--hair)' }} />
+      </button>
+      {open && children}
+    </div>
+  );
+}
+
 export function TexturesView({
   analysis, fileData, revision, onSaveTexture, onAddOverlay, onRemoveOverlay, onOpenInEditor,
 }: {
@@ -63,15 +106,22 @@ export function TexturesView({
   const model = sel ? modelForTexture(sel, analysis) : null;
   const isLayeredItem = !!overlay;                 // generated item — edit via 2D layers
   const entityTpl = sel && !isLayeredItem ? entityTemplateFor(normTex(sel)) : null;
-  // Show the editable 3D view for block textures (any model — the viewer resolves
-  // the parent chain) and for entity textures (bed/boat/chest via templates).
-  const show3D = !isLayeredItem && (!!model || !!entityTpl);
+  // Last resort: synthesize a model so texture-only overrides still get 3D.
+  const synth = sel && !isLayeredItem && !model && !entityTpl ? synthModelFor(sel) : null;
+  // Editable 3D for block textures (any model — the viewer resolves the parent
+  // chain), entity textures (templates), or synthesized vanilla geometry.
+  const show3D = !isLayeredItem && (!!model || !!entityTpl || !!synth);
   const baseTexPath = overlay?.layers.find((l) => l.index === 0)?.path ?? sel;
 
   // Layers for the preview: the model's layer stack, or just the texture itself.
   const previewLayers: PreviewLayer[] = overlay
     ? overlay.layers.map((l) => ({ key: l.key, label: l.key === 'layer0' ? 'base' : `overlay ${l.index}`, dataUrl: l.path ? fileData[l.path] : null }))
     : sel ? [{ key: 'tex', label: 'texture', dataUrl: fileData[sel] }] : [];
+
+  const previewChip = entityTpl ? <Chip tone="warning">approx</Chip>
+    : synth ? <Chip tone="neutral">{synth.note.includes('cube') ? 'cube' : 'vanilla model'}</Chip>
+    : isLayeredItem ? <Chip tone="info">item layers</Chip>
+    : model ? <Chip tone="info">3D</Chip> : null;
 
   return (
     <div style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
@@ -121,74 +171,78 @@ export function TexturesView({
             <button className="rp-btn sm" onClick={() => setSel(null)}>✕</button>
           </div>
           <div className="rp-drawer-body">
-            {/* Preview */}
-            <div className="rp-label" style={{ marginBottom: 8 }}>{show3D ? (entityTpl ? `${entityTpl.name} · 3D` : '3D model — paint on it') : isLayeredItem ? 'Item (stacked layers)' : 'Preview'}</div>
-            {show3D ? (
-              <ModelViewer3D
-                modelContent={model ? (fileData[model] ?? '{}') : '{}'}
-                entityTexture={entityTpl ? sel : null}
-                fileData={fileData} texturePaths={textures} revision={revision}
-                editable onPaint={onSaveTexture} onSelectTexture={(p) => select(p)}
-              />
-            ) : (
-              <LayeredPreview layers={previewLayers} size={220} />
-            )}
-            {model && (
-              <div style={{ marginTop: 8, fontSize: '0.62rem', color: 'var(--ink-faint)', textAlign: 'center' }}>
-                model: <a className="src" style={{ color: 'var(--accent)', cursor: 'pointer' }} onClick={() => onOpenInEditor(model)}>{model.split('/').pop()}</a>
-              </div>
-            )}
+            {/* ── Preview ── */}
+            <Fold title="Preview" chip={previewChip}>
+              {show3D ? (
+                <ModelViewer3D
+                  modelContent={model ? (fileData[model] ?? '{}') : synth ? JSON.stringify(synth.json) : '{}'}
+                  entityTexture={entityTpl ? sel : null}
+                  fileData={fileData} texturePaths={textures} revision={revision}
+                  editable onPaint={onSaveTexture} onSelectTexture={(p) => select(p)}
+                />
+              ) : (
+                <LayeredPreview layers={previewLayers} size={220} />
+              )}
+              {(model || entityTpl || synth) && (
+                <div style={{ marginTop: 8, fontSize: '0.62rem', color: 'var(--ink-faint)', textAlign: 'center' }}>
+                  {model ? (
+                    <>model: <a className="src" style={{ color: 'var(--accent)', cursor: 'pointer' }} onClick={() => onOpenInEditor(model)}>{model.split('/').pop()}</a></>
+                  ) : entityTpl ? (
+                    <>approximate {entityTpl.name} preview — the game renders these with a built-in model, not a pack file</>
+                  ) : (
+                    synth!.note
+                  )}
+                </div>
+              )}
+            </Fold>
 
-            {/* Overlay / layers */}
-            <div className="rp-label" style={{ margin: '16px 0 8px', display: 'flex', alignItems: 'center', gap: 8 }}>
-              Overlay layers
-              {overlay ? (overlay.hasOverlay ? <Chip tone="info">has overlay</Chip> : <Chip tone="neutral">base only</Chip>) : <Chip tone="neutral">not layered</Chip>}
-            </div>
-            {overlay ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                {overlay.layers.map((l) => (
-                  <div key={l.key} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '5px 7px', borderRadius: 8, background: activeLayer === l.path ? 'rgba(var(--accent-rgb),0.08)' : 'rgba(var(--text-rgb),0.03)', border: `1px solid ${activeLayer === l.path ? 'rgba(var(--accent-rgb),0.4)' : 'var(--hair)'}` }}>
-                    <div style={{ width: 26, height: 26, flexShrink: 0, background: 'repeating-conic-gradient(#0a0d13 0% 25%, #070a0f 0% 50%) 50% / 8px 8px', border: '1px solid var(--hair)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {l.path && fileData[l.path] ? <img src={fileData[l.path]} style={{ maxWidth: 22, maxHeight: 22, imageRendering: 'pixelated' }} alt="" /> : <span style={{ fontSize: 10, color: 'var(--sev-error)' }}>?</span>}
+            {/* ── Layers & overlay ── */}
+            <Fold title="Layers & overlay"
+              chip={overlay ? (overlay.hasOverlay ? <Chip tone="info">has overlay</Chip> : <Chip tone="neutral">base only</Chip>) : undefined}
+              defaultOpen={!!overlay}>
+              {overlay ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                  {overlay.layers.map((l) => (
+                    <div key={l.key} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '5px 7px', borderRadius: 8, background: activeLayer === l.path ? 'rgba(var(--accent-rgb),0.08)' : 'rgba(var(--text-rgb),0.03)', border: `1px solid ${activeLayer === l.path ? 'rgba(var(--accent-rgb),0.4)' : 'var(--hair)'}` }}>
+                      <div style={{ width: 26, height: 26, flexShrink: 0, background: 'repeating-conic-gradient(#0a0d13 0% 25%, #070a0f 0% 50%) 50% / 8px 8px', border: '1px solid var(--hair)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {l.path && fileData[l.path] ? <img src={fileData[l.path]} style={{ maxWidth: 22, maxHeight: 22, imageRendering: 'pixelated' }} alt="" /> : <span style={{ fontSize: 10, color: 'var(--sev-error)' }}>?</span>}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '0.66rem', color: 'var(--ink)' }}>{l.index === 0 ? 'layer0 · base' : `layer${l.index} · overlay`}</div>
+                        <div style={{ fontSize: '0.55rem', color: 'var(--ink-faint)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.ref}</div>
+                      </div>
+                      {l.path && <button className="rp-btn sm" onClick={() => setActiveLayer(l.path)}>Edit</button>}
+                      {l.index >= 1 && (
+                        <button className="rp-btn sm danger" title="Remove this overlay layer" onClick={() => {
+                          if (confirm(`Remove ${l.key} (overlay) from ${overlay.model.split('/').pop()}? The overlay texture will be deleted.`)) onRemoveOverlay(overlay.model, l.key, l.path);
+                        }}>✕</button>
+                      )}
                     </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '0.66rem', color: 'var(--ink)' }}>{l.index === 0 ? 'layer0 · base' : `layer${l.index} · overlay`}</div>
-                      <div style={{ fontSize: '0.55rem', color: 'var(--ink-faint)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.ref}</div>
-                    </div>
-                    {l.path && <button className="rp-btn sm" onClick={() => setActiveLayer(l.path)}>Edit</button>}
-                    {l.index >= 1 && (
-                      <button className="rp-btn sm danger" title="Remove this overlay layer" onClick={() => {
-                        if (confirm(`Remove ${l.key} (overlay) from ${overlay.model.split('/').pop()}? The overlay texture will be deleted.`)) onRemoveOverlay(overlay.model, l.key, l.path);
-                      }}>✕</button>
-                    )}
-                  </div>
-                ))}
-                <button className="rp-btn sm" style={{ borderColor: 'rgba(90,167,255,0.5)', color: 'var(--sev-info)', marginTop: 4 }}
-                  onClick={async () => { const p = await onAddOverlay(overlay.model, baseTexPath); if (p) { setActiveLayer(p); } }}>
-                  + Add overlay layer
-                </button>
-              </div>
-            ) : (
-              <div style={{ fontSize: '0.68rem', color: 'var(--ink-dim)', lineHeight: 1.5 }}>
-                This texture isn’t a layer of a generated item model, so it can’t take a stacked overlay. {model ? 'It’s used by a block/parent model — edit it directly below.' : 'Nothing in the pack references it yet.'}
-              </div>
-            )}
+                  ))}
+                  <button className="rp-btn sm" style={{ borderColor: 'rgba(90,167,255,0.5)', color: 'var(--sev-info)', marginTop: 4 }}
+                    onClick={async () => { const p = await onAddOverlay(overlay.model, baseTexPath); if (p) { setActiveLayer(p); } }}>
+                    + Add overlay layer
+                  </button>
+                </div>
+              ) : (
+                <div style={{ fontSize: '0.68rem', color: 'var(--ink-dim)', lineHeight: 1.5 }}>
+                  Only textures used as a layer of a generated item model can take stacked overlays.
+                  {show3D ? ' This one renders in 3D — paint it directly in the preview above.' : ''}
+                </div>
+              )}
+            </Fold>
 
-            {/* Painter for the active layer */}
-            <div className="rp-label" style={{ margin: '16px 0 8px' }}>Edit {activeLayer && activeLayer !== sel ? (overlay?.layers.find((l) => l.path === activeLayer)?.key ?? 'layer') : 'texture'}</div>
-            {activeLayer && fileData[activeLayer] ? (
-              <PixelPainter key={activeLayer + revision} compact dataUrl={fileData[activeLayer]} onSave={(d: string) => onSaveTexture(activeLayer, d)} />
-            ) : (
-              <div style={{ fontSize: '0.68rem', color: 'var(--ink-faint)' }}>Select a layer to edit.</div>
-            )}
+            {/* ── Pixel painter ── */}
+            <Fold title={`Pixel painter${activeLayer && activeLayer !== sel ? ` — ${overlay?.layers.find((l) => l.path === activeLayer)?.key ?? 'layer'}` : ''}`}>
+              {activeLayer && fileData[activeLayer] ? (
+                <PixelPainter key={activeLayer + revision} compact dataUrl={fileData[activeLayer]} onSave={(d: string) => onSaveTexture(activeLayer, d)} />
+              ) : (
+                <div style={{ fontSize: '0.68rem', color: 'var(--ink-faint)' }}>Select a layer to edit.</div>
+              )}
+            </Fold>
           </div>
         </div>
       )}
     </div>
   );
-}
-
-function safeParse(s: string | undefined): any {
-  if (!s) return null;
-  try { return JSON.parse(s); } catch { return null; }
 }
