@@ -76,6 +76,8 @@ export function TexturesView({
   const [filter, setFilter] = useState<Filter>('all');
   const [sel, setSel] = useState<string | null>(null);
   const [activeLayer, setActiveLayer] = useState<string | null>(null);
+  // Wide mode: grow the studio panel (and the 3D view with it) for detail work.
+  const [expanded, setExpanded] = useState(false);
 
   // Precompute overlay status for badges + filtering.
   const overlayOf = useMemo(() => {
@@ -162,12 +164,13 @@ export function TexturesView({
 
       {/* Studio panel */}
       {sel && (
-        <div className="rp-drawer rp-rise" style={{ width: 'min(440px, 46vw)' }}>
+        <div className="rp-drawer rp-rise" style={{ width: expanded ? 'min(980px, 92vw)' : 'min(440px, 46vw)', transition: 'width 0.2s ease' }}>
           <div className="rp-drawer-head">
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: '0.8rem', color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sel.split('/').pop()}</div>
               <div className="rp-path" style={{ fontSize: '0.58rem', marginTop: 2 }}>{sel.replace(/^assets\/[^/]+\//, '')}</div>
             </div>
+            <button className="rp-btn sm" title={expanded ? 'Shrink panel' : 'Expand panel — bigger 3D view and painter'} onClick={() => setExpanded((e) => !e)}>{expanded ? '⇥ Shrink' : '⤢ Expand'}</button>
             <button className="rp-btn sm" onClick={() => setSel(null)}>✕</button>
           </div>
           <div className="rp-drawer-body">
@@ -179,9 +182,10 @@ export function TexturesView({
                   entityTexture={entityTpl ? sel : null}
                   fileData={fileData} texturePaths={textures} revision={revision}
                   editable onPaint={onSaveTexture} onSelectTexture={(p) => select(p)}
+                  height={expanded ? 540 : 300}
                 />
               ) : (
-                <LayeredPreview layers={previewLayers} size={220} />
+                <LayeredPreview layers={previewLayers} size={expanded ? 400 : 220} />
               )}
               {(model || entityTpl || synth) && (
                 <div style={{ marginTop: 8, fontSize: '0.62rem', color: 'var(--ink-faint)', textAlign: 'center' }}>

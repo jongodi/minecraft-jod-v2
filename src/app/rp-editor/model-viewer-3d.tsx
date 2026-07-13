@@ -30,6 +30,7 @@ export default function ModelViewer3D({
   entityTexture = null,
   onPaint,
   onPickColor,
+  height = 300,
 }: {
   modelContent: string;
   fileData: Record<string, string>;
@@ -40,6 +41,7 @@ export default function ModelViewer3D({
   entityTexture?: string | null;
   onPaint?: (path: string, dataUrl: string) => void;
   onPickColor?: (hex: string) => void;
+  height?: number;
 }) {
   const mountRef = useRef<HTMLDivElement>(null);
   const [mode, setMode] = useState<'rotate' | 'paint'>(editable ? 'paint' : 'rotate');
@@ -51,6 +53,18 @@ export default function ModelViewer3D({
   // Keep latest paint settings available to the imperative three.js loop.
   const paintRef = useRef({ mode, color, brush, tool });
   paintRef.current = { mode, color, brush, tool };
+
+  // ── Paint undo/redo ──────────────────────────────────────────────────────────
+  // One snapshot per texture per stroke, stored as data URLs OUTSIDE the effect
+  // (each save bumps `revision`, which rebuilds the scene — the history must
+  // survive that). Undo restores the snapshot and persists it through onPaint,
+  // so the saved pack state and the canvas stay in sync.
+  const histRef = useRef<{ past: Array<{ path: string; data: string }>; future: Array<{ path: string; data: string }> }>({ past: [], future: [] });
+  const [, setHistVer] = useState(0);      // re-render for button disabled states
+  const bumpHist = () => setHistVer((v) => v + 1);
+  const undoFnRef = useRef<() => void>(() => {});
+  const redoFnRef = useRef<() => void>(() => {});
+  const hover3dRef = useRef(false);
 
   const ciLookup = new Map<string, string>();
   for (const p of texturePaths) ciLookup.set(p.toLowerCase(), p);
@@ -339,6 +353,14 @@ export default function ModelViewer3D({
         const hex = `#${[d[0], d[1], d[2]].map((v) => v.toString(16).padStart(2, '0')).join('')}`;
         setColor(hex); onPickColor?.(hex); return;
       }
+      // First time this stroke touches this texture: snapshot it for undo.
+      if (!strokeTouched.has(path)) {
+        strokeTouched.add(path);
+        histRef.current.past.push({ path, data: canvas.toDataURL('image/png') });
+        if (histRef.current.past.length > 50) histRef.current.past.shift();
+        histRef.current.future.length = 0;
+        bumpHist();
+      }
       const half = Math.floor(bs / 2);
       for (let dx = -half; dx <= bs - 1 - half; dx++) for (let dy = -half; dy <= bs - 1 - half; dy++) {
         const x = px + dx, y = py + dy;
@@ -350,9 +372,66 @@ export default function ModelViewer3D({
       emitPaint(path);
     }
 
+    // ── Undo/redo (per-stroke snapshots; persists through onPaint so the saved
+    // pack state, this canvas, and the 2D painter all agree) ───────────────────
+    const strokeTouched = new Set<string>();
+    function applySnapshot(path: string, dataUrl: string) {
+      // A pending debounced save for this path would overwrite the revert.
+      clearTimeout(emitTimers.get(path));
+      const entry = texCache.get(path);
+      if (entry) {
+        const img = new Image();
+        img.onload = () => {
+          entry.ctx.imageSmoothingEnabled = false;
+          entry.ctx.clearRect(0, 0, entry.canvas.width, entry.canvas.height);
+          entry.ctx.drawImage(img, 0, 0);
+          entry.tex.needsUpdate = true;
+        };
+        img.src = dataUrl;
+      }
+      onPaint?.(path, dataUrl);
+    }
+    // The live canvas is fresher than fileData while a save is still debounced.
+    const currentState = (path: string): string | undefined =>
+      texCache.get(path)?.canvas.toDataURL('image/png') ?? fileData[path];
+    const doUndo = () => {
+      const op = histRef.current.past.pop();
+      if (!op) return;
+      const cur = currentState(op.path);
+      if (cur) histRef.current.future.push({ path: op.path, data: cur });
+      applySnapshot(op.path, op.data);
+      bumpHist();
+    };
+    const doRedo = () => {
+      const op = histRef.current.future.pop();
+      if (!op) return;
+      const cur = currentState(op.path);
+      if (cur) histRef.current.past.push({ path: op.path, data: cur });
+      applySnapshot(op.path, op.data);
+      bumpHist();
+    };
+    undoFnRef.current = doUndo;
+    redoFnRef.current = doRedo;
+
+    // Ctrl/Cmd+Z over the 3D view — capture phase, so the 2D painter's global
+    // shortcut doesn't also fire while the cursor is on the model.
+    const onEnter = () => { hover3dRef.current = true; };
+    const onLeave = () => { hover3dRef.current = false; };
+    const onKey = (e: KeyboardEvent) => {
+      if (!editable || !hover3dRef.current) return;
+      if (!(e.ctrlKey || e.metaKey)) return;
+      const k = e.key.toLowerCase();
+      if (k === 'z' && !e.shiftKey) { e.preventDefault(); e.stopPropagation(); doUndo(); }
+      else if (k === 'y' || (k === 'z' && e.shiftKey)) { e.preventDefault(); e.stopPropagation(); doRedo(); }
+    };
+    el.addEventListener('mouseenter', onEnter);
+    el.addEventListener('mouseleave', onLeave);
+    window.addEventListener('keydown', onKey, true);
+
     let dragging = false, painting = false, px = 0, py = 0;
     const onDown = (ev: MouseEvent) => {
       if (editable && paintRef.current.mode === 'paint') {
+        strokeTouched.clear();
         painting = true; cam.auto = false; paintAt(ev.clientX, ev.clientY);
       } else {
         dragging = true; px = ev.clientX; py = ev.clientY; cam.auto = false; renderer.domElement.style.cursor = 'grabbing';
@@ -385,6 +464,8 @@ export default function ModelViewer3D({
       emitTimers.forEach((t) => clearTimeout(t));
       renderer.domElement.removeEventListener('mousedown', onDown);
       window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp);
+      window.removeEventListener('keydown', onKey, true);
+      el.removeEventListener('mouseenter', onEnter); el.removeEventListener('mouseleave', onLeave);
       renderer.domElement.removeEventListener('wheel', onWheel);
       renderer.dispose(); texCache.forEach((e) => e.tex.dispose());
       if (el.contains(renderer.domElement)) el.removeChild(renderer.domElement);
@@ -422,12 +503,15 @@ export default function ModelViewer3D({
           ))}
           <input type="color" value={color} onChange={(e) => setColor(e.target.value)} style={{ width: 26, height: 24, padding: 2, background: 'var(--bg-card)', border: `1px solid ${BORDER}`, cursor: 'pointer' }} />
           {[1, 2, 3].map((b) => <button key={b} className={`rp-btn sm${brush === b ? ' active' : ''}`} onClick={() => setBrush(b)}>{b}px</button>)}
+          <span style={{ width: 1, height: 18, background: BORDER, margin: '0 3px' }} />
+          <button className="rp-btn sm" title="Undo (Ctrl+Z)" disabled={histRef.current.past.length === 0} onClick={() => undoFnRef.current()}>↶</button>
+          <button className="rp-btn sm" title="Redo (Ctrl+Shift+Z)" disabled={histRef.current.future.length === 0} onClick={() => redoFnRef.current()}>↷</button>
         </div>
       )}
-      <div style={{ position: 'relative', width: '100%', height: 300, border: `1px solid ${BORDER}`, borderRadius: 8, overflow: 'hidden' }}>
+      <div style={{ position: 'relative', width: '100%', height, border: `1px solid ${BORDER}`, borderRadius: 8, overflow: 'hidden' }}>
         <div ref={mountRef} style={{ width: '100%', height: '100%' }} />
         <div style={{ position: 'absolute', top: 8, left: 8, fontSize: 9, color: '#556', letterSpacing: '1px', background: 'rgba(9,12,16,0.7)', padding: '2px 6px', borderRadius: 4 }}>
-          {editable && mode === 'paint' ? 'CLICK/DRAG TO PAINT · ⟳ TO ROTATE' : 'DRAG TO ROTATE · SCROLL TO ZOOM'}
+          {editable && mode === 'paint' ? 'CLICK/DRAG TO PAINT · CTRL+Z UNDO · ⟳ TO ROTATE' : 'DRAG TO ROTATE · SCROLL TO ZOOM'}
         </div>
         {entityMode && <div style={{ position: 'absolute', top: 8, right: 8, fontSize: 9, color: 'var(--sev-warning)', letterSpacing: '1px', background: 'rgba(9,12,16,0.7)', padding: '2px 6px', borderRadius: 4 }}>{entityMode.name.toUpperCase()} · APPROX</div>}
       </div>
