@@ -115,7 +115,9 @@ export const RP_CSS = `
 .rp-tab .tabnum{font-size:0.6rem; padding:1px 6px; border-radius:20px; background:rgba(var(--text-rgb),0.06); color:var(--ink-dim); letter-spacing:0;}
 .rp-tab .tabnum.err{background:rgba(255,87,115,0.14); color:var(--sev-error);}
 .rp-more{position:relative;}
-.rp-more-menu{position:absolute; top:calc(100% + 4px); right:0; min-width:230px; background:var(--bg-card); border:1px solid var(--hair-strong); border-radius:10px; padding:5px; z-index:60; box-shadow:0 14px 40px rgba(0,0,0,0.5);}
+/* Rendered in a portal at the document root (fixed), so the tab bar's
+   overflow-x:auto can never clip it. Coordinates are set inline at open time. */
+.rp-more-menu{position:fixed; min-width:230px; background:var(--bg-card); border:1px solid var(--hair-strong); border-radius:10px; padding:5px; z-index:120; box-shadow:0 14px 40px rgba(0,0,0,0.5);}
 .rp-more-item{display:flex; align-items:baseline; gap:10px; padding:8px 11px; border-radius:7px; cursor:pointer; font-size:0.6rem; letter-spacing:0.16em; text-transform:uppercase; color:var(--ink-dim); transition:background 0.15s, color 0.15s;}
 .rp-more-item:hover{background:rgba(var(--text-rgb),0.05); color:var(--ink);}
 .rp-more-item.active{color:var(--accent);}

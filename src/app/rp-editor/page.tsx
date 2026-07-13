@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import JSZip from 'jszip';
 import dynamic from 'next/dynamic';
 import DiscsView from './tabs/DiscsView';
@@ -65,8 +66,6 @@ export default function App() {
   const [revision, setRevision] = useState(0);
   const [status, setStatus] = useState('No pack loaded');
   const [dragging, setDragging] = useState(false);
-  const [serverBusy, setServerBusy] = useState(false);
-  const [serverError, setServerError] = useState<string | null>(null);
   const [painting3dTex, setPainting3dTex] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const reanalyzeTimer = useRef<any>(null);
@@ -112,30 +111,6 @@ export default function App() {
     e.preventDefault(); setDragging(false);
     const f = e.dataTransfer.files[0];
     if (f && f.name.endsWith('.zip')) loadFiles(f, []);
-  }, [loadFiles]);
-
-  // Pull the pack the live server is actually using (its server.properties
-  // resource-pack URL), proxied through our API, and load it like an upload.
-  const loadFromServer = useCallback(async () => {
-    setServerError(null);
-    setServerBusy(true);
-    setStatus('Fetching the resource pack from the server…');
-    try {
-      const res = await fetch('/api/rp-editor/server-pack');
-      if (!res.ok) {
-        let msg = `Couldn’t fetch the server pack (${res.status}).`;
-        try { const j = await res.json(); if (j?.error) msg = j.error; } catch { /* non-JSON */ }
-        setServerError(msg); setStatus(msg); return;
-      }
-      const blob = await res.blob();
-      const name = res.headers.get('X-Pack-Filename') || 'server-resource-pack.zip';
-      loadFiles(new File([blob], name, { type: 'application/zip' }), []);
-    } catch (e: any) {
-      const msg = `Couldn’t fetch the server pack: ${e?.message ?? 'network error'}`;
-      setServerError(msg); setStatus(msg);
-    } finally {
-      setServerBusy(false);
-    }
   }, [loadFiles]);
 
   const openInEditor = useCallback((path: string) => {
@@ -418,7 +393,6 @@ export default function App() {
         <div className="rp-brand">JOÐ<b>craft</b><span>Pack Assay</span></div>
         <div style={{ flex: 1 }} />
         {fileCount > 0 && <button className="rp-btn sm" onClick={exportZip}>Export .zip</button>}
-        <button className="rp-btn sm" onClick={loadFromServer} disabled={serverBusy} title="Load the pack the live server is using" style={{ opacity: serverBusy ? 0.6 : 1 }}>{serverBusy ? 'Fetching…' : '⭳ Server pack'}</button>
         <button className="rp-btn sm active" onClick={() => fileInputRef.current?.click()}>{fileCount > 0 ? 'Load new' : 'Open .zip'}</button>
         <input ref={fileInputRef} type="file" accept=".zip" style={{ display: 'none' }} onChange={handleFileChange} />
       </div>
@@ -458,25 +432,6 @@ export default function App() {
                 <div style={{ fontSize: '0.7rem', color: 'var(--ink-faint)', marginBottom: 18 }}>or click to browse · analysed locally in your browser, nothing is uploaded</div>
                 <span className="rp-btn primary">Choose file</span>
               </Glass>
-
-              {/* Or pull the pack the live server is running. */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '20px 4px 0' }}>
-                <span style={{ height: 1, flex: 1, background: 'var(--hair)' }} />
-                <span style={{ fontSize: '0.58rem', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--ink-faint)' }}>or</span>
-                <span style={{ height: 1, flex: 1, background: 'var(--hair)' }} />
-              </div>
-              <button className="rp-btn" disabled={serverBusy} onClick={loadFromServer}
-                style={{ width: '100%', justifyContent: 'center', marginTop: 14, padding: '13px 16px', fontSize: '0.82rem', gap: 9, opacity: serverBusy ? 0.7 : 1, cursor: serverBusy ? 'default' : 'pointer' }}>
-                {serverBusy ? <><span className="rp-spin" style={{ width: 14, height: 14, borderWidth: 2 }} /> Fetching from server…</> : <>⭳ Use the JOÐcraft server pack</>}
-              </button>
-              <div style={{ textAlign: 'center', fontSize: '0.64rem', color: 'var(--ink-faint)', marginTop: 10, lineHeight: 1.6 }}>
-                Pulls the live pack from <b style={{ color: 'var(--ink-dim)', fontWeight: 600 }}>play.jodcraft.world</b> — then view, edit, and export it here.
-              </div>
-              {serverError && (
-                <div role="alert" style={{ marginTop: 14, padding: '10px 13px', borderRadius: 8, border: '1px solid var(--sev-error)', background: 'rgba(var(--bg-rgb),0.45)', color: 'var(--sev-error)', fontSize: '0.68rem', lineHeight: 1.55 }}>
-                  {serverError}
-                </div>
-              )}
             </div>
           </div>
         ) : analysis ? (
@@ -520,33 +475,55 @@ export default function App() {
 }
 
 // ── "More" tab dropdown — secondary destinations, one click away ──────────────
+// The menu is portaled to <body> with fixed positioning: the tab bar scrolls
+// horizontally (overflow-x:auto), and a scrollable ancestor clips vertical
+// overflow too — an in-place absolute menu would be trapped inside the bar.
 function MoreTabs({ items, tab, setTab }: {
   items: Array<{ id: string; label: string; hint?: string }>;
   tab: string; setTab: (id: string) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const toggle = () => {
+    if (!open && triggerRef.current) {
+      const r = triggerRef.current.getBoundingClientRect();
+      setPos({ top: r.bottom + 6, right: Math.max(8, window.innerWidth - r.right) });
+    }
+    setOpen((o) => !o);
+  };
+
   useEffect(() => {
     if (!open) return;
-    const close = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
-    window.addEventListener('mousedown', close);
-    return () => window.removeEventListener('mousedown', close);
+    const closeOutside = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (triggerRef.current?.contains(t) || menuRef.current?.contains(t)) return;
+      setOpen(false);
+    };
+    const closeNow = () => setOpen(false);
+    window.addEventListener('mousedown', closeOutside);
+    window.addEventListener('resize', closeNow);
+    return () => { window.removeEventListener('mousedown', closeOutside); window.removeEventListener('resize', closeNow); };
   }, [open]);
+
   const active = items.find((t) => t.id === tab);
   return (
-    <div ref={ref} className="rp-more">
-      <div className={`rp-tab${active ? ' active' : ''}`} onClick={() => setOpen((o) => !o)}>
+    <div ref={triggerRef} className="rp-more">
+      <div className={`rp-tab${active ? ' active' : ''}`} onClick={toggle}>
         {active ? active.label : 'More'} <span style={{ fontSize: 8 }}>▾</span>
       </div>
-      {open && (
-        <div className="rp-more-menu rp-rise">
+      {open && pos && createPortal(
+        <div ref={menuRef} className="rp-more-menu rp-rise" style={{ top: pos.top, right: pos.right }}>
           {items.map((t) => (
             <div key={t.id} className={`rp-more-item${tab === t.id ? ' active' : ''}`} onClick={() => { setTab(t.id); setOpen(false); }}>
               {t.label}
               {t.hint && <span className="hint">{t.hint}</span>}
             </div>
           ))}
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );
