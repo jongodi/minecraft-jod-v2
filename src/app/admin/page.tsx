@@ -15,7 +15,7 @@ const AdminMapEditor = dynamic(() => import('@/components/AdminMapEditor'), { ss
 
 const mono = "'JetBrains Mono', monospace";
 const sans = "'Space Grotesk', sans-serif";
-const green = '#00ff41';
+const green = '#c8960c';
 const card  = { background: '#0d0d0d', border: '1px solid #1a1a1a', padding: '1.5rem' };
 
 function SectionHeader({ label, sub }: { label: string; sub?: string }) {
@@ -214,7 +214,7 @@ function DatapacksSection() {
                   )}
                 </div>
               ) : r.latestVersion ? (
-                <span style={{ fontFamily: mono, fontSize: '0.5rem', color: '#00ff4144', letterSpacing: '0.1em' }}>✓ UP TO DATE</span>
+                <span style={{ fontFamily: mono, fontSize: '0.5rem', color: '#c8960c44', letterSpacing: '0.1em' }}>✓ UP TO DATE</span>
               ) : r.error ? (
                 <span style={{ fontFamily: mono, fontSize: '0.5rem', color: '#ff446666' }} title={r.error}>CHECK FAILED</span>
               ) : null}

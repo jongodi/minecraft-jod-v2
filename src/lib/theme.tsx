@@ -1,7 +1,10 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, type ReactNode } from 'react';
 
+// The site ships with the Western design only. The old Matrix design is kept
+// in the repo (components/, unused) in case it's revived later — the Theme
+// type still names it so those files compile, but the theme never changes.
 export type Theme = 'matrix' | 'western';
 
 interface ThemeContextValue {
@@ -10,29 +13,13 @@ interface ThemeContextValue {
 }
 
 const ThemeContext = createContext<ThemeContextValue>({
-  theme: 'matrix',
+  theme: 'western',
   setTheme: () => {},
 });
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>('matrix');
-
-  useEffect(() => {
-    const saved = localStorage.getItem('jod-theme') as Theme | null;
-    if (saved === 'western' || saved === 'matrix') {
-      setThemeState(saved);
-      document.documentElement.setAttribute('data-theme', saved);
-    }
-  }, []);
-
-  const setTheme = (t: Theme) => {
-    setThemeState(t);
-    document.documentElement.setAttribute('data-theme', t);
-    localStorage.setItem('jod-theme', t);
-  };
-
   return (
-    <ThemeContext.Provider value={{ theme, setTheme }}>
+    <ThemeContext.Provider value={{ theme: 'western', setTheme: () => {} }}>
       {children}
     </ThemeContext.Provider>
   );

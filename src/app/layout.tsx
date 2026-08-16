@@ -3,8 +3,6 @@ import './globals.css';
 import CustomCursor from '@/components/CustomCursor';
 import ScrollProgress from '@/components/ScrollProgress';
 import RpEditorButton from '@/components/RpEditorButton';
-import NavHeader from '@/components/NavHeader';
-import { ThemeProvider } from '@/lib/theme';
 
 export const metadata: Metadata = {
   title: 'JOD — Private Minecraft Survival',
@@ -28,28 +26,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        {/* Prevent flash of wrong theme by applying saved theme before paint */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              try {
-                const t = localStorage.getItem('jod-theme');
-                if (t === 'western') document.documentElement.setAttribute('data-theme', 'western');
-              } catch(e) {}
-            `,
-          }}
-        />
-      </head>
+    <html lang="en" data-theme="western">
       <body>
-        <ThemeProvider>
-          <CustomCursor />
-          <ScrollProgress />
-          <NavHeader />
-          <RpEditorButton />
-          {children}
-        </ThemeProvider>
+        <CustomCursor />
+        <ScrollProgress />
+        <RpEditorButton />
+        {children}
       </body>
     </html>
   );

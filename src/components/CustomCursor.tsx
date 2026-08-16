@@ -10,9 +10,9 @@ interface Particle {
 }
 
 function getAccentColor(): string {
-  if (typeof window === 'undefined') return '#00ff41';
+  if (typeof window === 'undefined') return '#c8960c';
   return getComputedStyle(document.documentElement)
-    .getPropertyValue('--accent').trim() || '#00ff41';
+    .getPropertyValue('--accent').trim() || '#c8960c';
 }
 
 function buildTrailColors(accent: string): string[] {

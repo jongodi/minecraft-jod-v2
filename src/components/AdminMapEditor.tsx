@@ -4,10 +4,10 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import type { MapConfig, MapLocation, MapZone, MapPath } from '@/lib/map-types';
 
 const mono  = "'JetBrains Mono', monospace";
-const green = '#00ff41';
+const green = '#c8960c';
 
 const TYPE_COLOR: Record<string, string> = {
-  surface:     '#00ff41',
+  surface:     '#c8960c',
   underground: '#c084fc',
   island:      '#f97316',
   aerial:      '#38bdf8',

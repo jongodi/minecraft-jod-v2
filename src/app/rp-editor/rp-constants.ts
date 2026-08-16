@@ -1,8 +1,8 @@
-// Aligned to the JOÐcraft site palette (cool dark, JOD green). These feed the
+// Aligned to the JOÐcraft site palette (cool dark, western gold accent). These feed the
 // music-disc tool and the deep editor utilities; the analysis views are fully
 // theme-aware via CSS variables (see ui/tokens).
 export const BG="#06080c",BG2="#0d1018",BG3="#131722",BORDER="#1c2030";
-export const ACCENT="#00ff41",ACCENT2="#4aa8ff",DIM="#505770",TEXT="#dde1ec",TEXT2="#8b93a7",WARN="#f0a500",ERR="#ff5773";
+export const ACCENT="#c8960c",ACCENT2="#4aa8ff",DIM="#505770",TEXT="#dde1ec",TEXT2="#8b93a7",WARN="#f0a500",ERR="#ff5773";
 export const PX=`font-family:'Courier New',monospace`;
 export const VANILLA_PREFIXES=["block/","item/","entity/","gui/","environment/","font/","map/","misc/","mob_effect/","painting/","particle/","colormap/","effect/","models/","textures/","sounds/"];
 export function isLikelyVanilla(p:string){const norm=p.toLowerCase().replace(/^minecraft:/,'').replace(/^assets\/[^/]+\/textures\//,'').replace(/\.(png|jpg|jpeg)$/i,'');return VANILLA_PREFIXES.some(v=>norm.startsWith(v));}

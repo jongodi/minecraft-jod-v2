@@ -25,17 +25,17 @@ export default function RpEditorButton() {
           display:       'flex',
           alignItems:    'center',
           gap:           '0.6rem',
-          background:    '#111111',
-          border:        `1px solid ${hov ? '#00ff41' : '#222222'}`,
+          background:    'var(--bg-elevated)',
+          border:        `1px solid ${hov ? 'var(--accent)' : 'var(--border)'}`,
           padding:       '0.65rem 1rem',
-          fontFamily:    "'JetBrains Mono', monospace",
+          fontFamily:    'var(--font-mono)',
           fontSize:      '0.6rem',
-          color:         hov ? '#00ff41' : '#444444',
+          color:         hov ? 'var(--accent)' : 'var(--muted)',
           letterSpacing: '0.22em',
           textTransform: 'uppercase' as const,
           transition:    'border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease',
           boxShadow:     hov
-            ? '0 0 28px rgba(0,255,65,0.18), inset 0 0 20px rgba(0,255,65,0.04)'
+            ? '0 0 28px rgba(var(--accent-rgb),0.18), inset 0 0 20px rgba(var(--accent-rgb),0.04)'
             : '0 4px 24px rgba(0,0,0,0.6)',
           cursor:        'none',
         }}
@@ -54,8 +54,8 @@ export default function RpEditorButton() {
             width:        5,
             height:       5,
             borderRadius: '50%',
-            background:   hov ? '#00ff41' : '#1e3a1e',
-            border:       `1px solid ${hov ? '#00ff41' : '#2a4a2a'}`,
+            background:   hov ? 'var(--accent)' : 'var(--faint)',
+            border:       `1px solid ${hov ? 'var(--accent)' : 'var(--border-strong)'}`,
             transition:   'background 0.3s ease, border-color 0.3s ease',
             flexShrink:   0,
           }}

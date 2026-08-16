@@ -3,7 +3,6 @@
 import '@/app/western.css';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import Link from 'next/link';
-import { useTheme } from '@/lib/theme';
 import { DATAPACKS } from '@/data/datapacks';
 import WesternMap from './WesternMap';
 
@@ -102,13 +101,37 @@ const BulletHoleSVG = () => (
   </svg>
 );
 
-/* ─── quick draw state type ──────────────────────────────────────────────── */
-type QDState = 'idle' | 'countdown' | 'draw' | 'result';
+/* ─── quick draw ─────────────────────────────────────────────────────────── */
+/* One game = QD_ROUNDS draws. Each round: countdown → target up → fire.
+   Firing during the countdown is a foul and forfeits that draw. Rounds
+   chain automatically with a short reload pause between them. */
+const QD_ROUNDS      = 3;
+const QD_NEXT_DELAY  = 1600;
+const QD_NUMERAL     = ['I', 'II', 'III'];
+
+type QDState = 'idle' | 'countdown' | 'draw' | 'roundResult' | 'done';
+type QDShot  = number | null;   // reaction time in ms, or null for a foul
+
+const qdRankOf = (ms: number) =>
+  ms < 200 ? 'SHERIFF' :
+  ms < 400 ? 'WAGON MASTER' :
+  ms < 700 ? 'OUTLAW' :
+             'GREENHORN';
+
+const qdRankLabel = (ms: number) =>
+  ms < 200 ? 'SHERIFF — LIGHTNING FAST' :
+  ms < 400 ? 'WAGON MASTER — QUICK' :
+  ms < 700 ? 'OUTLAW — DECENT' :
+             'GREENHORN — SLOW';
+
+const qdRankClass = (rank: string) =>
+  rank === 'SHERIFF'      ? 'rank-sheriff' :
+  rank === 'WAGON MASTER' ? 'rank-wagon'   :
+  rank === 'OUTLAW'       ? 'rank-outlaw'  :
+  rank === 'GREENHORN'    ? 'rank-greenhorn' : '';
 
 /* ─── main component ─────────────────────────────────────────────────────── */
 export default function WesternHome() {
-  const { setTheme } = useTheme();
-
   /* server status */
   const [online, setOnline]       = useState<boolean | null>(null);
   const [players, setPlayers]     = useState(0);
@@ -128,8 +151,9 @@ export default function WesternHome() {
 
   /* quick draw */
   const [qdState, setQdState]     = useState<QDState>('idle');
+  const [qdShots, setQdShots]     = useState<QDShot[]>([]);
+  const [qdRound, setQdRound]     = useState(0);
   const [qdResult, setQdResult]   = useState('');
-  const [qdTime, setQdTime]       = useState(0);
   const [qdBest, setQdBest]       = useState<number | null>(null);
   const qdTimer    = useRef<ReturnType<typeof setTimeout>>();
   const qdStart    = useRef(0);
@@ -141,18 +165,23 @@ export default function WesternHome() {
   const tumbRef    = useRef<HTMLDivElement>(null);
   const wrapRef    = useRef<HTMLDivElement>(null);
 
-  /* ── fetch server status ─────────────────────────────────────────── */
+  /* ── fetch server status (refreshed every minute, as advertised) ─── */
   useEffect(() => {
-    fetch('/api/server-status')
-      .then(r => r.ok ? r.json() : null)
-      .then(data => {
-        if (!data) return;
-        setOnline(data.online ?? false);
-        setPlayers(data.players?.online ?? 0);
-        setMaxPlayers(data.players?.max ?? 20);
-        setOnlineList((data.players?.list ?? []).map((p: {name: string}) => p.name));
-      })
-      .catch(() => setOnline(false));
+    const load = () => {
+      fetch('/api/server-status')
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (!data) return;
+          setOnline(data.online ?? false);
+          setPlayers(data.players?.online ?? 0);
+          setMaxPlayers(data.players?.max ?? 20);
+          setOnlineList((data.players?.list ?? []).map((p: {name: string}) => p.name));
+        })
+        .catch(() => setOnline(false));
+    };
+    load();
+    const id = setInterval(load, 60_000);
+    return () => clearInterval(id);
   }, []);
 
   /* ── fetch stats ─────────────────────────────────────────────────── */
@@ -283,8 +312,24 @@ export default function WesternHome() {
   }, []);
 
   /* ── quick draw logic ────────────────────────────────────────────── */
-  const qdBegin = () => {
-    if (qdState !== 'idle') return;
+  /* all-time best survives page reloads */
+  useEffect(() => {
+    try {
+      const saved = Number(localStorage.getItem('jod-qd-best'));
+      if (saved > 0) setQdBest(saved);
+    } catch {}
+  }, []);
+  useEffect(() => {
+    if (qdBest !== null) {
+      try { localStorage.setItem('jod-qd-best', String(qdBest)); } catch {}
+    }
+  }, [qdBest]);
+
+  /* pending countdown/reload timers die with the component */
+  useEffect(() => () => clearTimeout(qdTimer.current), []);
+
+  const qdStartRound = useCallback((round: number) => {
+    setQdRound(round);
     setQdState('countdown');
     qdFired.current = false;
     const delay = 1800 + Math.random() * 2200;
@@ -292,30 +337,50 @@ export default function WesternHome() {
       setQdState('draw');
       qdStart.current = performance.now();
     }, delay);
+  }, []);
+
+  const qdBegin = () => {
+    if (qdState !== 'idle' && qdState !== 'done') return;
+    setQdShots([]);
+    setQdResult('');
+    qdStartRound(0);
+  };
+
+  const qdEndRound = (shot: QDShot, round: number) => {
+    setQdShots(prev => [...prev, shot]);
+    if (shot !== null) {
+      setQdBest(prev => (prev === null || shot < prev ? shot : prev));
+      setQdResult(`${shot}ms — ${qdRankLabel(shot)}`);
+    } else {
+      setQdResult('TOO SOON, OUTLAW — THAT DRAW IS A FOUL');
+    }
+    setQdState('roundResult');
+    const isLast = round + 1 >= QD_ROUNDS;
+    qdTimer.current = setTimeout(() => {
+      if (isLast) setQdState('done');
+      else        qdStartRound(round + 1);
+    }, QD_NEXT_DELAY);
   };
 
   const qdFire = () => {
     if (qdState === 'countdown') {
       clearTimeout(qdTimer.current);
-      setQdResult('TOO SOON, OUTLAW');
-      setQdState('result');
+      qdEndRound(null, qdRound);
       return;
     }
     if (qdState !== 'draw' || qdFired.current) return;
     qdFired.current = true;
-    const ms = Math.round(performance.now() - qdStart.current);
-    setQdTime(ms);
-    setQdBest(prev => prev === null || ms < prev ? ms : prev);
-    const rank =
-      ms < 200 ? 'SHERIFF — LIGHTNING FAST' :
-      ms < 400 ? 'WAGON MASTER — QUICK' :
-      ms < 700 ? 'OUTLAW — DECENT' :
-                 'GREENHORN — SLOW';
-    setQdResult(rank);
-    setQdState('result');
+    qdEndRound(Math.round(performance.now() - qdStart.current), qdRound);
   };
 
-  const qdReset = () => { setQdState('idle'); setQdResult(''); setQdTime(0); };
+  /* current-game tallies (settle before 'done' renders) */
+  const qdValid    = qdShots.filter((s): s is number => s !== null);
+  const qdGameBest = qdValid.length ? Math.min(...qdValid) : null;
+  const qdGameAvg  = qdValid.length
+    ? Math.round(qdValid.reduce((a, b) => a + b, 0) / qdValid.length)
+    : null;
+  const qdRank     = qdGameBest !== null ? qdRankOf(qdGameBest) : null;
+  const qdLastShot = qdShots.length ? qdShots[qdShots.length - 1] : undefined;
 
   /* ── stats leaderboard data ──────────────────────────────────────── */
   const tab = STAT_TABS.find(t => t.id === statsTab)!;
@@ -344,7 +409,8 @@ export default function WesternHome() {
           </a>
 
           <nav className="w-nav__links">
-            {NAV_LINKS.map(l => (
+            {/* brand mark already links home — skip 00. HOME to keep the row on one line */}
+            {NAV_LINKS.filter(l => l.href !== '#hero').map(l => (
               <a key={l.href} className="w-nav__link" href={l.href}>
                 <span className="w-nav__link-no">{l.no}</span>{l.label}
               </a>
@@ -356,13 +422,6 @@ export default function WesternHome() {
               <span className="w-nav__ip-dot" />
               play.jodcraft.world
             </div>
-            <button
-              className="w-nav__toggle"
-              onClick={() => setTheme('matrix')}
-              data-no-shoot=""
-            >
-              ⟵ MATRIX
-            </button>
             <button
               className="w-nav__toggle"
               onClick={() => setNight(n => !n)}
@@ -600,7 +659,7 @@ export default function WesternHome() {
               <div key={idx} className={`w-plate size-${p.size} w-reveal`}>
                 <div className="w-plate__photo">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={p.src} alt={p.title} />
+                  <img src={p.src} alt={p.title} loading="lazy" />
                   <div className="w-plate__no">
                     {idx === 0 ? `Plate 0${idx+1} / ${GALLERY_PLATES.length}` :
                      idx === GALLERY_PLATES.length - 1 ? `Plate ${idx+1} / ${GALLERY_PLATES.length}` :
@@ -690,19 +749,24 @@ export default function WesternHome() {
           </div>
           <h2 className="w-section__title">Quick Draw</h2>
           <p className="w-section__sub" style={{ color: 'var(--cream)' }}>
-            A test of nerve &amp; trigger finger — wait for the star, then fire.
+            A test of nerve &amp; trigger finger — three draws per game, wait for the star, then fire.
           </p>
         </header>
 
         <div className="w-quickdraw">
           <div className="w-quickdraw__stage">
-            <div className="w-quickdraw__pre">FRONTIER REFLEXES — TEST YOUR DRAW</div>
+            <div className="w-quickdraw__pre">FRONTIER REFLEXES — THREE DRAWS PER GAME</div>
             <h3 className="w-quickdraw__hd">Quick Draw</h3>
             <p className="w-quickdraw__rule">
-              {qdState === 'idle'      && 'Press the button below. Wait for the ★ target. Draw fast.'}
-              {qdState === 'countdown' && 'Hold steady, outlaw... wait for it...'}
-              {qdState === 'draw'      && 'DRAW NOW !!!'}
-              {qdState === 'result'    && qdResult}
+              {qdState === 'idle'        && 'Press the button below. Three draws — wait for the ★ target each time, then fire.'}
+              {qdState === 'countdown'   && 'Hold steady, outlaw... wait for it...'}
+              {qdState === 'draw'        && 'DRAW NOW !!!'}
+              {qdState === 'roundResult' && qdResult}
+              {qdState === 'done'        && (
+                qdGameBest !== null
+                  ? `SHOWDOWN OVER — BEST ${qdGameBest}ms · ${qdRankLabel(qdGameBest)}`
+                  : 'SHOWDOWN OVER — THREE FOULS. HOLSTER THAT IRON, GREENHORN.'
+              )}
             </p>
 
             {/* Arena */}
@@ -729,15 +793,37 @@ export default function WesternHome() {
 
               {/* State badge */}
               <div className="w-quickdraw__overlay--state">
-                {qdState === 'idle'      && 'HOLSTER'}
-                {qdState === 'countdown' && 'WAITING'}
-                {qdState === 'draw'      && '★ DRAW ★'}
-                {qdState === 'result'    && `${qdTime}ms`}
+                {qdState === 'idle'        && 'HOLSTER'}
+                {qdState === 'countdown'   && `DRAW ${qdRound + 1}/${QD_ROUNDS} · WAIT`}
+                {qdState === 'draw'        && `DRAW ${qdRound + 1}/${QD_ROUNDS} · ★ FIRE ★`}
+                {qdState === 'roundResult' && (typeof qdLastShot === 'number' ? `${qdLastShot}ms` : 'FOUL')}
+                {qdState === 'done'        && 'SHOWDOWN OVER'}
               </div>
 
               {qdBest !== null && (
                 <div className="w-quickdraw__overlay--best">BEST: {qdBest}ms</div>
               )}
+            </div>
+
+            {/* The three draws of the current game */}
+            <div className="w-quickdraw__shots">
+              {Array.from({ length: QD_ROUNDS }, (_, i) => {
+                const shot   = qdShots[i];
+                const isLive = i === qdRound && (qdState === 'countdown' || qdState === 'draw');
+                return (
+                  <div
+                    key={i}
+                    className={`w-quickdraw__shot${isLive ? ' is-live' : ''}${shot === null ? ' is-foul' : ''}`}
+                  >
+                    <span className="w-quickdraw__shot-k">Draw {QD_NUMERAL[i]}</span>
+                    <span className="w-quickdraw__shot-v">
+                      {typeof shot === 'number' ? `${shot}ms` :
+                       shot === null            ? 'FOUL' :
+                       isLive                   ? '…' : '—'}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
 
             {/* Button */}
@@ -756,34 +842,31 @@ export default function WesternHome() {
                 ★ FIRE ★
               </button>
             )}
-            {qdState === 'result' && (
-              <button className="w-quickdraw__btn" onClick={qdReset} data-no-shoot="">
-                DRAW AGAIN
+            {qdState === 'roundResult' && (
+              <div className="w-quickdraw__wait">
+                {qdShots.length >= QD_ROUNDS ? '— TALLYING THE SCORE —' : '— RELOADING NEXT DRAW —'}
+              </div>
+            )}
+            {qdState === 'done' && (
+              <button className="w-quickdraw__btn" onClick={qdBegin} data-no-shoot="">
+                ★ PLAY AGAIN ★
               </button>
             )}
 
             {/* Readout */}
             <div className="w-quickdraw__readout">
               <div>
-                <div className="w-quickdraw__readout-k">Last Draw</div>
-                <div className="w-quickdraw__readout-v">{qdTime > 0 ? `${qdTime}ms` : '—'}</div>
+                <div className="w-quickdraw__readout-k">Game Avg</div>
+                <div className="w-quickdraw__readout-v">{qdGameAvg !== null ? `${qdGameAvg}ms` : '—'}</div>
               </div>
               <div>
-                <div className="w-quickdraw__readout-k">Best</div>
+                <div className="w-quickdraw__readout-k">Best Ever</div>
                 <div className="w-quickdraw__readout-v">{qdBest !== null ? `${qdBest}ms` : '—'}</div>
               </div>
               <div>
                 <div className="w-quickdraw__readout-k">Rank</div>
-                <div className={`w-quickdraw__readout-v ${
-                  qdResult.includes('SHERIFF') ? 'rank-sheriff' :
-                  qdResult.includes('WAGON')   ? 'rank-wagon'   :
-                  qdResult.includes('OUTLAW')  ? 'rank-outlaw'  :
-                  qdResult.includes('GREEN')   ? 'rank-greenhorn' : ''
-                }`}>
-                  {qdResult.includes('SHERIFF') ? 'SHERIFF' :
-                   qdResult.includes('WAGON')   ? 'WAGON MASTER' :
-                   qdResult.includes('OUTLAW')  ? 'OUTLAW' :
-                   qdResult.includes('GREEN')   ? 'GREENHORN' : '—'}
+                <div className={`w-quickdraw__readout-v ${qdRank ? qdRankClass(qdRank) : ''}`}>
+                  {qdRank ?? '—'}
                 </div>
               </div>
             </div>
