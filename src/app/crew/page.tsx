@@ -28,14 +28,14 @@ function CrewCard({ member, index }: { member: CrewSummary; index: number }) {
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
           style={{
-            background:  '#131722',
-            border:      `1px solid ${hovered ? '#2a3045' : '#1c2030'}`,
+            background:  'var(--bg-card)',
+            border:      `1px solid ${hovered ? 'var(--border-strong)' : 'var(--border)'}`,
             padding:     '1.25rem',
             display:     'flex',
             gap:         '1rem',
             alignItems:  'center',
             transform:   hovered ? 'translateY(-2px)' : 'none',
-            boxShadow:   hovered ? '0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(0,255,65,0.06)' : 'none',
+            boxShadow:   hovered ? '0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(var(--accent-rgb),0.06)' : 'none',
             transition:  'all 0.25s ease',
             cursor:      'pointer',
             position:    'relative',
@@ -47,7 +47,7 @@ function CrewCard({ member, index }: { member: CrewSummary; index: number }) {
             position:        'absolute',
             top:             0, left: 0, right: 0,
             height:          '1px',
-            background:      'linear-gradient(to right, #00ff41, transparent)',
+            background:      'linear-gradient(to right, var(--accent), transparent)',
             transform:       `scaleX(${hovered ? 1 : 0})`,
             transformOrigin: 'left',
             transition:      'transform 0.4s cubic-bezier(0.16,1,0.3,1)',
@@ -58,8 +58,8 @@ function CrewCard({ member, index }: { member: CrewSummary; index: number }) {
             width:           '52px',
             height:          '52px',
             flexShrink:      0,
-            background:      '#0d1018',
-            border:          '1px solid #1c2030',
+            background:      'var(--bg-elevated)',
+            border:          '1px solid var(--border)',
             overflow:        'hidden',
             imageRendering:  'pixelated',
           }}>
@@ -77,10 +77,10 @@ function CrewCard({ member, index }: { member: CrewSummary; index: number }) {
           {/* Info */}
           <div style={{ flex: 1, minWidth: 0 }}>
             <p style={{
-              fontFamily:    "'Space Grotesk', sans-serif",
+              fontFamily:    'var(--font-display)',
               fontSize:      '0.95rem',
               fontWeight:    700,
-              color:         '#dde1ec',
+              color:         'var(--text)',
               letterSpacing: '-0.01em',
               marginBottom:  '0.2rem',
             }}>
@@ -88,9 +88,9 @@ function CrewCard({ member, index }: { member: CrewSummary; index: number }) {
             </p>
             {member.bio ? (
               <p style={{
-                fontFamily:    "'JetBrains Mono', monospace",
+                fontFamily:    'var(--font-mono)',
                 fontSize:      '0.58rem',
-                color:         '#505770',
+                color:         'var(--muted)',
                 lineHeight:    1.5,
                 overflow:      'hidden',
                 textOverflow:  'ellipsis',
@@ -100,9 +100,9 @@ function CrewCard({ member, index }: { member: CrewSummary; index: number }) {
               </p>
             ) : (
               <p style={{
-                fontFamily: "'JetBrains Mono', monospace",
+                fontFamily: 'var(--font-mono)',
                 fontSize:   '0.58rem',
-                color:      '#1e2230',
+                color:      'var(--faint)',
               }}>
                 No bio yet
               </p>
@@ -118,19 +118,19 @@ function CrewCard({ member, index }: { member: CrewSummary; index: number }) {
             flexShrink:    0,
           }}>
             {member.photoCount > 0 && (
-              <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.46rem', color: '#1e2230', letterSpacing: '0.1em' }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.52rem', color: 'var(--faint)', letterSpacing: '0.1em' }}>
                 {member.photoCount} photo{member.photoCount !== 1 ? 's' : ''}
               </span>
             )}
             {member.postCount > 0 && (
-              <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.46rem', color: '#1e2230', letterSpacing: '0.1em' }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.52rem', color: 'var(--faint)', letterSpacing: '0.1em' }}>
                 {member.postCount} post{member.postCount !== 1 ? 's' : ''}
               </span>
             )}
             <span style={{
-              fontFamily:    "'JetBrains Mono', monospace",
+              fontFamily:    'var(--font-mono)',
               fontSize:      '0.48rem',
-              color:         hovered ? '#00ff41' : '#1e2230',
+              color:         hovered ? 'var(--accent)' : 'var(--faint)',
               transition:    'color 0.2s',
               letterSpacing: '0.1em',
               marginTop:     '0.1rem',
@@ -157,7 +157,7 @@ export default function CrewPage() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: '#06080c',
+      background: 'var(--bg)',
       padding:    'clamp(5rem, 12vw, 9rem) clamp(1.5rem, 6vw, 5rem)',
     }}>
       {/* Back link */}
@@ -169,16 +169,16 @@ export default function CrewPage() {
         <Link
           href="/"
           style={{
-            fontFamily:     "'JetBrains Mono', monospace",
+            fontFamily:     'var(--font-mono)',
             fontSize:       '0.58rem',
             letterSpacing:  '0.22em',
             textTransform:  'uppercase',
-            color:          '#505770',
+            color:          'var(--muted)',
             textDecoration: 'none',
             transition:     'color 0.2s',
           }}
-          onMouseEnter={e => (e.currentTarget.style.color = '#00ff41')}
-          onMouseLeave={e => (e.currentTarget.style.color = '#505770')}
+          onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent)')}
+          onMouseLeave={e => (e.currentTarget.style.color = 'var(--muted)')}
         >
           ← BACK TO SITE
         </Link>
@@ -190,11 +190,11 @@ export default function CrewPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.55, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
         style={{
-          fontFamily:    "'Space Grotesk', sans-serif",
+          fontFamily:    'var(--font-display)',
           fontSize:      'clamp(3rem, 7vw, 6rem)',
           fontWeight:    900,
           letterSpacing: '-0.03em',
-          color:         '#dde1ec',
+          color:         'var(--text)',
           lineHeight:    0.95,
           marginBottom:  '0.75rem',
         }}
@@ -207,9 +207,9 @@ export default function CrewPage() {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.22 }}
         style={{
-          fontFamily:    "'JetBrains Mono', monospace",
+          fontFamily:    'var(--font-mono)',
           fontSize:      '0.65rem',
-          color:         '#505770',
+          color:         'var(--muted)',
           letterSpacing: '0.1em',
           marginBottom:  '2.5rem',
         }}
@@ -221,7 +221,7 @@ export default function CrewPage() {
       <div style={{
         display:       'flex',
         gap:           0,
-        borderBottom:  '1px solid #1c2030',
+        borderBottom:  '1px solid var(--border)',
         marginBottom:  '2rem',
       }}>
         {(['members', 'feed'] as const).map(t => (
@@ -229,20 +229,20 @@ export default function CrewPage() {
             key={t}
             onClick={() => setTab(t)}
             style={{
-              fontFamily:    "'JetBrains Mono', monospace",
+              fontFamily:    'var(--font-mono)',
               fontSize:      '0.52rem',
               letterSpacing: '0.22em',
               textTransform: 'uppercase',
               padding:       '0.5rem 1rem',
               background:    'none',
               border:        'none',
-              borderBottom:  `2px solid ${tab === t ? '#00ff41' : 'transparent'}`,
-              color:         tab === t ? '#00ff41' : '#1e2230',
+              borderBottom:  `2px solid ${tab === t ? 'var(--accent)' : 'transparent'}`,
+              color:         tab === t ? 'var(--accent)' : 'var(--faint)',
               cursor:        'pointer',
               transition:    'color 0.2s, border-color 0.2s',
             }}
-            onMouseEnter={e => { if (tab !== t) e.currentTarget.style.color = '#505770'; }}
-            onMouseLeave={e => { if (tab !== t) e.currentTarget.style.color = '#1e2230'; }}
+            onMouseEnter={e => { if (tab !== t) e.currentTarget.style.color = 'var(--muted)'; }}
+            onMouseLeave={e => { if (tab !== t) e.currentTarget.style.color = 'var(--faint)'; }}
           >
             {t === 'members' ? 'MEMBERS' : `ACTIVITY FEED${feed.length > 0 ? ` (${feed.length})` : ''}`}
           </button>
@@ -256,8 +256,8 @@ export default function CrewPage() {
           display:         'flex',
           flexDirection:   'column',
           gap:             '1px',
-          background:      '#1c2030',
-          border:          '1px solid #1c2030',
+          background:      'var(--border)',
+          border:          '1px solid var(--border)',
         }}>
           {crew.map((m, i) => (
             <CrewCard key={m.username} member={m} index={i} />
@@ -270,15 +270,15 @@ export default function CrewPage() {
         <div style={{ maxWidth: '620px' }}>
           {feed.length === 0 ? (
             <p style={{
-              fontFamily:    "'JetBrains Mono', monospace",
+              fontFamily:    'var(--font-mono)',
               fontSize:      '0.6rem',
-              color:         '#1e2230',
+              color:         'var(--faint)',
               lineHeight:    1.7,
             }}>
               No posts yet — crew members can share updates on their profile pages.
             </p>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', background: '#1c2030' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', background: 'var(--border)' }}>
               {feed.map((post, i) => (
                 <motion.div
                   key={post.id}
@@ -286,7 +286,7 @@ export default function CrewPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: Math.min(i * 0.04, 0.3) }}
                   style={{
-                    background: '#131722',
+                    background: 'var(--bg-card)',
                     padding:    '0.9rem 1rem',
                     display:    'flex',
                     gap:        '0.85rem',
@@ -298,7 +298,7 @@ export default function CrewPage() {
                     width:          26,
                     height:         26,
                     flexShrink:     0,
-                    border:         '1px solid #1c2030',
+                    border:         '1px solid var(--border)',
                     overflow:       'hidden',
                     imageRendering: 'pixelated',
                     marginTop:      '0.1rem',
@@ -319,31 +319,31 @@ export default function CrewPage() {
                       <Link
                         href={`/crew/${post.username}`}
                         style={{
-                          fontFamily:     "'Space Grotesk', sans-serif",
+                          fontFamily:     'var(--font-display)',
                           fontSize:       '0.82rem',
                           fontWeight:     700,
-                          color:          '#dde1ec',
+                          color:          'var(--text)',
                           textDecoration: 'none',
                           transition:     'color 0.2s',
                         }}
-                        onMouseEnter={e => (e.currentTarget.style.color = '#00ff41')}
-                        onMouseLeave={e => (e.currentTarget.style.color = '#dde1ec')}
+                        onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent)')}
+                        onMouseLeave={e => (e.currentTarget.style.color = 'var(--text)')}
                       >
                         {post.username}
                       </Link>
                       <span style={{
-                        fontFamily:    "'JetBrains Mono', monospace",
+                        fontFamily:    'var(--font-mono)',
                         fontSize:      '0.44rem',
-                        color:         '#1e2230',
+                        color:         'var(--faint)',
                         letterSpacing: '0.1em',
                       }}>
                         {formatAge(post.createdAt).toUpperCase()} AGO
                       </span>
                     </div>
                     <p style={{
-                      fontFamily: "'JetBrains Mono', monospace",
+                      fontFamily: 'var(--font-mono)',
                       fontSize:   '0.68rem',
-                      color:      '#505770',
+                      color:      'var(--muted)',
                       lineHeight: 1.65,
                       whiteSpace: 'pre-wrap',
                       wordBreak:  'break-word',

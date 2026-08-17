@@ -54,10 +54,10 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
         [side]:          '-3.5rem',
         top:             '50%',
         transform:       'translateY(-50%)',
-        background:      '#0d1018',
-        border:          '1px solid #2a3045',
-        color:           '#dde1ec',
-        fontFamily:      "'JetBrains Mono', monospace",
+        background:      'var(--bg-elevated)',
+        border:          '1px solid var(--border-strong)',
+        color:           'var(--text)',
+        fontFamily:      'var(--font-mono)',
         fontSize:        '1.2rem',
         width:           '2.5rem',
         height:          '2.5rem',
@@ -68,12 +68,12 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
         transition:      'background 0.2s, border-color 0.2s',
       }}
       onMouseEnter={e => {
-        e.currentTarget.style.background    = '#1c2030';
-        e.currentTarget.style.borderColor   = '#00ff41';
+        e.currentTarget.style.background    = 'var(--border)';
+        e.currentTarget.style.borderColor   = 'var(--accent)';
       }}
       onMouseLeave={e => {
-        e.currentTarget.style.background    = '#0d1018';
-        e.currentTarget.style.borderColor   = '#2a3045';
+        e.currentTarget.style.background    = 'var(--bg-elevated)';
+        e.currentTarget.style.borderColor   = 'var(--border-strong)';
       }}
     >
       {side === 'left' ? '‹' : '›'}
@@ -94,7 +94,7 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
           position:       'fixed',
           inset:          0,
           zIndex:         9999,
-          background:     'rgba(6,8,12,0.97)',
+          background:     'rgba(var(--bg-rgb),0.97)',
           display:        'flex',
           alignItems:     'center',
           justifyContent: 'center',
@@ -123,7 +123,7 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
               objectFit:  'contain',
               display:    'block',
               maxHeight:  '80vh',
-              border:     '1px solid #1c2030',
+              border:     '1px solid var(--border)',
             }}
           />
           {navBtn(onPrev, 'Previous photo', 'left')}
@@ -135,10 +135,10 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
           <div onClick={e => e.stopPropagation()} style={{ textAlign: 'center' }}>
             {photo.subtitle && (
               <p style={{
-                fontFamily:    "'JetBrains Mono', monospace",
+                fontFamily:    'var(--font-mono)',
                 fontSize:      '0.5rem',
                 letterSpacing: '0.3em',
-                color:         'rgba(0,255,65,0.5)',
+                color:         'rgba(var(--accent-rgb),0.6)',
                 textTransform: 'uppercase',
                 marginBottom:  '0.2rem',
               }}>
@@ -147,10 +147,10 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
             )}
             {photo.title && (
               <p style={{
-                fontFamily:    "'Space Grotesk', sans-serif",
+                fontFamily:    'var(--font-display)',
                 fontSize:      'clamp(0.9rem, 2vw, 1.15rem)',
                 fontWeight:    700,
-                color:         '#dde1ec',
+                color:         'var(--text)',
                 letterSpacing: '0.04em',
                 textTransform: 'uppercase',
               }}>
@@ -162,9 +162,9 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
 
         {/* Counter + hint */}
         <p style={{
-          fontFamily:    "'JetBrains Mono', monospace",
+          fontFamily:    'var(--font-mono)',
           fontSize:      '0.46rem',
-          color:         '#1e2230',
+          color:         'var(--faint)',
           letterSpacing: '0.2em',
         }}>
           {currentIndex + 1} / {photos.length} · ESC to close · ← → to navigate
@@ -177,10 +177,10 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
             position:      'fixed',
             top:           '1.25rem',
             right:         '1.25rem',
-            background:    '#0d1018',
-            border:        '1px solid #1c2030',
-            color:         '#505770',
-            fontFamily:    "'JetBrains Mono', monospace",
+            background:    'var(--bg-elevated)',
+            border:        '1px solid var(--border)',
+            color:         'var(--muted)',
+            fontFamily:    'var(--font-mono)',
             fontSize:      '0.62rem',
             padding:       '0.4rem 0.75rem',
             cursor:        'pointer',
@@ -188,12 +188,12 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
             transition:    'border-color 0.2s, color 0.2s',
           }}
           onMouseEnter={e => {
-            e.currentTarget.style.borderColor = '#00ff41';
-            e.currentTarget.style.color       = '#dde1ec';
+            e.currentTarget.style.borderColor = 'var(--accent)';
+            e.currentTarget.style.color       = 'var(--text)';
           }}
           onMouseLeave={e => {
-            e.currentTarget.style.borderColor = '#1c2030';
-            e.currentTarget.style.color       = '#505770';
+            e.currentTarget.style.borderColor = 'var(--border)';
+            e.currentTarget.style.color       = 'var(--muted)';
           }}
         >
           ESC ✕

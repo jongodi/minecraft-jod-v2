@@ -8,9 +8,12 @@ import type { PlayerStat, StatsResponse } from '@/app/api/stats/route';
 import { formatDate, formatAge } from '@/lib/format';
 import Lightbox from '@/components/Lightbox';
 
-const mono  = "'JetBrains Mono', monospace";
-const sans  = "'Space Grotesk', sans-serif";
-const green = '#00ff41';
+const mono  = 'var(--font-mono)';
+const sans  = 'var(--font-display)';
+const green      = 'var(--accent)';
+const greenSoft  = 'rgba(var(--accent-rgb),0.13)';
+const greenLine  = 'rgba(var(--accent-rgb),0.3)';
+const greenFaint = 'rgba(var(--accent-rgb),0.05)';
 
 const STAT_LABELS: { key: keyof PlayerStat; label: string; format: (v: number) => string }[] = [
   { key: 'playTimeHours',  label: 'PLAYTIME',  format: v => `${v}h`  },
@@ -103,12 +106,12 @@ function LoginModal({ username, onSuccess, onClose }: { username: string; onSucc
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={onClose}>
-      <form onSubmit={submit} onClick={e => e.stopPropagation()} style={{ background: '#131722', border: '1px solid #2a3045', padding: '2rem', width: '100%', maxWidth: '340px' }}>
+      <form onSubmit={submit} onClick={e => e.stopPropagation()} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-strong)', padding: '2rem', width: '100%', maxWidth: '340px' }}>
         <p style={{ fontFamily: mono, fontSize: '0.55rem', letterSpacing: '0.3em', color: green, marginBottom: '1.5rem', textTransform: 'uppercase' }}>LOGIN AS {username}</p>
         <input type="password" value={token} onChange={e => setToken(e.target.value)} placeholder="Your crew token..." autoFocus
-          style={{ width: '100%', background: '#0d1018', border: `1px solid ${error ? '#ff4466' : '#2a3045'}`, color: '#dde1ec', fontFamily: mono, fontSize: '0.8rem', padding: '0.5rem 0.7rem', outline: 'none', boxSizing: 'border-box', marginBottom: error ? '0.3rem' : '1rem' }} />
-        {error && <p style={{ fontFamily: mono, fontSize: '0.6rem', color: '#ff4466', marginBottom: '0.8rem' }}>{error}</p>}
-        <button type="submit" disabled={loading || !token} style={{ width: '100%', background: token && !loading ? green : '#1c2030', color: token && !loading ? '#080808' : '#333', border: 'none', fontFamily: mono, fontSize: '0.6rem', letterSpacing: '0.2em', padding: '0.6rem', cursor: token && !loading ? 'pointer' : 'not-allowed', textTransform: 'uppercase' }}>
+          style={{ width: '100%', background: 'var(--bg-elevated)', border: `1px solid ${error ? 'var(--status-offline)' : 'var(--border-strong)'}`, color: 'var(--text)', fontFamily: mono, fontSize: '0.8rem', padding: '0.5rem 0.7rem', outline: 'none', boxSizing: 'border-box', marginBottom: error ? '0.3rem' : '1rem' }} />
+        {error && <p style={{ fontFamily: mono, fontSize: '0.6rem', color: 'var(--status-offline)', marginBottom: '0.8rem' }}>{error}</p>}
+        <button type="submit" disabled={loading || !token} style={{ width: '100%', background: token && !loading ? green : 'var(--border)', color: token && !loading ? 'var(--bg)' : 'var(--faint)', border: 'none', fontFamily: mono, fontSize: '0.6rem', letterSpacing: '0.2em', padding: '0.6rem', cursor: token && !loading ? 'pointer' : 'not-allowed', textTransform: 'uppercase' }}>
           {loading ? 'CHECKING...' : 'LOGIN →'}
         </button>
       </form>
@@ -250,14 +253,14 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
 
   if (!profile) {
     return (
-      <div style={{ minHeight: '100vh', background: '#06080c', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <p style={{ fontFamily: mono, fontSize: '0.7rem', color: '#1e2230', letterSpacing: '0.2em' }}>LOADING...</p>
+      <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ fontFamily: mono, fontSize: '0.7rem', color: 'var(--faint)', letterSpacing: '0.2em' }}>LOADING...</p>
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#06080c', padding: 'clamp(5rem, 12vw, 9rem) clamp(1.5rem, 6vw, 5rem)' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', padding: 'clamp(5rem, 12vw, 9rem) clamp(1.5rem, 6vw, 5rem)' }}>
       {showLogin && <LoginModal username={username} onSuccess={onLoginSuccess} onClose={() => setShowLogin(false)} />}
 
       {/* Photo lightbox */}
@@ -278,15 +281,15 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
         </Link>
         <div style={{ flex: 1 }} />
         {isOwner ? (
-          <button onClick={logout} style={{ fontFamily: mono, fontSize: '0.55rem', letterSpacing: '0.15em', textTransform: 'uppercase', background: 'none', color: '#ff4466', border: '1px solid #ff446633', padding: '0.3rem 0.6rem', cursor: 'pointer' }}>LOGOUT</button>
+          <button onClick={logout} style={{ fontFamily: mono, fontSize: '0.55rem', letterSpacing: '0.15em', textTransform: 'uppercase', background: 'none', color: 'var(--status-offline)', border: '1px solid rgba(192,64,32,0.25)', padding: '0.3rem 0.6rem', cursor: 'pointer' }}>LOGOUT</button>
         ) : (
-          <button onClick={() => setShowLogin(true)} style={{ fontFamily: mono, fontSize: '0.55rem', letterSpacing: '0.15em', textTransform: 'uppercase', background: 'none', color: '#505770', border: '1px solid #2a3045', padding: '0.3rem 0.6rem', cursor: 'pointer' }}>EDIT PROFILE</button>
+          <button onClick={() => setShowLogin(true)} style={{ fontFamily: mono, fontSize: '0.55rem', letterSpacing: '0.15em', textTransform: 'uppercase', background: 'none', color: 'var(--muted)', border: '1px solid var(--border-strong)', padding: '0.3rem 0.6rem', cursor: 'pointer' }}>EDIT PROFILE</button>
         )}
       </div>
 
       {/* Profile header */}
       <div style={{ display: 'flex', gap: '2rem', alignItems: 'flex-start', marginBottom: '3rem', flexWrap: 'wrap' }}>
-        <div style={{ width: '96px', height: '96px', flexShrink: 0, border: '1px solid #2a3045', overflow: 'hidden', imageRendering: 'pixelated' }}>
+        <div style={{ width: '96px', height: '96px', flexShrink: 0, border: '1px solid var(--border-strong)', overflow: 'hidden', imageRendering: 'pixelated' }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={`https://crafatar.com/renders/head/${username}?size=96&overlay`} alt={username}
             style={{ width: '100%', height: '100%', objectFit: 'cover', imageRendering: 'pixelated' }}
@@ -296,7 +299,7 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
         <div style={{ flex: 1 }}>
           <motion.h1
             initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-            style={{ fontFamily: sans, fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 900, color: '#dde1ec', letterSpacing: '-0.03em', marginBottom: '0.5rem' }}
+            style={{ fontFamily: sans, fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 900, color: 'var(--text)', letterSpacing: '-0.03em', marginBottom: '0.5rem' }}
           >
             {profile.username}
           </motion.h1>
@@ -304,20 +307,20 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
           {editingBio && isOwner ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxWidth: '480px' }}>
               <textarea value={bioText} onChange={e => setBioText(e.target.value)} maxLength={500} rows={3}
-                style={{ background: '#0d1018', border: '1px solid #2a3045', color: '#dde1ec', fontFamily: mono, fontSize: '0.7rem', padding: '0.5rem', outline: 'none', resize: 'vertical', lineHeight: 1.6 }} />
-              {bioError && <p style={{ fontFamily: mono, fontSize: '0.55rem', color: '#ff4466' }}>{bioError}</p>}
+                style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-strong)', color: 'var(--text)', fontFamily: mono, fontSize: '0.7rem', padding: '0.5rem', outline: 'none', resize: 'vertical', lineHeight: 1.6 }} />
+              {bioError && <p style={{ fontFamily: mono, fontSize: '0.55rem', color: 'var(--status-offline)' }}>{bioError}</p>}
               <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button onClick={saveBio} style={{ fontFamily: mono, fontSize: '0.55rem', letterSpacing: '0.1em', textTransform: 'uppercase', background: green + '22', color: green, border: `1px solid ${green}44`, padding: '0.3rem 0.7rem', cursor: 'pointer' }}>SAVE</button>
-                <button onClick={() => { setEditingBio(false); setBioError(''); }} style={{ fontFamily: mono, fontSize: '0.55rem', background: 'none', color: '#505770', border: '1px solid #2a3045', padding: '0.3rem 0.6rem', cursor: 'pointer' }}>✕</button>
+                <button onClick={saveBio} style={{ fontFamily: mono, fontSize: '0.55rem', letterSpacing: '0.1em', textTransform: 'uppercase', background: greenSoft, color: green, border: `1px solid ${greenLine}`, padding: '0.3rem 0.7rem', cursor: 'pointer' }}>SAVE</button>
+                <button onClick={() => { setEditingBio(false); setBioError(''); }} style={{ fontFamily: mono, fontSize: '0.55rem', background: 'none', color: 'var(--muted)', border: '1px solid var(--border-strong)', padding: '0.3rem 0.6rem', cursor: 'pointer' }}>✕</button>
               </div>
             </div>
           ) : (
             <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'baseline', flexWrap: 'wrap' }}>
-              <p style={{ fontFamily: mono, fontSize: '0.7rem', color: profile.bio ? '#666' : '#2a3045', lineHeight: 1.6, fontStyle: profile.bio ? 'normal' : 'italic' }}>
+              <p style={{ fontFamily: mono, fontSize: '0.7rem', color: profile.bio ? 'var(--muted)' : 'var(--border-strong)', lineHeight: 1.6, fontStyle: profile.bio ? 'normal' : 'italic' }}>
                 {profile.bio || 'No bio yet.'}
               </p>
               {isOwner && (
-                <button onClick={() => setEditingBio(true)} style={{ fontFamily: mono, fontSize: '0.5rem', letterSpacing: '0.1em', textTransform: 'uppercase', background: 'none', color: '#1e2230', border: '1px solid #1c2030', padding: '0.2rem 0.5rem', cursor: 'pointer', flexShrink: 0 }}>EDIT BIO</button>
+                <button onClick={() => setEditingBio(true)} style={{ fontFamily: mono, fontSize: '0.5rem', letterSpacing: '0.1em', textTransform: 'uppercase', background: 'none', color: 'var(--faint)', border: '1px solid var(--border)', padding: '0.2rem 0.5rem', cursor: 'pointer', flexShrink: 0 }}>EDIT BIO</button>
               )}
             </div>
           )}
@@ -330,20 +333,20 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
             <p style={{ fontFamily: mono, fontSize: '0.6rem', letterSpacing: '0.25em', color: green, textTransform: 'uppercase' }}>STATS</p>
             {statsMeta?.source === 'cached' && statsMeta.cachedAt && (
-              <span style={{ fontFamily: mono, fontSize: '0.45rem', color: '#1e2230', letterSpacing: '0.1em' }}>LAST UPDATED {formatAge(statsMeta.cachedAt).toUpperCase()}</span>
+              <span style={{ fontFamily: mono, fontSize: '0.52rem', color: 'var(--faint)', letterSpacing: '0.1em' }}>LAST UPDATED {formatAge(statsMeta.cachedAt).toUpperCase()}</span>
             )}
           </div>
           {playerStats ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '1px', background: '#1c2030', maxWidth: '640px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '1px', background: 'var(--border)', maxWidth: '640px' }}>
               {STAT_LABELS.map(({ key, label, format }) => (
-                <div key={key} style={{ background: '#131722', padding: '0.75rem 1rem' }}>
-                  <p style={{ fontFamily: sans, fontSize: '1.1rem', fontWeight: 700, color: '#dde1ec', marginBottom: '0.15rem' }}>{format(playerStats[key] as number)}</p>
-                  <p style={{ fontFamily: mono, fontSize: '0.45rem', color: '#1e2230', letterSpacing: '0.15em', textTransform: 'uppercase' }}>{label}</p>
+                <div key={key} style={{ background: 'var(--bg-card)', padding: '0.75rem 1rem' }}>
+                  <p style={{ fontFamily: sans, fontSize: '1.1rem', fontWeight: 700, color: 'var(--text)', marginBottom: '0.15rem' }}>{format(playerStats[key] as number)}</p>
+                  <p style={{ fontFamily: mono, fontSize: '0.52rem', color: 'var(--faint)', letterSpacing: '0.15em', textTransform: 'uppercase' }}>{label}</p>
                 </div>
               ))}
             </div>
           ) : (
-            <p style={{ fontFamily: mono, fontSize: '0.55rem', color: '#1e2230', fontStyle: 'italic' }}>No stat data yet.</p>
+            <p style={{ fontFamily: mono, fontSize: '0.55rem', color: 'var(--faint)', fontStyle: 'italic' }}>No stat data yet.</p>
           )}
         </div>
       )}
@@ -358,51 +361,51 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
         {isOwner && (
           <form onSubmit={submitPost} style={{ marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             <textarea value={newPost} onChange={e => { setNewPost(e.target.value); setPostError(''); }} placeholder="What's happening on the server..." maxLength={1000} rows={2}
-              style={{ background: '#0d1018', border: `1px solid ${postError ? '#ff4466' : '#2a3045'}`, color: '#dde1ec', fontFamily: mono, fontSize: '0.7rem', padding: '0.6rem', outline: 'none', resize: 'vertical', lineHeight: 1.5 }} />
-            {postError && <p style={{ fontFamily: mono, fontSize: '0.55rem', color: '#ff4466' }}>{postError}</p>}
-            <button type="submit" disabled={posting || !newPost.trim()} style={{ alignSelf: 'flex-end', fontFamily: mono, fontSize: '0.55rem', letterSpacing: '0.15em', textTransform: 'uppercase', background: newPost.trim() ? green + '22' : 'none', color: newPost.trim() ? green : '#333', border: `1px solid ${newPost.trim() ? green + '44' : '#1c2030'}`, padding: '0.35rem 0.8rem', cursor: newPost.trim() ? 'pointer' : 'not-allowed' }}>
+              style={{ background: 'var(--bg-elevated)', border: `1px solid ${postError ? 'var(--status-offline)' : 'var(--border-strong)'}`, color: 'var(--text)', fontFamily: mono, fontSize: '0.7rem', padding: '0.6rem', outline: 'none', resize: 'vertical', lineHeight: 1.5 }} />
+            {postError && <p style={{ fontFamily: mono, fontSize: '0.55rem', color: 'var(--status-offline)' }}>{postError}</p>}
+            <button type="submit" disabled={posting || !newPost.trim()} style={{ alignSelf: 'flex-end', fontFamily: mono, fontSize: '0.55rem', letterSpacing: '0.15em', textTransform: 'uppercase', background: newPost.trim() ? greenSoft : 'none', color: newPost.trim() ? green : 'var(--faint)', border: `1px solid ${newPost.trim() ? greenLine : 'var(--border)'}`, padding: '0.35rem 0.8rem', cursor: newPost.trim() ? 'pointer' : 'not-allowed' }}>
               {posting ? 'POSTING...' : 'POST →'}
             </button>
           </form>
         )}
 
         {profile.posts.length === 0 ? (
-          <p style={{ fontFamily: mono, fontSize: '0.6rem', color: '#1e2230', fontStyle: 'italic' }}>
+          <p style={{ fontFamily: mono, fontSize: '0.6rem', color: 'var(--faint)', fontStyle: 'italic' }}>
             {isOwner ? 'Nothing posted yet — share what\'s happening on the server.' : 'No posts yet.'}
           </p>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', background: '#1c2030' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', background: 'var(--border)' }}>
             {profile.posts.map(post => (
-              <div key={post.id} style={{ background: '#131722', padding: '0.8rem 1rem' }}>
+              <div key={post.id} style={{ background: 'var(--bg-card)', padding: '0.8rem 1rem' }}>
                 {editingPostId === post.id ? (
                   /* Inline edit mode */
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     <textarea value={editText} onChange={e => setEditText(e.target.value)} maxLength={1000} rows={3}
                       autoFocus
-                      style={{ background: '#0d1018', border: '1px solid #2a3045', color: '#dde1ec', fontFamily: mono, fontSize: '0.7rem', padding: '0.5rem', outline: 'none', resize: 'vertical', lineHeight: 1.5 }} />
+                      style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-strong)', color: 'var(--text)', fontFamily: mono, fontSize: '0.7rem', padding: '0.5rem', outline: 'none', resize: 'vertical', lineHeight: 1.5 }} />
                     <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
                       <button onClick={() => saveEditPost(post.id)} disabled={editSaving || !editText.trim()}
-                        style={{ fontFamily: mono, fontSize: '0.5rem', letterSpacing: '0.1em', textTransform: 'uppercase', background: green + '22', color: green, border: `1px solid ${green}44`, padding: '0.25rem 0.6rem', cursor: 'pointer' }}>
+                        style={{ fontFamily: mono, fontSize: '0.5rem', letterSpacing: '0.1em', textTransform: 'uppercase', background: greenSoft, color: green, border: `1px solid ${greenLine}`, padding: '0.25rem 0.6rem', cursor: 'pointer' }}>
                         {editSaving ? 'SAVING...' : 'SAVE'}
                       </button>
-                      <button onClick={cancelEditPost} style={{ fontFamily: mono, fontSize: '0.5rem', background: 'none', color: '#505770', border: '1px solid #2a3045', padding: '0.25rem 0.5rem', cursor: 'pointer' }}>✕</button>
+                      <button onClick={cancelEditPost} style={{ fontFamily: mono, fontSize: '0.5rem', background: 'none', color: 'var(--muted)', border: '1px solid var(--border-strong)', padding: '0.25rem 0.5rem', cursor: 'pointer' }}>✕</button>
                     </div>
                   </div>
                 ) : (
                   /* Display mode */
                   <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
                     <div style={{ flex: 1 }}>
-                      <p style={{ fontFamily: mono, fontSize: '0.7rem', color: '#dde1ec', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{post.text}</p>
-                      <p style={{ fontFamily: mono, fontSize: '0.5rem', color: '#1e2230', marginTop: '0.4rem', letterSpacing: '0.1em' }}>{formatDate(post.createdAt)}</p>
+                      <p style={{ fontFamily: mono, fontSize: '0.7rem', color: 'var(--text)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{post.text}</p>
+                      <p style={{ fontFamily: mono, fontSize: '0.5rem', color: 'var(--faint)', marginTop: '0.4rem', letterSpacing: '0.1em' }}>{formatDate(post.createdAt)}</p>
                     </div>
                     {isOwner && (
                       <div style={{ display: 'flex', gap: '0.35rem', flexShrink: 0 }}>
                         <button onClick={() => startEditPost(post)} title="Edit post"
-                          style={{ fontFamily: mono, fontSize: '0.5rem', background: 'none', color: '#1e2230', border: 'none', cursor: 'pointer', padding: '0.2rem' }}>
+                          style={{ fontFamily: mono, fontSize: '0.5rem', background: 'none', color: 'var(--faint)', border: 'none', cursor: 'pointer', padding: '0.2rem' }}>
                           edit
                         </button>
                         <button onClick={() => deletePost(post.id)}
-                          style={{ fontFamily: mono, fontSize: '0.5rem', background: 'none', color: '#1e2230', border: 'none', cursor: 'pointer', padding: '0.2rem' }}>
+                          style={{ fontFamily: mono, fontSize: '0.5rem', background: 'none', color: 'var(--faint)', border: 'none', cursor: 'pointer', padding: '0.2rem' }}>
                           ✕
                         </button>
                       </div>
@@ -424,16 +427,16 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
           {isOwner && (
             <>
               <input ref={fileRef} type="file" accept="image/*" onChange={uploadPhoto} style={{ display: 'none' }} id="crew-photo-upload" />
-              <label htmlFor="crew-photo-upload" style={{ fontFamily: mono, fontSize: '0.5rem', letterSpacing: '0.1em', textTransform: 'uppercase', border: `1px solid ${green}33`, color: green, padding: '0.25rem 0.6rem', cursor: 'pointer', background: green + '08' }}>
+              <label htmlFor="crew-photo-upload" style={{ fontFamily: mono, fontSize: '0.5rem', letterSpacing: '0.1em', textTransform: 'uppercase', border: `1px solid ${greenLine}`, color: green, padding: '0.25rem 0.6rem', cursor: 'pointer', background: greenFaint }}>
                 + UPLOAD
               </label>
             </>
           )}
         </div>
-        {photoError && <p style={{ fontFamily: mono, fontSize: '0.55rem', color: '#ff4466', marginBottom: '0.75rem' }}>{photoError}</p>}
+        {photoError && <p style={{ fontFamily: mono, fontSize: '0.55rem', color: 'var(--status-offline)', marginBottom: '0.75rem' }}>{photoError}</p>}
 
         {profile.photos.length === 0 ? (
-          <p style={{ fontFamily: mono, fontSize: '0.6rem', color: '#1e2230', fontStyle: 'italic' }}>
+          <p style={{ fontFamily: mono, fontSize: '0.6rem', color: 'var(--faint)', fontStyle: 'italic' }}>
             {isOwner ? 'No screenshots yet — upload some to show off your builds.' : 'No photos yet.'}
           </p>
         ) : (
@@ -442,7 +445,7 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
               <div
                 key={photo.id}
                 onClick={() => setLightboxIdx(idx)}
-                style={{ aspectRatio: '16/9', overflow: 'hidden', border: '1px solid #1c2030', background: '#131722', position: 'relative', cursor: 'pointer' }}
+                style={{ aspectRatio: '16/9', overflow: 'hidden', border: '1px solid var(--border)', background: 'var(--bg-card)', position: 'relative', cursor: 'pointer' }}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={photo.filename} alt={photo.caption || ''} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.3s ease' }}
@@ -450,7 +453,7 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
                   onMouseLeave={e => { (e.target as HTMLImageElement).style.transform = 'scale(1)'; }} />
                 {photo.caption && (
                   <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(0,0,0,0.7)', padding: '0.3rem 0.5rem' }}>
-                    <p style={{ fontFamily: mono, fontSize: '0.5rem', color: '#dde1ec' }}>{photo.caption}</p>
+                    <p style={{ fontFamily: mono, fontSize: '0.5rem', color: 'var(--text)' }}>{photo.caption}</p>
                   </div>
                 )}
               </div>

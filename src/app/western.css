@@ -61,7 +61,9 @@
 
 .w > * { position: relative; z-index: 3; }
 .w a  { color: inherit; text-decoration: none; }
-.w button { font: inherit; cursor: pointer; background: none; border: none; color: inherit; padding: 0; }
+/* :where() keeps this reset at class-level specificity so single-class
+   button styles (.w-quickdraw__btn, .w-copybox, …) can override it. */
+.w :where(button) { font: inherit; cursor: pointer; background: none; border: none; color: inherit; padding: 0; }
 .w img { display: block; max-width: 100%; }
 
 /* ─── TYPOGRAPHY HELPERS ─────────────────────────────────────────────── */
@@ -139,12 +141,15 @@
 .w-nav__links {
   display:flex; justify-content:center; align-items:center;
   gap:0; overflow-x:auto; scrollbar-width:none;
+  /* "safe" keeps the first links reachable when the row overflows —
+     plain center clips both ends with no way to scroll to them */
+  justify-content:safe center;
 }
 .w-nav__links::-webkit-scrollbar { display:none; }
 .w-nav__link {
-  font-family:"IM Fell English SC",serif; font-size:14px;
-  letter-spacing:0.18em; text-transform:uppercase;
-  padding:10px 16px; color:var(--paper);
+  font-family:"IM Fell English SC",serif; font-size:13px;
+  letter-spacing:0.14em; text-transform:uppercase;
+  padding:10px 12px; color:var(--paper);
   border-bottom:2px solid transparent;
   white-space:nowrap; transition:color .2s,border-color .2s;
   display:flex; align-items:center; gap:7px;
@@ -174,10 +179,15 @@
   transition:background .2s,color .2s;
 }
 .w-nav__toggle:hover { background:var(--gold); color:var(--ink); }
-@media(max-width:900px) {
-  .w-nav__inner { grid-template-columns:auto 1fr; }
+/* the address already headlines the hero + join sections — only show the
+   nav pill when there's genuinely room for all seven chapter links too */
+@media(max-width:1560px) {
   .w-nav__ip { display:none; }
+}
+@media(max-width:900px) {
   .w-nav__brand-sub { display:none; }
+  .w-nav__inner { gap:12px; padding:0 16px; }
+  .w-nav__toggle { margin-left:0; }
 }
 
 /* ─── BAND (zigzag divider) ──────────────────────────────────────────── */
@@ -337,6 +347,12 @@
   color:var(--burnt); letter-spacing:0.03em; white-space:nowrap; text-align:center;
 }
 .w-hero__bounty-amt small { font-size:0.4em; color:var(--ink); letter-spacing:0.18em; }
+/* phones: stack the tagline under SADDLE UP instead of overflowing the poster */
+@media(max-width:700px){
+  .w-hero__bounty{ gap:12px; }
+  .w-hero__bounty-amt{ text-align:center; }
+  .w-hero__bounty-amt small{ display:block; margin-top:6px; }
+}
 .w-hero__body {
   display:grid; grid-template-columns:1.1fr 1fr; gap:32px;
   align-items:stretch; margin-top:16px;
@@ -481,6 +497,11 @@
   display:grid; grid-template-columns:1fr 1fr; gap:32px;
 }
 @media(max-width:900px){ .w-server{grid-template-columns:1fr;} }
+@media(max-width:600px){
+  .w-server{ padding:0 20px; }
+  .w-server__panel{ padding:22px 18px; }
+  .w-stats__tab{ padding:11px 12px; font-size:14px; }
+}
 .w-server__panel {
   background:var(--cream); border:3px solid var(--ink);
   padding:30px; box-shadow:8px 8px 0 var(--ink-soft); position:relative;
@@ -491,7 +512,8 @@
 }
 .w-server__brand { font-family:"IM Fell English SC",serif; font-size:13px; letter-spacing:0.32em; color:var(--burnt); text-transform:uppercase; margin-bottom:10px; }
 .w-server__word {
-  font-family:"Rye",serif; font-size:clamp(72px,14vw,180px); line-height:0.88;
+  /* min sized so CHECKING/OFFLINE fit inside the panel on a 390px phone */
+  font-family:"Rye",serif; font-size:clamp(40px,12vw,180px); line-height:0.88;
   color:var(--cactus); letter-spacing:0.04em;
   text-shadow:3px 0 0 var(--ink),6px 0 0 var(--cactus),9px 0 0 var(--ink),0 4px 0 rgba(42,20,16,0.16);
 }
@@ -508,9 +530,18 @@
 .w-server__meta>div {
   padding:14px 16px; border-right:2px solid var(--ink); border-bottom:2px solid var(--ink);
   background:var(--paper);
+  /* long values (the server address) wrap instead of widening the grid */
+  min-width:0; overflow-wrap:anywhere;
 }
 .w-server__meta>div:nth-child(2n){ border-right:none; }
 .w-server__meta>div:nth-last-child(-n+2){ border-bottom:none; }
+/* small phones: stack the meta cells so the address fits on one line */
+@media(max-width:480px){
+  .w-server__meta{ grid-template-columns:1fr; }
+  .w-server__meta>div{ border-right:none; }
+  .w-server__meta>div:not(:last-child){ border-bottom:2px solid var(--ink); }
+  .w-server__meta>div:last-child{ border-bottom:none; }
+}
 .w-server__meta-k { font-family:"IM Fell English SC",serif; font-size:11px; letter-spacing:0.22em; color:var(--ink-soft); text-transform:uppercase; }
 .w-server__meta-v { font-family:"Rye",serif; font-size:24px; color:var(--ink); margin-top:4px; line-height:1.1; }
 .w-server__meta-v.players { display:flex; align-items:baseline; gap:6px; }
@@ -775,6 +806,27 @@
 }
 .w-quickdraw__btn:hover{transform:translate(-2px,-2px);box-shadow:8px 8px 0 var(--ink);}
 .w-quickdraw__btn:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink);}
+.w-quickdraw__shots {
+  display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:0 0 14px;
+}
+.w-quickdraw__shot {
+  border:2px solid var(--ink); background:var(--paper);
+  padding:9px 6px 8px; transition:background .25s;
+}
+.w-quickdraw__shot.is-live { background:var(--gold); }
+.w-quickdraw__shot.is-foul .w-quickdraw__shot-v { color:var(--burnt); }
+.w-quickdraw__shot-k {
+  display:block; font-family:"IM Fell English SC",serif; font-size:11px;
+  letter-spacing:0.22em; color:var(--ink-soft); text-transform:uppercase;
+}
+.w-quickdraw__shot-v {
+  display:block; font-family:"Rye",serif; font-size:clamp(16px,2.2vw,22px);
+  color:var(--ink); margin-top:3px; line-height:1;
+}
+.w-quickdraw__wait {
+  font-family:"Special Elite",monospace; font-size:12px; letter-spacing:0.28em;
+  text-transform:uppercase; color:var(--ink-soft); padding:21px 0 20px; margin:6px 0;
+}
 .w-quickdraw__readout {
   display:grid; grid-template-columns:repeat(3,1fr); gap:0;
   border:3px solid var(--ink); background:var(--paper); margin-top:18px;
@@ -885,10 +937,11 @@
   margin-bottom:24px;
 }
 .w-join__ip {
-  font-family:"Special Elite",monospace; font-size:clamp(28px,6vw,64px);
+  /* min low enough that the 19-char address never overflows a phone screen */
+  font-family:"Special Elite",monospace; font-size:clamp(16px,6vw,64px);
   letter-spacing:0.04em; color:var(--gold);
-  padding:12px 28px; background:transparent; border:3px solid var(--gold);
-  display:inline-block; margin:16px 0 8px; cursor:pointer;
+  padding:12px clamp(10px,3vw,28px); background:transparent; border:3px solid var(--gold);
+  display:inline-block; max-width:100%; margin:16px 0 8px; cursor:pointer;
   transition:background .2s,color .2s; text-transform:uppercase;
 }
 .w-join__ip:hover,.w-join__ip.is-copied{background:var(--gold);color:var(--ink);}
@@ -969,4 +1022,18 @@
 .w.is-night {
   --paper:#C8B89A; --paper-2:#A89677; --paper-3:#8D7B5E; --cream:#B7A786;
   --terra:#6E5238; --burnt:#5C2A1F; --gold:#C4A352; --sky:#2F5B6E; --dust:#8C6E45;
+}
+
+/* ─── REDUCED MOTION ──────────────────────────────────────────────────── */
+/* Ambient/looping animation is decoration — honor the OS setting and stop
+   it entirely; one-shot feedback (copy kick, bullet pop) is left alone. */
+@media (prefers-reduced-motion: reduce) {
+  .w-ticker__track,
+  .w-tumbleweed.is-rolling,
+  .w-dust,
+  .w-hero__rays,
+  .w-hero__rays::after,
+  .w-shake { animation:none !important; }
+  .w-tumbleweed { display:none; }
+  .w-reveal { opacity:1; transform:none; transition:none; }
 }

@@ -63,10 +63,12 @@
   --accent-faint:  rgba(200, 150, 12, 0.06);
   --accent-trace:  rgba(200, 150, 12, 0.025);
 
-  /* Text — warm parchment */
+  /* Text — warm parchment. Muted/faint must stay readable on the dark
+     leather surfaces (--bg/--bg-card), so they sit well above the border
+     browns — #3d2410-as-text was nearly invisible. */
   --text:          #e8d5b0;
-  --muted:         #7a5c3a;
-  --faint:         #3d2410;
+  --muted:         #a17e54;
+  --faint:         #75542f;
 
   /* Borders — warm brown */
   --border:        #3d2410;

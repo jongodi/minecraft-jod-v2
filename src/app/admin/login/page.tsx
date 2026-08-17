@@ -59,7 +59,7 @@ function LoginForm() {
           background: '#0d0d0d',
         }}
       >
-        <p style={{ fontSize: '0.55rem', letterSpacing: '0.35em', color: '#00ff41', marginBottom: '0.5rem', textTransform: 'uppercase' }}>
+        <p style={{ fontSize: '0.55rem', letterSpacing: '0.35em', color: '#c8960c', marginBottom: '0.5rem', textTransform: 'uppercase' }}>
           JOD ADMIN
         </p>
         <h1 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '1.8rem', fontWeight: 900, color: '#f0f0f0', letterSpacing: '-0.03em', marginBottom: '2rem' }}>
@@ -100,7 +100,7 @@ function LoginForm() {
           disabled={loading || !token}
           style={{
             width:         '100%',
-            background:    token && !loading ? '#00ff41' : '#1a1a1a',
+            background:    token && !loading ? '#c8960c' : '#1a1a1a',
             color:         token && !loading ? '#080808' : '#333',
             border:        'none',
             fontFamily:    "'JetBrains Mono', monospace",
