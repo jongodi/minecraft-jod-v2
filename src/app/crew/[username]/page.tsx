@@ -333,7 +333,7 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
             <p style={{ fontFamily: mono, fontSize: '0.6rem', letterSpacing: '0.25em', color: green, textTransform: 'uppercase' }}>STATS</p>
             {statsMeta?.source === 'cached' && statsMeta.cachedAt && (
-              <span style={{ fontFamily: mono, fontSize: '0.45rem', color: 'var(--faint)', letterSpacing: '0.1em' }}>LAST UPDATED {formatAge(statsMeta.cachedAt).toUpperCase()}</span>
+              <span style={{ fontFamily: mono, fontSize: '0.52rem', color: 'var(--faint)', letterSpacing: '0.1em' }}>LAST UPDATED {formatAge(statsMeta.cachedAt).toUpperCase()}</span>
             )}
           </div>
           {playerStats ? (
@@ -341,7 +341,7 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
               {STAT_LABELS.map(({ key, label, format }) => (
                 <div key={key} style={{ background: 'var(--bg-card)', padding: '0.75rem 1rem' }}>
                   <p style={{ fontFamily: sans, fontSize: '1.1rem', fontWeight: 700, color: 'var(--text)', marginBottom: '0.15rem' }}>{format(playerStats[key] as number)}</p>
-                  <p style={{ fontFamily: mono, fontSize: '0.45rem', color: 'var(--faint)', letterSpacing: '0.15em', textTransform: 'uppercase' }}>{label}</p>
+                  <p style={{ fontFamily: mono, fontSize: '0.52rem', color: 'var(--faint)', letterSpacing: '0.15em', textTransform: 'uppercase' }}>{label}</p>
                 </div>
               ))}
             </div>

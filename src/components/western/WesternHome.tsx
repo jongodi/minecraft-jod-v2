@@ -11,17 +11,17 @@ const CREW = ['stebbias','AmmaGaur','joenana','ingunnbirta','Gamla123','fafnir19
 const HEAD = (name: string) => `https://mc-heads.net/head/${name}/128`;
 
 const GALLERY_PLATES = [
-  { src: '/screenshots/the-castle.png',    title: 'Goði Castle',       sub: 'far away lands',       size: 12 },
-  { src: '/screenshots/spawn-hill.png',    title: 'Joð Ville',         sub: 'old base',             size: 8  },
-  { src: '/screenshots/cherry-estate.png', title: 'Pink Estate',       sub: 'old base',             size: 4  },
-  { src: '/screenshots/j-club.png',        title: 'J Club',            sub: 'secret underground',   size: 4  },
-  { src: '/screenshots/mushroom-isle.png', title: 'Mushroom Isle',     sub: 'shroomy heaven',       size: 4  },
-  { src: '/screenshots/the-hall.png',      title: 'Potions Tower',     sub: 'new base',             size: 4  },
-  { src: '/screenshots/waterfront.png',    title: 'Venice',            sub: 'new base',             size: 5  },
-  { src: '/screenshots/the-tavern.png',    title: 'City Hall',         sub: 'new base',             size: 7  },
-  { src: '/screenshots/the-village.png',   title: 'The Village',       sub: 'new base',             size: 6  },
-  { src: '/screenshots/balloon-island.png',title: 'Balloon Paradise',  sub: 'new base',             size: 6  },
-  { src: '/screenshots/night-sky.png',     title: 'New Town',          sub: 'new base · closing plate', size: 12 },
+  { src: '/screenshots/the-castle.webp',    title: 'Goði Castle',       sub: 'far away lands',       size: 12 },
+  { src: '/screenshots/spawn-hill.webp',    title: 'Joð Ville',         sub: 'old base',             size: 8  },
+  { src: '/screenshots/cherry-estate.webp', title: 'Pink Estate',       sub: 'old base',             size: 4  },
+  { src: '/screenshots/j-club.webp',        title: 'J Club',            sub: 'secret underground',   size: 4  },
+  { src: '/screenshots/mushroom-isle.webp', title: 'Mushroom Isle',     sub: 'shroomy heaven',       size: 4  },
+  { src: '/screenshots/the-hall.webp',      title: 'Potions Tower',     sub: 'new base',             size: 4  },
+  { src: '/screenshots/waterfront.webp',    title: 'Venice',            sub: 'new base',             size: 5  },
+  { src: '/screenshots/the-tavern.webp',    title: 'City Hall',         sub: 'new base',             size: 7  },
+  { src: '/screenshots/the-village.webp',   title: 'The Village',       sub: 'new base',             size: 6  },
+  { src: '/screenshots/balloon-island.webp',title: 'Balloon Paradise',  sub: 'new base',             size: 6  },
+  { src: '/screenshots/night-sky.webp',     title: 'New Town',          sub: 'new base · closing plate', size: 12 },
 ];
 
 const NAV_LINKS = [
@@ -218,10 +218,13 @@ export default function WesternHome() {
   useEffect(() => {
     const wrap = wrapRef.current;
     if (!wrap) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    /* fewer composited particles on phones */
+    const count = window.matchMedia('(max-width: 640px)').matches ? 8 : 18;
     const field = document.createElement('div');
     field.className = 'w-dust-field';
     wrap.appendChild(field);
-    for (let i = 0; i < 18; i++) {
+    for (let i = 0; i < count; i++) {
       const d = document.createElement('div');
       d.className = 'w-dust';
       d.style.setProperty('--x',     `${Math.random() * 100}%`);
@@ -466,7 +469,7 @@ export default function WesternHome() {
               <div className="w-hero__photo">
                 <div className="w-hero__photo-plate">PLATE I</div>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/screenshots/night-sky.png" alt="JOÐ at dusk" />
+                <img src="/screenshots/night-sky.webp" alt="JOÐ at dusk" />
                 <div className="w-hero__photo-cap">Night sky over the homestead</div>
               </div>
 

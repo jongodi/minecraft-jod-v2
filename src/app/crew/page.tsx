@@ -118,12 +118,12 @@ function CrewCard({ member, index }: { member: CrewSummary; index: number }) {
             flexShrink:    0,
           }}>
             {member.photoCount > 0 && (
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.46rem', color: 'var(--faint)', letterSpacing: '0.1em' }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.52rem', color: 'var(--faint)', letterSpacing: '0.1em' }}>
                 {member.photoCount} photo{member.photoCount !== 1 ? 's' : ''}
               </span>
             )}
             {member.postCount > 0 && (
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.46rem', color: 'var(--faint)', letterSpacing: '0.1em' }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.52rem', color: 'var(--faint)', letterSpacing: '0.1em' }}>
                 {member.postCount} post{member.postCount !== 1 ? 's' : ''}
               </span>
             )}
