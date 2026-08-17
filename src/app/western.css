@@ -170,24 +170,14 @@
   box-shadow:0 0 0 2px var(--ink), 0 0 12px var(--gold);
   border-radius:50%;
 }
-.w-nav__toggle {
-  display:inline-flex; align-items:center; gap:8px;
-  padding:7px 12px; margin-left:8px;
-  border:1.5px solid var(--paper); background:transparent;
-  color:var(--paper); font-family:"IM Fell English SC",serif;
-  font-size:11px; letter-spacing:0.22em; text-transform:uppercase;
-  transition:background .2s,color .2s;
-}
-.w-nav__toggle:hover { background:var(--gold); color:var(--ink); }
 /* the address already headlines the hero + join sections — only show the
    nav pill when there's genuinely room for all seven chapter links too */
-@media(max-width:1560px) {
+@media(max-width:1440px) {
   .w-nav__ip { display:none; }
 }
 @media(max-width:900px) {
   .w-nav__brand-sub { display:none; }
   .w-nav__inner { gap:12px; padding:0 16px; }
-  .w-nav__toggle { margin-left:0; }
 }
 
 /* ─── BAND (zigzag divider) ──────────────────────────────────────────── */
@@ -1017,12 +1007,6 @@
 /* ─── REVEAL ON SCROLL ────────────────────────────────────────────────── */
 .w-reveal { opacity:0; transform:translateY(28px); transition:opacity .7s cubic-bezier(0.16,1,0.3,1),transform .7s cubic-bezier(0.16,1,0.3,1); }
 .w-reveal.is-in { opacity:1; transform:none; }
-
-/* ─── NIGHT MODE ─────────────────────────────────────────────────────── */
-.w.is-night {
-  --paper:#C8B89A; --paper-2:#A89677; --paper-3:#8D7B5E; --cream:#B7A786;
-  --terra:#6E5238; --burnt:#5C2A1F; --gold:#C4A352; --sky:#2F5B6E; --dust:#8C6E45;
-}
 
 /* ─── REDUCED MOTION ──────────────────────────────────────────────────── */
 /* Ambient/looping animation is decoration — honor the OS setting and stop

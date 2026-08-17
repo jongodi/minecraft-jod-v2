@@ -146,9 +146,6 @@ export default function WesternHome() {
   const [copied, setCopied]       = useState(false);
   const [copiedJoin, setCopiedJoin] = useState(false);
 
-  /* night mode */
-  const [night, setNight]         = useState(false);
-
   /* quick draw */
   const [qdState, setQdState]     = useState<QDState>('idle');
   const [qdShots, setQdShots]     = useState<QDShot[]>([]);
@@ -398,7 +395,7 @@ export default function WesternHome() {
 
   /* ── render ──────────────────────────────────────────────────────── */
   return (
-    <div ref={wrapRef} className={`w${night ? ' is-night' : ''}`}>
+    <div ref={wrapRef} className="w">
 
       {/* TUMBLEWEED */}
       <div ref={tumbRef} className="w-tumbleweed"><TumbleWeedSVG /></div>
@@ -420,18 +417,9 @@ export default function WesternHome() {
             ))}
           </nav>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div className="w-nav__ip">
-              <span className="w-nav__ip-dot" />
-              play.jodcraft.world
-            </div>
-            <button
-              className="w-nav__toggle"
-              onClick={() => setNight(n => !n)}
-              data-no-shoot=""
-            >
-              {night ? '☀ DAY' : '☾ NIGHT'}
-            </button>
+          <div className="w-nav__ip">
+            <span className="w-nav__ip-dot" />
+            play.jodcraft.world
           </div>
         </div>
       </header>
