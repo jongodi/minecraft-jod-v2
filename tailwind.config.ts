@@ -1,41 +1,55 @@
 import type { Config } from 'tailwindcss';
 
+// Every value here points at a custom property declared in src/app/globals.css.
+// Tokens are defined once, there; this file only names them for utilities.
 const config: Config = {
-  content: [
-    './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/components/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/app/**/*.{js,ts,jsx,tsx,mdx}',
-  ],
+  content: ['./src/**/*.{ts,tsx}'],
   theme: {
+    colors: {
+      transparent: 'transparent',
+      current: 'currentColor',
+      bg: 'var(--bg)',
+      surface: 'var(--surface)',
+      'surface-2': 'var(--surface-2)',
+      line: 'var(--line)',
+      text: 'var(--text)',
+      muted: 'var(--muted)',
+      accent: 'var(--accent)',
+      'accent-deep': 'var(--accent-deep)',
+      'accent-ink': 'var(--accent-ink)',
+    },
+    fontFamily: {
+      display: ['var(--font-display)', 'Georgia', 'serif'],
+      body: ['var(--font-body)', 'system-ui', 'sans-serif'],
+    },
+    fontSize: {
+      display: ['clamp(3rem, 9vw, 7rem)', { lineHeight: '0.92', letterSpacing: '-0.015em' }],
+      h2: ['clamp(1.75rem, 1rem + 2.2vw, 2.5rem)', { lineHeight: '1.1', letterSpacing: '-0.005em' }],
+      figure: ['1.5rem', { lineHeight: '1' }],
+      lead: ['1.25rem', { lineHeight: '1.35' }],
+      body: ['1rem', { lineHeight: '1.55' }],
+      meta: ['0.875rem', { lineHeight: '1.45', letterSpacing: '0.005em' }],
+      label: ['0.8125rem', { lineHeight: '1.2', letterSpacing: '0.02em' }],
+    },
+    borderRadius: {
+      none: '0',
+      DEFAULT: 'var(--radius)',
+      full: '9999px',
+    },
     extend: {
-      colors: {
-        bg: '#080808',
-        accent: '#00ff41',
-        'accent-dim': '#00cc33',
-        card: '#111111',
-        border: '#1a1a1a',
-        text: '#f0f0f0',
-        muted: '#666666',
+      spacing: {
+        gutter: 'var(--gutter)',
       },
-      fontFamily: {
-        display: ['Space Grotesk', 'sans-serif'],
-        mono: ['JetBrains Mono', 'monospace'],
+      maxWidth: {
+        site: '90rem',
       },
-      animation: {
-        glitch: 'glitch 6s infinite',
-        'scroll-x': 'scroll-x 30s linear infinite',
-        'chevron-bounce': 'chevron-bounce 1.5s ease-in-out infinite',
-        'cursor-ring': 'cursor-ring 0.15s ease-out',
+      transitionDuration: {
+        feedback: 'var(--t-feedback)',
+        panel: 'var(--t-panel)',
+        survey: 'var(--t-survey)',
       },
-      keyframes: {
-        'scroll-x': {
-          '0%': { transform: 'translateX(0)' },
-          '100%': { transform: 'translateX(-50%)' },
-        },
-        'chevron-bounce': {
-          '0%, 100%': { transform: 'translateY(0)', opacity: '0.4' },
-          '50%': { transform: 'translateY(8px)', opacity: '1' },
-        },
+      transitionTimingFunction: {
+        out: 'var(--ease-out)',
       },
     },
   },
