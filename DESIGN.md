@@ -193,14 +193,19 @@ states: Í gangi, Slökkt, Ræsir, Slekkur, Ekkert svar, Athuga. The address is 
 
 ## Client components and why
 
+- `Hero`: the state word, lamp and roster follow the live status.
+- `StatusPoller`: polls `/api/status` once a minute and when the tab comes
+  back, writes to a shared store, repaints the favicon. Renders nothing.
+- `LiveWordmark`: the footer lamp reads the same store.
 - `CopyAddress`: clipboard API and a two second confirmation.
-- `PlayerHead`: only for the error fallback when the avatar service fails.
+- `PlayerHead`: only for the fallback when the avatar service fails.
 - `Gallery` and `Lightbox`: which picture is open, keyboard and swipe.
 - `WorldMap`: the pick and the one-time survey draw.
 - `Fuse` and `FuseLoader`: the game, split out of the initial bundle.
-- `StatusLive` (Phase 2): polls the status route and updates the lamp.
 
-Everything else is a server component.
+Everything else is a server component. The page itself is rebuilt at most
+once a minute with status and stats fetched in parallel; upstream responses
+are cached across visitors for 30 s and 5 min.
 
 ## Decided against
 

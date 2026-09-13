@@ -35,6 +35,8 @@ export function PlayerHead({ name, size }: PlayerHeadProps) {
       width={size}
       height={size}
       unoptimized
+      fetchPriority="low"
+      decoding="async"
       className="pixel"
       onError={() => setFailed(true)}
     />

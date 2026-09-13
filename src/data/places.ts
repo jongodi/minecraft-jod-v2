@@ -12,7 +12,7 @@ export interface Place {
   label: 'right' | 'left' | 'above' | 'below-right' | 'below-left';
 }
 
-export interface Region {
+interface Region {
   id: string;
   name: string;
   cx: number;

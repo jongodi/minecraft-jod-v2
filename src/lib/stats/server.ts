@@ -12,7 +12,7 @@ import { SERVER } from '@/data/server';
 const EXAROTON = 'https://api.exaroton.com/v1';
 const REVALIDATE = 300;
 
-export interface Stats {
+interface Stats {
   rows: StatRow[];
   /** When the numbers were read, formatted for the page, or null. */
   asOf: string | null;

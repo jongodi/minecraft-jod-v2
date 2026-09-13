@@ -1,61 +1,90 @@
-# JODcraft: Minecraft Server Website
+# JOÐcraft
 
-Website for the JOD private Minecraft survival server at **play.jodcraft.world**.
+The website for JOÐcraft, a private Icelandic survival Minecraft server for a
+few friends, at [jodcraft.world](https://jodcraft.world). Players join at
+`play.jodcraft.world`.
 
-Built with Next.js 14, TypeScript, Tailwind CSS, and Framer Motion.
+The site answers seven questions and nothing else: is the server on and who
+is in, how do I join, what is different from vanilla, what changed recently,
+what does it look like, what is the world, and is there something to play
+with while I decide. Everything on it is in Icelandic. The design is argued
+for in [DESIGN.md](DESIGN.md).
 
----
-
-## Features
-
-- **Server status** : live player count and online crew display via Exaroton API
-- **Gallery** : screenshot lightbox with keyboard/swipe navigation, managed via admin panel
-- **Datapacks** : lists installed datapacks with automatic update checks against Modrinth and GitHub APIs
-- **Interactive map** : embedded Dynmap
-- **Crew profiles** : per-player pages with bio, posts, and photo uploads; login via crew token
-- **Player stats leaderboard** : playtime, kills, deaths, crafted items, distance walked (read from world stats files via Exaroton)
-- **Resource Pack Editor** (`/rp-editor`) : browser-based resource-pack analyser and editor. A Minecraft-accurate dependency engine (run in a Web Worker) resolves parent chains, blockstates, item definitions (1.21.4+) and legacy overrides, fonts, particles, equipment, atlases and datapacks, then reports broken references and provably-unused files with a full evidence trail and confidence tier — it never suggests removing anything a reference (in the pack, at a vanilla path, or in a datapack) still points at. Includes a who-uses-this inspector, an interactive dependency graph, custom_model_data collision + duplicate-texture detection, bulk auto-fix for broken references and unused-file cleanup, and shareable Markdown/JSON reports. A Textures studio lets you browse every texture, preview the item/block it belongs to (3D for block models, stacked-layer preview for items), paint directly on the 3D model or in a pixel painter, and manage overlay layers (add/remove a layer1+ on any generated item, with a badge showing which textures have overlays). The 3D viewer resolves model parent chains against a bundled set of vanilla template models (so inherited geometry like cube_all/orientable/cross renders, including flat plants and crops), tints tinted faces, shows animated textures at their first frame (painting preserves the full frame strip), and previews entity-rendered textures that have no model in the pack: chests (single + double halves), beds, shulker boxes, boats, chest boats, minecarts, bells, banners, and legacy signs/hanging signs. Texture-only overrides with no model anywhere still get 3D — signs, hanging signs and beds map to their real vanilla block-model geometry, and any other block texture is shown on a preview cube. Navigation is four primary tabs (Overview, Report, Textures, Files) with the rest one click away under More. Vanilla-override detection uses a generated manifest of the current game's assets, and pack versions are read from either pack_format or the 1.21.9+ min_format/max_format fields (through Minecraft 26.2).
-- **Admin panel** (`/admin`) : server control (start/stop/restart), datapack update manager, gallery management
-
----
-
-## Environment Variables
-
-Copy `.env.local.example` to `.env.local` and fill in the values.
-
-| Variable | Description |
-|---|---|
-| `EXAROTON_API_KEY` | Exaroton API token : enables server status, control, and player stats |
-| `EXAROTON_SERVER_ID` | Your server ID from exaroton.com (optional, avoids extra lookup) |
-| `ADMIN_TOKEN` | Password for the `/admin` panel (min 8 characters) |
-| `GITHUB_TOKEN` | GitHub classic PAT with no scopes : raises datapack API rate limit (optional) |
-| `CREW_TOKEN_<USERNAME>` | Login token per crew member, e.g. `CREW_TOKEN_STEBBIAS=...` |
-
----
-
-## Development
+## Run it
 
 ```bash
 npm install
-npm run dev
+npm run dev          # http://localhost:3000
+npx tsc --noEmit     # type-check
+npm run lint
+npm run build && npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Node 20 or newer. No database, no storage, no build-time network beyond npm:
+the fonts are committed under `src/fonts`.
 
----
+## Configuration
 
-## Adding a Crew Member
+Copy `.env.local.example` to `.env.local`.
 
-1. Add the username to `CREW_USERNAMES` in `src/lib/crew.ts`
-2. Add them to the `CREW` array in `src/components/ServerStatus.tsx`
-3. Set `CREW_TOKEN_<UPPERCASE_USERNAME>` in your environment variables
+| Variable | What it does |
+|---|---|
+| `EXAROTON_API_KEY` | Token from exaroton.com. Enables status with the player list, and the stats table. |
+| `EXAROTON_SERVER_ID` | Optional. Saves one API call per check. |
+| `EXAROTON_SERVER_HOST` | Optional. Hostname used by the public ping fallback. Defaults to `stebbias.exaroton.me`. |
+| `NEXT_PUBLIC_SITE_URL` | Optional. Public URL for Open Graph links. Defaults to `https://jodcraft.world`. |
 
-## Datapack Update Tracking
+Without a token the status comes from `api.mcsrvstat.us` and the stats
+section does not render.
 
-Edit `src/data/datapacks.ts` to configure each datapack:
+## Editing content
 
-- `source: 'modrinth'` + `modrinthSlug` : checks Modrinth API
-- `source: 'github'` + `githubRepo` (`owner/repo`) : checks GitHub Releases
-- `source: 'manual'` : no automatic checking
+Everything the site says lives in `src/data`. No component needs to change.
 
-Set `currentVersion` to the version currently installed on the server.
+| File | What is in it |
+|---|---|
+| `server.ts` | Name, address, version string, tagline, resource pack line, the list of players. |
+| `datapacks.ts` | One entry per datapack: name, Icelandic blurb (eight words at most), installed version, Modrinth slug. |
+| `changelog.ts` | Date plus one line per change, newest first. The section appears as soon as the list has an entry. |
+| `gallery.ts` | One entry per screenshot in `public/screenshots`: file, size, title, place, Icelandic alt text, desktop column span, map pin. |
+| `places.ts` | The map: places with drawing coordinates and label side, regions, the river, the sea. Not world coordinates. |
+
+To add a screenshot: put a webp in `public/screenshots`, add an entry to
+`gallery.ts` with its real pixel size, and, if it is a new place, a pin in
+`places.ts`.
+
+## Where the data comes from
+
+| Data | Source | Cached | When it fails |
+|---|---|---|---|
+| Status, who is in | Exaroton API, else `api.mcsrvstat.us` | 30 s on the server, polled every 60 s by the page | State becomes "Ekkert svar", the lamp goes grey, the page keeps polling |
+| Player heads | `mc-heads.net/head/<name>` | browser cache | A bone square with the player's initial |
+| Stats | Exaroton file API reading `world/players/stats/*.json`, names via Mojang | 5 min (names 1 day) | The section is left out |
+| Everything else | `src/data` and `public/screenshots` | build | |
+
+The page is regenerated at most once a minute. If a regeneration fails the
+last good page keeps serving.
+
+## When the status API changes
+
+All Exaroton reading is in two files: `src/lib/status/server.ts` (status)
+and `src/lib/stats/server.ts` (stats). The status file maps Exaroton's
+numeric status codes to the site's five states in `stateFromCode`; the
+public state type and the Icelandic words for it are in `src/lib/status`.
+Change the fetch, keep the `ServerStatus` shape, and nothing downstream
+notices. `/api/status` is what the browser polls and returns that same shape.
+
+## Routes
+
+| Route | What |
+|---|---|
+| `/` | The site |
+| `/stil` | The design system rendered: mark, palette, type, every state, the sections with sample data. Not indexed. |
+| `/rp-editor` | The resource pack analyser and editor, a tool for the pack author. English, desktop only, kept as is. |
+| `/api/status` | JSON the page polls |
+
+## Repository rules
+
+TypeScript strict with no `any` outside `src/app/rp-editor`. Tokens are
+declared once in `src/app/globals.css` and named in `tailwind.config.ts`.
+No em dash anywhere in the repo. CI type-checks, lints and builds every push.

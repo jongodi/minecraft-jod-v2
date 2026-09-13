@@ -16,12 +16,12 @@ export function Footer({ initial }: FooterProps) {
       </div>
       <div className="mt-4 flex flex-wrap items-baseline justify-between gap-x-8 gap-y-2 font-label text-label uppercase text-muted">
         <p>{SERVER.address}</p>
-        <p className="flex flex-wrap gap-x-5">
-          <Link href="/rp-editor" className="py-2">
+        <span className="flex flex-wrap gap-x-5">
+          <Link href="/rp-editor" className="flex min-h-11 items-center">
             Pakkaverkfæri
           </Link>
-          <span className="py-2">Ekki tengt Mojang</span>
-        </p>
+          <span className="flex min-h-11 items-center">Ekki tengt Mojang</span>
+        </span>
       </div>
     </footer>
   );

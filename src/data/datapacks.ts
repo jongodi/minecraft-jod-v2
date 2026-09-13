@@ -3,7 +3,7 @@
 // most. `version` is what is installed. `modrinth` is the project slug, so
 // the name links to the pack's page.
 
-export interface Datapack {
+interface Datapack {
   name: string;
   blurb: string;
   version: string;

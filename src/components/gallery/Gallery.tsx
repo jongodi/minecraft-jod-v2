@@ -44,7 +44,6 @@ export function Gallery({ shots }: GalleryProps) {
               type="button"
               onClick={() => setOpen(i)}
               className="flex w-full flex-col text-left"
-              aria-label={`Opna mynd: ${shot.title}`}
             >
               <Image
                 src={shot.src}

@@ -1,11 +1,11 @@
 /** A creeper's fuse: 30 ticks, one and a half seconds. */
 export const FUSE_MS = 1500;
-export const TICK_MS = 50;
+const TICK_MS = 50;
 export const ROUNDS = 3;
 export const WAIT_MIN_MS = 1500;
 export const WAIT_MAX_MS = 4000;
 export const RESULT_MS = 1400;
-export const BEST_KEY = 'jodcraft-kveikur-best';
+const BEST_KEY = 'jodcraft-kveikur-best';
 
 /** A shot is a tick count, or null when the round was lost. */
 export type Shot = number | null;

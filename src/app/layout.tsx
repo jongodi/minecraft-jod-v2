@@ -4,7 +4,8 @@ import './globals.css';
 
 // Static instances cut from the Google Fonts latin splits, which cover
 // Icelandic (ð þ æ ö and the acute vowels are in Latin-1). Committed to the
-// repo so a build never depends on a font CDN.
+// repo so a build never depends on a font CDN. The display and body faces
+// are preloaded so the first paint does not reflow; the label face is not.
 const display = localFont({
   src: '../fonts/ArchivoCondensed-Black.woff2',
   variable: '--font-display',

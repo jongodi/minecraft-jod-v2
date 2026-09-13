@@ -18,14 +18,14 @@ interface HeaderProps {
 export function Header({ lamp }: HeaderProps) {
   return (
     <header className="relative z-10 flex flex-wrap items-center justify-between gap-x-8 gap-y-3 px-gutter pt-[max(1.25rem,env(safe-area-inset-top))]">
-      <Link href="/" className="text-text" aria-label="JOÐcraft, forsíða">
+      <Link href="/" className="flex min-h-11 items-center text-text" aria-label="JOÐcraft, forsíða">
         <Wordmark lamp={lamp} height={26} title="JOÐcraft" />
       </Link>
       <nav aria-label="Hlutar síðunnar">
         <ul className="flex flex-wrap gap-x-4 gap-y-1 font-label text-label uppercase">
           {LINKS.map((l) => (
             <li key={l.href}>
-              <a href={l.href} className="inline-block py-2 text-text">
+              <a href={l.href} className="flex min-h-11 items-center text-text">
                 {l.label}
               </a>
             </li>

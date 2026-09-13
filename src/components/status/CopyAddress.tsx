@@ -31,7 +31,6 @@ export function CopyAddress({ address }: CopyAddressProps) {
     <button
       type="button"
       onClick={copy}
-      aria-label={`Afrita vistfangið ${address}`}
       className={`flex h-16 w-full items-center justify-between gap-4 px-5 text-left transition-colors duration-feedback ease-out ${
         copied ? 'bg-text text-accent-ink' : 'bg-accent text-accent-ink'
       }`}
