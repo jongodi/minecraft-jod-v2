@@ -9,6 +9,8 @@ export interface DatapackMeta {
   id:           number;
   name:         string;
   description:  string;
+  /** What it does, in Icelandic, eight words at most. Shown on the site. */
+  blurb:        string;
   category:     string;
   // Update-tracking fields
   source:       DatapackSource;
@@ -30,6 +32,7 @@ export const DATAPACKS: DatapackMeta[] = [
   {
     id:             1,
     name:           'MVP',
+    blurb:          'Fleiri málverk í vanilla-stíl',
     description:    'More Vanilla Paintings',
     category:       'BUILD',
     source:         'modrinth',
@@ -41,6 +44,7 @@ export const DATAPACKS: DatapackMeta[] = [
   {
     id:             2,
     name:           'Banner Flags',
+    blurb:          'Fánar úr borðum, hvar sem er',
     description:    'Plant banners as flags anywhere in the world',
     category:       'BUILD',
     source:         'modrinth',
@@ -52,6 +56,7 @@ export const DATAPACKS: DatapackMeta[] = [
   {
     id:             3,
     name:           'Call of the King',
+    blurb:          'Skepnur verða risastórar',
     description:    'Makes mobs HUGE!',
     category:       'COMBAT',
     source:         'modrinth',
@@ -63,6 +68,7 @@ export const DATAPACKS: DatapackMeta[] = [
   {
     id:             4,
     name:           'Colored Name Teams',
+    blurb:          'Litamerkt liðsnöfn yfir leikmönnum',
     description:    'Color-coded team nametags visible above players',
     category:       'SOCIAL',
     source:         'modrinth',
@@ -74,6 +80,7 @@ export const DATAPACKS: DatapackMeta[] = [
   {
     id:             5,
     name:           'Dungeons & Taverns',
+    blurb:          'Nýjar dýflissur og krár í heiminum',
     description:    'Overhauled dungeons and tavern structures in worldgen',
     category:       'STRUCTURE',
     source:         'modrinth',
@@ -85,6 +92,7 @@ export const DATAPACKS: DatapackMeta[] = [
   {
     id:             6,
     name:           'Ghast Mayhem',
+    blurb:          'Hraðskreiðir ghastar',
     description:    'Speedy ghasts!',
     category:       'COMBAT',
     source:         'modrinth',
@@ -96,6 +104,7 @@ export const DATAPACKS: DatapackMeta[] = [
   {
     id:             7,
     name:           'Holographic Tags',
+    blurb:          'Svífandi texti hvar sem er',
     description:    'Floating holographic text displayed!',
     category:       'SOCIAL',
     source:         'modrinth',
@@ -107,6 +116,7 @@ export const DATAPACKS: DatapackMeta[] = [
   {
     id:             8,
     name:           'LY Graves',
+    blurb:          'Gröf við dauða, dótið geymist',
     description:    'A grave marks your death — your loot stays safe',
     category:       'SURVIVAL',
     source:         'modrinth',
@@ -118,6 +128,7 @@ export const DATAPACKS: DatapackMeta[] = [
   {
     id:             9,
     name:           'Show Player Health',
+    blurb:          'Líf annarra sést í TAB-listanum',
     description:    "See other players' health in TAB list",
     category:       'SOCIAL',
     source:         'modrinth',
@@ -129,6 +140,7 @@ export const DATAPACKS: DatapackMeta[] = [
   {
     id:             10,
     name:           'Better Mineshaft',
+    blurb:          'Endurhönnuð námugöng',
     description:    'Completely redesigned mineshaft structures to explore',
     category:       'STRUCTURE',
     source:         'modrinth',
@@ -140,6 +152,7 @@ export const DATAPACKS: DatapackMeta[] = [
   {
     id:             11,
     name:           'MC Paint',
+    blurb:          'Teiknaðu eigin málverk í leiknum',
     description:    'Create custom pixel-art paintings in-game',
     category:       'BUILD',
     source:         'modrinth',
@@ -151,6 +164,7 @@ export const DATAPACKS: DatapackMeta[] = [
   {
     id:             12,
     name:           'Waystones',
+    blurb:          'Vegsteinar til að ferðast hratt',
     description:    'Place waystones to fast-travel across the world',
     category:       'QOL',
     source:         'modrinth',
@@ -162,6 +176,7 @@ export const DATAPACKS: DatapackMeta[] = [
   {
     id:             13,
     name:           'Vanilla Refresh',
+    blurb:          'Nýir hlutir og uppskriftir, samt vanilla',
     description:    'New items, recipes and mechanics that feel vanilla',
     category:       'QOL',
     source:         'modrinth',
@@ -172,6 +187,7 @@ export const DATAPACKS: DatapackMeta[] = [
   {
     id:             14,
     name:           'Wabi-Sabi Structures',
+    blurb:          'Japönsk mannvirki á víð og dreif',
     description:    'Japanese-inspired structures scattered across the world',
     category:       'STRUCTURE',
     source:         'modrinth',

@@ -34,6 +34,7 @@ export async function POST(req: NextRequest) {
     const pack = await addCustomPack({
       name:         name.trim(),
       description:  (description as string).trim(),
+      blurb:        (description as string).trim(),
       category:     (category as string).trim().toUpperCase(),
       source:       source as DatapackSource,
       modrinthSlug: typeof modrinthSlug === 'string' && modrinthSlug.trim() ? modrinthSlug.trim() : undefined,

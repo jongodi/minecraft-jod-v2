@@ -9,12 +9,13 @@ interface WordmarkProps {
   title?: string;
 }
 
-const VIEW_HEIGHT = 84;
+const VIEW_TOP = 8;
+const VIEW_HEIGHT = 76;
 
 /**
- * "JOÐcraft" set in Young Serif as outlines. The letters are JODcraft; the
- * crossbar that makes the Ð is drawn here in the accent colour so the name
- * itself shows whether the server is on.
+ * "JOÐcraft" as outlines. The letters are JODcraft; the crossbar that makes
+ * the Ð is drawn here in the accent colour so the name shows whether the
+ * server is on.
  */
 export function Wordmark({ lamp, height = 28, title }: WordmarkProps) {
   const width = Math.round((height * WORDMARK_WIDTH) / VIEW_HEIGHT);
@@ -22,7 +23,7 @@ export function Wordmark({ lamp, height = 28, title }: WordmarkProps) {
     <svg
       width={width}
       height={height}
-      viewBox={`0 -1 ${WORDMARK_WIDTH} ${VIEW_HEIGHT}`}
+      viewBox={`0 ${VIEW_TOP} ${WORDMARK_WIDTH} ${VIEW_HEIGHT}`}
       role={title ? 'img' : undefined}
       aria-hidden={title ? undefined : true}
     >
@@ -30,7 +31,7 @@ export function Wordmark({ lamp, height = 28, title }: WordmarkProps) {
       {WORDMARK_GLYPHS.map((glyph) => (
         <path key={glyph.x} d={glyph.d} className="fill-current" />
       ))}
-      <rect x="130.2" y="30.3" width="30" height="11.7" rx="1.5" className={LAMP_FILL[lamp]} />
+      <rect x="96.9" y="39.4" width="25.8" height="11.6" className={LAMP_FILL[lamp]} />
     </svg>
   );
 }

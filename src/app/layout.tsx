@@ -2,27 +2,39 @@ import type { Metadata } from 'next';
 import localFont from 'next/font/local';
 import './globals.css';
 
-// Both faces are the Google Fonts latin split, which covers Icelandic
-// (ð þ æ ö and the acute vowels sit in Latin-1). Committed to the repo so a
-// build never depends on a font CDN.
+// Static instances cut from the Google Fonts latin splits, which cover
+// Icelandic (ð þ æ ö and the acute vowels are in Latin-1). Committed to the
+// repo so a build never depends on a font CDN.
 const display = localFont({
-  src: '../fonts/YoungSerif-latin.woff2',
+  src: '../fonts/ArchivoCondensed-Black.woff2',
   variable: '--font-display',
-  weight: '400',
+  weight: '800',
+  display: 'swap',
+  preload: true,
+  fallback: ['Impact', 'Arial Narrow', 'sans-serif'],
+  adjustFontFallback: 'Arial',
+});
+
+const label = localFont({
+  src: '../fonts/ArchivoExpanded-SemiBold.woff2',
+  variable: '--font-label',
+  weight: '600',
+  display: 'swap',
+  preload: false,
+  fallback: ['Arial', 'sans-serif'],
+  adjustFontFallback: 'Arial',
+});
+
+const body = localFont({
+  src: [
+    { path: '../fonts/Literata-Regular.woff2', weight: '400', style: 'normal' },
+    { path: '../fonts/Literata-Italic.woff2', weight: '400', style: 'italic' },
+  ],
+  variable: '--font-body',
   display: 'swap',
   preload: true,
   fallback: ['Georgia', 'serif'],
   adjustFontFallback: 'Times New Roman',
-});
-
-const body = localFont({
-  src: '../fonts/InstrumentSans-latin.woff2',
-  variable: '--font-body',
-  weight: '400 700',
-  display: 'swap',
-  preload: true,
-  fallback: ['system-ui', 'sans-serif'],
-  adjustFontFallback: 'Arial',
 });
 
 export const metadata: Metadata = {
@@ -32,7 +44,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="is" className={`${display.variable} ${body.variable}`}>
+    <html lang="is" className={`${display.variable} ${label.variable} ${body.variable}`}>
       <body>{children}</body>
     </html>
   );

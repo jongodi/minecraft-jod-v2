@@ -7,8 +7,8 @@ interface CopyAddressProps {
 }
 
 /**
- * Client component: needs the clipboard API and a two-second confirmation.
- * The whole row is the button so the thumb target is the full width.
+ * Client component: clipboard API plus a two second confirmation. The whole
+ * block is the button so the thumb target is the full width, 64 px tall.
  */
 export function CopyAddress({ address }: CopyAddressProps) {
   const [copied, setCopied] = useState(false);
@@ -32,12 +32,12 @@ export function CopyAddress({ address }: CopyAddressProps) {
       type="button"
       onClick={copy}
       aria-label={`Afrita vistfangið ${address}`}
-      className={`mt-2 flex min-h-14 w-full items-center justify-between gap-4 rounded px-4 text-left transition-colors duration-feedback ease-out ${
-        copied ? 'bg-accent-deep text-accent-ink' : 'bg-accent text-accent-ink hover:bg-accent-deep'
+      className={`flex h-16 w-full items-center justify-between gap-4 px-5 text-left transition-colors duration-feedback ease-out ${
+        copied ? 'bg-text text-accent-ink' : 'bg-accent text-accent-ink'
       }`}
     >
-      <span className="num text-lead font-semibold">{address}</span>
-      <span className="text-label font-semibold" aria-live="polite">
+      <span className="font-display text-address">{address}</span>
+      <span className="font-label text-label uppercase" aria-live="polite">
         {copied ? 'Afritað' : 'Afrita'}
       </span>
     </button>
