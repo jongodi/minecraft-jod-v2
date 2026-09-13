@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import localFont from 'next/font/local';
 import './globals.css';
 
@@ -37,9 +37,27 @@ const body = localFont({
   adjustFontFallback: 'Times New Roman',
 });
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://jodcraft.world';
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: 'JOÐcraft',
-  description: 'Lokaður survival-þjónn fyrir vini. play.jodcraft.world',
+  description: 'Lokaður survival-þjónn fyrir vini. Paper 26.2, allt á íslensku. play.jodcraft.world',
+  openGraph: {
+    title: 'JOÐcraft',
+    description: 'Lokaður survival-þjónn fyrir vini. play.jodcraft.world',
+    url: '/',
+    siteName: 'JOÐcraft',
+    locale: 'is_IS',
+    type: 'website',
+    images: [{ url: '/og.png', width: 1200, height: 630, alt: 'JOÐcraft, play.jodcraft.world' }],
+  },
+  twitter: { card: 'summary_large_image' },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#0F0E0C',
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

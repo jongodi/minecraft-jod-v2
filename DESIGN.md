@@ -32,7 +32,7 @@ decisions rather than a stack of lists:
 - **The roster.** Under the state word sit the eight players' Minecraft faces
   in one row, pixel sharp, the ones in the world at full colour and the rest
   dimmed. With nobody on, which is most of the time, the row still says whose
-  place this is. Faces come from mc-heads.net; if that service fails, a face
+  place this is. Heads are the mc-heads.net render the old site used; if that service fails, a head
   becomes a bone square with the player's initial, never a broken image.
 - **The masthead.** The page ends with the wordmark at the full width of the
   page, lamp and all, the way a poster ends.

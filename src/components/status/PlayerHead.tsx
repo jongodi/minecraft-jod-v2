@@ -9,7 +9,8 @@ interface PlayerHeadProps {
 }
 
 /**
- * The player's Minecraft face from mc-heads.net, drawn pixel sharp. If the
+ * The player's Minecraft head from mc-heads.net, the same render the old
+ * site used, drawn pixel sharp. If the
  * avatar service is down the face becomes a bone square with the first
  * letter, so the roster never shows a broken image. Client component only
  * for the error fallback.
@@ -29,7 +30,7 @@ export function PlayerHead({ name, size }: PlayerHeadProps) {
   }
   return (
     <Image
-      src={`https://mc-heads.net/avatar/${encodeURIComponent(name)}/${size * 2}`}
+      src={`https://mc-heads.net/head/${encodeURIComponent(name)}/${size * 2}`}
       alt=""
       width={size}
       height={size}

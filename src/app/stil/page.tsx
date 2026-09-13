@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 
 const SAMPLE: ServerStatus = { state: 'online', players: ['stebbias', 'joenana'], checkedAt: '' };
 
-const STATES: ServerState[] = ['online', 'offline', 'starting', 'unreachable', 'checking'];
+const STATES: ServerState[] = ['online', 'offline', 'starting', 'stopping', 'unreachable'];
 
 const PALETTE = [
   { name: 'bg', hex: '#0F0E0C', role: 'Basalt. Svartur sandur, grunnurinn.' },
@@ -55,7 +55,7 @@ const SAMPLE_ROWS = [
 export default function StilPage() {
   return (
     <main>
-      <Hero status={SAMPLE} shot={GALLERY[10]} />
+      <Hero initial={SAMPLE} shot={GALLERY[10]} />
 
       <Section id="pakkar" question="Hvað er öðruvísi en vanilla?" title="Pakkarnir" figure={{ value: String(DATAPACKS.length), unit: 'datapakkar' }}>
         <PackList />
@@ -128,7 +128,7 @@ export default function StilPage() {
         </ul>
       </Section>
 
-      <Footer lamp="on" />
+      <Footer initial={SAMPLE} />
     </main>
   );
 }

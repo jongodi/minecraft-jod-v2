@@ -4,7 +4,7 @@ const nextConfig = {
 
   images: {
     // Player heads. Served unoptimised so the 8 by 8 face stays pixel sharp.
-    remotePatterns: [{ protocol: 'https', hostname: 'mc-heads.net', pathname: '/avatar/**' }],
+    remotePatterns: [{ protocol: 'https', hostname: 'mc-heads.net', pathname: '/head/**' }],
   },
 
   async headers() {

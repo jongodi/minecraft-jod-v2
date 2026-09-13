@@ -12,8 +12,6 @@ export function stateWord(state: ServerState): string {
       return 'Slekkur';
     case 'unreachable':
       return 'Ekkert svar';
-    case 'checking':
-      return 'Athuga';
   }
 }
 
@@ -31,8 +29,6 @@ export function playersLine(state: ServerState, players: string[]): string {
       return 'Hægt að koma inn eftir mínútu';
     case 'unreachable':
       return 'Næ ekki í þjóninn, reyni aftur';
-    case 'checking':
-      return '';
     default:
       return 'Enginn inni';
   }

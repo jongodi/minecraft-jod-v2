@@ -1,212 +1,28 @@
-// Shared datapack data — used by DatapacksSection and the update-checker API.
-// To enable automatic update checking, set `source` to 'modrinth' or 'github'
-// and fill in the corresponding `modrinthSlug` or `githubRepo` field.
-// Leave `source: 'manual'` for packs not hosted on a supported platform.
+// The datapacks on the server. Edit this list and nothing else; the site
+// reads it directly. `blurb` is what it does, in Icelandic, eight words at
+// most. `version` is what is installed. `modrinth` is the project slug, so
+// the name links to the pack's page.
 
-export type DatapackSource = 'modrinth' | 'github' | 'manual';
-
-export interface DatapackMeta {
-  id:           number;
-  name:         string;
-  description:  string;
-  /** What it does, in Icelandic, eight words at most. Shown on the site. */
-  blurb:        string;
-  category:     string;
-  // Update-tracking fields
-  source:       DatapackSource;
-  // Modrinth project slug (human-readable URL slug, e.g. "dungeons-and-taverns")
-  modrinthSlug?: string;
-  // GitHub repo in "owner/repo" format, e.g. "author/my-datapack"
-  githubRepo?:  string;
-  // The version currently installed on the server
-  currentVersion?: string;
-  // Minecraft game version to filter update checks against
-  gameVersion:  string;
-  // Unique substring of the actual filename/folder in /world/datapacks — used by the
-  // auto-sync feature to identify this pack regardless of naming conventions.
-  // Set to a distinctive part of the name that won't match other packs.
-  serverFile?:  string;
+export interface Datapack {
+  name: string;
+  blurb: string;
+  version: string;
+  modrinth: string;
 }
 
-export const DATAPACKS: DatapackMeta[] = [
-  {
-    id:             1,
-    name:           'MVP',
-    blurb:          'Fleiri málverk í vanilla-stíl',
-    description:    'More Vanilla Paintings',
-    category:       'BUILD',
-    source:         'modrinth',
-    modrinthSlug:   'mvp',
-    currentVersion: '1.0',
-    gameVersion:    '26.1',
-    serverFile:     'More Vanilla Paintings',   // "[1.20.x] More Vanilla Paintings v1.0"
-  },
-  {
-    id:             2,
-    name:           'Banner Flags',
-    blurb:          'Fánar úr borðum, hvar sem er',
-    description:    'Plant banners as flags anywhere in the world',
-    category:       'BUILD',
-    source:         'modrinth',
-    modrinthSlug:   'banner-flags',
-    currentVersion: '3.0.1',
-    gameVersion:    '26.1',
-    serverFile:     'banner-flags',             // "banner-flags-v3-0-1"
-  },
-  {
-    id:             3,
-    name:           'Call of the King',
-    blurb:          'Skepnur verða risastórar',
-    description:    'Makes mobs HUGE!',
-    category:       'COMBAT',
-    source:         'modrinth',
-    modrinthSlug:   'call-of-the-king',
-    currentVersion: '1.1',
-    gameVersion:    '1.21.11',
-    serverFile:     'call_of_the_king',         // "call_of_the_king-1.21.9-10"
-  },
-  {
-    id:             4,
-    name:           'Colored Name Teams',
-    blurb:          'Litamerkt liðsnöfn yfir leikmönnum',
-    description:    'Color-coded team nametags visible above players',
-    category:       'SOCIAL',
-    source:         'modrinth',
-    modrinthSlug:   'colorednameteams',
-    currentVersion: '1.0.3',
-    gameVersion:    '1.21.11',
-    serverFile:     'ColeredNameTeams',         // "ColeredNameTeams (1.0.3)" — typo is in the folder
-  },
-  {
-    id:             5,
-    name:           'Dungeons & Taverns',
-    blurb:          'Nýjar dýflissur og krár í heiminum',
-    description:    'Overhauled dungeons and tavern structures in worldgen',
-    category:       'STRUCTURE',
-    source:         'modrinth',
-    modrinthSlug:   'dungeons-and-taverns',
-    currentVersion: '5.2.0',
-    gameVersion:    '26.1',
-    serverFile:     'Dungeons and Taverns',     // "Dungeons and Taverns v5.2.0"
-  },
-  {
-    id:             6,
-    name:           'Ghast Mayhem',
-    blurb:          'Hraðskreiðir ghastar',
-    description:    'Speedy ghasts!',
-    category:       'COMBAT',
-    source:         'modrinth',
-    modrinthSlug:   'ghast-mayhem',
-    currentVersion: '1.3',
-    gameVersion:    '26.1',
-    serverFile:     'GM-',                      // "GM-1_3" — hyphen makes it distinct from "gm4_"
-  },
-  {
-    id:             7,
-    name:           'Holographic Tags',
-    blurb:          'Svífandi texti hvar sem er',
-    description:    'Floating holographic text displayed!',
-    category:       'SOCIAL',
-    source:         'modrinth',
-    modrinthSlug:   'gm4-holographic-tags',
-    currentVersion: '1.6.1',
-    gameVersion:    '26.1',
-    serverFile:     'gm4_holographic_tags',     // "gm4_holographic_tags_26_1"
-  },
-  {
-    id:             8,
-    name:           'LY Graves',
-    blurb:          'Gröf við dauða, dótið geymist',
-    description:    'A grave marks your death — your loot stays safe',
-    category:       'SURVIVAL',
-    source:         'modrinth',
-    modrinthSlug:   'ly-graves',
-    currentVersion: '3.0.0',
-    gameVersion:    '26.1',
-    serverFile:     'Graves',                   // "Graves v3.0.0 [1.21.11]"
-  },
-  {
-    id:             9,
-    name:           'Show Player Health',
-    blurb:          'Líf annarra sést í TAB-listanum',
-    description:    "See other players' health in TAB list",
-    category:       'SOCIAL',
-    source:         'modrinth',
-    modrinthSlug:   'show-player-health',
-    currentVersion: '2.2.0',
-    gameVersion:    '26.1',
-    serverFile:     'Health',                   // "Health-2.2.0"
-  },
-  {
-    id:             10,
-    name:           'Better Mineshaft',
-    blurb:          'Endurhönnuð námugöng',
-    description:    'Completely redesigned mineshaft structures to explore',
-    category:       'STRUCTURE',
-    source:         'modrinth',
-    modrinthSlug:   'hopo-better-mineshaft',
-    currentVersion: '1.3.6-datapack',
-    gameVersion:    '26.1',
-    serverFile:     'hopobettermineshaft',       // "hopobettermineshaft-26-1-1-3-6"
-  },
-  {
-    id:             11,
-    name:           'MC Paint',
-    blurb:          'Teiknaðu eigin málverk í leiknum',
-    description:    'Create custom pixel-art paintings in-game',
-    category:       'BUILD',
-    source:         'modrinth',
-    modrinthSlug:   'mc-paint',
-    currentVersion: '1.7.0',
-    gameVersion:    '1.21.11',
-    serverFile:     'mc_paint',                 // "mc_paint_v1.7.0_data_pack"
-  },
-  {
-    id:             12,
-    name:           'Waystones',
-    blurb:          'Vegsteinar til að ferðast hratt',
-    description:    'Place waystones to fast-travel across the world',
-    category:       'QOL',
-    source:         'modrinth',
-    modrinthSlug:   'waystones-data-pack',
-    currentVersion: '3.5.1',
-    gameVersion:    '26.1',
-    serverFile:     'pk_waystones',             // "pk_waystones_V.3.5.1_mc_26.1"
-  },
-  {
-    id:             13,
-    name:           'Vanilla Refresh',
-    blurb:          'Nýir hlutir og uppskriftir, samt vanilla',
-    description:    'New items, recipes and mechanics that feel vanilla',
-    category:       'QOL',
-    source:         'modrinth',
-    modrinthSlug:   'vanilla-refresh',
-    currentVersion: '1.4.30',
-    gameVersion:    '26.1',
-  },
-  {
-    id:             14,
-    name:           'Wabi-Sabi Structures',
-    blurb:          'Japönsk mannvirki á víð og dreif',
-    description:    'Japanese-inspired structures scattered across the world',
-    category:       'STRUCTURE',
-    source:         'modrinth',
-    modrinthSlug:   'wabi-sabi-structures',
-    currentVersion: '3.0.5',
-    gameVersion:    '1.21.11',
-    serverFile:     'Wabi-Sabi Structures',     // "Wabi-Sabi Structures-3.0.5-1.21.11 Datapack"
-  },
+export const DATAPACKS: readonly Datapack[] = [
+  { name: 'MVP', blurb: 'Fleiri málverk í vanilla-stíl', version: '1.0', modrinth: 'mvp' },
+  { name: 'Banner Flags', blurb: 'Fánar úr borðum, hvar sem er', version: '3.0.1', modrinth: 'banner-flags' },
+  { name: 'Call of the King', blurb: 'Skepnur verða risastórar', version: '1.1', modrinth: 'call-of-the-king' },
+  { name: 'Colored Name Teams', blurb: 'Litamerkt liðsnöfn yfir leikmönnum', version: '1.0.3', modrinth: 'colorednameteams' },
+  { name: 'Dungeons & Taverns', blurb: 'Nýjar dýflissur og krár í heiminum', version: '5.2.0', modrinth: 'dungeons-and-taverns' },
+  { name: 'Ghast Mayhem', blurb: 'Hraðskreiðir ghastar', version: '1.3', modrinth: 'ghast-mayhem' },
+  { name: 'Holographic Tags', blurb: 'Svífandi texti hvar sem er', version: '1.6.1', modrinth: 'gm4-holographic-tags' },
+  { name: 'LY Graves', blurb: 'Gröf við dauða, dótið geymist', version: '3.0.0', modrinth: 'ly-graves' },
+  { name: 'Show Player Health', blurb: 'Líf annarra sést í TAB-listanum', version: '2.2.0', modrinth: 'show-player-health' },
+  { name: 'Better Mineshaft', blurb: 'Endurhönnuð námugöng', version: '1.3.6', modrinth: 'hopo-better-mineshaft' },
+  { name: 'MC Paint', blurb: 'Teiknaðu eigin málverk í leiknum', version: '1.7.0', modrinth: 'mc-paint' },
+  { name: 'Waystones', blurb: 'Vegsteinar til að ferðast hratt', version: '3.5.1', modrinth: 'waystones-data-pack' },
+  { name: 'Vanilla Refresh', blurb: 'Nýir hlutir og uppskriftir, samt vanilla', version: '1.4.30', modrinth: 'vanilla-refresh' },
+  { name: 'Wabi-Sabi Structures', blurb: 'Japönsk mannvirki á víð og dreif', version: '3.0.5', modrinth: 'wabi-sabi-structures' },
 ];
-
-export const CATEGORY_COLORS: Record<string, string> = {
-  BUILD:     '#00ff41',
-  SURVIVAL:  '#ff6b35',
-  QOL:       '#4ecdc4',
-  LOOT:      '#f7dc6f',
-  WORLD:     '#95e1d3',
-  TRADE:     '#c9b1ff',
-  CRAFT:     '#ff9ff3',
-  COMBAT:    '#ff4466',
-  SOCIAL:    '#c9b1ff',
-  STRUCTURE: '#f0a500',
-};

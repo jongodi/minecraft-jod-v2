@@ -1,27 +1,32 @@
+'use client';
+
 import Image from 'next/image';
 import { Header } from '@/components/site/Header';
 import type { Shot } from '@/data/gallery';
 import { SERVER } from '@/data/server';
 import { playersLine, stateWord } from '@/lib/status/copy';
+import { useStatus } from '@/lib/status/store';
 import { lampFor, type ServerStatus } from '@/lib/status/types';
 import { CopyAddress } from './CopyAddress';
 import { Roster } from './Roster';
 
 interface HeroProps {
-  status: ServerStatus;
+  initial: ServerStatus;
   shot: Shot;
 }
 
 /**
  * The first screen answers the first two questions and nothing else: is it
  * on, who is in, how do I join. One screenshot is the ground; the state word
- * is the headline of the visit.
+ * is the headline of the visit. Client component because the state word,
+ * the lamp and the roster follow the live status.
  */
-export function Hero({ status, shot }: HeroProps) {
+export function Hero({ initial, shot }: HeroProps) {
+  const status = useStatus(initial);
   const lamp = lampFor(status.state);
   const line = playersLine(status.state, status.players);
   return (
-    <section className="relative flex min-h-svh flex-col">
+    <section className="relative flex min-h-svh flex-col" aria-label="Staðan og vistfangið">
       <Image
         src={shot.src}
         alt=""
@@ -32,12 +37,13 @@ export function Hero({ status, shot }: HeroProps) {
       />
       <div className="hero-veil absolute inset-0" aria-hidden="true" />
       <Header lamp={lamp} />
+      <h1 className="sr-only">JOÐcraft</h1>
       <div className="relative mt-auto grid items-end gap-x-6 gap-y-8 px-gutter pb-[max(1.5rem,env(safe-area-inset-bottom))] lg:grid-cols-12">
         <div className="lg:col-span-7">
           <p className="font-label text-label uppercase">Staðan núna</p>
-          <h1 className="mt-[0.2em] font-display text-state uppercase" aria-live="polite">
+          <p className="mt-[0.2em] font-display text-state uppercase" aria-live="polite">
             {stateWord(status.state)}
-          </h1>
+          </p>
           <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
             <Roster online={status.state === 'online' ? status.players : []} />
             {line && <p className="text-lead italic text-muted">{line}</p>}

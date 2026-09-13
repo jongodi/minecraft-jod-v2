@@ -1,13 +1,7 @@
 /** How the Ð crossbar is lit. Derived from ServerState, never set by hand. */
 export type Lamp = 'on' | 'dim' | 'off';
 
-export type ServerState =
-  | 'online'
-  | 'offline'
-  | 'starting'
-  | 'stopping'
-  | 'unreachable'
-  | 'checking';
+export type ServerState = 'online' | 'offline' | 'starting' | 'stopping' | 'unreachable';
 
 export interface ServerStatus {
   state: ServerState;
