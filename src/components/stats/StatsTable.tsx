@@ -25,11 +25,8 @@ const COLUMNS: Array<{ key: keyof Omit<StatRow, 'username'>; label: string; digi
 
 const fmt = new Intl.NumberFormat('is-IS');
 
-/** One table, sorted by hours. Fun numbers, small footprint. */
+/** One table, sorted by hours. The section is left out when there are no rows. */
 export function StatsTable({ rows, asOf }: StatsTableProps) {
-  if (rows.length === 0) {
-    return <p className="text-body text-muted">Engar tölur núna. Þær koma þegar þjónninn svarar.</p>;
-  }
   const sorted = [...rows].sort((a, b) => b.hours - a.hours);
   return (
     <div>

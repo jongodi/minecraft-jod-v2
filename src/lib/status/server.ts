@@ -1,5 +1,6 @@
 import 'server-only';
-import type { ServerState, ServerStatus } from './types';
+import { stateFromCode } from './codes';
+import type { ServerStatus } from './types';
 
 /**
  * Server status, read on the server and cached across visitors for 30 s so a
@@ -13,22 +14,6 @@ const REVALIDATE = 30;
 
 function host(): string {
   return process.env.EXAROTON_SERVER_HOST ?? 'stebbias.exaroton.me';
-}
-
-/** Exaroton status codes, from their API docs. */
-function stateFromCode(code: number): ServerState {
-  switch (code) {
-    case 1: // online
-    case 5: // saving
-      return 'online';
-    case 0: // offline
-    case 7: // crashed
-      return 'offline';
-    case 3: // stopping
-      return 'stopping';
-    default: // starting, restarting, loading, pending, preparing
-      return 'starting';
-  }
 }
 
 interface ExarotonServer {

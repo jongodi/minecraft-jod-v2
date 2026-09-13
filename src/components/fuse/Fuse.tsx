@@ -200,7 +200,7 @@ export default function Fuse() {
           const s = round.shots[i];
           return (
             <li key={i} className="border-t border-line pt-2">
-              {typeof s === 'number' ? tickWord(s) : s === null ? 'Tapað' : i === round.index && phase !== 'done' ? 'Þessi' : ''}
+              {typeof s === 'number' ? tickWord(s) : s === null ? 'Tapað' : i === round.index && phase !== 'done' ? 'Þessi umferð' : ''}
             </li>
           );
         })}

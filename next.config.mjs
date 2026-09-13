@@ -13,10 +13,10 @@ const nextConfig = {
       "default-src 'self'",
       // 'unsafe-eval' is required by webpack/react-refresh in dev mode only
       `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
-      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      "style-src 'self' 'unsafe-inline'",
       "img-src 'self' blob: data: https:",
       "connect-src 'self'",
-      "font-src 'self' https://fonts.gstatic.com",
+      "font-src 'self'",
       "frame-ancestors 'none'",
     ].join('; ');
 
