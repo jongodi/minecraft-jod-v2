@@ -17,11 +17,13 @@ npm install
 npm run dev          # http://localhost:3000
 npx tsc --noEmit     # type-check
 npm run lint
+npm test             # unit tests, Node's own runner
 npm run build && npm start
 ```
 
-Node 20 or newer. No database, no storage, no build-time network beyond npm:
-the fonts are committed under `src/fonts`.
+Node 22.6 or newer (the tests use Node's TypeScript stripping). No database,
+no storage, no build-time network beyond npm: the fonts are committed under
+`src/fonts`.
 
 ## Configuration
 
@@ -87,4 +89,14 @@ notices. `/api/status` is what the browser polls and returns that same shape.
 
 TypeScript strict with no `any` outside `src/app/rp-editor`. Tokens are
 declared once in `src/app/globals.css` and named in `tailwind.config.ts`.
-No em dash anywhere in the repo. CI type-checks, lints and builds every push.
+No em dash anywhere in the repo. CI type-checks, lints, tests and builds
+every push. Unit tests sit next to the pure modules they cover
+(`*.test.ts`); the RP editor has none and is out of scope for the lint
+rules on `any`.
+
+## Deploying
+
+Any Node host or Vercel. Set the variables above, run `npm run build`, serve
+with `npm start`. The home page is regenerated at most once a minute and
+`/api/status` is dynamic, so the host must run the Node server, not a static
+export.

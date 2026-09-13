@@ -185,6 +185,15 @@ the fold, paused when off screen or when the tab is hidden. The burn and the
 spark are transforms driven by one custom property from requestAnimationFrame,
 no canvas.
 
+## Other routes
+
+- `/stil` renders the system: mark, palette with contrast ratios, type ramp,
+  every status state, and each section with sample data. Not indexed.
+- `/rp-editor` is the pack author's tool. It keeps its own styling and is
+  linked once, in the footer, as "Pakkaverkfæri". It is English, which is
+  marked on its root element, and it is not part of this design.
+- The 404 uses the hero grammar: eyebrow, state word, one link home.
+
 ## Language
 
 All visitor-facing copy in Icelandic. The brand is written JOÐcraft. Server
