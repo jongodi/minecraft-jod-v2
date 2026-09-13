@@ -5,6 +5,7 @@ import { SERVER } from '@/data/server';
 import { playersLine, stateWord } from '@/lib/status/copy';
 import { lampFor, type ServerStatus } from '@/lib/status/types';
 import { CopyAddress } from './CopyAddress';
+import { Roster } from './Roster';
 
 interface HeroProps {
   status: ServerStatus;
@@ -37,7 +38,10 @@ export function Hero({ status, shot }: HeroProps) {
           <h1 className="mt-[0.2em] font-display text-state uppercase" aria-live="polite">
             {stateWord(status.state)}
           </h1>
-          {line && <p className="mt-4 text-lead italic text-muted">{line}</p>}
+          <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
+            <Roster online={status.state === 'online' ? status.players : []} />
+            {line && <p className="text-lead italic text-muted">{line}</p>}
+          </div>
         </div>
         <div className="lg:col-span-5 lg:col-start-8">
           <p className="mb-4 max-w-sm text-body text-muted">

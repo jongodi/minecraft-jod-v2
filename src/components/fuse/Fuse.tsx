@@ -192,11 +192,38 @@ export default function Fuse() {
         <span className="absolute inset-x-4 top-1/2 -translate-y-1/2 font-display text-h2 uppercase leading-none">
           {headline}
         </span>
-        <span className="absolute inset-x-4 bottom-6 h-1 bg-text" aria-hidden="true">
-          <span className="fuse-burned absolute inset-y-0 left-0 w-full origin-left bg-bg-2" />
-          <span className={`fuse-spark absolute inset-x-0 top-1/2 ${phase === 'lit' ? 'opacity-100' : 'opacity-0'}`}>
-            <span className="absolute left-0 top-0 h-4 w-4 -translate-x-1/2 -translate-y-1/2 bg-accent" />
-          </span>
+        <span className="absolute inset-x-4 bottom-8 block" aria-hidden="true">
+          <svg viewBox="0 0 600 24" preserveAspectRatio="none" className="block h-6 w-full">
+            {Array.from({ length: 7 }, (_, i) => (
+              <line key={i} x1={i * 100} y1={i % 2 === 0 ? 2 : 6} x2={i * 100} y2={12} stroke="var(--muted)" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
+            ))}
+            <line x1="0" y1="12" x2="600" y2="12" stroke="var(--text)" strokeWidth={3} vectorEffect="non-scaling-stroke" />
+          </svg>
+          <svg viewBox="0 0 600 16" className="absolute inset-x-0 top-6 block h-4 w-full" aria-hidden="true">
+            {[0, 5, 10, 15, 20, 25, 30].map((t, i) => (
+              <text
+                key={t}
+                x={i * 100}
+                y={12}
+                textAnchor={i === 0 ? 'start' : i === 6 ? 'end' : 'middle'}
+                fontSize={11}
+                letterSpacing={1}
+                className="num fill-muted font-label"
+              >
+                {t}
+              </text>
+            ))}
+          </svg>
+          <span className="fuse-burned absolute left-0 top-0 h-6 w-full origin-left bg-bg-2" />
+          {[0, 0.02, 0.045].map((lag, i) => (
+            <span
+              key={lag}
+              className={`fuse-spark absolute inset-x-0 top-3 ${phase === 'lit' ? 'opacity-100' : 'opacity-0'}`}
+              style={{ ['--lag' as string]: lag, opacity: phase === 'lit' ? 1 - i * 0.35 : 0 }}
+            >
+              <span className={`absolute left-0 top-0 -translate-x-1/2 -translate-y-1/2 bg-accent ${i === 0 ? 'h-4 w-4' : 'h-2 w-2'}`} />
+            </span>
+          ))}
         </span>
       </button>
       <ol className="num mt-4 grid grid-cols-3 gap-4 font-label text-label uppercase text-muted">

@@ -17,6 +17,26 @@ there is exactly one place to linger for people who want to.
 Brand voice: one friend telling another what the server is. Specific truths,
 no adjectives about adventure.
 
+## The devices
+
+Each section carries one authored device, so the page reads as a sequence of
+decisions rather than a stack of lists:
+
+- **The question.** Every section opens on a full-width hairline with the
+  question it answers, asked the way a friend would: "Hvað er öðruvísi en
+  vanilla?", "Hvar er hvað?", "Hver hefur spilað mest?". The seven questions
+  from the brief are the visible structure of the page.
+- **The figure.** Under each heading stands one true number at display size:
+  14 datapacks, 11 pictures, 8 players, 30 ticks. It is the only thing in the
+  margin column, and it is always a fact.
+- **The roster.** Under the state word sit the eight players' Minecraft faces
+  in one row, pixel sharp, the ones in the world at full colour and the rest
+  dimmed. With nobody on, which is most of the time, the row still says whose
+  place this is. Faces come from mc-heads.net; if that service fails, a face
+  becomes a bone square with the player's initial, never a broken image.
+- **The masthead.** The page ends with the wordmark at the full width of the
+  page, lamp and all, the way a poster ends.
+
 ## The material
 
 The site is made of three things the server already has: eleven screenshots,
@@ -136,8 +156,10 @@ round is still playable.
 
 **Kortið**, the map. The eleven named places, three regions and one river
 already exist as data. The map is an inline SVG in the palette above: a faint
-graticule, three rings per region like contour lines, the river, and a square
-pin per place with its name placed by hand. When it first scrolls into view it
+graticule, three contour rings per region drawn a little unevenly by seeded
+noise so they read as a hand's work, the sea around Mushroom Island hatched,
+the river, a square pin per place with its name placed by hand, and a
+cartouche that says what the map is and that it is not to scale. When it first scrolls into view it
 surveys itself: rings and river draw in, then the pins and names appear, over
 1.2 s, once. Picking a place shows its photograph beside the map, so the map
 and the gallery are one thing seen two ways. That answers "what is the world"
@@ -153,7 +175,9 @@ is the budgeted exception.
 ## The minigame
 
 **Kveikurinn**, the fuse. A creeper's fuse is 30 ticks, one and a half
-seconds. The fuse lights at a random moment; press before it burns down.
+seconds. The fuse is drawn as a ruler with a mark every five ticks, so you can
+read your own time off it; a pink spark with a short trail burns along it.
+The fuse lights at a random moment; press before it burns down.
 Scored in ticks, three rounds a game, pressing early loses the round, too slow
 and it goes off. The stage is one large button, so a thumb, a mouse and the
 space bar are equals. Personal best in localStorage. Loaded on demand below
@@ -170,6 +194,7 @@ states: Í gangi, Slökkt, Ræsir, Slekkur, Ekkert svar, Athuga. The address is 
 ## Client components and why
 
 - `CopyAddress`: clipboard API and a two second confirmation.
+- `PlayerHead`: only for the error fallback when the avatar service fails.
 - `Gallery` and `Lightbox`: which picture is open, keyboard and swipe.
 - `WorldMap`: the pick and the one-time survey draw.
 - `Fuse` and `FuseLoader`: the game, split out of the initial bundle.

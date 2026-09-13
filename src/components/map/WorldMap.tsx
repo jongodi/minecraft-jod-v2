@@ -3,7 +3,8 @@
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 import type { Shot } from '@/data/gallery';
-import { PLACES, REGIONS, RIVER, type Place } from '@/data/places';
+import { PLACES, REGIONS, RIVER, SEA, type Place } from '@/data/places';
+import { contourPath } from './contour';
 
 interface WorldMapProps {
   shots: readonly Shot[];
@@ -22,8 +23,9 @@ const LABEL: Record<Place['label'], { dx: number; dy: number; anchor: 'start' | 
 const GRATICULE = { step: 100, w: 1000, h: 650 };
 
 /**
- * The signature moment. An inline SVG of the world that surveys itself once
- * when it first scrolls into view; picking a place shows its picture. Pins
+ * The signature moment. An inline SVG of the world, contour rings drawn a
+ * little unevenly like a hand would, the sea hatched, that surveys itself
+ * once when it first scrolls into view; picking a place shows its picture. Pins
  * are small by nature, so the list beside the map is the real control on a
  * phone, and every pin has a 44 px hit area in the list.
  */
@@ -71,15 +73,24 @@ export function WorldMap({ shots }: WorldMapProps) {
             <line key={`h${i}`} x1={0} y1={(i + 1) * GRATICULE.step} x2={GRATICULE.w} y2={(i + 1) * GRATICULE.step} />
           ))}
         </g>
+        <defs>
+          <pattern id="sea" width="14" height="14" patternUnits="userSpaceOnUse" patternTransform="rotate(-20)">
+            <line x1="0" y1="7" x2="14" y2="7" stroke="var(--line)" strokeWidth="1.2" />
+          </pattern>
+        </defs>
+        <path
+          className="map-line"
+          d={contourPath(SEA.cx, SEA.cy, SEA.rx, SEA.ry, 7, 0.1)}
+          fill="url(#sea)"
+          stroke="var(--line)"
+          strokeWidth={1}
+        />
         {REGIONS.map((r) =>
           RINGS.map((d, i) => (
-            <ellipse
+            <path
               key={`${r.id}-${d}`}
               className="map-line"
-              cx={r.cx}
-              cy={r.cy}
-              rx={r.rx + d}
-              ry={r.ry + d * (r.ry / r.rx)}
+              d={contourPath(r.cx, r.cy, r.rx + d, r.ry + d * (r.ry / r.rx), r.seed + i)}
               fill="none"
               stroke="var(--line)"
               strokeWidth={i === 0 ? 1.5 : 1}
@@ -133,6 +144,14 @@ export function WorldMap({ shots }: WorldMapProps) {
             </g>
           );
         })}
+        <g className="map-label" aria-hidden="true">
+          <text x={976} y={598} textAnchor="end" fontSize={15} letterSpacing={2} className="fill-text font-label uppercase">
+            JOÐcraft, heimskortið
+          </text>
+          <text x={976} y={620} textAnchor="end" fontSize={13} letterSpacing={1.5} className="fill-muted font-label uppercase">
+            {PLACES.length} staðir, {REGIONS.length} svæði, ekki í mælikvarða
+          </text>
+        </g>
       </svg>
 
       <div className="px-gutter lg:col-span-4 lg:px-0 lg:pr-gutter">

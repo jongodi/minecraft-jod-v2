@@ -60,6 +60,11 @@ body {
   outline-offset: 3px;
 }
 
+/* Minecraft faces are 8 by 8; never smooth them. */
+.pixel {
+  image-rendering: pixelated;
+}
+
 /* Data numbers line up. */
 .num {
   font-variant-numeric: lining-nums tabular-nums;
@@ -113,5 +118,11 @@ body {
    only, driven by one custom property updated from requestAnimationFrame. */
 .fuse-stage { --burn: 0; }
 .fuse-burned { transform: scaleX(var(--burn)); }
-.fuse-spark { transform: translateX(calc(var(--burn) * 100%)); }
+.fuse-spark { --lag: 0; transform: translateX(calc(max(0, var(--burn) - var(--lag)) * 100%)); }
 .fuse-stage.is-boom { background: var(--text); color: var(--bg); }
+
+/* The footer wordmark fills the page width. */
+.masthead svg {
+  width: 100%;
+  height: auto;
+}

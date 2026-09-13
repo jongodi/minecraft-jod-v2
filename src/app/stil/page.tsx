@@ -9,7 +9,9 @@ import { Footer } from '@/components/site/Footer';
 import { Section } from '@/components/site/Section';
 import { StatsTable } from '@/components/stats/StatsTable';
 import { Hero } from '@/components/status/Hero';
+import { DATAPACKS } from '@/data/datapacks';
 import { GALLERY } from '@/data/gallery';
+import { SERVER } from '@/data/server';
 import { contrastRatio } from '@/lib/contrast';
 import { playersLine, stateWord } from '@/lib/status/copy';
 import type { ServerState, ServerStatus } from '@/lib/status/types';
@@ -55,27 +57,27 @@ export default function StilPage() {
     <main>
       <Hero status={SAMPLE} shot={GALLERY[10]} />
 
-      <Section id="pakkar" title="Öðruvísi en vanilla">
+      <Section id="pakkar" question="Hvað er öðruvísi en vanilla?" title="Pakkarnir" figure={{ value: String(DATAPACKS.length), unit: 'datapakkar' }}>
         <PackList />
       </Section>
 
-      <Section id="myndir" title="Svona lítur það út" bleed>
+      <Section id="myndir" question="Hvernig lítur það út?" title="Myndir" figure={{ value: String(GALLERY.length), unit: 'myndir úr heiminum' }} bleed>
         <Gallery shots={GALLERY} />
       </Section>
 
-      <Section id="kortid" title="Kortið" bleed>
+      <Section id="kortid" question="Hvar er hvað?" title="Kortið" bleed>
         <WorldMap shots={GALLERY} />
       </Section>
 
-      <Section id="tolur" title="Tölurnar" line="Sýnishorn. Réttu tölurnar koma úr stats-skrám þjónsins.">
+      <Section id="tolur" question="Hver hefur spilað mest?" title="Tölurnar" figure={{ value: String(SERVER.players.length), unit: 'leikmenn' }} line="Sýnishorn. Réttu tölurnar koma úr stats-skrám þjónsins.">
         <StatsTable rows={SAMPLE_ROWS} asOf="sýnishorni" />
       </Section>
 
-      <Section id="kveikur" title="Kveikurinn" line="Kveikur á creeper brennur í 30 tikk. Ýttu áður en hann springur.">
+      <Section id="kveikur" question="Eitthvað að dunda á meðan?" title="Kveikurinn" figure={{ value: '30', unit: 'tikk á kveiknum' }} line="Kveikur á creeper brennur í 30 tikk, eina og hálfa sekúndu. Ýttu áður en hann springur.">
         <FuseLoader />
       </Section>
 
-      <Section id="stadan" title="Hin stöðuorðin">
+      <Section id="stadan" question="Stíll" title="Stöðuorðin">
         <ul className="grid gap-x-8 gap-y-6 sm:grid-cols-2">
           {STATES.map((s) => (
             <li key={s} className="border-t border-line pt-3">
@@ -86,7 +88,7 @@ export default function StilPage() {
         </ul>
       </Section>
 
-      <Section id="merki" title="Merkið">
+      <Section id="merki" question="Stíll" title="Merkið">
         <div className="flex flex-wrap items-end gap-8">
           <Mark lamp="on" size={16} framed />
           <Mark lamp="on" size={32} framed />
@@ -101,7 +103,7 @@ export default function StilPage() {
         </div>
       </Section>
 
-      <Section id="litir" title="Litir">
+      <Section id="litir" question="Stíll" title="Litir">
         <ul>
           {PALETTE.map((c) => (
             <li key={c.name} className="flex flex-wrap items-center gap-x-5 gap-y-1 border-t border-line py-3">
@@ -115,7 +117,7 @@ export default function StilPage() {
         </ul>
       </Section>
 
-      <Section id="letur" title="Letur">
+      <Section id="letur" question="Stíll" title="Letur">
         <ul>
           {RAMP.map((r) => (
             <li key={r.role} className="border-t border-line py-5">
@@ -126,7 +128,7 @@ export default function StilPage() {
         </ul>
       </Section>
 
-      <Footer />
+      <Footer lamp="on" />
     </main>
   );
 }

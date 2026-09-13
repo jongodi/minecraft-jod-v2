@@ -21,6 +21,8 @@ export interface Region {
   ry: number;
   /** The name sits above or below the rings, whichever side is free. */
   label: 'above' | 'below';
+  /** Seed for the hand-drawn wobble of the rings. */
+  seed: number;
 }
 
 export const PLACES: readonly Place[] = [
@@ -38,12 +40,15 @@ export const PLACES: readonly Place[] = [
 ];
 
 export const REGIONS: readonly Region[] = [
-  { id: 'faraway', name: 'Langt í burtu', cx: 162, cy: 345, rx: 78, ry: 58, label: 'above' },
-  { id: 'old', name: 'Gamla basið', cx: 282, cy: 197, rx: 118, ry: 118, label: 'above' },
-  { id: 'new', name: 'Nýja basið', cx: 488, cy: 466, rx: 200, ry: 112, label: 'above' },
+  { id: 'faraway', name: 'Langt í burtu', cx: 162, cy: 345, rx: 78, ry: 58, label: 'above', seed: 5 },
+  { id: 'old', name: 'Gamla basið', cx: 282, cy: 197, rx: 118, ry: 118, label: 'above', seed: 11 },
+  { id: 'new', name: 'Nýja basið', cx: 488, cy: 466, rx: 200, ry: 112, label: 'above', seed: 23 },
 ];
 
 /** The river through the new base, drawn as one line. */
 export const RIVER: ReadonlyArray<readonly [number, number]> = [
   [520, 390], [512, 418], [528, 452], [516, 488], [505, 522], [514, 562],
 ];
+
+/** The water around Mushroom Island, which is the one place out at sea. */
+export const SEA = { cx: 872, cy: 260, rx: 120, ry: 84 } as const;

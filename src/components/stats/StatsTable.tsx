@@ -1,3 +1,5 @@
+import { PlayerHead } from '@/components/status/PlayerHead';
+
 export interface StatRow {
   username: string;
   hours: number;
@@ -46,8 +48,11 @@ export function StatsTable({ rows, asOf }: StatsTableProps) {
           <tbody>
             {sorted.map((r) => (
               <tr key={r.username} className="border-b border-line">
-                <th scope="row" className="py-3 pr-4 text-left font-display text-name font-normal uppercase">
-                  {r.username}
+                <th scope="row" className="py-2 pr-4 text-left font-normal">
+                  <span className="flex items-center gap-3">
+                    <PlayerHead name={r.username} size={28} />
+                    <span className="font-display text-name uppercase">{r.username}</span>
+                  </span>
                 </th>
                 {COLUMNS.map((c) => (
                   <td key={c.key} className="py-3 pl-4 text-right">
