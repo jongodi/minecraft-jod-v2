@@ -30,7 +30,8 @@ const SIZES: Record<Shot['span'], string> = {
 
 /**
  * Client component: it owns which picture is open. The grid itself is plain
- * markup; the pictures bleed to the viewport edge on every width.
+ * markup; the pictures bleed to the viewport edge on every width. On desktop
+ * a short tile stretches to its row so a narrow picture becomes a tall crop.
  */
 export function Gallery({ shots }: GalleryProps) {
   const [open, setOpen] = useState<number | null>(null);
@@ -38,11 +39,11 @@ export function Gallery({ shots }: GalleryProps) {
     <>
       <ul className="grid gap-2 lg:grid-cols-12">
         {shots.map((shot, i) => (
-          <li key={shot.src} className={SPAN[shot.span]}>
+          <li key={shot.src} className={`flex ${SPAN[shot.span]}`}>
             <button
               type="button"
               onClick={() => setOpen(i)}
-              className="group block w-full text-left"
+              className="flex w-full flex-col text-left"
               aria-label={`Opna mynd: ${shot.title}`}
             >
               <Image
@@ -52,7 +53,7 @@ export function Gallery({ shots }: GalleryProps) {
                 height={shot.height}
                 sizes={SIZES[shot.span]}
                 loading="lazy"
-                className="aspect-[16/9] w-full object-cover"
+                className="aspect-[16/9] w-full object-cover lg:aspect-auto lg:min-h-0 lg:flex-1"
               />
               <span className="flex items-baseline justify-between gap-4 px-gutter py-3 lg:px-3">
                 <span className="font-display text-name uppercase">{shot.title}</span>
