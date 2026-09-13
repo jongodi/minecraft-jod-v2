@@ -10,11 +10,11 @@ const SEV_HEAD: Record<string, string> = {
   info: 'Review (unverified use)',
 };
 
-/** A human-readable Markdown report — the shareable deliverable. */
+/** A human-readable Markdown report, the shareable deliverable. */
 export function generateReportMarkdown(a: AnalysisResult, packName: string): string {
   const L: string[] = [];
   const now = new Date().toISOString().slice(0, 10);
-  L.push(`# Pack report — ${packName}`);
+  L.push(`# Pack report, ${packName}`);
   L.push('');
   L.push(`Generated ${now} by the JOÐcraft Pack Editor.`);
   L.push('');
@@ -56,7 +56,7 @@ export function generateReportMarkdown(a: AnalysisResult, packName: string): str
   return L.join('\n');
 }
 
-/** A machine-readable cleanup list (dry-run) — only provably-unreferenced files. */
+/** A machine-readable cleanup list (dry-run), only provably-unreferenced files. */
 export function generateCleanupJson(a: AnalysisResult, packName: string): string {
   const items = Object.values(a.nodes)
     .filter((n) => n.verdict === 'safe-remove')

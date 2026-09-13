@@ -28,7 +28,7 @@ const IMG_EXT = /\.(png|jpg|jpeg)$/i;
 
 /**
  * A texture reference (`ns:block/foo` or `block/foo`) → its file path.
- * A reference may already include a leading `textures/` (rare) — handled.
+ * A reference may already include a leading `textures/` (rare), handled.
  */
 export function textureLocToPath(raw: string): string {
   const { namespace, path } = parseLoc(raw);
@@ -93,7 +93,7 @@ export function classify(path: string): AssetKind {
   if (p === 'pack.mcmeta' || p.endsWith('/pack.mcmeta')) return 'pack_meta';
   if (p === 'pack.png' || p.endsWith('/pack.png')) return 'pack_png';
   if (IMG_EXT.test(p)) {
-    // Textures live under assets/*/textures — but treat any png as a texture.
+    // Textures live under assets/*/textures, but treat any png as a texture.
     return 'texture';
   }
   if (p.endsWith('.png.mcmeta') || /\.(jpg|jpeg)\.mcmeta$/.test(p)) return 'texture_meta';
@@ -104,7 +104,7 @@ export function classify(path: string): AssetKind {
   if (p.endsWith('.mcmeta')) return 'texture_meta';
   if (p.endsWith('.json')) {
     // Entry-point kinds are anchored to the namespace root: `models/items/x.json`
-    // is a MODEL in an items/ subfolder, not an item definition — matching it
+    // is a MODEL in an items/ subfolder, not an item definition, matching it
     // loosely would skip its texture resolution and orphan everything it uses.
     if (/^assets\/[^/]+\/blockstates\/.+\.json$/.test(p)) return 'blockstate';
     if (/^assets\/[^/]+\/items\/.+\.json$/.test(p)) return 'item_definition';

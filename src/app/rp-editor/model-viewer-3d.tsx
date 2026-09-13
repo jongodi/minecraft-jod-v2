@@ -17,7 +17,7 @@ function refToPackPath(ref: string): string {
   return `assets/${ns}/textures/${p}.png`;
 }
 
-// Default foliage tint for tintindex faces (grass/leaves/vines) — a preview tint.
+// Default foliage tint for tintindex faces (grass/leaves/vines), a preview tint.
 const TINT = new THREE.Color(0x7cbd6b);
 
 export default function ModelViewer3D({
@@ -56,7 +56,7 @@ export default function ModelViewer3D({
 
   // ── Paint undo/redo ──────────────────────────────────────────────────────────
   // One snapshot per texture per stroke, stored as data URLs OUTSIDE the effect
-  // (each save bumps `revision`, which rebuilds the scene — the history must
+  // (each save bumps `revision`, which rebuilds the scene, the history must
   // survive that). Undo restores the snapshot and persists it through onPaint,
   // so the saved pack state and the canvas stay in sync.
   const histRef = useRef<{ past: Array<{ path: string; data: string }>; future: Array<{ path: string; data: string }> }>({ past: [], future: [] });
@@ -82,7 +82,7 @@ export default function ModelViewer3D({
   let entityMode: { name: string; texPath: string } | null = null;
 
   if ((!geom.elements || geom.elements.length === 0)) {
-    // No geometry from the model — try an entity template for the selected texture.
+    // No geometry from the model, try an entity template for the selected texture.
     const et = entityTexture ? entityTemplateFor(entityTexture) : null;
     if (et && entityTexture) {
       // Entity template UVs are already authored in the 0-16 model space.
@@ -170,7 +170,7 @@ export default function ModelViewer3D({
 
     // ── Per-texture editable canvases (shared across faces) ───────────────────
     // `strip` holds the full frame strip for animated textures: the visible canvas
-    // shows (and paints) only frame 0 — how the game maps model UVs — and saves
+    // shows (and paints) only frame 0, how the game maps model UVs, and saves
     // composite the edited frame back into the strip so no frames are lost.
     interface TexEntry { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D; tex: THREE.CanvasTexture; path: string; loaded: boolean; strip?: HTMLCanvasElement }
     const texCache = new Map<string, TexEntry>();
@@ -243,7 +243,7 @@ export default function ModelViewer3D({
 
     const MISSING = new THREE.MeshLambertMaterial({ color: 0xee44ee, transparent: true, opacity: 0.75 });
     const EMPTY = new THREE.MeshLambertMaterial({ color: 0x111318, transparent: true, opacity: 0.12 });
-    // A face whose texture is a vanilla asset the pack simply doesn't override —
+    // A face whose texture is a vanilla asset the pack simply doesn't override -
     // neutral wood-grey, not the magenta "broken reference" alarm.
     const VANILLA = new THREE.MeshLambertMaterial({ color: 0x8a8378 });
     function makeMat(face: any): THREE.MeshLambertMaterial {
@@ -269,7 +269,7 @@ export default function ModelViewer3D({
       const [tx, ty, tz] = e.to as number[];
       const [w, h, d] = [tx - fx, ty - fy, tz - fz];
       // Zero-thickness elements are real geometry (cross-plants, crops, chains
-      // are flat planes) — only inverted or fully-degenerate boxes are skipped.
+      // are flat planes), only inverted or fully-degenerate boxes are skipped.
       if (w < 0 || h < 0 || d < 0) continue;
       if ([w, h, d].filter((v) => v === 0).length >= 2) continue;
       const geo = new THREE.BoxGeometry(w, h, d);
@@ -301,7 +301,7 @@ export default function ModelViewer3D({
         pivot.rotation.set(
           THREE.MathUtils.degToRad(rx), THREE.MathUtils.degToRad(ry), THREE.MathUtils.degToRad(rz));
         // Vanilla `rescale` stretches the element so its rotated span still fills
-        // the block — how crossed plants reach corner to corner.
+        // the block, how crossed plants reach corner to corner.
         if (er.rescale && er.axis && er.angle) {
           const f = 1 / Math.cos(THREE.MathUtils.degToRad(Math.min(Math.abs(er.angle), 45)));
           if (er.axis === 'x') pivot.scale.set(1, f, f);
@@ -413,7 +413,7 @@ export default function ModelViewer3D({
     undoFnRef.current = doUndo;
     redoFnRef.current = doRedo;
 
-    // Ctrl/Cmd+Z over the 3D view — capture phase, so the 2D painter's global
+    // Ctrl/Cmd+Z over the 3D view, capture phase, so the 2D painter's global
     // shortcut doesn't also fire while the cursor is on the model.
     const onEnter = () => { hover3dRef.current = true; };
     const onLeave = () => { hover3dRef.current = false; };
@@ -483,7 +483,7 @@ export default function ModelViewer3D({
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 180, color: DIM, gap: 8, fontSize: 12, border: `1px solid ${BORDER}`, borderRadius: 8, background: '#090c10' }}>
           <span style={{ fontSize: 24 }}>{isItem ? '◈' : '⬡'}</span>
           <div style={{ textAlign: 'center', lineHeight: 1.6 }}>
-            {isItem ? '2D item sprite — edit it in the painter' : 'No geometry (parent/entity model not resolved)'}
+            {isItem ? '2D item sprite, edit it in the painter' : 'No geometry (parent/entity model not resolved)'}
           </div>
         </div>
         {isItem && firstTex && <img src={firstTex} style={{ imageRendering: 'pixelated', border: `1px solid ${BORDER}`, width: 64, height: 64, objectFit: 'contain', background: '#070910' }} alt="item" />}

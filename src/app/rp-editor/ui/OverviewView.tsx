@@ -19,7 +19,7 @@ export function OverviewView({
   return (
     <div className="rp-scroll">
       <div className="rp-sh">
-        <span className="rp-label">01 — Overview</span>
+        <span className="rp-label">01, Overview</span>
         <h2 style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{packName}</h2>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
           {analysis.meta.versionLabel && <Chip tone="info">{analysis.meta.versionLabel}</Chip>}
@@ -46,7 +46,7 @@ export function OverviewView({
         </div>
         {s.reclaimableBytes > 0 && (
           <div style={{ marginTop: 12, fontSize: '0.72rem', color: 'var(--ink-dim)' }}>
-            Up to <b style={{ color: 'var(--ink)' }}>{fmtBytes(s.reclaimableBytes)}</b> reclaimable from {s.safeRemove} provably-unreferenced file{s.safeRemove !== 1 ? 's' : ''} — reviewed and confirmed by you, never removed automatically.
+            Up to <b style={{ color: 'var(--ink)' }}>{fmtBytes(s.reclaimableBytes)}</b> reclaimable from {s.safeRemove} provably-unreferenced file{s.safeRemove !== 1 ? 's' : ''}, reviewed and confirmed by you, never removed automatically.
           </div>
         )}
       </Glass>

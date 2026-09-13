@@ -4,9 +4,9 @@
 // Design tokens + the liquid-glass system for the Pack Editor.
 //
 // Two colour languages, deliberately separate:
-//   • Brand/chrome — driven by the site's CSS variables (--accent, --bg…), so
+//   • Brand/chrome, driven by the site's CSS variables (--accent, --bg…), so
 //     the whole instrument flips with the matrix/western theme.
-//   • Semantics   — FIXED severity hues (error/review/used/info). Meaning must
+//   • Semantics  , FIXED severity hues (error/review/used/info). Meaning must
 //     stay legible in any theme, like a traffic light, so it is not themed.
 //
 // The glass is real optics: layered specular + rim light, an inner shadow for
@@ -73,7 +73,7 @@ export const RP_CSS = `
   -webkit-backdrop-filter:blur(16px) saturate(1.6) brightness(1.05);
   overflow:hidden;
 }
-/* specular sheen — follows the pointer via --mx/--my */
+/* specular sheen, follows the pointer via --mx/--my */
 .glass::before{
   content:''; position:absolute; inset:0; pointer-events:none; border-radius:inherit; z-index:0;
   background:
@@ -94,7 +94,7 @@ export const RP_CSS = `
 .glass.tint-accent{background:linear-gradient(157deg, rgba(var(--accent-rgb),0.10), rgba(var(--accent-rgb),0.02) 45%, rgba(0,0,0,0.10));}
 .glass.flush{border-radius:0;}
 
-/* refraction displacement — enhancement only, capable browsers */
+/* refraction displacement, enhancement only, capable browsers */
 @supports (backdrop-filter: url(#rp-refract)){
   .rp-refract-on .glass{ backdrop-filter:blur(13px) saturate(1.6) brightness(1.05) url(#rp-refract); }
 }

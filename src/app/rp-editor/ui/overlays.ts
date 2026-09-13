@@ -2,7 +2,7 @@
 // Overlay (model texture-layer) helpers
 //
 // Minecraft generated item models stack textures as layer0 (base) + layer1,
-// layer2… (overlays) — how dyed leather armor, potions, spawn eggs and tipped
+// layer2… (overlays), how dyed leather armor, potions, spawn eggs and tipped
 // arrows render. "Does this texture have an overlay" == is it a layer of a model
 // that also defines layer1+. These helpers read that structure straight off the
 // analysis (which already resolved every model's textures).
@@ -61,7 +61,7 @@ export function overlayForTexture(texPath: string, analysis: AnalysisResult): Ov
   return null;
 }
 
-/** The item model that renders `texPath` (as layer0), if any — for the 3D/preview. */
+/** The item model that renders `texPath` (as layer0), if any, for the 3D/preview. */
 export function modelForTexture(texPath: string, analysis: AnalysisResult): string | null {
   const node = analysis.nodes[texPath];
   if (!node) return null;

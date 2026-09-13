@@ -8,7 +8,7 @@
 // When a fix carries a `kind`, replacement is further constrained to positions
 // where that kind of reference lives (texture slots for texture fixes, model
 // slots for model fixes). A model and a texture can legally share the same
-// resource-location string in one file — repointing the broken texture must not
+// resource-location string in one file, repointing the broken texture must not
 // silently rewrite the working model parent.
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -16,12 +16,12 @@ export type RefKind = 'texture' | 'model' | 'font';
 
 /**
  * Does a string at (key, parentKey) hold a reference of `kind`?
- *   texture — model `textures` map values, particle `textures[]`, equipment
+ *   texture, model `textures` map values, particle `textures[]`, equipment
  *             layer `texture`, atlas `resource`/`textures[]`/`palette_key`/
  *             `permutations` values
- *   model   — `model` (blockstates, overrides, item definitions), `parent`,
+ *   model  , `model` (blockstates, overrides, item definitions), `parent`,
  *             special-model `base`
- *   font    — bitmap provider `file`, unihex `hex_file`, reference `id`
+ *   font   , bitmap provider `file`, unihex `hex_file`, reference `id`
  */
 function kindMatches(kind: RefKind, key?: string, parentKey?: string): boolean {
   if (kind === 'texture') {

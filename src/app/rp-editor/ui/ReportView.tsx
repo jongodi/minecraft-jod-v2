@@ -75,7 +75,7 @@ export function ReportView({
   return (
     <div className="rp-scroll">
       <div className="rp-sh">
-        <span className="rp-label">02 — Report</span>
+        <span className="rp-label">02, Report</span>
         <h2>{clean ? 'No problems found' : `${analysis.findings.length} finding${analysis.findings.length !== 1 ? 's' : ''}`}</h2>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           {fixables.length > 0 && (
@@ -121,7 +121,7 @@ export function ReportView({
               <div>
                 <div style={{ fontSize: '0.95rem', color: 'var(--ink)', marginBottom: 4 }}>Every reference resolves, and nothing is provably unused.</div>
                 <div style={{ fontSize: '0.72rem', color: 'var(--ink-dim)', lineHeight: 1.6 }}>
-                  The dependency graph is intact. Remember the editor cannot see plugin- or macro-generated references — see the blind spots below before assuming 100% coverage.
+                  The dependency graph is intact. Remember the editor cannot see plugin- or macro-generated references, see the blind spots below before assuming 100% coverage.
                 </div>
               </div>
             </Glass>
@@ -313,7 +313,7 @@ function CleanupPanel({
         <div>
           <div style={{ fontSize: '0.85rem', color: 'var(--ink)' }}>Clean up {items.length} provably-unreferenced file{items.length !== 1 ? 's' : ''}</div>
           <div style={{ fontSize: '0.68rem', color: 'var(--ink-dim)', marginTop: 3, lineHeight: 1.5, maxWidth: 640 }}>
-            Only files that <b>nothing references</b> are listed — no model, blockstate, item definition, atlas, font, vanilla path{hasDatapacks ? ', or any datapack you loaded' : ''}. Review the selection; nothing is deleted until you confirm.
+            Only files that <b>nothing references</b> are listed, no model, blockstate, item definition, atlas, font, vanilla path{hasDatapacks ? ', or any datapack you loaded' : ''}. Review the selection; nothing is deleted until you confirm.
           </div>
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
@@ -341,13 +341,13 @@ function CleanupPanel({
       <div style={{ maxHeight: 'calc(100vh - 360px)', overflowY: 'auto' }}>
         {groups.high.length > 0 && (
           <>
-            <div className="rp-label" style={{ padding: '10px 18px 6px', color: 'var(--sev-used)' }}>Confident — nothing references these ({groups.high.length})</div>
+            <div className="rp-label" style={{ padding: '10px 18px 6px', color: 'var(--sev-used)' }}>Confident, nothing references these ({groups.high.length})</div>
             {groups.high.map(Row)}
           </>
         )}
         {groups.other.length > 0 && (
           <>
-            <div className="rp-label" style={{ padding: '10px 18px 6px', color: 'var(--sev-warning)' }}>Review first — under block/ or item/, could be a vanilla override we don’t recognise ({groups.other.length})</div>
+            <div className="rp-label" style={{ padding: '10px 18px 6px', color: 'var(--sev-warning)' }}>Review first, under block/ or item/, could be a vanilla override we don’t recognise ({groups.other.length})</div>
             {groups.other.map(Row)}
           </>
         )}

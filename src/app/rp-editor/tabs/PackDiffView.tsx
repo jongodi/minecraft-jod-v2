@@ -56,7 +56,7 @@ export default function PackDiffView({fileDataA,filePathsA}:PackDiffViewProps){
         <div className="scroll-area">
           <div style={{display:'flex',gap:24,marginBottom:20,flexWrap:'wrap'}}>
             <div style={{fontSize:9,color:DIM,letterSpacing:'2px'}}>PACK A: {filePathsA.length} files</div>
-            <div style={{fontSize:9,color:DIM,letterSpacing:'2px'}}>PACK B: {nameB} — {filePathsB.length} files</div>
+            <div style={{fontSize:9,color:DIM,letterSpacing:'2px'}}>PACK B: {nameB}, {filePathsB.length} files</div>
             <button className="btn sm" style={{marginLeft:'auto'}} onClick={()=>{setFileDataB({});setFilePathsB([]);setNameB('');}}>✕ Reset B</button>
           </div>
 

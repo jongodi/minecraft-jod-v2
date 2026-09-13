@@ -1,7 +1,16 @@
 {
-  "extends": ["next/core-web-vitals"],
+  "extends": ["next/core-web-vitals", "next/typescript"],
   "rules": {
-    "@typescript-eslint/no-explicit-any": "off",
-    "react/no-unescaped-entities": "off"
-  }
+    "@typescript-eslint/no-explicit-any": "error"
+  },
+  "overrides": [
+    {
+      "files": ["src/app/rp-editor/**"],
+      "rules": {
+        "@typescript-eslint/no-explicit-any": "off",
+        "react/no-unescaped-entities": "off",
+        "@next/next/no-img-element": "off"
+      }
+    }
+  ]
 }

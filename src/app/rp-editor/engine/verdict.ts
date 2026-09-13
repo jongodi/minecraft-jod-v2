@@ -2,12 +2,12 @@
 // Verdicts + findings
 //
 // Reachability is computed from two tiers of roots:
-//   • certain roots   — vanilla overrides, datapack references, convention files
-//   • uncertain roots — custom entry points that MAY be invoked (mod/plugin)
+//   • certain roots  , vanilla overrides, datapack references, convention files
+//   • uncertain roots, custom entry points that MAY be invoked (mod/plugin)
 //
 // An asset reachable from any root is "used" (we never suggest deleting a file
 // something references). An asset reachable from NOTHING is a cleanup candidate,
-// and only then is "safe to remove" — always with the full evidence trail and an
+// and only then is "safe to remove", always with the full evidence trail and an
 // explicit statement of what removing it would do.
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -60,17 +60,17 @@ export function computeAnalysis(input: VerdictInput): AnalysisResult {
     });
   }
 
-  // An .mcmeta is exactly as removable as the texture it animates — mirror the
+  // An .mcmeta is exactly as removable as the texture it animates, mirror the
   // paired texture's verdict (a used texture already pulled its mcmeta into the
   // used set via the texture→mcmeta edge; this covers the unused/review cases).
   for (const node of Object.values(nodes)) {
     if (node.kind !== 'texture_meta' || node.verdict === 'used' || node.verdict === 'error') continue;
     const tex = nodes[node.path.replace(/\.mcmeta$/i, '')];
-    if (!tex) continue; // orphaned mcmeta — already surfaced as its own warning
+    if (!tex) continue; // orphaned mcmeta, already surfaced as its own warning
     node.verdict = tex.verdict === 'error' ? 'review' : tex.verdict;
     node.confidence = tex.confidence;
     node.evidence = [
-      { kind: 'note', detail: `Animation metadata for ${tex.path.split('/').pop()} — follows its texture's verdict (${tex.verdict}).` },
+      { kind: 'note', detail: `Animation metadata for ${tex.path.split('/').pop()}, follows its texture's verdict (${tex.verdict}).` },
       ...tex.evidence.slice(0, 2),
     ];
   }
@@ -86,7 +86,7 @@ export function computeAnalysis(input: VerdictInput): AnalysisResult {
       title: 'pack.mcmeta problem', detail: err, path: 'pack.mcmeta',
       evidence: [{ kind: 'note', detail: err, source: 'pack.mcmeta' }], confidence: 'certain' });
   }
-  // System / format mismatch — either system used against the wrong format.
+  // System / format mismatch, either system used against the wrong format.
   const hasItemDefs = graph.byKind.item_definition.length > 0;
   if (meta.itemSystem === 'legacy-overrides' && hasItemDefs) {
     findings.push({ id: nextId(), severity: 'warning', category: 'system-mismatch',
@@ -98,7 +98,7 @@ export function computeAnalysis(input: VerdictInput): AnalysisResult {
   if (meta.itemSystem === 'item-definition' && graph.hasLegacyOverrides && !hasItemDefs) {
     findings.push({ id: nextId(), severity: 'warning', category: 'system-mismatch',
       title: 'Legacy custom_model_data overrides on a version that ignores them',
-      detail: `This pack declares pack_format ${meta.packFormat} (${meta.versionLabel}), where item model "overrides" with custom_model_data predicates no longer work — Minecraft 1.21.4+ reads item models from assets/<ns>/items/ instead. These overrides render nothing; migrate them to item definitions.`,
+      detail: `This pack declares pack_format ${meta.packFormat} (${meta.versionLabel}), where item model "overrides" with custom_model_data predicates no longer work, Minecraft 1.21.4+ reads item models from assets/<ns>/items/ instead. These overrides render nothing; migrate them to item definitions.`,
       path: 'pack.mcmeta', confidence: 'high',
       evidence: [{ kind: 'note', detail: 'Models with an "overrides" array were found, but no assets/<ns>/items/ definitions exist.' }] });
   }
@@ -119,7 +119,7 @@ export function computeAnalysis(input: VerdictInput): AnalysisResult {
   for (const c of graph.cmd) {
     findings.push({ id: nextId(), severity: 'warning', category: 'cmd-collision',
       title: `custom_model_data ${c.value} is assigned twice on ${c.baseItem}`,
-      detail: `The ${c.system === 'legacy-overrides' ? 'legacy overrides' : 'item definition'} for ${c.baseItem} map the same custom_model_data value (${c.value}) to more than one model. In-game only one wins — the others are dead.`,
+      detail: `The ${c.system === 'legacy-overrides' ? 'legacy overrides' : 'item definition'} for ${c.baseItem} map the same custom_model_data value (${c.value}) to more than one model. In-game only one wins, the others are dead.`,
       refs: c.entries.map((e) => e.model), confidence: 'high',
       evidence: c.entries.map((e) => ({ kind: 'note' as const, detail: `→ ${e.model}`, source: e.source })),
       consequence: 'Give each variant a distinct custom_model_data value, or remove the duplicate.' });
@@ -138,8 +138,8 @@ export function computeAnalysis(input: VerdictInput): AnalysisResult {
       refs: g.members, path: keep, confidence: g.kind === 'exact' ? 'high' : 'low',
       evidence: g.members.map((m) => ({ kind: 'note' as const, detail: m === keep ? `${m} (keep)` : `${m} (duplicate of keep)`, source: m })),
       consequence: g.kind === 'exact'
-        ? 'Identical files — safe to merge, but confirm nothing depends on the exact path.'
-        : 'Near-duplicate — do NOT auto-merge; the difference may be intentional.' });
+        ? 'Identical files, safe to merge, but confirm nothing depends on the exact path.'
+        : 'Near-duplicate, do NOT auto-merge; the difference may be intentional.' });
   }
 
   // Cleanup + review findings from node verdicts.
@@ -161,7 +161,7 @@ export function computeAnalysis(input: VerdictInput): AnalysisResult {
         detail: describeReview(n),
         path: n.path, confidence: n.confidence,
         evidence: evidenceFor(n, graph),
-        consequence: 'Keep unless you can confirm nothing invokes it — the editor cannot see plugin/mod code or macro-built NBT.' });
+        consequence: 'Keep unless you can confirm nothing invokes it, the editor cannot see plugin/mod code or macro-built NBT.' });
     }
   }
 
@@ -184,7 +184,7 @@ export function computeAnalysis(input: VerdictInput): AnalysisResult {
 
   const blindSpots = buildBlindSpots(datapackRefs, datapacks, graph);
   if (meta.overlays.length > 0) {
-    blindSpots.push(`This pack declares ${meta.overlays.length} overlay directory(ies) (${meta.overlays.join(', ')}). Overlay assets load on specific versions and are analysed separately — files inside them are surfaced for review, never flagged for removal.`);
+    blindSpots.push(`This pack declares ${meta.overlays.length} overlay directory(ies) (${meta.overlays.join(', ')}). Overlay assets load on specific versions and are analysed separately, files inside them are surfaced for review, never flagged for removal.`);
   }
 
   const brokenRefs = graph.issues
@@ -203,7 +203,7 @@ function bfs(seeds: string[], nodes: Record<string, AssetNode>): Set<string> {
   const seen = new Set<string>();
   const queue: string[] = [];
   for (const s of seeds) if (nodes[s] && !seen.has(s)) { seen.add(s); queue.push(s); }
-  for (let i = 0; i < queue.length; i++) {  // index cursor — shift() is O(n²) on big packs
+  for (let i = 0; i < queue.length; i++) {  // index cursor, shift() is O(n²) on big packs
     for (const to of nodes[queue[i]]?.refs ?? []) {
       if (!seen.has(to)) { seen.add(to); queue.push(to); }
     }
@@ -222,7 +222,7 @@ interface VerdictCtx {
 
 function assignVerdict(node: AssetNode, ctx: VerdictCtx) {
   const ev: Evidence[] = [];
-  // pack.mcmeta, pack.png, shaders, text — not part of the used/unused model.
+  // pack.mcmeta, pack.png, shaders, text, not part of the used/unused model.
   if (node.kind === 'pack_meta' || node.kind === 'pack_png' || node.kind === 'shader' ||
       node.kind === 'sounds_json' || node.kind === 'lang' || node.kind === 'other' || node.kind === 'text') {
     node.verdict = ctx.isError ? 'error' : 'used';
@@ -246,7 +246,7 @@ function assignVerdict(node: AssetNode, ctx: VerdictCtx) {
       ev.push({ kind: 'convention', detail: ctx.root.reason });
     } else if (ctx.usedCertain) {
       // Also reachable from a certain root (e.g. a custom font pulled in by the
-      // default font's reference provider) — provably used, don't demote it.
+      // default font's reference provider), provably used, don't demote it.
       node.verdict = 'used'; node.confidence = 'certain';
       ev.push({ kind: 'referenced-by', detail: 'Reachable from a certainly-loaded file, in addition to being an entry point itself.' });
     } else {
@@ -288,12 +288,12 @@ function classifyUnreferenced(node: AssetNode) {
     if (!loc) {
       // Non-standard path: not under assets/<ns>/textures/. Most often a pack
       // overlay directory, whose internal references we do not resolve. Never
-      // flag these for removal — keep for review.
+      // flag these for removal, keep for review.
       node.verdict = 'review'; node.confidence = 'low';
-      ev.push({ kind: 'ambiguity', detail: 'This texture is not under a standard assets/<ns>/textures/ path — it may live in a pack overlay directory whose references are resolved separately in-game. Kept for review, not flagged for removal.' });
+      ev.push({ kind: 'ambiguity', detail: 'This texture is not under a standard assets/<ns>/textures/ path, it may live in a pack overlay directory whose references are resolved separately in-game. Kept for review, not flagged for removal.' });
     } else if (loc.namespace !== 'minecraft') {
       node.verdict = 'safe-remove'; node.confidence = 'high';
-      ev.push({ kind: 'note', detail: `Custom namespace "${loc.namespace}" — cannot be a vanilla override, so nothing loads it by convention.` });
+      ev.push({ kind: 'note', detail: `Custom namespace "${loc.namespace}", cannot be a vanilla override, so nothing loads it by convention.` });
     } else if (isStrongOverridePath(loc.path)) {
       // Shouldn't reach here (handled as convention), but guard anyway.
       node.verdict = 'used'; node.confidence = 'certain';
@@ -303,31 +303,31 @@ function classifyUnreferenced(node: AssetNode) {
       // A minecraft-namespace texture whose name we don't positively recognise.
       // Our vanilla manifest has known holes (multi-frame item sprites like
       // clock_04, pre-1.13 blocks/ items/ layouts), and if the name IS vanilla,
-      // vanilla's own model still loads it — so this must never be safe-remove.
+      // vanilla's own model still loads it, so this must never be safe-remove.
       node.verdict = 'review'; node.confidence = 'medium';
-      ev.push({ kind: 'ambiguity', detail: 'Minecraft-namespace texture not in our vanilla manifest — but if it overrides a vanilla texture by a name we do not recognise (animation frames, older layouts), vanilla still loads it. Kept for review, never flagged for removal.' });
+      ev.push({ kind: 'ambiguity', detail: 'Minecraft-namespace texture not in our vanilla manifest, but if it overrides a vanilla texture by a name we do not recognise (animation frames, older layouts), vanilla still loads it. Kept for review, never flagged for removal.' });
     }
   } else if (node.kind === 'texture_meta') {
     // Mirrored to its paired texture in a post-pass; this default only applies
     // to unpaired edge cases. Keep, never remove blindly.
     node.verdict = 'review'; node.confidence = 'medium';
-    ev.push({ kind: 'note', detail: 'Animation metadata — follows its paired texture.' });
+    ev.push({ kind: 'note', detail: 'Animation metadata, follows its paired texture.' });
   } else if (node.kind === 'model') {
     const loc = modelPathToLoc(node.path);
     if (!loc) {
-      // Not under a standard assets/<ns>/models/ path — most often a pack
+      // Not under a standard assets/<ns>/models/ path, most often a pack
       // overlay directory. Never flag those for removal.
       node.verdict = 'review'; node.confidence = 'low';
-      ev.push({ kind: 'ambiguity', detail: 'This model is not under a standard assets/<ns>/models/ path — it may live in a pack overlay directory whose references are resolved separately in-game. Kept for review, not flagged for removal.' });
+      ev.push({ kind: 'ambiguity', detail: 'This model is not under a standard assets/<ns>/models/ path, it may live in a pack overlay directory whose references are resolved separately in-game. Kept for review, not flagged for removal.' });
     } else if (loc.namespace !== 'minecraft') {
       node.verdict = 'safe-remove'; node.confidence = 'high';
       ev.push({ kind: 'note', detail: 'Custom-namespace model reached by no blockstate, item definition, override, or parent link.' });
     } else {
       // Vanilla model names our registry-derived heuristic can miss (door
       // left/right variants, pulling_0 frames, template_*) would still be
-      // rendered by vanilla's own blockstates — never safe-remove on a guess.
+      // rendered by vanilla's own blockstates, never safe-remove on a guess.
       node.verdict = 'review'; node.confidence = 'medium';
-      ev.push({ kind: 'ambiguity', detail: 'Minecraft-namespace model not referenced inside the pack and not at a vanilla model name we positively recognise. If it overrides a vanilla model (multi-part or animation-frame names are easy to miss), vanilla still renders it — kept for review.' });
+      ev.push({ kind: 'ambiguity', detail: 'Minecraft-namespace model not referenced inside the pack and not at a vanilla model name we positively recognise. If it overrides a vanilla model (multi-part or animation-frame names are easy to miss), vanilla still renders it, kept for review.' });
     }
   } else if (node.kind === 'sound') {
     node.verdict = 'review'; node.confidence = 'medium';
@@ -356,7 +356,7 @@ function evidenceFor(node: AssetNode, graph: Graph): Evidence[] {
 
 function describeUnreferenced(n: AssetNode): string {
   const size = n.bytes ? ` (${fmtBytes(n.bytes)})` : '';
-  return `${n.path}${size} is reached by nothing — no model, blockstate, item definition, atlas source, font, particle, equipment, or supplied datapack points at it.`;
+  return `${n.path}${size} is reached by nothing, no model, blockstate, item definition, atlas source, font, particle, equipment, or supplied datapack points at it.`;
 }
 
 function describeReview(n: AssetNode): string {
@@ -373,9 +373,9 @@ function consequenceFor(n: AssetNode): string {
 function buildBlindSpots(datapackRefs: DatapackRef[], datapacks: string[], graph: Graph): string[] {
   const spots: string[] = [];
   if (datapacks.length === 0) {
-    spots.push('No datapacks were provided. Any texture/model/font invoked only by a datapack (item_model, custom_model_data, font) will look unreferenced here — add your datapacks for a complete picture.');
+    spots.push('No datapacks were provided. Any texture/model/font invoked only by a datapack (item_model, custom_model_data, font) will look unreferenced here, add your datapacks for a complete picture.');
   }
-  spots.push('Server plugins (Bukkit/Paper/Spigot) and mods live outside the pack and can reference assets by hardcoded path — the editor cannot see those.');
+  spots.push('Server plugins (Bukkit/Paper/Spigot) and mods live outside the pack and can reference assets by hardcoded path, the editor cannot see those.');
   if (datapackRefs.some((r) => r.value === '(object)')) {
     spots.push('Some datapack custom_model_data values are objects/macros that cannot be fully resolved statically; the affected item entry points are flagged for review rather than confirmed.');
   }

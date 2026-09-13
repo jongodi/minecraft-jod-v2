@@ -413,7 +413,7 @@ export function PixelPainter({ dataUrl, onSave, compact }: any) {
         <span style={{ fontSize: 9, color: DIM, letterSpacing: '2px', textTransform: 'uppercase', flexShrink: 0 }}>Palette</span>
         <div style={{ display: 'flex', gap: 2, flexWrap: 'wrap', flex: 1 }}>
           {palette.map((c, i) => (
-            <div key={i} title={c || 'Empty — click active color to save'}
+            <div key={i} title={c || 'Empty, click active color to save'}
               onClick={() => { if (c) setColor(c); }}
               onContextMenu={(e) => { e.preventDefault(); if (c) { const np = [...palette]; np[i] = ''; setPalette(np); savePaletteStorage(np); } }}
               style={{ width: 16, height: 16, background: c || BG3, border: `1px solid ${c ? c + ' ' : BORDER}`, cursor: c ? 'pointer' : 'default', flexShrink: 0, boxSizing: 'border-box', outline: c === color ? `1px solid ${ACCENT}` : 'none', outlineOffset: 1 }}
@@ -592,7 +592,7 @@ export function PackMetaEditor({ content, onChange }: any) {
     <div style={{ maxWidth: 480 }}>
       <div className="rp-field"><label>Pack format</label><input type="number" value={fmt} onChange={(e) => upd('pack_format', parseInt(e.target.value) || 34)} /></div>
       <div className="rp-field"><label>Description</label><textarea value={desc} onChange={(e) => upd('description', e.target.value)} /></div>
-      <div style={{ fontSize: 11, color: DIM }}>34 = 1.21 · 46 = 1.21.4 (item definitions) · 84 = 26.1 · 88 = 26.2. From 1.21.9 packs use min_format/max_format — edit those in the JSON tab.</div>
+      <div style={{ fontSize: 11, color: DIM }}>34 = 1.21 · 46 = 1.21.4 (item definitions) · 84 = 26.1 · 88 = 26.2. From 1.21.9 packs use min_format/max_format, edit those in the JSON tab.</div>
     </div>
   );
 }

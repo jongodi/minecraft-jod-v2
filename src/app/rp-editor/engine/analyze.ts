@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// Orchestrator — the single entry point the worker (and fallbacks) call.
+// Orchestrator, the single entry point the worker (and fallbacks) call.
 //
 //   parse namespaces → parse pack.mcmeta → build the RP graph
 //   → extract + resolve datapack references into the graph
@@ -102,7 +102,7 @@ function resolveDatapackRefs(graph: Graph, refs: DatapackRef[]): Finding[] {
     } else if (ref.via === 'font') {
       const target = fontLocToPath(ref.value);
       rootWithDatapack(target, ref, `Referenced by a datapack text component font (${ref.pack}).`);
-      // A missing font falls back to default in-game — not an error, so no finding.
+      // A missing font falls back to default in-game, not an error, so no finding.
     } else if (ref.via === 'custom_model_data' && ref.context) {
       // Root the base item's entry point (item definition first, then legacy model).
       const itemDef = itemDefLocToPath(ref.context);

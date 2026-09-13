@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// JOÐcraft Pack Editor — analysis engine types
+// JOÐcraft Pack Editor, analysis engine types
 //
 // The engine is pure, framework-agnostic TypeScript. It takes a normalized
 // snapshot of a resource pack (and optional datapacks) and produces a full
@@ -7,7 +7,7 @@
 //
 // Design principle: NEVER guess. Every verdict carries the evidence that
 // produced it. "Safe to remove" is the highest bar and requires proof that
-// nothing — the RP graph, a vanilla-override path, or any datapack — points
+// nothing, the RP graph, a vanilla-override path, or any datapack, points
 // at the asset. When in doubt, the verdict is "review", never "remove".
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -42,10 +42,10 @@ export type AssetKind =
  * Only `safe-remove` is ever offered as a deletion suggestion.
  */
 export type Verdict =
-  | 'error'       // broken / malformed / orphaned — needs a fix
+  | 'error'       // broken / malformed / orphaned, needs a fix
   | 'used'        // reachable from the graph, a datapack, or a vanilla path
   | 'review'      // no static reference found, but a dynamic one may exist
-  | 'safe-remove';// provably unreferenced — nothing points at it anywhere
+  | 'safe-remove';// provably unreferenced, nothing points at it anywhere
 
 /** Severity used for findings and UI cues. */
 export type Severity = 'error' | 'warning' | 'cleanup' | 'info';
@@ -56,7 +56,7 @@ export type Confidence = 'certain' | 'high' | 'medium' | 'low';
 /**
  * A single piece of evidence. Provenance ("referenced by X") and
  * anti-provenance ("no reference found; here's what we checked") are both
- * evidence — the trail is what makes a verdict trustworthy.
+ * evidence, the trail is what makes a verdict trustworthy.
  */
 export interface Evidence {
   kind:
@@ -78,7 +78,7 @@ export interface Evidence {
   ref?: string;
 }
 
-/** A node in the dependency graph — one real file in the pack. */
+/** A node in the dependency graph, one real file in the pack. */
 export interface AssetNode {
   path: string;          // zip-relative path, canonical key
   kind: AssetKind;
@@ -119,7 +119,7 @@ export interface DatapackRef {
 /**
  * A broken reference that can be repointed. Applying a fix replaces every
  * occurrence of the exact `value` string inside `file` with a new resource
- * location — safe because `value` is a concrete, missing resource location, so
+ * location, safe because `value` is a concrete, missing resource location, so
  * all its occurrences in that file point at the same broken target.
  */
 export interface BrokenRef {
@@ -127,7 +127,7 @@ export interface BrokenRef {
   file: string;
   /** The exact broken resource-location string to replace. */
   value: string;
-  /** What the reference should resolve to — drives the suggestion pool. */
+  /** What the reference should resolve to, drives the suggestion pool. */
   targetKind: 'texture' | 'model' | 'font';
   /** Human label for the reference site, e.g. "texture 'layer0'". */
   context: string;

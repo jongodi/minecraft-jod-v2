@@ -83,7 +83,7 @@ export function GraphView({ analysis, onOpen }: { analysis: AnalysisResult; onOp
   return (
     <div className="rp-scroll">
       <div className="rp-sh">
-        <span className="rp-label">05 — Graph</span>
+        <span className="rp-label">05, Graph</span>
         <h2>Dependency trace</h2>
       </div>
 
@@ -150,7 +150,7 @@ export function GraphView({ analysis, onOpen }: { analysis: AnalysisResult; onOp
       </div>
 
       <div style={{ marginTop: 12, fontSize: '0.7rem', color: 'var(--ink-dim)' }}>
-        Tracing <b style={{ color: 'var(--ink)' }}>{short(focus!)}</b> — {node.usedBy.length} dependent{node.usedBy.length !== 1 ? 's' : ''}, {node.refs.length} direct dependenc{node.refs.length !== 1 ? 'ies' : 'y'}.
+        Tracing <b style={{ color: 'var(--ink)' }}>{short(focus!)}</b>, {node.usedBy.length} dependent{node.usedBy.length !== 1 ? 's' : ''}, {node.refs.length} direct dependenc{node.refs.length !== 1 ? 'ies' : 'y'}.
         <button className="rp-btn sm" style={{ marginLeft: 10 }} onClick={() => onOpen(focus!)}>Open in editor</button>
       </div>
     </div>

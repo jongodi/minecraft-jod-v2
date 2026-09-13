@@ -53,7 +53,7 @@ export function candidatesFor(targetKind: BrokenRef['targetKind'], analysis: Ana
       if (loc) out.push({ loc: fmtLoc(loc), path: loc.path, name: loc.path.split('/').pop() ?? loc.path });
     }
   } else {
-    // texture or font bitmap — both draw from the texture pool.
+    // texture or font bitmap, both draw from the texture pool.
     for (const p of analysis.byKind.texture) {
       const loc = texturePathToLoc(p);
       if (!loc) continue;

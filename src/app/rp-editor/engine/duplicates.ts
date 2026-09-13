@@ -6,7 +6,7 @@
 //         group two different textures as "identical".
 // Near:   perceptual average-hash (aHash) within a small Hamming distance.
 //
-// Near-duplicates are reported but NEVER auto-merged — a 1px difference can be
+// Near-duplicates are reported but NEVER auto-merged, a 1px difference can be
 // intentional. The report says so.
 // ─────────────────────────────────────────────────────────────────────────────
 

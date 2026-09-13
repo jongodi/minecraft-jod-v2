@@ -70,7 +70,7 @@ const jukeKey    = (id: string) => `jukebox_song.minecraft.${id}`;
 const sndKey     = (id: string) => `music_disc.${id}`;
 const sndOggPath = (ref: string) => `assets/minecraft/sounds/${ref}.ogg`;
 
-// Minecraft and most MC tooling allow // and /* */ comments in JSON files —
+// Minecraft and most MC tooling allow // and /* */ comments in JSON files -
 // strip them before passing to JSON.parse so we don't silently return {}
 function stripJsonComments(s: string): string {
   return s
@@ -261,7 +261,7 @@ function ColorTextField({ value, onChange, placeholder }: { value: string; onCha
   const [open, setOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Insert §code at cursor, or wrap selected text — called from palette buttons.
+  // Insert §code at cursor, or wrap selected text, called from palette buttons.
   // Buttons use onMouseDown+preventDefault so the input keeps focus and selection.
   const insertCode = (code: string) => {
     const el = inputRef.current;
@@ -476,7 +476,7 @@ export default function DiscsView({ fileData, filePaths, onUpdateFiles, onDelete
   const texInputRef   = useRef<HTMLInputElement>(null);
   const soundInputRef = useRef<HTMLInputElement>(null);
 
-  // Derived pack state — filePaths is included so the memo recomputes when files change
+  // Derived pack state, filePaths is included so the memo recomputes when files change
   // (fileData is passed as a mutable ref value; the reference alone isn't reliable)
   const soundsJson = useMemo(() => parseSoundsJson(fileData, filePaths), [fileData, filePaths]);
   const langJson   = useMemo(() => parseLangFile(fileData, filePaths),   [fileData, filePaths]);
@@ -545,7 +545,7 @@ export default function DiscsView({ fileData, filePaths, onUpdateFiles, onDelete
     e.target.value = '';
   };
 
-  // Sound file upload — also detects duration asynchronously
+  // Sound file upload, also detects duration asynchronously
   const handleSoundUpload = (e: any) => {
     const f = e.target.files?.[0]; if (!f) return;
     const reader = new FileReader();
@@ -571,7 +571,7 @@ export default function DiscsView({ fileData, filePaths, onUpdateFiles, onDelete
     // 1. Texture
     if (editTexUrl) updates[texPath(selectedId)] = editTexUrl;
 
-    // 2. Model — only needed for truly custom discs (vanilla models already exist in the game)
+    // 2. Model, only needed for truly custom discs (vanilla models already exist in the game)
     if (disc?.isCustom && !fileData[modelPath(selectedId)]) {
       updates[modelPath(selectedId)] = makeDiscModel(selectedId);
     }
@@ -584,7 +584,7 @@ export default function DiscsView({ fileData, filePaths, onUpdateFiles, onDelete
     if (editJukeTitle.trim()) lang[jukeKey(selectedId)]  = editJukeTitle.trim();
     updates[lp] = JSON.stringify(lang, null, 2);
 
-    // 4. sounds.json — override the sound event
+    // 4. sounds.json, override the sound event
     const sndRef = editSoundRef.trim() || `records/${selectedId}`;
     const newSounds: Record<string,any> = { ...soundsJson };
     newSounds[sndKey(selectedId)] = { sounds: [{ name: sndRef, stream: true }] };
@@ -612,7 +612,7 @@ export default function DiscsView({ fileData, filePaths, onUpdateFiles, onDelete
     const sndRef = getSoundRef(selectedId, soundsJson);
     if (sndRef && fileData[sndOggPath(sndRef)]) toDelete.push(sndOggPath(sndRef));
 
-    // Patch sounds.json and lang — remove this disc's entries
+    // Patch sounds.json and lang, remove this disc's entries
     const newSounds = { ...soundsJson };
     delete newSounds[sndKey(selectedId)];
 
@@ -767,7 +767,7 @@ export default function DiscsView({ fileData, filePaths, onUpdateFiles, onDelete
                 {hasOverride(disc.id) ? (
                   <span style={{ fontSize: 9, padding: '2px 7px', border: `1px solid ${ACCENT}44`, color: ACCENT, letterSpacing: '1px' }}>● OVERRIDDEN IN PACK</span>
                 ) : (
-                  <span style={{ fontSize: 9, padding: '2px 7px', border: `1px solid ${BORDER}`, color: DIM, letterSpacing: '1px' }}>○ VANILLA — no overrides yet</span>
+                  <span style={{ fontSize: 9, padding: '2px 7px', border: `1px solid ${BORDER}`, color: DIM, letterSpacing: '1px' }}>○ VANILLA, no overrides yet</span>
                 )}
                 {saved && (
                   <span style={{ fontSize: 9, padding: '2px 7px', border: `1px solid ${ACCENT}`, color: ACCENT, letterSpacing: '1px', background: `${ACCENT}10` }}>✓ SAVED TO PACK</span>
@@ -794,7 +794,7 @@ export default function DiscsView({ fileData, filePaths, onUpdateFiles, onDelete
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <div style={{ fontSize: 10, color: TEXT2, lineHeight: 1.5 }}>
                   {currentTexUrl
-                    ? `Custom texture${editTexUrl ? ' (not yet saved)' : ' — in pack'}`
+                    ? `Custom texture${editTexUrl ? ' (not yet saved)' : ', in pack'}`
                     : 'No custom texture. The vanilla disc texture will show in-game.'}
                 </div>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
@@ -829,7 +829,7 @@ export default function DiscsView({ fileData, filePaths, onUpdateFiles, onDelete
             </Fld>
             <Fld
               label={`Jukebox "Now Playing" title (1.21+)`}
-              hint={`Lang key: ${jukeKey(disc.id)} — leave blank to keep vanilla / not override`}>
+              hint={`Lang key: ${jukeKey(disc.id)}, leave blank to keep vanilla / not override`}>
               <ColorTextField value={editJukeTitle} onChange={v => { setEditJukeTitle(v); setSaved(false); }} placeholder="e.g. Artist Name - Song Title"/>
             </Fld>
             <div style={{ fontSize: 10, color: DIM, background: BG3, padding: '7px 10px', border: `1px solid ${BORDER}`, lineHeight: 1.7 }}>
@@ -974,7 +974,7 @@ export default function DiscsView({ fileData, filePaths, onUpdateFiles, onDelete
               </button>
             )}
             {saved && (
-              <span style={{ fontSize: 11, color: ACCENT }}>✓ Saved — export zip to use the pack</span>
+              <span style={{ fontSize: 11, color: ACCENT }}>✓ Saved, export zip to use the pack</span>
             )}
           </div>
 

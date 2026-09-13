@@ -6,7 +6,7 @@ export interface PreviewLayer { key: string; label: string; dataUrl: string | nu
 
 /**
  * Composites stacked item-model layers (layer0 at the bottom) into a single
- * pixelated preview, with per-layer visibility toggles — so you can see exactly
+ * pixelated preview, with per-layer visibility toggles, so you can see exactly
  * how an item renders with its overlay, and isolate a layer while editing.
  */
 export function LayeredPreview({ layers, size = 240 }: { layers: PreviewLayer[]; size?: number }) {

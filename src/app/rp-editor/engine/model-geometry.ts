@@ -1,12 +1,12 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Model geometry resolution for the 3D viewer
 //
-// A model rarely carries its own `elements` — it inherits them from a parent
+// A model rarely carries its own `elements`, it inherits them from a parent
 // (block/cube_all → block/cube, orientable, cross, …). The old viewer only read
 // the selected model, so any inherited model rendered nothing. This resolves the
 // full parent chain (pack models first, then bundled vanilla templates), merging
 // texture variables child-wins and taking elements from the nearest ancestor
-// that defines them — exactly how Minecraft assembles a model.
+// that defines them, exactly how Minecraft assembles a model.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { vanillaModel } from './vanilla-models';

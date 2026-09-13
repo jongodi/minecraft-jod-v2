@@ -145,7 +145,7 @@ export function buildGraph(files: RawFile[]): Graph {
   }
 
   const casingSeen = new Set<string>();
-  /** A reference resolved only by ignoring case — breaks on case-sensitive (Linux) servers. */
+  /** A reference resolved only by ignoring case, breaks on case-sensitive (Linux) servers. */
   function casingIssue(referrer: string, ref: string, actual: string) {
     const k = referrer + '|' + ref;
     if (casingSeen.has(k)) return;
@@ -190,7 +190,7 @@ export function buildGraph(files: RawFile[]): Graph {
     const target = textureLocToPath(value);
     const hit = findFile(target);
     if (hit) return { status: 'found', path: hit.path, casing: hit.casing };
-    // Synthesized at runtime by a paletted_permutations atlas source — valid.
+    // Synthesized at runtime by a paletted_permutations atlas source, valid.
     if (generatedSprites.has(`${namespace}:${path.replace(/^textures\//, '')}`)) return { status: 'vanilla' };
     // Absent: minecraft namespace → vanilla default (inherited, not broken).
     if (namespace === 'minecraft') return { status: 'vanilla' };
@@ -322,7 +322,7 @@ export function buildGraph(files: RawFile[]): Graph {
       path: bp, kind: ns === 'minecraft' ? 'certain' : 'uncertain',
       reason: ns === 'minecraft'
         ? 'Blockstate overrides a vanilla block (loaded by the game for that block id).'
-        : 'Custom-namespace blockstate — assumes a mod/plugin registers this block.',
+        : 'Custom-namespace blockstate, assumes a mod/plugin registers this block.',
     });
     const modelRefs: string[] = [];
     const collect = (v: any) => {
@@ -363,7 +363,7 @@ export function buildGraph(files: RawFile[]): Graph {
       path: ip, kind: vanilla ? 'certain' : 'uncertain',
       reason: vanilla
         ? `Item definition overrides the vanilla item "${name}".`
-        : `Custom item model "${loc?.namespace}:${name}" — used only if a datapack/plugin sets it via the item_model component.`,
+        : `Custom item model "${loc?.namespace}:${name}", used only if a datapack/plugin sets it via the item_model component.`,
     });
     const modelRefs: string[] = [];
     const cmdEntries: CmdEntry[] = [];
@@ -430,7 +430,7 @@ export function buildGraph(files: RawFile[]): Graph {
 
   // ── Vanilla model overrides (convention roots) ──────────────────────────────
   // A minecraft-namespace model at models/block|item/<vanilla-name> overrides a
-  // vanilla model that vanilla's own blockstate/item still points at — so it is
+  // vanilla model that vanilla's own blockstate/item still points at, so it is
   // used even with NO in-pack reference. Rooting these prevents a false-unused
   // for packs that replace vanilla models directly (a classic trap).
   for (const mp of byKind.model) {
@@ -443,7 +443,7 @@ export function buildGraph(files: RawFile[]): Graph {
     const base = loc.path.replace(/^item\//, '').replace(/^block\//, '');
     // A vanilla-named model (by the block/item registry, or a multi-variant name
     // whose base block exists, e.g. oak_stairs_inner) overrides a default that
-    // vanilla still renders — used-by-convention even with no in-pack reference.
+    // vanilla still renders, used-by-convention even with no in-pack reference.
     const baseBlock = base.replace(/_(inner|outer|top|bottom|side|open|on|lit|horizontal|vertical|\d+)$/g, '');
     if ((isItem && isVanillaItem(base)) || (isBlock && (isVanillaBlock(base) || isVanillaBlock(baseBlock)))) {
       roots.set(mp, { path: mp, kind: 'certain',
@@ -465,7 +465,7 @@ export function buildGraph(files: RawFile[]): Graph {
       path: fp, kind: vanillaFont ? 'certain' : 'uncertain',
       reason: vanillaFont
         ? `Vanilla font "${fname}" (loaded by the game).`
-        : `Custom font "${fname}" — used only if a text component references it via "font".`,
+        : `Custom font "${fname}", used only if a text component references it via "font".`,
     });
     const providers = Array.isArray(json?.providers) ? json.providers : [];
     for (const prov of providers) {
@@ -508,7 +508,7 @@ export function buildGraph(files: RawFile[]): Graph {
       path: pp, kind: vanillaParticle ? 'certain' : 'uncertain',
       reason: vanillaParticle
         ? `Vanilla particle "${pname}" definition (loaded by the game).`
-        : `Custom particle "${pname}" — requires a mod to be emitted; cannot be verified here.`,
+        : `Custom particle "${pname}", requires a mod to be emitted; cannot be verified here.`,
     });
     const texs = Array.isArray(json?.textures) ? json.textures : [];
     for (const t of texs) {
@@ -539,7 +539,7 @@ export function buildGraph(files: RawFile[]): Graph {
       path: ep, kind: vanillaEquip ? 'certain' : 'uncertain',
       reason: vanillaEquip
         ? `Vanilla equipment asset "${ename}" (worn armor/elytra overlay).`
-        : `Custom equipment "${ename}" — used only if an item's equippable component points at it (datapack).`,
+        : `Custom equipment "${ename}", used only if an item's equippable component points at it (datapack).`,
     });
     const layers = json?.layers && typeof json.layers === 'object' ? json.layers : {};
     for (const [layerType, arr] of Object.entries(layers)) {
@@ -579,7 +579,7 @@ export function buildGraph(files: RawFile[]): Graph {
     for (const src of sources) {
       if (!src || typeof src !== 'object') continue;
       if (src.type === 'directory' && typeof src.source === 'string') {
-        // Stitches EVERY texture under textures/<source>/ in EVERY namespace —
+        // Stitches EVERY texture under textures/<source>/ in EVERY namespace -
         // the game's resource listing spans namespaces, so restricting this to
         // the atlas file's own namespace would falsely orphan cross-ns sprites.
         const dirRe = new RegExp(`^assets/[^/]+/textures/${escapeRe(src.source.replace(/\/$/, ''))}/`);
@@ -655,7 +655,7 @@ export function buildGraph(files: RawFile[]): Graph {
         const type = typeof s === 'object' ? s?.type : undefined;
         if (typeof name !== 'string' || type === 'event') continue;
         // A namespaced name resolves in ITS namespace; a bare name is looked up
-        // in this file's namespace and then minecraft (safe direction — never
+        // in this file's namespace and then minecraft (safe direction, never
         // report an error for a sound that actually resolves).
         const soundNs = name.includes(':') ? parseLoc(name).namespace : null;
         const candidates = soundNs
@@ -664,7 +664,7 @@ export function buildGraph(files: RawFile[]): Graph {
         const hit = candidates.map((c) => findFile(c)).find(Boolean);
         if (hit) addEdge(sp, hit.path);
         else if (soundNs && soundNs !== 'minecraft') {
-          // Only a custom namespace is provably broken — vanilla ships the
+          // Only a custom namespace is provably broken, vanilla ships the
           // minecraft-namespace sounds, so those may resolve outside the pack.
           issues.push({ severity: 'error', category: 'missing-sound',
             title: 'sounds.json points at a missing file',
@@ -676,7 +676,7 @@ export function buildGraph(files: RawFile[]): Graph {
 
   // ── lang files are convention roots ─────────────────────────────────────────
   for (const lp of byKind.lang) {
-    roots.set(lp, { path: lp, kind: 'certain', reason: 'Language file — loaded by the game for translations.' });
+    roots.set(lp, { path: lp, kind: 'certain', reason: 'Language file, loaded by the game for translations.' });
     if (parseErrors.has(lp)) {
       issues.push({ severity: 'error', category: 'invalid-json', title: 'Malformed language file',
         detail: parseErrors.get(lp)!, path: lp });
@@ -690,7 +690,7 @@ export function buildGraph(files: RawFile[]): Graph {
     const ns = loc.namespace;
     if (ns === 'minecraft') {
       if (isStrongOverridePath(loc.path)) {
-        markConvention(tp, `Sits at a hardcoded vanilla path (textures/${loc.path.split('/')[0]}/…) — Minecraft loads it directly.`);
+        markConvention(tp, `Sits at a hardcoded vanilla path (textures/${loc.path.split('/')[0]}/…), Minecraft loads it directly.`);
       } else if (isKnownVanillaTexture(loc.path)) {
         markConvention(tp, `Overrides the vanilla texture "${loc.path}" (vanilla's own model still points here).`);
       }

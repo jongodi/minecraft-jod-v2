@@ -17,13 +17,13 @@ import type { DatapackInput, DatapackRef } from './types';
 
 const ITEM_MODEL_RE = /(?:minecraft:)?item_model\s*[=:]\s*"?([a-z0-9_.-]+:[a-z0-9_./-]+|[a-z0-9_./-]+)"?/gi;
 // JSON text components quote the key; SNBT components (tellraw, item names) may
-// not quote either side — accept both.
+// not quote either side, accept both.
 const FONT_RE = /"?font"?\s*:\s*["']?([a-z0-9_.-]+:[a-z0-9_./-]+|[a-z0-9_./-]+)["']?/gi;
 // custom_model_data as a component: int (legacy) or object (1.21.4+).
 const CMD_INT_RE = /(?:minecraft:)?custom_model_data\s*[=:]\s*(\d+)\b/gi;
 const CMD_OBJ_RE = /(?:minecraft:)?custom_model_data\s*[=:]\s*\{/gi;
 // Base item preceding a component block: `minecraft:diamond_sword[` or
-// `music_disc_13[` — item ids can contain digits.
+// `music_disc_13[`, item ids can contain digits.
 const ITEM_WITH_COMPONENTS_RE = /\b(?:minecraft:)?([a-z0-9_]+)\s*\[/gi;
 
 /** A single deduped external reference plus its provenance. */
@@ -68,7 +68,7 @@ function scanText(text: string, pack: string, file: string, out: DatapackRef[]) 
 
   FONT_RE.lastIndex = 0;
   while ((m = FONT_RE.exec(text))) {
-    // Skip the well-known vanilla fonts referenced in text — still record, the
+    // Skip the well-known vanilla fonts referenced in text, still record, the
     // resolver will decide (a pack may legitimately override default/alt).
     out.push({ pack, file, via: 'font', value: m[1] });
   }
@@ -124,7 +124,7 @@ export function extractDatapackRefs(datapacks: DatapackInput[]): ExtractedRefs {
         try {
           scanJson(JSON.parse(f.text), dp.label, f.path, refs);
         } catch {
-          // Malformed datapack JSON — scan as raw text so we still catch refs.
+          // Malformed datapack JSON, scan as raw text so we still catch refs.
           scanText(f.text, dp.label, f.path, refs);
         }
       }

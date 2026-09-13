@@ -2,18 +2,18 @@
 // Vanilla knowledge base
 //
 // Used to distinguish three things the raw graph cannot:
-//   1. "vanilla default" vs "broken"     — a minecraft: ref absent from the pack
+//   1. "vanilla default" vs "broken"    , a minecraft: ref absent from the pack
 //      is inherited from vanilla, not broken. A CUSTOM-namespace ref absent from
 //      the pack IS broken.
-//   2. "used-by-convention override"      — a file at a vanilla path replaces a
+//   2. "used-by-convention override"     , a file at a vanilla path replaces a
 //      default and is loaded by hardcoded path, so it is used even with no ref.
-//   3. "overrides a vanilla item/block"   — an item definition / model / texture
+//   3. "overrides a vanilla item/block"  , an item definition / model / texture
 //      named after a vanilla asset is wired up by convention.
 //
 // The asset lists come from a real, generated manifest (misode/mcmeta, current
 // release). Every list here is UPGRADE-ONLY: membership can only move a verdict
 // toward "used"/"keep". An incomplete/stale list therefore causes, at worst, an
-// over-cautious "review" — never a dangerous false "safe to remove".
+// over-cautious "review", never a dangerous false "safe to remove".
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { normTex } from './resloc';
@@ -90,7 +90,7 @@ export function isVanillaBlock(name: string): boolean {
 /**
  * Is this texture (by relative path, e.g. block/stone, item/diamond_sword) a
  * real vanilla texture? A pack file at this path overrides the vanilla default,
- * which vanilla's own model still loads — so it is used even with no pack ref.
+ * which vanilla's own model still loads, so it is used even with no pack ref.
  */
 export function isKnownVanillaTexture(texRelPath: string): boolean {
   return isVanillaTexturePath(normTex(texRelPath));

@@ -3,12 +3,12 @@
 //
 // Runs in either a Web Worker or the window (createImageBitmap + OffscreenCanvas
 // exist in both). Produces:
-//   • fileData  — data URLs for images/audio, raw text for JSON/text (the UI's
+//   • fileData , data URLs for images/audio, raw text for JSON/text (the UI's
 //                 editable snapshot)
-//   • rawFiles  — the engine's input: text for JSON, {w,h,hash,ahash} for images
+//   • rawFiles , the engine's input: text for JSON, {w,h,hash,ahash} for images
 //
 // Exact-dup hash is FNV-1a over the decompressed file bytes (so identical files
-// group together; identical *pixels* re-encoded differently do not — the report
+// group together; identical *pixels* re-encoded differently do not, the report
 // wording reflects that). aHash is an 8×8 grayscale average hash for near-dupes.
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -122,7 +122,7 @@ export async function extractZip(
           fileData[path] = text;
           rawFiles.push({ path, kind, isImage: false, bytes: text.length, text });
         } else {
-          // Unknown binary (unihex zips, ttf fonts, …) — carry the bytes as a data
+          // Unknown binary (unihex zips, ttf fonts, …), carry the bytes as a data
           // URL so the file survives a round-trip through Export .zip unchanged.
           const bytes = await entry.async('uint8array');
           fileData[path] = `data:application/octet-stream;base64,${bytesToBase64(bytes)}`;

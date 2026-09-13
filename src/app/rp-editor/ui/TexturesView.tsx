@@ -18,7 +18,7 @@ const ModelViewer3D = dynamic(() => import('../model-viewer-3d'), {
 type Filter = 'all' | 'overlay' | 'layered' | 'no-model';
 
 /**
- * A synthesized model for a texture nothing in the pack references — so
+ * A synthesized model for a texture nothing in the pack references, so
  * texture-only overrides still get a 3D view. Signs, hanging signs and beds map
  * to their real vanilla geometry (26.x turned them into block models); any other
  * block texture falls back to a plain cube.
@@ -37,7 +37,7 @@ function synthModelFor(sel: string): { json: any; note: string } | null {
     };
   }
   m = sel.match(/^assets\/([^/]+)\/textures\/(block\/[a-z0-9_]+)\.png$/i);
-  if (m) return { json: { parent: 'minecraft:block/cube_all', textures: { all: `${m[1]}:${m[2]}` } }, note: 'no model in pack — shown on a cube' };
+  if (m) return { json: { parent: 'minecraft:block/cube_all', textures: { all: `${m[1]}:${m[2]}` } }, note: 'no model in pack, shown on a cube' };
   return null;
 }
 
@@ -106,11 +106,11 @@ export function TexturesView({
 
   const overlay = sel ? overlayForTexture(sel, analysis) : null;
   const model = sel ? modelForTexture(sel, analysis) : null;
-  const isLayeredItem = !!overlay;                 // generated item — edit via 2D layers
+  const isLayeredItem = !!overlay;                 // generated item, edit via 2D layers
   const entityTpl = sel && !isLayeredItem ? entityTemplateFor(normTex(sel)) : null;
   // Last resort: synthesize a model so texture-only overrides still get 3D.
   const synth = sel && !isLayeredItem && !model && !entityTpl ? synthModelFor(sel) : null;
-  // Editable 3D for block textures (any model — the viewer resolves the parent
+  // Editable 3D for block textures (any model, the viewer resolves the parent
   // chain), entity textures (templates), or synthesized vanilla geometry.
   const show3D = !isLayeredItem && (!!model || !!entityTpl || !!synth);
   const baseTexPath = overlay?.layers.find((l) => l.index === 0)?.path ?? sel;
@@ -170,7 +170,7 @@ export function TexturesView({
               <div style={{ fontSize: '0.8rem', color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sel.split('/').pop()}</div>
               <div className="rp-path" style={{ fontSize: '0.58rem', marginTop: 2 }}>{sel.replace(/^assets\/[^/]+\//, '')}</div>
             </div>
-            <button className="rp-btn sm" title={expanded ? 'Shrink panel' : 'Expand panel — bigger 3D view and painter'} onClick={() => setExpanded((e) => !e)}>{expanded ? '⇥ Shrink' : '⤢ Expand'}</button>
+            <button className="rp-btn sm" title={expanded ? 'Shrink panel' : 'Expand panel, bigger 3D view and painter'} onClick={() => setExpanded((e) => !e)}>{expanded ? '⇥ Shrink' : '⤢ Expand'}</button>
             <button className="rp-btn sm" onClick={() => setSel(null)}>✕</button>
           </div>
           <div className="rp-drawer-body">
@@ -192,7 +192,7 @@ export function TexturesView({
                   {model ? (
                     <>model: <a className="src" style={{ color: 'var(--accent)', cursor: 'pointer' }} onClick={() => onOpenInEditor(model)}>{model.split('/').pop()}</a></>
                   ) : entityTpl ? (
-                    <>approximate {entityTpl.name} preview — the game renders these with a built-in model, not a pack file</>
+                    <>approximate {entityTpl.name} preview, the game renders these with a built-in model, not a pack file</>
                   ) : (
                     synth!.note
                   )}
@@ -231,13 +231,13 @@ export function TexturesView({
               ) : (
                 <div style={{ fontSize: '0.68rem', color: 'var(--ink-dim)', lineHeight: 1.5 }}>
                   Only textures used as a layer of a generated item model can take stacked overlays.
-                  {show3D ? ' This one renders in 3D — paint it directly in the preview above.' : ''}
+                  {show3D ? ' This one renders in 3D, paint it directly in the preview above.' : ''}
                 </div>
               )}
             </Fold>
 
             {/* ── Pixel painter ── */}
-            <Fold title={`Pixel painter${activeLayer && activeLayer !== sel ? ` — ${overlay?.layers.find((l) => l.path === activeLayer)?.key ?? 'layer'}` : ''}`}>
+            <Fold title={`Pixel painter${activeLayer && activeLayer !== sel ? `, ${overlay?.layers.find((l) => l.path === activeLayer)?.key ?? 'layer'}` : ''}`}>
               {activeLayer && fileData[activeLayer] ? (
                 <PixelPainter key={activeLayer + revision} compact dataUrl={fileData[activeLayer]} onSave={(d: string) => onSaveTexture(activeLayer, d)} />
               ) : (

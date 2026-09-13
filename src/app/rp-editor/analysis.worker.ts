@@ -2,7 +2,7 @@
 // Analysis Web Worker
 //
 // Decompresses the resource pack (and any datapacks), decodes textures for
-// perceptual hashing, and runs the full dependency analysis — all off the main
+// perceptual hashing, and runs the full dependency analysis, all off the main
 // thread so the UI stays responsive on multi-hundred-MB packs. Progress is
 // streamed back phase by phase.
 // ─────────────────────────────────────────────────────────────────────────────

@@ -38,7 +38,7 @@ export function DatapacksView({
   return (
     <div className="rp-scroll">
       <div className="rp-sh">
-        <span className="rp-label">04 — Datapacks</span>
+        <span className="rp-label">04, Datapacks</span>
         <h2>Coverage</h2>
       </div>
 
@@ -56,7 +56,7 @@ export function DatapacksView({
           <div style={{ fontSize: '0.7rem', color: 'var(--ink-dim)', lineHeight: 1.6, maxWidth: 520, margin: '0 auto' }}>
             Drop datapack <b>.zip</b> files here. The editor scans functions, loot tables, recipes and advancements for
             <code> item_model</code>, <code> custom_model_data</code> and <code> font</code> references, then resolves them
-            through this pack — so a texture used only by a datapack is never mis-flagged as unused.
+            through this pack, so a texture used only by a datapack is never mis-flagged as unused.
           </div>
           <input ref={inputRef} type="file" accept=".zip" multiple style={{ display: 'none' }} onChange={(e) => handleFiles(e.target.files)} />
         </div>

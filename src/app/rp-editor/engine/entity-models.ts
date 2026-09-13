@@ -2,7 +2,7 @@
 // Entity-model templates
 //
 // Beds, chests, boats, shulker boxes, signs and the like are rendered by
-// hardcoded geometry in the game — there is no model JSON in the pack, so their
+// hardcoded geometry in the game, there is no model JSON in the pack, so their
 // entity/… textures otherwise have no 3D view. These templates give each a
 // representative box model (element geometry, in the same 0-16 space as normal
 // models) so the texture can be previewed and painted in 3D.
@@ -25,7 +25,7 @@ export interface EntityTemplate {
 const uvFn = (tw: number, th: number) => (x0: number, y0: number, x1: number, y1: number) =>
   [(x0 / tw) * 16, (y0 / th) * 16, (x1 / tw) * 16, (y1 / th) * 16];
 
-// ── Chest (single) — 64×64 ────────────────────────────────────────────────────
+// ── Chest (single), 64×64 ────────────────────────────────────────────────────
 function chest(): any[] {
   const uv = uvFn(64, 64);
   return [
@@ -56,7 +56,7 @@ function chest(): any[] {
   ];
 }
 
-// ── Bed (head piece) — 64×64 ──────────────────────────────────────────────────
+// ── Bed (head piece), 64×64 ──────────────────────────────────────────────────
 function bed(): any[] {
   const uv = uvFn(64, 64);
   return [
@@ -83,7 +83,7 @@ function bed(): any[] {
   ];
 }
 
-// ── Shulker box — 64×64 ───────────────────────────────────────────────────────
+// ── Shulker box, 64×64 ───────────────────────────────────────────────────────
 function shulker(): any[] {
   const uv = uvFn(64, 64);
   return [
@@ -102,12 +102,12 @@ function shulker(): any[] {
   ];
 }
 
-// ── Boat / chest boat — reconstructs the vanilla BoatModel ────────────────────
+// ── Boat / chest boat, reconstructs the vanilla BoatModel ────────────────────
 // Boats have no model JSON in a pack (the game renders them from a hardcoded
 // entity model), so we rebuild the hull from the known part layout, read off the
 // vanilla boat texture (128×64: a bottom plank, four walls, two paddles). A chest
-// boat's texture is 128×128 — the same hull art fills its top 128×64 unchanged,
-// with a chest added below — so both share this hull and differ only in which
+// boat's texture is 128×128, the same hull art fills its top 128×64 unchanged,
+// with a chest added below, so both share this hull and differ only in which
 // `uvFn` (declared canvas) their faces are scaled against.
 
 // Minecraft entity box-UV unwrap for a (w×h×d)-pixel cube at texture offset (u,v),
@@ -123,7 +123,7 @@ function boxUv(uv: (x0: number, y0: number, x1: number, y1: number) => number[],
   };
 }
 
-// World scale for the boat (pixels → model units) — keeps the ~28-long hull in view.
+// World scale for the boat (pixels → model units), keeps the ~28-long hull in view.
 const BOAT_S = 0.5;
 
 // A boat part: a (w×h×d)-pixel cube centred at world `c`, rotated in place. UVs
@@ -138,7 +138,7 @@ function boatPart(uv: (x0: number, y0: number, x1: number, y1: number) => number
 }
 
 // The hull, shared by both plain and chest boats. `uv` picks which declared
-// canvas (128×64 vs 128×128) the raw pixel offsets below are scaled against —
+// canvas (128×64 vs 128×128) the raw pixel offsets below are scaled against -
 // the offsets themselves are unchanged, since the hull art occupies the same
 // top-left 128×64 region of both textures.
 const FLOOR_Y = 3.4, WALL_Y = 4.8, FLOOR_HALF_DEPTH = 4; // = (16 * BOAT_S) / 2, the rotated floor's Z half-extent
@@ -164,9 +164,9 @@ function boat(): any[] {
 }
 
 // The chest sub-image lives in the lower half of the 128×128 chest-boat texture
-// (below the shared hull art), laid out as two stacked boxes — a short lid and a
-// taller body — each with their own up/down + 4-side unwrap, read directly off
-// the vanilla texture's pixel grid (not hand-derived — measured off the actual
+// (below the shared hull art), laid out as two stacked boxes, a short lid and a
+// taller body, each with their own up/down + 4-side unwrap, read directly off
+// the vanilla texture's pixel grid (not hand-derived, measured off the actual
 // asset, since it doesn't follow the single-chest layout used by chest/normal.png).
 function chestBoat(): any[] {
   const uv = uvFn(128, 128);
@@ -191,7 +191,7 @@ function chestBoat(): any[] {
   return [...boatHull(uv), lid, body];
 }
 
-// ── Double chest halves — 64×64 each ──────────────────────────────────────────
+// ── Double chest halves, 64×64 each ──────────────────────────────────────────
 // Each half is a 15-wide box; the seam face has no art in the texture (it butts
 // against the other half), so that face is simply omitted. Layout read off the
 // vanilla normal_left/normal_right textures: lid unwrap at (0,0) 15×5×14, body
@@ -217,7 +217,7 @@ function chestHalf(side: 'left' | 'right'): any[] {
   ];
 }
 
-// ── Minecart — 64×32 ──────────────────────────────────────────────────────────
+// ── Minecart, 64×32 ──────────────────────────────────────────────────────────
 // Floor 20×16×2 at (0,10) laid flat; four walls 16×8×2 sharing the art at (0,0).
 function minecart(): any[] {
   const uv = uvFn(64, 32);
@@ -237,7 +237,7 @@ function minecart(): any[] {
   ];
 }
 
-// ── Bell — 32×32 (bell_body.png) ─────────────────────────────────────────────
+// ── Bell, 32×32 (bell_body.png) ─────────────────────────────────────────────
 // Body 6×7×6 at (0,0); the wider bottom lip 8×2×8 at (0,13).
 function bell(): any[] {
   const uv = uvFn(32, 32);
@@ -247,7 +247,7 @@ function bell(): any[] {
   ];
 }
 
-// ── Banner — 64×64 (banner/base.png holds only the cloth, 20×40×1) ───────────
+// ── Banner, 64×64 (banner/base.png holds only the cloth, 20×40×1) ───────────
 function banner(): any[] {
   const uv = uvFn(64, 64);
   const S = 0.36, w = 20 * S, h = 40 * S, d = Math.max(1 * S, 0.3);
@@ -257,7 +257,7 @@ function banner(): any[] {
   ];
 }
 
-// ── Legacy standing sign — 64×32 (entity/signs/<wood>.png, pre-26.x packs) ───
+// ── Legacy standing sign, 64×32 (entity/signs/<wood>.png, pre-26.x packs) ───
 // Board 24×12×2 at (0,0); post 2×14×2 at (0,14). (26.x signs are block models.)
 function legacySign(): any[] {
   const uv = uvFn(64, 32);
@@ -269,7 +269,7 @@ function legacySign(): any[] {
   ];
 }
 
-// ── Legacy hanging sign — 64×32 (entity/signs/hanging/<wood>.png) ─────────────
+// ── Legacy hanging sign, 64×32 (entity/signs/hanging/<wood>.png) ─────────────
 // Top plank 16×2×4 at (0,0); two flat chains 3×6 at (0,6) and (6,6); board
 // 14×10×2 at (0,12). Chains are zero-thickness planes, like vanilla's model.
 function legacyHangingSign(): any[] {

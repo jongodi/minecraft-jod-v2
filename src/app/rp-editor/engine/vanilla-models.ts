@@ -1,5 +1,5 @@
 // AUTO-GENERATED vanilla parent/template model geometry (misode/mcmeta, current
-// release). Only parent/textures/elements are kept — enough to resolve inherited
+// release). Only parent/textures/elements are kept, enough to resolve inherited
 // geometry in the 3D viewer. Keyed by resource path (with and without the
 // minecraft namespace). Regenerate by fetching assets/minecraft/models/<id>.json.
 

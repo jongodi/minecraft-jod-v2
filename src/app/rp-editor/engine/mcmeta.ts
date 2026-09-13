@@ -3,8 +3,8 @@
 //
 // pack_format is the version handshake. We map it to a human version label and,
 // more importantly, to which item-model system the pack targets:
-//   • legacy-overrides — models/item/*.json with `overrides` + predicates
-//   • item-definition  — assets/<ns>/items/*.json (introduced in 1.21.4 / fmt 46)
+//   • legacy-overrides, models/item/*.json with `overrides` + predicates
+//   • item-definition , assets/<ns>/items/*.json (introduced in 1.21.4 / fmt 46)
 //
 // The engine ALSO detects the system by file presence downstream; this is the
 // declared intent, used for messaging and mismatch warnings.
@@ -54,7 +54,7 @@ export function versionLabel(fmt: number): string {
   if (exact) return exact.label;
   // Below the oldest we track.
   if (fmt < FORMAT_TABLE[0].fmt) return 'pre-1.6';
-  // Above the newest we track — report as newer than the last known.
+  // Above the newest we track, report as newer than the last known.
   const last = FORMAT_TABLE[FORMAT_TABLE.length - 1];
   if (fmt > last.fmt) return `newer than ${last.label} (fmt ${fmt})`;
   // Between two known formats (a transitional snapshot number).
@@ -88,14 +88,14 @@ export function parsePackMeta(
     errors: [],
   };
   if (text == null) {
-    info.errors.push('pack.mcmeta not found — the pack will not load in-game.');
+    info.errors.push('pack.mcmeta not found, the pack will not load in-game.');
     return info;
   }
   let json: any;
   try {
     json = JSON.parse(text);
   } catch (e: any) {
-    info.errors.push(`pack.mcmeta is not valid JSON — ${e.message}`);
+    info.errors.push(`pack.mcmeta is not valid JSON, ${e.message}`);
     return info;
   }
   const pack = json?.pack;
@@ -140,7 +140,7 @@ export function parsePackMeta(
     }
   }
   // A pack declaring support up to a newer format (supported_formats) targets
-  // that newer game too — judge the item system by the newest supported format,
+  // that newer game too, judge the item system by the newest supported format,
   // so packs shipping both systems for a version range aren't warned wrongly.
   const sfMax = info.supportedFormats && !Array.isArray(info.supportedFormats)
     ? info.supportedFormats.max : undefined;
@@ -148,7 +148,7 @@ export function parsePackMeta(
     info.itemSystem = itemSystemFor(sfMax);
   }
   if (pack.description === undefined) {
-    info.errors.push('pack.mcmeta has no "description" — the pack shows a blank line in the selection menu.');
+    info.errors.push('pack.mcmeta has no "description", the pack shows a blank line in the selection menu.');
   } else {
     info.description = typeof pack.description === 'string'
       ? pack.description

@@ -1,7 +1,7 @@
 'use client';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// useAnalyzer — drives the analysis worker, with a main-thread fallback.
+// useAnalyzer, drives the analysis worker, with a main-thread fallback.
 //
 // The worker does the heavy one-time work (decompress + decode + analyse). After
 // edits, the page re-runs analyze() synchronously on the cached rawFiles, which

@@ -147,7 +147,7 @@ export default function App() {
   }, [selected]);
 
   // Repoint one broken reference: replace occurrences of `oldValue` in the file
-  // with `newValue` — structural, and constrained to positions matching the
+  // with `newValue`, structural, and constrained to positions matching the
   // reference kind, so fixing a broken texture can never rewrite a working
   // model parent that happens to share the same string.
   const applyFix = useCallback((file: string, oldValue: string, newValue: string, kind?: RefKind) => {
@@ -200,7 +200,7 @@ export default function App() {
 
   // Rename a file and repoint every reference to it. References are matched by
   // where they RESOLVE (namespace-aware, case-insensitive), rewritten with the
-  // new location case-preserved, and constrained to the right kind of slot —
+  // new location case-preserved, and constrained to the right kind of slot -
   // texture refs for texture renames, model/parent refs for model renames.
   const renameFile = useCallback((oldPath: string, newPath: string) => {
     if (!oldPath || !newPath || oldPath === newPath) return;
@@ -208,7 +208,7 @@ export default function App() {
     if (!data[oldPath]) return;
     data[newPath] = data[oldPath]; delete data[oldPath];
     if (raw[oldPath]) { raw[newPath] = { ...raw[oldPath], path: newPath }; delete raw[oldPath]; }
-    // A texture's animation .mcmeta belongs with it — move it too.
+    // A texture's animation .mcmeta belongs with it, move it too.
     if (IMG.test(oldPath) && data[oldPath + '.mcmeta'] != null) {
       data[newPath + '.mcmeta'] = data[oldPath + '.mcmeta']; delete data[oldPath + '.mcmeta'];
       if (raw[oldPath + '.mcmeta']) { raw[newPath + '.mcmeta'] = { ...raw[oldPath + '.mcmeta'], path: newPath + '.mcmeta' }; delete raw[oldPath + '.mcmeta']; }
@@ -255,7 +255,7 @@ export default function App() {
       } catch (e: any) { setStatus('Datapack read failed: ' + e.message); }
     }
     reanalyze();
-    setStatus(`Loaded ${files.length} datapack(s) — coverage updated`);
+    setStatus(`Loaded ${files.length} datapack(s), coverage updated`);
   }, [reanalyze]);
 
   // Save painted pixels to an arbitrary texture path (used by the Textures studio).
@@ -292,12 +292,12 @@ export default function App() {
     if (selected === modelPath) setSelectedContent(updated);
     setFilePaths(Object.keys(fileDataRef.current));
     reanalyze();
-    setStatus(`Added overlay layer${nextIdx} to ${modelPath.split('/').pop()} — paint it now`);
+    setStatus(`Added overlay layer${nextIdx} to ${modelPath.split('/').pop()}, paint it now`);
     return overlayPath;
   }, [selected, reanalyze]);
 
   // Remove an overlay layer from a model; delete its texture only if nothing
-  // else still references it (safe — a shared overlay is kept).
+  // else still references it (safe, a shared overlay is kept).
   const removeOverlayLayer = useCallback((modelPath: string, layerKey: string, texPath: string | null) => {
     const content = fileDataRef.current[modelPath];
     if (!content) return;
@@ -354,7 +354,7 @@ export default function App() {
   const isJson = ext === 'json' && !isMeta;
 
   // Navigation: the four everyday destinations up front, everything else under
-  // "More" — every option stays one click away without a 9-tab wall.
+  // "More", every option stays one click away without a 9-tab wall.
   const PRIMARY_TABS = [
     { id: 'overview', label: 'Overview' },
     { id: 'report', label: 'Report', badge: issueCount + (analysis?.summary.safeRemove ?? 0) },
@@ -372,7 +372,7 @@ export default function App() {
   const busy = state.status === 'running';
 
   return (
-    <div className="rp-root rp-refract-on">
+    <div lang="en" className="rp-root rp-refract-on">
       <style dangerouslySetInnerHTML={{ __html: legacyCss }} />
       <style dangerouslySetInnerHTML={{ __html: RP_CSS }} />
       <GlassFilterDefs />
@@ -423,7 +423,7 @@ export default function App() {
                 </div>
                 <div style={{ fontSize: '0.78rem', color: 'var(--ink-dim)', lineHeight: 1.7, maxWidth: 440, margin: '0 auto' }}>
                   A Minecraft-accurate dependency analyser. It resolves your parent chains, blockstates, item definitions,
-                  atlases and datapacks — then shows its work on every verdict, so nothing it flags can break your pack.
+                  atlases and datapacks, then shows its work on every verdict, so nothing it flags can break your pack.
                 </div>
               </div>
               <Glass className={`rp-drop${dragging ? ' drag' : ''}`} onClick={() => fileInputRef.current?.click()}>
@@ -474,10 +474,10 @@ export default function App() {
   );
 }
 
-// ── "More" tab dropdown — secondary destinations, one click away ──────────────
+// ── "More" tab dropdown, secondary destinations, one click away ──────────────
 // The menu is portaled to <body> with fixed positioning: the tab bar scrolls
 // horizontally (overflow-x:auto), and a scrollable ancestor clips vertical
-// overflow too — an in-place absolute menu would be trapped inside the bar.
+// overflow too, an in-place absolute menu would be trapped inside the bar.
 function MoreTabs({ items, tab, setTab }: {
   items: Array<{ id: string; label: string; hint?: string }>;
   tab: string; setTab: (id: string) => void;
@@ -594,7 +594,7 @@ function EditorPane({
                 {editorTab === 'editor' && !isJson && !isMeta && !isImage && !isAudio && (
                   selectedContent?.startsWith('data:application/octet-stream')
                     ? <div style={{ padding: 20, fontSize: '0.72rem', color: 'var(--ink-dim)', lineHeight: 1.7 }}>
-                        Binary file — kept as-is and included unchanged when you export the pack.
+                        Binary file, kept as-is and included unchanged when you export the pack.
                       </div>
                     : <textarea className="rp-code" value={selectedContent || ''} onChange={(e) => updateContent(e.target.value)} spellCheck={false} />
                 )}

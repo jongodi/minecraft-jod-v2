@@ -41,7 +41,7 @@ export function AssetsView({
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <div style={{ padding: '16px clamp(16px,4vw,40px) 0' }}>
           <div className="rp-sh">
-            <span className="rp-label">03 — Assets</span>
+            <span className="rp-label">03, Assets</span>
             <h2>Textures</h2>
           </div>
           <div className="rp-filters">
@@ -55,7 +55,7 @@ export function AssetsView({
               <button className="rp-btn sm danger" style={{ marginLeft: 'auto' }}
                 onClick={() => {
                   const paths = textures.filter((t) => analysis.nodes[t]?.verdict === 'safe-remove');
-                  if (confirm(`Delete ${paths.length} provably-unreferenced texture${paths.length !== 1 ? 's' : ''}? Review each in the inspector first — this cannot be undone.`)) {
+                  if (confirm(`Delete ${paths.length} provably-unreferenced texture${paths.length !== 1 ? 's' : ''}? Review each in the inspector first, this cannot be undone.`)) {
                     onDelete(paths); setSel(null);
                   }
                 }}>
