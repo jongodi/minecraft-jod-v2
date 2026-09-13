@@ -17,161 +17,174 @@ there is exactly one place to linger for people who want to.
 Brand voice: one friend telling another what the server is. Specific truths,
 no adjectives about adventure.
 
+## The material
+
+The site is made of three things the server already has: eleven screenshots,
+a sketch map of eleven places, and Icelandic. The design job is to get out of
+their way. There are no cards, no panels, no shadows, no rounded corners and
+no icons. Structure comes from type, hairlines and the edges of photographs.
+
 ## The mark
 
-The name is JOÐcraft. "Joð" is the Icelandic name of the letter J, and the Ð
-is the one letter that makes the name Icelandic. The mark is a heavy D whose
-crossbar, the stroke that turns it into a Ð, is the only lit element. That
-crossbar is the status lamp: amber when the server is online, dimmed while it
-starts or stops, snow-grey when it is off. The favicon, the header wordmark and
-the hero all carry the same lamp, so the tab strip alone tells you whether the
-light is on.
+"Joð" is the Icelandic name of the letter J, so the Ð is the letter that makes
+the name Icelandic. The wordmark is JOÐcraft set in Archivo Condensed Black as
+outlines; the crossbar that turns the D into a Ð is drawn separately and is
+the status lamp: pink when the server is online, dimmed while it starts or
+stops, grey when it is off. The favicon is the same D with the same bar. The
+tab strip alone tells you whether the light is on.
 
-- `src/components/brand/Mark.tsx`: the Ð alone, 32 unit grid, works at 16 px.
-- `src/components/brand/Wordmark.tsx`: "JODcraft" as Young Serif outlines with
-  the crossbar drawn separately so it can carry state.
-- `src/app/icon.svg`: the framed mark, lit.
+- `src/components/brand/Wordmark.tsx`: the outlines, exported once from the
+  font with HarfBuzz shaping, plus the hand-drawn bar.
+- `src/components/brand/Mark.tsx` and `src/app/icon.svg`: the D alone on a
+  32 unit grid. Reads at 16 px on a dark or light tab bar.
 
 ## Palette
 
-Logic in one sentence: an Icelandic winter dusk seen from the road, blue-black
-ground and sky, snow-white text, and one lit window.
+Logic in one sentence: basalt, bone and cherry. Black sand for the ground,
+driftwood for the type, and the pink of the cherry grove at the old base as
+the one colour. Every other colour on the page comes from a screenshot.
 
 | Token | Hex | Use | Contrast on bg |
 |---|---|---|---|
-| bg | #0B1120 | ground and sky, page background | |
-| surface | #121A2C | snow in shadow, panels and rows | |
-| surface-2 | #1A2439 | next layer up, fields inside a panel | |
-| line | #263250 | the one hairline | decorative |
-| text | #EEF1F7 | all text | 16.6:1 |
-| muted | #97A2BE | secondary text, unlit lamp | 7.4:1 |
-| accent | #F0B25A | the lit window: online lamp, copy button | 10.1:1 |
-| accent-deep | #D89A3E | the same light, pressed | 7.7:1 |
-| accent-ink | #1A1206 | text on the accent | 9.9:1 on accent |
+| bg | #0F0E0C | the ground | |
+| bg-2 | #1A1815 | the map and the game stage | |
+| line | #2C2925 | the one hairline | decorative |
+| text | #EFE9DC | all type | 16.0:1 |
+| muted | #9A9184 | secondary type, the unlit lamp | 6.2:1 |
+| accent | #F4A6C1 | the lamp and the copy block | 10.2:1 |
+| accent-ink | #0F0E0C | type on the accent | 10.2:1 |
 
-The accent appears at most twice per screen: the lamp in the wordmark, and the
-copy button. When the server is offline the lamp is muted, so the offline page
-has one amber element, not two. No red anywhere; an unlit lamp is the offline
-state. The minigame's spark is the same amber, and the game only shows one.
+The accent appears at most twice per screen: the lamp in the wordmark and the
+address block. When the server is offline the lamp is grey, so an offline page
+has one pink element. There is no red; an unlit lamp is the offline state. On
+the map the selected pin is pink; nothing else is.
 
-Focus rings are 2 px of `text`, offset 3 px, so focus is visible without
-spending the accent.
+Focus rings are 2 px of `text`, offset 3 px.
 
 ## Typography
 
-Two faces, both self hosted from `src/fonts` through `next/font/local`,
-Google's latin split (27 KB and 30 KB), which contains ð þ æ ö and every acute
-vowel. Preloaded, `font-display: swap`, size-adjusted fallbacks so the swap
-does not shift layout.
+Two families, four files, all static instances cut from Google's latin
+splits and committed to `src/fonts` (about 72 KB in total, every Icelandic
+glyph verified). Loaded with `next/font/local`, preloaded, `font-display:
+swap`, fallbacks size-adjusted.
 
-- **Young Serif** (display): one heavy weight, warm, slightly hand-cut. It is
-  the lamp light of the type system. Used for the name, the state word
-  ("Í gangi"), section headings, and any number that is a score or a total.
-- **Instrument Sans** (body and UI): cool, narrow, precise. It is the snow.
-  Everything else.
-
-The tension is warm serif against cool grotesk, which is the palette logic in
-type. Both faces have tabular and lining figures; the `.num` utility turns them
-on wherever a number is data.
+- **Archivo Condensed Black** (display): the poster face. Every heading,
+  the state word, place names, pack names, the address, scores. Always
+  uppercase.
+- **Archivo Expanded SemiBold** (label): the same family stretched the other
+  way. Tiny tracked labels, navigation, table heads, button words. The width
+  contrast between the two Archivo cuts is the typographic signature of the
+  site: one narrow and enormous, one wide and small, nothing in between.
+- **Literata** (body, upright and italic): the reading face. Blurbs, the
+  tagline, who is in, table numbers. It is the only lowercase on the page,
+  which is why it reads as speech.
 
 | Role | Face | Size | Line height | Tracking |
 |---|---|---|---|---|
-| display | Young Serif | clamp(48px, 9vw, 112px) | 0.92 | -0.015em |
-| h2 | Young Serif | clamp(28px, 16px + 2.2vw, 40px) | 1.1 | -0.005em |
-| figure | Young Serif | 24px | 1 | 0 |
-| lead | Instrument Sans 500 | 20px | 1.35 | 0 |
-| body | Instrument Sans 400 | 16px | 1.55 | 0 |
-| meta | Instrument Sans 400 | 14px | 1.45 | 0.005em |
-| label | Instrument Sans 600 | 13px | 1.2 | 0.02em |
+| state | Condensed | clamp(88px, 26vw, 240px) | 0.86 | -0.01em |
+| h2 | Condensed | clamp(48px, 9vw, 96px) | 0.9 | -0.005em |
+| figure | Condensed | 40px | 0.9 | 0 |
+| name | Condensed | 24px | 1 | 0 |
+| address | Condensed | clamp(24px, 6.4vw, 32px) | 1 | -0.01em |
+| lead | Literata italic | 20px | 1.35 | 0 |
+| body | Literata | 17px | 1.55 | 0 |
+| meta | Literata | 15px | 1.45 | 0 |
+| label | Expanded | 12px | 1.2 | 0.14em |
 
-Type does the structural work: every section is a Young Serif heading in the
-left margin column and Instrument Sans content to its right. Strip the colour
-and the page still has a spine.
+Body copy is 17 px so it holds its own next to the condensed caps; nothing on
+the page is below 15 px except the tracked labels. Tabular lining figures are
+turned on wherever a number is data.
+
+Strip the colour and the page still has bones: every section is a stack of
+condensed capitals in the left column and Literata to its right.
 
 ## Grid and spacing
 
-Layout paradigm: **a margin spine**. On desktop every section is a 12 column
-grid, 24 px gap: the heading sits alone in columns 1 to 3 and the content in
-columns 4 to 12, like marginal notes in a book. The hero deliberately inverts
-it, name on the left, status panel on the right, so the first screen is the one
-composition that breaks the rule. On mobile the heading stacks above.
+Layout paradigm: **a margin spine with full-bleed plates**. On desktop every
+section is a 12 column grid, 24 px gap: the heading stands alone in columns
+1 to 5, the content takes 6 to 12. The photographs and the map ignore the
+grid and run edge to edge at every width; at 1920 that is where the extra
+width goes. The hero inverts the spine, state word left and address right,
+so the first screen is the one composition that breaks the rule.
 
-- Container: 1440 px maximum, side gutter 20 px on phones, 40 px from 768 px,
-  64 px from 1536 px. Gallery and map bleed to the viewport edge at every
-  width; at 1920 that is where the extra width goes.
-- Spacing scale, 4 px based: 4, 8, 12, 16, 24, 32, 48, 64, 96, 128. Section
-  rhythm is 64 px on phones and 96 px on desktop. Nothing off the scale.
-- One radius: 6 px. The only round thing on the site is a player head, which
-  is an image, not a token.
-- Elevation model: three tones and one hairline, no shadows. bg, then
-  surface, then surface-2, separated by `line` where two surfaces meet.
+- Container: 1536 px maximum, side gutter 20 px on phones, 40 px from 768 px,
+  64 px from 1536 px.
+- Spacing scale, 4 px based: 4, 8, 12, 16, 24, 32, 48, 64, 96. Sections are
+  64 px apart on phones, 96 px on desktop. Nothing off the scale.
+- Radius: 0. Everything on the page is a rectangle because a screenshot is a
+  rectangle.
+- Elevation: none. Two ground tones and one hairline. Depth comes from the
+  photographs.
 
 ## Motion
 
-Nothing moves unless it tells you something. No scroll reveals, no infinite
-loops, no hover-only effects.
+Nothing moves unless it tells you something. No scroll reveals, no loops, no
+hover-only effects.
 
 | Class | Meaning | Duration | Easing |
 |---|---|---|---|
-| feedback | you touched this (copy, press, tab) | 150 ms | cubic-bezier(0.2, 0, 0, 1) |
-| panel | something opened (lightbox, pin detail, menu) | 250 ms | same |
-| survey | the map is drawn once when it first comes into view | 1200 ms | same |
-| game | the fuse burns while a round is live | rAF, at most 1.5 s per round | linear, it is a fuse |
+| feedback | you pressed this (copy, select) | 150 ms | cubic-bezier(0.2, 0, 0, 1) |
+| panel | something opened or changed (lightbox, map pick) | 250 ms | same |
+| survey | the map draws itself once when first seen | 1200 ms | same |
+| fuse | the fuse burns while a round is live | up to 1.5 s, rAF | linear, it is a fuse |
 
-`prefers-reduced-motion`: feedback and panel collapse to instant, survey is
-skipped (the map is simply there), the fuse does not animate but the spark
-still appears and the round is still playable.
+`prefers-reduced-motion`: feedback and panel collapse to instant, the map is
+simply there, the fuse does not travel but the spark still appears and the
+round is still playable.
 
 ## The signature moment
 
-**Kortið**, the map. The world's eleven named places, three regions and one
-river already exist as data. The map is redrawn as an inline SVG in the palette
-above, and when it first scrolls into view it surveys itself: contours and the
-river draw in, then the pins land, over 1.2 s, once. Tapping a pin opens that
-place's screenshot in the same lightbox the gallery uses, so the map and the
-gallery are one thing seen two ways. That answers "what is the world" and
-"what does it look like" in one gesture.
+**Kortið**, the map. The eleven named places, three regions and one river
+already exist as data. The map is an inline SVG in the palette above: a faint
+graticule, three rings per region like contour lines, the river, and a square
+pin per place with its name placed by hand. When it first scrolls into view it
+surveys itself: rings and river draw in, then the pins and names appear, over
+1.2 s, once. Picking a place shows its photograph beside the map, so the map
+and the gallery are one thing seen two ways. That answers "what is the world"
+and "what does it look like" in one gesture. Because pins are small by nature,
+the list beside the map is the real control on a phone, every row 44 px.
 
-Budget: inline SVG under 20 KB, client JS under 6 KB gzipped for pin selection
-and the one IntersectionObserver that starts the draw, no canvas, no
-requestAnimationFrame, one stroke animation that runs once and never again.
-The stroke draw is the one animation on the site that is not transform or
-opacity; it is paint only, on a single small SVG, and is the budgeted exception.
-
-Everything else stays quiet so this lands.
+Budget: SVG under 12 KB inline, client JS under 6 KB gzipped for the pick and
+the one IntersectionObserver that starts the draw, no canvas, no
+requestAnimationFrame. The stroke draw is the one animation on the site that
+is not transform or opacity; it is paint only, on one small SVG, runs once, and
+is the budgeted exception.
 
 ## The minigame
 
-**Kveikurinn**, the fuse. A creeper's fuse is 30 ticks, 1.5 s. The fuse lights
-at a random moment; tap, click or press space before it burns down. Score in
-ticks, 1 tick = 50 ms, three rounds per game, tapping early is a foul, too
-slow and it goes off. Personal best in localStorage. Client-only, code split,
-paused when off screen or when the tab is hidden. Rendered with DOM and CSS
-transforms, no canvas.
+**Kveikurinn**, the fuse. A creeper's fuse is 30 ticks, one and a half
+seconds. The fuse lights at a random moment; press before it burns down.
+Scored in ticks, three rounds a game, pressing early loses the round, too slow
+and it goes off. The stage is one large button, so a thumb, a mouse and the
+space bar are equals. Personal best in localStorage. Loaded on demand below
+the fold, paused when off screen or when the tab is hidden. The burn and the
+spark are transforms driven by one custom property from requestAnimationFrame,
+no canvas.
 
 ## Language
 
 All visitor-facing copy in Icelandic. The brand is written JOÐcraft. Server
-states: Í gangi, Slökkt, Er að ræsa, Er að slökkva, Náði ekki sambandi. The
-address is a "vistfang". No em dash anywhere in the repo.
+states: Í gangi, Slökkt, Ræsir, Slekkur, Ekkert svar, Athuga. The address is a
+"vistfang". No em dash anywhere in the repo.
 
 ## Client components and why
 
 - `CopyAddress`: clipboard API and a two second confirmation.
+- `Gallery` and `Lightbox`: which picture is open, keyboard and swipe.
+- `WorldMap`: the pick and the one-time survey draw.
+- `Fuse` and `FuseLoader`: the game, split out of the initial bundle.
 - `StatusLive` (Phase 2): polls the status route and updates the lamp.
-- `Lightbox` (Phase 2): keyboard and swipe navigation.
-- `WorldMap` (Phase 2): pin selection and the one-time survey draw.
-- `Fuse` (Phase 2): the game.
-- `MotionSamples`: only on /stil.
 
 Everything else is a server component.
 
-## What was decided against
+## Decided against
 
-- Framer Motion: three motion classes do not need 30 KB of library. CSS
-  transitions and one IntersectionObserver cover all of it.
+- The first Phase 1 direction: navy ground, bordered cards, warm serif with a
+  grotesk, amber button. It was the default look of generated sites with the
+  hue changed, and nothing in it came from this world.
+- Framer Motion: three motion classes do not need 30 KB of library.
 - Pixel typography and block borders: a Minecraft site does not have to look
   like Minecraft's marketing.
 - Runes, horns, blackletter: Icelandic is a living language, not a costume.
-- A red offline colour: an unlit lamp says it better and keeps the palette to
-  one hue.
+- A red offline colour: an unlit lamp says it better and keeps one hue.
+- Rounded corners: nothing here is a button from an app store.
