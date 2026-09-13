@@ -38,7 +38,7 @@ export const PLACES: readonly Place[] = [
 ];
 
 export const REGIONS: readonly Region[] = [
-  { id: 'faraway', name: 'Langt í burtu', cx: 162, cy: 345, rx: 78, ry: 58, label: 'below' },
+  { id: 'faraway', name: 'Langt í burtu', cx: 162, cy: 345, rx: 78, ry: 58, label: 'above' },
   { id: 'old', name: 'Gamla basið', cx: 282, cy: 197, rx: 118, ry: 118, label: 'above' },
   { id: 'new', name: 'Nýja basið', cx: 488, cy: 466, rx: 200, ry: 112, label: 'above' },
 ];
