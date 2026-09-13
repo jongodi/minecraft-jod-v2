@@ -56,7 +56,7 @@ export function Lightbox({ shots, index, onIndex, onClose }: LightboxProps) {
         if (dx < -SWIPE_PX) next();
       }}
     >
-      <div className="flex items-center justify-between px-gutter pt-[max(1rem,env(safe-area-inset-top))]">
+      <div className="flex items-center justify-between px-gutter pt-safe-t">
         <p className="num font-label text-label uppercase text-muted">
           {index + 1} / {shots.length}
         </p>
@@ -74,7 +74,7 @@ export function Lightbox({ shots, index, onIndex, onClose }: LightboxProps) {
           className="object-contain"
         />
       </div>
-      <div className="flex items-end justify-between gap-6 px-gutter pb-[max(1rem,env(safe-area-inset-bottom))] pt-4">
+      <div className="flex items-end justify-between gap-6 px-gutter pb-safe-b pt-4">
         <div>
           <p className="font-display text-name uppercase">{shot.title}</p>
           <p className="mt-1 text-meta text-muted">{shot.place}</p>

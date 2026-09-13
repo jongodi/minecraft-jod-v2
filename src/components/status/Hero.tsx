@@ -38,7 +38,7 @@ export function Hero({ initial, shot }: HeroProps) {
       <div className="hero-veil absolute inset-0" aria-hidden="true" />
       <Header lamp={lamp} />
       <h1 className="sr-only">JOÐcraft</h1>
-      <div className="relative mt-auto grid items-end gap-x-6 gap-y-8 px-gutter pb-[max(1.5rem,env(safe-area-inset-bottom))] lg:grid-cols-12">
+      <div className="relative mt-auto grid items-end gap-x-6 gap-y-8 px-gutter pb-safe-b lg:grid-cols-12">
         <div className="lg:col-span-7">
           <p className="font-label text-label uppercase">Staðan núna</p>
           <p className="mt-[0.2em] font-display text-state uppercase" aria-live="polite">

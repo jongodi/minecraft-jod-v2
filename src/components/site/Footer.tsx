@@ -10,7 +10,7 @@ interface FooterProps {
 /** The name once more, the full width of the page, the way a poster ends. */
 export function Footer({ initial }: FooterProps) {
   return (
-    <footer className="mx-auto max-w-site px-gutter pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-24">
+    <footer className="mx-auto max-w-site px-gutter pb-safe-b pt-24">
       <div className="masthead border-t border-line pt-6 text-text">
         <LiveWordmark initial={initial} title="JOÐcraft" />
       </div>

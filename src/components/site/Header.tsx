@@ -17,7 +17,7 @@ interface HeaderProps {
 /** Sits on top of the hero image. Not sticky: the page is short. */
 export function Header({ lamp }: HeaderProps) {
   return (
-    <header className="relative z-10 flex flex-wrap items-center justify-between gap-x-8 gap-y-3 px-gutter pt-[max(1.25rem,env(safe-area-inset-top))]">
+    <header className="relative z-10 flex flex-wrap items-center justify-between gap-x-8 gap-y-3 px-gutter pt-safe-t">
       <Link href="/" className="flex min-h-11 items-center text-text" aria-label="JOÐcraft, forsíða">
         <Wordmark lamp={lamp} height={26} title="JOÐcraft" />
       </Link>

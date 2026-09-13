@@ -37,6 +37,12 @@ const config: Config = {
     extend: {
       spacing: {
         gutter: 'var(--gutter)',
+        'safe-t': 'max(1.25rem, env(safe-area-inset-top))',
+        'safe-b': 'max(1.5rem, env(safe-area-inset-bottom))',
+      },
+      aspectRatio: {
+        photo: '16 / 9',
+        stage: '4 / 5',
       },
       maxWidth: {
         site: '96rem',

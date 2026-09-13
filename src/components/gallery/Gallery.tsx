@@ -52,7 +52,7 @@ export function Gallery({ shots }: GalleryProps) {
                 height={shot.height}
                 sizes={SIZES[shot.span]}
                 loading="lazy"
-                className="aspect-[16/9] w-full object-cover lg:aspect-auto lg:min-h-0 lg:flex-1"
+                className="aspect-photo w-full object-cover lg:aspect-auto lg:min-h-0 lg:flex-1"
               />
               <span className="flex items-baseline justify-between gap-4 px-gutter py-3 lg:px-3">
                 <span className="font-display text-name uppercase">{shot.title}</span>

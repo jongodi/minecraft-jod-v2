@@ -3,7 +3,7 @@ import { Wordmark } from '@/components/brand/Wordmark';
 
 export default function NotFound() {
   return (
-    <main className="flex min-h-svh flex-col px-gutter pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(1.25rem,env(safe-area-inset-top))]">
+    <main className="flex min-h-svh flex-col px-gutter pb-safe-b pt-safe-t">
       <Link href="/" className="flex min-h-11 items-center self-start text-text" aria-label="JOÐcraft, forsíða">
         <Wordmark lamp="off" height={26} title="JOÐcraft" />
       </Link>

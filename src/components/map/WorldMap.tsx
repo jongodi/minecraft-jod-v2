@@ -163,7 +163,7 @@ export function WorldMap({ shots }: WorldMapProps) {
               width={shot.width}
               height={shot.height}
               sizes="(min-width: 1024px) 30vw, 100vw"
-              className="aspect-[16/9] w-full object-cover"
+              className="aspect-photo w-full object-cover"
             />
             <figcaption className="mt-3 flex items-baseline justify-between gap-4">
               <span className="font-display text-name uppercase">{selected.name}</span>

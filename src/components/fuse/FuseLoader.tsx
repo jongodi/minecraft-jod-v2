@@ -8,7 +8,7 @@ import dynamic from 'next/dynamic';
  */
 const Fuse = dynamic(() => import('./Fuse'), {
   ssr: false,
-  loading: () => <div className="aspect-[4/5] w-full border border-line bg-bg-2 sm:aspect-[16/9]" aria-hidden="true" />,
+  loading: () => <div className="aspect-stage w-full border border-line bg-bg-2 sm:aspect-photo" aria-hidden="true" />,
 });
 
 export function FuseLoader() {
