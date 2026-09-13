@@ -1,5 +1,9 @@
-import WesternHome from '@/components/western/WesternHome';
+import WorldHome from '@/components/atlas/WorldHome';
+import { readGallery } from '@/lib/gallery';
 
-export default function Home() {
-  return <WesternHome />;
+export const dynamic = 'force-dynamic';
+
+export default async function Home() {
+  const photos = (await readGallery()).filter(photo => photo.active).sort((a, b) => a.order - b.order);
+  return <WorldHome initialPhotos={photos} />;
 }
