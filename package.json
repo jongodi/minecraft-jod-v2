@@ -6,14 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@types/three": "^0.183.1",
-    "@vercel/blob": "^2.3.3",
     "autoprefixer": "^10.4.27",
-    "framer-motion": "^11.3.19",
-    "ioredis": "^5.10.1",
     "jszip": "^3.10.1",
     "next": "15.5.18",
     "react": "^18",

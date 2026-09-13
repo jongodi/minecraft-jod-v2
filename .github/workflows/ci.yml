@@ -22,14 +22,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Type-check
+        run: npm run typecheck
+
       - name: Lint
         run: npm run lint
 
-      - name: Type-check & build
+      - name: Build
         run: npm run build
-        env:
-          # Build-time env stubs so Next.js doesn't fail on missing vars
-          EXAROTON_API_KEY:       stub
-          ADMIN_TOKEN:            stubstub
-          REDIS_URL:              redis://localhost:6379
-          BLOB_READ_WRITE_TOKEN:  stub
