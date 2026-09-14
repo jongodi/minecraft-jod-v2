@@ -1,39 +1,46 @@
 import { DATAPACKS } from '@/data/datapacks';
-import SectionHead from './SectionHead';
-import { Divider } from './Ornaments';
+import { Arrow, Stamp } from './Bits';
 
 const CATEGORY: Record<string, string> = {
-  BUILD: 'Building', COMBAT: 'Combat', QOL: 'Quality of life',
-  SOCIAL: 'Social', STRUCTURE: 'Structures', SURVIVAL: 'Survival',
+  BUILD: 'BUILDING', COMBAT: 'COMBAT', QOL: 'QUALITY OF LIFE',
+  SOCIAL: 'SOCIAL', STRUCTURE: 'STRUCTURES', SURVIVAL: 'SURVIVAL',
 };
 
 export default function Provisions() {
   const versions = Array.from(new Set(DATAPACKS.map(d => d.gameVersion))).sort();
   return (
-    <section id="provisions" className="f-band">
-      <div className="f-wrap f-band__inner">
-        <SectionHead
-          kicker="Chapter VI · Provisions"
-          title="The general store"
-          lede={`${DATAPACKS.length} datapacks run on the server. Nothing to install on your side; the resource pack is sent when you ride in.`}
-        />
+    <section id="provisions" className="j-sec">
+      <div className="j-wrap">
+        <div className="j-store__head">
+          <div>
+            <p className="j-note j-note--big">What&rsquo;s loaded on the server</p>
+            <p className="j-note">{DATAPACKS.length} datapacks. nothing to install on your side, the resource pack comes down when you ride in</p>
+          </div>
+          <p className="j-note j-note--faint">kept the receipt <Arrow /></p>
+        </div>
 
-        <div className="f-store">
-          <ol className="f-store__list" style={{ marginTop: 0 }}>
-            {DATAPACKS.map(d => (
-              <li key={d.id} className="f-store__row">
-                <div className="f-store__line">
-                  <span className="f-store__name">{d.name}</span>
-                  <span className="f-leader" style={{ borderColor: 'var(--ink-3)' }} />
-                  <span className="f-store__ver">{d.currentVersion ? `v${d.currentVersion}` : '—'}</span>
-                </div>
-                <div className="f-store__desc">{d.description}</div>
-                <div className="f-store__cat">{CATEGORY[d.category] ?? d.category}</div>
-              </li>
-            ))}
-          </ol>
-          <Divider className="f-head__orn" />
-          <p className="f-store__foot">Minecraft {versions.join(' and ')} · Java Edition</p>
+        <div className="j-receipt">
+          <p className="j-receipt__title">JOÐ GENERAL STORE</p>
+          <p className="j-receipt__meta">play.jodcraft.world<br />Minecraft {versions.join(' / ')} · Java Edition</p>
+          <hr className="j-receipt__hr" />
+          {DATAPACKS.map((d, i) => (
+            <div key={d.id}>
+              <div className="j-receipt__row">
+                <span>{String(i + 1).padStart(2, '0')}</span>
+                <span className="j-receipt__name">{d.name.toUpperCase()}</span>
+                <span className="j-receipt__lead" />
+                <span className="j-receipt__ver">{d.currentVersion ? `v${d.currentVersion}` : '—'}</span>
+              </div>
+              <div className="j-receipt__desc">{d.description} · {CATEGORY[d.category] ?? d.category}</div>
+            </div>
+          ))}
+          <hr className="j-receipt__hr" />
+          <div className="j-receipt__total"><span>PACKS LOADED</span><span>{DATAPACKS.length}</span></div>
+          <div className="j-receipt__total"><span>TO PAY</span><span>NOTHING</span></div>
+          <hr className="j-receipt__hr" />
+          <p className="j-receipt__foot">THANK YOU · RIDE SAFE</p>
+          <div className="j-receipt__code" aria-hidden="true" />
+          <Stamp small r={-12}>Paid in full</Stamp>
         </div>
       </div>
     </section>

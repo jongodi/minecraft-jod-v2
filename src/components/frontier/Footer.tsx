@@ -3,10 +3,10 @@ import { SERVER_IP } from './data';
 
 export default function Footer() {
   return (
-    <footer className="f-foot">
-      <div className="f-wrap f-foot__inner">
-        <span className="f-nav__mark">JOÐ</span>
-        <nav className="f-foot__nav" aria-label="Footer">
+    <footer className="j-foot">
+      <div className="j-wrap j-foot__inner">
+        <span className="j-note">— JOÐ, since 2024. {SERVER_IP}</span>
+        <nav className="j-foot__nav" aria-label="Footer">
           <Link href="/#camp">Camp</Link>
           <Link href="/#territory">Territory</Link>
           <Link href="/#postcards">Postcards</Link>
@@ -16,10 +16,7 @@ export default function Footer() {
           <Link href="/rp-editor">Pack editor</Link>
           <Link href="/admin">Admin</Link>
         </nav>
-        <p className="f-foot__small">
-          {SERVER_IP} · since 2024<br />
-          Not affiliated with Mojang or Microsoft.
-        </p>
+        <p className="j-foot__small">Not affiliated with Mojang or Microsoft.</p>
       </div>
     </footer>
   );

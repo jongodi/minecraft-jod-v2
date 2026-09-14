@@ -13,6 +13,7 @@ import Tallies from './Tallies';
 import Provisions from './Provisions';
 import RideIn from './RideIn';
 import Footer from './Footer';
+import { TrailLine } from './Bits';
 import { HOME_LINKS, PLATES, sentenceCase, titleCase, type Plate } from './data';
 import { useScrollSpy, useServerStatus, useStats } from './hooks';
 
@@ -36,11 +37,15 @@ export default function FrontierHome() {
   }, []);
 
   return (
-    <>
-      <div className="f-grain" aria-hidden="true" />
+    <div className="j">
+      <div className="j-grain" aria-hidden="true" />
+      <TrailLine />
+      <span className="j-ring" style={{ top: '1.5%', left: '54%', width: '9rem', height: '9rem' }} aria-hidden="true" />
+      <span className="j-ring" style={{ top: '46%', right: '-2rem', width: '8rem', height: '8rem' }} aria-hidden="true" />
+      <span className="j-ring" style={{ top: '79%', left: '4%', width: '9rem', height: '9rem' }} aria-hidden="true" />
       <TrailNav links={HOME_LINKS} activeId={active} />
       <main>
-        <Hero server={server} />
+        <Hero server={server} activeId={active} />
         <Camp server={server} />
         <TerritoryMap plates={plates} />
         <Postcards plates={plates} />
@@ -50,6 +55,6 @@ export default function FrontierHome() {
         <RideIn />
       </main>
       <Footer />
-    </>
+    </div>
   );
 }

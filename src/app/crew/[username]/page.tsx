@@ -3,6 +3,7 @@
 import '@/app/frontier.css';
 import { useEffect, useState, useRef, useCallback, use, type FormEvent, type ChangeEvent } from 'react';
 import Link from 'next/link';
+import type { CSSProperties } from 'react';
 import type { CrewProfile, CrewPost } from '@/lib/crew';
 import type { PlayerStat, StatsResponse } from '@/app/api/stats/route';
 import { formatDate } from '@/lib/format';
@@ -10,7 +11,7 @@ import TrailNav from '@/components/frontier/TrailNav';
 import Footer from '@/components/frontier/Footer';
 import PlayerHead from '@/components/frontier/PlayerHead';
 import Lightbox from '@/components/frontier/Lightbox';
-import { Star } from '@/components/frontier/Ornaments';
+import { Arrow, Pin, Star, Tape } from '@/components/frontier/Bits';
 import { PAGE_LINKS, STAT_TABS } from '@/components/frontier/data';
 
 // ─── Badges: the highest earned tier per category ─────────────────────────────
@@ -38,6 +39,8 @@ function earnedBadges(stat: PlayerStat): BadgeDef[] {
   return Array.from(top.values());
 }
 
+const TILT = [-2.5, 2, -1.5, 3, -3, 1.5];
+
 // ─── Login ────────────────────────────────────────────────────────────────────
 
 function LoginModal({ username, onSuccess, onClose }: { username: string; onSuccess: () => void; onClose: () => void }) {
@@ -64,23 +67,15 @@ function LoginModal({ username, onSuccess, onClose }: { username: string; onSucc
   }
 
   return (
-    <div className="f-modal" onClick={onClose} role="dialog" aria-modal="true" aria-label="Log in">
-      <form className="f-modal__box" onSubmit={submit} onClick={e => e.stopPropagation()}>
-        <p className="f-modal__title">Log in as {username}</p>
-        <p className="f-modal__sub">Your crew token is set by whoever runs the server.</p>
-        <input
-          type="password"
-          className={`f-input${error ? ' is-error' : ''}`}
-          value={token}
-          onChange={e => setToken(e.target.value)}
-          placeholder="Crew token"
-          autoFocus
-          autoComplete="current-password"
-        />
-        {error && <p className="f-err">{error}</p>}
-        <div className="f-modal__actions">
-          <button type="submit" className="f-btn" disabled={loading || !token}>{loading ? 'Checking…' : 'Log in'}</button>
-          <button type="button" className="f-btn f-btn--ghost" onClick={onClose}>Cancel</button>
+    <div className="j-modal" onClick={onClose} role="dialog" aria-modal="true" aria-label="Log in">
+      <form className="j-modal__box" onSubmit={submit} onClick={e => e.stopPropagation()}>
+        <p className="j-modal__title">Log in as {username}</p>
+        <p className="j-modal__sub">your crew token is set by whoever runs the server</p>
+        <input type="password" className={`j-input${error ? ' is-error' : ''}`} value={token} onChange={e => setToken(e.target.value)} placeholder="Crew token" autoFocus autoComplete="current-password" />
+        {error && <p className="j-err">{error}</p>}
+        <div className="j-modal__actions">
+          <button type="submit" className="j-btn" disabled={loading || !token}>{loading ? 'Checking…' : 'Log in'}</button>
+          <button type="button" className="j-btn j-btn--ghost" onClick={onClose}>Cancel</button>
         </div>
       </form>
     </div>
@@ -163,9 +158,7 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
 
   async function saveBio() {
     setBioError('');
-    const res = await fetch(`/api/crew/${username}/bio`, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ bio: bioText }),
-    });
+    const res = await fetch(`/api/crew/${username}/bio`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ bio: bioText }) });
     if (res.ok) { setProfile(p => p ? { ...p, bio: bioText } : p); setEditingBio(false); }
     else { const data = await res.json().catch(() => ({})) as { error?: string }; setBioError(data.error ?? 'Could not save the bio.'); }
   }
@@ -176,9 +169,7 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
     setPosting(true);
     setPostError('');
     try {
-      const res = await fetch(`/api/crew/${username}/posts`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: newPost }),
-      });
+      const res = await fetch(`/api/crew/${username}/posts`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: newPost }) });
       if (res.ok) {
         const post = await res.json() as CrewPost;
         setProfile(p => p ? { ...p, posts: [post, ...p.posts] } : p);
@@ -204,9 +195,7 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
     if (!editText.trim()) return;
     setEditSaving(true);
     try {
-      const res = await fetch(`/api/crew/${username}/posts/${id}`, {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: editText }),
-      });
+      const res = await fetch(`/api/crew/${username}/posts/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: editText }) });
       if (res.ok) {
         const updated = await res.json() as CrewPost;
         setProfile(p => p ? { ...p, posts: p.posts.map(post => post.id === id ? updated : post) } : p);
@@ -238,186 +227,160 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
   const badges = playerStats ? earnedBadges(playerStats) : [];
 
   return (
-    <>
-      <div className="f-grain" aria-hidden="true" />
-      <TrailNav links={PAGE_LINKS} />
-      <main className="f-band f-band--paper">
-        <div className="f-wrap f-page">
-          <Link href="/crew" className="f-back">← All crew</Link>
+    <div className="j">
+      <div className="j-grain" aria-hidden="true" />
+      <TrailNav links={PAGE_LINKS} always />
+      <main className="j-wrap j-page">
+        <Link href="/crew" className="j-back"><Arrow flip /> all of the crew</Link>
 
-          {notFound ? (
-            <p className="f-empty">No one by the name {username} on the whitelist.</p>
-          ) : !profile ? (
-            <p className="f-note">Loading {username}…</p>
-          ) : (
-            <>
-              <section className="f-profile">
-                <div className="f-profile__head"><PlayerHead name={profile.username} size={128} /></div>
-                <div>
-                  <div className="f-profile__top">
-                    <div>
-                      <div className="f-profile__wanted">Wanted · rider of the JOÐ</div>
-                      <h1 className="f-profile__name">{profile.username}</h1>
-                    </div>
-                    {isOwner ? (
-                      <button className="f-btn f-btn--ghost f-btn--small" onClick={logout}>Log out</button>
-                    ) : (
-                      <button className="f-btn f-btn--ghost f-btn--small" onClick={() => setShowLogin(true)}>This is me</button>
-                    )}
+        {notFound ? (
+          <p className="j-empty">no one by the name {username} on the whitelist</p>
+        ) : !profile ? (
+          <p className="j-empty">loading {username}…</p>
+        ) : (
+          <>
+            <section className="j-profile">
+              <Pin />
+              <div className="j-profile__head"><PlayerHead name={profile.username} size={128} /></div>
+              <div>
+                <div className="j-profile__top">
+                  <div>
+                    <div className="j-profile__wanted">Wanted · rider of the JOÐ</div>
+                    <h1 className="j-profile__name">{profile.username}</h1>
                   </div>
-
-                  {editingBio && isOwner ? (
-                    <div className="f-profile__biorow">
-                      <textarea
-                        className={`f-textarea${bioError ? ' is-error' : ''}`}
-                        value={bioText}
-                        onChange={e => setBioText(e.target.value)}
-                        maxLength={280}
-                        placeholder="A line or two about you"
-                        style={{ flex: '1 1 18rem' }}
-                      />
-                      <div className="f-inline">
-                        <button className="f-btn f-btn--small" onClick={saveBio}>Save</button>
-                        <button className="f-btn f-btn--ghost f-btn--small" onClick={() => { setEditingBio(false); setBioError(''); setBioText(profile.bio); }}>Cancel</button>
-                      </div>
-                      {bioError && <p className="f-err" style={{ width: '100%' }}>{bioError}</p>}
-                    </div>
+                  {isOwner ? (
+                    <button className="j-btn j-btn--ghost j-btn--small" onClick={logout}>Log out</button>
                   ) : (
-                    <div className="f-profile__biorow">
-                      <p className={`f-profile__bio${profile.bio ? '' : ' is-empty'}`}>
-                        {profile.bio || (isOwner ? 'You have not written a bio yet.' : 'No bio yet.')}
-                      </p>
-                      {isOwner && <button className="f-btn f-btn--ghost f-btn--small" onClick={() => setEditingBio(true)}>Edit bio</button>}
+                    <button className="j-btn j-btn--ghost j-btn--small" onClick={() => setShowLogin(true)}>This is me</button>
+                  )}
+                </div>
+
+                {editingBio && isOwner ? (
+                  <div className="j-profile__biorow">
+                    <textarea className={`j-textarea${bioError ? ' is-error' : ''}`} value={bioText} onChange={e => setBioText(e.target.value)} maxLength={280} placeholder="A line or two about you" style={{ flex: '1 1 18rem' }} />
+                    <div className="j-inline">
+                      <button className="j-btn j-btn--small" onClick={saveBio}>Save</button>
+                      <button className="j-btn j-btn--ghost j-btn--small" onClick={() => { setEditingBio(false); setBioError(''); setBioText(profile.bio); }}>Cancel</button>
                     </div>
-                  )}
-
-                  {playerStats && (
-                    <>
-                      <dl className="f-stats">
-                        {STAT_TABS.map(t => (
-                          <div key={t.id} className="f-stat">
-                            <dt className="f-stat__k">{t.label}</dt>
-                            <dd className="f-stat__v">{t.unit(playerStats[t.id])}</dd>
-                          </div>
-                        ))}
-                      </dl>
-                      {badges.length > 0 && (
-                        <ul className="f-badges" aria-label="Achievements">
-                          {badges.map(b => <li key={b.id} className="f-badge"><Star className="f-star" />{b.label}</li>)}
-                        </ul>
-                      )}
-                      {statsMeta?.source === 'cached' && statsMeta.cachedAt && (
-                        <p className="f-note">The server is down; these numbers are from {formatDate(statsMeta.cachedAt)}.</p>
-                      )}
-                    </>
-                  )}
-                </div>
-              </section>
-
-              {/* posts */}
-              <section className="f-block">
-                <div className="f-block__head">
-                  <h2 className="f-block__title">Posts{profile.posts.length > 0 && <small>{profile.posts.length}</small>}</h2>
-                </div>
-
-                {isOwner && (
-                  <form className="f-compose" onSubmit={submitPost}>
-                    <textarea
-                      className={`f-textarea${postError ? ' is-error' : ''}`}
-                      value={newPost}
-                      onChange={e => setNewPost(e.target.value)}
-                      maxLength={500}
-                      placeholder="What's happening on the server?"
-                    />
-                    <div className="f-compose__row">
-                      <span className="f-compose__count">{newPost.length} / 500</span>
-                      <button type="submit" className="f-btn f-btn--small" disabled={posting || !newPost.trim()}>{posting ? 'Posting…' : 'Post'}</button>
-                    </div>
-                    {postError && <p className="f-err">{postError}</p>}
-                  </form>
-                )}
-
-                {profile.posts.length === 0 ? (
-                  <p className="f-empty">{isOwner ? 'Nothing posted yet. Write the first one above.' : 'No posts yet.'}</p>
+                    {bioError && <p className="j-err" style={{ width: '100%' }}>{bioError}</p>}
+                  </div>
                 ) : (
-                  <ul className="f-feed">
-                    {profile.posts.map(post => (
-                      <li key={post.id} className="f-post f-post--plain">
-                        {editingPostId === post.id ? (
-                          <div>
-                            <textarea className="f-textarea" value={editText} onChange={e => setEditText(e.target.value)} maxLength={500} autoFocus />
-                            <div className="f-inline" style={{ marginTop: '0.6rem' }}>
-                              <button className="f-btn f-btn--small" onClick={() => saveEditPost(post.id)} disabled={editSaving || !editText.trim()}>{editSaving ? 'Saving…' : 'Save'}</button>
-                              <button className="f-btn f-btn--ghost f-btn--small" onClick={cancelEditPost}>Cancel</button>
-                            </div>
-                          </div>
-                        ) : (
-                          <div>
-                            <p className="f-post__text" style={{ marginTop: 0 }}>{post.text}</p>
-                            <div className="f-post__meta" style={{ marginTop: '0.5rem' }}>
-                              <span>{formatDate(post.createdAt)}</span>
-                              {isOwner && (
-                                <span className="f-post__actions">
-                                  <button onClick={() => startEditPost(post)}>Edit</button>
-                                  <button onClick={() => deletePost(post.id)}>Delete</button>
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </section>
-
-              {/* photos */}
-              <section className="f-block">
-                <div className="f-block__head">
-                  <h2 className="f-block__title">Screenshots{profile.photos.length > 0 && <small>{profile.photos.length}</small>}</h2>
-                  {isOwner && (
-                    <>
-                      <input ref={fileRef} type="file" accept="image/*" onChange={uploadPhoto} style={{ display: 'none' }} id="crew-photo-upload" />
-                      <label htmlFor="crew-photo-upload" className="f-btn f-btn--ghost f-btn--small" style={{ cursor: uploading ? 'wait' : 'pointer' }}>
-                        {uploading ? 'Uploading…' : 'Upload'}
-                      </label>
-                    </>
-                  )}
-                </div>
-                {photoError && <p className="f-err" style={{ marginBottom: '0.75rem' }}>{photoError}</p>}
-
-                {profile.photos.length === 0 ? (
-                  <p className="f-empty">{isOwner ? 'No screenshots yet. Upload a few of your builds.' : 'No screenshots yet.'}</p>
-                ) : (
-                  <div className="f-shots">
-                    {profile.photos.map((photo, idx) => (
-                      <button key={photo.id} className="f-shot" onClick={() => setLightboxIdx(idx)} aria-label={photo.caption || `Screenshot ${idx + 1}`}>
-                        <span className="f-photo__frame" style={{ display: 'block' }}>
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={photo.filename} alt={photo.caption || ''} loading="lazy" style={{ width: '100%', aspectRatio: '4 / 3', objectFit: 'cover' }} />
-                        </span>
-                        {photo.caption && <span className="f-shot__cap">{photo.caption}</span>}
-                      </button>
-                    ))}
+                  <div className="j-profile__biorow">
+                    <p className={`j-profile__bio${profile.bio ? '' : ' is-empty'}`}>
+                      {profile.bio || (isOwner ? 'you have not written a bio yet' : 'no bio yet')}
+                    </p>
+                    {isOwner && <button className="j-btn j-btn--ghost j-btn--small" onClick={() => setEditingBio(true)}>Edit bio</button>}
                   </div>
                 )}
-              </section>
-            </>
-          )}
-        </div>
+
+                {playerStats && (
+                  <>
+                    <dl className="j-stats">
+                      {STAT_TABS.map(t => (
+                        <div key={t.id} className="j-stat">
+                          <dt className="j-stat__k">{t.label}</dt>
+                          <dd className="j-stat__v">{t.unit(playerStats[t.id])}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                    {badges.length > 0 && (
+                      <ul className="j-badges" aria-label="Achievements">
+                        {badges.map(b => <li key={b.id} className="j-badge"><Star className="j-star" />{b.label}</li>)}
+                      </ul>
+                    )}
+                    {statsMeta?.source === 'cached' && statsMeta.cachedAt && (
+                      <p className="j-note j-note--faint" style={{ marginTop: '0.75rem' }}>server is down, these numbers are from {formatDate(statsMeta.cachedAt)}</p>
+                    )}
+                  </>
+                )}
+              </div>
+            </section>
+
+            {/* posts */}
+            <section className="j-block">
+              <div className="j-block__head">
+                <p className="j-note j-note--big">Posts{profile.posts.length > 0 && <span className="j-note j-note--faint"> · {profile.posts.length}</span>}</p>
+              </div>
+              {isOwner && (
+                <form className="j-compose" onSubmit={submitPost}>
+                  <textarea className={`j-textarea${postError ? ' is-error' : ''}`} value={newPost} onChange={e => setNewPost(e.target.value)} maxLength={500} placeholder="What's happening on the server?" />
+                  <div className="j-compose__row">
+                    <span className="j-compose__count">{newPost.length} / 500</span>
+                    <button type="submit" className="j-btn j-btn--small" disabled={posting || !newPost.trim()}>{posting ? 'Posting…' : 'Post'}</button>
+                  </div>
+                  {postError && <p className="j-err">{postError}</p>}
+                </form>
+              )}
+              {profile.posts.length === 0 ? (
+                <p className="j-empty">{isOwner ? 'nothing posted yet, write the first one above' : 'no posts yet'}</p>
+              ) : (
+                <ul className="j-feed" style={{ maxWidth: 'none' }}>
+                  {profile.posts.map(post => (
+                    <li key={post.id} className="j-post j-post--plain">
+                      {editingPostId === post.id ? (
+                        <div>
+                          <textarea className="j-textarea" value={editText} onChange={e => setEditText(e.target.value)} maxLength={500} autoFocus />
+                          <div className="j-inline" style={{ marginTop: '0.6rem' }}>
+                            <button className="j-btn j-btn--small" onClick={() => saveEditPost(post.id)} disabled={editSaving || !editText.trim()}>{editSaving ? 'Saving…' : 'Save'}</button>
+                            <button className="j-btn j-btn--ghost j-btn--small" onClick={cancelEditPost}>Cancel</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <p className="j-post__text" style={{ marginTop: 0 }}>{post.text}</p>
+                          <div className="j-post__meta" style={{ marginTop: '0.5rem' }}>
+                            <span>{formatDate(post.createdAt)}</span>
+                            {isOwner && (
+                              <span className="j-post__actions">
+                                <button onClick={() => startEditPost(post)}>edit</button>
+                                <button onClick={() => deletePost(post.id)}>delete</button>
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+
+            {/* photos */}
+            <section className="j-block">
+              <div className="j-block__head">
+                <p className="j-note j-note--big">Screenshots{profile.photos.length > 0 && <span className="j-note j-note--faint"> · {profile.photos.length}</span>}</p>
+                {isOwner && (
+                  <>
+                    <input ref={fileRef} type="file" accept="image/*" onChange={uploadPhoto} style={{ display: 'none' }} id="crew-photo-upload" />
+                    <label htmlFor="crew-photo-upload" className="j-btn j-btn--ghost j-btn--small" style={{ cursor: uploading ? 'wait' : 'pointer' }}>{uploading ? 'Uploading…' : 'Upload'}</label>
+                  </>
+                )}
+              </div>
+              {photoError && <p className="j-err" style={{ marginBottom: '0.75rem' }}>{photoError}</p>}
+              {profile.photos.length === 0 ? (
+                <p className="j-empty">{isOwner ? 'no screenshots yet, upload a few of your builds' : 'no screenshots yet'}</p>
+              ) : (
+                <div className="j-shots">
+                  {profile.photos.map((photo, idx) => (
+                    <button key={photo.id} className="j-polaroid" style={{ '--r': `${TILT[idx % TILT.length]}deg` } as CSSProperties} onClick={() => setLightboxIdx(idx)} aria-label={photo.caption || `Screenshot ${idx + 1}`}>
+                      <Tape at="top" r={idx % 2 ? 3 : -3} />
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={photo.filename} alt={photo.caption || ''} loading="lazy" />
+                      <span className="j-polaroid__cap">{photo.caption || formatDate(photo.uploadedAt)}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </section>
+          </>
+        )}
       </main>
       <Footer />
 
       {showLogin && <LoginModal username={username} onSuccess={onLoginSuccess} onClose={() => setShowLogin(false)} />}
       {lightboxIdx !== null && profile && (
-        <Lightbox
-          photos={profile.photos.map(p => ({ src: p.filename, title: p.caption || undefined, sub: formatDate(p.uploadedAt) }))}
-          index={lightboxIdx}
-          onClose={closeLightbox}
-          onPrev={prevPhoto}
-          onNext={nextPhoto}
-        />
+        <Lightbox photos={profile.photos.map(p => ({ src: p.filename, title: p.caption || undefined, sub: formatDate(p.uploadedAt) }))} index={lightboxIdx} onClose={closeLightbox} onPrev={prevPhoto} onNext={nextPhoto} />
       )}
-    </>
+    </div>
   );
 }
