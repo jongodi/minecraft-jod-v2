@@ -1,74 +1,74 @@
-# JOÐ: Minecraft server website
+# JOÐ: Minecraft-vefurinn okkar
 
-Website for the JOÐ private Minecraft survival server at **play.jodcraft.world**.
+Vefur fyrir Minecraft-einkaþjón JOÐ á **play.jodcraft.world**.
 
-Built with Next.js 15, TypeScript and plain CSS. No UI framework on the public pages.
+Byggt með Next.js 15, TypeScript og CSS. Almennu síðurnar nota ekkert viðmótsrammaverk.
 
----
+## Vefurinn
 
-## The public site
+Útlitið minnir á ferðadagbók á gömlum pappír: myndir límdar inn á ská, símskeyti fest á síðuna, vistfangið sem stimpill og handskrifaðar athugasemdir á spássíunum. Punktalína teiknast niður síðuna þegar skrunað er. Rye er notað fyrir stóru fyrirsagnirnar, Caveat fyrir handskriftina og Lora fyrir meginmálið. Letrið fylgir vefnum í gegnum `@fontsource`.
 
-One long sheet of aged paper, laid out like a trail journal: photographs taped on at an angle, a telegram pinned to the page, the address as a rubber stamp, notes handwritten in the margins, and a dashed trail that draws itself down the page as you scroll. Rye wood type for the big words, Caveat for the handwriting, Lora for the reading. Fonts are self-hosted from `@fontsource`.
-
-| Stop | What it shows |
+| Hluti | Innihald |
 |---|---|
-| First page | The wordmark, a taped screenshot, a wooden signpost to the sections, and a pinned telegram with the live status. The stamp copies the address. |
-| Camp | The eight crew as portraits pegged on a rope. Colour and an IN stamp mean riding now (pinged once a minute). |
-| Territory | The world map as a burnt-edged survey sheet with brass tacks; the selected claim's photo is taped over its corner. Edited in the admin panel. |
-| Postcards | The screenshot gallery as an album of polaroids, sepia until you hover, with a lightbox. Managed in the admin panel. |
-| Showdown | Quick Draw at high noon on a leather patch: three draws, a flash on the call, smoke and a bullet hole on the hit. Best time is kept in the browser. |
-| Tallies | The leaderboard as a wanted board on wooden planks: posters for the top three, a lined ledger for the rest. |
-| Provisions | The datapacks printed on a store receipt. |
-| Ride in | The address burnt into a leather patch; tap to copy. |
+| Forsíða | Merkið, mynd úr leiknum, vegvísir að efni síðunnar og símskeyti með stöðu þjónsins. Smellur á stimpilinn afritar vistfangið. |
+| Búðirnar | Myndir af átta félögum hanga á snúru. Litur og „Inni“-stimpill sýna hver er að spila. Staðan uppfærist á mínútu fresti. |
+| Landakort | Kort heimsins á blaði með sviðnum brúnum og látúnspinnum. Mynd af völdum stað birtist yfir horninu. Kortinu er breytt í stjórnborðinu. |
+| Myndaalbúm | Myndir úr leiknum, sem fá lit þegar bent er á þær. Smelltu til að stækka. Myndunum er stjórnað í stjórnborðinu. |
+| Einvígi | Viðbragðsleikur með þremur umferðum. Blossi gefur merki, svo birtast reykur og skotgat. Besti tíminn vistast í vafranum. |
+| Tölfræði | Stigatafla á eftirlýsingaspjöldum. Þrjú efstu fá spjald, hin birtast í bókinni fyrir neðan. |
+| Pakkar | Uppsettir gagnapakkar á kvittun úr kaupfélaginu. |
+| Komdu inn | Merki brennt í leður og vistfang á málmplötu. Smelltu til að afrita. |
 
-`/crew` is the roll call, `/crew/<name>` a pinned poster with bio, tallies, achievement stars, posts and screenshots. Members log in there with their crew token.
+Á `/crew` er félagalistinn. Á `/crew/<name>` eru kynning, tölfræði, afrek, færslur og myndir hvers leikmanns. Félagar skrá sig inn með sínum aðgangslykli.
 
-Code lives in `src/components/frontier/`, styles in `src/app/frontier.css`, shared tokens in `src/app/globals.css`.
+Kóðinn er í `src/components/frontier/`, útlitsreglur í `src/app/frontier.css` og sameiginleg grunngildi í `src/app/globals.css`.
 
-## Tools
+## Verkfæri
 
-- **Resource Pack Editor** (`/rp-editor`): browser-based resource-pack analyser and editor. A Minecraft-accurate dependency engine (run in a Web Worker) resolves parent chains, blockstates, item definitions and overrides, fonts, particles, equipment, atlases and datapacks, then reports broken references and provably unused files. Includes a who-uses-this inspector, a dependency graph, `custom_model_data` collision and duplicate-texture detection, bulk auto-fix, shareable reports, and a Textures studio with 3D previews and painting.
-- **Admin panel** (`/admin`): server control (start/stop/restart), datapack update manager, gallery and map management.
+- **Pakkaritill** (`/rp-editor`): Greinir og breytir útlitspökkum í vafranum. Greining í bakgrunnsþræði rekur yfirlíkön, kubbaástand, hlutaskilgreiningar og yfirskriftir, letur, agnir, búnað, áferðarsöfn og gagnapakka. Hún sýnir bilaðar tilvísanir og skrár sem eru sannanlega ónotaðar. Þar eru líka tengslakort, leit að árekstrum í `custom_model_data`, leit að tvíteknum áferðum, sjálfvirkar leiðréttingar, útflutningur skýrslna og myndritill með þrívíðri forskoðun.
+- **Stjórnborð** (`/admin`): Ræsa, stöðva og endurræsa þjóninn, fylgjast með uppfærslum gagnapakka og breyta myndasafni og korti.
 
----
+## Tungumál
 
-## Environment variables
+Viðmótið, villuskilaboð, sjálfgefnir myndatextar og greiningarskýrslur eru á íslensku. Dagsetningar og tölur nota `is-IS`.
 
-Copy `.env.local.example` to `.env.local` and fill in the values.
+Auðkenni, slóðir, Minecraft-lyklar, notendanöfn og eiginheiti utanaðkomandi pakka og laga haldast óbreytt. Ritillinn breytir ekki tungumáli efnis í pökkum sem notandi opnar. Í `src/lib/icelandic.ts` eru birtingarheiti fyrir innri auðkenni og samsvaranir fyrir eldri enska myndatexta og kortaheiti. Þekktur eldri texti er þýddur við lestur, án þess að skrifa yfir nýtt efni notenda í gagnagrunni.
 
-| Variable | Description |
+## Umhverfisbreytur
+
+Afritaðu `.env.local.example` sem `.env.local` og fylltu inn gildin.
+
+| Breyta | Lýsing |
 |---|---|
-| `EXAROTON_API_KEY` | Exaroton API token: enables server status, control, and player stats |
-| `EXAROTON_SERVER_ID` | Your server ID from exaroton.com (optional, avoids an extra lookup) |
-| `ADMIN_TOKEN` | Password for the `/admin` panel (min 8 characters) |
-| `GITHUB_TOKEN` | GitHub classic PAT with no scopes: raises the datapack API rate limit (optional) |
-| `CREW_TOKEN_<USERNAME>` | Login token per crew member, e.g. `CREW_TOKEN_STEBBIAS=...` |
-| `REDIS_URL` | Redis, stores crew profiles, posts, gallery metadata and stat snapshots |
-| `BLOB_READ_WRITE_TOKEN` | Vercel Blob, stores uploaded photos |
+| `EXAROTON_API_KEY` | Exaroton-aðgangslykill fyrir stöðu þjónsins, stjórnun og tölfræði leikmanna |
+| `EXAROTON_SERVER_ID` | Auðkenni þjónsins á exaroton.com; valfrjálst, sparar auka uppflettingu |
+| `ADMIN_TOKEN` | Lykilorð að stjórnborðinu á `/admin`, að minnsta kosti 8 stafir |
+| `GITHUB_TOKEN` | Hefðbundinn GitHub-aðgangslykill án aðgangssviða; hækkar fyrirspurnamörk við athugun gagnapakka, valfrjálst |
+| `CREW_TOKEN_<USERNAME>` | Aðgangslykill hvers félaga, t.d. `CREW_TOKEN_STEBBIAS=...` |
+| `REDIS_URL` | Redis-tenging fyrir prófíla, færslur, myndalýsigögn og vistuð tölfræðigögn |
+| `BLOB_READ_WRITE_TOKEN` | Vercel Blob-aðgangur fyrir myndir sem er hlaðið upp |
 
----
-
-## Development
+## Þróun
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Opnaðu [vefinn á localhost:3000](http://localhost:3000).
 
-## Adding a crew member
+## Bæta við félaga
 
-1. Add the username to `CREW_USERNAMES` in `src/lib/crew.ts`
-2. Add them to `CREW` in `src/components/frontier/data.ts`
-3. Set `CREW_TOKEN_<UPPERCASE_USERNAME>` in your environment variables
+1. Bættu notandanafninu við `CREW_USERNAMES` í `src/lib/crew.ts`.
+2. Bættu því við `CREW` í `src/components/frontier/data.ts`.
+3. Stilltu `CREW_TOKEN_<UPPERCASE_USERNAME>` í umhverfisbreytunum.
 
-## Datapack update tracking
+## Fylgjast með uppfærslum gagnapakka
 
-Edit `src/data/datapacks.ts` to configure each datapack:
+Stilltu hvern gagnapakka í `src/data/datapacks.ts`:
 
-- `source: 'modrinth'` + `modrinthSlug`: checks the Modrinth API
-- `source: 'github'` + `githubRepo` (`owner/repo`): checks GitHub Releases
-- `source: 'manual'`: no automatic checking
+- `source: 'modrinth'` og `modrinthSlug`: athugar Modrinth.
+- `source: 'github'` og `githubRepo` (`owner/repo`): athugar útgáfur á GitHub.
+- `source: 'manual'`: engin sjálfvirk athugun.
 
-Set `currentVersion` to the version currently installed on the server.
+Settu `currentVersion` á þá útgáfu sem er uppsett á þjóninum.

@@ -1,5 +1,7 @@
 'use client';
 
+import { categoryLabel } from '@/lib/icelandic';
+
 import { useEffect, useState, useRef, useCallback, type FormEvent, type CSSProperties } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -34,7 +36,7 @@ function StatusPill({ status }: { status: 'online' | 'offline' | 'starting' | 's
   const c = colors[status] ?? '#444';
   return (
     <span style={{ fontFamily: mono, fontSize: '0.6rem', letterSpacing: '0.15em', color: c, background: c + '18', border: `1px solid ${c}33`, padding: '0.2rem 0.6rem', textTransform: 'uppercase' }}>
-      ● {status}
+      ● {({ online: 'Í gangi', offline: 'Slökkt', starting: 'Ræsist', stopping: 'Stöðvast', unknown: 'Óþekkt' })[status]}
     </span>
   );
 }
@@ -67,16 +69,16 @@ function ServerControlSection() {
 
   useEffect(() => { fetchInfo(); }, [fetchInfo]);
 
-  async function doAction(action: string) {
+  async function doAction(action: 'start' | 'stop' | 'restart') {
     setActing(action);
     setActMsg('');
     try {
       const res = await fetch(`/api/admin/server/${action}`, { method: 'POST' });
       const data = await res.json() as { ok?: boolean; error?: string };
-      setActMsg(data.ok ? `✓ ${action} command sent` : `✗ ${data.error}`);
+      setActMsg(data.ok ? `✓ Beiðni send: ${{ start: 'ræsa', stop: 'stöðva', restart: 'endurræsa' }[action] ?? action}` : `✗ ${data.error}`);
       setTimeout(() => fetchInfo(), 3000);
     } catch {
-      setActMsg('Network error');
+      setActMsg('Villa í nettengingu');
     } finally {
       setActing(null);
     }
@@ -86,21 +88,21 @@ function ServerControlSection() {
 
   return (
     <div style={card}>
-      <SectionHeader label="SERVER CONTROL" sub="Exaroton" />
+      <SectionHeader label="STJÓRN ÞJÓNS" sub="Exaroton" />
       {loading ? (
-        <p style={{ fontFamily: mono, fontSize: '0.65rem', color: '#444' }}>Loading server info...</p>
+        <p style={{ fontFamily: mono, fontSize: '0.65rem', color: '#444' }}>Sæki upplýsingar um þjóninn…</p>
       ) : info ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
             <StatusPill status={status} />
             {info.players && (
               <span style={{ fontFamily: mono, fontSize: '0.65rem', color: '#555' }}>
-                {info.players.count}/{info.players.max} players
+                {info.players.count}/{info.players.max} leikmenn
               </span>
             )}
             {info.ram && (
               <span style={{ fontFamily: mono, fontSize: '0.65rem', color: '#555' }}>
-                {info.ram} MB RAM
+                {info.ram} MB vinnsluminni
               </span>
             )}
           </div>
@@ -126,14 +128,14 @@ function ServerControlSection() {
                   transition:    'opacity 0.2s',
                 }}
               >
-                {acting === action ? '...' : action}
+                {acting === action ? '…' : { start: 'Ræsa', stop: 'Stöðva', restart: 'Endurræsa' }[action]}
               </button>
             ))}
             <button
               onClick={fetchInfo}
               style={{ fontFamily: mono, fontSize: '0.6rem', letterSpacing: '0.15em', textTransform: 'uppercase', padding: '0.5rem 1rem', cursor: 'pointer', border: '1px solid #2a2a2a', background: 'transparent', color: '#444' }}
             >
-              REFRESH
+              ENDURHLAÐA
             </button>
           </div>
 
@@ -145,7 +147,7 @@ function ServerControlSection() {
         </div>
       ) : (
         <p style={{ fontFamily: mono, fontSize: '0.65rem', color: '#ff4466' }}>
-          Could not load server info. Check EXAROTON_API_KEY.
+          Ekki tókst að sækja upplýsingar um þjóninn. Athugaðu EXAROTON_API_KEY.
         </p>
       )}
     </div>
@@ -174,13 +176,13 @@ function DatapacksSection() {
 
   return (
     <div style={card}>
-      <SectionHeader label="DATAPACK UPDATES" sub="Modrinth · GitHub" />
+      <SectionHeader label="UPPFÆRSLUR GAGNAPAKKA" sub="Modrinth · GitHub" />
 
-      {loading && <p style={{ fontFamily: mono, fontSize: '0.65rem', color: '#444' }}>Checking for updates...</p>}
+      {loading && <p style={{ fontFamily: mono, fontSize: '0.65rem', color: '#444' }}>Leita að uppfærslum…</p>}
 
       {updates.length > 0 && (
         <div style={{ background: '#f0a50010', border: '1px solid #f0a50030', padding: '0.6rem 0.8rem', marginBottom: '1rem', fontFamily: mono, fontSize: '0.6rem', color: '#f0a500' }}>
-          {updates.length} update{updates.length !== 1 ? 's' : ''} available
+          Uppfærslur í boði: {updates.length}
         </div>
       )}
 
@@ -198,25 +200,25 @@ function DatapacksSection() {
                 {r.currentVersion ? `v${r.currentVersion}` : '—'}
               </span>
               {r.source === 'manual' ? (
-                <span style={{ fontFamily: mono, fontSize: '0.5rem', color: '#2a2a2a', letterSpacing: '0.1em' }}>MANUAL</span>
+                <span style={{ fontFamily: mono, fontSize: '0.5rem', color: '#2a2a2a', letterSpacing: '0.1em' }}>HANDVIRKT</span>
               ) : r.updateAvailable ? (
                 <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
                   <span style={{ fontFamily: mono, fontSize: '0.55rem', color: '#f0a500' }}>→ v{r.latestVersion}</span>
                   {r.downloadUrl && (
                     <a href={r.downloadUrl} target="_blank" rel="noopener noreferrer" style={{ fontFamily: mono, fontSize: '0.5rem', color: '#f0a500', border: '1px solid #f0a50044', padding: '0.15rem 0.4rem', textDecoration: 'none', letterSpacing: '0.1em' }}>
-                      ↓ DL
+                      ↓ SÆKJA
                     </a>
                   )}
                   {r.modrinthUrl && (
                     <a href={r.modrinthUrl} target="_blank" rel="noopener noreferrer" style={{ fontFamily: mono, fontSize: '0.5rem', color: '#555', border: '1px solid #2a2a2a', padding: '0.15rem 0.4rem', textDecoration: 'none', letterSpacing: '0.1em' }}>
-                      MR →
+                      Modrinth →
                     </a>
                   )}
                 </div>
               ) : r.latestVersion ? (
-                <span style={{ fontFamily: mono, fontSize: '0.5rem', color: '#c8960c44', letterSpacing: '0.1em' }}>✓ UP TO DATE</span>
+                <span style={{ fontFamily: mono, fontSize: '0.5rem', color: '#c8960c44', letterSpacing: '0.1em' }}>✓ NÝJASTA ÚTGÁFA</span>
               ) : r.error ? (
-                <span style={{ fontFamily: mono, fontSize: '0.5rem', color: '#ff446666' }} title={r.error}>CHECK FAILED</span>
+                <span style={{ fontFamily: mono, fontSize: '0.5rem', color: '#ff446666' }} title={r.error}>ATHUGUN MISTÓKST</span>
               ) : null}
             </div>
           ))}
@@ -228,7 +230,7 @@ function DatapacksSection() {
         disabled={loading}
         style={{ marginTop: '1rem', fontFamily: mono, fontSize: '0.6rem', letterSpacing: '0.15em', textTransform: 'uppercase', padding: '0.4rem 0.8rem', cursor: loading ? 'not-allowed' : 'pointer', border: '1px solid #2a2a2a', background: 'transparent', color: '#444' }}
       >
-        {loading ? 'CHECKING...' : 'REFRESH'}
+        {loading ? 'ATHUGA…' : 'ENDURHLAÐA'}
       </button>
     </div>
   );
@@ -266,9 +268,9 @@ function AddPackModal({ filename, onClose, onSaved }: { filename: string; onClos
         }),
       });
       const data = await res.json() as { error?: string };
-      if (!res.ok) { setError(data.error ?? 'Save failed'); return; }
+      if (!res.ok) { setError(data.error ?? 'Ekki tókst að vista'); return; }
       onSaved();
-    } catch { setError('Network error'); }
+    } catch { setError('Villa í nettengingu'); }
     finally   { setSaving(false); }
   }
 
@@ -280,67 +282,67 @@ function AddPackModal({ filename, onClose, onSaved }: { filename: string; onClos
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.88)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
       <div onClick={e => e.stopPropagation()} style={{ background: '#0d0d0d', border: '1px solid #2a2a2a', padding: '1.75rem', width: 'min(520px, 100%)', maxHeight: '90vh', overflowY: 'auto' }}>
         <div style={{ marginBottom: '1.25rem', borderBottom: '1px solid #1a1a1a', paddingBottom: '0.75rem' }}>
-          <p style={{ fontFamily: mono, fontSize: '0.5rem', letterSpacing: '0.3em', color: green, marginBottom: '0.25rem' }}>NEW DATAPACK</p>
-          <h2 style={{ fontFamily: sans, fontSize: '1.2rem', fontWeight: 900, color: '#f0f0f0', letterSpacing: '-0.02em', margin: 0 }}>Add custom pack</h2>
+          <p style={{ fontFamily: mono, fontSize: '0.5rem', letterSpacing: '0.3em', color: green, marginBottom: '0.25rem' }}>NÝR GAGNAPAKKI</p>
+          <h2 style={{ fontFamily: sans, fontSize: '1.2rem', fontWeight: 900, color: '#f0f0f0', letterSpacing: '-0.02em', margin: 0 }}>Bæta við eigin pakka</h2>
           <p style={{ fontFamily: mono, fontSize: '0.5rem', color: '#333', marginTop: '0.4rem', wordBreak: 'break-all' }}>{filename}</p>
         </div>
         <form onSubmit={submit}>
           <div style={row}>
-            <label style={lbl}>Name *</label>
+            <label style={lbl}>Nafn *</label>
             <input value={name} onChange={e => setName(e.target.value)} required style={inp} placeholder="Herobrine DP" />
           </div>
           <div style={row}>
-            <label style={lbl}>Description *</label>
-            <input value={desc} onChange={e => setDesc(e.target.value)} required style={inp} placeholder="One sentence description" />
+            <label style={lbl}>Lýsing *</label>
+            <input value={desc} onChange={e => setDesc(e.target.value)} required style={inp} placeholder="Stutt lýsing í einni setningu" />
           </div>
           <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '0.85rem' }}>
             <div style={{ flex: 1 }}>
-              <label style={lbl}>Category *</label>
+              <label style={lbl}>Flokkur *</label>
               <select value={category} onChange={e => setCategory(e.target.value)} style={{ ...inp, cursor: 'pointer' }}>
-                {PACK_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                {PACK_CATEGORIES.map(c => <option key={c} value={c}>{categoryLabel(c)}</option>)}
               </select>
             </div>
             <div style={{ flex: 1 }}>
-              <label style={lbl}>Source *</label>
+              <label style={lbl}>Uppruni *</label>
               <select value={source} onChange={e => setSource(e.target.value as typeof source)} style={{ ...inp, cursor: 'pointer' }}>
                 <option value="modrinth">Modrinth</option>
                 <option value="github">GitHub</option>
-                <option value="manual">Manual</option>
+                <option value="manual">Handvirkt</option>
               </select>
             </div>
           </div>
           {source === 'modrinth' && (
             <div style={row}>
-              <label style={lbl}>Modrinth slug</label>
+              <label style={lbl}>Auðkenni á Modrinth</label>
               <input value={slug} onChange={e => setSlug(e.target.value)} style={inp} placeholder="my-datapack-slug" />
             </div>
           )}
           {source === 'github' && (
             <div style={row}>
-              <label style={lbl}>GitHub repo</label>
+              <label style={lbl}>GitHub-safn</label>
               <input value={repo} onChange={e => setRepo(e.target.value)} style={inp} placeholder="owner/repo" />
             </div>
           )}
           <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '0.85rem' }}>
             <div style={{ flex: 1 }}>
-              <label style={lbl}>Game version</label>
+              <label style={lbl}>Útgáfa leiks</label>
               <input value={gameVer} onChange={e => setGameVer(e.target.value)} style={inp} placeholder="26.1" />
             </div>
             <div style={{ flex: 2 }}>
-              <label style={lbl}>Server file identifier</label>
+              <label style={lbl}>Auðkenni skrár á þjóni</label>
               <input value={serverFile} onChange={e => setServerFile(e.target.value)} style={inp} />
             </div>
           </div>
           <p style={{ fontFamily: mono, fontSize: '0.5rem', color: '#2a2a2a', marginBottom: '1rem', lineHeight: 1.6 }}>
-            Trim server file to the distinctive part before the version — e.g. &quot;Herobrine DP&quot; from &quot;Herobrine DP 1.21.9 - 26.1.2 v7.3.3&quot;
+            Notaðu þann hluta skráarheitisins sem auðkennir pakkann, án útgáfunúmers. Til dæmis &quot;Herobrine DP&quot; úr &quot;Herobrine DP 1.21.9 - 26.1.2 v7.3.3&quot;.
           </p>
           {error && <p style={{ fontFamily: mono, fontSize: '0.6rem', color: '#ff4466', marginBottom: '0.75rem' }}>✗ {error}</p>}
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             <button type="submit" disabled={saving} style={{ fontFamily: mono, fontSize: '0.6rem', letterSpacing: '0.15em', textTransform: 'uppercase', padding: '0.5rem 1rem', cursor: saving ? 'not-allowed' : 'pointer', border: `1px solid ${green}44`, background: green + '18', color: green }}>
-              {saving ? 'SAVING...' : 'ADD PACK'}
+              {saving ? 'VISTA…' : 'BÆTA VIÐ PAKKA'}
             </button>
             <button type="button" onClick={onClose} style={{ fontFamily: mono, fontSize: '0.6rem', letterSpacing: '0.15em', textTransform: 'uppercase', padding: '0.5rem 1rem', cursor: 'pointer', border: '1px solid #2a2a2a', background: 'transparent', color: '#444' }}>
-              CANCEL
+              HÆTTA VIÐ
             </button>
           </div>
         </form>
@@ -388,9 +390,9 @@ function DatapackVersionsSection() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ versions: Object.fromEntries(Object.entries(edits).map(([k, v]) => [k, v])) }),
       });
-      setMsg(res.ok ? '✓ Versions saved — update checker will use these next run' : '✗ Save failed');
+      setMsg(res.ok ? '✓ Útgáfur vistaðar — þær verða notaðar við næstu uppfærsluathugun' : '✗ Ekki tókst að vista');
       if (res.ok) fetchPacks();
-    } catch { setMsg('✗ Network error'); }
+    } catch { setMsg('✗ Villa í nettengingu'); }
     finally   { setSaving(false); }
   }
 
@@ -399,9 +401,9 @@ function DatapackVersionsSection() {
     try {
       const res  = await fetch('/api/admin/datapacks/refresh', { method: 'POST' });
       const data = await res.json() as RefreshResult & { error?: string };
-      if (!res.ok) { setSyncError(data.error ?? 'Sync failed'); }
+      if (!res.ok) { setSyncError(data.error ?? 'Samstilling mistókst'); }
       else         { setSyncResult(data); await fetchPacks(); }
-    } catch { setSyncError('Network error'); }
+    } catch { setSyncError('Villa í nettengingu'); }
     finally  { setSyncing(false); }
   }
 
@@ -409,12 +411,12 @@ function DatapackVersionsSection() {
 
   return (
     <div style={card}>
-      <SectionHeader label="DATAPACK VERSIONS" sub="Installed versions" />
+      <SectionHeader label="ÚTGÁFUR GAGNAPAKKA" sub="Uppsettar útgáfur" />
       <p style={{ fontFamily: mono, fontSize: '0.6rem', color: '#444', marginBottom: '1.25rem', lineHeight: 1.6 }}>
-        Edit the installed version for each pack. The update checker uses these values to detect when a newer version is available on Modrinth or GitHub.
+        Skráðu hvaða útgáfa er uppsett af hverjum pakka. Þessar upplýsingar eru notaðar til að athuga hvort nýrri útgáfa sé fáanleg á Modrinth eða GitHub.
       </p>
 
-      {loading ? <p style={{ fontFamily: mono, fontSize: '0.65rem', color: '#444' }}>Loading...</p> : (
+      {loading ? <p style={{ fontFamily: mono, fontSize: '0.65rem', color: '#444' }}>Hleð…</p> : (
         <>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
             {packs.map(p => (
@@ -425,7 +427,7 @@ function DatapackVersionsSection() {
                 <input
                   value={edits[p.id] ?? ''}
                   onChange={e => setEdits(prev => ({ ...prev, [p.id]: e.target.value }))}
-                  placeholder="e.g. 1.2.3"
+                  placeholder="t.d. 1.2.3"
                   style={{
                     background:  '#0d0d0d',
                     border:      `1px solid ${edits[p.id] !== (p.currentVersion ?? '') ? '#f0a50055' : '#1a1a1a'}`,
@@ -439,7 +441,7 @@ function DatapackVersionsSection() {
                   }}
                 />
                 {p.isOverridden && (
-                  <span style={{ fontFamily: mono, fontSize: '0.45rem', color: '#f0a500', letterSpacing: '0.1em' }}>OVERRIDDEN</span>
+                  <span style={{ fontFamily: mono, fontSize: '0.45rem', color: '#f0a500', letterSpacing: '0.1em' }}>HANDVIRKT GILDI</span>
                 )}
               </div>
             ))}
@@ -451,14 +453,14 @@ function DatapackVersionsSection() {
               disabled={syncing || saving}
               style={{ fontFamily: mono, fontSize: '0.6rem', letterSpacing: '0.15em', textTransform: 'uppercase', padding: '0.5rem 1rem', cursor: syncing || saving ? 'not-allowed' : 'pointer', border: '1px solid #4ecdc444', background: 'transparent', color: '#4ecdc4', transition: 'all 0.2s' }}
             >
-              {syncing ? 'SYNCING...' : 'SYNC FROM SERVER'}
+              {syncing ? 'SAMSTILLI…' : 'SAMSTILLA VIÐ ÞJÓN'}
             </button>
             <button
               onClick={save}
               disabled={saving || !hasChanges}
               style={{ fontFamily: mono, fontSize: '0.6rem', letterSpacing: '0.15em', textTransform: 'uppercase', padding: '0.5rem 1rem', cursor: saving || !hasChanges ? 'not-allowed' : 'pointer', border: `1px solid ${green}44`, background: hasChanges ? green + '18' : 'transparent', color: hasChanges ? green : '#333', transition: 'all 0.2s' }}
             >
-              {saving ? 'SAVING...' : 'SAVE VERSIONS'}
+              {saving ? 'VISTA…' : 'VISTA ÚTGÁFUR'}
             </button>
             {msg && <span style={{ fontFamily: mono, fontSize: '0.6rem', color: msg.startsWith('✓') ? green : '#ff4466' }}>{msg}</span>}
           </div>
@@ -471,7 +473,7 @@ function DatapackVersionsSection() {
           {syncResult && (
             <div style={{ marginTop: '0.75rem', border: '1px solid #1a2a1a', background: '#0a120a', padding: '0.75rem 1rem' }}>
               <p style={{ fontFamily: mono, fontSize: '0.6rem', color: green, marginBottom: '0.5rem' }}>
-                ✓ Scanned {syncResult.scanned.length} file{syncResult.scanned.length !== 1 ? 's' : ''} — {syncResult.updated} version{syncResult.updated !== 1 ? 's' : ''} updated, {syncResult.matched.length} matched, {syncResult.unmatched.length} unrecognised
+                ✓ Skrár skoðaðar: {syncResult.scanned.length} · Útgáfur uppfærðar: {syncResult.updated} · Pakkar þekktir: {syncResult.matched.length} · Óþekktir: {syncResult.unmatched.length}
               </p>
               {syncResult.matched.map(m => (
                 <div key={m.id} style={{ display: 'flex', gap: '0.75rem', padding: '0.2rem 0', fontFamily: mono, fontSize: '0.55rem' }}>
@@ -479,12 +481,12 @@ function DatapackVersionsSection() {
                   <span style={{ color: '#888', flex: 1 }}>{m.name}</span>
                   {m.version
                     ? <span style={{ color: green }}>v{m.version}</span>
-                    : <span style={{ color: '#333' }}>detected — set version manually</span>}
+                    : <span style={{ color: '#333' }}>fannst — skráðu útgáfuna handvirkt</span>}
                 </div>
               ))}
               {syncResult.unmatched.length > 0 && (
                 <div style={{ marginTop: '0.5rem', borderTop: '1px solid #1a1a1a', paddingTop: '0.5rem' }}>
-                  <p style={{ fontFamily: mono, fontSize: '0.5rem', color: '#444', letterSpacing: '0.15em', marginBottom: '0.4rem' }}>UNRECOGNISED</p>
+                  <p style={{ fontFamily: mono, fontSize: '0.5rem', color: '#444', letterSpacing: '0.15em', marginBottom: '0.4rem' }}>ÓÞEKKT</p>
                   {syncResult.unmatched.map(f => (
                     <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.2rem 0' }}>
                       <span style={{ fontFamily: mono, fontSize: '0.5rem', color: '#333', flex: 1, wordBreak: 'break-all' }}>{f}</span>
@@ -492,7 +494,7 @@ function DatapackVersionsSection() {
                         onClick={() => setAddingFor(f)}
                         style={{ fontFamily: mono, fontSize: '0.45rem', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '0.2rem 0.5rem', cursor: 'pointer', border: '1px solid #2a2a2a', background: 'transparent', color: '#555', flexShrink: 0 }}
                       >
-                        + ADD
+                        + BÆTA VIÐ
                       </button>
                     </div>
                   ))}
@@ -555,7 +557,7 @@ function GalleryManagerSection() {
       body:    JSON.stringify({ active: !photo.active }),
     });
     if (res.ok) setPhotos(ps => ps.map(p => p.id === photo.id ? { ...p, active: !p.active } : p));
-    else setStatusMsg('✗ Failed to update — try again');
+    else setStatusMsg('✗ Uppfærsla mistókst — reyndu aftur');
   }
 
   async function saveTitle(photo: GalleryPhoto) {
@@ -567,17 +569,17 @@ function GalleryManagerSection() {
     if (res.ok) {
       setPhotos(ps => ps.map(p => p.id === photo.id ? { ...p, title: editTitle.toUpperCase(), sublabel: editSublabel.toUpperCase() } : p));
       setEditingId(null);
-      setStatusMsg('✓ Title saved');
+      setStatusMsg('✓ Titill vistaður');
     } else {
-      setStatusMsg('✗ Failed to save title — try again');
+      setStatusMsg('✗ Ekki tókst að vista titilinn — reyndu aftur');
     }
   }
 
   async function deletePhoto(id: string) {
-    if (!confirm('Delete this photo? This cannot be undone.')) return;
+    if (!confirm('Eyða þessari mynd? Það er ekki hægt að afturkalla það.')) return;
     const res = await fetch(`/api/admin/gallery/${id}`, { method: 'DELETE' });
     if (res.ok) setPhotos(ps => ps.filter(p => p.id !== id));
-    else setStatusMsg('✗ Failed to delete — try again');
+    else setStatusMsg('✗ Eyðing mistókst — reyndu aftur');
   }
 
   // Drag-and-drop reorder
@@ -600,7 +602,7 @@ function GalleryManagerSection() {
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ ids: newPhotos.map(p => p.id) }),
     });
-    if (!res.ok) setStatusMsg('✗ Failed to save order — try again');
+    if (!res.ok) setStatusMsg('✗ Ekki tókst að vista röðina — reyndu aftur');
   }
 
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -610,20 +612,20 @@ function GalleryManagerSection() {
     setStatusMsg('');
     const fd = new FormData();
     fd.append('file', file);
-    fd.append('title', 'NEW SCREENSHOT');
+    fd.append('title', 'NÝ MYND ÚR LEIKNUM');
     fd.append('sublabel', '');
     try {
       const res = await fetch('/api/admin/gallery/upload', { method: 'POST', body: fd });
       if (res.ok) {
         const p = await res.json() as GalleryPhoto;
         setPhotos(ps => [...ps, p]);
-        setStatusMsg('✓ Photo uploaded');
+        setStatusMsg('✓ Mynd hlaðið upp');
       } else {
         const err = await res.json() as { error: string };
         setStatusMsg(`✗ ${err.error}`);
       }
     } catch {
-      setStatusMsg('✗ Upload failed');
+      setStatusMsg('✗ Upphleðsla mistókst');
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -634,7 +636,7 @@ function GalleryManagerSection() {
 
   return (
     <div style={card}>
-      <SectionHeader label="GALLERY MANAGER" sub="Photos" />
+      <SectionHeader label="MYNDASAFN" sub="Myndir" />
 
       {/* Upload */}
       <div style={{ marginBottom: '1.5rem', display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -643,16 +645,16 @@ function GalleryManagerSection() {
           htmlFor="gallery-upload"
           style={{ fontFamily: mono, fontSize: '0.6rem', letterSpacing: '0.15em', textTransform: 'uppercase', padding: '0.5rem 1rem', cursor: uploading ? 'not-allowed' : 'pointer', border: `1px solid ${green}44`, color: green, background: green + '08' }}
         >
-          {uploading ? 'UPLOADING...' : '+ UPLOAD PHOTO'}
+          {uploading ? 'HLEÐ UPP…' : '+ HLAÐA UPP MYND'}
         </label>
         {statusMsg && <span style={{ fontFamily: mono, fontSize: '0.6rem', color: statusMsg.startsWith('✓') ? green : '#ff4466' }}>{statusMsg}</span>}
         <span style={{ fontFamily: mono, fontSize: '0.55rem', color: '#333', marginLeft: 'auto' }}>
-          {photos.filter(p => p.active).length}/{photos.length} active · drag to reorder
+          {photos.filter(p => p.active).length}/{photos.length} sýnilegar · dragðu til að breyta röðinni
         </span>
       </div>
 
       {loading ? (
-        <p style={{ fontFamily: mono, fontSize: '0.65rem', color: '#444' }}>Loading photos...</p>
+        <p style={{ fontFamily: mono, fontSize: '0.65rem', color: '#444' }}>Sæki myndir…</p>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.75rem' }}>
           {sorted.map(photo => (
@@ -678,7 +680,7 @@ function GalleryManagerSection() {
                 <img src={photo.filename} alt={photo.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                 {!photo.active && (
                   <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <span style={{ fontFamily: mono, fontSize: '0.5rem', letterSpacing: '0.2em', color: '#666', background: '#0008', padding: '0.2rem 0.5rem' }}>HIDDEN</span>
+                    <span style={{ fontFamily: mono, fontSize: '0.5rem', letterSpacing: '0.2em', color: '#666', background: '#0008', padding: '0.2rem 0.5rem' }}>FALIÐ</span>
                   </div>
                 )}
                 {/* Order badge */}
@@ -694,17 +696,17 @@ function GalleryManagerSection() {
                     <input
                       value={editTitle}
                       onChange={e => setEditTitle(e.target.value)}
-                      placeholder="Title"
+                      placeholder="Titill"
                       style={{ background: '#0d0d0d', border: '1px solid #2a2a2a', color: '#f0f0f0', fontFamily: mono, fontSize: '0.6rem', padding: '0.3rem 0.4rem', outline: 'none' }}
                     />
                     <input
                       value={editSublabel}
                       onChange={e => setEditSublabel(e.target.value)}
-                      placeholder="Sublabel (e.g. NEW BASE)"
+                      placeholder="Undirtitill (t.d. Nýja byggðin)"
                       style={{ background: '#0d0d0d', border: '1px solid #2a2a2a', color: '#f0f0f0', fontFamily: mono, fontSize: '0.6rem', padding: '0.3rem 0.4rem', outline: 'none' }}
                     />
                     <div style={{ display: 'flex', gap: '0.3rem' }}>
-                      <button onClick={() => saveTitle(photo)} style={{ flex: 1, fontFamily: mono, fontSize: '0.5rem', letterSpacing: '0.1em', background: green + '22', color: green, border: `1px solid ${green}44`, padding: '0.25rem', cursor: 'pointer' }}>SAVE</button>
+                      <button onClick={() => saveTitle(photo)} style={{ flex: 1, fontFamily: mono, fontSize: '0.5rem', letterSpacing: '0.1em', background: green + '22', color: green, border: `1px solid ${green}44`, padding: '0.25rem', cursor: 'pointer' }}>VISTA</button>
                       <button onClick={() => setEditingId(null)} style={{ fontFamily: mono, fontSize: '0.5rem', background: 'none', color: '#444', border: '1px solid #2a2a2a', padding: '0.25rem 0.5rem', cursor: 'pointer' }}>✕</button>
                     </div>
                   </div>
@@ -716,15 +718,15 @@ function GalleryManagerSection() {
                       <button
                         onClick={() => { setEditingId(photo.id); setEditTitle(photo.title); setEditSublabel(photo.sublabel); }}
                         style={{ fontFamily: mono, fontSize: '0.45rem', letterSpacing: '0.1em', background: 'none', color: '#444', border: '1px solid #222', padding: '0.2rem 0.4rem', cursor: 'pointer' }}
-                      >EDIT</button>
+                      >BREYTA</button>
                       <button
                         onClick={() => toggleActive(photo)}
                         style={{ fontFamily: mono, fontSize: '0.45rem', letterSpacing: '0.1em', background: photo.active ? '#ff446618' : green + '18', color: photo.active ? '#ff4466' : green, border: `1px solid ${photo.active ? '#ff446633' : green + '33'}`, padding: '0.2rem 0.4rem', cursor: 'pointer' }}
-                      >{photo.active ? 'HIDE' : 'SHOW'}</button>
+                      >{photo.active ? 'FELA' : 'SÝNA'}</button>
                       <button
                         onClick={() => deletePhoto(photo.id)}
                         style={{ fontFamily: mono, fontSize: '0.45rem', letterSpacing: '0.1em', background: 'none', color: '#3a1a1a', border: '1px solid #2a1010', padding: '0.2rem 0.4rem', cursor: 'pointer' }}
-                      >DEL</button>
+                      >EYÐA</button>
                     </div>
                   </>
                 )}
@@ -752,16 +754,16 @@ function MapEditorSection() {
 
   return (
     <div style={card}>
-      <SectionHeader label="MAP EDITOR" sub="World locations & zones" />
+      <SectionHeader label="KORTARITILL" sub="Staðir og svæði" />
       <p style={{ fontFamily: mono, fontSize: '0.6rem', color: '#444', marginBottom: '1.25rem', lineHeight: 1.6 }}>
-        Drag pins to reposition them. Click a pin to edit its label, sublabel, and type. Drag zone ellipses to move them; drag the handles to resize. Click &quot;Save Map&quot; when done.
+        Dragðu pinna til að færa þá. Smelltu á pinna til að breyta heiti, undirtitli og tegund. Dragðu svæði til að færa þau og handföngin til að breyta stærðinni. Smelltu á &quot;Vista kort&quot; þegar þú ert búinn.
       </p>
       {loading ? (
-        <p style={{ fontFamily: mono, fontSize: '0.65rem', color: '#444' }}>Loading map...</p>
+        <p style={{ fontFamily: mono, fontSize: '0.65rem', color: '#444' }}>Sæki kort…</p>
       ) : config ? (
         <AdminMapEditor initialConfig={config} />
       ) : (
-        <p style={{ fontFamily: mono, fontSize: '0.65rem', color: '#ff4466' }}>Failed to load map config.</p>
+        <p style={{ fontFamily: mono, fontSize: '0.65rem', color: '#ff4466' }}>Ekki tókst að sækja kortastillingar.</p>
       )}
     </div>
   );
@@ -782,11 +784,11 @@ export default function AdminPage() {
   }
 
   const tabs: { id: Tab; label: string }[] = [
-    { id: 'server',    label: 'SERVER' },
-    { id: 'datapacks', label: 'DATAPACKS' },
-    { id: 'versions',  label: 'VERSIONS' },
-    { id: 'gallery',   label: 'GALLERY' },
-    { id: 'map',       label: 'MAP' },
+    { id: 'server',    label: 'ÞJÓNN' },
+    { id: 'datapacks', label: 'GAGNAPAKKAR' },
+    { id: 'versions',  label: 'ÚTGÁFUR' },
+    { id: 'gallery',   label: 'MYNDASAFN' },
+    { id: 'map',       label: 'LANDAKORT' },
   ];
 
   return (
@@ -794,11 +796,11 @@ export default function AdminPage() {
       {/* Top bar */}
       <div style={{ position: 'sticky', top: 0, background: '#0a0a0a', borderBottom: '1px solid #1a1a1a', padding: '0.75rem 2rem', display: 'flex', alignItems: 'center', gap: '1rem', zIndex: 100 }}>
         <span style={{ fontFamily: sans, fontSize: '1rem', fontWeight: 900, color: green, letterSpacing: '-0.02em' }}>JOD</span>
-        <span style={{ fontFamily: mono, fontSize: '0.5rem', letterSpacing: '0.3em', color: '#2a2a2a', textTransform: 'uppercase' }}>ADMIN PANEL</span>
+        <span style={{ fontFamily: mono, fontSize: '0.5rem', letterSpacing: '0.3em', color: '#2a2a2a', textTransform: 'uppercase' }}>STJÓRNBORÐ</span>
         <div style={{ flex: 1 }} />
-        <Link href="/" style={{ fontFamily: mono, fontSize: '0.55rem', letterSpacing: '0.15em', color: '#444', textDecoration: 'none', textTransform: 'uppercase' }}>← SITE</Link>
+        <Link href="/" style={{ fontFamily: mono, fontSize: '0.55rem', letterSpacing: '0.15em', color: '#444', textDecoration: 'none', textTransform: 'uppercase' }}>← FORSÍÐA</Link>
         <button onClick={logout} style={{ fontFamily: mono, fontSize: '0.55rem', letterSpacing: '0.15em', textTransform: 'uppercase', background: 'none', color: '#ff4466', border: '1px solid #ff446633', padding: '0.3rem 0.6rem', cursor: 'pointer' }}>
-          LOGOUT
+          SKRÁ ÚT
         </button>
       </div>
 

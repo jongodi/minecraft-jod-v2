@@ -2,12 +2,12 @@
 // Vanilla knowledge base
 //
 // Used to distinguish three things the raw graph cannot:
-//   1. "vanilla default" vs "broken"     — a minecraft: ref absent from the pack
+//   1. "upprunalegt gildi" vs "broken"     — a minecraft: ref absent from the pack
 //      is inherited from vanilla, not broken. A CUSTOM-namespace ref absent from
 //      the pack IS broken.
-//   2. "used-by-convention override"      — a file at a vanilla path replaces a
+//   2. "yfirskrift sem leikurinn hleður sjálfkrafa"      — a file at a vanilla path replaces a
 //      default and is loaded by hardcoded path, so it is used even with no ref.
-//   3. "overrides a vanilla item/block"   — an item definition / model / texture
+//   3. "kemur í stað upprunalegs hlutar eða kubbs"   — an item definition / model / texture
 //      named after a vanilla asset is wired up by convention.
 //
 // The asset lists come from a real, generated manifest (misode/mcmeta, current
@@ -44,7 +44,7 @@ export function isVanillaModelRef(raw: string): boolean {
 /**
  * Texture path prefixes (relative to assets/<ns>/textures/) that Minecraft
  * loads by HARDCODED path rather than through a model. A file here overrides a
- * vanilla default and is used-by-convention regardless of model references.
+ * upprunalegt gildi and is used-by-convention regardless of model references.
  */
 export const STRONG_OVERRIDE_PREFIXES = [
   'gui/',
@@ -89,7 +89,7 @@ export function isVanillaBlock(name: string): boolean {
 
 /**
  * Is this texture (by relative path, e.g. block/stone, item/diamond_sword) a
- * real vanilla texture? A pack file at this path overrides the vanilla default,
+ * real vanilla texture? A pack file at this path overrides the upprunalegt gildi,
  * which vanilla's own model still loads — so it is used even with no pack ref.
  */
 export function isKnownVanillaTexture(texRelPath: string): boolean {

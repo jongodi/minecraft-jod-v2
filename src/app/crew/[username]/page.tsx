@@ -19,18 +19,18 @@ import { PAGE_LINKS, STAT_TABS } from '@/components/frontier/data';
 interface BadgeDef { id: string; label: string; category: string; check: (s: PlayerStat) => boolean }
 
 const BADGE_DEFS: BadgeDef[] = [
-  { id: 'played-10h',   label: 'Newbie',          category: 'playtime', check: s => s.playTimeHours  >= 10    },
-  { id: 'played-100h',  label: 'Active player',   category: 'playtime', check: s => s.playTimeHours  >= 100   },
-  { id: 'played-500h',  label: 'MVP',             category: 'playtime', check: s => s.playTimeHours  >= 500   },
-  { id: 'kills-100',    label: '100 mob kills',   category: 'kills',    check: s => s.mobKills       >= 100   },
-  { id: 'kills-1k',     label: 'Mob slayer',      category: 'kills',    check: s => s.mobKills       >= 1000  },
-  { id: 'kills-5k',     label: 'Mob butcher',     category: 'kills',    check: s => s.mobKills       >= 5000  },
-  { id: 'walked-100km', label: 'Map explorer',    category: 'distance', check: s => s.distanceWalked >= 100 * 100_000 },
-  { id: 'walked-500km', label: 'World traveller', category: 'distance', check: s => s.distanceWalked >= 500 * 100_000 },
-  { id: 'deaths-10',    label: 'Clumsy',          category: 'deaths',   check: s => s.deaths         >= 10    },
-  { id: 'deaths-50',    label: 'Not so lucky',    category: 'deaths',   check: s => s.deaths         >= 50    },
-  { id: 'crafted-1k',   label: 'Crafter',         category: 'crafted',  check: s => s.itemsCrafted   >= 1000  },
-  { id: 'pvp',          label: 'PvP',             category: 'pvp',      check: s => s.playerKills    >= 1     },
+  { id: 'played-10h',   label: 'Nýliði',          category: 'playtime', check: s => s.playTimeHours  >= 10    },
+  { id: 'played-100h',  label: 'Fastagestur',   category: 'playtime', check: s => s.playTimeHours  >= 100   },
+  { id: 'played-500h',  label: 'Lykilmaður',             category: 'playtime', check: s => s.playTimeHours  >= 500   },
+  { id: 'kills-100',    label: '100 verur felldar',   category: 'kills',    check: s => s.mobKills       >= 100   },
+  { id: 'kills-1k',     label: 'Skrímslabani',      category: 'kills',    check: s => s.mobKills       >= 1000  },
+  { id: 'kills-5k',     label: 'Slátrarinn',     category: 'kills',    check: s => s.mobKills       >= 5000  },
+  { id: 'walked-100km', label: 'Landkönnuður',    category: 'distance', check: s => s.distanceWalked >= 100 * 100_000 },
+  { id: 'walked-500km', label: 'Heimsflakkari', category: 'distance', check: s => s.distanceWalked >= 500 * 100_000 },
+  { id: 'deaths-10',    label: 'Hrakfallabálkur',          category: 'deaths',   check: s => s.deaths         >= 10    },
+  { id: 'deaths-50',    label: 'Óheppinn',    category: 'deaths',   check: s => s.deaths         >= 50    },
+  { id: 'crafted-1k',   label: 'Smiður',         category: 'crafted',  check: s => s.itemsCrafted   >= 1000  },
+  { id: 'pvp',          label: 'Mannabani',             category: 'pvp',      check: s => s.playerKills    >= 1     },
 ];
 
 function earnedBadges(stat: PlayerStat): BadgeDef[] {
@@ -60,22 +60,22 @@ function LoginModal({ username, onSuccess, onClose }: { username: string; onSucc
       if (res.ok) { onSuccess(); onClose(); }
       else {
         const data = await res.json().catch(() => ({})) as { error?: string };
-        setError(data.error ?? 'That token is not right.');
+        setError(data.error ?? 'Aðgangslykillinn er ekki réttur.');
       }
-    } catch { setError('Network error, try again.'); }
+    } catch { setError('Nettenging brást. Reyndu aftur.'); }
     finally   { setLoading(false); }
   }
 
   return (
-    <div className="j-modal" onClick={onClose} role="dialog" aria-modal="true" aria-label="Log in">
+    <div className="j-modal" onClick={onClose} role="dialog" aria-modal="true" aria-label="Skrá inn">
       <form className="j-modal__box" onSubmit={submit} onClick={e => e.stopPropagation()}>
-        <p className="j-modal__title">Log in as {username}</p>
-        <p className="j-modal__sub">your crew token is set by whoever runs the server</p>
-        <input type="password" className={`j-input${error ? ' is-error' : ''}`} value={token} onChange={e => setToken(e.target.value)} placeholder="Crew token" autoFocus autoComplete="current-password" />
+        <p className="j-modal__title">Skrá inn sem {username}</p>
+        <p className="j-modal__sub">stjórnandi þjónsins útvegar þér aðgangslykil</p>
+        <input type="password" className={`j-input${error ? ' is-error' : ''}`} value={token} onChange={e => setToken(e.target.value)} placeholder="Aðgangslykill" autoFocus autoComplete="current-password" />
         {error && <p className="j-err">{error}</p>}
         <div className="j-modal__actions">
-          <button type="submit" className="j-btn" disabled={loading || !token}>{loading ? 'Checking…' : 'Log in'}</button>
-          <button type="button" className="j-btn j-btn--ghost" onClick={onClose}>Cancel</button>
+          <button type="submit" className="j-btn" disabled={loading || !token}>{loading ? 'Athuga…' : 'Skrá inn'}</button>
+          <button type="button" className="j-btn j-btn--ghost" onClick={onClose}>Hætta við</button>
         </div>
       </form>
     </div>
@@ -160,7 +160,7 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
     setBioError('');
     const res = await fetch(`/api/crew/${username}/bio`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ bio: bioText }) });
     if (res.ok) { setProfile(p => p ? { ...p, bio: bioText } : p); setEditingBio(false); }
-    else { const data = await res.json().catch(() => ({})) as { error?: string }; setBioError(data.error ?? 'Could not save the bio.'); }
+    else { const data = await res.json().catch(() => ({})) as { error?: string }; setBioError(data.error ?? 'Ekki tókst að vista kynninguna.'); }
   }
 
   async function submitPost(e: FormEvent) {
@@ -176,14 +176,14 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
         setNewPost('');
       } else {
         const data = await res.json().catch(() => ({})) as { error?: string };
-        setPostError(data.error ?? 'Could not post.');
+        setPostError(data.error ?? 'Ekki tókst að birta færsluna.');
       }
-    } catch { setPostError('Network error, try again.'); }
+    } catch { setPostError('Nettenging brást. Reyndu aftur.'); }
     finally   { setPosting(false); }
   }
 
   async function deletePost(id: string) {
-    if (!confirm('Delete this post?')) return;
+    if (!confirm('Eyða þessari færslu?')) return;
     const res = await fetch(`/api/crew/${username}/posts/${id}`, { method: 'DELETE' });
     if (res.ok) setProfile(p => p ? { ...p, posts: p.posts.filter(post => post.id !== id) } : p);
   }
@@ -214,8 +214,8 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
     try {
       const res = await fetch(`/api/crew/${username}/photos`, { method: 'POST', body: fd });
       if (res.ok) { const photo = await res.json(); setProfile(p => p ? { ...p, photos: [photo, ...p.photos] } : p); }
-      else { const data = await res.json().catch(() => ({})) as { error?: string }; setPhotoError(data.error ?? 'Upload failed.'); }
-    } catch { setPhotoError('Network error, the upload did not go through.'); }
+      else { const data = await res.json().catch(() => ({})) as { error?: string }; setPhotoError(data.error ?? 'Upphleðsla mistókst.'); }
+    } catch { setPhotoError('Nettenging brást og myndin komst ekki í gegn.'); }
     finally { setUploading(false); }
     if (fileRef.current) fileRef.current.value = '';
   }
@@ -231,10 +231,10 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
       <div className="j-grain" aria-hidden="true" />
       <TrailNav links={PAGE_LINKS} always />
       <main className="j-wrap j-page">
-        <Link href="/crew" className="j-back"><Arrow flip /> all of the crew</Link>
+        <Link href="/crew" className="j-back"><Arrow flip /> allur hópurinn</Link>
 
         {notFound ? (
-          <p className="j-empty">no one by the name {username} on the whitelist</p>
+          <p className="j-empty">enginn með nafnið {username} hefur aðgang</p>
         ) : !profile ? (
           <p className="j-empty">loading {username}…</p>
         ) : (
@@ -245,31 +245,31 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
               <div>
                 <div className="j-profile__top">
                   <div>
-                    <div className="j-profile__wanted">Wanted · rider of the JOÐ</div>
+                    <div className="j-profile__wanted">Eftirlýst · JOÐ-félagi</div>
                     <h1 className="j-profile__name">{profile.username}</h1>
                   </div>
                   {isOwner ? (
-                    <button className="j-btn j-btn--ghost j-btn--small" onClick={logout}>Log out</button>
+                    <button className="j-btn j-btn--ghost j-btn--small" onClick={logout}>Skrá út</button>
                   ) : (
-                    <button className="j-btn j-btn--ghost j-btn--small" onClick={() => setShowLogin(true)}>This is me</button>
+                    <button className="j-btn j-btn--ghost j-btn--small" onClick={() => setShowLogin(true)}>Þetta er ég</button>
                   )}
                 </div>
 
                 {editingBio && isOwner ? (
                   <div className="j-profile__biorow">
-                    <textarea className={`j-textarea${bioError ? ' is-error' : ''}`} value={bioText} onChange={e => setBioText(e.target.value)} maxLength={280} placeholder="A line or two about you" style={{ flex: '1 1 18rem' }} />
+                    <textarea className={`j-textarea${bioError ? ' is-error' : ''}`} value={bioText} onChange={e => setBioText(e.target.value)} maxLength={280} placeholder="Ein eða tvær línur um þig" style={{ flex: '1 1 18rem' }} />
                     <div className="j-inline">
-                      <button className="j-btn j-btn--small" onClick={saveBio}>Save</button>
-                      <button className="j-btn j-btn--ghost j-btn--small" onClick={() => { setEditingBio(false); setBioError(''); setBioText(profile.bio); }}>Cancel</button>
+                      <button className="j-btn j-btn--small" onClick={saveBio}>Vista</button>
+                      <button className="j-btn j-btn--ghost j-btn--small" onClick={() => { setEditingBio(false); setBioError(''); setBioText(profile.bio); }}>Hætta við</button>
                     </div>
                     {bioError && <p className="j-err" style={{ width: '100%' }}>{bioError}</p>}
                   </div>
                 ) : (
                   <div className="j-profile__biorow">
                     <p className={`j-profile__bio${profile.bio ? '' : ' is-empty'}`}>
-                      {profile.bio || (isOwner ? 'you have not written a bio yet' : 'no bio yet')}
+                      {profile.bio || (isOwner ? 'þú átt eftir að skrifa kynningu' : 'engin kynning enn')}
                     </p>
-                    {isOwner && <button className="j-btn j-btn--ghost j-btn--small" onClick={() => setEditingBio(true)}>Edit bio</button>}
+                    {isOwner && <button className="j-btn j-btn--ghost j-btn--small" onClick={() => setEditingBio(true)}>Breyta kynningu</button>}
                   </div>
                 )}
 
@@ -284,12 +284,12 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
                       ))}
                     </dl>
                     {badges.length > 0 && (
-                      <ul className="j-badges" aria-label="Achievements">
+                      <ul className="j-badges" aria-label="Afrek">
                         {badges.map(b => <li key={b.id} className="j-badge"><Star className="j-star" />{b.label}</li>)}
                       </ul>
                     )}
                     {statsMeta?.source === 'cached' && statsMeta.cachedAt && (
-                      <p className="j-note j-note--faint" style={{ marginTop: '0.75rem' }}>server is down, these numbers are from {formatDate(statsMeta.cachedAt)}</p>
+                      <p className="j-note j-note--faint" style={{ marginTop: '0.75rem' }}>slökkt á þjóninum, þessar tölur eru frá {formatDate(statsMeta.cachedAt)}</p>
                     )}
                   </>
                 )}
@@ -299,20 +299,20 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
             {/* posts */}
             <section className="j-block">
               <div className="j-block__head">
-                <p className="j-note j-note--big">Posts{profile.posts.length > 0 && <span className="j-note j-note--faint"> · {profile.posts.length}</span>}</p>
+                <p className="j-note j-note--big">Færslur{profile.posts.length > 0 && <span className="j-note j-note--faint"> · {profile.posts.length}</span>}</p>
               </div>
               {isOwner && (
                 <form className="j-compose" onSubmit={submitPost}>
-                  <textarea className={`j-textarea${postError ? ' is-error' : ''}`} value={newPost} onChange={e => setNewPost(e.target.value)} maxLength={500} placeholder="What's happening on the server?" />
+                  <textarea className={`j-textarea${postError ? ' is-error' : ''}`} value={newPost} onChange={e => setNewPost(e.target.value)} maxLength={500} placeholder="Hvað er að gerast á þjóninum?" />
                   <div className="j-compose__row">
                     <span className="j-compose__count">{newPost.length} / 500</span>
-                    <button type="submit" className="j-btn j-btn--small" disabled={posting || !newPost.trim()}>{posting ? 'Posting…' : 'Post'}</button>
+                    <button type="submit" className="j-btn j-btn--small" disabled={posting || !newPost.trim()}>{posting ? 'Birti…' : 'Birta'}</button>
                   </div>
                   {postError && <p className="j-err">{postError}</p>}
                 </form>
               )}
               {profile.posts.length === 0 ? (
-                <p className="j-empty">{isOwner ? 'nothing posted yet, write the first one above' : 'no posts yet'}</p>
+                <p className="j-empty">{isOwner ? 'ekkert komið enn; skrifaðu fyrstu færsluna hér fyrir ofan' : 'engar færslur enn'}</p>
               ) : (
                 <ul className="j-feed" style={{ maxWidth: 'none' }}>
                   {profile.posts.map(post => (
@@ -321,8 +321,8 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
                         <div>
                           <textarea className="j-textarea" value={editText} onChange={e => setEditText(e.target.value)} maxLength={500} autoFocus />
                           <div className="j-inline" style={{ marginTop: '0.6rem' }}>
-                            <button className="j-btn j-btn--small" onClick={() => saveEditPost(post.id)} disabled={editSaving || !editText.trim()}>{editSaving ? 'Saving…' : 'Save'}</button>
-                            <button className="j-btn j-btn--ghost j-btn--small" onClick={cancelEditPost}>Cancel</button>
+                            <button className="j-btn j-btn--small" onClick={() => saveEditPost(post.id)} disabled={editSaving || !editText.trim()}>{editSaving ? 'Vista…' : 'Vista'}</button>
+                            <button className="j-btn j-btn--ghost j-btn--small" onClick={cancelEditPost}>Hætta við</button>
                           </div>
                         </div>
                       ) : (
@@ -332,8 +332,8 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
                             <span>{formatDate(post.createdAt)}</span>
                             {isOwner && (
                               <span className="j-post__actions">
-                                <button onClick={() => startEditPost(post)}>edit</button>
-                                <button onClick={() => deletePost(post.id)}>delete</button>
+                                <button onClick={() => startEditPost(post)}>breyta</button>
+                                <button onClick={() => deletePost(post.id)}>eyða</button>
                               </span>
                             )}
                           </div>
@@ -348,21 +348,21 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
             {/* photos */}
             <section className="j-block">
               <div className="j-block__head">
-                <p className="j-note j-note--big">Screenshots{profile.photos.length > 0 && <span className="j-note j-note--faint"> · {profile.photos.length}</span>}</p>
+                <p className="j-note j-note--big">Myndir úr leiknum{profile.photos.length > 0 && <span className="j-note j-note--faint"> · {profile.photos.length}</span>}</p>
                 {isOwner && (
                   <>
                     <input ref={fileRef} type="file" accept="image/*" onChange={uploadPhoto} style={{ display: 'none' }} id="crew-photo-upload" />
-                    <label htmlFor="crew-photo-upload" className="j-btn j-btn--ghost j-btn--small" style={{ cursor: uploading ? 'wait' : 'pointer' }}>{uploading ? 'Uploading…' : 'Upload'}</label>
+                    <label htmlFor="crew-photo-upload" className="j-btn j-btn--ghost j-btn--small" style={{ cursor: uploading ? 'wait' : 'pointer' }}>{uploading ? 'Hleð upp…' : 'Hlaða upp'}</label>
                   </>
                 )}
               </div>
               {photoError && <p className="j-err" style={{ marginBottom: '0.75rem' }}>{photoError}</p>}
               {profile.photos.length === 0 ? (
-                <p className="j-empty">{isOwner ? 'no screenshots yet, upload a few of your builds' : 'no screenshots yet'}</p>
+                <p className="j-empty">{isOwner ? 'engar myndir enn; hentu inn nokkrum af því sem þú hefur byggt' : 'engar myndir enn'}</p>
               ) : (
                 <div className="j-shots">
                   {profile.photos.map((photo, idx) => (
-                    <button key={photo.id} className="j-polaroid" style={{ '--r': `${TILT[idx % TILT.length]}deg` } as CSSProperties} onClick={() => setLightboxIdx(idx)} aria-label={photo.caption || `Screenshot ${idx + 1}`}>
+                    <button key={photo.id} className="j-polaroid" style={{ '--r': `${TILT[idx % TILT.length]}deg` } as CSSProperties} onClick={() => setLightboxIdx(idx)} aria-label={photo.caption || `Mynd úr leiknum ${idx + 1}`}>
                       <Tape at="top" r={idx % 2 ? 3 : -3} />
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={photo.filename} alt={photo.caption || ''} loading="lazy" />

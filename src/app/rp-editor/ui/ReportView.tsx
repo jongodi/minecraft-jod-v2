@@ -1,5 +1,7 @@
 'use client';
 
+import { assetKindLabel } from '@/lib/icelandic';
+
 import { useMemo, useState } from 'react';
 import type { AnalysisResult, AssetNode, BrokenRef, Finding, Severity } from '../engine/types';
 import { suggestReplacements, bestReplacement } from '../engine/suggest';
@@ -8,7 +10,7 @@ import { Glass } from './Glass';
 import { Chip, Conf, EvidenceList, sevIcon } from './bits';
 
 const SEV_ORDER: Severity[] = ['error', 'warning', 'cleanup', 'info'];
-const SEV_LABEL: Record<Severity, string> = { error: 'Broken', warning: 'Warnings', cleanup: 'Cleanup', info: 'Review' };
+const SEV_LABEL: Record<Severity, string> = { error: 'Bilað', warning: 'Viðvaranir', cleanup: 'Tiltekt', info: 'Yfirferð' };
 
 interface Fixable { id: string; fix: BrokenRef }
 
@@ -75,19 +77,19 @@ export function ReportView({
   return (
     <div className="rp-scroll">
       <div className="rp-sh">
-        <span className="rp-label">02 — Report</span>
-        <h2>{clean ? 'No problems found' : `${analysis.findings.length} finding${analysis.findings.length !== 1 ? 's' : ''}`}</h2>
+        <span className="rp-label">02 — Skýrsla</span>
+        <h2>{clean ? 'Engin vandamál fundust' : `Niðurstöður: ${analysis.findings.length}`}</h2>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           {fixables.length > 0 && (
             <button className="rp-btn sm" style={{ borderColor: 'rgba(90,167,255,0.5)', color: 'var(--sev-info)' }}
-              onClick={() => setMode('fix')}>⚡ Auto-fix {fixables.length} broken</button>
+              onClick={() => setMode('fix')}>⚡ Laga tilvísanir ({fixables.length})</button>
           )}
           {safeRemove.length > 0 && (
             <button className="rp-btn sm" style={{ borderColor: 'rgba(240,165,0,0.5)', color: 'var(--sev-warning)' }}
-              onClick={() => setMode('clean')}>⌦ Clean up {safeRemove.length} unused</button>
+              onClick={() => setMode('clean')}>⌦ Taka til ({safeRemove.length})</button>
           )}
-          <button className="rp-btn sm" onClick={() => onExport('report')}>Export report</button>
-          <button className="rp-btn sm" onClick={() => onExport('cleanup')} disabled={safeRemove.length === 0}>Export cleanup list</button>
+          <button className="rp-btn sm" onClick={() => onExport('report')}>Flytja út skýrslu</button>
+          <button className="rp-btn sm" onClick={() => onExport('cleanup')} disabled={safeRemove.length === 0}>Flytja út tiltektarlista</button>
         </div>
       </div>
 
@@ -109,19 +111,19 @@ export function ReportView({
           <div className="rp-filters">
             {(['all', ...SEV_ORDER] as const).map((s) => (
               <button key={s} className={`rp-btn sm${filter === s ? ' active' : ''}`} onClick={() => setFilter(s)}>
-                {s === 'all' ? 'All' : SEV_LABEL[s as Severity]} ({counts[s] ?? 0})
+                {s === 'all' ? 'Allt' : SEV_LABEL[s as Severity]} ({counts[s] ?? 0})
               </button>
             ))}
-            <input className="rp-search" placeholder="Search findings, paths…" value={q} onChange={(e) => setQ(e.target.value)} />
+            <input className="rp-search" placeholder="Leita í niðurstöðum og slóðum…" value={q} onChange={(e) => setQ(e.target.value)} />
           </div>
 
           {clean ? (
             <Glass className="rp-rise" style={{ padding: 28, display: 'flex', gap: 16, alignItems: 'center' }}>
               <div style={{ fontSize: 30, color: 'var(--sev-used)' }}>✓</div>
               <div>
-                <div style={{ fontSize: '0.95rem', color: 'var(--ink)', marginBottom: 4 }}>Every reference resolves, and nothing is provably unused.</div>
+                <div style={{ fontSize: '0.95rem', color: 'var(--ink)', marginBottom: 4 }}>Allar tilvísanir virka og engin skrá er sannanlega ónotuð.</div>
                 <div style={{ fontSize: '0.72rem', color: 'var(--ink-dim)', lineHeight: 1.6 }}>
-                  The dependency graph is intact. Remember the editor cannot see plugin- or macro-generated references — see the blind spots below before assuming 100% coverage.
+                  Allar greindar tilvísanir virka. Ritillinn sér þó ekki tilvísanir sem viðbætur eða fjölvar búa til. Skoðaðu takmarkanirnar hér fyrir neðan áður en þú gerir ráð fyrir að allt hafi verið greint.
                 </div>
               </div>
             </Glass>
@@ -150,18 +152,18 @@ export function ReportView({
                         <div className="rp-evidence">
                           {f.path && (
                             <div className="rp-ev-row">
-                              <span className="tag">file</span>
+                              <span className="tag">skrá</span>
                               <a className="src" onClick={() => onOpen(f.path!)}>{f.path}</a>
                             </div>
                           )}
                           <EvidenceList evidence={f.evidence} onOpen={onOpen} />
-                          {f.consequence && <div className="rp-consequence"><b>If you act on this:</b> {f.consequence}</div>}
+                          {f.consequence && <div className="rp-consequence"><b>Ef þú gerir þessa breytingu:</b> {f.consequence}</div>}
                           {f.fix && <FixControl fix={f.fix} analysis={analysis} onApplyFix={onApplyFix} />}
                           {f.severity === 'cleanup' && f.path && analysis.nodes[f.path]?.verdict === 'safe-remove' && (
                             <div style={{ marginTop: 2 }}>
                               <button className="rp-btn sm danger" onClick={() => {
-                                if (confirm(`Delete ${f.path}? ${analysis.nodes[f.path!]?.confidence === 'high' ? 'Nothing references it.' : 'Review the caveat above first.'}`)) onDelete([f.path!]);
-                              }}>Delete this file</button>
+                                if (confirm(`Eyða ${f.path}? ${analysis.nodes[f.path!]?.confidence === 'high' ? 'Ekkert vísar í skrána.' : 'Lestu fyrst fyrirvarann hér fyrir ofan.'}`)) onDelete([f.path!]);
+                              }}>Eyða þessari skrá</button>
                             </div>
                           )}
                         </div>
@@ -175,7 +177,7 @@ export function ReportView({
 
           {analysis.blindSpots.length > 0 && (
             <Glass style={{ padding: 18, marginTop: 12 }}>
-              <div className="rp-label" style={{ marginBottom: 10, color: 'var(--sev-info)' }}>What this analysis cannot see</div>
+              <div className="rp-label" style={{ marginBottom: 10, color: 'var(--sev-info)' }}>Það sem greiningin nær ekki yfir</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {analysis.blindSpots.map((b, i) => (
                   <div key={i} style={{ display: 'flex', gap: 10, fontSize: '0.72rem', color: 'var(--ink-dim)', lineHeight: 1.55 }}>
@@ -198,10 +200,10 @@ function FixControl({ fix, analysis, onApplyFix }: { fix: BrokenRef; analysis: A
   const dl = `fx-${fix.file}-${fix.value}`.replace(/[^a-z0-9]/gi, '');
   return (
     <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', marginTop: 2 }}>
-      <span style={{ fontSize: '0.55rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-faint)' }}>Repoint {fix.context}</span>
+      <span style={{ fontSize: '0.55rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-faint)' }}>Breyta tilvísun: {fix.context}</span>
       <input className="rp-search" list={dl} value={val} onChange={(e) => setVal(e.target.value)} placeholder={suggestions[0] ?? (fix.targetKind === 'model' ? 'namespace:item/foo' : 'namespace:item/foo')} style={{ minWidth: 180, flex: '0 1 260px' }} />
       <datalist id={dl}>{suggestions.map((s) => <option key={s} value={s} />)}</datalist>
-      <button className="rp-btn sm apply" disabled={!val.trim()} onClick={() => val.trim() && onApplyFix(fix.file, fix.value, val.trim(), fix.targetKind)}>Apply</button>
+      <button className="rp-btn sm apply" disabled={!val.trim()} onClick={() => val.trim() && onApplyFix(fix.file, fix.value, val.trim(), fix.targetKind)}>Nota</button>
     </div>
   );
 }
@@ -231,17 +233,17 @@ function FixAllPanel({
     <Glass className="rp-rise" style={{ padding: 0, marginBottom: 16, overflow: 'hidden' }}>
       <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--hair)', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
         <div>
-          <div style={{ fontSize: '0.85rem', color: 'var(--ink)' }}>Repoint {fixables.length} broken reference{fixables.length !== 1 ? 's' : ''}</div>
+          <div style={{ fontSize: '0.85rem', color: 'var(--ink)' }}>Laga bilaðar tilvísanir ({fixables.length})</div>
           <div style={{ fontSize: '0.68rem', color: 'var(--ink-dim)', marginTop: 3, lineHeight: 1.5, maxWidth: 620 }}>
-            Each suggestion is drawn only from files that exist in the pack, so a fix can never create a new broken reference. Confident matches are pre-filled; edit any, or clear a row to skip it. Nothing changes until you apply.
+            Tillögurnar vísa aðeins í skrár sem eru til í pakkanum, svo leiðrétting býr ekki til nýja bilaða tilvísun. Líklegustu samsvaranirnar eru forvaldar. Breyttu þeim eða tæmdu reit til að sleppa. Ekkert breytist fyrr en þú staðfestir.
           </div>
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
           <button className="rp-btn sm apply" disabled={applyCount === 0}
             onClick={() => onApply(fixables.filter((f) => vals[f.id]?.trim()).map((f) => ({ file: f.fix.file, from: f.fix.value, to: vals[f.id].trim(), kind: f.fix.targetKind })))}>
-            Apply {applyCount} fix{applyCount !== 1 ? 'es' : ''}
+            Nota leiðréttingar ({applyCount})
           </button>
-          <button className="rp-btn sm" onClick={onCancel}>Cancel</button>
+          <button className="rp-btn sm" onClick={onCancel}>Hætta við</button>
         </div>
       </div>
       <div style={{ maxHeight: 'calc(100vh - 320px)', overflowY: 'auto' }}>
@@ -256,7 +258,7 @@ function FixAllPanel({
               </div>
               <span style={{ color: 'var(--ink-faint)', textAlign: 'center' }}>→</span>
               <div style={{ display: 'flex', gap: 4, alignItems: 'center', minWidth: 0 }}>
-                <input className="rp-search" list={dl} value={val} placeholder="leave blank to skip"
+                <input className="rp-search" list={dl} value={val} placeholder="hafðu reitinn auðan til að sleppa"
                   onChange={(e) => setVals((s) => ({ ...s, [f.id]: e.target.value }))}
                   style={{ flex: 1, minWidth: 0 }} />
                 <datalist id={dl}>{(suggestionMap[f.id] ?? []).map((s) => <option key={s} value={s} />)}</datalist>
@@ -300,9 +302,9 @@ function CleanupPanel({
         {isTex && fileData[n.path] && <img src={fileData[n.path]} style={{ width: 22, height: 22, imageRendering: 'pixelated', objectFit: 'contain', border: '1px solid var(--hair)', flexShrink: 0 }} alt="" />}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: '0.7rem', color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{n.path.replace(/^assets\/[^/]+\//, '')}</div>
-          <div style={{ fontSize: '0.55rem', color: 'var(--ink-faint)' }}>{n.kind} · {fmtBytes(n.bytes ?? 0)}</div>
+          <div style={{ fontSize: '0.55rem', color: 'var(--ink-faint)' }}>{assetKindLabel(n.kind)} · {fmtBytes(n.bytes ?? 0)}</div>
         </div>
-        <a className="src" style={{ fontSize: '0.55rem', color: 'var(--accent)', flexShrink: 0 }} onClick={(e) => { e.stopPropagation(); onOpen(n.path); }}>inspect</a>
+        <a className="src" style={{ fontSize: '0.55rem', color: 'var(--accent)', flexShrink: 0 }} onClick={(e) => { e.stopPropagation(); onOpen(n.path); }}>skoða</a>
       </div>
     );
   };
@@ -311,43 +313,43 @@ function CleanupPanel({
     <Glass className="rp-rise" style={{ padding: 0, marginBottom: 16, overflow: 'hidden' }}>
       <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--hair)', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
         <div>
-          <div style={{ fontSize: '0.85rem', color: 'var(--ink)' }}>Clean up {items.length} provably-unreferenced file{items.length !== 1 ? 's' : ''}</div>
+          <div style={{ fontSize: '0.85rem', color: 'var(--ink)' }}>Taka til í skrám án tilvísana ({items.length})</div>
           <div style={{ fontSize: '0.68rem', color: 'var(--ink-dim)', marginTop: 3, lineHeight: 1.5, maxWidth: 640 }}>
-            Only files that <b>nothing references</b> are listed — no model, blockstate, item definition, atlas, font, vanilla path{hasDatapacks ? ', or any datapack you loaded' : ''}. Review the selection; nothing is deleted until you confirm.
+            Á listanum eru aðeins skrár sem <b>ekkert vísar í</b>: hvorki líkan, kubbaástand, hlutaskilgreining, áferðarsafn, letur né upprunaleg slóð{hasDatapacks ? ', og enginn gagnapakki sem þú opnaðir' : ''}. Farðu yfir valið; engu er eytt fyrr en þú staðfestir.
           </div>
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
           <button className="rp-btn sm danger" disabled={sel.size === 0}
-            onClick={() => { if (confirm(`Delete ${sel.size} file${sel.size !== 1 ? 's' : ''} (${fmtBytes(selBytes)})? This cannot be undone. You can re-export the pack .zip afterwards.`)) onApply([...sel]); }}>
-            Delete {sel.size} ({fmtBytes(selBytes)})
+            onClick={() => { if (confirm(`Eyða völdum skrám (${sel.size}, ${fmtBytes(selBytes)})? Það er ekki hægt að afturkalla það. Þú getur flutt pakkann út aftur sem .zip á eftir.`)) onApply([...sel]); }}>
+            Eyða ({sel.size}) ({fmtBytes(selBytes)})
           </button>
-          <button className="rp-btn sm" onClick={onCancel}>Cancel</button>
+          <button className="rp-btn sm" onClick={onCancel}>Hætta við</button>
         </div>
       </div>
 
       {!hasDatapacks && (
         <div style={{ padding: '10px 18px', borderBottom: '1px solid var(--hair)', background: 'rgba(240,165,0,0.06)', fontSize: '0.68rem', color: 'var(--sev-warning)', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
           <span style={{ flexShrink: 0 }}>!</span>
-          <span>No datapacks are loaded. A file used only by a datapack would look unused here. If any of these assets are driven by a datapack, load it on the Datapacks tab <b>before</b> deleting.</span>
+          <span>Engir gagnapakkar eru opnir. Skrá sem aðeins gagnapakki notar gæti virst ónotuð hér. Ef gagnapakki notar einhver þessara tilfanga skaltu opna hann á flipanum Gagnapakkar <b>áður en</b> þú eyðir.</span>
         </div>
       )}
 
       <div style={{ display: 'flex', gap: 8, padding: '8px 18px', borderBottom: '1px solid var(--hair)' }}>
-        <button className="rp-btn sm" onClick={() => setSel(new Set(items.map((i) => i.path)))}>Select all</button>
-        <button className="rp-btn sm" onClick={() => setSel(new Set())}>Select none</button>
-        {groups.other.length > 0 && <button className="rp-btn sm" onClick={() => setSel(new Set(groups.high.map((i) => i.path)))}>Only high-confidence</button>}
+        <button className="rp-btn sm" onClick={() => setSel(new Set(items.map((i) => i.path)))}>Velja allt</button>
+        <button className="rp-btn sm" onClick={() => setSel(new Set())}>Afvelja allt</button>
+        {groups.other.length > 0 && <button className="rp-btn sm" onClick={() => setSel(new Set(groups.high.map((i) => i.path)))}>Aðeins með mikilli vissu</button>}
       </div>
 
       <div style={{ maxHeight: 'calc(100vh - 360px)', overflowY: 'auto' }}>
         {groups.high.length > 0 && (
           <>
-            <div className="rp-label" style={{ padding: '10px 18px 6px', color: 'var(--sev-used)' }}>Confident — nothing references these ({groups.high.length})</div>
+            <div className="rp-label" style={{ padding: '10px 18px 6px', color: 'var(--sev-used)' }}>Mikil vissa — engar tilvísanir fundust ({groups.high.length})</div>
             {groups.high.map(Row)}
           </>
         )}
         {groups.other.length > 0 && (
           <>
-            <div className="rp-label" style={{ padding: '10px 18px 6px', color: 'var(--sev-warning)' }}>Review first — under block/ or item/, could be a vanilla override we don’t recognise ({groups.other.length})</div>
+            <div className="rp-label" style={{ padding: '10px 18px 6px', color: 'var(--sev-warning)' }}>Skoðaðu fyrst — undir block/ eða item/, gæti komið í stað óþekktrar upprunalegrar skrár ({groups.other.length})</div>
             {groups.other.map(Row)}
           </>
         )}

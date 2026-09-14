@@ -8,12 +8,12 @@ export async function POST(req: NextRequest) {
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
   const { limited } = await checkRateLimit(ip, 'crew-auth');
   if (limited) {
-    return NextResponse.json({ error: 'Too many attempts. Try again later.' }, { status: 429 });
+    return NextResponse.json({ error: 'Of margar tilraunir. Reyndu aftur síðar.' }, { status: 429 });
   }
 
   const { username, token } = await req.json() as { username?: string; token?: string };
   if (!username || !token) {
-    return NextResponse.json({ error: 'Missing credentials' }, { status: 400 });
+    return NextResponse.json({ error: 'Innskráningarupplýsingar vantar.' }, { status: 400 });
   }
 
   const expected = getCrewToken(username);
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     token.length !== expected.length ||
     !timingSafeEqual(Buffer.from(token), Buffer.from(expected))
   ) {
-    return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+    return NextResponse.json({ error: 'Innskráningarupplýsingarnar eru ekki réttar.' }, { status: 401 });
   }
 
   const sessionId = await createCrewSession(username);

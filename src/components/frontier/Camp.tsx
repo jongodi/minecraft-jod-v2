@@ -21,14 +21,14 @@ export default function Camp({ server }: { server: ServerState }) {
       <div className="j-wrap">
         <div className="j-camp__head">
           <div className="j-camp__title">
-            <p className="j-note j-note--big">Who&rsquo;s at camp tonight?</p>
+            <p className="j-note j-note--big">Hver er inni í kvöld?</p>
             <p className="j-note">
-              {online === null ? 'still pinging…' :
-               online ? (riding === 0 ? 'the gate is open but nobody is in yet' : `${riding} of us riding${players > riding ? `, plus ${players - riding} guest${players - riding === 1 ? '' : 's'}` : ''}`) :
-               'server is down, everybody is away'}
+              {online === null ? 'athuga stöðuna…' :
+               online ? (riding === 0 ? 'þjónninn er opinn en enginn kominn inn enn' : `${riding} úr hópnum inni${players > riding ? `, gestir: ${players - riding}` : ''}`) :
+               'slökkt á þjóninum, allir í pásu'}
             </p>
           </div>
-          <p className="j-note j-note--faint">portraits in colour are on right now <Arrow /></p>
+          <p className="j-note j-note--faint">þau sem eru í lit eru inni núna <Arrow /></p>
         </div>
 
         <div className="j-rope">
@@ -48,9 +48,9 @@ export default function Camp({ server }: { server: ServerState }) {
                 >
                   <span className="j-peg__clip" aria-hidden="true" />
                   <span className="j-peg__frame"><PlayerHead name={name} size={128} /></span>
-                  {on && <span className="j-peg__in"><Stamp small r={12}>In</Stamp></span>}
+                  {on && <span className="j-peg__in"><Stamp small r={12}>Inni</Stamp></span>}
                   <span className="j-peg__name">{name}</span>
-                  {!on && <span className="j-peg__away">away</span>}
+                  {!on && <span className="j-peg__away">í pásu</span>}
                 </Link>
               );
             })}

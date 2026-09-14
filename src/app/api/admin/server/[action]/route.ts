@@ -1,3 +1,4 @@
+import { errorMessage } from '@/lib/icelandic';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin, unauthorizedResponse } from '@/lib/auth';
 import { getExarotonServerId, type ExarotonServer } from '@/lib/exaroton';
@@ -13,12 +14,12 @@ export async function POST(
 
   const { action } = await params;
   if (!(ALLOWED_ACTIONS as readonly string[]).includes(action)) {
-    return NextResponse.json({ error: `Unknown action: ${action}` }, { status: 400 });
+    return NextResponse.json({ error: `Óþekkt aðgerð: ${action}` }, { status: 400 });
   }
 
   const token = process.env.EXAROTON_API_KEY;
   if (!token) {
-    return NextResponse.json({ error: 'EXAROTON_API_KEY not configured' }, { status: 503 });
+    return NextResponse.json({ error: 'EXAROTON_API_KEY hefur ekki verið stilltur.' }, { status: 503 });
   }
 
   try {
@@ -35,12 +36,12 @@ export async function POST(
 
     if (!res.ok) {
       const errBody = await res.text();
-      return NextResponse.json({ error: `Exaroton error: ${errBody}` }, { status: res.status });
+      return NextResponse.json({ error: `Villa frá Exaroton: ${errBody}` }, { status: res.status });
     }
 
     return NextResponse.json({ ok: true, action });
   } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    return NextResponse.json({ error: errorMessage(err) }, { status: 500 });
   }
 }
 
@@ -52,12 +53,12 @@ export async function GET(
   if (!(await requireAdmin())) return unauthorizedResponse();
   const { action } = await params;
   if (action !== 'info') {
-    return NextResponse.json({ error: 'Use POST for actions, GET /info for details' }, { status: 400 });
+    return NextResponse.json({ error: 'Notaðu POST fyrir aðgerðir og GET /info fyrir upplýsingar.' }, { status: 400 });
   }
 
   const token = process.env.EXAROTON_API_KEY;
   if (!token) {
-    return NextResponse.json({ error: 'EXAROTON_API_KEY not configured' }, { status: 503 });
+    return NextResponse.json({ error: 'EXAROTON_API_KEY hefur ekki verið stilltur.' }, { status: 503 });
   }
 
   try {
@@ -66,10 +67,10 @@ export async function GET(
       headers: { Authorization: `Bearer ${token}` },
       cache: 'no-store',
     });
-    if (!res.ok) throw new Error(`Exaroton error: ${res.status}`);
+    if (!res.ok) throw new Error(`Villa frá Exaroton: ${res.status}`);
     const { data } = await res.json() as { data: ExarotonServer };
     return NextResponse.json(data);
   } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    return NextResponse.json({ error: errorMessage(err) }, { status: 500 });
   }
 }

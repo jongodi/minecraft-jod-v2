@@ -15,19 +15,19 @@ export default function Hero({ server, activeId }: { server: ServerState; active
       <div className="j-wrap j-hero__grid">
         <div>
           <h1 className="j-hero__mark">JOÐ</h1>
-          <p className="j-note j-note--big j-hero__sub">a private survival world, since summer &rsquo;24</p>
+          <p className="j-note j-note--big j-hero__sub">okkar eigin Minecraft-heimur, frá sumrinu 2024</p>
           <Under />
           <p className="j-hero__body">
-            Eight friends, one map, no resets. We run our own datapacks and resource pack,
-            and the whitelist is by invitation. This page is where we keep track of the place.
+            Átta vinir, einn heimur og ekkert verið að byrja upp á nýtt. Við erum með eigin gagnapakka
+            og útlitspakka, og þú þarft boð til að komast inn. Hér höldum við utan um það sem er að gerast.
           </p>
           <div className="j-hero__meta">
-            <Stamp r={-6} onClick={copy} copied={copied}>{copied ? 'Copied' : SERVER_IP}</Stamp>
+            <Stamp r={-6} onClick={copy} copied={copied}>{copied ? 'Afritað' : SERVER_IP}</Stamp>
             <span className="j-note">
-              <Arrow flip /> tap the stamp to copy the address
+              <Arrow flip /> smelltu á stimpilinn til að afrita vistfangið
             </span>
           </div>
-          <a href="#camp" className="j-hero__scroll j-note j-note--faint">the trail starts here <Arrow /></a>
+          <a href="#camp" className="j-hero__scroll j-note j-note--faint">leiðin byrjar hér <Arrow /></a>
         </div>
 
         <div>
@@ -37,19 +37,19 @@ export default function Hero({ server, activeId }: { server: ServerState; active
             <Tape at="tl" />
             <Tape at="br" />
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/screenshots/the-castle.webp" alt="Goði Castle seen from the water" fetchPriority="high" />
-            <figcaption className="j-print__cap">Goði Castle, the far away lands. Every picture here is from the server.</figcaption>
+            <img src="/screenshots/the-castle.webp" alt="Kastali Goða séður frá vatninu" fetchPriority="high" />
+            <figcaption className="j-print__cap">Kastali Goða í fjarlægum löndum. Allar myndirnar hér eru úr heiminum okkar.</figcaption>
           </figure>
 
           <div style={{ marginTop: '1.75rem', display: 'flex', justifyContent: 'flex-end' }}>
             <div className="j-slip" style={{ '--r': '2deg' } as React.CSSProperties}>
               <Pin red style={{ top: -6, left: '50%', marginLeft: -7 }} />
-              <div className="j-slip__head"><span>Telegram</span><span>{checkedAt ? (ago || 'just now') : '…'}</span></div>
+              <div className="j-slip__head"><span>Símskeyti</span><span>{checkedAt ? (ago || 'rétt í þessu') : '…'}</span></div>
               <div className={`j-slip__word${online === null ? '' : online ? ' is-on' : ' is-off'}`}>
-                {online === null ? 'Pinging the camp' : online ? 'Camp is lit' : 'Camp is dark'}
+                {online === null ? 'Athuga stöðuna' : online ? 'Kveikt á þjóninum' : 'Slökkt á þjóninum'}
               </div>
               <div className="j-slip__row">
-                {online === null ? 'waiting on the wire…' : online ? (players === 0 ? 'nobody in yet, gate is open' : `${players} riding right now`) : 'nobody can ride in tonight'}
+                {online === null ? 'bíð eftir svari…' : online ? (players === 0 ? 'enginn inni enn, en það er opið' : `inni núna: ${players}`) : 'ekki hægt að tengjast í augnablikinu'}
               </div>
             </div>
           </div>

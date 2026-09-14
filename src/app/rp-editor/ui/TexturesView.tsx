@@ -12,32 +12,32 @@ import { Chip } from './bits';
 
 const ModelViewer3D = dynamic(() => import('../model-viewer-3d'), {
   ssr: false,
-  loading: () => <div style={{ height: 240, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-faint)', fontSize: 12, border: '1px solid var(--hair)', borderRadius: 10 }}>Loading 3D…</div>,
+  loading: () => <div style={{ height: 240, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-faint)', fontSize: 12, border: '1px solid var(--hair)', borderRadius: 10 }}>Hleð þrívídd…</div>,
 });
 
 type Filter = 'all' | 'overlay' | 'layered' | 'no-model';
 
 /**
  * A synthesized model for a texture nothing in the pack references — so
- * texture-only overrides still get a 3D view. Signs, hanging signs and beds map
+ * texture-only overrides still get a 3D view. Signs, hangandi skiltis and beds map
  * to their real vanilla geometry (26.x turned them into block models); any other
  * block texture falls back to a plain cube.
  */
 function synthModelFor(sel: string): { json: any; note: string } | null {
   let m = sel.match(/^assets\/([^/]+)\/textures\/(block\/[a-z0-9_]+_hanging_sign)\.png$/i);
-  if (m) return { json: { parent: 'minecraft:block/template_hanging_sign_rot_0', textures: { all: `${m[1]}:${m[2]}` } }, note: 'vanilla hanging-sign model' };
+  if (m) return { json: { parent: 'minecraft:block/template_hanging_sign_rot_0', textures: { all: `${m[1]}:${m[2]}` } }, note: 'upprunalegt líkan af hangandi skilti' };
   m = sel.match(/^assets\/([^/]+)\/textures\/(block\/[a-z0-9_]+_sign)\.png$/i);
-  if (m) return { json: { parent: 'minecraft:block/template_sign_rot_0', textures: { all: `${m[1]}:${m[2]}` } }, note: 'vanilla sign model' };
+  if (m) return { json: { parent: 'minecraft:block/template_sign_rot_0', textures: { all: `${m[1]}:${m[2]}` } }, note: 'upprunalegt skiltalíkan' };
   m = sel.match(/^assets\/([^/]+)\/textures\/block\/([a-z0-9_]+_bed_(head|foot))_(up|east|west)\.png$/i);
   if (m) {
     const base = `${m[1]}:block/${m[2]}`;
     return {
       json: { parent: `minecraft:block/template_bed_${m[3]}`, textures: { up: `${base}_up`, east: `${base}_east`, west: `${base}_west` } },
-      note: 'vanilla bed model',
+      note: 'upprunalegt rúmlíkan',
     };
   }
   m = sel.match(/^assets\/([^/]+)\/textures\/(block\/[a-z0-9_]+)\.png$/i);
-  if (m) return { json: { parent: 'minecraft:block/cube_all', textures: { all: `${m[1]}:${m[2]}` } }, note: 'no model in pack — shown on a cube' };
+  if (m) return { json: { parent: 'minecraft:block/cube_all', textures: { all: `${m[1]}:${m[2]}` } }, note: 'ekkert líkan í pakkanum — sýnt á teningi' };
   return null;
 }
 
@@ -117,12 +117,12 @@ export function TexturesView({
 
   // Layers for the preview: the model's layer stack, or just the texture itself.
   const previewLayers: PreviewLayer[] = overlay
-    ? overlay.layers.map((l) => ({ key: l.key, label: l.key === 'layer0' ? 'base' : `overlay ${l.index}`, dataUrl: l.path ? fileData[l.path] : null }))
+    ? overlay.layers.map((l) => ({ key: l.key, label: l.key === 'layer0' ? 'grunnlag' : `viðbótarlag ${l.index}`, dataUrl: l.path ? fileData[l.path] : null }))
     : sel ? [{ key: 'tex', label: 'texture', dataUrl: fileData[sel] }] : [];
 
-  const previewChip = entityTpl ? <Chip tone="warning">approx</Chip>
-    : synth ? <Chip tone="neutral">{synth.note.includes('cube') ? 'cube' : 'vanilla model'}</Chip>
-    : isLayeredItem ? <Chip tone="info">item layers</Chip>
+  const previewChip = entityTpl ? <Chip tone="warning">nálgun</Chip>
+    : synth ? <Chip tone="neutral">{synth.note.includes('cube') ? 'cube' : 'upprunalegt líkan'}</Chip>
+    : isLayeredItem ? <Chip tone="info">lög hlutar</Chip>
     : model ? <Chip tone="info">3D</Chip> : null;
 
   return (
@@ -131,16 +131,16 @@ export function TexturesView({
       <div style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <div style={{ padding: '16px clamp(16px,3vw,32px) 0' }}>
           <div className="rp-sh">
-            <span className="rp-label">Studio</span>
-            <h2>Textures</h2>
+            <span className="rp-label">Vinnustofa</span>
+            <h2>Áferðir</h2>
           </div>
           <div className="rp-filters">
             {(['all', 'layered', 'overlay', 'no-model'] as Filter[]).map((f) => (
               <button key={f} className={`rp-btn sm${filter === f ? ' active' : ''}`} onClick={() => setFilter(f)}>
-                {f === 'all' ? 'All' : f === 'layered' ? 'Can overlay' : f === 'overlay' ? 'Has overlay' : 'No model'} ({counts[f]})
+                {f === 'all' ? 'Allt' : f === 'layered' ? 'Má bæta lagi við' : f === 'overlay' ? 'Með viðbótarlagi' : 'Án líkans'} ({counts[f]})
               </button>
             ))}
-            <input className="rp-search" placeholder="Search textures…" value={q} onChange={(e) => setQ(e.target.value)} />
+            <input className="rp-search" placeholder="Leita að áferðum…" value={q} onChange={(e) => setQ(e.target.value)} />
           </div>
         </div>
         <div className="rp-scroll" style={{ paddingTop: 8 }}>
@@ -150,7 +150,7 @@ export function TexturesView({
               return (
                 <div key={t} className={`rp-cell${sel === t ? ' sel' : ''}`} onClick={() => select(t)} title={t}>
                   <div className="thumb"><img src={fileData[t]} alt={t.split('/').pop()} loading="lazy" /></div>
-                  {ov?.hasOverlay && <div style={{ position: 'absolute', top: 5, right: 5, fontSize: 11, color: 'var(--sev-info)', background: 'rgba(var(--bg-rgb),0.7)', borderRadius: 4, padding: '0 3px' }} title="Has overlay layer">⧉</div>}
+                  {ov?.hasOverlay && <div style={{ position: 'absolute', top: 5, right: 5, fontSize: 11, color: 'var(--sev-info)', background: 'rgba(var(--bg-rgb),0.7)', borderRadius: 4, padding: '0 3px' }} title="Er með viðbótarlag">⧉</div>}
                   <div className="cap">
                     <div className="nm">{t.split('/').pop()}</div>
                     <div className="v" style={{ color: ov ? 'var(--sev-info)' : 'var(--ink-faint)' }}>{ov ? (ov.hasOverlay ? `${ov.layers.length} layers` : 'layer0') : 'texture'}</div>
@@ -170,12 +170,12 @@ export function TexturesView({
               <div style={{ fontSize: '0.8rem', color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sel.split('/').pop()}</div>
               <div className="rp-path" style={{ fontSize: '0.58rem', marginTop: 2 }}>{sel.replace(/^assets\/[^/]+\//, '')}</div>
             </div>
-            <button className="rp-btn sm" title={expanded ? 'Shrink panel' : 'Expand panel — bigger 3D view and painter'} onClick={() => setExpanded((e) => !e)}>{expanded ? '⇥ Shrink' : '⤢ Expand'}</button>
+            <button className="rp-btn sm" title={expanded ? 'Minnka spjald' : 'Stækka spjald — stærri þrívíddarsýn og myndflötur'} onClick={() => setExpanded((e) => !e)}>{expanded ? '⇥ Minnka' : '⤢ Stækka'}</button>
             <button className="rp-btn sm" onClick={() => setSel(null)}>✕</button>
           </div>
           <div className="rp-drawer-body">
             {/* ── Preview ── */}
-            <Fold title="Preview" chip={previewChip}>
+            <Fold title="Forskoðun" chip={previewChip}>
               {show3D ? (
                 <ModelViewer3D
                   modelContent={model ? (fileData[model] ?? '{}') : synth ? JSON.stringify(synth.json) : '{}'}
@@ -190,9 +190,9 @@ export function TexturesView({
               {(model || entityTpl || synth) && (
                 <div style={{ marginTop: 8, fontSize: '0.62rem', color: 'var(--ink-faint)', textAlign: 'center' }}>
                   {model ? (
-                    <>model: <a className="src" style={{ color: 'var(--accent)', cursor: 'pointer' }} onClick={() => onOpenInEditor(model)}>{model.split('/').pop()}</a></>
+                    <>líkan: <a className="src" style={{ color: 'var(--accent)', cursor: 'pointer' }} onClick={() => onOpenInEditor(model)}>{model.split('/').pop()}</a></>
                   ) : entityTpl ? (
-                    <>approximate {entityTpl.name} preview — the game renders these with a built-in model, not a pack file</>
+                    <>Einföld forskoðun: {entityTpl.name}. Leikurinn notar innbyggt líkan fyrir þetta.</>
                   ) : (
                     synth!.note
                   )}
@@ -200,9 +200,9 @@ export function TexturesView({
               )}
             </Fold>
 
-            {/* ── Layers & overlay ── */}
-            <Fold title="Layers & overlay"
-              chip={overlay ? (overlay.hasOverlay ? <Chip tone="info">has overlay</Chip> : <Chip tone="neutral">base only</Chip>) : undefined}
+            {/* ── Lög og viðbótarlög ── */}
+            <Fold title="Lög og viðbótarlög"
+              chip={overlay ? (overlay.hasOverlay ? <Chip tone="info">með viðbótarlagi</Chip> : <Chip tone="neutral">aðeins grunnlag</Chip>) : undefined}
               defaultOpen={!!overlay}>
               {overlay ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
@@ -212,36 +212,36 @@ export function TexturesView({
                         {l.path && fileData[l.path] ? <img src={fileData[l.path]} style={{ maxWidth: 22, maxHeight: 22, imageRendering: 'pixelated' }} alt="" /> : <span style={{ fontSize: 10, color: 'var(--sev-error)' }}>?</span>}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: '0.66rem', color: 'var(--ink)' }}>{l.index === 0 ? 'layer0 · base' : `layer${l.index} · overlay`}</div>
+                        <div style={{ fontSize: '0.66rem', color: 'var(--ink)' }}>{l.index === 0 ? 'layer0 · grunnlag' : `layer${l.index} · viðbótarlag`}</div>
                         <div style={{ fontSize: '0.55rem', color: 'var(--ink-faint)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.ref}</div>
                       </div>
-                      {l.path && <button className="rp-btn sm" onClick={() => setActiveLayer(l.path)}>Edit</button>}
+                      {l.path && <button className="rp-btn sm" onClick={() => setActiveLayer(l.path)}>Breyta</button>}
                       {l.index >= 1 && (
-                        <button className="rp-btn sm danger" title="Remove this overlay layer" onClick={() => {
-                          if (confirm(`Remove ${l.key} (overlay) from ${overlay.model.split('/').pop()}? The overlay texture will be deleted.`)) onRemoveOverlay(overlay.model, l.key, l.path);
+                        <button className="rp-btn sm danger" title="Fjarlægja þetta viðbótarlag" onClick={() => {
+                          if (confirm(`Fjarlægja viðbótarlagið ${l.key} úr ${overlay.model.split('/').pop()}? Áferð lagsins verður eytt.`)) onRemoveOverlay(overlay.model, l.key, l.path);
                         }}>✕</button>
                       )}
                     </div>
                   ))}
                   <button className="rp-btn sm" style={{ borderColor: 'rgba(90,167,255,0.5)', color: 'var(--sev-info)', marginTop: 4 }}
                     onClick={async () => { const p = await onAddOverlay(overlay.model, baseTexPath); if (p) { setActiveLayer(p); } }}>
-                    + Add overlay layer
+                    + Bæta við lagi
                   </button>
                 </div>
               ) : (
                 <div style={{ fontSize: '0.68rem', color: 'var(--ink-dim)', lineHeight: 1.5 }}>
-                  Only textures used as a layer of a generated item model can take stacked overlays.
-                  {show3D ? ' This one renders in 3D — paint it directly in the preview above.' : ''}
+                  Aðeins áferðir sem eru notaðar sem lög í sjálfmynduðu hlutalíkani geta haft viðbótarlög.
+                  {show3D ? ' Þetta birtist í þrívídd — málaðu beint á forskoðunina hér fyrir ofan.' : ''}
                 </div>
               )}
             </Fold>
 
             {/* ── Pixel painter ── */}
-            <Fold title={`Pixel painter${activeLayer && activeLayer !== sel ? ` — ${overlay?.layers.find((l) => l.path === activeLayer)?.key ?? 'layer'}` : ''}`}>
+            <Fold title={`Myndritill${activeLayer && activeLayer !== sel ? ` — ${overlay?.layers.find((l) => l.path === activeLayer)?.key ?? 'lag'}` : ''}`}>
               {activeLayer && fileData[activeLayer] ? (
                 <PixelPainter key={activeLayer + revision} compact dataUrl={fileData[activeLayer]} onSave={(d: string) => onSaveTexture(activeLayer, d)} />
               ) : (
-                <div style={{ fontSize: '0.68rem', color: 'var(--ink-faint)' }}>Select a layer to edit.</div>
+                <div style={{ fontSize: '0.68rem', color: 'var(--ink-faint)' }}>Veldu lag til að breyta.</div>
               )}
             </Fold>
           </div>

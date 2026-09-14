@@ -8,7 +8,7 @@ import { Arrow, Stamp, Tape } from './Bits';
 import type { Plate } from './data';
 
 const TYPE: Record<MapLocation['type'], string> = {
-  surface: 'surface', underground: 'underground', island: 'island', aerial: 'from the air',
+  surface: 'á yfirborði', underground: 'neðanjarðar', island: 'eyja', aerial: 'úr lofti',
 };
 
 const INK    = '#3b2719';
@@ -18,7 +18,7 @@ const WATER  = '#6b7f7a';
 const BRASS  = '#c9a24a';
 const WAX    = '#9b3b2a';
 const LAND_PATH = 'M 435 60 C 528 45, 674 78, 752 142 C 810 194, 822 262, 818 330 C 814 402, 786 460, 746 502 C 700 550, 635 582, 555 596 C 476 610, 396 604, 320 582 C 232 558, 155 512, 110 458 C 62 400, 50 336, 56 278 C 62 218, 88 166, 132 136 C 182 100, 298 70, 435 60 Z';
-const pretty = (s: string) => s.toLowerCase().replace(/(^|\s)\S/g, c => c.toUpperCase());
+const pretty = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 export default function TerritoryMap({ plates }: { plates: Plate[] }) {
   const [locations, setLocations] = useState<MapLocation[]>(DEFAULT_LOCATIONS);
@@ -54,9 +54,9 @@ export default function TerritoryMap({ plates }: { plates: Plate[] }) {
     <section id="territory" className="j-sec">
       <div className="j-wrap j-map">
         <div className="j-map__wrap">
-          <span className="j-map__label"><Stamp r={-4}>Territory</Stamp></span>
+          <span className="j-map__label"><Stamp r={-4}>Landakort</Stamp></span>
           <div ref={sheet} className={`j-map__sheet${surveyed ? ' is-surveyed' : ''}`}>
-            <svg viewBox="0 0 1000 650" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Survey map of the JOÐ world">
+            <svg viewBox="0 0 1000 650" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Landakort af JOÐ-heiminum">
               <defs>
                 <filter id="jBurn" x="-5%" y="-5%" width="110%" height="110%">
                   <feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="3" seed="4" result="n" />
@@ -154,8 +154,8 @@ export default function TerritoryMap({ plates }: { plates: Plate[] }) {
                 <circle r="2.2" fill={INK} stroke="none" />
                 <text y="-36" textAnchor="middle" fill={INK} stroke="none" fontSize="14" fontFamily="var(--font-hand)" fontWeight="600">N</text>
               </g>
-              <text x="44" y="56" fill={INK} fontSize="20" fontFamily="var(--font-wood)">JOÐ · Survival World</text>
-              <text x="44" y="78" fill={INK} fillOpacity="0.75" fontSize="15" fontFamily="var(--font-hand)">{locations.length} claims surveyed, 2024 to {new Date().getFullYear()}</text>
+              <text x="44" y="56" fill={INK} fontSize="20" fontFamily="var(--font-wood)">JOÐ · Heimurinn okkar</text>
+              <text x="44" y="78" fill={INK} fillOpacity="0.75" fontSize="15" fontFamily="var(--font-hand)">{locations.length} staðir á kortinu, 2024 til {new Date().getFullYear()}</text>
               <rect x="30" y="30" width="940" height="590" fill="none" stroke={INK} strokeOpacity="0.55" strokeWidth="1" />
             </svg>
           </div>
@@ -177,8 +177,8 @@ export default function TerritoryMap({ plates }: { plates: Plate[] }) {
         </div>
 
         <aside>
-          <p className="j-note j-note--big">every claim on the map</p>
-          <p className="j-note j-note--faint" style={{ marginBottom: '1rem' }}>tap a tack or a name, the photo comes up <Arrow /></p>
+          <p className="j-note j-note--big">allir staðirnir á kortinu</p>
+          <p className="j-note j-note--faint" style={{ marginBottom: '1rem' }}>smelltu á pinna eða nafn til að sjá mynd <Arrow /></p>
           <ol className="j-index">
             {locations.map(loc => (
               <li key={loc.id}>

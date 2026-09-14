@@ -1,3 +1,4 @@
+import { errorMessage } from '@/lib/icelandic';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin, unauthorizedResponse } from '@/lib/auth';
 import { getCustomPacks, addCustomPack } from '@/lib/custom-datapacks';
@@ -18,16 +19,16 @@ export async function POST(req: NextRequest) {
   const { name, description, category, source, modrinthSlug, githubRepo, gameVersion, serverFile } = body;
 
   if (!name || typeof name !== 'string' || !name.trim()) {
-    return NextResponse.json({ error: 'name is required' }, { status: 400 });
+    return NextResponse.json({ error: 'Nafn vantar.' }, { status: 400 });
   }
   if (!description || typeof description !== 'string' || !description.trim()) {
-    return NextResponse.json({ error: 'description is required' }, { status: 400 });
+    return NextResponse.json({ error: 'Lýsingu vantar.' }, { status: 400 });
   }
   if (!category || typeof category !== 'string' || !category.trim()) {
-    return NextResponse.json({ error: 'category is required' }, { status: 400 });
+    return NextResponse.json({ error: 'Flokk vantar.' }, { status: 400 });
   }
   if (!source || !['modrinth', 'github', 'manual'].includes(source as string)) {
-    return NextResponse.json({ error: 'source must be modrinth, github, or manual' }, { status: 400 });
+    return NextResponse.json({ error: 'Uppruni verður að vera modrinth, github eða manual.' }, { status: 400 });
   }
 
   try {
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(pack, { status: 201 });
   } catch (err) {
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'Failed to save' },
+      { error: errorMessage(err, 'Ekki tókst að vista.') },
       { status: 500 }
     );
   }

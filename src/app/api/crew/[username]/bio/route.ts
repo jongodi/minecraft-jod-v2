@@ -9,12 +9,12 @@ export async function PATCH(
   const { username } = await params;
 
   if (!session || session.username.toLowerCase() !== username.toLowerCase()) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return NextResponse.json({ error: 'Þú þarft að skrá þig inn með réttum aðgangi.' }, { status: 401 });
   }
 
   const { bio } = await req.json() as { bio?: string };
   if (typeof bio !== 'string') {
-    return NextResponse.json({ error: 'bio must be a string' }, { status: 400 });
+    return NextResponse.json({ error: 'Kynningin verður að vera texti.' }, { status: 400 });
   }
 
   const escaped = bio

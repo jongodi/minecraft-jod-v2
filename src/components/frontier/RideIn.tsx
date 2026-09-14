@@ -10,8 +10,8 @@ export default function RideIn() {
   return (
     <section id="ride" className="j-sec">
       <div className="j-wrap" style={{ textAlign: 'center' }}>
-        <p className="j-note j-note--big">Ride in</p>
-        <p className="j-note">Java Edition, any recent version. not on the whitelist yet? ask one of us</p>
+        <p className="j-note j-note--big">Komdu inn</p>
+        <p className="j-note">Nýleg Java-útgáfa af Minecraft. Vantar þig aðgang? Heyrðu í einhverju okkar</p>
 
         <div className="j-saddle">
           <span className="j-rivet" style={{ top: 18, left: 18 }} aria-hidden="true" />
@@ -28,12 +28,12 @@ export default function RideIn() {
             <span className="j-brandmark__text">JOÐ</span>
           </div>
 
-          <button className={`j-plate${copied ? ' is-copied' : ''}`} onClick={copy} aria-label="Copy the server address">
-            <span className="j-plate__addr">{copied ? 'copied to clipboard' : SERVER_IP}</span>
-            <span className="j-plate__hint">{copied ? 'now paste it in the game' : 'tap the plate to copy'}</span>
+          <button className={`j-plate${copied ? ' is-copied' : ''}`} onClick={copy} aria-label="Afrita vistfang þjónsins">
+            <span className="j-plate__addr">{copied ? 'vistfang afritað' : SERVER_IP}</span>
+            <span className="j-plate__hint">{copied ? 'límdu það nú inn í leikinn' : 'smelltu á plötuna til að afrita'}</span>
           </button>
 
-          <p className="j-saddle__note">Multiplayer, then Add Server, then paste</p>
+          <p className="j-saddle__note">Opnaðu fjölspilun, bættu við þjóni og límdu vistfangið inn</p>
         </div>
       </div>
     </section>

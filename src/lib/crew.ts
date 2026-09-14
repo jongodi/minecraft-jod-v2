@@ -93,7 +93,7 @@ export async function writeProfile(profile: CrewProfile): Promise<void> {
       return;
     } catch (e) {
       console.error('Redis writeProfile error:', e);
-      throw new Error('Storage error: failed to save profile');
+      throw new Error('Ekki tókst að vista prófílinn vegna villu í geymslu.');
     }
   }
 

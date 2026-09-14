@@ -51,11 +51,11 @@ export function analyze(input: EngineInput): AnalysisResult {
   result.summary.warnings = result.findings.filter((f) => f.severity === 'warning').length;
 
   if (nearCapped) {
-    result.blindSpots.push('Near-duplicate detection was skipped (too many textures for an exhaustive pixel comparison); exact duplicates are still reported.');
+    result.blindSpots.push('Leit að áferðum sem eru næstum eins var sleppt því þær eru of margar til að bera saman alla myndpunkta. Nákvæmlega eins skrár eru samt sýndar.');
   }
   // Record datapack coverage in blind spots when a pack scanned zero relevant files.
   for (const [label, count] of Object.entries(scanned)) {
-    if (count === 0) result.blindSpots.push(`Datapack "${label}" contained no functions, loot tables, recipes, or advancements to scan.`);
+    if (count === 0) result.blindSpots.push(`Gagnapakkinn "${label}" innihélt engar aðgerðir, fengjatöflur, uppskriftir eða afrek til að greina.`);
   }
 
   return result;
@@ -83,25 +83,25 @@ function resolveDatapackRefs(graph: Graph, refs: DatapackRef[]): Finding[] {
   for (const ref of refs) {
     if (ref.via === 'item_model') {
       const target = itemDefLocToPath(ref.value);
-      const ok = rootWithDatapack(target, ref, `Invoked by a datapack item_model component (${ref.pack}).`);
+      const ok = rootWithDatapack(target, ref, `Notað með item_model úr gagnapakka (${ref.pack}).`);
       if (!ok) {
         const key = `im|${ref.value}`;
         if (!seenMissing.has(key)) {
           seenMissing.add(key);
           findings.push({
             id: `dp${fid++}`, severity: 'warning', category: 'datapack-missing-target',
-            title: 'Datapack sets an item_model the pack does not provide',
-            detail: `A datapack sets item_model = "${ref.value}", but the pack has no ${target}. In-game this item renders as the missing (magenta/black) model.`,
+            title: 'Gagnapakki vísar í item_model sem pakkann vantar',
+            detail: `Gagnapakki setur item_model = "${ref.value}" en ${target} vantar í pakkann. Hluturinn birtist því sem bleiksvarta villulíkanið í leiknum.`,
             path: ref.file, refs: [target], confidence: 'high',
             evidence: [{ kind: 'datapack', detail: `item_model = ${ref.value}`, source: `${ref.pack}: ${ref.file}` },
-                       { kind: 'missing-target', detail: `Expected ${target}` }],
-            consequence: 'Add the item definition to the pack, or fix the item_model value in the datapack.',
+                       { kind: 'missing-target', detail: `Bjóst við ${target}` }],
+            consequence: 'Bættu skilgreiningu hlutarins við pakkann eða leiðréttu item_model-gildið í gagnapakkanum.',
           });
         }
       }
     } else if (ref.via === 'font') {
       const target = fontLocToPath(ref.value);
-      rootWithDatapack(target, ref, `Referenced by a datapack text component font (${ref.pack}).`);
+      rootWithDatapack(target, ref, `Tilvísun í letur úr textahluta gagnapakka (${ref.pack}).`);
       // A missing font falls back to default in-game — not an error, so no finding.
     } else if (ref.via === 'custom_model_data' && ref.context) {
       // Root the base item's entry point (item definition first, then legacy model).
@@ -109,9 +109,9 @@ function resolveDatapackRefs(graph: Graph, refs: DatapackRef[]): Finding[] {
       const legacyItem = modelLocToPath(`item/${ref.context}`);
       const legacyBlock = modelLocToPath(`block/${ref.context}`);
       const rooted =
-        rootWithDatapack(itemDef, ref, `Base item "${ref.context}" is given with custom_model_data by a datapack (${ref.pack}).`) ||
-        rootWithDatapack(legacyItem, ref, `Base item "${ref.context}" is given with custom_model_data by a datapack (${ref.pack}).`) ||
-        rootWithDatapack(legacyBlock, ref, `Base block "${ref.context}" is given with custom_model_data by a datapack (${ref.pack}).`);
+        rootWithDatapack(itemDef, ref, `Grunnhlutur "${ref.context}" er gefinn með custom_model_data af gagnapakka (${ref.pack}).`) ||
+        rootWithDatapack(legacyItem, ref, `Grunnhlutur "${ref.context}" er gefinn með custom_model_data af gagnapakka (${ref.pack}).`) ||
+        rootWithDatapack(legacyBlock, ref, `Grunnkubbur "${ref.context}" er gefinn með custom_model_data af gagnapakka (${ref.pack}).`);
       void rooted; // absence is fine: a vanilla base item without a pack override still renders vanilla.
     }
   }

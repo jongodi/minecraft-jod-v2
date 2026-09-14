@@ -28,5 +28,5 @@ export async function requireAdmin(): Promise<boolean> {
 }
 
 export function unauthorizedResponse() {
-  return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  return NextResponse.json({ error: 'Þú þarft að skrá þig inn með réttum aðgangi.' }, { status: 401 });
 }

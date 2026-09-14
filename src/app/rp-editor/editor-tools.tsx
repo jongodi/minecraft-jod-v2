@@ -1,5 +1,7 @@
 'use client';
 
+import { jsonErrorMessage } from '@/lib/icelandic';
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Deep editor utilities: pixel painter, audio player, JSON + pack.mcmeta editors
 // and the file tree. Extracted verbatim from the original editor so the hands-on
@@ -69,7 +71,7 @@ export const TreeNode = memo(function TreeNode({ name, node, path, depth, select
     <div className={`tree-node${selected === full ? ' selected' : ''}`} style={{ '--depth': depth } as any}
       onClick={() => onSelect(full)}
       onDoubleClick={(e) => { e.stopPropagation(); setEditName(name); setEditing(true); }}
-      title="Double-click to rename"
+      title="Tvísmelltu til að endurnefna"
     >
       <span style={{ color: ext === 'png' ? ACCENT2 : ext === 'ogg' ? '#a78bfa' : ext === 'json' ? '#f0a500' : DIM, fontSize: 11, flexShrink: 0 }}>{icon}</span>
       <span>{name}</span>
@@ -106,9 +108,9 @@ function floodFill(ctx: CanvasRenderingContext2D, sx: number, sy: number, fillHe
 }
 
 const TOOLS = [
-  { id: 'pen', label: '✏ Pen' }, { id: 'line', label: '╱ Line' }, { id: 'rect', label: '□ Rect' },
-  { id: 'fill', label: '◉ Fill' }, { id: 'eraser', label: '◻ Erase' }, { id: 'picker', label: '✦ Pick' },
-  { id: 'select', label: '▣ Select' },
+  { id: 'pen', label: '✏ Penni' }, { id: 'line', label: '╱ Lína' }, { id: 'rect', label: '□ Rétthyrningur' },
+  { id: 'fill', label: '◉ Fylla' }, { id: 'eraser', label: '◻ Stroka' }, { id: 'picker', label: '✦ Velja lit' },
+  { id: 'select', label: '▣ Velja' },
 ];
 const PALETTE_KEY = 'jod_rp_palette';
 const PALETTE_SIZE = 16;
@@ -178,7 +180,7 @@ export function PixelPainter({ dataUrl, onSave, compact }: any) {
     setCanRedo(historyIdxRef.current < historyRef.current.length - 1);
   }, []);
 
-  const pushHistory = useCallback((label = 'Edit') => {
+  const pushHistory = useCallback((label = 'Breyta') => {
     const c = canvasRef.current; if (!c) return;
     const snap = c.getContext('2d')!.getImageData(0, 0, c.width, c.height);
     historyRef.current = historyRef.current.slice(0, historyIdxRef.current + 1);
@@ -295,7 +297,7 @@ export function PixelPainter({ dataUrl, onSave, compact }: any) {
       setColor(`#${[d[0], d[1], d[2]].map((v: number) => v.toString(16).padStart(2, '0')).join('')}`);
     } else if (tool === 'fill') {
       if (px < 0 || py < 0 || px >= c.width || py >= c.height) return;
-      floodFill(ctx, px, py, color, c.width, c.height); pushHistory('Fill'); drawOverlayRef.current();
+      floodFill(ctx, px, py, color, c.width, c.height); pushHistory('Fylla'); drawOverlayRef.current();
     } else if (tool === 'line' || tool === 'rect') {
       if (px < 0 || py < 0 || px >= c.width || py >= c.height) return;
       dragStartRef.current = { x: px, y: py }; baseSnapRef.current = ctx.getImageData(0, 0, c.width, c.height);
@@ -328,10 +330,10 @@ export function PixelPainter({ dataUrl, onSave, compact }: any) {
   const handleMouseUp = (e: any) => {
     const [px, py] = getPixel(e); const c = canvasRef.current; if (!c) return;
     if (tool === 'pen' || tool === 'eraser') {
-      if (paintedRef.current) pushHistory(tool === 'eraser' ? 'Erase' : 'Pen stroke');
+      if (paintedRef.current) pushHistory(tool === 'eraser' ? 'Stroka út' : 'Pennastrik');
       paintedRef.current = false; setPainting(false);
     } else if ((tool === 'line' || tool === 'rect') && dragStartRef.current) {
-      pushHistory(tool === 'line' ? 'Line' : 'Rectangle'); dragStartRef.current = null; baseSnapRef.current = null;
+      pushHistory(tool === 'line' ? 'Lína' : 'Rétthyrningur'); dragStartRef.current = null; baseSnapRef.current = null;
     } else if (tool === 'select' && dragStartRef.current) {
       const { x: sx, y: sy } = dragStartRef.current;
       const ex = Math.max(0, Math.min(c.width - 1, px)), ey = Math.max(0, Math.min(c.height - 1, py));
@@ -351,14 +353,14 @@ export function PixelPainter({ dataUrl, onSave, compact }: any) {
     if (!selection) return; const c = canvasRef.current; if (!c) return;
     const ctx = c.getContext('2d')!; ctx.fillStyle = fillColor;
     const w = selection.x2 - selection.x1 + 1, h = selection.y2 - selection.y1 + 1;
-    ctx.fillRect(selection.x1, selection.y1, w, h); pushHistory('Fill selection'); drawOverlayRef.current();
+    ctx.fillRect(selection.x1, selection.y1, w, h); pushHistory('Fylla val'); drawOverlayRef.current();
   }, [selection, pushHistory]);
 
   const selClear = useCallback(() => {
     if (!selection) return; const c = canvasRef.current; if (!c) return;
     const ctx = c.getContext('2d')!;
     const w = selection.x2 - selection.x1 + 1, h = selection.y2 - selection.y1 + 1;
-    ctx.clearRect(selection.x1, selection.y1, w, h); pushHistory('Erase selection'); drawOverlayRef.current();
+    ctx.clearRect(selection.x1, selection.y1, w, h); pushHistory('Stroka út val'); drawOverlayRef.current();
   }, [selection, pushHistory]);
 
   const selReplaceColor = useCallback(() => {
@@ -371,7 +373,7 @@ export function PixelPainter({ dataUrl, onSave, compact }: any) {
     for (let i = 0; i < d.length; i += 4) {
       if (d[i] === fr && d[i + 1] === fg && d[i + 2] === fb && d[i + 3] > 0) { d[i] = tr; d[i + 1] = tg; d[i + 2] = tb; d[i + 3] = 255; }
     }
-    ctx.putImageData(img, selection.x1, selection.y1); pushHistory('Replace color'); drawOverlayRef.current();
+    ctx.putImageData(img, selection.x1, selection.y1); pushHistory('Skipta um lit'); drawOverlayRef.current();
   }, [selection, replaceFrom, replaceTo, pushHistory]);
 
   const pickFromCanvas = (setter: (c: string) => void) => {
@@ -404,31 +406,31 @@ export function PixelPainter({ dataUrl, onSave, compact }: any) {
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
         <input type="color" value={color} onChange={(e) => setColor(e.target.value)} style={{ width: 28, height: 26, padding: 2, background: BG3, border: `1px solid ${BORDER}`, cursor: 'pointer' }} />
         <span style={{ fontSize: 10, color: DIM }}>{color}</span>
-        <button className={`rp-btn sm${showImport ? ' active' : ''}`} style={{ marginLeft: 4 }} onClick={() => { setShowImport((v) => !v); setImportSrc(null); importImgRef.current = null; }}>↑ Import</button>
+        <button className={`rp-btn sm${showImport ? ' active' : ''}`} style={{ marginLeft: 4 }} onClick={() => { setShowImport((v) => !v); setImportSrc(null); importImgRef.current = null; }}>↑ Flytja inn</button>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 3 }}>
           {[2, 4, 8, 16].map((s) => <button key={s} className={`rp-btn sm${scale === s ? ' active' : ''}`} onClick={() => changeScale(s)}>{s}x</button>)}
         </div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 9, color: DIM, letterSpacing: '2px', textTransform: 'uppercase', flexShrink: 0 }}>Palette</span>
+        <span style={{ fontSize: 9, color: DIM, letterSpacing: '2px', textTransform: 'uppercase', flexShrink: 0 }}>Litatafla</span>
         <div style={{ display: 'flex', gap: 2, flexWrap: 'wrap', flex: 1 }}>
           {palette.map((c, i) => (
-            <div key={i} title={c || 'Empty — click active color to save'}
+            <div key={i} title={c || 'Tómt — smelltu á valinn lit til að vista'}
               onClick={() => { if (c) setColor(c); }}
               onContextMenu={(e) => { e.preventDefault(); if (c) { const np = [...palette]; np[i] = ''; setPalette(np); savePaletteStorage(np); } }}
               style={{ width: 16, height: 16, background: c || BG3, border: `1px solid ${c ? c + ' ' : BORDER}`, cursor: c ? 'pointer' : 'default', flexShrink: 0, boxSizing: 'border-box', outline: c === color ? `1px solid ${ACCENT}` : 'none', outlineOffset: 1 }}
             />
           ))}
         </div>
-        <button className="rp-btn sm" title="Save current color to palette" onClick={() => {
+        <button className="rp-btn sm" title="Vista valinn lit á litatöflu" onClick={() => {
           const empty = palette.findIndex((c) => !c); const idx = empty >= 0 ? empty : palette.length - 1;
           const np = [...palette]; np[idx] = color; setPalette(np); savePaletteStorage(np);
-        }}>+ Save</button>
+        }}>+ Vista</button>
       </div>
 
       {showImport && (
         <div style={{ background: BG2, border: `1px solid ${BORDER}`, padding: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div style={{ fontSize: 9, color: DIM, letterSpacing: '2px', textTransform: 'uppercase' }}>Import image as texture</div>
+          <div style={{ fontSize: 9, color: DIM, letterSpacing: '2px', textTransform: 'uppercase' }}>Flytja inn mynd sem áferð</div>
           {!importSrc ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               <div style={{ border: `2px dashed ${BORDER}`, padding: '18px 24px', textAlign: 'center', cursor: 'pointer', color: DIM, fontSize: 11, width: '100%' }}
@@ -436,12 +438,12 @@ export function PixelPainter({ dataUrl, onSave, compact }: any) {
                 onDragOver={(e) => { e.preventDefault(); (e.currentTarget as any).style.borderColor = ACCENT; }}
                 onDragLeave={(e) => { (e.currentTarget as any).style.borderColor = BORDER; }}
                 onDrop={(e) => { e.preventDefault(); (e.currentTarget as any).style.borderColor = BORDER; const f = e.dataTransfer.files[0]; if (f) { const r = new FileReader(); r.onload = (ev) => { const src = ev.target?.result as string; setImportSrc(src); const img = new Image(); img.onload = () => { importImgRef.current = img; renderImportPreview(img, pixelBlock); }; img.src = src; }; r.readAsDataURL(f); } }}
-              >Drop image here or click to browse</div>
+              >Slepptu mynd hér eða smelltu til að velja</div>
               <input ref={importFileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImportFile} />
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <div style={{ fontSize: 10, color: TEXT2 }}>Block size (pixelation)</div>
+              <div style={{ fontSize: 10, color: TEXT2 }}>Stærð myndpunkta</div>
               <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                 {BLOCK_PRESETS.map((b) => <button key={b} className={`rp-btn sm${pixelBlock === b ? ' active' : ''}`} onClick={() => setPixelBlock(b)}>{b}</button>)}
               </div>
@@ -449,13 +451,13 @@ export function PixelPainter({ dataUrl, onSave, compact }: any) {
                 <input type="range" min={8} max={512} step={1} value={pixelBlock} onChange={(e) => setPixelBlock(Number(e.target.value))} style={{ flex: 1, accentColor: ACCENT }} />
                 <span style={{ fontSize: 11, color: ACCENT, minWidth: 36, textAlign: 'right' }}>{pixelBlock}px</span>
               </div>
-              <div style={{ fontSize: 9, color: DIM, letterSpacing: '1px' }}>Preview</div>
+              <div style={{ fontSize: 9, color: DIM, letterSpacing: '1px' }}>Forskoðun</div>
               <div style={{ overflow: 'auto', maxHeight: compact ? 180 : 260, border: `1px solid ${BORDER}`, background: '#04060a', display: 'inline-block' }}>
                 <canvas ref={previewRef} style={{ imageRendering: 'pixelated', display: 'block' }} />
               </div>
               <div style={{ display: 'flex', gap: 6 }}>
-                <button className="rp-btn active" onClick={applyImport}>Apply to canvas</button>
-                <button className="rp-btn sm" onClick={() => { setImportSrc(null); importImgRef.current = null; }}>← Back</button>
+                <button className="rp-btn active" onClick={applyImport}>Setja á myndflöt</button>
+                <button className="rp-btn sm" onClick={() => { setImportSrc(null); importImgRef.current = null; }}>← Til baka</button>
               </div>
             </div>
           )}
@@ -465,53 +467,53 @@ export function PixelPainter({ dataUrl, onSave, compact }: any) {
       {selection && tool === 'select' && (
         <div style={{ background: BG2, border: `1px solid ${ACCENT2}44`, padding: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 9, color: ACCENT2, letterSpacing: '2px', textTransform: 'uppercase' }}>Selection</span>
+            <span style={{ fontSize: 9, color: ACCENT2, letterSpacing: '2px', textTransform: 'uppercase' }}>Val</span>
             <span style={{ fontSize: 10, color: DIM }}>{selection.x2 - selection.x1 + 1}×{selection.y2 - selection.y1 + 1}px @ ({selection.x1},{selection.y1})</span>
-            <button className="rp-btn sm" style={{ marginLeft: 'auto' }} onClick={() => { selectionRef.current = null; setSelection(null); drawOverlayRef.current(); }}>✕ Deselect</button>
+            <button className="rp-btn sm" style={{ marginLeft: 'auto' }} onClick={() => { selectionRef.current = null; setSelection(null); drawOverlayRef.current(); }}>✕ Afvelja</button>
           </div>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-            <button className="rp-btn sm" onClick={() => selFill(color)}>Fill with color</button>
-            <button className="rp-btn sm danger" onClick={selClear}>Erase</button>
+            <button className="rp-btn sm" onClick={() => selFill(color)}>Fylla með lit</button>
+            <button className="rp-btn sm danger" onClick={selClear}>Stroka út</button>
           </div>
           <div style={{ borderTop: `1px solid ${BORDER}`, paddingTop: 6, display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <div style={{ fontSize: 9, color: DIM, letterSpacing: '2px', textTransform: 'uppercase' }}>Replace color</div>
+            <div style={{ fontSize: 9, color: DIM, letterSpacing: '2px', textTransform: 'uppercase' }}>Skipta um lit</div>
             <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'center' }}>
-                <span style={{ fontSize: 9, color: DIM }}>From</span>
+                <span style={{ fontSize: 9, color: DIM }}>Úr</span>
                 <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
                   <input type="color" value={replaceFrom} onChange={(e) => setReplaceFrom(e.target.value)} style={{ width: 26, height: 24, padding: 2, background: BG3, border: `1px solid ${BORDER}`, cursor: 'pointer' }} />
-                  <button className="rp-btn sm" title="Pick from canvas" onClick={() => pickFromCanvas(setReplaceFrom)}>✦</button>
+                  <button className="rp-btn sm" title="Velja lit af mynd" onClick={() => pickFromCanvas(setReplaceFrom)}>✦</button>
                 </div>
               </div>
               <span style={{ fontSize: 14, color: DIM, marginTop: 12 }}>→</span>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'center' }}>
-                <span style={{ fontSize: 9, color: DIM }}>To</span>
+                <span style={{ fontSize: 9, color: DIM }}>Í</span>
                 <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
                   <input type="color" value={replaceTo} onChange={(e) => setReplaceTo(e.target.value)} style={{ width: 26, height: 24, padding: 2, background: BG3, border: `1px solid ${BORDER}`, cursor: 'pointer' }} />
-                  <button className="rp-btn sm" title="Pick from canvas" onClick={() => pickFromCanvas(setReplaceTo)}>✦</button>
+                  <button className="rp-btn sm" title="Velja lit af mynd" onClick={() => pickFromCanvas(setReplaceTo)}>✦</button>
                 </div>
               </div>
-              <button className="rp-btn sm apply" style={{ marginTop: 12 }} onClick={selReplaceColor}>Replace</button>
+              <button className="rp-btn sm apply" style={{ marginTop: 12 }} onClick={selReplaceColor}>Skipta út</button>
             </div>
           </div>
         </div>
       )}
 
       <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap' }}>
-        <button className="rp-btn sm" onClick={undo} disabled={!canUndo} title="Undo (Ctrl+Z)" style={{ opacity: canUndo ? 1 : 0.3, cursor: canUndo ? 'pointer' : 'default' }}>← Undo</button>
-        <button className="rp-btn sm" onClick={redo} disabled={!canRedo} title="Redo (Ctrl+Shift+Z)" style={{ opacity: canRedo ? 1 : 0.3, cursor: canRedo ? 'pointer' : 'default' }}>Redo →</button>
+        <button className="rp-btn sm" onClick={undo} disabled={!canUndo} title="Afturkalla (Ctrl+Z)" style={{ opacity: canUndo ? 1 : 0.3, cursor: canUndo ? 'pointer' : 'default' }}>← Afturkalla</button>
+        <button className="rp-btn sm" onClick={redo} disabled={!canRedo} title="Endurtaka (Ctrl+Shift+Z)" style={{ opacity: canRedo ? 1 : 0.3, cursor: canRedo ? 'pointer' : 'default' }}>Endurtaka →</button>
         <span style={{ fontSize: 9, color: DIM, marginLeft: 2, letterSpacing: '1px' }}>{historyIdxRef.current + 1}/{historyRef.current.length}</span>
-        <button className={`rp-btn sm${showHistory ? ' active' : ''}`} style={{ marginLeft: 'auto' }} onClick={() => setShowHistory((v) => !v)} title="History">⏱ History</button>
-        <button className={`rp-btn sm${showShortcuts ? ' active' : ''}`} onClick={() => setShowShortcuts((v) => !v)} title="Keyboard shortcuts (?)">? Keys</button>
+        <button className={`rp-btn sm${showHistory ? ' active' : ''}`} style={{ marginLeft: 'auto' }} onClick={() => setShowHistory((v) => !v)} title="Breytingasaga">⏱ Breytingasaga</button>
+        <button className={`rp-btn sm${showShortcuts ? ' active' : ''}`} onClick={() => setShowShortcuts((v) => !v)} title="Flýtilyklar (?)">? Flýtilyklar</button>
       </div>
 
       {showHistory && (
         <div style={{ background: BG2, border: `1px solid ${BORDER}`, maxHeight: 160, overflowY: 'auto', padding: '4px 0' }}>
-          <div style={{ fontSize: 9, color: DIM, letterSpacing: '2px', textTransform: 'uppercase', padding: '4px 10px', borderBottom: `1px solid ${BORDER}` }}>Action History ({historyRef.current.length})</div>
+          <div style={{ fontSize: 9, color: DIM, letterSpacing: '2px', textTransform: 'uppercase', padding: '4px 10px', borderBottom: `1px solid ${BORDER}` }}>Breytingasaga ({historyRef.current.length})</div>
           {historyRef.current.map((_, i) => (
             <div key={i} onClick={() => { const c = canvasRef.current; if (!c) return; historyIdxRef.current = i; c.getContext('2d')!.putImageData(historyRef.current[i], 0, 0); drawOverlayRef.current(); syncButtons(); }}
               style={{ padding: '3px 10px', fontSize: 10, cursor: 'pointer', background: historyIdxRef.current === i ? 'rgba(var(--accent-rgb),0.08)' : 'transparent', color: historyIdxRef.current === i ? ACCENT : DIM, borderLeft: historyIdxRef.current === i ? `2px solid ${ACCENT}` : '2px solid transparent' }}>
-              {i === 0 ? 'Initial state' : historyLabelsRef.current[i] || `Step ${i}`}
+              {i === 0 ? 'Upphafsstaða' : historyLabelsRef.current[i] || `Step ${i}`}
             </div>
           ))}
         </div>
@@ -519,9 +521,9 @@ export function PixelPainter({ dataUrl, onSave, compact }: any) {
 
       {showShortcuts && (
         <div style={{ background: BG2, border: `1px solid ${BORDER}`, padding: '10px 12px' }}>
-          <div style={{ fontSize: 9, color: DIM, letterSpacing: '2px', textTransform: 'uppercase', marginBottom: 8 }}>Keyboard Shortcuts</div>
+          <div style={{ fontSize: 9, color: DIM, letterSpacing: '2px', textTransform: 'uppercase', marginBottom: 8 }}>Flýtilyklar</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2px 16px', fontSize: 10 }}>
-            {[['B', 'Pen/Brush'], ['E', 'Eraser'], ['F', 'Fill'], ['L', 'Line'], ['R', 'Rectangle'], ['P', 'Color Picker'], ['S', 'Save to pack'], ['Ctrl+Z', 'Undo'], ['Ctrl+Shift+Z', 'Redo'], ['Esc', 'Deselect'], ['?', 'Toggle shortcuts']].map(([k, v]) => (
+            {[['B', 'Pen/Brush'], ['E', 'Strokleður'], ['F', 'Fylla'], ['L', 'Lína'], ['R', 'Rétthyrningur'], ['P', 'Litaval'], ['S', 'Vista í pakka'], ['Ctrl+Z', 'Afturkalla'], ['Ctrl+Shift+Z', 'Endurtaka'], ['Esc', 'Afvelja'], ['?', 'Sýna eða fela flýtilykla']].map(([k, v]) => (
               <div key={k} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '2px 0' }}>
                 <kbd style={{ background: BG3, border: `1px solid ${BORDER}`, padding: '1px 5px', fontSize: 9, color: ACCENT, minWidth: 24, textAlign: 'center', flexShrink: 0 }}>{k}</kbd>
                 <span style={{ color: TEXT2 }}>{v}</span>
@@ -537,8 +539,8 @@ export function PixelPainter({ dataUrl, onSave, compact }: any) {
           onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseLeave} />
       </div>
       <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-        <button className="rp-btn active" onClick={() => { const c = canvasRef.current; if (c) onSave(c.toDataURL('image/png')); }}>Save to pack</button>
-        <span style={{ fontSize: 9, color: DIM, letterSpacing: '1px' }}>W: {overlayRef.current?.width / scale | 0}px · H: {overlayRef.current?.height / scale | 0}px</span>
+        <button className="rp-btn active" onClick={() => { const c = canvasRef.current; if (c) onSave(c.toDataURL('image/png')); }}>Vista í pakka</button>
+        <span style={{ fontSize: 9, color: DIM, letterSpacing: '1px' }}>Breidd: {overlayRef.current?.width / scale | 0}px · Hæð: {overlayRef.current?.height / scale | 0}px</span>
       </div>
     </div>
   );
@@ -555,7 +557,7 @@ export function AudioPlayer({ dataUrl, name }: any) {
       <div style={{ background: BG2, border: `1px solid ${BORDER}`, padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div style={{ fontSize: 13, color: ACCENT2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>♪ {name}</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <button className={`rp-btn${playing ? ' active' : ''}`} onClick={toggle} style={{ width: 70 }}>{playing ? '■ Stop' : '▶ Play'}</button>
+          <button className={`rp-btn${playing ? ' active' : ''}`} onClick={toggle} style={{ width: 70 }}>{playing ? '■ Stöðva' : '▶ Spila'}</button>
           <div style={{ flex: 1, height: 4, background: BORDER, cursor: 'pointer', position: 'relative' }} onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); const ratio = (e.clientX - r.left) / r.width; if (audRef.current) { audRef.current.currentTime = ratio * dur; setTime(ratio * dur); } }}>
             <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${dur ? time / dur * 100 : 0}%`, background: ACCENT2 }} />
           </div>
@@ -568,18 +570,18 @@ export function AudioPlayer({ dataUrl, name }: any) {
 
 export function JsonEditor({ content, onChange }: any) {
   const [errors, setErrors] = useState<any[]>([]);
-  const validate = (val: string) => { try { JSON.parse(val); setErrors([]); } catch (e: any) { const msg = e.message; const lm = msg.match(/line (\d+)/i); const cm = msg.match(/column (\d+)/i); setErrors([{ line: lm ? parseInt(lm[1]) : null, col: cm ? parseInt(cm[1]) : null, msg }]); } };
+  const validate = (val: string) => { try { JSON.parse(val); setErrors([]); } catch (e: any) { const msg = e.message; const lm = msg.match(/line (\d+)/i); const cm = msg.match(/column (\d+)/i); setErrors([{ line: lm ? parseInt(lm[1]) : null, col: cm ? parseInt(cm[1]) : null, msg: jsonErrorMessage(e) }]); } };
   const handle = (e: any) => { const v = e.target.value; onChange(v); validate(v); };
   const lines = ((content || '').match(/\n/g) || []).length + 1;
   const lineNums = Array.from({ length: lines }, (_, i) => i + 1).join('\n');
   return (
     <div style={{ maxWidth: 760 }}>
-      {errors.map((e, i) => <div key={i} className="rp-errline">✕ {e.line ? `Line ${e.line}${e.col ? `, col ${e.col}` : ''}:` : ''} {e.msg}</div>)}
+      {errors.map((e, i) => <div key={i} className="rp-errline">✕ {e.line ? `Lína ${e.line}${e.col ? `, dálkur ${e.col}` : ''}:` : ''} {e.msg}</div>)}
       <div className="rp-json-wrap">
         <div className="rp-linenums">{lineNums}</div>
         <textarea className={`rp-code${errors.length > 0 ? ' has-errors' : ''}`} value={content || ''} onChange={handle} spellCheck={false} />
       </div>
-      {errors.length === 0 && content?.trim() && <div style={{ marginTop: 6, fontSize: 11, color: ACCENT }}>✓ Valid JSON</div>}
+      {errors.length === 0 && content?.trim() && <div style={{ marginTop: 6, fontSize: 11, color: ACCENT }}>✓ Gilt JSON</div>}
     </div>
   );
 }
@@ -590,8 +592,8 @@ export function PackMetaEditor({ content, onChange }: any) {
   const upd = (field: string, val: any) => { const u = { ...parsed, pack: { ...parsed.pack, [field]: val } }; onChange(JSON.stringify(u, null, 2)); };
   return (
     <div style={{ maxWidth: 480 }}>
-      <div className="rp-field"><label>Pack format</label><input type="number" value={fmt} onChange={(e) => upd('pack_format', parseInt(e.target.value) || 34)} /></div>
-      <div className="rp-field"><label>Description</label><textarea value={desc} onChange={(e) => upd('description', e.target.value)} /></div>
+      <div className="rp-field"><label>Snið pakkans</label><input type="number" value={fmt} onChange={(e) => upd('pack_format', parseInt(e.target.value) || 34)} /></div>
+      <div className="rp-field"><label>Lýsing</label><textarea value={desc} onChange={(e) => upd('description', e.target.value)} /></div>
       <div style={{ fontSize: 11, color: DIM }}>34 = 1.21 · 46 = 1.21.4 (item definitions) · 84 = 26.1 · 88 = 26.2. From 1.21.9 packs use min_format/max_format — edit those in the JSON tab.</div>
     </div>
   );

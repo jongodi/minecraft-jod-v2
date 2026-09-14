@@ -1,5 +1,7 @@
 'use client';
 
+import { mapLabel } from '@/lib/icelandic';
+
 import { useState, useRef, useCallback, useEffect } from 'react';
 import type { MapConfig, MapLocation, MapZone, MapPath } from '@/lib/map-types';
 
@@ -195,7 +197,7 @@ export default function AdminMapEditor({ initialConfig }: { initialConfig: MapCo
         // Double-click: finish drawing
         if (drawPoints.length >= 2) {
           const uid = `path-${Date.now()}`;
-          const kindLabel = drawing === 'river' ? 'RIVER' : drawing === 'road' ? 'ROAD' : 'BORDER';
+          const kindLabel = drawing === 'river' ? 'Á' : drawing === 'road' ? 'VEGUR' : 'MÖRK';
           const newPath: MapPath = {
             id: uid, label: kindLabel, kind: drawing,
             points: drawPoints, colorKey: drawColor,
@@ -215,13 +217,13 @@ export default function AdminMapEditor({ initialConfig }: { initialConfig: MapCo
 
     if (placing === 'pin') {
       const newId = Math.max(0, ...locations.map(l => l.id)) + 1;
-      const pin: MapLocation = { id: newId, label: 'NEW LOCATION', sublabel: '', x: mx, y: my, type: 'surface' };
+      const pin: MapLocation = { id: newId, label: 'NÝR STAÐUR', sublabel: '', x: mx, y: my, type: 'surface' };
       setLocations(prev => [...prev, pin]);
       setSelected({ kind: 'pin', id: newId });
     } else {
       const uid = `${placing}-${Date.now()}`;
       const defaultLabels: Record<string, string> = {
-        zone: 'NEW ZONE', land: 'NEW LAND', lake: 'NEW LAKE', mountain: 'NEW MOUNTAIN',
+        zone: 'NÝTT SVÆÐI', land: 'NÝ LANDSPILDA', lake: 'NÝTT VATN', mountain: 'NÝTT FJALL',
       };
       const defaultColors: Record<string, MapZone['colorKey']> = {
         zone: 'purple', land: 'green', lake: 'blue', mountain: 'orange',
@@ -311,13 +313,13 @@ export default function AdminMapEditor({ initialConfig }: { initialConfig: MapCo
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ locations, zones, paths }),
       });
-      setMsg(res.ok ? '✓ Map saved' : '✗ Save failed');
-    } catch { setMsg('✗ Network error'); }
+      setMsg(res.ok ? '✓ Kort vistað' : '✗ Ekki tókst að vista');
+    } catch { setMsg('✗ Villa í nettengingu'); }
     finally { setSaving(false); }
   }
 
   async function reset() {
-    if (!confirm('Reset map to defaults?')) return;
+    if (!confirm('Endurstilla kortið á upphafleg gildi?')) return;
     setSaving(true); setMsg('');
     try {
       const res = await fetch('/api/admin/map', {
@@ -329,9 +331,9 @@ export default function AdminMapEditor({ initialConfig }: { initialConfig: MapCo
         setZones(initialConfig.zones);
         setPaths(initialConfig.paths ?? []);
         setSelected(null);
-        setMsg('✓ Reset to defaults');
-      } else { setMsg('✗ Reset failed'); }
-    } catch { setMsg('✗ Network error'); }
+        setMsg('✓ Upphafleg gildi endurheimt');
+      } else { setMsg('✗ Endurstilling mistókst'); }
+    } catch { setMsg('✗ Villa í nettengingu'); }
     finally { setSaving(false); }
   }
 
@@ -373,7 +375,7 @@ export default function AdminMapEditor({ initialConfig }: { initialConfig: MapCo
           color: active ? green : '#555',
         }}
       >
-        {active ? `CLICK MAP…` : label}
+        {active ? `SMELLTU Á KORTIÐ…` : label}
       </button>
     );
   }
@@ -394,7 +396,7 @@ export default function AdminMapEditor({ initialConfig }: { initialConfig: MapCo
           color: active ? 'rgba(56,189,248,0.9)' : '#555',
         }}
       >
-        {active ? `DRAWING… (dbl-click finish)` : label}
+        {active ? `TEIKNA… (tvísmelltu til að ljúka)` : label}
       </button>
     );
   }
@@ -404,31 +406,31 @@ export default function AdminMapEditor({ initialConfig }: { initialConfig: MapCo
 
       {/* Toolbar row 1 */}
       <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-        <PlaceBtn mode="pin"      label="+ PIN" />
-        <PlaceBtn mode="zone"     label="+ ZONE" />
+        <PlaceBtn mode="pin"      label="+ PINNI" />
+        <PlaceBtn mode="zone"     label="+ SVÆÐI" />
         <PlaceBtn mode="land"     label="+ LAND" />
-        <PlaceBtn mode="lake"     label="+ LAKE" />
-        <PlaceBtn mode="mountain" label="+ MOUNTAIN" />
+        <PlaceBtn mode="lake"     label="+ VATN" />
+        <PlaceBtn mode="mountain" label="+ FJALL" />
         <div style={{ width: '1px', height: '20px', background: '#2a2a2a', margin: '0 0.25rem' }}/>
-        <DrawBtn mode="river"  label="✏ DRAW RIVER" />
-        <DrawBtn mode="road"   label="✏ DRAW ROAD" />
-        <DrawBtn mode="border" label="✏ DRAW BORDER" />
+        <DrawBtn mode="river"  label="✏ TEIKNA Á" />
+        <DrawBtn mode="road"   label="✏ TEIKNA VEG" />
+        <DrawBtn mode="border" label="✏ TEIKNA MÖRK" />
         {isDrawingActive && (
           <select value={drawColor} onChange={e => setDrawColor(e.target.value as MapPath['colorKey'])}
             style={{ ...inputStyle, width: 'auto', padding: '0.3rem 0.5rem' }}>
             {(['blue','orange','green','purple'] as const).map(c => (
-              <option key={c} value={c}>{c.toUpperCase()}</option>
+              <option key={c} value={c}>{mapLabel(c)}</option>
             ))}
           </select>
         )}
         <div style={{ flex: 1 }} />
         <button onClick={save} disabled={saving}
           style={{ fontFamily: mono, fontSize: '0.55rem', letterSpacing: '0.15em', textTransform: 'uppercase', padding: '0.35rem 0.7rem', cursor: saving ? 'not-allowed' : 'pointer', border: `1px solid ${green}44`, background: green + '18', color: green }}>
-          {saving ? 'SAVING…' : 'SAVE MAP'}
+          {saving ? 'VISTA…' : 'VISTA KORT'}
         </button>
         <button onClick={reset} disabled={saving}
           style={{ fontFamily: mono, fontSize: '0.55rem', letterSpacing: '0.15em', textTransform: 'uppercase', padding: '0.35rem 0.7rem', cursor: 'pointer', border: '1px solid #2a2a2a', background: 'transparent', color: '#444' }}>
-          RESET DEFAULTS
+          ENDURSTILLA
         </button>
         {msg && <span style={{ fontFamily: mono, fontSize: '0.55rem', color: msg.startsWith('✓') ? green : '#ff4466' }}>{msg}</span>}
       </div>
@@ -436,7 +438,7 @@ export default function AdminMapEditor({ initialConfig }: { initialConfig: MapCo
       {/* Drawing status hint */}
       {isDrawingActive && (
         <div style={{ fontFamily: mono, fontSize: '0.5rem', color: 'rgba(56,189,248,0.7)', letterSpacing: '0.1em', padding: '0.4rem 0.6rem', border: '1px solid rgba(56,189,248,0.2)', background: 'rgba(56,189,248,0.05)' }}>
-          DRAWING {drawing?.toUpperCase()} — click to add points ({drawPoints.length} pts) · double-click to finish · ESC to cancel
+          TEIKNA: {mapLabel(drawing ?? '')} · Smelltu til að bæta við punktum ({drawPoints.length}) · Tvísmelltu til að ljúka · Esc til að hætta við
         </div>
       )}
 
@@ -636,33 +638,33 @@ export default function AdminMapEditor({ initialConfig }: { initialConfig: MapCo
           {selPin ? (
             <div style={{ background: '#0d0d0d', border: `1px solid ${TYPE_COLOR[selPin.type]}33`, padding: '1rem' }}>
               <p style={{ fontFamily: mono, fontSize: '0.5rem', letterSpacing: '0.2em', color: TYPE_COLOR[selPin.type], marginBottom: '0.75rem' }}>
-                PIN #{selPin.id}
+                PINNI #{selPin.id}
               </p>
               <div style={fieldStyle}>
-                <label style={labelStyle}>LABEL</label>
+                <label style={labelStyle}>HEITI</label>
                 <input value={editPinLabel} onChange={e => setEditPinLabel(e.target.value)} onBlur={commitPin} style={inputStyle}/>
               </div>
               <div style={fieldStyle}>
-                <label style={labelStyle}>SUBLABEL</label>
+                <label style={labelStyle}>UNDIRTITILL</label>
                 <input value={editPinSublabel} onChange={e => setEditPinSublabel(e.target.value)} onBlur={commitPin} style={inputStyle}/>
               </div>
               <div style={fieldStyle}>
-                <label style={labelStyle}>TYPE</label>
+                <label style={labelStyle}>TEGUND</label>
                 <select value={editPinType} onChange={e => setEditPinType(e.target.value as MapLocation['type'])} onBlur={commitPin}
                   style={{ ...inputStyle, width: '100%' }}>
                   {(['surface','underground','island','aerial'] as const).map(t => (
-                    <option key={t} value={t}>{t.toUpperCase()}</option>
+                    <option key={t} value={t}>{mapLabel(t)}</option>
                   ))}
                 </select>
               </div>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <button onClick={commitPin}
                   style={{ fontFamily: mono, fontSize: '0.5rem', letterSpacing: '0.1em', padding: '0.3rem 0.6rem', border: `1px solid ${green}44`, background: green + '18', color: green, cursor: 'pointer' }}>
-                  APPLY
+                  NOTA
                 </button>
                 <button onClick={deleteSelected}
                   style={{ fontFamily: mono, fontSize: '0.5rem', letterSpacing: '0.1em', padding: '0.3rem 0.6rem', border: '1px solid #ff446633', background: 'transparent', color: '#ff4466', cursor: 'pointer' }}>
-                  DELETE
+                  EYÐA
                 </button>
               </div>
               <p style={{ fontFamily: mono, fontSize: '0.5rem', color: '#333', marginTop: '0.5rem' }}>
@@ -672,19 +674,19 @@ export default function AdminMapEditor({ initialConfig }: { initialConfig: MapCo
           ) : selZone ? (
             <div style={{ background: '#0d0d0d', border: '1px solid #2a2a2a', padding: '1rem' }}>
               <p style={{ fontFamily: mono, fontSize: '0.5rem', letterSpacing: '0.2em', color: '#888', marginBottom: '0.75rem' }}>
-                {selZone.kind.toUpperCase()} — {selZone.label}
+                {mapLabel(selZone.kind)} — {selZone.label}
               </p>
               <div style={fieldStyle}>
-                <label style={labelStyle}>LABEL</label>
+                <label style={labelStyle}>HEITI</label>
                 <input value={editZoneLabel} onChange={e => setEditZoneLabel(e.target.value)} onBlur={commitZone} style={inputStyle}/>
               </div>
               {selZone.kind !== 'lake' && (
                 <div style={fieldStyle}>
-                  <label style={labelStyle}>COLOR</label>
+                  <label style={labelStyle}>LITUR</label>
                   <select value={editZoneColor} onChange={e => setEditZoneColor(e.target.value as MapZone['colorKey'])} onBlur={commitZone}
                     style={{ ...inputStyle, width: '100%' }}>
                     {(['purple','blue','orange','green'] as const).map(c => (
-                      <option key={c} value={c}>{c.toUpperCase()}</option>
+                      <option key={c} value={c}>{mapLabel(c)}</option>
                     ))}
                   </select>
                 </div>
@@ -692,84 +694,84 @@ export default function AdminMapEditor({ initialConfig }: { initialConfig: MapCo
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <button onClick={commitZone}
                   style={{ fontFamily: mono, fontSize: '0.5rem', letterSpacing: '0.1em', padding: '0.3rem 0.6rem', border: `1px solid ${green}44`, background: green + '18', color: green, cursor: 'pointer' }}>
-                  APPLY
+                  NOTA
                 </button>
                 <button onClick={deleteSelected}
                   style={{ fontFamily: mono, fontSize: '0.5rem', letterSpacing: '0.1em', padding: '0.3rem 0.6rem', border: '1px solid #ff446633', background: 'transparent', color: '#ff4466', cursor: 'pointer' }}>
-                  DELETE
+                  EYÐA
                 </button>
               </div>
               <p style={{ fontFamily: mono, fontSize: '0.55rem', color: '#444', marginTop: '0.6rem', lineHeight: 1.7 }}>
                 CX {selZone.cx} · CY {selZone.cy}<br/>
                 RX {selZone.rx} · RY {selZone.ry}<br/>
-                <span style={{ color: '#333' }}>Drag to move · handles to resize</span>
+                <span style={{ color: '#333' }}>Dragðu til að færa · notaðu handföng til að breyta stærð</span>
               </p>
             </div>
           ) : selPath ? (
             <div style={{ background: '#0d0d0d', border: '1px solid #2a2a2a', padding: '1rem' }}>
               <p style={{ fontFamily: mono, fontSize: '0.5rem', letterSpacing: '0.2em', color: '#888', marginBottom: '0.75rem' }}>
-                {selPath.kind.toUpperCase()} — {selPath.label}
+                {mapLabel(selPath.kind)} — {selPath.label}
               </p>
               <div style={fieldStyle}>
-                <label style={labelStyle}>LABEL</label>
+                <label style={labelStyle}>HEITI</label>
                 <input value={editPathLabel} onChange={e => setEditPathLabel(e.target.value)} onBlur={commitPath} style={inputStyle}/>
               </div>
               <div style={fieldStyle}>
-                <label style={labelStyle}>TYPE</label>
+                <label style={labelStyle}>TEGUND</label>
                 <select value={editPathKind} onChange={e => setEditPathKind(e.target.value as MapPath['kind'])} onBlur={commitPath}
                   style={{ ...inputStyle, width: '100%' }}>
                   {(['river','road','border'] as const).map(k => (
-                    <option key={k} value={k}>{k.toUpperCase()}</option>
+                    <option key={k} value={k}>{mapLabel(k)}</option>
                   ))}
                 </select>
               </div>
               <div style={fieldStyle}>
-                <label style={labelStyle}>COLOR</label>
+                <label style={labelStyle}>LITUR</label>
                 <select value={editPathColor} onChange={e => setEditPathColor(e.target.value as MapPath['colorKey'])} onBlur={commitPath}
                   style={{ ...inputStyle, width: '100%' }}>
                   {(['blue','orange','green','purple'] as const).map(c => (
-                    <option key={c} value={c}>{c.toUpperCase()}</option>
+                    <option key={c} value={c}>{mapLabel(c)}</option>
                   ))}
                 </select>
               </div>
               <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
                 <button onClick={commitPath}
                   style={{ fontFamily: mono, fontSize: '0.5rem', letterSpacing: '0.1em', padding: '0.3rem 0.6rem', border: `1px solid ${green}44`, background: green + '18', color: green, cursor: 'pointer' }}>
-                  APPLY
+                  NOTA
                 </button>
                 <button onClick={deleteSelected}
                   style={{ fontFamily: mono, fontSize: '0.5rem', letterSpacing: '0.1em', padding: '0.3rem 0.6rem', border: '1px solid #ff446633', background: 'transparent', color: '#ff4466', cursor: 'pointer' }}>
-                  DELETE
+                  EYÐA
                 </button>
               </div>
               <p style={{ fontFamily: mono, fontSize: '0.5rem', color: '#333', lineHeight: 1.7 }}>
-                {selPath.points.length} pts · drag dots to move<br/>
-                <span style={{ color: '#2a2a2a' }}>double-click a dot to remove it</span>
+                {selPath.points.length} punktar · dragðu punkta til að færa þá<br/>
+                <span style={{ color: '#2a2a2a' }}>tvísmelltu á punkt til að fjarlægja hann</span>
               </p>
             </div>
           ) : (
             <div style={{ background: '#0d0d0d', border: '1px solid #1a1a1a', padding: '1rem' }}>
               <p style={{ fontFamily: mono, fontSize: '0.55rem', color: '#333', lineHeight: 1.9, letterSpacing: '0.05em', whiteSpace: 'pre-line' }}>
                 {placing
-                  ? `Click the map to\nplace the new ${placing}.`
+                  ? `Smelltu á kortið til að\nbæta við: ${mapLabel(placing ?? '')}.`
                   : drawing
-                  ? `Click to add points.\nDouble-click to finish.\nESC to cancel.`
-                  : `Click a pin or shape\nto select and edit it.\n\nDrag to move.\nDrag handles to resize.\nClick path to select.`}
+                  ? `Smelltu til að bæta við punktum.\nTvísmelltu til að ljúka.\nEsc til að hætta við.`
+                  : `Smelltu á pinna eða form\ntil að velja og breyta.\n\nDragðu til að færa.\nNotaðu handföng til að breyta stærð.\nSmelltu á línu til að velja hana.`}
               </p>
             </div>
           )}
 
           {/* Zone/feature lists */}
-          <ZoneList title="NAMED ZONES"  zones={namedZones}    selected={selected} onSelect={id => setSelected(s => s?.id === id ? null : { kind: 'zone', id })} colors={ZONE_STYLE}/>
-          <ZoneList title="LAND PATCHES" zones={landZones}     selected={selected} onSelect={id => setSelected(s => s?.id === id ? null : { kind: 'zone', id })} colors={ZONE_STYLE}/>
-          <ZoneList title="LAKES"        zones={lakeZones}     selected={selected} onSelect={id => setSelected(s => s?.id === id ? null : { kind: 'zone', id })} colors={ZONE_STYLE}/>
-          <ZoneList title="MOUNTAINS"    zones={mountainZones} selected={selected} onSelect={id => setSelected(s => s?.id === id ? null : { kind: 'zone', id })} colors={ZONE_STYLE}/>
+          <ZoneList title="NAFNGREIND SVÆÐI"  zones={namedZones}    selected={selected} onSelect={id => setSelected(s => s?.id === id ? null : { kind: 'zone', id })} colors={ZONE_STYLE}/>
+          <ZoneList title="LANDSPILDUR" zones={landZones}     selected={selected} onSelect={id => setSelected(s => s?.id === id ? null : { kind: 'zone', id })} colors={ZONE_STYLE}/>
+          <ZoneList title="VÖTN"        zones={lakeZones}     selected={selected} onSelect={id => setSelected(s => s?.id === id ? null : { kind: 'zone', id })} colors={ZONE_STYLE}/>
+          <ZoneList title="FJÖLL"    zones={mountainZones} selected={selected} onSelect={id => setSelected(s => s?.id === id ? null : { kind: 'zone', id })} colors={ZONE_STYLE}/>
 
           {/* Paths list */}
           {paths.length > 0 && (
             <div style={{ background: '#0d0d0d', border: '1px solid #1a1a1a', padding: '1rem' }}>
               <p style={{ fontFamily: mono, fontSize: '0.5rem', letterSpacing: '0.2em', color: '#555', marginBottom: '0.5rem' }}>
-                PATHS ({paths.length})
+                LÍNUR ({paths.length})
               </p>
               {paths.map(p => {
                 const c = PATH_COLORS[p.colorKey] ?? PATH_COLORS.blue;
@@ -784,7 +786,7 @@ export default function AdminMapEditor({ initialConfig }: { initialConfig: MapCo
                       background: isSel ? 'rgba(56,189,248,0.08)' : 'transparent',
                       color: isSel ? '#f0f0f0' : '#555', cursor: 'pointer',
                     }}>
-                    {p.kind.toUpperCase()} · {p.label}
+                    {mapLabel(p.kind)} · {p.label}
                   </button>
                 );
               })}
@@ -794,7 +796,7 @@ export default function AdminMapEditor({ initialConfig }: { initialConfig: MapCo
           {/* Pin list */}
           <div style={{ background: '#0d0d0d', border: '1px solid #1a1a1a', padding: '1rem', maxHeight: '260px', overflowY: 'auto' }}>
             <p style={{ fontFamily: mono, fontSize: '0.5rem', letterSpacing: '0.2em', color: '#555', marginBottom: '0.6rem' }}>
-              PINS ({locations.length})
+              PINNAR ({locations.length})
             </p>
             {locations.map(loc => {
               const color = TYPE_COLOR[loc.type];

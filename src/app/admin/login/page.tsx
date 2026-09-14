@@ -29,12 +29,12 @@ function LoginForm() {
       if (res.ok) {
         window.location.href = next;
       } else {
-        setError('Invalid token.');
+        setError('Aðgangslykillinn er ekki réttur.');
         setToken('');
         inputRef.current?.focus();
       }
     } catch {
-      setError('Network error — try again.');
+      setError('Nettenging brást. Reyndu aftur.');
     } finally {
       setLoading(false);
     }
@@ -74,7 +74,7 @@ function LoginForm() {
           type="password"
           value={token}
           onChange={e => setToken(e.target.value)}
-          placeholder="Enter token..."
+          placeholder="Sláðu inn aðgangslykil…"
           autoComplete="current-password"
           style={{
             width:        '100%',
@@ -112,7 +112,7 @@ function LoginForm() {
             transition:    'all 0.2s ease',
           }}
         >
-          {loading ? 'VERIFYING...' : 'ENTER →'}
+          {loading ? 'STAÐFESTI…' : 'INN →'}
         </button>
       </form>
     </div>

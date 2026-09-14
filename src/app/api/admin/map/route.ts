@@ -12,7 +12,7 @@ export async function PUT(req: NextRequest) {
   if (!(await requireAdmin())) return unauthorizedResponse();
   const body = await req.json() as Partial<MapConfig>;
   if (!Array.isArray(body.locations) || !Array.isArray(body.zones)) {
-    return NextResponse.json({ error: 'locations and zones arrays required' }, { status: 400 });
+    return NextResponse.json({ error: 'Lista yfir staði og svæði vantar.' }, { status: 400 });
   }
   await writeMap({ locations: body.locations, zones: body.zones, paths: body.paths ?? [] });
   return NextResponse.json({ ok: true });

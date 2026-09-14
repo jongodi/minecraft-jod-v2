@@ -41,32 +41,32 @@ export function AssetsView({
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <div style={{ padding: '16px clamp(16px,4vw,40px) 0' }}>
           <div className="rp-sh">
-            <span className="rp-label">03 — Assets</span>
-            <h2>Textures</h2>
+            <span className="rp-label">03 — Tilföng</span>
+            <h2>Áferðir</h2>
           </div>
           <div className="rp-filters">
             {(['all', 'used', 'review', 'safe-remove', 'error'] as VFilter[]).map((f) => (
               <button key={f} className={`rp-btn sm${filter === f ? ' active' : ''}`} onClick={() => setFilter(f)}>
-                {f === 'all' ? 'All' : f === 'safe-remove' ? 'Removable' : f[0].toUpperCase() + f.slice(1)} ({counts[f] ?? 0})
+                {f === 'all' ? 'Allt' : f === 'safe-remove' ? 'Má fjarlægja' : verdictLabel(f)} ({counts[f] ?? 0})
               </button>
             ))}
-            <input className="rp-search" placeholder="Search textures…" value={q} onChange={(e) => setQ(e.target.value)} />
+            <input className="rp-search" placeholder="Leita að áferðum…" value={q} onChange={(e) => setQ(e.target.value)} />
             {counts['safe-remove'] > 0 && (
               <button className="rp-btn sm danger" style={{ marginLeft: 'auto' }}
                 onClick={() => {
                   const paths = textures.filter((t) => analysis.nodes[t]?.verdict === 'safe-remove');
-                  if (confirm(`Delete ${paths.length} provably-unreferenced texture${paths.length !== 1 ? 's' : ''}? Review each in the inspector first — this cannot be undone.`)) {
+                  if (confirm(`Eyða áferðum án tilvísana (${paths.length})? Skoðaðu hverja þeirra fyrst — þetta er ekki hægt að afturkalla.`)) {
                     onDelete(paths); setSel(null);
                   }
                 }}>
-                Delete {counts['safe-remove']} removable
+                Eyða ónotuðum ({counts['safe-remove']})
               </button>
             )}
           </div>
         </div>
         <div className="rp-scroll" style={{ paddingTop: 8 }}>
           {filtered.length === 0 ? (
-            <div style={{ color: 'var(--ink-faint)', fontSize: '0.75rem', padding: 20 }}>No textures match this filter.</div>
+            <div style={{ color: 'var(--ink-faint)', fontSize: '0.75rem', padding: 20 }}>Engar áferðir passa við þessa síu.</div>
           ) : (
             <div className="rp-grid">
               {filtered.map((path) => {
@@ -123,11 +123,11 @@ function Inspector({
           {node.bytes ? <span style={{ fontSize: '0.62rem', color: 'var(--ink-faint)' }}>{fmtBytes(node.bytes)}</span> : null}
         </div>
 
-        {/* Who uses this */}
-        <div className="rp-label" style={{ marginBottom: 8 }}>Who uses this</div>
+        {/* Hvaða skrár nota þetta? */}
+        <div className="rp-label" style={{ marginBottom: 8 }}>Hvaða skrár nota þetta?</div>
         {node.usedBy.length === 0 && node.datapackRefs.length === 0 ? (
           <div style={{ fontSize: '0.72rem', color: 'var(--ink-dim)', marginBottom: 14, lineHeight: 1.5 }}>
-            Nothing in the resource pack references this texture directly.
+            Ekkert í útlitspakkanum vísar beint í þessa áferð.
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 14 }}>
@@ -137,20 +137,20 @@ function Inspector({
               </a>
             ))}
             {node.datapackRefs.map((d, i) => (
-              <div key={i} style={{ fontSize: '0.7rem', color: 'var(--sev-used)' }}>← datapack {d.pack}: {d.via}={d.value}</div>
+              <div key={i} style={{ fontSize: '0.7rem', color: 'var(--sev-used)' }}>← gagnapakki {d.pack}: {d.via}={d.value}</div>
             ))}
           </div>
         )}
 
         {/* Evidence trail */}
-        <div className="rp-label" style={{ marginBottom: 8 }}>Evidence</div>
+        <div className="rp-label" style={{ marginBottom: 8 }}>Rökstuðningur</div>
         <div style={{ marginBottom: 14 }}>
           <EvidenceList evidence={node.evidence} onOpen={onOpen} />
         </div>
 
         {dup && (
           <Glass style={{ padding: 12, marginBottom: 14 }}>
-            <div className="rp-label" style={{ marginBottom: 6 }}>{dup.kind === 'exact' ? 'Exact duplicate group' : `Near-duplicate (distance ${dup.distance})`}</div>
+            <div className="rp-label" style={{ marginBottom: 6 }}>{dup.kind === 'exact' ? 'Hópur nákvæmlega eins skráa' : `Næstum eins (fjarlægð ${dup.distance})`}</div>
             {dup.members.filter((m) => m !== node.path).map((m) => (
               <div key={m} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 }}>
                 <img src={fileData[m]} style={{ width: 22, height: 22, imageRendering: 'pixelated', objectFit: 'contain', border: '1px solid var(--hair)' }} alt="" />
@@ -161,13 +161,13 @@ function Inspector({
         )}
 
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-          <button className="rp-btn sm" onClick={() => onOpen(node.path)}>Open in editor</button>
+          <button className="rp-btn sm" onClick={() => onOpen(node.path)}>Opna í ritli</button>
           {node.verdict === 'safe-remove' && (
             <button className="rp-btn sm danger" onClick={() => {
-              if (confirm(`Delete ${node.path.split('/').pop()}? ${node.confidence === 'high' ? 'Nothing references it.' : 'Review the vanilla-override caveat above first.'}`)) {
+              if (confirm(`Eyða ${node.path.split('/').pop()}? ${node.confidence === 'high' ? 'Ekkert vísar í skrána.' : 'Lestu fyrst fyrirvarann hér fyrir ofan um yfirskriftir upprunalegra skráa.'}`)) {
                 onDelete([node.path]); onClose();
               }
-            }}>Delete this file</button>
+            }}>Eyða þessari skrá</button>
           )}
         </div>
       </div>

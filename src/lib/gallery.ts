@@ -1,3 +1,4 @@
+import { localizeContent } from './icelandic';
 import { promises as fs } from 'fs';
 import path from 'path';
 
@@ -43,7 +44,7 @@ async function readFromDisk(): Promise<GalleryPhoto[]> {
   }
 }
 
-export async function readGallery(): Promise<GalleryPhoto[]> {
+async function readStoredGallery(): Promise<GalleryPhoto[]> {
   if (hasKV()) {
     try {
       const { rGet, rSet } = await import('./redis');
@@ -68,10 +69,16 @@ export async function writeGallery(photos: GalleryPhoto[]): Promise<void> {
       return;
     } catch (e) {
       console.error('Redis writeGallery error:', e);
-      throw new Error('Storage error: failed to save gallery');
+      throw new Error('Ekki tókst að vista myndasafnið vegna villu í geymslu');
     }
   }
   const p = galleryPath();
   await fs.mkdir(path.dirname(p), { recursive: true });
   await fs.writeFile(p, JSON.stringify(photos, null, 2) + '\n', 'utf-8');
+}
+
+export async function readGallery(): Promise<GalleryPhoto[]> {
+  return (await readStoredGallery()).map(photo => ({
+    ...photo, title: localizeContent(photo.title), sublabel: localizeContent(photo.sublabel),
+  }));
 }

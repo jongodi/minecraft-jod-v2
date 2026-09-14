@@ -1,3 +1,4 @@
+import { errorMessage } from '@/lib/icelandic';
 // ─────────────────────────────────────────────────────────────────────────────
 // Analysis Web Worker
 //
@@ -25,18 +26,18 @@ ctx.onmessage = async (e: MessageEvent<InMsg>) => {
   const msg = e.data;
   if (msg?.type !== 'analyze') return;
   try {
-    ctx.postMessage({ type: 'progress', phase: 'Decompressing pack', done: 0, total: 1 });
+    ctx.postMessage({ type: 'progress', phase: 'Afþjappa pakka', done: 0, total: 1 });
     const pack = await extractZip(msg.packBuffer, (done, total) =>
-      ctx.postMessage({ type: 'progress', phase: 'Reading pack files', done, total }));
+      ctx.postMessage({ type: 'progress', phase: 'Les skrár pakkans', done, total }));
 
     const datapackInputs: DatapackInput[] = [];
     for (const dp of msg.datapacks) {
-      ctx.postMessage({ type: 'progress', phase: `Reading datapack ${dp.name}`, done: 0, total: 1 });
+      ctx.postMessage({ type: 'progress', phase: `Les gagnapakka ${dp.name}`, done: 0, total: 1 });
       const extracted = await extractZip(dp.buffer);
       datapackInputs.push({ label: dp.name, files: extracted.rawFiles });
     }
 
-    ctx.postMessage({ type: 'progress', phase: 'Analysing dependency graph', done: 1, total: 1 });
+    ctx.postMessage({ type: 'progress', phase: 'Greini tengsl skráa', done: 1, total: 1 });
     const input: EngineInput = { files: pack.rawFiles, datapacks: datapackInputs };
     const analysis = analyze(input);
 
@@ -49,7 +50,7 @@ ctx.onmessage = async (e: MessageEvent<InMsg>) => {
       analysis,
     });
   } catch (err: any) {
-    ctx.postMessage({ type: 'error', message: err?.message ?? String(err) });
+    ctx.postMessage({ type: 'error', message: errorMessage(err, 'Ekki tókst að lesa eða greina pakkann. Athugaðu að zip-skráin sé gild.') });
   }
 };
 

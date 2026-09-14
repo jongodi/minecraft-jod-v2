@@ -1,3 +1,4 @@
+import { jsonErrorMessage } from '@/lib/icelandic';
 // ─────────────────────────────────────────────────────────────────────────────
 // pack.mcmeta parsing + Minecraft version inference
 //
@@ -56,7 +57,7 @@ export function versionLabel(fmt: number): string {
   if (fmt < FORMAT_TABLE[0].fmt) return 'pre-1.6';
   // Above the newest we track — report as newer than the last known.
   const last = FORMAT_TABLE[FORMAT_TABLE.length - 1];
-  if (fmt > last.fmt) return `newer than ${last.label} (fmt ${fmt})`;
+  if (fmt > last.fmt) return `nýrra en ${last.label} (snið ${fmt})`;
   // Between two known formats (a transitional snapshot number).
   let below = FORMAT_TABLE[0];
   for (const r of FORMAT_TABLE) {
@@ -88,19 +89,19 @@ export function parsePackMeta(
     errors: [],
   };
   if (text == null) {
-    info.errors.push('pack.mcmeta not found — the pack will not load in-game.');
+    info.errors.push('pack.mcmeta fannst ekki — leikurinn getur ekki hlaðið pakkanum.');
     return info;
   }
   let json: any;
   try {
     json = JSON.parse(text);
   } catch (e: any) {
-    info.errors.push(`pack.mcmeta is not valid JSON — ${e.message}`);
+    info.errors.push(`pack.mcmeta er ekki gilt JSON — ${jsonErrorMessage(e)}`);
     return info;
   }
   const pack = json?.pack;
   if (!pack || typeof pack !== 'object') {
-    info.errors.push('pack.mcmeta is missing its required "pack" object.');
+    info.errors.push('Nauðsynlegan "pack"-hluta vantar í pack.mcmeta.');
     return info;
   }
   // Since 1.21.9 (format 69) the single pack_format was replaced by a
@@ -126,7 +127,7 @@ export function parsePackMeta(
       info.versionLabel = versionLabel(primary);
     }
   } else {
-    info.errors.push('pack.mcmeta declares no pack_format, min_format, or max_format.');
+    info.errors.push('Hvorki pack_format, min_format né max_format er skilgreint í pack.mcmeta.');
   }
   // supported_formats can also appear as a number, [min,max], or {min_inclusive,max_inclusive}.
   const sf = pack.supported_formats;
@@ -148,7 +149,7 @@ export function parsePackMeta(
     info.itemSystem = itemSystemFor(sfMax);
   }
   if (pack.description === undefined) {
-    info.errors.push('pack.mcmeta has no "description" — the pack shows a blank line in the selection menu.');
+    info.errors.push('"description" vantar í pack.mcmeta — lýsing pakkans verður auð í valmyndinni.');
   } else {
     info.description = typeof pack.description === 'string'
       ? pack.description

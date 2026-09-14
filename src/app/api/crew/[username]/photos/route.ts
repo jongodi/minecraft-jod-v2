@@ -13,16 +13,16 @@ export async function POST(
   const { username } = await params;
 
   if (!session || session.username.toLowerCase() !== username.toLowerCase()) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return NextResponse.json({ error: 'Þú þarft að skrá þig inn með réttum aðgangi.' }, { status: 401 });
   }
 
   const formData = await req.formData();
   const file    = formData.get('file')    as File | null;
   const caption = (formData.get('caption') as string | null) ?? '';
 
-  if (!file) return NextResponse.json({ error: 'No file provided' }, { status: 400 });
-  if (!file.type.startsWith('image/'))  return NextResponse.json({ error: 'Images only' }, { status: 400 });
-  if (file.size > 10 * 1024 * 1024)    return NextResponse.json({ error: 'Max 10 MB' }, { status: 400 });
+  if (!file) return NextResponse.json({ error: 'Engin skrá valin.' }, { status: 400 });
+  if (!file.type.startsWith('image/'))  return NextResponse.json({ error: 'Aðeins myndir eru leyfðar.' }, { status: 400 });
+  if (file.size > 10 * 1024 * 1024)    return NextResponse.json({ error: 'Hámark 10 MB.' }, { status: 400 });
 
   const ext = file.name.split('.').pop()?.toLowerCase() ?? 'png';
   const id  = randomUUID();

@@ -16,10 +16,10 @@ type Phase = 'idle' | 'hold' | 'draw' | 'result' | 'done';
 type Shot  = number | null;
 
 function rankOf(ms: number) {
-  if (ms < 200) return 'Sheriff';
-  if (ms < 300) return 'Deputy';
-  if (ms < 450) return 'Ranch hand';
-  return 'Greenhorn';
+  if (ms < 200) return 'Sýslumaður';
+  if (ms < 300) return 'Aðstoðarsýslumaður';
+  if (ms < 450) return 'Kúreki';
+  return 'Nýliði';
 }
 
 function Gunslinger({ x, flip, cls }: { x: number; flip?: boolean; cls: string }) {
@@ -87,23 +87,23 @@ export default function QuickDraw() {
   const arenaCls   = ['j-arena', `is-${phase}`, lastIsHit ? 'is-hit' : '', lastIsFoul ? 'is-foul' : ''].filter(Boolean).join(' ');
 
   const call =
-    phase === 'idle'   ? { big: 'High noon', small: 'tap here to start, wait for the call, then tap again' } :
-    phase === 'hold'   ? { big: 'Hold…',     small: 'not yet' } :
-    phase === 'draw'   ? { big: 'DRAW',      small: '' } :
-    phase === 'result' ? (lastIsHit ? { big: `${last} ms`, small: rankOf(last) } : { big: 'Too soon', small: 'foul, that draw is gone' }) :
-    gameBest !== null  ? { big: `${gameBest} ms`, small: `${rankOf(gameBest)}. tap to go again` } :
-                         { big: 'Three fouls', small: 'patience, partner. tap to go again' };
+    phase === 'idle'   ? { big: 'Hádegi', small: 'smelltu til að byrja, bíddu eftir merkinu og smelltu aftur' } :
+    phase === 'hold'   ? { big: 'Bíddu…',     small: 'ekki strax' } :
+    phase === 'draw'   ? { big: 'SKJÓTTU',      small: '' } :
+    phase === 'result' ? (lastIsHit ? { big: `${last} ms`, small: rankOf(last) } : { big: 'Of snemma', small: 'þessi umferð er fallin' }) :
+    gameBest !== null  ? { big: `${gameBest} ms`, small: `${rankOf(gameBest)}. Smelltu til að reyna aftur` } :
+                         { big: 'Þrjár fallnar umferðir', small: 'rólegur á gikknum! Smelltu til að reyna aftur' };
 
   return (
     <section id="showdown" className="j-sec j-noon">
-      <span className="j-noon__word" aria-hidden="true">SHOWDOWN</span>
+      <span className="j-noon__word" aria-hidden="true">EINVÍGI</span>
       <div className="j-wrap">
         <div className="j-noon__head">
           <div>
-            <p className="j-note j-note--big">Quick draw at high noon</p>
-            <p className="j-note">three draws a game, best time stays on this device</p>
+            <p className="j-note j-note--big">Hver er fljótastur á gikknum?</p>
+            <p className="j-note">þrjár umferðir í leik; besti tíminn vistast í þessu tæki</p>
           </div>
-          <p className="j-note">under 200 ms and you wear the star <Arrow /></p>
+          <p className="j-note">undir 200 ms og stjarnan er þín <Arrow /></p>
         </div>
 
         <div className="j-noon__grid">
@@ -116,7 +116,7 @@ export default function QuickDraw() {
             }}
             role="button"
             tabIndex={0}
-            aria-label="Quick draw arena"
+            aria-label="Einvígi: prófaðu viðbragðstímann"
             onKeyDown={e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); tap(); } }}
           >
             <svg viewBox="0 0 800 450" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
@@ -134,8 +134,8 @@ export default function QuickDraw() {
             </svg>
             <div className="j-arena__flash" />
             {hole && <BulletHole x={hole.x} y={hole.y} />}
-            <span className="j-arena__corner">Draw {NUMERAL[Math.min(round, ROUNDS - 1)]} of {NUMERAL[ROUNDS - 1]}</span>
-            {best !== null && <span className="j-arena__corner j-arena__corner--r">Best {best} ms</span>}
+            <span className="j-arena__corner">Umferð {NUMERAL[Math.min(round, ROUNDS - 1)]} af {NUMERAL[ROUNDS - 1]}</span>
+            {best !== null && <span className="j-arena__corner j-arena__corner--r">Best: {best} ms</span>}
             <div className="j-arena__call" aria-live="polite">
               <div>
                 <div className="j-arena__big">{call.big}</div>
@@ -151,20 +151,20 @@ export default function QuickDraw() {
                 const live = i === round && (phase === 'hold' || phase === 'draw');
                 return (
                   <div key={i} className={`j-stub${live ? ' is-live' : ''}${s === null ? ' is-foul' : ''}`} style={{ '--r': `${TILT[i]}deg` } as CSSProperties}>
-                    <div className="j-stub__k">Draw {NUMERAL[i]}</div>
-                    <div className="j-stub__v">{typeof s === 'number' ? `${s} ms` : s === null ? 'Foul' : live ? '…' : '·'}</div>
+                    <div className="j-stub__k">Umferð {NUMERAL[i]}</div>
+                    <div className="j-stub__v">{typeof s === 'number' ? `${s} ms` : s === null ? 'Fallið' : live ? '…' : '·'}</div>
                   </div>
                 );
               })}
             </div>
             <div className="j-noon__readout">
-              <div><div className="j-noon__k">Game average</div><div className="j-noon__v">{gameAvg !== null ? `${gameAvg} ms` : '·'}</div></div>
-              <div><div className="j-noon__k">Rank</div><div className="j-noon__v">{gameBest !== null && gameBest < 200 && <Star className="j-star" />}{gameBest !== null ? rankOf(gameBest) : '·'}</div></div>
+              <div><div className="j-noon__k">Meðaltal leiks</div><div className="j-noon__v">{gameAvg !== null ? `${gameAvg} ms` : '·'}</div></div>
+              <div><div className="j-noon__k">Staða</div><div className="j-noon__v">{gameBest !== null && gameBest < 200 && <Star className="j-star" />}{gameBest !== null ? rankOf(gameBest) : '·'}</div></div>
             </div>
             <button className="j-btn" onClick={() => tap()} disabled={phase === 'result'}>
-              {phase === 'idle' ? 'Start the showdown' : phase === 'done' ? 'Play again' : phase === 'draw' ? 'Fire' : phase === 'result' ? 'Reloading…' : 'Hold…'}
+              {phase === 'idle' ? 'Hefja einvígi' : phase === 'done' ? 'Spila aftur' : phase === 'draw' ? 'Skjóttu' : phase === 'result' ? 'Hleð aftur…' : 'Bíddu…'}
             </button>
-            <p className="j-noon__rules">Sheriff under 200 ms, Deputy under 300, Ranch hand under 450. Slower and you&rsquo;re a Greenhorn.</p>
+            <p className="j-noon__rules">Sýslumaður undir 200 ms, aðstoðarsýslumaður undir 300 og kúreki undir 450. Annars ertu nýliði.</p>
           </div>
         </div>
       </div>

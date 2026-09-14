@@ -15,7 +15,7 @@ export async function PATCH(
 
   const gallery = await readGallery();
   const idx = gallery.findIndex(p => p.id === id);
-  if (idx === -1) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  if (idx === -1) return NextResponse.json({ error: 'Fannst ekki.' }, { status: 404 });
 
   const { title, sublabel, active, order } = body;
   gallery[idx] = {
@@ -39,7 +39,7 @@ export async function DELETE(
 
   const gallery = await readGallery();
   const photo = gallery.find(p => p.id === id);
-  if (!photo) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  if (!photo) return NextResponse.json({ error: 'Fannst ekki.' }, { status: 404 });
 
   const remaining = gallery.filter(p => p.id !== id);
   await writeGallery(remaining);

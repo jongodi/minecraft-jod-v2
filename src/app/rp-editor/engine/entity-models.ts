@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Entity-model templates
 //
-// Beds, chests, boats, shulker boxes, signs and the like are rendered by
+// Beds, chests, boats, shulker-kassies, signs and the like are rendered by
 // hardcoded geometry in the game — there is no model JSON in the pack, so their
 // entity/… textures otherwise have no 3D view. These templates give each a
 // representative box model (element geometry, in the same 0-16 space as normal
@@ -102,7 +102,7 @@ function shulker(): any[] {
   ];
 }
 
-// ── Boat / chest boat — reconstructs the vanilla BoatModel ────────────────────
+// ── Boat / bátur með kistu — reconstructs the vanilla BoatModel ────────────────────
 // Boats have no model JSON in a pack (the game renders them from a hardcoded
 // entity model), so we rebuild the hull from the known part layout, read off the
 // vanilla boat texture (128×64: a bottom plank, four walls, two paddles). A chest
@@ -137,7 +137,7 @@ function boatPart(uv: (x0: number, y0: number, x1: number, y1: number) => number
   return el;
 }
 
-// The hull, shared by both plain and chest boats. `uv` picks which declared
+// The hull, shared by both plain and bátur með kistus. `uv` picks which declared
 // canvas (128×64 vs 128×128) the raw pixel offsets below are scaled against —
 // the offsets themselves are unchanged, since the hull art occupies the same
 // top-left 128×64 region of both textures.
@@ -269,7 +269,7 @@ function legacySign(): any[] {
   ];
 }
 
-// ── Legacy hanging sign — 64×32 (entity/signs/hanging/<wood>.png) ─────────────
+// ── Legacy hangandi skilti — 64×32 (entity/signs/hanging/<wood>.png) ─────────────
 // Top plank 16×2×4 at (0,0); two flat chains 3×6 at (0,6) and (6,6); board
 // 14×10×2 at (0,12). Chains are zero-thickness planes, like vanilla's model.
 function legacyHangingSign(): any[] {
@@ -290,18 +290,18 @@ function legacyHangingSign(): any[] {
 
 export const ENTITY_TEMPLATES: EntityTemplate[] = [
   // Double-chest halves must match before the generic chest rule.
-  { match: /(^|\/)entity\/chest\/[a-z0-9_]*_left(\.|$)/i, name: 'double chest (left)', texSize: [64, 64], elements: chestHalf('left') },
-  { match: /(^|\/)entity\/chest\/[a-z0-9_]*_right(\.|$)/i, name: 'double chest (right)', texSize: [64, 64], elements: chestHalf('right') },
-  { match: /(^|\/)entity\/chest\//i, name: 'chest', texSize: [64, 64], elements: chest() },
-  { match: /(^|\/)entity\/bed\//i, name: 'bed', texSize: [64, 64], elements: bed() },
-  { match: /(^|\/)entity\/shulker\//i, name: 'shulker box', texSize: [64, 64], elements: shulker() },
-  { match: /(^|\/)entity\/chest_boat\//i, name: 'chest boat', texSize: [128, 128], elements: chestBoat() },
-  { match: /(^|\/)entity\/boat\//i, name: 'boat', texSize: [128, 64], elements: boat() },
-  { match: /(^|\/)entity\/minecart(\/|\.|$)/i, name: 'minecart', texSize: [64, 32], elements: minecart() },
-  { match: /(^|\/)entity\/bell\//i, name: 'bell', texSize: [32, 32], elements: bell() },
-  { match: /(^|\/)entity\/banner(\/|_|\.)/i, name: 'banner', texSize: [64, 64], elements: banner() },
-  { match: /(^|\/)entity\/signs\/hanging\//i, name: 'hanging sign', texSize: [64, 32], elements: legacyHangingSign() },
-  { match: /(^|\/)entity\/signs\//i, name: 'sign', texSize: [64, 32], elements: legacySign() },
+  { match: /(^|\/)entity\/chest\/[a-z0-9_]*_left(\.|$)/i, name: 'tvöföld kista (vinstri)', texSize: [64, 64], elements: chestHalf('left') },
+  { match: /(^|\/)entity\/chest\/[a-z0-9_]*_right(\.|$)/i, name: 'tvöföld kista (hægri)', texSize: [64, 64], elements: chestHalf('right') },
+  { match: /(^|\/)entity\/chest\//i, name: 'kista', texSize: [64, 64], elements: chest() },
+  { match: /(^|\/)entity\/bed\//i, name: 'rúm', texSize: [64, 64], elements: bed() },
+  { match: /(^|\/)entity\/shulker\//i, name: 'shulker-kassi', texSize: [64, 64], elements: shulker() },
+  { match: /(^|\/)entity\/chest_boat\//i, name: 'bátur með kistu', texSize: [128, 128], elements: chestBoat() },
+  { match: /(^|\/)entity\/boat\//i, name: 'bátur', texSize: [128, 64], elements: boat() },
+  { match: /(^|\/)entity\/minecart(\/|\.|$)/i, name: 'námuvagn', texSize: [64, 32], elements: minecart() },
+  { match: /(^|\/)entity\/bell\//i, name: 'bjalla', texSize: [32, 32], elements: bell() },
+  { match: /(^|\/)entity\/banner(\/|_|\.)/i, name: 'fáni', texSize: [64, 64], elements: banner() },
+  { match: /(^|\/)entity\/signs\/hanging\//i, name: 'hangandi skilti', texSize: [64, 32], elements: legacyHangingSign() },
+  { match: /(^|\/)entity\/signs\//i, name: 'skilti', texSize: [64, 32], elements: legacySign() },
 ];
 
 /** An entity template for a texture path, or null. */
