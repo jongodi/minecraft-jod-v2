@@ -1,5 +1,5 @@
-import WesternHome from '@/components/western/WesternHome';
+import FrontierHome from '@/components/frontier/FrontierHome';
 
 export default function Home() {
-  return <WesternHome />;
+  return <FrontierHome />;
 }
