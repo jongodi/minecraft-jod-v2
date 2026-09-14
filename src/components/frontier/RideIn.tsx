@@ -3,6 +3,8 @@
 import { SERVER_IP } from './data';
 import { useCopy } from './hooks';
 
+/** The last stop: a saddle-leather patch with the ranch brand burnt into
+    it and the address engraved on a brass plate riveted underneath. */
 export default function RideIn() {
   const [copied, copy] = useCopy(SERVER_IP);
   return (
@@ -11,19 +13,27 @@ export default function RideIn() {
         <p className="j-note j-note--big">Ride in</p>
         <p className="j-note">Java Edition, any recent version. not on the whitelist yet? ask one of us</p>
 
-        <div className="j-patch">
-          <button className={`j-brand${copied ? ' is-copied' : ''}`} onClick={copy} aria-label="Copy the server address">
-            <svg viewBox="0 0 400 400" aria-hidden="true">
-              <g className="j-brand__glow"><circle className="j-brand__ring" cx="200" cy="200" r="182" strokeWidth="6" /></g>
-              <circle className="j-brand__ring" cx="200" cy="200" r="182" strokeWidth="5" />
-              <circle className="j-brand__ring" cx="200" cy="200" r="168" strokeWidth="2" strokeDasharray="4 10" />
-              <path d="M200 46 l6 14 15 1 -11 10 3 15 -13 -8 -13 8 3 -15 -11 -10 15 -1 z" fill="currentColor" />
-              <path d="M200 354 l6 -14 15 -1 -11 -10 3 -15 -13 8 -13 -8 3 15 -11 10 15 1 z" fill="currentColor" />
+        <div className="j-saddle">
+          <span className="j-rivet" style={{ top: 18, left: 18 }} aria-hidden="true" />
+          <span className="j-rivet" style={{ top: 18, right: 18 }} aria-hidden="true" />
+          <span className="j-rivet" style={{ bottom: 18, left: 18 }} aria-hidden="true" />
+          <span className="j-rivet" style={{ bottom: 18, right: 18 }} aria-hidden="true" />
+
+          <div className="j-brandmark" aria-hidden="true">
+            <svg viewBox="0 0 200 200">
+              <circle className="j-brandmark__ember" cx="100" cy="100" r="86" />
+              <circle className="j-brandmark__ring" cx="100" cy="100" r="86" />
+              <circle className="j-brandmark__rim" cx="100" cy="100" r="86" />
             </svg>
-            <span className="j-brand__text">{copied ? 'Copied' : SERVER_IP}</span>
-            <span className="j-brand__hint">{copied ? 'branded' : 'tap to copy'}</span>
+            <span className="j-brandmark__text">JOÐ</span>
+          </div>
+
+          <button className={`j-plate${copied ? ' is-copied' : ''}`} onClick={copy} aria-label="Copy the server address">
+            <span className="j-plate__addr">{copied ? 'copied to clipboard' : SERVER_IP}</span>
+            <span className="j-plate__hint">{copied ? 'now paste it in the game' : 'tap the plate to copy'}</span>
           </button>
-          <p className="j-patch__note">paste it into Multiplayer → Add Server</p>
+
+          <p className="j-saddle__note">Multiplayer, then Add Server, then paste</p>
         </div>
       </div>
     </section>

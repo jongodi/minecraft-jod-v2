@@ -29,7 +29,7 @@ export default function Provisions() {
                 <span>{String(i + 1).padStart(2, '0')}</span>
                 <span className="j-receipt__name">{d.name.toUpperCase()}</span>
                 <span className="j-receipt__lead" />
-                <span className="j-receipt__ver">{d.currentVersion ? `v${d.currentVersion}` : '—'}</span>
+                <span className="j-receipt__ver">{d.currentVersion ? `v${d.currentVersion}` : '·'}</span>
               </div>
               <div className="j-receipt__desc">{d.description} · {CATEGORY[d.category] ?? d.category}</div>
             </div>

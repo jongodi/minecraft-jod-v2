@@ -152,14 +152,14 @@ export default function QuickDraw() {
                 return (
                   <div key={i} className={`j-stub${live ? ' is-live' : ''}${s === null ? ' is-foul' : ''}`} style={{ '--r': `${TILT[i]}deg` } as CSSProperties}>
                     <div className="j-stub__k">Draw {NUMERAL[i]}</div>
-                    <div className="j-stub__v">{typeof s === 'number' ? `${s} ms` : s === null ? 'Foul' : live ? '…' : '—'}</div>
+                    <div className="j-stub__v">{typeof s === 'number' ? `${s} ms` : s === null ? 'Foul' : live ? '…' : '·'}</div>
                   </div>
                 );
               })}
             </div>
             <div className="j-noon__readout">
-              <div><div className="j-noon__k">Game average</div><div className="j-noon__v">{gameAvg !== null ? `${gameAvg} ms` : '—'}</div></div>
-              <div><div className="j-noon__k">Rank</div><div className="j-noon__v">{gameBest !== null && gameBest < 200 && <Star className="j-star" />}{gameBest !== null ? rankOf(gameBest) : '—'}</div></div>
+              <div><div className="j-noon__k">Game average</div><div className="j-noon__v">{gameAvg !== null ? `${gameAvg} ms` : '·'}</div></div>
+              <div><div className="j-noon__k">Rank</div><div className="j-noon__v">{gameBest !== null && gameBest < 200 && <Star className="j-star" />}{gameBest !== null ? rankOf(gameBest) : '·'}</div></div>
             </div>
             <button className="j-btn" onClick={() => tap()} disabled={phase === 'result'}>
               {phase === 'idle' ? 'Start the showdown' : phase === 'done' ? 'Play again' : phase === 'draw' ? 'Fire' : phase === 'result' ? 'Reloading…' : 'Hold…'}
