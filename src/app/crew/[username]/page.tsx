@@ -1,85 +1,47 @@
 'use client';
 
-import { useEffect, useState, useRef, useCallback, use, FormEvent } from 'react';
+import '@/app/frontier.css';
+import { useEffect, useState, useRef, useCallback, use, type FormEvent, type ChangeEvent } from 'react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import type { CSSProperties } from 'react';
 import type { CrewProfile, CrewPost } from '@/lib/crew';
 import type { PlayerStat, StatsResponse } from '@/app/api/stats/route';
-import { formatDate, formatAge } from '@/lib/format';
-import Lightbox from '@/components/Lightbox';
+import { formatDate } from '@/lib/format';
+import TrailNav from '@/components/frontier/TrailNav';
+import Footer from '@/components/frontier/Footer';
+import PlayerHead from '@/components/frontier/PlayerHead';
+import Lightbox from '@/components/frontier/Lightbox';
+import { Arrow, Pin, Star, Tape } from '@/components/frontier/Bits';
+import { PAGE_LINKS, STAT_TABS } from '@/components/frontier/data';
 
-const mono  = 'var(--font-mono)';
-const sans  = 'var(--font-display)';
-const green      = 'var(--accent)';
-const greenSoft  = 'rgba(var(--accent-rgb),0.13)';
-const greenLine  = 'rgba(var(--accent-rgb),0.3)';
-const greenFaint = 'rgba(var(--accent-rgb),0.05)';
-
-const STAT_LABELS: { key: keyof PlayerStat; label: string; format: (v: number) => string }[] = [
-  { key: 'playTimeHours',  label: 'PLAYTIME',  format: v => `${v}h`  },
-  { key: 'mobKills',       label: 'MOB KILLS', format: v => v.toLocaleString() },
-  { key: 'deaths',         label: 'DEATHS',    format: v => v.toLocaleString() },
-  { key: 'itemsCrafted',   label: 'CRAFTED',   format: v => v.toLocaleString() },
-  { key: 'distanceWalked', label: 'WALKED',    format: v => `${(v / 100000).toFixed(1)} km` },
-];
-
-// ─── Achievement badges ───────────────────────────────────────────────────────
+// ─── Badges: the highest earned tier per category ─────────────────────────────
 
 interface BadgeDef { id: string; label: string; category: string; check: (s: PlayerStat) => boolean }
 
 const BADGE_DEFS: BadgeDef[] = [
-  { id: 'played-10h',    label: 'Newbie',           category: 'playtime', check: s => s.playTimeHours  >= 10    },
-  { id: 'played-100h',   label: 'Active Player',    category: 'playtime', check: s => s.playTimeHours  >= 100   },
-  { id: 'played-500h',   label: 'MVP player!',      category: 'playtime', check: s => s.playTimeHours  >= 500   },
-  { id: 'kills-100',     label: '100 Mob Kills',    category: 'kills',    check: s => s.mobKills       >= 100   },
-  { id: 'kills-1k',      label: 'Mob Slayer',       category: 'kills',    check: s => s.mobKills       >= 1000  },
-  { id: 'kills-5k',      label: 'Mob Butcher',      category: 'kills',    check: s => s.mobKills       >= 5000  },
-  { id: 'walked-100km',  label: 'Map Explorer',     category: 'distance', check: s => s.distanceWalked >= 100 * 100_000 },
-  { id: 'walked-500km',  label: 'World Traveller',  category: 'distance', check: s => s.distanceWalked >= 500 * 100_000 },
-  { id: 'deaths-10',     label: 'Clumsy',           category: 'deaths',   check: s => s.deaths         >= 10    },
-  { id: 'deaths-50',     label: 'Not So Lucky',     category: 'deaths',   check: s => s.deaths         >= 50    },
-  { id: 'crafted-1k',    label: 'Crafter',          category: 'crafted',  check: s => s.itemsCrafted   >= 1000  },
-  { id: 'pvp',           label: 'PvP',              category: 'pvp',      check: s => s.playerKills    >= 1     },
+  { id: 'played-10h',   label: 'Newbie',          category: 'playtime', check: s => s.playTimeHours  >= 10    },
+  { id: 'played-100h',  label: 'Active player',   category: 'playtime', check: s => s.playTimeHours  >= 100   },
+  { id: 'played-500h',  label: 'MVP',             category: 'playtime', check: s => s.playTimeHours  >= 500   },
+  { id: 'kills-100',    label: '100 mob kills',   category: 'kills',    check: s => s.mobKills       >= 100   },
+  { id: 'kills-1k',     label: 'Mob slayer',      category: 'kills',    check: s => s.mobKills       >= 1000  },
+  { id: 'kills-5k',     label: 'Mob butcher',     category: 'kills',    check: s => s.mobKills       >= 5000  },
+  { id: 'walked-100km', label: 'Map explorer',    category: 'distance', check: s => s.distanceWalked >= 100 * 100_000 },
+  { id: 'walked-500km', label: 'World traveller', category: 'distance', check: s => s.distanceWalked >= 500 * 100_000 },
+  { id: 'deaths-10',    label: 'Clumsy',          category: 'deaths',   check: s => s.deaths         >= 10    },
+  { id: 'deaths-50',    label: 'Not so lucky',    category: 'deaths',   check: s => s.deaths         >= 50    },
+  { id: 'crafted-1k',   label: 'Crafter',         category: 'crafted',  check: s => s.itemsCrafted   >= 1000  },
+  { id: 'pvp',          label: 'PvP',             category: 'pvp',      check: s => s.playerKills    >= 1     },
 ];
 
-function AchievementBadges({ stat }: { stat: PlayerStat }) {
-  // Keep only the highest earned tier per category (badges are ordered low→high)
-  const topPerCategory = new Map<string, BadgeDef>();
-  for (const b of BADGE_DEFS) {
-    if (b.check(stat)) topPerCategory.set(b.category, b);
-  }
-  const earned = Array.from(topPerCategory.values());
-  if (earned.length === 0) return null;
-
-  return (
-    <div style={{ marginBottom: '3rem' }}>
-      <p style={{ fontFamily: mono, fontSize: '0.6rem', letterSpacing: '0.25em', color: green, textTransform: 'uppercase', marginBottom: '0.75rem' }}>
-        ACHIEVEMENTS
-      </p>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
-        {earned.map(b => (
-          <span
-            key={b.id}
-            style={{
-              fontFamily:    mono,
-              fontSize:      '0.5rem',
-              letterSpacing: '0.12em',
-              color:         '#f0a500',
-              background:    'rgba(240,165,0,0.06)',
-              border:        '1px solid rgba(240,165,0,0.25)',
-              padding:       '0.25rem 0.55rem',
-              textTransform: 'uppercase',
-            }}
-          >
-            {b.label}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
+function earnedBadges(stat: PlayerStat): BadgeDef[] {
+  const top = new Map<string, BadgeDef>();
+  for (const b of BADGE_DEFS) if (b.check(stat)) top.set(b.category, b);
+  return Array.from(top.values());
 }
 
-// ─── Login modal ─────────────────────────────────────────────────────────────
+const TILT = [-2.5, 2, -1.5, 3, -3, 1.5];
+
+// ─── Login ────────────────────────────────────────────────────────────────────
 
 function LoginModal({ username, onSuccess, onClose }: { username: string; onSuccess: () => void; onClose: () => void }) {
   const [token,   setToken]   = useState('');
@@ -98,53 +60,54 @@ function LoginModal({ username, onSuccess, onClose }: { username: string; onSucc
       if (res.ok) { onSuccess(); onClose(); }
       else {
         const data = await res.json().catch(() => ({})) as { error?: string };
-        setError(data.error ?? 'Invalid token.');
+        setError(data.error ?? 'That token is not right.');
       }
-    } catch { setError('Network error — try again.'); }
+    } catch { setError('Network error, try again.'); }
     finally   { setLoading(false); }
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={onClose}>
-      <form onSubmit={submit} onClick={e => e.stopPropagation()} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-strong)', padding: '2rem', width: '100%', maxWidth: '340px' }}>
-        <p style={{ fontFamily: mono, fontSize: '0.55rem', letterSpacing: '0.3em', color: green, marginBottom: '1.5rem', textTransform: 'uppercase' }}>LOGIN AS {username}</p>
-        <input type="password" value={token} onChange={e => setToken(e.target.value)} placeholder="Your crew token..." autoFocus
-          style={{ width: '100%', background: 'var(--bg-elevated)', border: `1px solid ${error ? 'var(--status-offline)' : 'var(--border-strong)'}`, color: 'var(--text)', fontFamily: mono, fontSize: '0.8rem', padding: '0.5rem 0.7rem', outline: 'none', boxSizing: 'border-box', marginBottom: error ? '0.3rem' : '1rem' }} />
-        {error && <p style={{ fontFamily: mono, fontSize: '0.6rem', color: 'var(--status-offline)', marginBottom: '0.8rem' }}>{error}</p>}
-        <button type="submit" disabled={loading || !token} style={{ width: '100%', background: token && !loading ? green : 'var(--border)', color: token && !loading ? 'var(--bg)' : 'var(--faint)', border: 'none', fontFamily: mono, fontSize: '0.6rem', letterSpacing: '0.2em', padding: '0.6rem', cursor: token && !loading ? 'pointer' : 'not-allowed', textTransform: 'uppercase' }}>
-          {loading ? 'CHECKING...' : 'LOGIN →'}
-        </button>
+    <div className="j-modal" onClick={onClose} role="dialog" aria-modal="true" aria-label="Log in">
+      <form className="j-modal__box" onSubmit={submit} onClick={e => e.stopPropagation()}>
+        <p className="j-modal__title">Log in as {username}</p>
+        <p className="j-modal__sub">your crew token is set by whoever runs the server</p>
+        <input type="password" className={`j-input${error ? ' is-error' : ''}`} value={token} onChange={e => setToken(e.target.value)} placeholder="Crew token" autoFocus autoComplete="current-password" />
+        {error && <p className="j-err">{error}</p>}
+        <div className="j-modal__actions">
+          <button type="submit" className="j-btn" disabled={loading || !token}>{loading ? 'Checking…' : 'Log in'}</button>
+          <button type="button" className="j-btn j-btn--ghost" onClick={onClose}>Cancel</button>
+        </div>
       </form>
     </div>
   );
 }
 
-// ─── Profile page ─────────────────────────────────────────────────────────────
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function CrewProfilePage({ params }: { params: Promise<{ username: string }> }) {
   const { username } = use(params);
 
   const [profile,       setProfile]       = useState<CrewProfile | null>(null);
+  const [notFound,      setNotFound]      = useState(false);
   const [session,       setSession]       = useState<string | null>(null);
   const [showLogin,     setShowLogin]     = useState(false);
   const [editingBio,    setEditingBio]    = useState(false);
   const [bioText,       setBioText]       = useState('');
+  const [bioError,      setBioError]      = useState('');
   const [newPost,       setNewPost]       = useState('');
   const [posting,       setPosting]       = useState(false);
   const [postError,     setPostError]     = useState('');
-  const [bioError,      setBioError]      = useState('');
   const [photoError,    setPhotoError]    = useState('');
+  const [uploading,     setUploading]     = useState(false);
   const [playerStats,   setPlayerStats]   = useState<PlayerStat | null>(null);
   const [statsMeta,     setStatsMeta]     = useState<{ source: string; cachedAt: string | null } | null>(null);
-  // Post editing
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
   const [editText,      setEditText]      = useState('');
   const [editSaving,    setEditSaving]    = useState(false);
-  // Photo lightbox
   const [lightboxIdx,   setLightboxIdx]   = useState<number | null>(null);
 
-  const fileRef  = useRef<HTMLInputElement>(null);
-  const isOwner  = !!session && session.toLowerCase() === username.toLowerCase();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const isOwner = !!session && session.toLowerCase() === username.toLowerCase();
 
   async function loadProfile() {
     const res = await fetch(`/api/crew/${username}`);
@@ -152,6 +115,8 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
       const p = await res.json() as CrewProfile;
       setProfile(p);
       setBioText(p.bio);
+    } else if (res.status === 404) {
+      setNotFound(true);
     }
   }
 
@@ -180,44 +145,51 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
         setStatsMeta({ source: data.source, cachedAt: data.cachedAt });
       })
       .catch(() => {});
-  // Intentionally re-runs only when username changes — fetch functions are defined
-  // inline and don't need to be listed; adding them would cause an infinite loop.
+  // The fetch helpers close over `username`; re-running on it alone is what we want.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [username]);
 
   function onLoginSuccess() { checkSession(); loadProfile(); }
-  async function logout() { await fetch('/api/crew/auth', { method: 'DELETE' }); setSession(null); localStorage.removeItem('jod_crew_user'); }
+  async function logout() {
+    await fetch('/api/crew/auth', { method: 'DELETE' });
+    setSession(null);
+    localStorage.removeItem('jod_crew_user');
+  }
 
   async function saveBio() {
     setBioError('');
     const res = await fetch(`/api/crew/${username}/bio`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ bio: bioText }) });
     if (res.ok) { setProfile(p => p ? { ...p, bio: bioText } : p); setEditingBio(false); }
-    else { const data = await res.json().catch(() => ({})) as { error?: string }; setBioError(data.error ?? 'Failed to save bio.'); }
+    else { const data = await res.json().catch(() => ({})) as { error?: string }; setBioError(data.error ?? 'Could not save the bio.'); }
   }
 
   async function submitPost(e: FormEvent) {
     e.preventDefault();
     if (!newPost.trim()) return;
-    setPosting(true); setPostError('');
+    setPosting(true);
+    setPostError('');
     try {
       const res = await fetch(`/api/crew/${username}/posts`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: newPost }) });
-      if (res.ok) { const post = await res.json() as CrewPost; setProfile(p => p ? { ...p, posts: [post, ...p.posts] } : p); setNewPost(''); }
-      else {
+      if (res.ok) {
+        const post = await res.json() as CrewPost;
+        setProfile(p => p ? { ...p, posts: [post, ...p.posts] } : p);
+        setNewPost('');
+      } else {
         const data = await res.json().catch(() => ({})) as { error?: string };
-        if (res.status === 401) { setPostError('Session expired — please log in again.'); setSession(null); localStorage.removeItem('jod_crew_user'); }
-        else                    { setPostError(data.error ?? 'Failed to post — try again.'); }
+        setPostError(data.error ?? 'Could not post.');
       }
-    } catch { setPostError('Network error — try again.'); }
+    } catch { setPostError('Network error, try again.'); }
     finally   { setPosting(false); }
   }
 
   async function deletePost(id: string) {
+    if (!confirm('Delete this post?')) return;
     const res = await fetch(`/api/crew/${username}/posts/${id}`, { method: 'DELETE' });
     if (res.ok) setProfile(p => p ? { ...p, posts: p.posts.filter(post => post.id !== id) } : p);
   }
 
   function startEditPost(post: CrewPost) { setEditingPostId(post.id); setEditText(post.text); }
-  function cancelEditPost()              { setEditingPostId(null); setEditText(''); }
+  function cancelEditPost() { setEditingPostId(null); setEditText(''); }
 
   async function saveEditPost(id: string) {
     if (!editText.trim()) return;
@@ -229,21 +201,22 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
         setProfile(p => p ? { ...p, posts: p.posts.map(post => post.id === id ? updated : post) } : p);
         cancelEditPost();
       }
-    } catch { /* non-fatal */ }
-    finally   { setEditSaving(false); }
+    } finally { setEditSaving(false); }
   }
 
-  async function uploadPhoto(e: React.ChangeEvent<HTMLInputElement>) {
+  async function uploadPhoto(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     setPhotoError('');
+    setUploading(true);
     const fd = new FormData();
     fd.append('file', file);
     try {
       const res = await fetch(`/api/crew/${username}/photos`, { method: 'POST', body: fd });
       if (res.ok) { const photo = await res.json(); setProfile(p => p ? { ...p, photos: [photo, ...p.photos] } : p); }
       else { const data = await res.json().catch(() => ({})) as { error?: string }; setPhotoError(data.error ?? 'Upload failed.'); }
-    } catch { setPhotoError('Network error — upload failed.'); }
+    } catch { setPhotoError('Network error, the upload did not go through.'); }
+    finally { setUploading(false); }
     if (fileRef.current) fileRef.current.value = '';
   }
 
@@ -251,216 +224,163 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
   const prevPhoto     = useCallback(() => setLightboxIdx(i => i !== null && profile ? (i - 1 + profile.photos.length) % profile.photos.length : null), [profile]);
   const nextPhoto     = useCallback(() => setLightboxIdx(i => i !== null && profile ? (i + 1) % profile.photos.length : null), [profile]);
 
-  if (!profile) {
-    return (
-      <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <p style={{ fontFamily: mono, fontSize: '0.7rem', color: 'var(--faint)', letterSpacing: '0.2em' }}>LOADING...</p>
-      </div>
-    );
-  }
+  const badges = playerStats ? earnedBadges(playerStats) : [];
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', padding: 'clamp(5rem, 12vw, 9rem) clamp(1.5rem, 6vw, 5rem)' }}>
-      {showLogin && <LoginModal username={username} onSuccess={onLoginSuccess} onClose={() => setShowLogin(false)} />}
+    <div className="j">
+      <div className="j-grain" aria-hidden="true" />
+      <TrailNav links={PAGE_LINKS} always />
+      <main className="j-wrap j-page">
+        <Link href="/crew" className="j-back"><Arrow flip /> all of the crew</Link>
 
-      {/* Photo lightbox */}
-      {lightboxIdx !== null && (
-        <Lightbox
-          photos={profile.photos.map(p => ({ src: p.filename, title: p.caption || undefined }))}
-          currentIndex={lightboxIdx}
-          onClose={closeLightbox}
-          onPrev={prevPhoto}
-          onNext={nextPhoto}
-        />
-      )}
-
-      {/* Back + auth controls */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2.5rem', flexWrap: 'wrap' }}>
-        <Link href="/crew" style={{ fontFamily: mono, fontSize: '0.55rem', letterSpacing: '0.2em', color: green, textDecoration: 'none', textTransform: 'uppercase' }}>
-          ← CREW
-        </Link>
-        <div style={{ flex: 1 }} />
-        {isOwner ? (
-          <button onClick={logout} style={{ fontFamily: mono, fontSize: '0.55rem', letterSpacing: '0.15em', textTransform: 'uppercase', background: 'none', color: 'var(--status-offline)', border: '1px solid rgba(192,64,32,0.25)', padding: '0.3rem 0.6rem', cursor: 'pointer' }}>LOGOUT</button>
+        {notFound ? (
+          <p className="j-empty">no one by the name {username} on the whitelist</p>
+        ) : !profile ? (
+          <p className="j-empty">loading {username}…</p>
         ) : (
-          <button onClick={() => setShowLogin(true)} style={{ fontFamily: mono, fontSize: '0.55rem', letterSpacing: '0.15em', textTransform: 'uppercase', background: 'none', color: 'var(--muted)', border: '1px solid var(--border-strong)', padding: '0.3rem 0.6rem', cursor: 'pointer' }}>EDIT PROFILE</button>
-        )}
-      </div>
-
-      {/* Profile header */}
-      <div style={{ display: 'flex', gap: '2rem', alignItems: 'flex-start', marginBottom: '3rem', flexWrap: 'wrap' }}>
-        <div style={{ width: '96px', height: '96px', flexShrink: 0, border: '1px solid var(--border-strong)', overflow: 'hidden', imageRendering: 'pixelated' }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={`https://crafatar.com/renders/head/${username}?size=96&overlay`} alt={username}
-            style={{ width: '100%', height: '100%', objectFit: 'cover', imageRendering: 'pixelated' }}
-            onError={e => { (e.target as HTMLImageElement).src = `https://mc-heads.net/head/${username}/128`; }} />
-        </div>
-
-        <div style={{ flex: 1 }}>
-          <motion.h1
-            initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-            style={{ fontFamily: sans, fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 900, color: 'var(--text)', letterSpacing: '-0.03em', marginBottom: '0.5rem' }}
-          >
-            {profile.username}
-          </motion.h1>
-
-          {editingBio && isOwner ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxWidth: '480px' }}>
-              <textarea value={bioText} onChange={e => setBioText(e.target.value)} maxLength={500} rows={3}
-                style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-strong)', color: 'var(--text)', fontFamily: mono, fontSize: '0.7rem', padding: '0.5rem', outline: 'none', resize: 'vertical', lineHeight: 1.6 }} />
-              {bioError && <p style={{ fontFamily: mono, fontSize: '0.55rem', color: 'var(--status-offline)' }}>{bioError}</p>}
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button onClick={saveBio} style={{ fontFamily: mono, fontSize: '0.55rem', letterSpacing: '0.1em', textTransform: 'uppercase', background: greenSoft, color: green, border: `1px solid ${greenLine}`, padding: '0.3rem 0.7rem', cursor: 'pointer' }}>SAVE</button>
-                <button onClick={() => { setEditingBio(false); setBioError(''); }} style={{ fontFamily: mono, fontSize: '0.55rem', background: 'none', color: 'var(--muted)', border: '1px solid var(--border-strong)', padding: '0.3rem 0.6rem', cursor: 'pointer' }}>✕</button>
-              </div>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'baseline', flexWrap: 'wrap' }}>
-              <p style={{ fontFamily: mono, fontSize: '0.7rem', color: profile.bio ? 'var(--muted)' : 'var(--border-strong)', lineHeight: 1.6, fontStyle: profile.bio ? 'normal' : 'italic' }}>
-                {profile.bio || 'No bio yet.'}
-              </p>
-              {isOwner && (
-                <button onClick={() => setEditingBio(true)} style={{ fontFamily: mono, fontSize: '0.5rem', letterSpacing: '0.1em', textTransform: 'uppercase', background: 'none', color: 'var(--faint)', border: '1px solid var(--border)', padding: '0.2rem 0.5rem', cursor: 'pointer', flexShrink: 0 }}>EDIT BIO</button>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Stats */}
-      {(playerStats || statsMeta?.source === 'unavailable') && (
-        <div style={{ marginBottom: '3rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-            <p style={{ fontFamily: mono, fontSize: '0.6rem', letterSpacing: '0.25em', color: green, textTransform: 'uppercase' }}>STATS</p>
-            {statsMeta?.source === 'cached' && statsMeta.cachedAt && (
-              <span style={{ fontFamily: mono, fontSize: '0.52rem', color: 'var(--faint)', letterSpacing: '0.1em' }}>LAST UPDATED {formatAge(statsMeta.cachedAt).toUpperCase()}</span>
-            )}
-          </div>
-          {playerStats ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '1px', background: 'var(--border)', maxWidth: '640px' }}>
-              {STAT_LABELS.map(({ key, label, format }) => (
-                <div key={key} style={{ background: 'var(--bg-card)', padding: '0.75rem 1rem' }}>
-                  <p style={{ fontFamily: sans, fontSize: '1.1rem', fontWeight: 700, color: 'var(--text)', marginBottom: '0.15rem' }}>{format(playerStats[key] as number)}</p>
-                  <p style={{ fontFamily: mono, fontSize: '0.52rem', color: 'var(--faint)', letterSpacing: '0.15em', textTransform: 'uppercase' }}>{label}</p>
+          <>
+            <section className="j-profile">
+              <Pin />
+              <div className="j-profile__head"><PlayerHead name={profile.username} size={128} /></div>
+              <div>
+                <div className="j-profile__top">
+                  <div>
+                    <div className="j-profile__wanted">Wanted · rider of the JOÐ</div>
+                    <h1 className="j-profile__name">{profile.username}</h1>
+                  </div>
+                  {isOwner ? (
+                    <button className="j-btn j-btn--ghost j-btn--small" onClick={logout}>Log out</button>
+                  ) : (
+                    <button className="j-btn j-btn--ghost j-btn--small" onClick={() => setShowLogin(true)}>This is me</button>
+                  )}
                 </div>
-              ))}
-            </div>
-          ) : (
-            <p style={{ fontFamily: mono, fontSize: '0.55rem', color: 'var(--faint)', fontStyle: 'italic' }}>No stat data yet.</p>
-          )}
-        </div>
-      )}
 
-      {/* Achievement badges */}
-      {playerStats && <AchievementBadges stat={playerStats} />}
-
-      {/* Posts */}
-      <div style={{ maxWidth: '640px', marginBottom: '3rem' }}>
-        <p style={{ fontFamily: mono, fontSize: '0.6rem', letterSpacing: '0.25em', color: green, textTransform: 'uppercase', marginBottom: '1rem' }}>UPDATES</p>
-
-        {isOwner && (
-          <form onSubmit={submitPost} style={{ marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <textarea value={newPost} onChange={e => { setNewPost(e.target.value); setPostError(''); }} placeholder="What's happening on the server..." maxLength={1000} rows={2}
-              style={{ background: 'var(--bg-elevated)', border: `1px solid ${postError ? 'var(--status-offline)' : 'var(--border-strong)'}`, color: 'var(--text)', fontFamily: mono, fontSize: '0.7rem', padding: '0.6rem', outline: 'none', resize: 'vertical', lineHeight: 1.5 }} />
-            {postError && <p style={{ fontFamily: mono, fontSize: '0.55rem', color: 'var(--status-offline)' }}>{postError}</p>}
-            <button type="submit" disabled={posting || !newPost.trim()} style={{ alignSelf: 'flex-end', fontFamily: mono, fontSize: '0.55rem', letterSpacing: '0.15em', textTransform: 'uppercase', background: newPost.trim() ? greenSoft : 'none', color: newPost.trim() ? green : 'var(--faint)', border: `1px solid ${newPost.trim() ? greenLine : 'var(--border)'}`, padding: '0.35rem 0.8rem', cursor: newPost.trim() ? 'pointer' : 'not-allowed' }}>
-              {posting ? 'POSTING...' : 'POST →'}
-            </button>
-          </form>
-        )}
-
-        {profile.posts.length === 0 ? (
-          <p style={{ fontFamily: mono, fontSize: '0.6rem', color: 'var(--faint)', fontStyle: 'italic' }}>
-            {isOwner ? 'Nothing posted yet — share what\'s happening on the server.' : 'No posts yet.'}
-          </p>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', background: 'var(--border)' }}>
-            {profile.posts.map(post => (
-              <div key={post.id} style={{ background: 'var(--bg-card)', padding: '0.8rem 1rem' }}>
-                {editingPostId === post.id ? (
-                  /* Inline edit mode */
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <textarea value={editText} onChange={e => setEditText(e.target.value)} maxLength={1000} rows={3}
-                      autoFocus
-                      style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-strong)', color: 'var(--text)', fontFamily: mono, fontSize: '0.7rem', padding: '0.5rem', outline: 'none', resize: 'vertical', lineHeight: 1.5 }} />
-                    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                      <button onClick={() => saveEditPost(post.id)} disabled={editSaving || !editText.trim()}
-                        style={{ fontFamily: mono, fontSize: '0.5rem', letterSpacing: '0.1em', textTransform: 'uppercase', background: greenSoft, color: green, border: `1px solid ${greenLine}`, padding: '0.25rem 0.6rem', cursor: 'pointer' }}>
-                        {editSaving ? 'SAVING...' : 'SAVE'}
-                      </button>
-                      <button onClick={cancelEditPost} style={{ fontFamily: mono, fontSize: '0.5rem', background: 'none', color: 'var(--muted)', border: '1px solid var(--border-strong)', padding: '0.25rem 0.5rem', cursor: 'pointer' }}>✕</button>
+                {editingBio && isOwner ? (
+                  <div className="j-profile__biorow">
+                    <textarea className={`j-textarea${bioError ? ' is-error' : ''}`} value={bioText} onChange={e => setBioText(e.target.value)} maxLength={280} placeholder="A line or two about you" style={{ flex: '1 1 18rem' }} />
+                    <div className="j-inline">
+                      <button className="j-btn j-btn--small" onClick={saveBio}>Save</button>
+                      <button className="j-btn j-btn--ghost j-btn--small" onClick={() => { setEditingBio(false); setBioError(''); setBioText(profile.bio); }}>Cancel</button>
                     </div>
+                    {bioError && <p className="j-err" style={{ width: '100%' }}>{bioError}</p>}
                   </div>
                 ) : (
-                  /* Display mode */
-                  <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
-                    <div style={{ flex: 1 }}>
-                      <p style={{ fontFamily: mono, fontSize: '0.7rem', color: 'var(--text)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{post.text}</p>
-                      <p style={{ fontFamily: mono, fontSize: '0.5rem', color: 'var(--faint)', marginTop: '0.4rem', letterSpacing: '0.1em' }}>{formatDate(post.createdAt)}</p>
-                    </div>
-                    {isOwner && (
-                      <div style={{ display: 'flex', gap: '0.35rem', flexShrink: 0 }}>
-                        <button onClick={() => startEditPost(post)} title="Edit post"
-                          style={{ fontFamily: mono, fontSize: '0.5rem', background: 'none', color: 'var(--faint)', border: 'none', cursor: 'pointer', padding: '0.2rem' }}>
-                          edit
-                        </button>
-                        <button onClick={() => deletePost(post.id)}
-                          style={{ fontFamily: mono, fontSize: '0.5rem', background: 'none', color: 'var(--faint)', border: 'none', cursor: 'pointer', padding: '0.2rem' }}>
-                          ✕
-                        </button>
-                      </div>
+                  <div className="j-profile__biorow">
+                    <p className={`j-profile__bio${profile.bio ? '' : ' is-empty'}`}>
+                      {profile.bio || (isOwner ? 'you have not written a bio yet' : 'no bio yet')}
+                    </p>
+                    {isOwner && <button className="j-btn j-btn--ghost j-btn--small" onClick={() => setEditingBio(true)}>Edit bio</button>}
+                  </div>
+                )}
+
+                {playerStats && (
+                  <>
+                    <dl className="j-stats">
+                      {STAT_TABS.map(t => (
+                        <div key={t.id} className="j-stat">
+                          <dt className="j-stat__k">{t.label}</dt>
+                          <dd className="j-stat__v">{t.unit(playerStats[t.id])}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                    {badges.length > 0 && (
+                      <ul className="j-badges" aria-label="Achievements">
+                        {badges.map(b => <li key={b.id} className="j-badge"><Star className="j-star" />{b.label}</li>)}
+                      </ul>
                     )}
-                  </div>
+                    {statsMeta?.source === 'cached' && statsMeta.cachedAt && (
+                      <p className="j-note j-note--faint" style={{ marginTop: '0.75rem' }}>server is down, these numbers are from {formatDate(statsMeta.cachedAt)}</p>
+                    )}
+                  </>
                 )}
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+            </section>
 
-      {/* Photos */}
-      <div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
-          <p style={{ fontFamily: mono, fontSize: '0.6rem', letterSpacing: '0.25em', color: green, textTransform: 'uppercase' }}>
-            PHOTOS {profile.photos.length > 0 && `(${profile.photos.length})`}
-          </p>
-          {isOwner && (
-            <>
-              <input ref={fileRef} type="file" accept="image/*" onChange={uploadPhoto} style={{ display: 'none' }} id="crew-photo-upload" />
-              <label htmlFor="crew-photo-upload" style={{ fontFamily: mono, fontSize: '0.5rem', letterSpacing: '0.1em', textTransform: 'uppercase', border: `1px solid ${greenLine}`, color: green, padding: '0.25rem 0.6rem', cursor: 'pointer', background: greenFaint }}>
-                + UPLOAD
-              </label>
-            </>
-          )}
-        </div>
-        {photoError && <p style={{ fontFamily: mono, fontSize: '0.55rem', color: 'var(--status-offline)', marginBottom: '0.75rem' }}>{photoError}</p>}
-
-        {profile.photos.length === 0 ? (
-          <p style={{ fontFamily: mono, fontSize: '0.6rem', color: 'var(--faint)', fontStyle: 'italic' }}>
-            {isOwner ? 'No screenshots yet — upload some to show off your builds.' : 'No photos yet.'}
-          </p>
-        ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.5rem' }}>
-            {profile.photos.map((photo, idx) => (
-              <div
-                key={photo.id}
-                onClick={() => setLightboxIdx(idx)}
-                style={{ aspectRatio: '16/9', overflow: 'hidden', border: '1px solid var(--border)', background: 'var(--bg-card)', position: 'relative', cursor: 'pointer' }}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={photo.filename} alt={photo.caption || ''} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.3s ease' }}
-                  onMouseEnter={e => { (e.target as HTMLImageElement).style.transform = 'scale(1.04)'; }}
-                  onMouseLeave={e => { (e.target as HTMLImageElement).style.transform = 'scale(1)'; }} />
-                {photo.caption && (
-                  <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(0,0,0,0.7)', padding: '0.3rem 0.5rem' }}>
-                    <p style={{ fontFamily: mono, fontSize: '0.5rem', color: 'var(--text)' }}>{photo.caption}</p>
+            {/* posts */}
+            <section className="j-block">
+              <div className="j-block__head">
+                <p className="j-note j-note--big">Posts{profile.posts.length > 0 && <span className="j-note j-note--faint"> · {profile.posts.length}</span>}</p>
+              </div>
+              {isOwner && (
+                <form className="j-compose" onSubmit={submitPost}>
+                  <textarea className={`j-textarea${postError ? ' is-error' : ''}`} value={newPost} onChange={e => setNewPost(e.target.value)} maxLength={500} placeholder="What's happening on the server?" />
+                  <div className="j-compose__row">
+                    <span className="j-compose__count">{newPost.length} / 500</span>
+                    <button type="submit" className="j-btn j-btn--small" disabled={posting || !newPost.trim()}>{posting ? 'Posting…' : 'Post'}</button>
                   </div>
+                  {postError && <p className="j-err">{postError}</p>}
+                </form>
+              )}
+              {profile.posts.length === 0 ? (
+                <p className="j-empty">{isOwner ? 'nothing posted yet, write the first one above' : 'no posts yet'}</p>
+              ) : (
+                <ul className="j-feed" style={{ maxWidth: 'none' }}>
+                  {profile.posts.map(post => (
+                    <li key={post.id} className="j-post j-post--plain">
+                      {editingPostId === post.id ? (
+                        <div>
+                          <textarea className="j-textarea" value={editText} onChange={e => setEditText(e.target.value)} maxLength={500} autoFocus />
+                          <div className="j-inline" style={{ marginTop: '0.6rem' }}>
+                            <button className="j-btn j-btn--small" onClick={() => saveEditPost(post.id)} disabled={editSaving || !editText.trim()}>{editSaving ? 'Saving…' : 'Save'}</button>
+                            <button className="j-btn j-btn--ghost j-btn--small" onClick={cancelEditPost}>Cancel</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <p className="j-post__text" style={{ marginTop: 0 }}>{post.text}</p>
+                          <div className="j-post__meta" style={{ marginTop: '0.5rem' }}>
+                            <span>{formatDate(post.createdAt)}</span>
+                            {isOwner && (
+                              <span className="j-post__actions">
+                                <button onClick={() => startEditPost(post)}>edit</button>
+                                <button onClick={() => deletePost(post.id)}>delete</button>
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+
+            {/* photos */}
+            <section className="j-block">
+              <div className="j-block__head">
+                <p className="j-note j-note--big">Screenshots{profile.photos.length > 0 && <span className="j-note j-note--faint"> · {profile.photos.length}</span>}</p>
+                {isOwner && (
+                  <>
+                    <input ref={fileRef} type="file" accept="image/*" onChange={uploadPhoto} style={{ display: 'none' }} id="crew-photo-upload" />
+                    <label htmlFor="crew-photo-upload" className="j-btn j-btn--ghost j-btn--small" style={{ cursor: uploading ? 'wait' : 'pointer' }}>{uploading ? 'Uploading…' : 'Upload'}</label>
+                  </>
                 )}
               </div>
-            ))}
-          </div>
+              {photoError && <p className="j-err" style={{ marginBottom: '0.75rem' }}>{photoError}</p>}
+              {profile.photos.length === 0 ? (
+                <p className="j-empty">{isOwner ? 'no screenshots yet, upload a few of your builds' : 'no screenshots yet'}</p>
+              ) : (
+                <div className="j-shots">
+                  {profile.photos.map((photo, idx) => (
+                    <button key={photo.id} className="j-polaroid" style={{ '--r': `${TILT[idx % TILT.length]}deg` } as CSSProperties} onClick={() => setLightboxIdx(idx)} aria-label={photo.caption || `Screenshot ${idx + 1}`}>
+                      <Tape at="top" r={idx % 2 ? 3 : -3} />
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={photo.filename} alt={photo.caption || ''} loading="lazy" />
+                      <span className="j-polaroid__cap">{photo.caption || formatDate(photo.uploadedAt)}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </section>
+          </>
         )}
-      </div>
+      </main>
+      <Footer />
+
+      {showLogin && <LoginModal username={username} onSuccess={onLoginSuccess} onClose={() => setShowLogin(false)} />}
+      {lightboxIdx !== null && profile && (
+        <Lightbox photos={profile.photos.map(p => ({ src: p.filename, title: p.caption || undefined, sub: formatDate(p.uploadedAt) }))} index={lightboxIdx} onClose={closeLightbox} onPrev={prevPhoto} onNext={nextPhoto} />
+      )}
     </div>
   );
 }

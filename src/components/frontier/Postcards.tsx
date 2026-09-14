@@ -1,0 +1,60 @@
+'use client';
+
+import { useCallback, useState } from 'react';
+import type { CSSProperties } from 'react';
+import Lightbox from './Lightbox';
+import { Arrow, Stamp, Tape } from './Bits';
+import type { Plate } from './data';
+
+const TILT = [-2.5, 2, -1.5, 3, -3, 1.5, 2.5, -2, 1, -2.5, 2];
+const WIDE = new Set([0, 5]);
+
+export default function Postcards({ plates }: { plates: Plate[] }) {
+  const [open, setOpen] = useState<number | null>(null);
+  const prev  = useCallback(() => setOpen(i => (i === null ? null : (i - 1 + plates.length) % plates.length)), [plates.length]);
+  const next  = useCallback(() => setOpen(i => (i === null ? null : (i + 1) % plates.length)), [plates.length]);
+  const close = useCallback(() => setOpen(null), []);
+
+  return (
+    <section id="postcards" className="j-sec">
+      <div className="j-wrap">
+        <div className="j-album__head">
+          <div>
+            <Stamp r={-3}>Postcards</Stamp>
+            <p className="j-note j-note--big" style={{ marginTop: '0.75rem' }}>{plates.length} pictures from around the world</p>
+            <p className="j-note">in the order the builds went up</p>
+          </div>
+          <p className="j-note j-note--faint">they colour in when you hover, tap to see one big <Arrow /></p>
+        </div>
+
+        <div className="j-album">
+          {plates.map((p, i) => (
+            <button
+              key={p.id}
+              className={`j-polaroid${WIDE.has(i) ? ' j-polaroid--wide' : ''}`}
+              style={{ '--r': `${TILT[i % TILT.length]}deg` } as CSSProperties}
+              onClick={() => setOpen(i)}
+              aria-label={`Open ${p.title}`}
+            >
+              <Tape at="top" r={i % 2 ? 3 : -3} />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={p.src} alt={p.title} loading={i < 4 ? 'eager' : 'lazy'} decoding="async" />
+              <span className="j-polaroid__no">{i + 1}</span>
+              <span className="j-polaroid__cap"><b>{p.title}</b>, {p.sub.toLowerCase()}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {open !== null && (
+        <Lightbox
+          photos={plates.map(p => ({ src: p.src, title: p.title, sub: p.sub }))}
+          index={open}
+          onClose={close}
+          onPrev={prev}
+          onNext={next}
+        />
+      )}
+    </section>
+  );
+}

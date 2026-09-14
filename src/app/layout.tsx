@@ -1,38 +1,39 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
+import '@fontsource/rye/400.css';
+import '@fontsource/caveat/400.css';
+import '@fontsource/caveat/600.css';
+import '@fontsource/lora/400.css';
+import '@fontsource/lora/400-italic.css';
+import '@fontsource/lora/600.css';
+import '@fontsource/lora/700.css';
+import '@fontsource/jetbrains-mono/400.css';
+import '@fontsource/jetbrains-mono/600.css';
 import './globals.css';
-import CustomCursor from '@/components/CustomCursor';
-import ScrollProgress from '@/components/ScrollProgress';
-import RpEditorButton from '@/components/RpEditorButton';
 
 export const metadata: Metadata = {
-  title: 'JOD — Private Minecraft Survival',
+  title: 'JOÐ — private Minecraft survival',
   description:
-    'Private Minecraft survival server. Custom datapacks, tight-knit community. IP: play.jodcraft.world',
-  keywords: ['minecraft', 'survival', 'private server', 'JOD', 'datapacks'],
-  icons: {
-    icon: '/icon.svg',
-    shortcut: '/icon.svg',
-  },
+    'A private Minecraft survival world for eight friends, running since 2024. Live server status, the world map, screenshots and player stats. play.jodcraft.world',
+  keywords: ['minecraft', 'survival', 'private server', 'JOD', 'JOÐ', 'datapacks'],
+  icons: { icon: '/icon.svg', shortcut: '/icon.svg' },
   openGraph: {
-    title: 'JOD — Private Minecraft Survival',
-    description: 'Private survival. Custom datapacks. play.jodcraft.world',
+    title: 'JOÐ — private Minecraft survival',
+    description: 'Eight friends, one survival world, since 2024. play.jodcraft.world',
     type: 'website',
+    images: ['/screenshots/the-castle.webp'],
   },
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export const viewport: Viewport = {
+  themeColor: '#efe3c6',
+  width: 'device-width',
+  initialScale: 1,
+};
+
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" data-theme="western">
-      <body>
-        <CustomCursor />
-        <ScrollProgress />
-        <RpEditorButton />
-        {children}
-      </body>
+    <html lang="en">
+      <body>{children}</body>
     </html>
   );
 }
