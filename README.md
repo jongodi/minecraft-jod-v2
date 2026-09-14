@@ -1,4 +1,4 @@
-# JOÐ — Minecraft server website
+# JOÐ: Minecraft server website
 
 Website for the JOÐ private Minecraft survival server at **play.jodcraft.world**.
 

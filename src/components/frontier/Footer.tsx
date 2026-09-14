@@ -5,7 +5,7 @@ export default function Footer() {
   return (
     <footer className="j-foot">
       <div className="j-wrap j-foot__inner">
-        <span className="j-note">— JOÐ, since 2024. {SERVER_IP}</span>
+        <span className="j-note">JOÐ, since 2024. {SERVER_IP}</span>
         <nav className="j-foot__nav" aria-label="Footer">
           <Link href="/#camp">Camp</Link>
           <Link href="/#territory">Territory</Link>
