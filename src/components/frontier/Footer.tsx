@@ -5,8 +5,8 @@ export default function Footer() {
   return (
     <footer className="f-foot">
       <div className="f-wrap f-foot__inner">
-        <span className="f-nav__mark">JO<span className="eth">Ð</span></span>
-        <nav className="f-foot__nav f-label" aria-label="Footer">
+        <span className="f-nav__mark">JOÐ</span>
+        <nav className="f-foot__nav" aria-label="Footer">
           <Link href="/#camp">Camp</Link>
           <Link href="/#territory">Territory</Link>
           <Link href="/#postcards">Postcards</Link>

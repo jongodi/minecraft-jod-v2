@@ -15,66 +15,40 @@ export default function Camp({ server }: { server: ServerState }) {
 
   return (
     <section id="camp" className="f-section">
-      <div className="f-wrap">
+      <div className="f-wrap f-cols">
         <SectionHead
-          no="01"
           kicker="Camp"
-          title="Who's at camp"
-          lede="The server is pinged once a minute. Anyone with a lit frame is on right now; tap a head to see their page."
-        />
+          title="Who's on"
+          lede="The server is pinged once a minute. Faces in colour are on right now."
+        >
+          <p className="f-status-line">
+            <span className={`f-dot${online === null ? '' : online ? ' is-on' : ' is-off'}`} />
+            {online === null ? 'Pinging…' : online ? 'Up' : 'Down'}
+            {checkedAt && <span className="f-muted"> · checked {ago || 'just now'}</span>}
+          </p>
+        </SectionHead>
 
-        <div className="f-camp">
-          <div className="f-sign f-reveal">
-            <div className="f-sign__top f-label">
-              <span>{SERVER_IP}</span>
-              <span className={`f-lamp${online === null ? '' : online ? ' is-on' : ' is-off'}`} />
-            </div>
-            <div className={`f-sign__word${online === null ? '' : online ? ' is-on' : ' is-off'}`}>
-              {online === null ? 'Pinging' : online ? 'Online' : 'Offline'}
-            </div>
-            <div className="f-sign__grid">
-              <div>
-                <div className="f-sign__k f-label">On now</div>
-                <div className="f-sign__v">{online ? players : 0} <small>/ {max}</small></div>
-              </div>
-              <div>
-                <div className="f-sign__k f-label">Crew riding</div>
-                <div className="f-sign__v">{riding}{guests > 0 && <small> +{guests} guest{guests === 1 ? '' : 's'}</small>}</div>
-              </div>
-              <div>
-                <div className="f-sign__k f-label">Edition</div>
-                <div className="f-sign__v">Java</div>
-              </div>
-              <div>
-                <div className="f-sign__k f-label">Access</div>
-                <div className="f-sign__v">Whitelist</div>
-              </div>
-            </div>
-            <p className="f-sign__foot">
-              {online === null ? 'Waiting on the first ping.' :
-               online ? `Last ping ${ago || 'just now'}.` :
-               `Nobody can join while it's down. Last ping ${ago || 'just now'}.`}
-            </p>
+        <div>
+          <div className="f-heads">
+            {CREW.map(name => {
+              const on = !!online && lower.includes(name.toLowerCase());
+              return (
+                <Link key={name} href={`/crew/${name}`} className={`f-head-card${on ? ' is-on' : ''}`} title={name}>
+                  <PlayerHead name={name} size={128} />
+                  <span className="f-head-card__name">{name}</span>
+                  {on && <span className="f-head-card__tag">on now</span>}
+                </Link>
+              );
+            })}
           </div>
 
-          <div className="f-reveal">
-            <div className="f-riders__head f-label">
-              <span><strong>{CREW.length}</strong> in the crew</span>
-              <span><strong>{online ? riding : 0}</strong> riding</span>
-            </div>
-            <div className="f-crew">
-              {CREW.map(name => {
-                const on = !!online && lower.includes(name.toLowerCase());
-                return (
-                  <Link key={name} href={`/crew/${name}`} className={`f-rider${on ? ' is-riding' : ''}`}>
-                    <span className="f-rider__frame"><PlayerHead name={name} size={128} /></span>
-                    <span className="f-rider__name">{name}</span>
-                    <span className="f-rider__tag f-label">{on ? 'Riding' : 'Away'}</span>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
+          <dl className="f-dl" style={{ marginTop: '2rem' }}>
+            <dt>Address</dt><dd>{SERVER_IP}</dd>
+            <dt>Playing</dt>
+            <dd>{online ? players : 0} <small>of {max}</small>{guests > 0 && <small>, {guests} not in the crew</small>}</dd>
+            <dt>Edition</dt><dd>Java, any recent version</dd>
+            <dt>Access</dt><dd>Whitelist, by invitation</dd>
+          </dl>
         </div>
       </div>
     </section>

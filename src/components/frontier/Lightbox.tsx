@@ -56,9 +56,9 @@ export default function Lightbox({ photos, index, onClose, onPrev, onNext }: Pro
         </div>
         {photos.length > 1 && (
           <div className="f-inline">
-            <span className="f-label f-cards__count">{index + 1} / {photos.length}</span>
-            <button className="f-cards__arrow" onClick={onPrev} aria-label="Previous">←</button>
-            <button className="f-cards__arrow" onClick={onNext} aria-label="Next">→</button>
+            <span className="f-lb__count">{index + 1} / {photos.length}</span>
+            <button className="f-arrow" onClick={onPrev} aria-label="Previous">←</button>
+            <button className="f-arrow" onClick={onNext} aria-label="Next">→</button>
           </div>
         )}
       </div>

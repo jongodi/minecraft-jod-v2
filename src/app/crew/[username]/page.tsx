@@ -238,10 +238,10 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
 
   return (
     <>
-      <TrailNav links={PAGE_LINKS} solid />
+      <TrailNav links={PAGE_LINKS} />
       <main className="f-page">
         <div className="f-wrap">
-          <Link href="/crew" className="f-back f-label">← All crew</Link>
+          <Link href="/crew" className="f-back">← All crew</Link>
 
           {notFound ? (
             <p className="f-empty">No one by the name {username} on the whitelist.</p>
@@ -250,7 +250,7 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
           ) : (
             <>
               <section className="f-profile">
-                <div className="f-profile__head"><PlayerHead name={profile.username} size={128} /></div>
+                <PlayerHead name={profile.username} size={128} className="f-profile__head" />
                 <div>
                   <div className="f-profile__top">
                     <h1 className="f-profile__name">{profile.username}</h1>
@@ -279,7 +279,7 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
                     </div>
                   ) : (
                     <div className="f-profile__biorow">
-                      <p className={`f-profile__bio${profile.bio ? '' : ' is-empty'}`} style={{ marginTop: 0, flex: '1 1 18rem' }}>
+                      <p className={`f-profile__bio${profile.bio ? '' : ' is-empty'}`}>
                         {profile.bio || (isOwner ? 'You have not written a bio yet.' : 'No bio yet.')}
                       </p>
                       {isOwner && <button className="f-btn f-btn--ghost f-btn--small" onClick={() => setEditingBio(true)}>Edit bio</button>}
@@ -288,23 +288,21 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
 
                   {playerStats && (
                     <>
-                      <div className="f-stats">
+                      <dl className="f-stats">
                         {STAT_TABS.map(t => (
                           <div key={t.id} className="f-stat">
-                            <div className="f-stat__k f-label">{t.label}</div>
-                            <div className="f-stat__v">{t.unit(playerStats[t.id])}</div>
+                            <dt className="f-stat__k">{t.label}</dt>
+                            <dd className="f-stat__v">{t.unit(playerStats[t.id])}</dd>
                           </div>
                         ))}
-                      </div>
+                      </dl>
                       {badges.length > 0 && (
-                        <div className="f-badges">
-                          {badges.map(b => <span key={b.id} className="f-badge f-label">{b.label}</span>)}
-                        </div>
+                        <ul className="f-badges" aria-label="Achievements">
+                          {badges.map(b => <li key={b.id} className="f-badge">{b.label}</li>)}
+                        </ul>
                       )}
                       {statsMeta?.source === 'cached' && statsMeta.cachedAt && (
-                        <p className="f-note" style={{ marginTop: '0.75rem' }}>
-                          Server is down, these numbers are from {formatDate(statsMeta.cachedAt)}.
-                        </p>
+                        <p className="f-note">The server is down; these numbers are from {formatDate(statsMeta.cachedAt)}.</p>
                       )}
                     </>
                   )}
@@ -327,7 +325,7 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
                       placeholder="What's happening on the server?"
                     />
                     <div className="f-compose__row">
-                      <span className="f-compose__count f-label">{newPost.length} / 500</span>
+                      <span className="f-compose__count">{newPost.length} / 500</span>
                       <button type="submit" className="f-btn f-btn--small" disabled={posting || !newPost.trim()}>{posting ? 'Posting…' : 'Post'}</button>
                     </div>
                     {postError && <p className="f-err">{postError}</p>}
@@ -337,13 +335,13 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
                 {profile.posts.length === 0 ? (
                   <p className="f-empty">{isOwner ? 'Nothing posted yet. Write the first one above.' : 'No posts yet.'}</p>
                 ) : (
-                  <div className="f-feed">
+                  <ul className="f-feed">
                     {profile.posts.map(post => (
-                      <article key={post.id} className="f-post" style={{ gridTemplateColumns: 'minmax(0, 1fr)' }}>
+                      <li key={post.id} className="f-post f-post--plain">
                         {editingPostId === post.id ? (
                           <div>
                             <textarea className="f-textarea" value={editText} onChange={e => setEditText(e.target.value)} maxLength={500} autoFocus />
-                            <div className="f-post__actions">
+                            <div className="f-inline" style={{ marginTop: '0.6rem' }}>
                               <button className="f-btn f-btn--small" onClick={() => saveEditPost(post.id)} disabled={editSaving || !editText.trim()}>{editSaving ? 'Saving…' : 'Save'}</button>
                               <button className="f-btn f-btn--ghost f-btn--small" onClick={cancelEditPost}>Cancel</button>
                             </div>
@@ -352,19 +350,19 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
                           <div>
                             <p className="f-post__text" style={{ marginTop: 0 }}>{post.text}</p>
                             <div className="f-post__meta" style={{ marginTop: '0.5rem' }}>
-                              <span className="f-post__when f-label">{formatDate(post.createdAt)}</span>
+                              <span>{formatDate(post.createdAt)}</span>
                               {isOwner && (
-                                <span className="f-inline">
-                                  <button className="f-btn f-btn--ghost f-btn--small" onClick={() => startEditPost(post)}>Edit</button>
-                                  <button className="f-btn f-btn--ghost f-btn--small" onClick={() => deletePost(post.id)}>Delete</button>
+                                <span className="f-post__actions">
+                                  <button onClick={() => startEditPost(post)}>Edit</button>
+                                  <button onClick={() => deletePost(post.id)}>Delete</button>
                                 </span>
                               )}
                             </div>
                           </div>
                         )}
-                      </article>
+                      </li>
                     ))}
-                  </div>
+                  </ul>
                 )}
               </section>
 
@@ -375,7 +373,7 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
                   {isOwner && (
                     <>
                       <input ref={fileRef} type="file" accept="image/*" onChange={uploadPhoto} style={{ display: 'none' }} id="crew-photo-upload" />
-                      <label htmlFor="crew-photo-upload" className="f-btn f-btn--small" style={{ cursor: uploading ? 'wait' : 'pointer' }}>
+                      <label htmlFor="crew-photo-upload" className="f-btn f-btn--ghost f-btn--small" style={{ cursor: uploading ? 'wait' : 'pointer' }}>
                         {uploading ? 'Uploading…' : 'Upload'}
                       </label>
                     </>
@@ -386,12 +384,12 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
                 {profile.photos.length === 0 ? (
                   <p className="f-empty">{isOwner ? 'No screenshots yet. Upload a few of your builds.' : 'No screenshots yet.'}</p>
                 ) : (
-                  <div className="f-photos">
+                  <div className="f-shots">
                     {profile.photos.map((photo, idx) => (
-                      <button key={photo.id} className="f-photo" onClick={() => setLightboxIdx(idx)} aria-label={photo.caption || `Screenshot ${idx + 1}`}>
+                      <button key={photo.id} className="f-shot" onClick={() => setLightboxIdx(idx)} aria-label={photo.caption || `Screenshot ${idx + 1}`}>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={photo.filename} alt={photo.caption || ''} loading="lazy" />
-                        {photo.caption && <span className="f-photo__cap">{photo.caption}</span>}
+                        {photo.caption && <span className="f-shot__cap">{photo.caption}</span>}
                       </button>
                     ))}
                   </div>

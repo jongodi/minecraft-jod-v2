@@ -5,57 +5,39 @@ import Link from 'next/link';
 import { SERVER_IP, type NavLink } from './data';
 import { useCopy } from './hooks';
 
-interface Props {
-  links:     NavLink[];
-  activeId?: string | null;
-  /** Solid from the start (pages without a hero). */
-  solid?:    boolean;
-}
+interface Props { links: NavLink[]; activeId?: string | null }
 
-export default function TrailNav({ links, activeId, solid = false }: Props) {
-  const [scrolled, setScrolled] = useState(false);
-  const [open, setOpen]         = useState(false);
-  const [copied, copy]          = useCopy(SERVER_IP);
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 24);
-    onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
+export default function TrailNav({ links, activeId }: Props) {
+  const [open, setOpen] = useState(false);
+  const [copied, copy]  = useCopy(SERVER_IP);
 
   useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
   }, [open]);
 
-  const isSolid = solid || scrolled || open;
-
   return (
     <>
-      <header className={`f-nav${isSolid ? ' is-solid' : ''}`}>
+      <header className="f-nav">
         <div className="f-wrap f-nav__inner">
           <Link href="/" className="f-nav__brand" onClick={() => setOpen(false)}>
-            <span className="f-nav__mark">JO<span className="eth">Ð</span></span>
-            <span className="f-nav__brandsub f-label">Survival</span>
+            <span className="f-nav__mark">JOÐ</span>
+            <span className="f-nav__brandsub">survival</span>
           </Link>
 
-          <nav className="f-nav__links f-label" aria-label="Sections">
+          <nav className="f-nav__links" aria-label="Sections">
             {links.map(l => (
-              <Link
-                key={l.href}
-                href={l.href}
-                className={`f-nav__link${activeId && l.id === activeId ? ' is-active' : ''}`}
-              >
+              <Link key={l.href} href={l.href} className={`f-nav__link${activeId && l.id === activeId ? ' is-active' : ''}`}>
                 {l.label}
               </Link>
             ))}
           </nav>
 
           <div className="f-nav__right">
-            <button className={`f-btn f-btn--small f-nav__ip${copied ? ' is-copied' : ''}`} onClick={copy}>
-              {copied ? 'Copied' : SERVER_IP}
-            </button>
+            <span className="f-nav__addr">
+              {SERVER_IP}
+              <button onClick={copy}>{copied ? 'copied' : 'copy'}</button>
+            </span>
             <button
               className={`f-nav__burger${open ? ' is-open' : ''}`}
               onClick={() => setOpen(o => !o)}
@@ -72,14 +54,14 @@ export default function TrailNav({ links, activeId, solid = false }: Props) {
       <div id="f-menu" className={`f-menu${open ? ' is-open' : ''}`} aria-hidden={!open}>
         {links.map((l, i) => (
           <Link key={l.href} href={l.href} className="f-menu__link" onClick={() => setOpen(false)}>
-            <small>{String(i + 1).padStart(2, '0')}</small>{l.label}
+            <small>{i + 1}</small>{l.label}
           </Link>
         ))}
         <div className="f-menu__foot">
           <button className={`f-btn${copied ? ' is-copied' : ''}`} onClick={copy}>
             {copied ? 'Address copied' : `Copy ${SERVER_IP}`}
           </button>
-          <p className="f-note">Java Edition · whitelist only</p>
+          <p className="f-small">Java Edition · whitelist by invitation</p>
         </div>
       </div>
     </>

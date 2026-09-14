@@ -20,11 +20,10 @@ function rankOf(ms: number) {
 }
 
 function Gunslinger({ x, flip, cls }: { x: number; flip?: boolean; cls: string }) {
-  /* blocky figure, feet on y=400 */
-  /* The outer group carries the SVG placement; the inner one takes the CSS
-     transforms for the fall, so the two never overwrite each other. */
+  /* Blocky figure, feet on y=400. The outer group carries the SVG placement;
+     the inner one takes the CSS transforms for the fall. */
   return (
-    <g transform={`translate(${x} 400) scale(${flip ? -1 : 1} 1)`} fill="#120b09">
+    <g transform={`translate(${x} 400) scale(${flip ? -1 : 1} 1)`} fill="currentColor">
       <g className={`f-qd__fig ${cls}`}>
         <rect x="-14" y="-60" width="12" height="60" />
         <rect x="2"   y="-60" width="12" height="60" />
@@ -69,10 +68,7 @@ export default function QuickDraw() {
     }, 1600 + Math.random() * 2400);
   }, []);
 
-  const begin = useCallback(() => {
-    setShots([]);
-    startRound(0);
-  }, [startRound]);
+  const begin = useCallback(() => { setShots([]); startRound(0); }, [startRound]);
 
   const endRound = useCallback((shot: Shot, r: number) => {
     setShots(s => [...s, shot]);
@@ -93,39 +89,35 @@ export default function QuickDraw() {
     }
   }, [phase, round, begin, endRound]);
 
-  const valid   = shots.filter((s): s is number => s !== null);
-  const gameBest = valid.length ? Math.min(...valid) : null;
-  const gameAvg  = valid.length ? Math.round(valid.reduce((a, b) => a + b, 0) / valid.length) : null;
-  const last     = shots[shots.length - 1];
-  const lastIsHit = phase === 'result' && typeof last === 'number';
+  const valid      = shots.filter((s): s is number => s !== null);
+  const gameBest   = valid.length ? Math.min(...valid) : null;
+  const gameAvg    = valid.length ? Math.round(valid.reduce((a, b) => a + b, 0) / valid.length) : null;
+  const last       = shots[shots.length - 1];
+  const lastIsHit  = phase === 'result' && typeof last === 'number';
   const lastIsFoul = phase === 'result' && last === null;
 
-  const arenaCls = [
-    'f-qd__arena',
-    `is-${phase}`,
-    lastIsHit ? 'is-hit' : '',
-    lastIsFoul ? 'is-foul' : '',
-  ].filter(Boolean).join(' ');
+  const arenaCls = ['f-qd__arena', `is-${phase}`, lastIsHit ? 'is-hit' : '', lastIsFoul ? 'is-foul' : ''].filter(Boolean).join(' ');
 
   const call =
-    phase === 'idle'   ? { big: 'Ready?',  small: 'Tap the arena to start. Wait for the call, then tap again.' } :
-    phase === 'hold'   ? { big: 'Hold…',   small: 'Not yet.' } :
-    phase === 'draw'   ? { big: 'DRAW',    small: '' } :
-    phase === 'result' ? (lastIsHit ? { big: `${last} ms`, small: rankOf(last) } : { big: 'Too soon', small: 'Foul. That draw is gone.' }) :
+    phase === 'idle'   ? { big: 'Ready?',  small: 'Tap here to start. Wait for the call, then tap again.' } :
+    phase === 'hold'   ? { big: 'Hold.',   small: 'Not yet.' } :
+    phase === 'draw'   ? { big: 'Draw!',   small: '' } :
+    phase === 'result' ? (lastIsHit ? { big: `${last} ms`, small: rankOf(last) } : { big: 'Too soon.', small: 'Foul. That draw is gone.' }) :
     gameBest !== null  ? { big: `${gameBest} ms`, small: `${rankOf(gameBest)}. Tap to go again.` } :
-                         { big: 'Three fouls', small: 'Patience, partner. Tap to go again.' };
+                         { big: 'Three fouls.', small: 'Patience. Tap to go again.' };
 
   return (
-    <section id="showdown" className="f-section f-section--tint">
-      <div className="f-wrap">
+    <section id="showdown" className="f-section">
+      <div className="f-wrap f-cols">
         <SectionHead
-          no="04"
           kicker="Showdown"
           title="Quick draw"
-          lede="A reaction test. Three draws a game, your best time is kept on this device."
-        />
+          lede="A reaction test. Three draws a game. Under 200 ms makes you Sheriff, under 300 Deputy, under 450 Ranch hand, slower is a Greenhorn."
+        >
+          {best !== null && <p className="f-status-line">Your best on this device: <span className="f-num">{best} ms</span></p>}
+        </SectionHead>
 
-        <div className="f-qd f-reveal">
+        <div className="f-qd">
           <div
             className={arenaCls}
             onPointerDown={e => { if (e.pointerType === 'mouse' && e.button !== 0) return; tap(); }}
@@ -135,16 +127,13 @@ export default function QuickDraw() {
             onKeyDown={e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); tap(); } }}
           >
             <svg viewBox="0 0 800 450" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
-              <circle cx="400" cy="300" r="70" fill="#f2c66d" opacity="0.9" />
-              <path d="M0 320 L90 320 L120 280 L200 280 L230 320 L360 320 L400 260 L470 260 L510 320 L640 320 L680 290 L760 290 L800 320 L800 450 L0 450 Z" fill="#3a1b33" />
-              <path d="M0 370 L800 370 L800 450 L0 450 Z" fill="#241019" />
-              <path d="M0 400 L800 400 L800 450 L0 450 Z" fill="#120b09" />
-              <Gunslinger x={270} cls="f-qd__fig--you" />
-              <Gunslinger x={530} flip cls="f-qd__fig--foe" />
+              <circle cx="400" cy="250" r="60" fill="none" stroke="currentColor" strokeOpacity="0.35" />
+              <line x1="0" y1="400" x2="800" y2="400" stroke="currentColor" strokeOpacity="0.5" />
+              <line x1="0" y1="430" x2="800" y2="430" stroke="currentColor" strokeOpacity="0.15" />
+              <Gunslinger x={150} cls="f-qd__fig--you" />
+              <Gunslinger x={650} flip cls="f-qd__fig--foe" />
             </svg>
-            <div className="f-qd__flash" />
-            <span className="f-qd__corner f-label">Draw {Math.min(round + 1, ROUNDS)} / {ROUNDS}</span>
-            {best !== null && <span className="f-qd__corner f-qd__corner--r f-label">Best {best} ms</span>}
+            <span className="f-qd__corner">Draw {Math.min(round + 1, ROUNDS)} of {ROUNDS}</span>
             <div className="f-qd__call" aria-live="polite">
               <div>
                 <div className="f-qd__call-big">{call.big}</div>
@@ -160,35 +149,21 @@ export default function QuickDraw() {
                 const live = i === round && (phase === 'hold' || phase === 'draw');
                 return (
                   <div key={i} className={`f-qd__shot${live ? ' is-live' : ''}${s === null ? ' is-foul' : ''}`}>
-                    <div className="f-qd__shot-k f-label">Draw {i + 1}</div>
+                    <div className="f-qd__shot-k">Draw {i + 1}</div>
                     <div className="f-qd__shot-v">{typeof s === 'number' ? `${s} ms` : s === null ? 'Foul' : live ? '…' : '—'}</div>
                   </div>
                 );
               })}
             </div>
 
-            <div className="f-qd__readout">
-              <div>
-                <div className="f-qd__readout-k f-label">Game avg</div>
-                <div className="f-qd__readout-v">{gameAvg !== null ? `${gameAvg} ms` : '—'}</div>
-              </div>
-              <div>
-                <div className="f-qd__readout-k f-label">Best ever</div>
-                <div className="f-qd__readout-v">{best !== null ? `${best} ms` : '—'}</div>
-              </div>
-              <div>
-                <div className="f-qd__readout-k f-label">Rank</div>
-                <div className="f-qd__readout-v f-qd__rank">{gameBest !== null ? rankOf(gameBest) : '—'}</div>
-              </div>
-            </div>
+            <dl className="f-dl">
+              <dt>Game average</dt><dd>{gameAvg !== null ? `${gameAvg} ms` : '—'}</dd>
+              <dt>Rank</dt><dd>{gameBest !== null ? rankOf(gameBest) : '—'}</dd>
+            </dl>
 
             <button className="f-btn" onClick={tap} disabled={phase === 'result'}>
               {phase === 'idle' ? 'Start' : phase === 'done' ? 'Play again' : phase === 'draw' ? 'Fire' : phase === 'result' ? 'Reloading…' : 'Hold…'}
             </button>
-
-            <p className="f-qd__rules">
-              Under 200 ms is Sheriff, under 300 Deputy, under 450 Ranch hand. Anything slower and you&apos;re a Greenhorn.
-            </p>
           </div>
         </div>
       </div>

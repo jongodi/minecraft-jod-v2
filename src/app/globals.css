@@ -1,74 +1,70 @@
-@import url('https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Barlow+Condensed:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Lora:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,400;1,9..144,600&family=Work+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* ─── Tokens ──────────────────────────────────────────────────
-   One palette for the whole site. The admin panel and the pack
-   editor read the generic names (--bg, --accent, --text …); the
-   public site reads the named colours directly.                */
+   The public site is printed matter: warm paper, dark ink, one
+   oxblood accent. The admin panel and the pack editor paint their
+   own dark roots and read only the generic names below.        */
 :root {
-  /* dusk palette */
-  --night:   #14101b;
-  --dusk:    #2a1a2c;
-  --plum:    #4b2340;
-  --ember:   #c9502a;
-  --amber:   #e8a13a;
-  --gold:    #f2c66d;
-  --sand:    #e6cfa3;
-  --bone:    #f4e8d0;
-  --umber:   #241510;
-  --soil:    #1a100c;
-  --sage:    #7a8560;
-  --ink:     #120b09;
+  /* paper and ink */
+  --paper:   #f5efe3;
+  --paper-2: #ece4d2;
+  --paper-3: #dfd5bf;
+  --ink:     #221a15;
+  --ink-2:   #5f544a;
+  --ink-3:   #978a79;
+  --rule:    #d8ceba;
+  --rule-2:  #bdb09a;
+  --accent:  #8c2f24;
+  --moss:    #56703c;
 
-  --line:        rgba(230, 207, 163, 0.14);
-  --line-strong: rgba(230, 207, 163, 0.32);
+  --font-serif: 'Fraunces', 'Iowan Old Style', 'Georgia', serif;
+  --font-sans:  'Work Sans', 'Helvetica Neue', Arial, sans-serif;
+  --font-mono:  'JetBrains Mono', ui-monospace, monospace;
 
-  /* generic names used by /admin and /rp-editor */
-  --bg:            var(--soil);
-  --bg-elevated:   #22150f;
-  --bg-card:       #2a1a13;
-  --accent:        var(--amber);
-  --accent-dim:    #c98a2e;
-  --accent-glow:   rgba(232, 161, 58, 0.14);
-  --accent-faint:  rgba(232, 161, 58, 0.06);
-  --accent-trace:  rgba(232, 161, 58, 0.025);
-  --text:          var(--sand);
-  --muted:         #a68a62;
-  --faint:         #6e5a3e;
-  --border:        #3a2619;
-  --border-strong: #55392a;
-  --status-online:  #9fb56b;
+  /* generic names used by /admin and /rp-editor (dark tools) */
+  --bg:            #16100c;
+  --bg-elevated:   #1f1610;
+  --bg-card:       #271c14;
+  --accent-dim:    #6f251c;
+  --accent-glow:   rgba(140, 47, 36, 0.16);
+  --accent-faint:  rgba(140, 47, 36, 0.06);
+  --accent-trace:  rgba(140, 47, 36, 0.025);
+  --text:          #e9dfcc;
+  --muted:         #a8987f;
+  --faint:         #6f6150;
+  --border:        #3a2c22;
+  --border-strong: #55433a;
+  --status-online:  #8fb06a;
   --status-offline: #d0532f;
-  --status-gold:    var(--amber);
-  --accent-rgb:    232, 161, 58;
-  --bg-rgb:        26, 16, 12;
-  --text-rgb:      230, 207, 163;
+  --status-gold:    #e0a83c;
+  --accent-rgb:    224, 168, 60;
+  --bg-rgb:        22, 16, 12;
+  --text-rgb:      233, 223, 204;
   --card:          var(--bg-card);
-
-  --font-display: 'Alfa Slab One', 'Rockwell', serif;
-  --font-label:   'Barlow Condensed', 'Arial Narrow', sans-serif;
-  --font-body:    'Lora', Georgia, serif;
-  --font-mono:    'JetBrains Mono', ui-monospace, monospace;
-
-  --radius: 3px;
+  --font-display:  var(--font-sans);
+  --font-body:     var(--font-sans);
+  --radius:        2px;
 }
 
 /* ─── Reset & base ────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html {
-  scroll-behavior: smooth;
-  background: var(--soil);
-  color: var(--sand);
+  background: var(--paper);
+  color: var(--ink);
   -webkit-text-size-adjust: 100%;
 }
 body {
-  background: var(--soil);
-  color: var(--sand);
-  font-family: var(--font-body);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-optical-sizing: auto;
+  font-size: 1.0625rem;
+  line-height: 1.55;
   overflow-x: clip;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -77,17 +73,10 @@ img { display: block; max-width: 100%; }
 button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
 a { color: inherit; }
 
-::selection { background: var(--amber); color: var(--ink); }
-
-:focus-visible { outline: 2px solid var(--amber); outline-offset: 3px; }
-
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: var(--soil); }
-::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: var(--amber); }
+::selection { background: var(--ink); color: var(--paper); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 @media (prefers-reduced-motion: reduce) {
-  html { scroll-behavior: auto; }
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;

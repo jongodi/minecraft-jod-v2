@@ -6,19 +6,18 @@ import { DEFAULT_LOCATIONS, DEFAULT_ZONES, DEFAULT_PATHS } from '@/lib/map-types
 import SectionHead from './SectionHead';
 import type { Plate } from './data';
 
-const TYPE: Record<MapLocation['type'], { label: string; color: string }> = {
-  surface:     { label: 'Surface',     color: '#8f9d6e' },
-  underground: { label: 'Underground', color: '#e8a13a' },
-  island:      { label: 'Island',      color: '#d0532f' },
-  aerial:      { label: 'Aerial',      color: '#6fa3a8' },
+const TYPE: Record<MapLocation['type'], string> = {
+  surface: 'surface', underground: 'underground', island: 'island', aerial: 'from the air',
 };
 
-const ZONE_COLOR: Record<MapZone['colorKey'], string> = {
-  purple: '#a86f8f', blue: '#6fa3a8', orange: '#d0532f', green: '#8f9d6e',
-};
+/* Survey-sheet palette: paper, ink, one accent. */
+const INK    = '#221a15';
+const PAPER  = '#ece4d2';
+const LAND   = '#e2d8c2';
+const ACCENT = '#8c2f24';
+const WATER  = '#5f7f88';
 
-const SAND = '#e6cfa3';
-const INK  = '#120b09';
+const LAND_PATH = 'M 435 60 C 528 45, 674 78, 752 142 C 810 194, 822 262, 818 330 C 814 402, 786 460, 746 502 C 700 550, 635 582, 555 596 C 476 610, 396 604, 320 582 C 232 558, 155 512, 110 458 C 62 400, 50 336, 56 278 C 62 218, 88 166, 132 136 C 182 100, 298 70, 435 60 Z';
 
 interface Props { plates: Plate[] }
 
@@ -43,68 +42,58 @@ export default function TerritoryMap({ plates }: Props) {
   const plate    = selected ? plates.find(p => Number(p.id) === selected.id) ?? null : null;
 
   return (
-    <section id="territory" className="f-section f-section--tint">
-      <div className="f-wrap">
+    <section id="territory" className="f-section">
+      <div className="f-wrap f-cols">
         <SectionHead
-          no="02"
           kicker="Territory"
-          title="The lay of the land"
-          lede="Every claim on the survival map, old base to new. Pick a pin or a name and the matching screenshot comes up."
+          title="The map"
+          lede="Every claim in the world, from the first base to the newest. Pick a pin or a name and its photograph comes up."
         />
 
-        <div className="f-map f-reveal">
+        <div>
           <div className="f-map__frame">
-            <svg viewBox="0 0 1000 650" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Map of the JOÐ world">
+            <svg viewBox="0 0 1000 650" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Survey map of the JOÐ world">
               <defs>
-                <pattern id="fGrid" width="50" height="50" patternUnits="userSpaceOnUse">
-                  <path d="M50 0 H0 V50" fill="none" stroke={SAND} strokeOpacity="0.06" strokeWidth="1" />
+                <pattern id="fHatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                  <line x1="0" y1="0" x2="0" y2="6" stroke={WATER} strokeOpacity="0.35" strokeWidth="1" />
                 </pattern>
-                <radialGradient id="fMapLand" cx="0.5" cy="0.45" r="0.6">
-                  <stop offset="0" stopColor="#3a2519" />
-                  <stop offset="1" stopColor="#2b1b13" />
-                </radialGradient>
+                <pattern id="fGrid" width="100" height="100" patternUnits="userSpaceOnUse">
+                  <path d="M100 0 H0 V100" fill="none" stroke={INK} strokeOpacity="0.07" strokeWidth="1" />
+                </pattern>
               </defs>
 
-              <rect width="1000" height="650" fill="#1f130e" />
+              <rect width="1000" height="650" fill={PAPER} />
+              <rect width="1000" height="650" fill="url(#fHatch)" />
               <rect width="1000" height="650" fill="url(#fGrid)" />
 
-              {/* landmass with two contour offsets */}
-              <path
-                d="M 435 60 C 528 45, 674 78, 752 142 C 810 194, 822 262, 818 330 C 814 402, 786 460, 746 502 C 700 550, 635 582, 555 596 C 476 610, 396 604, 320 582 C 232 558, 155 512, 110 458 C 62 400, 50 336, 56 278 C 62 218, 88 166, 132 136 C 182 100, 298 70, 435 60 Z"
-                fill="url(#fMapLand)" stroke={SAND} strokeOpacity="0.35" strokeWidth="1.5"
-              />
-              <path
-                d="M 435 60 C 528 45, 674 78, 752 142 C 810 194, 822 262, 818 330 C 814 402, 786 460, 746 502 C 700 550, 635 582, 555 596 C 476 610, 396 604, 320 582 C 232 558, 155 512, 110 458 C 62 400, 50 336, 56 278 C 62 218, 88 166, 132 136 C 182 100, 298 70, 435 60 Z"
-                fill="none" stroke={SAND} strokeOpacity="0.12" strokeWidth="1" transform="translate(500 325) scale(1.04) translate(-500 -325)"
-              />
-              <path
-                d="M 435 60 C 528 45, 674 78, 752 142 C 810 194, 822 262, 818 330 C 814 402, 786 460, 746 502 C 700 550, 635 582, 555 596 C 476 610, 396 604, 320 582 C 232 558, 155 512, 110 458 C 62 400, 50 336, 56 278 C 62 218, 88 166, 132 136 C 182 100, 298 70, 435 60 Z"
-                fill="none" stroke={SAND} strokeOpacity="0.06" strokeWidth="1" transform="translate(500 325) scale(1.08) translate(-500 -325)"
-              />
+              {/* landmass, with two faint contour offsets */}
+              <path d={LAND_PATH} fill={LAND} stroke={INK} strokeWidth="1.4" />
+              <path d={LAND_PATH} fill="none" stroke={INK} strokeOpacity="0.28" strokeWidth="0.8" transform="translate(500 325) scale(1.035) translate(-500 -325)" />
+              <path d={LAND_PATH} fill="none" stroke={INK} strokeOpacity="0.14" strokeWidth="0.8" transform="translate(500 325) scale(1.07) translate(-500 -325)" />
 
-              {/* land patches and lakes from the admin map editor */}
+              {/* terrain from the admin editor */}
               {zones.filter(z => z.kind === 'land').map(z => (
-                <ellipse key={z.id} cx={z.cx} cy={z.cy} rx={z.rx} ry={z.ry} fill={ZONE_COLOR[z.colorKey]} fillOpacity="0.14" stroke={SAND} strokeOpacity="0.25" />
+                <ellipse key={z.id} cx={z.cx} cy={z.cy} rx={z.rx} ry={z.ry} fill={LAND} stroke={INK} strokeOpacity="0.5" />
               ))}
               {zones.filter(z => z.kind === 'lake').map(z => (
                 <g key={z.id}>
-                  <ellipse cx={z.cx} cy={z.cy} rx={z.rx} ry={z.ry} fill="#6fa3a8" fillOpacity="0.28" />
-                  {z.label && <text x={z.cx} y={z.cy + z.ry + 14} textAnchor="middle" fill="#6fa3a8" fontSize="9" className="f-pin__label">{z.label}</text>}
+                  <ellipse cx={z.cx} cy={z.cy} rx={z.rx} ry={z.ry} fill="url(#fHatch)" stroke={INK} strokeOpacity="0.4" />
+                  {z.label && <text x={z.cx} y={z.cy + z.ry + 14} textAnchor="middle" fill={INK} fillOpacity="0.6" fontSize="10" fontStyle="italic">{z.label}</text>}
                 </g>
               ))}
               {zones.filter(z => z.kind === 'mountain').map(z => (
-                <g key={z.id}>
-                  <polygon points={`${z.cx},${z.cy - z.ry} ${z.cx - z.rx},${z.cy + z.ry} ${z.cx + z.rx},${z.cy + z.ry}`} fill="#3a2519" stroke={SAND} strokeOpacity="0.3" />
-                  <polygon points={`${z.cx},${z.cy - z.ry} ${z.cx - z.rx * 0.35},${z.cy - z.ry * 0.3} ${z.cx + z.rx * 0.35},${z.cy - z.ry * 0.3}`} fill={SAND} fillOpacity="0.45" />
-                  {z.label && <text x={z.cx} y={z.cy + z.ry + 14} textAnchor="middle" fill={SAND} fillOpacity="0.6" fontSize="9" className="f-pin__label">{z.label}</text>}
+                <g key={z.id} fill="none" stroke={INK} strokeOpacity="0.6">
+                  <polygon points={`${z.cx},${z.cy - z.ry} ${z.cx - z.rx},${z.cy + z.ry} ${z.cx + z.rx},${z.cy + z.ry}`} />
+                  <line x1={z.cx} y1={z.cy - z.ry} x2={z.cx + z.rx * 0.35} y2={z.cy + z.ry * 0.4} />
+                  {z.label && <text x={z.cx} y={z.cy + z.ry + 14} textAnchor="middle" fill={INK} fillOpacity="0.6" stroke="none" fontSize="10" fontStyle="italic">{z.label}</text>}
                 </g>
               ))}
 
               {/* named regions */}
               {zones.filter(z => z.kind === 'zone').map(z => (
                 <g key={z.id}>
-                  <ellipse cx={z.cx} cy={z.cy} rx={z.rx} ry={z.ry} fill={ZONE_COLOR[z.colorKey]} fillOpacity="0.06" stroke={ZONE_COLOR[z.colorKey]} strokeOpacity="0.55" strokeWidth="1.4" strokeDasharray="7 5" />
-                  <text x={z.cx} y={z.cy + z.ry + 16} textAnchor="middle" fill={ZONE_COLOR[z.colorKey]} fontSize="10" className="f-pin__label">{z.label}</text>
+                  <ellipse cx={z.cx} cy={z.cy} rx={z.rx} ry={z.ry} fill="none" stroke={ACCENT} strokeOpacity="0.7" strokeWidth="1.2" strokeDasharray="6 4" />
+                  <text x={z.cx} y={z.cy - z.ry - 8} textAnchor="middle" fill={ACCENT} fontSize="11" className="f-map__text" letterSpacing="1">{z.label}</text>
                 </g>
               ))}
 
@@ -112,111 +101,91 @@ export default function TerritoryMap({ plates }: Props) {
               {paths.map(p => {
                 if (p.points.length < 2) return null;
                 const pts = p.points.map(([x, y]) => `${x},${y}`).join(' ');
-                const c = ZONE_COLOR[p.colorKey];
+                const river = p.kind === 'river';
                 return (
                   <g key={p.id} fill="none" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points={pts} stroke={c} strokeOpacity="0.2" strokeWidth="10" />
-                    <polyline points={pts} stroke={c} strokeOpacity="0.85" strokeWidth="2.5" strokeDasharray={p.kind === 'road' ? '6 6' : undefined} />
+                    {river && <polyline points={pts} stroke={WATER} strokeOpacity="0.35" strokeWidth="7" />}
+                    <polyline points={pts} stroke={river ? WATER : INK} strokeWidth={river ? 2 : 1.5} strokeDasharray={p.kind === 'road' ? '5 4' : p.kind === 'border' ? '2 3' : undefined} />
                   </g>
                 );
               })}
 
-              {/* mushroom isle + small rocks */}
-              <ellipse cx="872" cy="260" rx="56" ry="44" fill="#d0532f" fillOpacity="0.16" stroke="#d0532f" strokeOpacity="0.5" />
+              {/* mushroom isle and small rocks */}
+              <ellipse cx="872" cy="260" rx="56" ry="44" fill={LAND} stroke={INK} strokeWidth="1.2" />
               {[[856, 247], [878, 238], [894, 256], [864, 268], [886, 272]].map(([x, y], i) => (
-                <circle key={i} cx={x} cy={y} r="4.5" fill="#d0532f" fillOpacity="0.6" />
+                <circle key={i} cx={x} cy={y} r="4" fill="none" stroke={ACCENT} strokeWidth="1.2" />
               ))}
-              <ellipse cx="895" cy="490" rx="20" ry="14" fill="#3a2519" stroke={SAND} strokeOpacity="0.25" />
-              <ellipse cx="68"  cy="545" rx="24" ry="16" fill="#3a2519" stroke={SAND} strokeOpacity="0.25" />
-              <ellipse cx="780" cy="120" rx="16" ry="11" fill="#3a2519" stroke={SAND} strokeOpacity="0.25" />
+              <ellipse cx="895" cy="490" rx="20" ry="14" fill={LAND} stroke={INK} strokeOpacity="0.6" />
+              <ellipse cx="68"  cy="545" rx="24" ry="16" fill={LAND} stroke={INK} strokeOpacity="0.6" />
+              <ellipse cx="780" cy="120" rx="16" ry="11" fill={LAND} stroke={INK} strokeOpacity="0.6" />
 
               {/* pins */}
               {locations.map(loc => {
-                const t = TYPE[loc.type];
                 const active = loc.id === selected?.id;
                 return (
                   <g
                     key={loc.id}
-                    className={`f-pin${active ? ' is-active' : ''}`}
+                    className="f-pin"
                     onClick={() => setSelected(loc.id)}
                     role="button"
                     tabIndex={0}
-                    aria-label={`${loc.label}, ${t.label}`}
+                    aria-label={`${loc.label}, ${TYPE[loc.type]}`}
                     onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelected(loc.id); } }}
                   >
                     <circle className="f-pin__hit" cx={loc.x} cy={loc.y} r="26" />
-                    {active && <circle className="f-pin__ring" cx={loc.x} cy={loc.y} r="23" fill="none" stroke={t.color} strokeWidth="1.5" strokeDasharray="3 3" />}
+                    {active && <circle cx={loc.x} cy={loc.y} r="22" fill="none" stroke={ACCENT} strokeWidth="1" strokeDasharray="3 3" />}
                     <g className="f-pin__body">
-                      <circle cx={loc.x} cy={loc.y} r="14" fill={t.color} stroke={INK} strokeWidth="2" />
-                      <text x={loc.x} y={loc.y + 4.5} textAnchor="middle" fill={INK} fontSize="13" className="f-pin__label">{loc.id}</text>
+                      <circle cx={loc.x} cy={loc.y} r="13" fill={active ? ACCENT : INK} stroke={PAPER} strokeWidth="2" />
+                      <text x={loc.x} y={loc.y + 4.5} textAnchor="middle" fill={PAPER} fontSize="12" fontWeight="600" className="f-map__text">{loc.id}</text>
                     </g>
-                    {loc.type === 'underground' && (
-                      <line x1={loc.x} y1={loc.y + 16} x2={loc.x} y2={loc.y + 28} stroke={t.color} strokeWidth="1.5" strokeDasharray="2 2" />
-                    )}
-                    {loc.type === 'aerial' && (
-                      <ellipse cx={loc.x} cy={loc.y - 23} rx="5" ry="6" fill="none" stroke={t.color} strokeWidth="1.2" />
-                    )}
+                    {loc.type === 'underground' && <line x1={loc.x} y1={loc.y + 15} x2={loc.x} y2={loc.y + 27} stroke={INK} strokeWidth="1.5" strokeDasharray="2 2" />}
+                    {loc.type === 'aerial' && <circle cx={loc.x} cy={loc.y - 21} r="5" fill="none" stroke={INK} strokeWidth="1.2" />}
                   </g>
                 );
               })}
 
-              {/* compass */}
-              <g transform="translate(930 578)" stroke={SAND} strokeOpacity="0.7" fill="none">
-                <circle r="26" />
-                <line x1="0" y1="-20" x2="0" y2="20" />
-                <line x1="-20" y1="0" x2="20" y2="0" />
-                <polygon points="0,-24 5,-8 -5,-8" fill="#d0532f" stroke="none" />
-                <text y="-32" textAnchor="middle" fill={SAND} stroke="none" fontSize="11" className="f-pin__label">N</text>
+              {/* compass and title block */}
+              <g transform="translate(936 574)" fill="none" stroke={INK}>
+                <circle r="24" strokeOpacity="0.6" />
+                <line x1="0" y1="-18" x2="0" y2="18" strokeOpacity="0.6" />
+                <line x1="-18" y1="0" x2="18" y2="0" strokeOpacity="0.6" />
+                <polygon points="0,-22 4,-7 -4,-7" fill={ACCENT} stroke="none" />
+                <text y="-29" textAnchor="middle" fill={INK} stroke="none" fontSize="11" className="f-map__text">N</text>
               </g>
-
-              {/* title block */}
-              <text x="26" y="40" fill={SAND} fontSize="16" className="f-pin__label">JOÐ · SURVIVAL WORLD</text>
-              <text x="26" y="58" fill={SAND} fillOpacity="0.6" fontSize="10" className="f-pin__label">{locations.length} CLAIMS · SURVEYED 2024–{new Date().getFullYear().toString().slice(-2)}</text>
-              <rect x="10" y="10" width="980" height="630" fill="none" stroke={SAND} strokeOpacity="0.4" strokeWidth="1.5" />
+              <text x="24" y="38" fill={INK} fontSize="13" fontWeight="600" className="f-map__text">JOÐ · survival world</text>
+              <text x="24" y="56" fill={INK} fillOpacity="0.6" fontSize="10" className="f-map__text">{locations.length} claims · surveyed 2024–{String(new Date().getFullYear()).slice(-2)}</text>
+              <rect x="8" y="8" width="984" height="634" fill="none" stroke={INK} strokeWidth="1.2" />
             </svg>
           </div>
 
-          <aside className="f-map__side">
-            {selected && (
-              <div className="f-map__detail" aria-live="polite">
-                {plate && (
-                  <div className="f-map__detail-img">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={plate.src} alt={plate.title} loading="lazy" />
-                  </div>
-                )}
-                <div className="f-map__detail-body">
-                  <div className="f-map__detail-kicker f-label">
-                    <span>Claim {String(selected.id).padStart(2, '0')}</span>
-                    <span style={{ color: TYPE[selected.type].color }}>{TYPE[selected.type].label}</span>
-                  </div>
-                  <div className="f-map__detail-title">{selected.label}</div>
-                  <div className="f-map__detail-sub">{selected.sublabel.toLowerCase().replace(/\s*·\s*/g, ', ')}</div>
-                </div>
-              </div>
-            )}
-
-            <ul className="f-map__list">
+          <div className="f-map__grid">
+            <ol className="f-loclist">
               {locations.map(loc => (
                 <li key={loc.id}>
-                  <button
-                    className={`f-map__item${loc.id === selected?.id ? ' is-active' : ''}`}
-                    onClick={() => setSelected(loc.id)}
-                  >
-                    <span className="f-map__item-no">{loc.id}</span>
-                    <span className="f-map__item-dot" style={{ background: TYPE[loc.type].color }} />
-                    <span className="f-map__item-label">{loc.label}</span>
+                  <button className={loc.id === selected?.id ? 'is-active' : ''} onClick={() => setSelected(loc.id)}>
+                    <span className="f-loclist__no">{loc.id}</span>
+                    <span className="f-loclist__label">{loc.label.toLowerCase().replace(/(^|\s)\S/g, s => s.toUpperCase())}</span>
+                    <span className="f-loclist__type">{TYPE[loc.type]}</span>
                   </button>
                 </li>
               ))}
-            </ul>
+            </ol>
 
-            <div className="f-map__legend f-label">
-              {(Object.keys(TYPE) as Array<keyof typeof TYPE>).map(k => (
-                <span key={k}><span className="f-map__item-dot" style={{ background: TYPE[k].color }} />{TYPE[k].label}</span>
-              ))}
-            </div>
-          </aside>
+            {selected && (
+              <figure className="f-figure" aria-live="polite">
+                {plate ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={plate.src} alt={plate.title} loading="lazy" />
+                ) : (
+                  <div style={{ aspectRatio: '16 / 10', border: '1px solid var(--rule)', borderRadius: 'var(--radius)', background: 'var(--paper-2)' }} />
+                )}
+                <figcaption>
+                  <div className="f-figure__title">{selected.id}. {selected.label.toLowerCase().replace(/(^|\s)\S/g, s => s.toUpperCase())}</div>
+                  <div className="f-figure__sub">{selected.sublabel.toLowerCase().replace(/\s*·\s*/g, ', ')} · {TYPE[selected.type]}</div>
+                </figcaption>
+              </figure>
+            )}
+          </div>
         </div>
       </div>
     </section>

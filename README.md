@@ -8,14 +8,14 @@ Built with Next.js 15, TypeScript and plain CSS. No UI framework on the public p
 
 ## The public site
 
-One page, read top to bottom, in a "territory at dusk" theme:
+One page, laid out like a printed field journal: warm paper, dark ink, one oxblood accent, a single serif family. Real screenshots are the only imagery.
 
-| Stop | What it shows |
+| Section | What it shows |
 |---|---|
-| Hero | A layered landscape. The sun is the server status: up when the server answers, a moon when it is down. |
-| Camp | Live status (pinged every minute) and the eight crew heads. Lit frames are the people on right now. |
-| Territory | The interactive world map. Pins and the location list select a claim, and the matching screenshot appears. Edited in the admin panel. |
-| Postcards | The screenshot gallery as a swipeable strip with a lightbox. Managed in the admin panel. |
+| Hero | The headline, a plain server-status sentence, the address, and a full-width screenshot. |
+| Camp | The eight crew heads. Faces in colour are on right now (pinged once a minute). |
+| Territory | The interactive survey map. Pins and the location list select a claim, and its screenshot appears. Edited in the admin panel. |
+| Postcards | The screenshot gallery: a grid on desktop, a swipe strip on phones, with a lightbox. Managed in the admin panel. |
 | Showdown | Quick Draw, a three-round reaction game. Best time is kept in the browser. |
 | Tallies | The player leaderboard: playtime, kills, deaths, crafted, distance walked. |
 | Provisions | The datapack ledger. |

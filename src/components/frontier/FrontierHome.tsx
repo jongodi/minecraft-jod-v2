@@ -4,7 +4,6 @@ import '@/app/frontier.css';
 import { useEffect, useState } from 'react';
 import type { GalleryPhoto } from '@/lib/gallery';
 import TrailNav from './TrailNav';
-import TrailMarker from './TrailMarker';
 import Hero from './Hero';
 import Camp from './Camp';
 import TerritoryMap from './TerritoryMap';
@@ -15,7 +14,7 @@ import Provisions from './Provisions';
 import RideIn from './RideIn';
 import Footer from './Footer';
 import { HOME_LINKS, PLATES, sentenceCase, titleCase, type Plate } from './data';
-import { useReveal, useScrollSpy, useServerStatus, useStats } from './hooks';
+import { useScrollSpy, useServerStatus, useStats } from './hooks';
 
 const SECTION_IDS = HOME_LINKS.map(l => l.id).filter((id): id is string => !!id);
 
@@ -36,12 +35,9 @@ export default function FrontierHome() {
       .catch(() => {});
   }, []);
 
-  useReveal([plates, stats.players.length]);
-
   return (
     <>
       <TrailNav links={HOME_LINKS} activeId={active} />
-      <TrailMarker links={HOME_LINKS} activeId={active} />
       <main>
         <Hero server={server} />
         <Camp server={server} />

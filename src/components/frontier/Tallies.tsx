@@ -32,54 +32,45 @@ export default function Tallies({ stats }: { stats: StatsState }) {
 
   return (
     <section id="tallies" className="f-section">
-      <div className="f-wrap">
+      <div className="f-wrap f-cols">
         <SectionHead
-          no="05"
           kicker="Tallies"
-          title="Who rode hardest"
-          lede="Read straight from the world's stats files. Playtime, mob kills, deaths, items crafted and distance on foot."
-        />
+          title="The leaderboard"
+          lede="Read from the world's own stats files: hours played, mobs killed, deaths, items crafted and distance on foot."
+        >
+          {stats.source && (
+            <p className="f-note">
+              {stats.source === 'live' ? `Live from the server${when ? `, read ${when}` : ''}.` :
+               stats.source === 'cached' ? `The server is down; these are from ${when ?? 'the last read'}.` :
+               'Stats are not available right now.'}
+            </p>
+          )}
+        </SectionHead>
 
-        <div className="f-reveal">
+        <div>
           <div className="f-tabs" role="tablist" aria-label="Statistic">
             {STAT_TABS.map(t => (
-              <button
-                key={t.id}
-                role="tab"
-                aria-selected={tab === t.id}
-                className={`f-tab f-label${tab === t.id ? ' is-active' : ''}`}
-                onClick={() => setTab(t.id)}
-              >
+              <button key={t.id} role="tab" aria-selected={tab === t.id} className={`f-tab${tab === t.id ? ' is-active' : ''}`} onClick={() => setTab(t.id)}>
                 {t.label}
               </button>
             ))}
           </div>
 
-          <div ref={board} className="f-board">
+          <div ref={board}>
             {rows.length === 0 ? (
-              <div className="f-board__empty">
-                {stats.source === null ? 'Fetching the tallies…' : 'No tallies yet. The stats come in once the server has been up.'}
-              </div>
+              <p className="f-empty">{stats.source === null ? 'Fetching the tallies…' : 'No tallies yet. They come in once the server has been up.'}</p>
             ) : rows.map((r, i) => (
-              <Link key={r.name} href={`/crew/${r.name}`} className={`f-row${i < 3 ? ` is-${i + 1}` : ''}`}>
+              <Link key={r.name} href={`/crew/${r.name}`} className={`f-row${i === 0 ? ' is-1' : ''}`}>
                 <span className="f-row__rank">{i + 1}</span>
                 <span className="f-row__head"><PlayerHead name={r.name} size={64} /></span>
                 <span className="f-row__name">{r.name}</span>
                 <span className="f-row__bar">
-                  <span className="f-row__fill" style={{ transform: `scaleX(${shown ? r.val / top : 0})`, transitionDelay: `${i * 60}ms` }} />
+                  <span className="f-row__fill" style={{ transform: `scaleX(${shown ? r.val / top : 0})`, transitionDelay: `${i * 50}ms` }} />
                 </span>
                 <span className="f-row__val">{meta.unit(r.val)}</span>
               </Link>
             ))}
           </div>
-
-          {stats.source && (
-            <p className="f-tally__meta">
-              {stats.source === 'live' ? `Live from the server${when ? `, read ${when}` : ''}.` :
-               stats.source === 'cached' ? `Server is down, showing the last read${when ? ` from ${when}` : ''}.` :
-               'Stats are not available right now.'}
-            </p>
-          )}
         </div>
       </div>
     </section>
