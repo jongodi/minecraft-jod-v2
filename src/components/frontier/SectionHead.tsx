@@ -1,15 +1,14 @@
-interface Props { kicker: string; title: string; lede?: string; children?: React.ReactNode }
+import { Divider } from './Ornaments';
 
-/** Left-column heading for a section; sticks on desktop while the
-    right column scrolls. Extra content (a status line, a legend)
-    can be passed as children. */
-export default function SectionHead({ kicker, title, lede, children }: Props) {
+interface Props { kicker: string; title: string; lede?: string }
+
+export default function SectionHead({ kicker, title, lede }: Props) {
   return (
-    <header className="f-cols__aside">
+    <header className="f-head">
       <p className="f-head__kicker">{kicker}</p>
       <h2 className="f-head__title">{title}</h2>
+      <Divider className="f-head__orn" />
       {lede && <p className="f-head__lede">{lede}</p>}
-      {children}
     </header>
   );
 }

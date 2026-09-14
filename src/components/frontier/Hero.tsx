@@ -1,5 +1,7 @@
 'use client';
 
+import Dust from './Dust';
+import { Corner, Divider, Lantern } from './Ornaments';
 import { SERVER_IP } from './data';
 import { useCopy, type ServerState } from './hooks';
 
@@ -7,40 +9,47 @@ export default function Hero({ server }: { server: ServerState }) {
   const [copied, copy] = useCopy(SERVER_IP);
   const { online, players } = server;
 
+  const status =
+    online === null ? 'Raising the camp…' :
+    online ? (players === 0 ? 'Camp is lit, nobody in yet' : `Camp is lit, ${players} riding`) :
+    'Camp is dark tonight';
+
   return (
     <section id="top" className="f-hero">
-      <div className="f-wrap">
-        <p className="f-hero__eyebrow">Private Minecraft survival server · Java Edition · since 2024</p>
-        <h1 className="f-hero__title"><em>JOÐ</em> is a survival world for eight friends.</h1>
-        <p className="f-hero__dek">
-          One map, no resets, running since the summer of 2024. We use our own datapacks and
-          resource pack. The whitelist is by invitation.
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img className="f-hero__bg" src="/screenshots/the-castle.webp" alt="" aria-hidden="true" fetchPriority="high" />
+      <div className="f-hero__shade" aria-hidden="true" />
+      <Dust />
+
+      <article className="f-poster">
+        <Corner className="f-corner f-corner--tl" />
+        <Corner className="f-corner f-corner--tr" />
+        <Corner className="f-corner f-corner--bl" />
+        <Corner className="f-corner f-corner--br" />
+
+        <p className="f-poster__est">Est. MMXXIV · Java Edition</p>
+        <h1 className="f-poster__mark">JOÐ</h1>
+        <p className="f-poster__line">A private survival world on the frontier</p>
+        <Divider className="f-poster__orn" />
+        <p className="f-poster__body">
+          Eight friends, one map, no resets since the summer of 2024. Our own datapacks and
+          resource pack. Whitelist by invitation.
         </p>
 
-        <div className="f-hero__meta">
-          <span>
-            <span className={`f-dot${online === null ? '' : online ? ' is-on' : ' is-off'}`} />
-            {online === null ? 'Checking the server…' :
-             online ? (players === 0 ? 'Server is up, nobody on yet' : `Server is up, ${players} playing`) :
-             'Server is down right now'}
-          </span>
-          <span className="f-hero__addr">
-            <code>{SERVER_IP}</code>
-            <button className={`f-btn f-btn--small${copied ? ' is-copied' : ''}`} onClick={copy}>
-              {copied ? 'Copied' : 'Copy address'}
-            </button>
-          </span>
-        </div>
+        <p className="f-poster__status">
+          <Lantern lit={!!online} />
+          <span>{status}</span>
+        </p>
 
-        <figure className="f-hero__photo">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/screenshots/the-castle.webp" alt="Goði Castle seen from the water, with hills behind it" fetchPriority="high" />
-          <figcaption className="f-cap">
-            <i>Goði Castle, in the far away lands.</i>
-            <span>Every picture on this page is a screenshot from the server.</span>
-          </figcaption>
-        </figure>
-      </div>
+        <div className="f-poster__addr">
+          <code>{SERVER_IP}</code>
+          <button className={`f-btn f-btn--small${copied ? ' is-copied' : ''}`} onClick={copy}>
+            {copied ? 'Copied' : 'Copy address'}
+          </button>
+        </div>
+      </article>
+
+      <a href="#camp" className="f-hero__scroll">Down the trail ↓</a>
     </section>
   );
 }

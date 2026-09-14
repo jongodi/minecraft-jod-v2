@@ -1,36 +1,40 @@
 import { DATAPACKS } from '@/data/datapacks';
 import SectionHead from './SectionHead';
+import { Divider } from './Ornaments';
 
 const CATEGORY: Record<string, string> = {
-  BUILD: 'building', COMBAT: 'combat', QOL: 'quality of life',
-  SOCIAL: 'social', STRUCTURE: 'structures', SURVIVAL: 'survival',
+  BUILD: 'Building', COMBAT: 'Combat', QOL: 'Quality of life',
+  SOCIAL: 'Social', STRUCTURE: 'Structures', SURVIVAL: 'Survival',
 };
 
 export default function Provisions() {
   const versions = Array.from(new Set(DATAPACKS.map(d => d.gameVersion))).sort();
   return (
-    <section id="provisions" className="f-section">
-      <div className="f-wrap f-cols">
+    <section id="provisions" className="f-band">
+      <div className="f-wrap f-band__inner">
         <SectionHead
-          kicker="Provisions"
-          title="What's loaded"
-          lede={`${DATAPACKS.length} datapacks run on the server. Nothing to install on your side; the resource pack is sent when you join.`}
-        >
-          <p className="f-note">Minecraft {versions.join(' and ')}, Java Edition.</p>
-        </SectionHead>
+          kicker="Chapter VI · Provisions"
+          title="The general store"
+          lede={`${DATAPACKS.length} datapacks run on the server. Nothing to install on your side; the resource pack is sent when you ride in.`}
+        />
 
-        <ol className="f-ledger">
-          {DATAPACKS.map((d, i) => (
-            <li key={d.id} className="f-ledger__row">
-              <span className="f-ledger__no">{String(i + 1).padStart(2, '0')}</span>
-              <span className="f-ledger__name">{d.name}</span>
-              <span className="f-ledger__desc">{d.description}</span>
-              <span className="f-ledger__meta">
-                {d.currentVersion ? `v${d.currentVersion} · ` : ''}{CATEGORY[d.category] ?? d.category.toLowerCase()}
-              </span>
-            </li>
-          ))}
-        </ol>
+        <div className="f-store">
+          <ol className="f-store__list" style={{ marginTop: 0 }}>
+            {DATAPACKS.map(d => (
+              <li key={d.id} className="f-store__row">
+                <div className="f-store__line">
+                  <span className="f-store__name">{d.name}</span>
+                  <span className="f-leader" style={{ borderColor: 'var(--ink-3)' }} />
+                  <span className="f-store__ver">{d.currentVersion ? `v${d.currentVersion}` : '—'}</span>
+                </div>
+                <div className="f-store__desc">{d.description}</div>
+                <div className="f-store__cat">{CATEGORY[d.category] ?? d.category}</div>
+              </li>
+            ))}
+          </ol>
+          <Divider className="f-head__orn" />
+          <p className="f-store__foot">Minecraft {versions.join(' and ')} · Java Edition</p>
+        </div>
       </div>
     </section>
   );

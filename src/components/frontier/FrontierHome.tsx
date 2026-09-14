@@ -37,6 +37,7 @@ export default function FrontierHome() {
 
   return (
     <>
+      <div className="f-grain" aria-hidden="true" />
       <TrailNav links={HOME_LINKS} activeId={active} />
       <main>
         <Hero server={server} />

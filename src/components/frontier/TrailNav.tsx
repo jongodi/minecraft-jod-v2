@@ -61,7 +61,7 @@ export default function TrailNav({ links, activeId }: Props) {
           <button className={`f-btn${copied ? ' is-copied' : ''}`} onClick={copy}>
             {copied ? 'Address copied' : `Copy ${SERVER_IP}`}
           </button>
-          <p className="f-small">Java Edition · whitelist by invitation</p>
+          <p className="f-note">Java Edition · whitelist by invitation</p>
         </div>
       </div>
     </>

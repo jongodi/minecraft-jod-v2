@@ -8,6 +8,7 @@ import type { FeedPost } from '@/app/api/crew/feed/route';
 import TrailNav from '@/components/frontier/TrailNav';
 import Footer from '@/components/frontier/Footer';
 import PlayerHead from '@/components/frontier/PlayerHead';
+import SectionHead from '@/components/frontier/SectionHead';
 import { PAGE_LINKS } from '@/components/frontier/data';
 
 interface CrewSummary {
@@ -30,16 +31,20 @@ export default function CrewPage() {
 
   return (
     <>
+      <div className="f-grain" aria-hidden="true" />
       <TrailNav links={PAGE_LINKS} />
-      <main className="f-page">
-        <div className="f-wrap">
-          <Link href="/" className="f-back">← Home</Link>
-          <h1 className="f-page__title">The crew</h1>
-          <p className="f-page__lede">
-            Everyone on the whitelist. Each page has a bio, stats read from the world, posts and screenshots.
-          </p>
+      <main className="f-band f-band--paper">
+        <div className="f-wrap f-page">
+          <Link href="/" className="f-back">← Back to the trail</Link>
+          <div style={{ marginTop: '1.5rem' }}>
+            <SectionHead
+              kicker="The crew"
+              title="Riders of the JOÐ"
+              lede="Everyone on the whitelist. Each page has a bio, tallies read from the world, posts and screenshots."
+            />
+          </div>
 
-          <div className="f-tabs" role="tablist" style={{ marginTop: '2rem' }}>
+          <div className="f-tabs" role="tablist">
             <button role="tab" aria-selected={tab === 'members'} className={`f-tab${tab === 'members' ? ' is-active' : ''}`} onClick={() => setTab('members')}>
               Members
             </button>
@@ -50,23 +55,24 @@ export default function CrewPage() {
 
           {tab === 'members' && (
             crew === null ? <p className="f-note">Loading the roster…</p> :
-            <ul className="f-members" style={{ marginTop: 0 }}>
-              {crew.map(m => (
+            <ol className="f-lrows f-members">
+              {crew.map((m, i) => (
                 <li key={m.username}>
-                  <Link href={`/crew/${m.username}`} className="f-member">
-                    <PlayerHead name={m.username} size={64} />
-                    <span style={{ minWidth: 0 }}>
-                      <span className="f-member__name">{m.username}</span>
-                      <span className={`f-member__bio${m.bio ? '' : ' is-empty'}`}>{m.bio || 'No bio yet'}</span>
+                  <Link href={`/crew/${m.username}`} className="f-lrow">
+                    <span className="f-lrow__rank">{i + 1}</span>
+                    <span className="f-lrow__head"><PlayerHead name={m.username} size={64} /></span>
+                    <span className="f-lrow__name" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 0 }}>
+                      <span>{m.username}</span>
+                      <span className={`f-lrow__sub${m.bio ? '' : ' is-empty'}`}>{m.bio || 'No bio yet'}</span>
                     </span>
-                    <span className="f-member__meta">
+                    <span className="f-lrow__meta">
                       {m.postCount} post{m.postCount === 1 ? '' : 's'}<br />
                       {m.photoCount} photo{m.photoCount === 1 ? '' : 's'}
                     </span>
                   </Link>
                 </li>
               ))}
-            </ul>
+            </ol>
           )}
 
           {tab === 'feed' && (
@@ -76,7 +82,7 @@ export default function CrewPage() {
               <ul className="f-feed">
                 {feed.map(post => (
                   <li key={post.id} className="f-post">
-                    <span className="f-row__head"><PlayerHead name={post.username} size={64} /></span>
+                    <span className="f-lrow__head"><PlayerHead name={post.username} size={64} /></span>
                     <div>
                       <div className="f-post__meta">
                         <Link href={`/crew/${post.username}`} className="f-post__who">{post.username}</Link>

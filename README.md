@@ -8,20 +8,20 @@ Built with Next.js 15, TypeScript and plain CSS. No UI framework on the public p
 
 ## The public site
 
-One page, laid out like a printed field journal: warm paper, dark ink, one oxblood accent, a single serif family. Real screenshots are the only imagery.
+One page, done as a frontier period piece: dark walnut and leather bands alternating with aged parchment, torn paper edges between them, film grain over everything, brass rules and engraved corner ornaments. Rye wood type for the big words, Playfair Display for titles, Lora to read.
 
-| Section | What it shows |
+| Chapter | What it shows |
 |---|---|
-| Hero | The headline, a plain server-status sentence, the address, and a full-width screenshot. |
-| Camp | The eight crew heads. Faces in colour are on right now (pinged once a minute). |
-| Territory | The interactive survey map. Pins and the location list select a claim, and its screenshot appears. Edited in the admin panel. |
-| Postcards | The screenshot gallery: a grid on desktop, a swipe strip on phones, with a lightbox. Managed in the admin panel. |
-| Showdown | Quick Draw, a three-round reaction game. Best time is kept in the browser. |
-| Tallies | The player leaderboard: playtime, kills, deaths, crafted, distance walked. |
-| Provisions | The datapack ledger. |
-| Ride in | The server address. |
+| Hero | A sepia screenshot with a slow drift and dust motes, behind a brass-framed poster: the wordmark, a lantern that only lights when the server is up, the address. |
+| Camp | A telegraph panel with the live status and the eight crew as tintype portraits; colour means riding now (pinged once a minute). |
+| Territory | The world map as a burnt-edged survey sheet with brass tacks; the rivers draw themselves as you arrive. Tack or name selects a claim and its photograph. Edited in the admin panel. |
+| Postcards | The screenshot gallery as tintypes that go from sepia to colour on hover; a grid on desktop, a swipe strip on phones, with a lightbox. Managed in the admin panel. |
+| Showdown | Quick Draw at high noon: three draws a game, a flash on the call, smoke and a bullet hole on the hit. Best time is kept in the browser. |
+| Tallies | The leaderboard as a wanted board: posters for the top three, a ledger for the rest. |
+| Provisions | The datapacks as a general-store price list. |
+| Ride in | The server address as a hot cattle brand; tap to copy. |
 
-`/crew` lists the crew, `/crew/<name>` is a member page with bio, stats, achievement badges, posts and screenshots. Members log in there with their crew token.
+`/crew` lists the crew, `/crew/<name>` is a member page with bio, stats, achievement stars, posts and screenshots. Members log in there with their crew token.
 
 Code lives in `src/components/frontier/`, styles in `src/app/frontier.css`, shared tokens in `src/app/globals.css`.
 

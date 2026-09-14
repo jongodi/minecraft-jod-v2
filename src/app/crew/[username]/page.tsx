@@ -10,6 +10,7 @@ import TrailNav from '@/components/frontier/TrailNav';
 import Footer from '@/components/frontier/Footer';
 import PlayerHead from '@/components/frontier/PlayerHead';
 import Lightbox from '@/components/frontier/Lightbox';
+import { Star } from '@/components/frontier/Ornaments';
 import { PAGE_LINKS, STAT_TABS } from '@/components/frontier/data';
 
 // ─── Badges: the highest earned tier per category ─────────────────────────────
@@ -238,9 +239,10 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
 
   return (
     <>
+      <div className="f-grain" aria-hidden="true" />
       <TrailNav links={PAGE_LINKS} />
-      <main className="f-page">
-        <div className="f-wrap">
+      <main className="f-band f-band--paper">
+        <div className="f-wrap f-page">
           <Link href="/crew" className="f-back">← All crew</Link>
 
           {notFound ? (
@@ -250,10 +252,13 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
           ) : (
             <>
               <section className="f-profile">
-                <PlayerHead name={profile.username} size={128} className="f-profile__head" />
+                <div className="f-profile__head"><PlayerHead name={profile.username} size={128} /></div>
                 <div>
                   <div className="f-profile__top">
-                    <h1 className="f-profile__name">{profile.username}</h1>
+                    <div>
+                      <div className="f-profile__wanted">Wanted · rider of the JOÐ</div>
+                      <h1 className="f-profile__name">{profile.username}</h1>
+                    </div>
                     {isOwner ? (
                       <button className="f-btn f-btn--ghost f-btn--small" onClick={logout}>Log out</button>
                     ) : (
@@ -298,7 +303,7 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
                       </dl>
                       {badges.length > 0 && (
                         <ul className="f-badges" aria-label="Achievements">
-                          {badges.map(b => <li key={b.id} className="f-badge">{b.label}</li>)}
+                          {badges.map(b => <li key={b.id} className="f-badge"><Star className="f-star" />{b.label}</li>)}
                         </ul>
                       )}
                       {statsMeta?.source === 'cached' && statsMeta.cachedAt && (
@@ -387,8 +392,10 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
                   <div className="f-shots">
                     {profile.photos.map((photo, idx) => (
                       <button key={photo.id} className="f-shot" onClick={() => setLightboxIdx(idx)} aria-label={photo.caption || `Screenshot ${idx + 1}`}>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={photo.filename} alt={photo.caption || ''} loading="lazy" />
+                        <span className="f-photo__frame" style={{ display: 'block' }}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={photo.filename} alt={photo.caption || ''} loading="lazy" style={{ width: '100%', aspectRatio: '4 / 3', objectFit: 'cover' }} />
+                        </span>
                         {photo.caption && <span className="f-shot__cap">{photo.caption}</span>}
                       </button>
                     ))}
