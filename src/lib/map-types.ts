@@ -25,7 +25,7 @@ export interface MapZone {
 export interface MapPath {
   id:       string;
   label:    string;
-  kind:     'Á' | 'road' | 'border';
+  kind:     'river' | 'road' | 'border';
   points:   [number, number][];
   colorKey: 'blue' | 'orange' | 'green' | 'purple';
 }
@@ -57,7 +57,7 @@ export const DEFAULT_ZONES: MapZone[] = [
 ];
 
 export const DEFAULT_PATHS: MapPath[] = [
-  { id: 'river-main', label: 'Á', kind: 'Á', colorKey: 'blue',
+  { id: 'river-main', label: 'Á', kind: 'river', colorKey: 'blue',
     points: [[520, 390], [512, 418], [528, 452], [516, 488], [505, 522], [514, 562]] },
 ];
 

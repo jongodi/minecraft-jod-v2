@@ -47,7 +47,8 @@ export const PLATES: Plate[] = [
 
 /* Gallery titles are stored in caps by the admin panel; show them as names. */
 export function titleCase(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1);
+  const t = s === s.toLocaleUpperCase('is-IS') ? s.toLocaleLowerCase('is-IS') : s;
+  return t.charAt(0).toLocaleUpperCase('is-IS') + t.slice(1);
 }
 export function sentenceCase(s: string): string {
   const t = s.toLowerCase().replace(/\s*·\s*/g, ', ');
