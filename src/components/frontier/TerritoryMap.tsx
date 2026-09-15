@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { motion, useMotionValue, useReducedMotion, animate } from 'framer-motion';
+import type { MotionValue } from 'framer-motion';
 import type { MapLocation, MapZone, MapPath } from '@/lib/map-types';
 import { DEFAULT_LOCATIONS, DEFAULT_ZONES, DEFAULT_PATHS } from '@/lib/map-types';
 import { Arrow, Stamp, Tape } from './Bits';
@@ -22,6 +23,13 @@ const WAX    = '#9b3b2a';
 const LAND_PATH = 'M 435 60 C 528 45, 674 78, 752 142 C 810 194, 822 262, 818 330 C 814 402, 786 460, 746 502 C 700 550, 635 582, 555 596 C 476 610, 396 604, 320 582 C 232 558, 155 512, 110 458 C 62 400, 50 336, 56 278 C 62 218, 88 166, 132 136 C 182 100, 298 70, 435 60 Z';
 const VB_W = 1000, VB_H = 650;
 const MIN_Z = 1, MAX_Z = 3.2;
+
+/* framer-motion 11 types animate() for numbers; drive the MotionValue from onUpdate.
+   The cast below is needed because animate()'s overloads can't express "Transition plus an
+   onUpdate callback" without widening to the full Transition union, whose `{ type: false }` /
+   string-`from` variants then fail assignability — the merged object is correct at runtime. */
+const spring = (mv: MotionValue<number>, to: number) =>
+  animate(mv.get(), to, { ...SPRING, onUpdate: (v: number) => mv.set(v) } as any);
 
 export default function TerritoryMap({ plates }: { plates: Plate[] }) {
   const [locations, setLocations] = useState<MapLocation[]>(DEFAULT_LOCATIONS);
@@ -45,7 +53,7 @@ export default function TerritoryMap({ plates }: { plates: Plate[] }) {
   const settle = () => {
     const { minX, minY } = limits();
     const tx = clamp(x.get(), minX, 0), ty = clamp(y.get(), minY, 0);
-    animate(x, tx, SPRING); animate(y, ty, SPRING);
+    spring(x, tx); spring(y, ty);
   };
 
   const onPointerDown = (e: React.PointerEvent) => {
@@ -97,11 +105,11 @@ export default function TerritoryMap({ plates }: { plates: Plate[] }) {
     const w = el.clientWidth, h = el.clientHeight;
     const s = 2;
     const cx = (loc.x / VB_W) * w * s, cy = (loc.y / VB_H) * h * s;
-    animate(z, s, SPRING);
-    animate(x, clamp(w / 2 - cx, w - w * s, 0), SPRING);
-    animate(y, clamp(h / 2 - cy, h - h * s, 0), SPRING);
+    spring(z, s);
+    spring(x, clamp(w / 2 - cx, w - w * s, 0));
+    spring(y, clamp(h / 2 - cy, h - h * s, 0));
   };
-  const resetView = () => { animate(z, 1, SPRING); animate(x, 0, SPRING); animate(y, 0, SPRING); };
+  const resetView = () => { spring(z, 1); spring(x, 0); spring(y, 0); };
 
   useEffect(() => {
     const el = sheet.current;
