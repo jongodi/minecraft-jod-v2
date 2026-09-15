@@ -421,16 +421,20 @@
 @media (min-width: 1000px) { .j-map { grid-template-columns: minmax(0, 8fr) minmax(15rem, 4fr); gap: 3rem; align-items: start; } }
 .j-map__wrap { position: relative; padding-bottom: 3rem; }
 @media (min-width: 720px) { .j-map__wrap { padding-bottom: 0; } }
-.j-map__sheet { transform: rotate(-1.2deg); filter: drop-shadow(0 12px 22px rgba(43, 29, 18, 0.35)); }
-.j-map__sheet svg { width: 100%; height: auto; display: block; }
+.j-map__sheet { position: relative; overflow: clip; transform: rotate(-1.2deg); filter: drop-shadow(0 12px 22px rgba(43, 29, 18, 0.35)); cursor: grab; touch-action: none; border-radius: 2px; }
+.j-map__sheet:active { cursor: grabbing; }
+.j-map__view { will-change: transform; }
+.j-map__view svg { width: 100%; height: auto; display: block; }
+.j-map__reset { position: absolute; right: 0.8rem; bottom: 0.8rem; z-index: 4; cursor: pointer; }
 .j-map__label { position: absolute; top: -1.4rem; left: -0.6rem; z-index: 3; }
 .j-map__print { position: relative; margin: -2rem auto 0; width: min(100%, 22rem); z-index: 3; }
 @media (min-width: 720px) { .j-map__print { position: absolute; right: -1.5rem; bottom: -2.5rem; width: 16rem; margin: 0; } }
 @media (min-width: 1000px) { .j-map__print { right: -2.5rem; bottom: -3rem; width: 17rem; } }
 .j-pin-map { cursor: pointer; }
 .j-pin-map__hit { fill: transparent; }
-.j-pin-map__body { transition: transform 0.15s ease; transform-box: fill-box; transform-origin: center; }
-.j-pin-map:hover .j-pin-map__body { transform: scale(1.15); }
+.j-pin-map__body { transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1); transform-box: fill-box; transform-origin: center bottom; }
+.j-pin-map:hover .j-pin-map__body { transform: translateY(-2px) scale(1.15); }
+.j-pin-map:active .j-pin-map__body { transform: scale(1.05); }
 .j-trail { stroke-dasharray: 1400; stroke-dashoffset: 1400; }
 .is-surveyed .j-trail { animation: j-draw 2.4s ease-out forwards; }
 @keyframes j-draw { to { stroke-dashoffset: 0; } }
