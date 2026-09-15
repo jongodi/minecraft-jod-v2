@@ -1,10 +1,10 @@
 /* ═══════════════════════════════════════════════════════════════
    JOÐ — the trail journal
    One long sheet of aged paper. Photographs are taped on at an
-   angle, the telegram is pinned, the address is a rubber stamp,
-   notes are handwritten in the margins, and a dashed trail draws
-   itself down the page as you scroll. Nothing is centred by
-   default; things sit where a hand would put them.
+   angle, the telegram is pinned, the address is a rubber stamp and
+   notes are handwritten in the margins. Nothing is centred by
+   default; things sit where a hand would put them. The paper itself
+   stays quiet: no props that don't carry information.
    ═══════════════════════════════════════════════════════════════ */
 
 /* ─── the desk and the sheet ─────────────────────────────────── */
@@ -51,68 +51,15 @@
       linear-gradient(#000, #000) 24px 0 / calc(100% - 48px) 100% no-repeat;
   }
 }
-/* fold line down the middle of the sheet */
-.j::after {
-  content: '';
-  position: absolute;
-  top: 0; bottom: 0;
-  left: 50%;
-  width: 6px;
-  margin-left: -3px;
-  background: linear-gradient(90deg, transparent, rgba(43, 29, 18, 0.05) 45%, rgba(255, 250, 235, 0.35) 52%, transparent);
-  pointer-events: none;
-  z-index: 0;
-}
 .j-grain {
   position: fixed;
   inset: 0;
   z-index: 90;
   pointer-events: none;
-  opacity: 0.22;
+  opacity: 0.16;
   mix-blend-mode: multiply;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.42 0 0 0 0 0.30 0 0 0 0 0.16 0 0 0 0.5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   background-size: 240px 240px;
-}
-.j-lantern {
-  position: fixed;
-  top: 0; left: 0;
-  width: 1200px; height: 1200px;
-  z-index: 30;
-  pointer-events: none;
-  background: radial-gradient(circle, rgba(255, 196, 110, 0.16), rgba(255, 170, 80, 0.06) 35%, transparent 62%);
-  mix-blend-mode: soft-light;
-  will-change: transform;
-}
-.j-motes { position: fixed; inset: 0; z-index: 29; pointer-events: none; opacity: 0.9; }
-@media (pointer: coarse) { .j-lantern { display: none; } }
-/* coffee ring */
-.j-ring {
-  position: absolute;
-  width: 11rem;
-  height: 11rem;
-  border-radius: 50%;
-  border: 7px solid rgba(110, 70, 25, 0.13);
-  box-shadow: inset 0 0 0 2px rgba(110, 70, 25, 0.06), 0 0 0 1px rgba(110, 70, 25, 0.05);
-  filter: blur(0.4px);
-  pointer-events: none;
-  mix-blend-mode: multiply;
-}
-@media (max-width: 899px) { .j-ring { right: 0 !important; } }
-.j-trailline {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 0;
-}
-.j-trailline path {
-  fill: none;
-  stroke: var(--ink-soft);
-  stroke-width: 2.5;
-  stroke-linecap: round;
-  stroke-dasharray: 0.012 0.008;
-  opacity: 0.55;
 }
 .j-wrap { position: relative; z-index: 1; width: 100%; max-width: 1200px; margin-inline: auto; padding-inline: clamp(1.25rem, 5vw, 3rem); }
 .j-sec { position: relative; padding-block: clamp(3.5rem, 8vw, 6.5rem); }
@@ -163,7 +110,7 @@
   text-transform: uppercase;
   color: var(--rust);
   border: 3px double var(--rust);
-  border-radius: 4px;
+  border-radius: 3px;
   transform: rotate(var(--r, -5deg));
   mix-blend-mode: multiply;
   opacity: 0.88;
@@ -312,6 +259,7 @@
   pointer-events: none;
 }
 .j-pan__cap { position: absolute; right: clamp(1.25rem, 5vw, 3rem); bottom: 1.6rem; font-size: 1.15rem; color: var(--cream); text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7); max-width: 40ch; text-align: right; }
+@media (max-width: 899px) { .j-pan__cap { bottom: auto; top: 4.5rem; max-width: 24ch; font-size: 1.05rem; } }
 
 .j-hero__grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2rem; align-items: start; margin-top: -4.5rem; }
 .j-hero__grid > * { min-width: 0; }
@@ -325,22 +273,20 @@
 }
 .j-hero__mark span {
   display: inline-block;
-  background: linear-gradient(180deg, #5a3d28 0%, #2b1d12 38%, #2b1d12 62%, #1a1008 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  filter: drop-shadow(2px 2px 0 var(--paper-2)) drop-shadow(5px 6px 0 rgba(43, 29, 18, 0.22));
+  color: var(--ink);
+  text-shadow: 2px 2px 0 var(--paper-2), 6px 7px 0 rgba(43, 29, 18, 0.18);
 }
 .j-hero__sub { margin-top: 0.4rem; }
 .j-hero__body { margin-top: 1.4rem; max-width: 42ch; font-size: 1.1rem; line-height: 1.6; }
 .j-hero__meta { margin-top: 1.5rem; display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 1.5rem; }
 .j-hero__scroll { margin-top: 2.5rem; display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; }
 .j-hero__side { display: flex; flex-direction: column; align-items: flex-end; gap: 1.75rem; }
+@media (min-width: 900px) { .j-hero__side { padding-top: 8.5rem; } }
 @media (max-width: 899px) { .j-hero__side { align-items: flex-start; } }
 
 .j-sign { display: none; }
 @media (min-width: 900px) {
-  .j-sign:not(.j-sign--fixed) { display: block; position: relative; width: 13rem; padding-left: 1.4rem; }
+  .j-sign { display: block; position: relative; width: 13rem; padding-left: 1.4rem; }
   .j-sign__pole { position: absolute; left: 0.55rem; top: -1rem; bottom: -1rem; width: 0.9rem; background: linear-gradient(90deg, #4a321f, #7a5636 45%, #4a321f); border-radius: 3px; box-shadow: 2px 0 3px rgba(0, 0, 0, 0.5); }
   .j-sign__plank {
     position: relative; display: block; margin: 0.45rem 0; padding: 0.45rem 1.4rem 0.45rem 0.9rem;
@@ -355,14 +301,6 @@
   .j-sign__plank:hover { transform: rotate(var(--r, 0deg)) translateX(4px); background: linear-gradient(180deg, #8f6a44, #6b4a2d); }
   .j-sign__plank:active { transform: rotate(var(--r, 0deg)) translateX(2px) scale(0.98); }
   .j-sign__plank.is-active { background: linear-gradient(180deg, #a5442e, #7a2e1f); }
-}
-@media (min-width: 1180px) {
-  .j-sign--fixed {
-    display: block; position: fixed; right: clamp(1rem, 3vw, 2.5rem); top: 50%; z-index: 38; width: 13rem; padding-left: 1.4rem;
-    opacity: 0; visibility: hidden; transform: translateY(-50%) translateX(1.5rem); pointer-events: none;
-    transition: opacity 0.3s cubic-bezier(.2, .8, .2, 1), transform 0.3s cubic-bezier(.2, .8, .2, 1), visibility 0s linear 0.3s;
-  }
-  .j-sign--fixed.is-shown { opacity: 1; visibility: visible; transform: translateY(-50%); pointer-events: auto; transition: opacity 0.3s cubic-bezier(.2, .8, .2, 1), transform 0.3s cubic-bezier(.2, .8, .2, 1), visibility 0s; }
 }
 
 .j-print {
@@ -428,8 +366,7 @@
 /* ─── territory: the survey sheet ────────────────────────────── */
 .j-map { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2rem; }
 @media (min-width: 1000px) { .j-map { grid-template-columns: minmax(0, 8fr) minmax(15rem, 4fr); gap: 3rem; align-items: start; } }
-.j-map__wrap { position: relative; padding-bottom: 3rem; }
-@media (min-width: 720px) { .j-map__wrap { padding-bottom: 0; } }
+.j-map__wrap { position: relative; }
 .j-map__sheet { position: relative; overflow: clip; transform: rotate(-1.2deg); filter: drop-shadow(0 12px 22px rgba(43, 29, 18, 0.35)); cursor: grab; touch-action: none; border-radius: 2px; }
 .j-map__sheet:active { cursor: grabbing; }
 @media (max-width: 1199px), (pointer: coarse) { .j-map__sheet { touch-action: pan-y; } }
@@ -440,7 +377,7 @@
 .j-map__zoom { position: absolute; left: 0.8rem; bottom: 0.8rem; z-index: 4; display: flex; gap: 0.3rem; }
 .j-map__zoom button { width: 2rem; height: 2rem; border: 1px solid var(--ink-faint); border-radius: 3px; background: var(--cream); font-family: var(--font-wood); }
 .j-map__label { position: absolute; top: -1.4rem; left: -0.6rem; z-index: 3; }
-.j-map__print { position: relative; margin: -2rem auto 0; width: min(100%, 22rem); z-index: 3; }
+.j-map__print { position: relative; margin: 1.25rem auto 0; width: min(100%, 22rem); z-index: 3; }
 @media (min-width: 720px) { .j-map__print { position: absolute; right: -1.5rem; bottom: -2.5rem; width: 16rem; margin: 0; } }
 @media (min-width: 1000px) { .j-map__print { right: -2.5rem; bottom: -3rem; width: 17rem; } }
 .j-pin-map { cursor: pointer; }
@@ -467,7 +404,7 @@
 
 /* ─── postcards: the album page ──────────────────────────────── */
 .j-album__head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 1rem 2rem; margin-bottom: 2.5rem; }
-.j-album { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem 1rem; }
+.j-album { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-flow: dense; gap: 1.5rem 1rem; }
 @media (min-width: 720px) { .j-album { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2.25rem 1.5rem; } }
 .j-polaroid {
   position: relative;
@@ -511,28 +448,8 @@
   background:
     radial-gradient(60% 80% at 20% 20%, rgba(120, 80, 45, 0.35), transparent 60%),
     linear-gradient(180deg, #3a2718, #22160e);
-  box-shadow: inset 0 0 0 10px var(--leather-2), inset 0 0 0 12px rgba(184, 146, 62, 0.35);
+  box-shadow: inset 0 0 0 1px rgba(184, 146, 62, 0.45), inset 0 0 0 8px var(--leather-2);
   overflow: hidden;
-}
-.j-noon::before {
-  content: '';
-  position: absolute;
-  inset: 20px;
-  border: 2px dashed rgba(239, 227, 198, 0.35);
-  border-radius: 4px;
-  pointer-events: none;
-}
-.j-noon__word {
-  position: absolute;
-  left: -0.05em;
-  top: 0.1em;
-  font-family: var(--font-wood);
-  font-size: clamp(6rem, 22vw, 20rem);
-  line-height: 0.85;
-  color: rgba(239, 227, 198, 0.05);
-  white-space: nowrap;
-  pointer-events: none;
-  user-select: none;
 }
 .j-noon__head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 1rem 2rem; margin-bottom: 2rem; }
 .j-noon__head .j-note { color: var(--paper-2); }
@@ -677,7 +594,8 @@
 .j-ledger__head img { width: 100%; height: 100%; image-rendering: pixelated; object-fit: cover; }
 .j-ledger__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .j-ledger__val { font-variant-numeric: tabular-nums; white-space: nowrap; }
-.j-empty { padding: 1.5rem 0; font-family: var(--font-hand); font-size: 1.4rem; color: var(--ink-faint); text-align: center; }
+.j-empty { padding: 1rem 0; font-family: var(--font-hand); font-size: 1.4rem; color: var(--ink-faint); }
+.j-board .j-empty { text-align: center; padding-block: 1.5rem; }
 .j-board .j-empty, .j-noon .j-empty { color: var(--paper-2); }
 .j-foot-note { margin-top: 1.25rem; font-family: var(--font-hand); font-size: 1.2rem; color: var(--paper-2); }
 
@@ -739,9 +657,10 @@
 .j-page__title { font-family: var(--font-wood); font-size: clamp(2.4rem, 7vw, 4.5rem); line-height: 1; letter-spacing: -0.015em; }
 .j-rollcall { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2.25rem 1rem; }
 @media (min-width: 640px) { .j-rollcall { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2.5rem 1.5rem; } }
-.j-poster--crew { padding-top: 1.6rem; }
-.j-poster--crew .j-poster__img { width: min(100%, 8rem); }
-.j-poster__meta { margin-top: 0.6rem; font-variant: small-caps; letter-spacing: 0.14em; font-weight: 600; font-size: 0.72rem; color: var(--ink-faint); }
+.j-poster--crew { padding-top: 1.9rem; }
+.j-poster--crew .j-poster__img { margin-top: 0; width: min(100%, 8rem); }
+.j-poster--crew .j-poster__name { margin-top: 0.9rem; }
+.j-poster__meta { margin-top: 0.5rem; font-family: var(--font-hand); font-size: 1.05rem; color: var(--ink-faint); }
 .j-poster__note { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .j-feed { max-width: 44rem; margin-inline: auto; list-style: none; }
 .j-post { display: grid; grid-template-columns: 2.2rem minmax(0, 1fr); gap: 0.9rem; padding: 1rem 0; border-bottom: 1px dashed var(--ink-faint); }

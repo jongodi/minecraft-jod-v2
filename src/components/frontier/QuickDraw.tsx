@@ -106,7 +106,6 @@ export default function QuickDraw() {
 
   return (
     <section id="showdown" className="j-sec j-noon">
-      <span className="j-noon__word" aria-hidden="true">EINVÍGI</span>
       <div className="j-wrap">
         <div className="j-noon__head">
           <div>
