@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from 'react';
 import type { CSSProperties } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import Lightbox from './Lightbox';
 import { Arrow, Stamp, Tape } from './Bits';
 import type { Plate } from './data';
@@ -11,6 +12,7 @@ const WIDE = new Set([0, 5]);
 
 export default function Postcards({ plates }: { plates: Plate[] }) {
   const [open, setOpen] = useState<number | null>(null);
+  const [origin, setOrigin] = useState<DOMRect | null>(null);
   const prev  = useCallback(() => setOpen(i => (i === null ? null : (i - 1 + plates.length) % plates.length)), [plates.length]);
   const next  = useCallback(() => setOpen(i => (i === null ? null : (i + 1) % plates.length)), [plates.length]);
   const close = useCallback(() => setOpen(null), []);
@@ -33,7 +35,7 @@ export default function Postcards({ plates }: { plates: Plate[] }) {
               key={p.id}
               className={`j-polaroid${WIDE.has(i) ? ' j-polaroid--wide' : ''}`}
               style={{ '--r': `${TILT[i % TILT.length]}deg` } as CSSProperties}
-              onClick={() => setOpen(i)}
+              onClick={e => { setOrigin(e.currentTarget.getBoundingClientRect()); setOpen(i); }}
               aria-label={`Opna mynd: ${p.title}`}
             >
               <Tape at="top" r={i % 2 ? 3 : -3} />
@@ -46,15 +48,19 @@ export default function Postcards({ plates }: { plates: Plate[] }) {
         </div>
       </div>
 
-      {open !== null && (
-        <Lightbox
-          photos={plates.map(p => ({ src: p.src, title: p.title, sub: p.sub }))}
-          index={open}
-          onClose={close}
-          onPrev={prev}
-          onNext={next}
-        />
-      )}
+      <AnimatePresence>
+        {open !== null && (
+          <Lightbox
+            key="lb"
+            photos={plates.map(p => ({ src: p.src, title: p.title, sub: p.sub }))}
+            index={open}
+            origin={origin}
+            onClose={close}
+            onPrev={prev}
+            onNext={next}
+          />
+        )}
+      </AnimatePresence>
     </section>
   );
 }

@@ -467,6 +467,7 @@
   text-align: left;
   min-width: 0;
 }
+.j-polaroid:active { transform: rotate(var(--r, 0deg)) scale(0.985); transition-duration: 0.08s; }
 .j-polaroid:hover, .j-polaroid:focus-visible { transform: rotate(0deg) scale(1.03); box-shadow: 0 16px 30px rgba(43, 29, 18, 0.3); z-index: 2; }
 .j-polaroid img { width: 100%; aspect-ratio: 1; object-fit: cover; filter: sepia(0.65) contrast(0.95) brightness(0.9); transition: filter 0.45s ease; background: var(--paper-2); }
 .j-polaroid--wide { grid-column: span 2; }
@@ -478,14 +479,17 @@
 
 /* ─── lightbox ───────────────────────────────────────────────── */
 .j-lb { position: fixed; inset: 0; z-index: 60; background: rgba(23, 17, 12, 0.94); color: var(--paper); display: grid; grid-template-rows: 1fr auto; padding: 3.5rem 1rem 1.25rem; }
-.j-lb__img { min-height: 0; display: grid; place-items: center; }
-.j-lb__img img { max-width: 100%; max-height: 100%; object-fit: contain; border: 8px solid var(--cream); border-bottom-width: 2.2rem; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5); }
+.j-lb__img { min-height: 0; display: grid; place-items: center; overflow: hidden; }
+.j-lb__card { max-width: min(90vw, 1100px); max-height: 100%; cursor: grab; touch-action: none; will-change: transform; }
+.j-lb__card:active { cursor: grabbing; }
+.j-lb__card img { max-width: 100%; max-height: calc(100vh - 9rem); object-fit: contain; border: 8px solid var(--cream); border-bottom-width: 2.2rem; box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6); user-select: none; -webkit-user-drag: none; }
 .j-lb__bar { display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem; margin-top: 1rem; }
 .j-lb__cap { font-family: var(--font-hand); font-size: 1.5rem; }
 .j-lb__cap small { display: block; font-family: var(--font-text); font-style: italic; font-size: 0.9rem; color: var(--paper-2); }
 .j-lb__count { font-size: 0.9rem; color: var(--paper-2); font-variant-numeric: tabular-nums; }
 .j-arrowbtn { width: 2.5rem; height: 2.5rem; border: 1px solid currentColor; border-radius: 3px; display: inline-flex; align-items: center; justify-content: center; opacity: 0.8; }
 .j-arrowbtn:hover { opacity: 1; }
+.j-arrowbtn:active { transform: scale(0.94); }
 .j-lb__close { position: absolute; top: 0.75rem; right: 1rem; width: 2.5rem; height: 2.5rem; border: 1px solid var(--paper-2); border-radius: 3px; color: var(--paper); }
 
 /* ─── showdown: the leather patch ────────────────────────────── */
