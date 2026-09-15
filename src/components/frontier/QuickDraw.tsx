@@ -88,7 +88,7 @@ export default function QuickDraw() {
   const last       = shots[shots.length - 1];
   const lastIsHit  = phase === 'result' && typeof last === 'number';
   const lastIsFoul = phase === 'result' && last === null;
-  const arenaCls   = ['j-arena', `is-${phase}`, lastIsFoul ? 'is-foul' : ''].filter(Boolean).join(' ');
+  const arenaCls   = ['j-arena', `is-${phase}`, lastIsHit ? 'is-hit' : '', lastIsFoul ? 'is-foul' : ''].filter(Boolean).join(' ');
 
   useEffect(() => {
     if (lastIsHit && !reduce) kick.start({ x: [0, -6, 5, -3, 0], y: [0, 3, -2, 1, 0], transition: { type: 'spring', bounce: 0.35, duration: 0.45 } });
