@@ -423,6 +423,7 @@
 @media (min-width: 720px) { .j-map__wrap { padding-bottom: 0; } }
 .j-map__sheet { position: relative; overflow: clip; transform: rotate(-1.2deg); filter: drop-shadow(0 12px 22px rgba(43, 29, 18, 0.35)); cursor: grab; touch-action: none; border-radius: 2px; }
 .j-map__sheet:active { cursor: grabbing; }
+@media (max-width: 899px) { .j-map__sheet { touch-action: pan-y; } }
 .j-map__view { will-change: transform; }
 .j-map__view svg { width: 100%; height: auto; display: block; }
 .j-map__reset { position: absolute; top: 0.8rem; right: 0.8rem; z-index: 4; cursor: pointer; }
