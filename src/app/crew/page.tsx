@@ -54,12 +54,17 @@ export default function CrewPage() {
             crew === null ? <p className="j-empty">sæki félagalistann…</p> :
             <div className="j-rollcall">
               {crew.map((m, i) => (
-                <Link key={m.username} href={`/crew/${m.username}`} className="j-peg" style={{ '--r': `${TILT[i % TILT.length]}deg` } as CSSProperties}>
-                  <span className="j-peg__clip" aria-hidden="true" />
-                  <span className="j-peg__frame"><PlayerHead name={m.username} size={128} /></span>
-                  <span className="j-peg__name">{m.username}</span>
-                  <span className="j-peg__meta">{m.bio || `Færslur: ${m.postCount} · Myndir: ${m.photoCount}`}</span>
-                </Link>
+                <div key={m.username} className="j-poster__slot">
+                  <Link href={`/crew/${m.username}`} className="j-poster j-poster--crew" style={{ '--r': `${TILT[i % TILT.length]}deg` } as CSSProperties}>
+                    <span className="j-nail" aria-hidden="true" />
+                    <div className="j-poster__wanted">Eftirlýst</div>
+                    <div className="j-poster__img"><PlayerHead name={m.username} size={128} /></div>
+                    <div className="j-poster__name">{m.username}</div>
+                    <div className="j-poster__reward">Síðast séð</div>
+                    <div className="j-poster__note">{m.bio || (m.lastPost ? `skrifaði ${formatAge(m.lastPost)}` : 'ekkert heyrst enn')}</div>
+                    <div className="j-poster__meta">Færslur: {m.postCount} · Myndir: {m.photoCount}</div>
+                  </Link>
+                </div>
               ))}
             </div>
           )}
@@ -68,16 +73,16 @@ export default function CrewPage() {
             feed.length === 0 ? (
               <p className="j-empty">engar færslur enn. Félagar geta skrifað færslur á eigin síðu</p>
             ) : (
-              <ul className="j-feed">
+              <ul className="j-tapefeed">
                 {feed.map(post => (
-                  <li key={post.id} className="j-post">
+                  <li key={post.id} className="j-tapefeed__strip">
                     <span className="j-ledger__head" style={{ width: '2.2rem', height: '2.2rem' }}><PlayerHead name={post.username} size={64} /></span>
-                    <div>
-                      <div className="j-post__meta">
+                    <div className="j-tapefeed__body">
+                      <div className="j-tapefeed__meta">
                         <Link href={`/crew/${post.username}`} className="j-post__who">{post.username}</Link>
                         <span>{formatAge(post.createdAt)}</span>
                       </div>
-                      <p className="j-post__text">{post.text}</p>
+                      <p className="j-tapefeed__text">{post.text}</p>
                     </div>
                   </li>
                 ))}
