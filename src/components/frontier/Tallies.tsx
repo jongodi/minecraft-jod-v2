@@ -47,7 +47,7 @@ export default function Tallies({ stats }: { stats: StatsState }) {
           <LayoutGroup>
             <div className="j-posters">
               {top.map((r, i) => (
-                <motion.div key={r.name} layout layoutId={`rank-${r.name}`} transition={SPRING} className="j-poster__slot">
+                <motion.div key={r.name} layout="position" layoutId={`rank-${r.name}`} transition={SPRING} className="j-poster__slot">
                   <Link href={`/crew/${r.name}`} className="j-poster" style={{ '--r': `${TILT[i]}deg` } as CSSProperties}>
                     <span className="j-nail" aria-hidden="true" />
                     <div className="j-poster__wanted">Eftirlýst</div>
@@ -65,7 +65,7 @@ export default function Tallies({ stats }: { stats: StatsState }) {
               <div className="j-ledger">
                 <p className="j-ledger__title">hin í bókinni: {meta.label.toLowerCase()}</p>
                 {rest.map((r, i) => (
-                  <motion.div key={r.name} layout layoutId={`rank-${r.name}`} transition={SPRING}>
+                  <motion.div key={r.name} layout="position" layoutId={`rank-${r.name}`} transition={SPRING}>
                     <Link href={`/crew/${r.name}`} className="j-ledger__row">
                       <span className="j-ledger__rank">{i + 4}.</span>
                       <span className="j-ledger__head"><PlayerHead name={r.name} size={64} /></span>
