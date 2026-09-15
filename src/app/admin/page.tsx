@@ -10,6 +10,7 @@ import type { RefreshResult } from '@/app/api/admin/datapacks/refresh/route';
 import type { GalleryPhoto } from '@/lib/gallery';
 import type { MapConfig, MapLocation } from '@/lib/map-types';
 import dynamic from 'next/dynamic';
+import GalleryUploader from '@/components/admin/GalleryUploader';
 
 const AdminMapEditor = dynamic(() => import('@/components/AdminMapEditor'), { ssr: false });
 
@@ -540,9 +541,7 @@ function GalleryManagerSection() {
   const [editSublabel,setEditSublabel]= useState('');
   const [editLocation,setEditLocation]= useState<number | null>(null);
   const [savingEdit,  setSavingEdit]  = useState(false);
-  const [uploading,   setUploading]   = useState(false);
   const [statusMsg,   setStatusMsg]   = useState('');
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchPhotos = useCallback(async () => {
     setLoading(true);
@@ -647,33 +646,11 @@ function GalleryManagerSection() {
     if (!res.ok) setStatusMsg('✗ Ekki tókst að vista röðina — reyndu aftur');
   }
 
-  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploading(true);
-    setStatusMsg('');
-    const fd = new FormData();
-    fd.append('file', file);
-    fd.append('title', file.name.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ').trim() || 'Ný mynd úr leiknum');
-    fd.append('sublabel', '');
-    try {
-      const res = await fetch('/api/admin/gallery/upload', { method: 'POST', body: fd });
-      if (res.ok) {
-        const p = await res.json() as AdminPhoto;
-        setPhotos(ps => [...ps, p]);
-        setStatusMsg('✓ Mynd hlaðið upp. Smelltu á „Breyta“ til að setja titil og tengja hana við pinna á kortinu.');
-        startEdit(p);
-      } else {
-        const err = await res.json() as { error: string };
-        setStatusMsg(`✗ ${err.error}`);
-      }
-    } catch {
-      setStatusMsg('✗ Upphleðsla mistókst');
-    } finally {
-      setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
-  }
+  const onUploaded = useCallback((p: AdminPhoto, first: boolean) => {
+    setPhotos(ps => (ps.some(x => x.id === p.id) ? ps : [...ps, p]));
+    setStatusMsg('✓ Mynd hlaðið upp. Smelltu á „Breyta“ til að setja titil og tengja hana við pinna á kortinu.');
+    if (first) startEdit(p);
+  }, []);
 
   const sorted = [...photos].sort((a, b) => a.order - b.order);
 
@@ -682,14 +659,8 @@ function GalleryManagerSection() {
       <SectionHeader label="MYNDASAFN" sub="Myndir" />
 
       {/* Upload */}
-      <div style={{ marginBottom: '1.5rem', display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
-        <input ref={fileInputRef} type="file" accept="image/*" onChange={handleUpload} style={{ display: 'none' }} id="gallery-upload" />
-        <label
-          htmlFor="gallery-upload"
-          style={{ fontFamily: mono, fontSize: '0.6rem', letterSpacing: '0.15em', textTransform: 'uppercase', padding: '0.5rem 1rem', cursor: uploading ? 'not-allowed' : 'pointer', border: `1px solid ${green}44`, color: green, background: green + '08' }}
-        >
-          {uploading ? 'HLEÐ UPP…' : '+ HLAÐA UPP MYND'}
-        </label>
+      <GalleryUploader onUploaded={onUploaded} />
+      <div style={{ marginBottom: '1.25rem', display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
         {statusMsg && <span style={{ fontFamily: mono, fontSize: '0.6rem', color: statusMsg.startsWith('✓') ? green : '#ff4466' }}>{statusMsg}</span>}
         <span style={{ fontFamily: mono, fontSize: '0.55rem', color: '#333', marginLeft: 'auto' }}>
           {photos.filter(p => p.active).length}/{photos.length} sýnilegar · {photos.filter(p => p.locationId !== null).length} á kortinu · dragðu til að breyta röðinni

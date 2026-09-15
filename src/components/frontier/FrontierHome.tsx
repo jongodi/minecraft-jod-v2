@@ -11,7 +11,6 @@ import Postcards from './Postcards';
 import QuickDraw from './QuickDraw';
 import Tallies from './Tallies';
 import Provisions from './Provisions';
-import RideIn from './RideIn';
 import Footer from './Footer';
 import { TrailLine } from './Bits';
 import { HOME_LINKS, PLATES, sentenceCase, titleCase, type Plate } from './data';
@@ -56,7 +55,6 @@ export default function FrontierHome() {
           <QuickDraw />
           <Tallies stats={stats} />
           <Provisions />
-          <RideIn />
         </main>
         <Footer />
       </div>

@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { readProfile, writeProfile, getCrewSession, type CrewPhoto } from '@/lib/crew';
-import { hasBlob } from '@/lib/gallery';
-import { promises as fs } from 'fs';
-import path from 'path';
+import { storeImage } from '@/lib/blob-store';
 import { randomUUID } from 'crypto';
 
 export async function POST(
@@ -24,25 +22,15 @@ export async function POST(
   if (!file.type.startsWith('image/'))  return NextResponse.json({ error: 'Aðeins myndir eru leyfðar.' }, { status: 400 });
   if (file.size > 10 * 1024 * 1024)    return NextResponse.json({ error: 'Hámark 10 MB.' }, { status: 400 });
 
-  const ext = file.name.split('.').pop()?.toLowerCase() ?? 'png';
+  const rawExt = file.name.split('.').pop()?.toLowerCase() ?? '';
+  const ext = /^(png|jpe?g|webp|gif|avif)$/.test(rawExt) ? rawExt : 'png';
   const id  = randomUUID();
   let fileUrl: string;
-
-  if (hasBlob()) {
-    const { put } = await import('@vercel/blob');
-    const blob = await put(
-      `crew/${username.toLowerCase()}/${id}.${ext}`,
-      file,
-      { access: 'public' }
-    );
-    fileUrl = blob.url;
-  } else {
-    // Filesystem fallback (local dev)
-    const filename = `crew-${username.toLowerCase()}-${id}.${ext}`;
-    const savePath = path.join(process.cwd(), 'public', 'screenshots', filename);
-    await fs.mkdir(path.dirname(savePath), { recursive: true });
-    await fs.writeFile(savePath, Buffer.from(await file.arrayBuffer()));
-    fileUrl = `/screenshots/${filename}`;
+  try {
+    fileUrl = await storeImage(`crew/${username.toLowerCase()}/${id}.${ext}`, file, file.type);
+  } catch (e) {
+    console.error('crew photo upload:', e);
+    return NextResponse.json({ error: e instanceof Error ? e.message : 'Upphleðsla mistókst.' }, { status: 500 });
   }
 
   const photo: CrewPhoto = {

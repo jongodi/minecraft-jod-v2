@@ -18,9 +18,7 @@ function hasKV(): boolean {
   return !!process.env.REDIS_URL;
 }
 
-export function hasBlob(): boolean {
-  return !!process.env.BLOB_READ_WRITE_TOKEN;
-}
+export { hasBlob } from './blob-store';
 
 function galleryPath(): string {
   if (process.env.VERCEL && !hasKV()) return '/tmp/jod-gallery.json';
@@ -81,4 +79,22 @@ export async function readGallery(): Promise<GalleryPhoto[]> {
   return (await readStoredGallery()).map(photo => ({
     ...photo, title: localizeContent(photo.title), sublabel: localizeContent(photo.sublabel),
   }));
+}
+
+/** Append a stored image to the gallery as a visible photo at the end of the order. */
+export async function addGalleryPhoto(input: { id: string; fileUrl: string; title: string; sublabel: string }): Promise<GalleryPhoto> {
+  const gallery  = await readStoredGallery();
+  const maxOrder = gallery.reduce((m, p) => Math.max(m, p.order), 0);
+  const photo: GalleryPhoto = {
+    id:       input.id,
+    filename: input.fileUrl,
+    title:    input.title.trim().slice(0, 100) || 'Ný mynd úr leiknum',
+    sublabel: input.sublabel.trim().slice(0, 100),
+    gradient: 'linear-gradient(160deg, #1a1a1a 0%, #2a2a2a 100%)',
+    active:   true,
+    order:    maxOrder + 1,
+  };
+  gallery.push(photo);
+  await writeGallery(gallery);
+  return photo;
 }

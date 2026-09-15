@@ -10,7 +10,8 @@ const nextConfig = {
       `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "img-src 'self' blob: data: https:",
-      "connect-src 'self'",
+      // The admin panel uploads photos straight to Vercel Blob from the browser
+      "connect-src 'self' https://vercel.com https://blob.vercel-storage.com https://*.blob.vercel-storage.com",
       "font-src 'self' https://fonts.gstatic.com",
       "frame-ancestors 'none'",
     ].join('; ');
