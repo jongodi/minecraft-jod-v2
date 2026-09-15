@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef } from 'react';
 import { SERVER_IP } from './data';
 import { useCopy } from './hooks';
 
@@ -7,6 +8,7 @@ import { useCopy } from './hooks';
     it and the address engraved on a brass plate riveted underneath. */
 export default function RideIn() {
   const [copied, copy] = useCopy(SERVER_IP);
+  const pressed = useRef(false);
   return (
     <section id="ride" className="j-sec">
       <div className="j-wrap" style={{ textAlign: 'center' }}>
@@ -28,7 +30,13 @@ export default function RideIn() {
             <span className="j-brandmark__text">JOÐ</span>
           </div>
 
-          <button className={`j-plate${copied ? ' is-copied' : ''}`} onPointerDown={copy} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); copy(); } }} aria-label="Afrita vistfang þjónsins">
+          <button
+            className={`j-plate${copied ? ' is-copied' : ''}`}
+            onPointerDown={e => { if (e.pointerType !== 'touch' && e.button === 0) { pressed.current = true; copy(); } }}
+            onClick={() => { if (!pressed.current) copy(); pressed.current = false; }}
+            onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); copy(); } }}
+            aria-label="Afrita vistfang þjónsins"
+          >
             <span className="j-plate__addr">{copied ? 'vistfang afritað' : SERVER_IP}</span>
             <span className="j-plate__hint">{copied ? 'límdu það nú inn í leikinn' : 'smelltu á plötuna til að afrita'}</span>
           </button>
