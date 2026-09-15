@@ -16,6 +16,9 @@ const browser = await chromium.launch({ executablePath: EXE });
 for (const [w, h] of SIZES) {
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 1 });
   const page = await ctx.newPage();
+  if (process.env.REDUCE === '1') {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+  }
   for (const p of pages) {
     await page.goto(BASE + p, { waitUntil: 'networkidle' });
     await page.waitForTimeout(1200);
