@@ -45,14 +45,22 @@ export const PLATES: Plate[] = [
   { id: '11', src: '/screenshots/night-sky.webp',      title: 'Nýibær',         sub: 'Nýja byggðin að nóttu'       },
 ];
 
-/* Gallery titles are stored in caps by the admin panel; show them as names. */
+/* Older versions of the admin panel stored every caption in caps. Text typed
+   since then keeps the casing the admin chose; only shouting gets calmed down. */
+export function isShouting(s: string): boolean {
+  return s.length > 3 && s === s.toLocaleUpperCase('is-IS') && s !== s.toLocaleLowerCase('is-IS');
+}
 export function titleCase(s: string): string {
-  const t = s === s.toLocaleUpperCase('is-IS') ? s.toLocaleLowerCase('is-IS') : s;
+  const t = isShouting(s) ? s.toLocaleLowerCase('is-IS') : s;
   return t.charAt(0).toLocaleUpperCase('is-IS') + t.slice(1);
 }
 export function sentenceCase(s: string): string {
-  const t = s.toLowerCase().replace(/\s*·\s*/g, ', ');
-  return t.charAt(0).toUpperCase() + t.slice(1);
+  const t = (isShouting(s) ? s.toLocaleLowerCase('is-IS') : s).replace(/\s*·\s*/g, ', ');
+  return t.charAt(0).toLocaleUpperCase('is-IS') + t.slice(1);
+}
+/* For handwritten labels on the map: as typed, or lowercase if it was stored in caps. */
+export function handCase(s: string): string {
+  return isShouting(s) ? s.toLocaleLowerCase('is-IS') : s;
 }
 
 export const STAT_TABS = [

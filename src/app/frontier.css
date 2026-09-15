@@ -264,6 +264,8 @@
 }
 .j-print:hover { transform: rotate(0deg) scale(1.01); }
 .j-print img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
+.j-print__empty { display: grid; place-items: center; aspect-ratio: 4 / 3; background: var(--paper-2); border: 1px dashed rgba(59, 39, 25, 0.35); }
+.j-print__empty span { font-family: var(--font-hand); font-size: 1.2rem; color: var(--ink-faint); transform: rotate(-3deg); }
 .j-print__cap { margin-top: 0.5rem; padding-inline: 0.25rem; font-family: var(--font-hand); font-size: 1.25rem; color: var(--ink-soft); }
 .j-hero__print { margin-top: 2rem; }
 @media (min-width: 900px) { .j-hero__print { margin-top: 2.5rem; width: 92%; } }

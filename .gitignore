@@ -20,3 +20,6 @@ next-env.d.ts
 # misc
 .DS_Store
 *.pem
+
+# local map storage (dev without Redis)
+data/

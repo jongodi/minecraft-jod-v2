@@ -8,10 +8,13 @@ import Link from 'next/link';
 import type { DatapackUpdateResult } from '@/app/api/datapacks/check-updates/route';
 import type { RefreshResult } from '@/app/api/admin/datapacks/refresh/route';
 import type { GalleryPhoto } from '@/lib/gallery';
-import type { MapConfig } from '@/lib/map-types';
+import type { MapConfig, MapLocation } from '@/lib/map-types';
 import dynamic from 'next/dynamic';
 
 const AdminMapEditor = dynamic(() => import('@/components/AdminMapEditor'), { ssr: false });
+
+/** A gallery photo as the admin API returns it: with the id of the map pin it is linked to. */
+type AdminPhoto = GalleryPhoto & { locationId: number | null };
 
 // ─── Shared styles ────────────────────────────────────────────────────────────
 
@@ -527,13 +530,16 @@ function DatapackVersionsSection() {
 // ─── Gallery Manager ──────────────────────────────────────────────────────────
 
 function GalleryManagerSection() {
-  const [photos,      setPhotos]      = useState<GalleryPhoto[]>([]);
+  const [photos,      setPhotos]      = useState<AdminPhoto[]>([]);
+  const [locations,   setLocations]   = useState<MapLocation[]>([]);
   const [loading,     setLoading]     = useState(true);
   const [dragId,      setDragId]      = useState<string | null>(null);
   const [dragOverId,  setDragOverId]  = useState<string | null>(null);
   const [editingId,   setEditingId]   = useState<string | null>(null);
   const [editTitle,   setEditTitle]   = useState('');
   const [editSublabel,setEditSublabel]= useState('');
+  const [editLocation,setEditLocation]= useState<number | null>(null);
+  const [savingEdit,  setSavingEdit]  = useState(false);
   const [uploading,   setUploading]   = useState(false);
   const [statusMsg,   setStatusMsg]   = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -541,8 +547,15 @@ function GalleryManagerSection() {
   const fetchPhotos = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/gallery');
-      if (res.ok) setPhotos(await res.json());
+      const [photosRes, mapRes] = await Promise.all([
+        fetch('/api/admin/gallery', { cache: 'no-store' }),
+        fetch('/api/admin/map',     { cache: 'no-store' }),
+      ]);
+      if (photosRes.ok) setPhotos(await photosRes.json());
+      if (mapRes.ok) {
+        const cfg = await mapRes.json() as MapConfig;
+        setLocations([...cfg.locations].sort((a, b) => a.id - b.id));
+      }
     } finally {
       setLoading(false);
     }
@@ -550,33 +563,62 @@ function GalleryManagerSection() {
 
   useEffect(() => { fetchPhotos(); }, [fetchPhotos]);
 
-  async function toggleActive(photo: GalleryPhoto) {
+  const locationById = (id: number | null) => (id === null ? null : locations.find(l => l.id === id) ?? null);
+
+  async function toggleActive(photo: AdminPhoto) {
     const res = await fetch(`/api/admin/gallery/${photo.id}`, {
       method:  'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ active: !photo.active }),
     });
-    if (res.ok) setPhotos(ps => ps.map(p => p.id === photo.id ? { ...p, active: !p.active } : p));
+    if (res.ok) {
+      setPhotos(ps => ps.map(p => p.id === photo.id ? { ...p, active: !p.active } : p));
+      if (photo.active && photo.locationId !== null) {
+        setStatusMsg('✓ Myndin er falin. Hún birtist ekki á kortinu á meðan.');
+      }
+    }
     else setStatusMsg('✗ Uppfærsla mistókst — reyndu aftur');
   }
 
-  async function saveTitle(photo: GalleryPhoto) {
-    const res = await fetch(`/api/admin/gallery/${photo.id}`, {
-      method:  'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ title: editTitle.toUpperCase(), sublabel: editSublabel.toUpperCase() }),
-    });
-    if (res.ok) {
-      setPhotos(ps => ps.map(p => p.id === photo.id ? { ...p, title: editTitle.toUpperCase(), sublabel: editSublabel.toUpperCase() } : p));
+  function startEdit(photo: AdminPhoto) {
+    setEditingId(photo.id);
+    setEditTitle(photo.title);
+    setEditSublabel(photo.sublabel);
+    setEditLocation(photo.locationId);
+  }
+
+  async function saveEdit(photo: AdminPhoto) {
+    setSavingEdit(true);
+    setStatusMsg('');
+    try {
+      const body: Record<string, unknown> = { title: editTitle, sublabel: editSublabel };
+      if (editLocation !== photo.locationId) body.locationId = editLocation;
+      const res = await fetch(`/api/admin/gallery/${photo.id}`, {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(body),
+      });
+      if (!res.ok) { setStatusMsg('✗ Ekki tókst að vista — reyndu aftur'); return; }
+      const saved = await res.json() as Partial<AdminPhoto>;
+      const newLocation = saved.locationId !== undefined ? saved.locationId : photo.locationId;
+      setPhotos(ps => ps.map(p => {
+        if (p.id === photo.id) return { ...p, title: saved.title ?? editTitle, sublabel: saved.sublabel ?? editSublabel, locationId: newLocation };
+        // A pin shows one photo: the pin just chosen no longer belongs to any other photo
+        if (newLocation !== null && p.locationId === newLocation) return { ...p, locationId: null };
+        return p;
+      }));
       setEditingId(null);
-      setStatusMsg('✓ Titill vistaður');
-    } else {
-      setStatusMsg('✗ Ekki tókst að vista titilinn — reyndu aftur');
+      const loc = locationById(newLocation);
+      setStatusMsg(loc ? `✓ Vistað. Myndin birtist á pinna #${loc.id} · ${loc.label}` : '✓ Vistað');
+    } catch {
+      setStatusMsg('✗ Villa í nettengingu');
+    } finally {
+      setSavingEdit(false);
     }
   }
 
   async function deletePhoto(id: string) {
-    if (!confirm('Eyða þessari mynd? Það er ekki hægt að afturkalla það.')) return;
+    if (!confirm('Eyða þessari mynd? Hún hverfur líka af kortinu. Það er ekki hægt að afturkalla það.')) return;
     const res = await fetch(`/api/admin/gallery/${id}`, { method: 'DELETE' });
     if (res.ok) setPhotos(ps => ps.filter(p => p.id !== id));
     else setStatusMsg('✗ Eyðing mistókst — reyndu aftur');
@@ -612,14 +654,15 @@ function GalleryManagerSection() {
     setStatusMsg('');
     const fd = new FormData();
     fd.append('file', file);
-    fd.append('title', 'NÝ MYND ÚR LEIKNUM');
+    fd.append('title', file.name.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ').trim() || 'Ný mynd úr leiknum');
     fd.append('sublabel', '');
     try {
       const res = await fetch('/api/admin/gallery/upload', { method: 'POST', body: fd });
       if (res.ok) {
-        const p = await res.json() as GalleryPhoto;
+        const p = await res.json() as AdminPhoto;
         setPhotos(ps => [...ps, p]);
-        setStatusMsg('✓ Mynd hlaðið upp');
+        setStatusMsg('✓ Mynd hlaðið upp. Smelltu á „Breyta“ til að setja titil og tengja hana við pinna á kortinu.');
+        startEdit(p);
       } else {
         const err = await res.json() as { error: string };
         setStatusMsg(`✗ ${err.error}`);
@@ -649,7 +692,7 @@ function GalleryManagerSection() {
         </label>
         {statusMsg && <span style={{ fontFamily: mono, fontSize: '0.6rem', color: statusMsg.startsWith('✓') ? green : '#ff4466' }}>{statusMsg}</span>}
         <span style={{ fontFamily: mono, fontSize: '0.55rem', color: '#333', marginLeft: 'auto' }}>
-          {photos.filter(p => p.active).length}/{photos.length} sýnilegar · dragðu til að breyta röðinni
+          {photos.filter(p => p.active).length}/{photos.length} sýnilegar · {photos.filter(p => p.locationId !== null).length} á kortinu · dragðu til að breyta röðinni
         </span>
       </div>
 
@@ -705,18 +748,45 @@ function GalleryManagerSection() {
                       placeholder="Undirtitill (t.d. Nýja byggðin)"
                       style={{ background: '#0d0d0d', border: '1px solid #2a2a2a', color: '#f0f0f0', fontFamily: mono, fontSize: '0.6rem', padding: '0.3rem 0.4rem', outline: 'none' }}
                     />
+                    <label style={{ fontFamily: mono, fontSize: '0.45rem', letterSpacing: '0.1em', color: '#555', marginTop: '0.2rem' }}>PINNI Á KORTINU</label>
+                    <select
+                      value={editLocation === null ? '' : String(editLocation)}
+                      onChange={e => setEditLocation(e.target.value === '' ? null : Number(e.target.value))}
+                      style={{ background: '#0d0d0d', border: '1px solid #2a2a2a', color: '#f0f0f0', fontFamily: mono, fontSize: '0.6rem', padding: '0.3rem 0.4rem', outline: 'none' }}
+                    >
+                      <option value="">— Enginn pinni —</option>
+                      {locations.map(l => {
+                        const holder = photos.find(p => p.locationId === l.id && p.id !== photo.id);
+                        return (
+                          <option key={l.id} value={String(l.id)}>
+                            #{l.id} · {l.label}{holder ? ` (nú: ${holder.title})` : ''}
+                          </option>
+                        );
+                      })}
+                    </select>
+                    {locations.length === 0 && (
+                      <p style={{ fontFamily: mono, fontSize: '0.45rem', color: '#444' }}>Engir pinnar á kortinu enn. Bættu þeim við í kortaritlinum.</p>
+                    )}
                     <div style={{ display: 'flex', gap: '0.3rem' }}>
-                      <button onClick={() => saveTitle(photo)} style={{ flex: 1, fontFamily: mono, fontSize: '0.5rem', letterSpacing: '0.1em', background: green + '22', color: green, border: `1px solid ${green}44`, padding: '0.25rem', cursor: 'pointer' }}>VISTA</button>
-                      <button onClick={() => setEditingId(null)} style={{ fontFamily: mono, fontSize: '0.5rem', background: 'none', color: '#444', border: '1px solid #2a2a2a', padding: '0.25rem 0.5rem', cursor: 'pointer' }}>✕</button>
+                      <button onClick={() => saveEdit(photo)} disabled={savingEdit} style={{ flex: 1, fontFamily: mono, fontSize: '0.5rem', letterSpacing: '0.1em', background: green + '22', color: green, border: `1px solid ${green}44`, padding: '0.25rem', cursor: savingEdit ? 'wait' : 'pointer' }}>{savingEdit ? 'VISTA…' : 'VISTA'}</button>
+                      <button onClick={() => setEditingId(null)} disabled={savingEdit} style={{ fontFamily: mono, fontSize: '0.5rem', background: 'none', color: '#444', border: '1px solid #2a2a2a', padding: '0.25rem 0.5rem', cursor: 'pointer' }}>✕</button>
                     </div>
                   </div>
                 ) : (
                   <>
                     <p style={{ fontFamily: sans, fontSize: '0.75rem', fontWeight: 700, color: '#ccc', marginBottom: '0.1rem' }}>{photo.title}</p>
-                    <p style={{ fontFamily: mono, fontSize: '0.5rem', color: '#444', marginBottom: '0.5rem' }}>{photo.sublabel || '—'}</p>
+                    <p style={{ fontFamily: mono, fontSize: '0.5rem', color: '#444', marginBottom: '0.3rem' }}>{photo.sublabel || '—'}</p>
+                    {(() => {
+                      const loc = locationById(photo.locationId);
+                      return (
+                        <p style={{ fontFamily: mono, fontSize: '0.5rem', color: loc ? '#38bdf8' : '#333', marginBottom: '0.5rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {loc ? `◆ Pinni #${loc.id} · ${loc.label}` : '◇ Ekki á kortinu'}
+                        </p>
+                      );
+                    })()}
                     <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap' }}>
                       <button
-                        onClick={() => { setEditingId(photo.id); setEditTitle(photo.title); setEditSublabel(photo.sublabel); }}
+                        onClick={() => startEdit(photo)}
                         style={{ fontFamily: mono, fontSize: '0.45rem', letterSpacing: '0.1em', background: 'none', color: '#444', border: '1px solid #222', padding: '0.2rem 0.4rem', cursor: 'pointer' }}
                       >BREYTA</button>
                       <button
@@ -756,7 +826,7 @@ function MapEditorSection() {
     <div style={card}>
       <SectionHeader label="KORTARITILL" sub="Staðir og svæði" />
       <p style={{ fontFamily: mono, fontSize: '0.6rem', color: '#444', marginBottom: '1.25rem', lineHeight: 1.6 }}>
-        Dragðu pinna til að færa þá. Smelltu á pinna til að breyta heiti, undirtitli og tegund. Dragðu svæði til að færa þau og handföngin til að breyta stærðinni. Smelltu á &quot;Vista kort&quot; þegar þú ert búinn.
+        Dragðu pinna til að færa þá. Smelltu á pinna til að breyta heiti, undirtitli og tegund og til að tengja mynd við hann; myndin birtist þegar smellt er á pinnann á vefnum. Dragðu svæði til að færa þau og handföngin til að breyta stærðinni. Texti er vistaður nákvæmlega eins og hann er skrifaður. Smelltu á „Vista kort“ þegar þú ert búinn.
       </p>
       {loading ? (
         <p style={{ fontFamily: mono, fontSize: '0.65rem', color: '#444' }}>Sæki kort…</p>

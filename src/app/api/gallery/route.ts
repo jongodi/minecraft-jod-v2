@@ -9,5 +9,5 @@ export async function GET() {
   const active = all
     .filter(p => p.active)
     .sort((a, b) => a.order - b.order);
-  return NextResponse.json(active);
+  return NextResponse.json(active, { headers: { 'Cache-Control': 'no-store' } });
 }

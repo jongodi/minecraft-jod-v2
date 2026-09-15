@@ -5,5 +5,5 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   const cfg = await readMap();
-  return NextResponse.json(cfg);
+  return NextResponse.json(cfg, { headers: { 'Cache-Control': 'no-store' } });
 }

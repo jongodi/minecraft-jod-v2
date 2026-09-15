@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { readGallery, writeGallery } from '@/lib/gallery';
+import { linkPhotoToLocation, unlinkPhoto } from '@/lib/map';
 import { requireAdmin, unauthorizedResponse } from '@/lib/auth';
 import { promises as fs } from 'fs';
 import path from 'path';
 
-// PATCH — update title, sublabel, active, or order
+export const dynamic = 'force-dynamic';
+
+// PATCH — update title, sublabel, active, order, or the map pin the photo is linked to
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -17,19 +20,26 @@ export async function PATCH(
   const idx = gallery.findIndex(p => p.id === id);
   if (idx === -1) return NextResponse.json({ error: 'Fannst ekki.' }, { status: 404 });
 
-  const { title, sublabel, active, order } = body;
+  const { title, sublabel, active, order, locationId } = body;
   gallery[idx] = {
     ...gallery[idx],
-    ...(typeof title === 'string'    && { title:    title.trim().toUpperCase().slice(0, 100) }),
-    ...(typeof sublabel === 'string' && { sublabel: sublabel.trim().toUpperCase().slice(0, 100) }),
+    ...(typeof title === 'string'    && { title:    title.trim().slice(0, 100) }),
+    ...(typeof sublabel === 'string' && { sublabel: sublabel.trim().slice(0, 100) }),
     ...(typeof active === 'boolean'  && { active }),
     ...(typeof order === 'number' && Number.isFinite(order) && { order: Math.floor(order) }),
   };
   await writeGallery(gallery);
-  return NextResponse.json(gallery[idx]);
+
+  // `locationId`: number = link the photo to that pin (and to no other), null = unlink everywhere.
+  let linkedLocationId: number | null | undefined;
+  if (locationId === null || (typeof locationId === 'number' && Number.isFinite(locationId))) {
+    linkedLocationId = await linkPhotoToLocation(id, locationId === null ? null : Math.floor(locationId));
+  }
+
+  return NextResponse.json({ ...gallery[idx], ...(linkedLocationId !== undefined && { locationId: linkedLocationId }) });
 }
 
-// DELETE — remove photo from gallery.json and optionally from disk
+// DELETE — remove photo from the gallery, from any map pin, and optionally from disk
 export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -43,6 +53,7 @@ export async function DELETE(
 
   const remaining = gallery.filter(p => p.id !== id);
   await writeGallery(remaining);
+  try { await unlinkPhoto(id); } catch (e) { console.error('unlinkPhoto error:', e); }
 
   // Remove the actual file if it's a local /public/screenshots/ path
   try {
