@@ -10,7 +10,6 @@ import { formatDate } from '@/lib/format';
 import TrailNav from '@/components/frontier/TrailNav';
 import Footer from '@/components/frontier/Footer';
 import PlayerHead from '@/components/frontier/PlayerHead';
-import Atmosphere from '@/components/frontier/Atmosphere';
 import Lightbox from '@/components/frontier/Lightbox';
 import { AnimatePresence } from 'framer-motion';
 import { Arrow, Star, Tape } from '@/components/frontier/Bits';
@@ -233,7 +232,6 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
     <div className="j-desk">
       <div className="j">
         <div className="j-grain" aria-hidden="true" />
-        <Atmosphere />
         <TrailNav links={PAGE_LINKS} always />
         <main className="j-wrap j-page">
           <Link href="/crew" className="j-back"><Arrow flip /> allur hópurinn</Link>
@@ -241,7 +239,7 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
           {notFound ? (
             <p className="j-empty">enginn með nafnið {username} hefur aðgang</p>
           ) : !profile ? (
-            <p className="j-empty">loading {username}…</p>
+            <p className="j-empty">sæki {username}…</p>
           ) : (
             <>
               <div className="j-profile__slot">

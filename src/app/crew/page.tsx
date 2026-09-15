@@ -9,7 +9,6 @@ import type { FeedPost } from '@/app/api/crew/feed/route';
 import TrailNav from '@/components/frontier/TrailNav';
 import Footer from '@/components/frontier/Footer';
 import PlayerHead from '@/components/frontier/PlayerHead';
-import Atmosphere from '@/components/frontier/Atmosphere';
 import { Arrow, Pin, Stamp } from '@/components/frontier/Bits';
 import { PAGE_LINKS } from '@/components/frontier/data';
 
@@ -31,7 +30,6 @@ export default function CrewPage() {
     <div className="j-desk">
       <div className="j">
         <div className="j-grain" aria-hidden="true" />
-        <Atmosphere />
         <TrailNav links={PAGE_LINKS} always />
         <main className="j-wrap j-page">
           <Link href="/" className="j-back"><Arrow flip /> aftur á forsíðu</Link>
@@ -57,12 +55,10 @@ export default function CrewPage() {
                 <div key={m.username} className="j-poster__slot">
                   <Link href={`/crew/${m.username}`} className="j-poster j-poster--crew" style={{ '--r': `${TILT[i % TILT.length]}deg` } as CSSProperties}>
                     <span className="j-nail" aria-hidden="true" />
-                    <div className="j-poster__wanted">Eftirlýst</div>
                     <div className="j-poster__img"><PlayerHead name={m.username} size={128} /></div>
                     <div className="j-poster__name">{m.username}</div>
-                    <div className="j-poster__reward">Síðast séð</div>
                     <div className="j-poster__note">{m.bio || (m.lastPost ? `skrifaði ${formatAge(m.lastPost)}` : 'ekkert heyrst enn')}</div>
-                    <div className="j-poster__meta">Færslur: {m.postCount} · Myndir: {m.photoCount}</div>
+                    <div className="j-poster__meta">{m.postCount} {m.postCount === 1 ? 'færsla' : 'færslur'} · {m.photoCount} {m.photoCount === 1 ? 'mynd' : 'myndir'}</div>
                   </Link>
                 </div>
               ))}

@@ -1,9 +1,8 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
 import type { CSSProperties } from 'react';
 
-/* Small hand-made things: tape, pins, stamps, a rope, a trail. */
+/* Small hand-made things: tape, pins, stamps, a rope. */
 
 export function Tape({ at, r }: { at: 'tl' | 'tr' | 'br' | 'top'; r?: number }) {
   return <span className={`j-tape j-tape--${at}`} style={r !== undefined ? ({ '--r': `${r}deg` } as CSSProperties) : undefined} aria-hidden="true" />;
@@ -74,34 +73,3 @@ export function BulletHole({ x, y }: { x: number; y: number }) {
   );
 }
 
-/** A dashed trail wandering down behind the whole page. It draws
-    itself as you scroll: the dash offset follows scroll progress. */
-export function TrailLine() {
-  const ref = useRef<SVGPathElement>(null);
-  useEffect(() => {
-    const path = ref.current;
-    if (!path) return;
-    const paint = () => {
-      const doc = document.documentElement;
-      const max = doc.scrollHeight - window.innerHeight;
-      const p = max > 0 ? Math.min(1, (window.scrollY + window.innerHeight * 0.6) / (max + window.innerHeight * 0.6)) : 1;
-      path.style.strokeDashoffset = String(1 - p);
-    };
-    paint();
-    window.addEventListener('scroll', paint, { passive: true });
-    window.addEventListener('resize', paint);
-    return () => { window.removeEventListener('scroll', paint); window.removeEventListener('resize', paint); };
-  }, []);
-  const d = 'M 88 40 C 96 120, 60 160, 30 220 S 8 330, 40 380 S 96 470, 70 540 S 10 640, 24 720 S 90 820, 60 900 S 30 960, 50 1000';
-  return (
-    <svg className="j-trailline" viewBox="0 0 100 1000" preserveAspectRatio="none" aria-hidden="true">
-      <defs>
-        <mask id="jTrailMask" maskUnits="userSpaceOnUse" x="0" y="0" width="100" height="1000">
-          {/* a solid copy of the trail, revealed from the top as the reader scrolls */}
-          <path ref={ref} d={d} pathLength={1} fill="none" stroke="#fff" strokeWidth="6" vectorEffect="non-scaling-stroke" style={{ strokeDasharray: '1 1', strokeDashoffset: 1 }} />
-        </mask>
-      </defs>
-      <path d={d} pathLength={1} mask="url(#jTrailMask)" vectorEffect="non-scaling-stroke" />
-    </svg>
-  );
-}

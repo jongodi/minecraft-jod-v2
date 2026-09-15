@@ -82,7 +82,7 @@ a { color: inherit; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
-  .j-lantern, .j-motes, .j-peg__glow, .j-arena__heat { display: none !important; }
+  .j-peg__glow, .j-arena__heat { display: none !important; }
   .j-pan__img { transform: none !important; }
   .j-print, .j-polaroid, .j-poster, .j-tag, .j-peg__swing { transition: opacity 0.2s ease !important; }
 }

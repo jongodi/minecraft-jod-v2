@@ -8,7 +8,7 @@ Byggt með Next.js 15, TypeScript og CSS. Almennu síðurnar nota ekkert viðmó
 
 Útlitið minnir á ferðadagbók á gömlum pappír: myndir límdar inn á ská, símskeyti fest á síðuna, vistfangið sem stimpill og handskrifaðar athugasemdir á spássíunum. Punktalína teiknast niður síðuna þegar skrunað er. Rye er notað fyrir stóru fyrirsagnirnar, Caveat fyrir handskriftina og Lora fyrir meginmálið. Letrið fylgir vefnum í gegnum `@fontsource`.
 
-Blaðið liggur á dökku leðri með rifnum brúnum. Ljós frá lukt fylgir bendlinum hægt og ryk svífur í loftinu; hvort tveggja slokknar ef stýrikerfið biður um minni hreyfingu. Kortið má draga, stækka og láta fljúga að pinna. Í myndaalbúminu opnast myndin út úr rammanum sem smellt var á og henni má fleygja til hliðar eða sleppa niður til að loka.
+Blaðið liggur á dökku leðri með rifnum brúnum. Kortið má draga, stækka og láta fljúga að pinna. Í myndaalbúminu opnast myndin út úr rammanum sem smellt var á og henni má fleygja til hliðar eða sleppa niður til að loka.
 
 | Hluti | Innihald |
 |---|---|
