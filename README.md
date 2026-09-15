@@ -12,7 +12,7 @@ Byggt með Next.js 15, TypeScript og CSS. Almennu síðurnar nota ekkert viðmó
 |---|---|
 | Forsíða | Merkið, mynd úr leiknum, vegvísir að efni síðunnar og símskeyti með stöðu þjónsins. Smellur á stimpilinn afritar vistfangið. |
 | Búðirnar | Myndir af átta félögum hanga á snúru. Litur og „Inni“-stimpill sýna hver er að spila. Staðan uppfærist á mínútu fresti. |
-| Landakort | Kort heimsins á blaði með sviðnum brúnum og látúnspinnum. Mynd af völdum stað birtist yfir horninu. Kortinu er breytt í stjórnborðinu. |
+| Landakort | Kort heimsins á blaði með sviðnum brúnum og látúnspinnum. Mynd af völdum stað birtist yfir horninu. Kortinu er breytt í stjórnborðinu, þar sem hverjum pinna er tengd mynd úr myndasafninu, annaðhvort úr kortaritlinum eða úr myndasafninu sjálfu. |
 | Myndaalbúm | Myndir úr leiknum, sem fá lit þegar bent er á þær. Smelltu til að stækka. Myndunum er stjórnað í stjórnborðinu. |
 | Einvígi | Viðbragðsleikur með þremur umferðum. Blossi gefur merki, svo birtast reykur og skotgat. Besti tíminn vistast í vafranum. |
 | Tölfræði | Stigatafla á eftirlýsingaspjöldum. Þrjú efstu fá spjald, hin birtast í bókinni fyrir neðan. |
@@ -26,7 +26,7 @@ Kóðinn er í `src/components/frontier/`, útlitsreglur í `src/app/frontier.cs
 ## Verkfæri
 
 - **Pakkaritill** (`/rp-editor`): Greinir og breytir útlitspökkum í vafranum. Greining í bakgrunnsþræði rekur yfirlíkön, kubbaástand, hlutaskilgreiningar og yfirskriftir, letur, agnir, búnað, áferðarsöfn og gagnapakka. Hún sýnir bilaðar tilvísanir og skrár sem eru sannanlega ónotaðar. Þar eru líka tengslakort, leit að árekstrum í `custom_model_data`, leit að tvíteknum áferðum, sjálfvirkar leiðréttingar, útflutningur skýrslna og myndritill með þrívíðri forskoðun.
-- **Stjórnborð** (`/admin`): Ræsa, stöðva og endurræsa þjóninn, fylgjast með uppfærslum gagnapakka og breyta myndasafni og korti.
+- **Stjórnborð** (`/admin`): Ræsa, stöðva og endurræsa þjóninn, fylgjast með uppfærslum gagnapakka og breyta myndasafni og korti. Heiti staða, svæða og mynda eru vistuð nákvæmlega eins og þau eru skrifuð.
 
 ## Tungumál
 

@@ -1,23 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { readGallery, writeGallery, hasBlob, type GalleryPhoto } from '@/lib/gallery';
+import { linkPhotoToLocation } from '@/lib/map';
 import { requireAdmin, unauthorizedResponse } from '@/lib/auth';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { randomUUID } from 'crypto';
+
+export const dynamic = 'force-dynamic';
+
+const ALLOWED_EXT = new Set(['png', 'jpg', 'jpeg', 'webp', 'gif', 'avif']);
 
 export async function POST(req: NextRequest) {
   if (!(await requireAdmin())) return unauthorizedResponse();
 
   const formData = await req.formData();
   const file     = formData.get('file')     as File | null;
-  const title    = (formData.get('title')    as string | null) ?? 'NÝ MYND ÚR LEIKNUM';
-  const sublabel = (formData.get('sublabel') as string | null) ?? '';
+  const title    = ((formData.get('title')    as string | null) ?? '').trim().slice(0, 100) || 'Ný mynd úr leiknum';
+  const sublabel = ((formData.get('sublabel') as string | null) ?? '').trim().slice(0, 100);
+  // Optional: link the new photo to a map pin straight away
+  const locRaw     = formData.get('locationId');
+  const locationId = typeof locRaw === 'string' && /^\d+$/.test(locRaw) ? Number(locRaw) : null;
 
   if (!file) return NextResponse.json({ error: 'Engin skrá valin.' }, { status: 400 });
   if (!file.type.startsWith('image/')) return NextResponse.json({ error: 'Aðeins er hægt að hlaða upp myndum.' }, { status: 400 });
   if (file.size > 10 * 1024 * 1024)   return NextResponse.json({ error: 'Skráin er of stór (hámark 10 MB).' }, { status: 400 });
 
-  const ext = file.name.split('.').pop()?.toLowerCase() ?? 'png';
+  const rawExt = file.name.split('.').pop()?.toLowerCase() ?? '';
+  const ext = ALLOWED_EXT.has(rawExt) ? rawExt : 'png';
   const id  = randomUUID();
   let fileUrl: string;
 
@@ -40,8 +49,8 @@ export async function POST(req: NextRequest) {
   const newPhoto: GalleryPhoto = {
     id:       id,
     filename: fileUrl,
-    title:    title.toUpperCase(),
-    sublabel: sublabel.toUpperCase(),
+    title,
+    sublabel,
     gradient: 'linear-gradient(160deg, #1a1a1a 0%, #2a2a2a 100%)',
     active:   true,
     order:    maxOrder + 1,
@@ -50,5 +59,8 @@ export async function POST(req: NextRequest) {
   gallery.push(newPhoto);
   await writeGallery(gallery);
 
-  return NextResponse.json(newPhoto, { status: 201 });
+  let linkedLocationId: number | null = null;
+  if (locationId !== null) linkedLocationId = await linkPhotoToLocation(id, locationId);
+
+  return NextResponse.json({ ...newPhoto, locationId: linkedLocationId }, { status: 201 });
 }

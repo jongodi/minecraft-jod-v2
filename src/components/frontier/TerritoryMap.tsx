@@ -5,7 +5,7 @@ import type { CSSProperties } from 'react';
 import type { MapLocation, MapZone, MapPath } from '@/lib/map-types';
 import { DEFAULT_LOCATIONS, DEFAULT_ZONES, DEFAULT_PATHS } from '@/lib/map-types';
 import { Arrow, Stamp, Tape } from './Bits';
-import type { Plate } from './data';
+import { handCase, titleCase, type Plate } from './data';
 
 const TYPE: Record<MapLocation['type'], string> = {
   surface: 'á yfirborði', underground: 'neðanjarðar', island: 'eyja', aerial: 'úr lofti',
@@ -18,7 +18,6 @@ const WATER  = '#6b7f7a';
 const BRASS  = '#c9a24a';
 const WAX    = '#9b3b2a';
 const LAND_PATH = 'M 435 60 C 528 45, 674 78, 752 142 C 810 194, 822 262, 818 330 C 814 402, 786 460, 746 502 C 700 550, 635 582, 555 596 C 476 610, 396 604, 320 582 C 232 558, 155 512, 110 458 C 62 400, 50 336, 56 278 C 62 218, 88 166, 132 136 C 182 100, 298 70, 435 60 Z';
-const pretty = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 export default function TerritoryMap({ plates }: { plates: Plate[] }) {
   const [locations, setLocations] = useState<MapLocation[]>(DEFAULT_LOCATIONS);
@@ -48,7 +47,7 @@ export default function TerritoryMap({ plates }: { plates: Plate[] }) {
   }, []);
 
   const selected = locations.find(l => l.id === selectedId) ?? locations[0] ?? null;
-  const plate    = selected ? plates.find(p => Number(p.id) === selected.id) ?? null : null;
+  const plate    = selected?.photoId ? plates.find(p => p.id === selected.photoId) ?? null : null;
 
   return (
     <section id="territory" className="j-sec">
@@ -91,20 +90,20 @@ export default function TerritoryMap({ plates }: { plates: Plate[] }) {
               {zones.filter(z => z.kind === 'lake').map(z => (
                 <g key={z.id}>
                   <ellipse cx={z.cx} cy={z.cy} rx={z.rx} ry={z.ry} fill="url(#jHatch)" stroke={INK} strokeOpacity="0.55" />
-                  {z.label && <text x={z.cx} y={z.cy + z.ry + 16} textAnchor="middle" fill={INK} fillOpacity="0.75" fontSize="14" fontFamily="var(--font-hand)">{z.label.toLowerCase()}</text>}
+                  {z.label && <text x={z.cx} y={z.cy + z.ry + 16} textAnchor="middle" fill={INK} fillOpacity="0.75" fontSize="14" fontFamily="var(--font-hand)">{handCase(z.label)}</text>}
                 </g>
               ))}
               {zones.filter(z => z.kind === 'mountain').map(z => (
                 <g key={z.id} fill="none" stroke={INK} strokeOpacity="0.75">
                   <polygon points={`${z.cx},${z.cy - z.ry} ${z.cx - z.rx},${z.cy + z.ry} ${z.cx + z.rx},${z.cy + z.ry}`} fill={PAPER} />
                   <line x1={z.cx} y1={z.cy - z.ry} x2={z.cx + z.rx * 0.35} y2={z.cy + z.ry * 0.4} />
-                  {z.label && <text x={z.cx} y={z.cy + z.ry + 16} textAnchor="middle" fill={INK} fillOpacity="0.75" stroke="none" fontSize="14" fontFamily="var(--font-hand)">{z.label.toLowerCase()}</text>}
+                  {z.label && <text x={z.cx} y={z.cy + z.ry + 16} textAnchor="middle" fill={INK} fillOpacity="0.75" stroke="none" fontSize="14" fontFamily="var(--font-hand)">{handCase(z.label)}</text>}
                 </g>
               ))}
               {zones.filter(z => z.kind === 'zone').map(z => (
                 <g key={z.id}>
                   <ellipse cx={z.cx} cy={z.cy} rx={z.rx} ry={z.ry} fill="none" stroke={WAX} strokeOpacity="0.75" strokeWidth="1.2" strokeDasharray="6 4" />
-                  <text x={z.cx} y={z.cy - z.ry - 8} textAnchor="middle" fill={WAX} fontSize="16" fontFamily="var(--font-hand)" fontWeight="600">{z.label.toLowerCase()}</text>
+                  <text x={z.cx} y={z.cy - z.ry - 8} textAnchor="middle" fill={WAX} fontSize="16" fontFamily="var(--font-hand)" fontWeight="600">{handCase(z.label)}</text>
                 </g>
               ))}
 
@@ -167,10 +166,10 @@ export default function TerritoryMap({ plates }: { plates: Plate[] }) {
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={plate.src} alt={plate.title} loading="lazy" />
               ) : (
-                <div style={{ aspectRatio: '4 / 3', background: 'var(--paper-2)' }} />
+                <div className="j-print__empty" aria-hidden="true"><span>engin mynd enn</span></div>
               )}
               <figcaption className="j-print__cap">
-                {selected.id}. {pretty(selected.label)}, {selected.sublabel.toLowerCase().replace(/\s*·\s*/g, ', ')}
+                {selected.id}. {titleCase(selected.label)}{selected.sublabel && <>, {handCase(selected.sublabel).replace(/\s*·\s*/g, ', ')}</>}
               </figcaption>
             </figure>
           )}
@@ -184,7 +183,7 @@ export default function TerritoryMap({ plates }: { plates: Plate[] }) {
               <li key={loc.id}>
                 <button className={loc.id === selected?.id ? 'is-active' : ''} onClick={() => setSelected(loc.id)}>
                   <span className="j-index__no">{loc.id}.</span>
-                  <span className="j-index__label">{pretty(loc.label)}</span>
+                  <span className="j-index__label">{titleCase(loc.label)}</span>
                   <span className="j-index__type">{TYPE[loc.type]}</span>
                 </button>
               </li>

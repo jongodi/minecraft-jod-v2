@@ -2,8 +2,12 @@
 
 import { mapLabel } from '@/lib/icelandic';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import type { MapConfig, MapLocation, MapZone, MapPath } from '@/lib/map-types';
+import type { GalleryPhoto } from '@/lib/gallery';
+
+/** A gallery photo as the admin API returns it: with the pin it is linked to. */
+export type AdminPhoto = GalleryPhoto & { locationId: number | null };
 
 const mono  = "'JetBrains Mono', monospace";
 const green = '#c8960c';
@@ -58,43 +62,38 @@ export default function AdminMapEditor({ initialConfig }: { initialConfig: MapCo
   const [drawPoints, setDrawPoints] = useState<[number, number][]>([]);
   const [drawColor,  setDrawColor]  = useState<MapPath['colorKey']>('blue');
 
-  // Pin edit fields
-  const [editPinLabel,    setEditPinLabel]    = useState('');
-  const [editPinSublabel, setEditPinSublabel] = useState('');
-  const [editPinType,     setEditPinType]     = useState<MapLocation['type']>('surface');
+  // Gallery photos, for linking a photo to a pin
+  const [photos,      setPhotos]      = useState<AdminPhoto[]>([]);
+  const [photosError, setPhotosError] = useState('');
+  const [pickerOpen,  setPickerOpen]  = useState(false);
+  const [uploading,   setUploading]   = useState(false);
 
-  // Zone edit fields
-  const [editZoneLabel, setEditZoneLabel] = useState('');
-  const [editZoneColor, setEditZoneColor] = useState<MapZone['colorKey']>('purple');
-
-  // Path edit fields
-  const [editPathLabel, setEditPathLabel] = useState('');
-  const [editPathKind,  setEditPathKind]  = useState<MapPath['kind']>('river');
-  const [editPathColor, setEditPathColor] = useState<MapPath['colorKey']>('blue');
+  // What the server last confirmed, to know whether there are unsaved changes
+  const [savedJson, setSavedJson] = useState(() => serialize(initialConfig));
+  const dirty = useMemo(() => serialize({ locations, zones, paths }) !== savedJson, [locations, zones, paths, savedJson]);
 
   const svgRef  = useRef<SVGSVGElement>(null);
   const dragRef = useRef<DragMode>(null);
 
-  // Populate pin edit fields on selection
-  useEffect(() => {
-    if (!selected || selected.kind !== 'pin') return;
-    const loc = locations.find(l => l.id === selected.id);
-    if (loc) { setEditPinLabel(loc.label); setEditPinSublabel(loc.sublabel); setEditPinType(loc.type); }
-  }, [selected, locations]);
+  const loadPhotos = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/gallery', { cache: 'no-store' });
+      if (!res.ok) throw new Error();
+      setPhotos(await res.json() as AdminPhoto[]);
+      setPhotosError('');
+    } catch {
+      setPhotosError('Ekki tókst að sækja myndasafnið.');
+    }
+  }, []);
+  useEffect(() => { loadPhotos(); }, [loadPhotos]);
 
-  // Populate zone edit fields on selection
+  // Warn before leaving the page with unsaved changes
   useEffect(() => {
-    if (!selected || selected.kind !== 'zone') return;
-    const z = zones.find(z => z.id === selected.id);
-    if (z) { setEditZoneLabel(z.label); setEditZoneColor(z.colorKey); }
-  }, [selected, zones]);
-
-  // Populate path edit fields on selection
-  useEffect(() => {
-    if (!selected || selected.kind !== 'path') return;
-    const p = paths.find(p => p.id === selected.id);
-    if (p) { setEditPathLabel(p.label); setEditPathKind(p.kind); setEditPathColor(p.colorKey); }
-  }, [selected, paths]);
+    if (!dirty) return;
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ''; };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [dirty]);
 
   // ─── SVG coord conversion ──────────────────────────────────────────────────
 
@@ -197,7 +196,7 @@ export default function AdminMapEditor({ initialConfig }: { initialConfig: MapCo
         // Double-click: finish drawing
         if (drawPoints.length >= 2) {
           const uid = `path-${Date.now()}`;
-          const kindLabel = drawing === 'river' ? 'Á' : drawing === 'road' ? 'VEGUR' : 'MÖRK';
+          const kindLabel = drawing === 'river' ? 'Á' : drawing === 'road' ? 'Vegur' : 'Mörk';
           const newPath: MapPath = {
             id: uid, label: kindLabel, kind: drawing,
             points: drawPoints, colorKey: drawColor,
@@ -217,13 +216,13 @@ export default function AdminMapEditor({ initialConfig }: { initialConfig: MapCo
 
     if (placing === 'pin') {
       const newId = Math.max(0, ...locations.map(l => l.id)) + 1;
-      const pin: MapLocation = { id: newId, label: 'NÝR STAÐUR', sublabel: '', x: mx, y: my, type: 'surface' };
+      const pin: MapLocation = { id: newId, label: 'Nýr staður', sublabel: '', x: mx, y: my, type: 'surface', photoId: null };
       setLocations(prev => [...prev, pin]);
       setSelected({ kind: 'pin', id: newId });
     } else {
       const uid = `${placing}-${Date.now()}`;
       const defaultLabels: Record<string, string> = {
-        zone: 'NÝTT SVÆÐI', land: 'NÝ LANDSPILDA', lake: 'NÝTT VATN', mountain: 'NÝTT FJALL',
+        zone: 'Nýtt svæði', land: 'Ný landspilda', lake: 'Nýtt vatn', mountain: 'Nýtt fjall',
       };
       const defaultColors: Record<string, MapZone['colorKey']> = {
         zone: 'purple', land: 'green', lake: 'blue', mountain: 'orange',
@@ -259,33 +258,56 @@ export default function AdminMapEditor({ initialConfig }: { initialConfig: MapCo
     return () => window.removeEventListener('keydown', handler);
   }, [drawing, placing]);
 
-  // ─── Edit commits ─────────────────────────────────────────────────────────
+  // ─── Edits (fields write straight into the map; text is kept exactly as typed) ──
 
-  function commitPin() {
-    if (!selected || selected.kind !== 'pin') return;
-    setLocations(prev => prev.map(l =>
-      l.id === selected.id
-        ? { ...l, label: editPinLabel.toUpperCase(), sublabel: editPinSublabel.toUpperCase(), type: editPinType }
-        : l
-    ));
+  function updatePin(id: number, patch: Partial<MapLocation>) {
+    setLocations(prev => prev.map(l => l.id === id ? { ...l, ...patch } : l));
   }
 
-  function commitZone() {
-    if (!selected || selected.kind !== 'zone') return;
-    setZones(prev => prev.map(z =>
-      z.id === selected.id
-        ? { ...z, label: editZoneLabel.toUpperCase(), colorKey: editZoneColor }
-        : z
-    ));
+  function updateZone(id: string, patch: Partial<MapZone>) {
+    setZones(prev => prev.map(z => z.id === id ? { ...z, ...patch } : z));
   }
 
-  function commitPath() {
-    if (!selected || selected.kind !== 'path') return;
-    setPaths(prev => prev.map(p =>
-      p.id === selected.id
-        ? { ...p, label: editPathLabel.toUpperCase(), kind: editPathKind, colorKey: editPathColor }
-        : p
-    ));
+  function updatePath(id: string, patch: Partial<MapPath>) {
+    setPaths(prev => prev.map(p => p.id === id ? { ...p, ...patch } : p));
+  }
+
+  /** A photo belongs to one pin at a time: linking it here takes it off any other pin. */
+  function linkPhoto(pinId: number, photoId: string | null): MapLocation[] {
+    const next = locations.map(l => {
+      if (l.id === pinId) return { ...l, photoId };
+      if (photoId !== null && l.photoId === photoId) return { ...l, photoId: null };
+      return l;
+    });
+    setLocations(next);
+    return next;
+  }
+
+  /** Upload a new photo straight from the pin panel, link it, and save the map. */
+  async function uploadForPin(pin: MapLocation, file: File) {
+    setUploading(true); setMsg('');
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('title', pin.label);
+      fd.append('sublabel', pin.sublabel);
+      const res = await fetch('/api/admin/gallery/upload', { method: 'POST', body: fd });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'Upphleðsla mistókst' })) as { error?: string };
+        setMsg(`✗ ${err.error ?? 'Upphleðsla mistókst'}`);
+        return;
+      }
+      const photo = await res.json() as AdminPhoto;
+      setPhotos(prev => [...prev, photo]);
+      const nextLocations = linkPhoto(pin.id, photo.id);
+      setPickerOpen(false);
+      const ok = await persist({ locations: nextLocations, zones, paths });
+      setMsg(ok ? '✓ Mynd hlaðið upp, tengd við pinnann og kortið vistað' : '✗ Myndin er komin í safnið en kortið vistaðist ekki. Reyndu að vista aftur.');
+    } catch {
+      setMsg('✗ Villa í nettengingu');
+    } finally {
+      setUploading(false);
+    }
   }
 
   function deleteSelected() {
@@ -306,35 +328,43 @@ export default function AdminMapEditor({ initialConfig }: { initialConfig: MapCo
 
   // ─── Save / Reset ─────────────────────────────────────────────────────────
 
-  async function save() {
-    setSaving(true); setMsg('');
+  /** Send a config to the server. On success the editor shows exactly what was stored. */
+  async function persist(cfg: MapConfig): Promise<boolean> {
+    setSaving(true);
     try {
       const res = await fetch('/api/admin/map', {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ locations, zones, paths }),
+        body: JSON.stringify(cfg),
       });
-      setMsg(res.ok ? '✓ Kort vistað' : '✗ Ekki tókst að vista');
-    } catch { setMsg('✗ Villa í nettengingu'); }
-    finally { setSaving(false); }
+      const data = await res.json().catch(() => null) as { ok?: boolean; config?: MapConfig; error?: string } | null;
+      if (!res.ok) { setMsg(`✗ ${data?.error ?? 'Ekki tókst að vista'}`); return false; }
+      const stored = data?.config ?? cfg;
+      setLocations(stored.locations);
+      setZones(stored.zones);
+      setPaths(stored.paths ?? []);
+      setSavedJson(serialize(stored));
+      // The gallery's "linked pin" info depends on the map, so refresh it
+      loadPhotos();
+      return true;
+    } catch {
+      setMsg('✗ Villa í nettengingu');
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function save() {
+    setMsg('');
+    const ok = await persist({ locations, zones, paths });
+    if (ok) setMsg('✓ Kort vistað. Breytingarnar eru komnar á vefinn.');
   }
 
   async function reset() {
-    if (!confirm('Endurstilla kortið á upphafleg gildi?')) return;
-    setSaving(true); setMsg('');
-    try {
-      const res = await fetch('/api/admin/map', {
-        method: 'PUT', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ locations: initialConfig.locations, zones: initialConfig.zones, paths: initialConfig.paths ?? [] }),
-      });
-      if (res.ok) {
-        setLocations(initialConfig.locations);
-        setZones(initialConfig.zones);
-        setPaths(initialConfig.paths ?? []);
-        setSelected(null);
-        setMsg('✓ Upphafleg gildi endurheimt');
-      } else { setMsg('✗ Endurstilling mistókst'); }
-    } catch { setMsg('✗ Villa í nettengingu'); }
-    finally { setSaving(false); }
+    if (!confirm('Henda óvistuðum breytingum og fara til baka í síðustu vistuðu útgáfu kortsins?')) return;
+    setMsg('');
+    const ok = await persist({ locations: initialConfig.locations, zones: initialConfig.zones, paths: initialConfig.paths ?? [] });
+    if (ok) { setSelected(null); setMsg('✓ Síðasta vistaða útgáfa endurheimt'); }
   }
 
   // ─── Derived ──────────────────────────────────────────────────────────────
@@ -342,6 +372,8 @@ export default function AdminMapEditor({ initialConfig }: { initialConfig: MapCo
   const selPin  = selected?.kind === 'pin'  ? locations.find(l => l.id === selected.id) : null;
   const selZone = selected?.kind === 'zone' ? zones.find(z => z.id === selected.id)     : null;
   const selPath = selected?.kind === 'path' ? paths.find(p => p.id === selected.id)     : null;
+  const selPhoto = selPin?.photoId ? photos.find(p => p.id === selPin.photoId) ?? null : null;
+  const photoById = useMemo(() => new Map(photos.map(p => [p.id, p])), [photos]);
 
   const landZones     = zones.filter(z => z.kind === 'land');
   const namedZones    = zones.filter(z => z.kind === 'zone');
@@ -424,16 +456,23 @@ export default function AdminMapEditor({ initialConfig }: { initialConfig: MapCo
           </select>
         )}
         <div style={{ flex: 1 }} />
-        <button onClick={save} disabled={saving}
-          style={{ fontFamily: mono, fontSize: '0.55rem', letterSpacing: '0.15em', textTransform: 'uppercase', padding: '0.35rem 0.7rem', cursor: saving ? 'not-allowed' : 'pointer', border: `1px solid ${green}44`, background: green + '18', color: green }}>
+        {dirty && !saving && (
+          <span style={{ fontFamily: mono, fontSize: '0.5rem', letterSpacing: '0.1em', color: '#f0a500' }}>● ÓVISTAÐAR BREYTINGAR</span>
+        )}
+        <button onClick={save} disabled={saving || uploading}
+          style={{ fontFamily: mono, fontSize: '0.55rem', letterSpacing: '0.15em', textTransform: 'uppercase', padding: '0.35rem 0.7rem', cursor: saving ? 'not-allowed' : 'pointer', border: `1px solid ${dirty ? green : green + '44'}`, background: dirty ? green + '30' : green + '18', color: green, fontWeight: dirty ? 700 : 400 }}>
           {saving ? 'VISTA…' : 'VISTA KORT'}
         </button>
-        <button onClick={reset} disabled={saving}
+        <button onClick={reset} disabled={saving || uploading}
           style={{ fontFamily: mono, fontSize: '0.55rem', letterSpacing: '0.15em', textTransform: 'uppercase', padding: '0.35rem 0.7rem', cursor: 'pointer', border: '1px solid #2a2a2a', background: 'transparent', color: '#444' }}>
-          ENDURSTILLA
+          HÆTTA VIÐ
         </button>
-        {msg && <span style={{ fontFamily: mono, fontSize: '0.55rem', color: msg.startsWith('✓') ? green : '#ff4466' }}>{msg}</span>}
       </div>
+      {msg && (
+        <div style={{ fontFamily: mono, fontSize: '0.55rem', color: msg.startsWith('✓') ? green : '#ff4466', padding: '0.4rem 0.6rem', border: `1px solid ${msg.startsWith('✓') ? green + '33' : '#ff446633'}`, background: msg.startsWith('✓') ? green + '08' : '#ff446608' }}>
+          {msg}
+        </div>
+      )}
 
       {/* Drawing status hint */}
       {isDrawingActive && (
@@ -642,29 +681,72 @@ export default function AdminMapEditor({ initialConfig }: { initialConfig: MapCo
               </p>
               <div style={fieldStyle}>
                 <label style={labelStyle}>HEITI</label>
-                <input value={editPinLabel} onChange={e => setEditPinLabel(e.target.value)} onBlur={commitPin} style={inputStyle}/>
+                <input value={selPin.label} onChange={e => updatePin(selPin.id, { label: e.target.value })} style={inputStyle} maxLength={100}/>
               </div>
               <div style={fieldStyle}>
                 <label style={labelStyle}>UNDIRTITILL</label>
-                <input value={editPinSublabel} onChange={e => setEditPinSublabel(e.target.value)} onBlur={commitPin} style={inputStyle}/>
+                <input value={selPin.sublabel} onChange={e => updatePin(selPin.id, { sublabel: e.target.value })} style={inputStyle} maxLength={100}/>
               </div>
               <div style={fieldStyle}>
                 <label style={labelStyle}>TEGUND</label>
-                <select value={editPinType} onChange={e => setEditPinType(e.target.value as MapLocation['type'])} onBlur={commitPin}
+                <select value={selPin.type} onChange={e => updatePin(selPin.id, { type: e.target.value as MapLocation['type'] })}
                   style={{ ...inputStyle, width: '100%' }}>
                   {(['surface','underground','island','aerial'] as const).map(t => (
                     <option key={t} value={t}>{mapLabel(t)}</option>
                   ))}
                 </select>
               </div>
+
+              {/* Photo shown when the pin is clicked on the public map */}
+              <div style={{ ...fieldStyle, borderTop: '1px solid #1a1a1a', paddingTop: '0.6rem' }}>
+                <label style={labelStyle}>MYND Á KORTINU</label>
+                {selPhoto ? (
+                  <div>
+                    <div style={{ position: 'relative', aspectRatio: '4/3', overflow: 'hidden', background: '#080808', border: '1px solid #2a2a2a' }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={selPhoto.filename} alt={selPhoto.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}/>
+                      {!selPhoto.active && (
+                        <span style={{ position: 'absolute', top: '0.3rem', right: '0.3rem', fontFamily: mono, fontSize: '0.45rem', letterSpacing: '0.15em', color: '#f0a500', background: '#000c', padding: '0.15rem 0.4rem' }}>FALIN Í ALBÚMI</span>
+                      )}
+                    </div>
+                    <p style={{ fontFamily: mono, fontSize: '0.55rem', color: '#aaa', margin: '0.4rem 0 0.5rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selPhoto.title}</p>
+                    {!selPhoto.active && (
+                      <p style={{ fontFamily: mono, fontSize: '0.5rem', color: '#f0a500', marginBottom: '0.5rem', lineHeight: 1.5 }}>Myndin er falin í myndasafninu og birtist því ekki á kortinu fyrr en hún er sýnd aftur.</p>
+                    )}
+                    <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                      <button onClick={() => setPickerOpen(true)} style={smallBtn(green)}>SKIPTA UM MYND</button>
+                      <button onClick={() => linkPhoto(selPin.id, null)} style={smallBtn('#888')}>AFTENGJA</button>
+                    </div>
+                  </div>
+                ) : selPin.photoId ? (
+                  <div>
+                    <p style={{ fontFamily: mono, fontSize: '0.5rem', color: '#f0a500', marginBottom: '0.5rem', lineHeight: 1.5 }}>
+                      {photosError || 'Tengda myndin fannst ekki í myndasafninu.'}
+                    </p>
+                    <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                      <button onClick={() => setPickerOpen(true)} style={smallBtn(green)}>VELJA MYND</button>
+                      <button onClick={() => linkPhoto(selPin.id, null)} style={smallBtn('#888')}>AFTENGJA</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <p style={{ fontFamily: mono, fontSize: '0.5rem', color: '#444', marginBottom: '0.5rem', lineHeight: 1.5 }}>Engin mynd tengd þessum pinna.</p>
+                    <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                      <button onClick={() => setPickerOpen(true)} style={smallBtn(green)}>VELJA ÚR MYNDASAFNI</button>
+                      <label style={{ ...smallBtn('#38bdf8'), cursor: uploading ? 'wait' : 'pointer' }}>
+                        {uploading ? 'HLEÐ UPP…' : 'HLAÐA UPP NÝRRI'}
+                        <input type="file" accept="image/*" disabled={uploading} style={{ display: 'none' }}
+                          onChange={e => { const f = e.target.files?.[0]; e.target.value = ''; if (f) uploadForPin(selPin, f); }}/>
+                      </label>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button onClick={commitPin}
-                  style={{ fontFamily: mono, fontSize: '0.5rem', letterSpacing: '0.1em', padding: '0.3rem 0.6rem', border: `1px solid ${green}44`, background: green + '18', color: green, cursor: 'pointer' }}>
-                  NOTA
-                </button>
                 <button onClick={deleteSelected}
                   style={{ fontFamily: mono, fontSize: '0.5rem', letterSpacing: '0.1em', padding: '0.3rem 0.6rem', border: '1px solid #ff446633', background: 'transparent', color: '#ff4466', cursor: 'pointer' }}>
-                  EYÐA
+                  EYÐA PINNA
                 </button>
               </div>
               <p style={{ fontFamily: mono, fontSize: '0.5rem', color: '#333', marginTop: '0.5rem' }}>
@@ -678,12 +760,12 @@ export default function AdminMapEditor({ initialConfig }: { initialConfig: MapCo
               </p>
               <div style={fieldStyle}>
                 <label style={labelStyle}>HEITI</label>
-                <input value={editZoneLabel} onChange={e => setEditZoneLabel(e.target.value)} onBlur={commitZone} style={inputStyle}/>
+                <input value={selZone.label} onChange={e => updateZone(selZone.id, { label: e.target.value })} style={inputStyle} maxLength={100}/>
               </div>
               {selZone.kind !== 'lake' && (
                 <div style={fieldStyle}>
                   <label style={labelStyle}>LITUR</label>
-                  <select value={editZoneColor} onChange={e => setEditZoneColor(e.target.value as MapZone['colorKey'])} onBlur={commitZone}
+                  <select value={selZone.colorKey} onChange={e => updateZone(selZone.id, { colorKey: e.target.value as MapZone['colorKey'] })}
                     style={{ ...inputStyle, width: '100%' }}>
                     {(['purple','blue','orange','green'] as const).map(c => (
                       <option key={c} value={c}>{mapLabel(c)}</option>
@@ -692,10 +774,6 @@ export default function AdminMapEditor({ initialConfig }: { initialConfig: MapCo
                 </div>
               )}
               <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button onClick={commitZone}
-                  style={{ fontFamily: mono, fontSize: '0.5rem', letterSpacing: '0.1em', padding: '0.3rem 0.6rem', border: `1px solid ${green}44`, background: green + '18', color: green, cursor: 'pointer' }}>
-                  NOTA
-                </button>
                 <button onClick={deleteSelected}
                   style={{ fontFamily: mono, fontSize: '0.5rem', letterSpacing: '0.1em', padding: '0.3rem 0.6rem', border: '1px solid #ff446633', background: 'transparent', color: '#ff4466', cursor: 'pointer' }}>
                   EYÐA
@@ -714,11 +792,11 @@ export default function AdminMapEditor({ initialConfig }: { initialConfig: MapCo
               </p>
               <div style={fieldStyle}>
                 <label style={labelStyle}>HEITI</label>
-                <input value={editPathLabel} onChange={e => setEditPathLabel(e.target.value)} onBlur={commitPath} style={inputStyle}/>
+                <input value={selPath.label} onChange={e => updatePath(selPath.id, { label: e.target.value })} style={inputStyle} maxLength={100}/>
               </div>
               <div style={fieldStyle}>
                 <label style={labelStyle}>TEGUND</label>
-                <select value={editPathKind} onChange={e => setEditPathKind(e.target.value as MapPath['kind'])} onBlur={commitPath}
+                <select value={selPath.kind} onChange={e => updatePath(selPath.id, { kind: e.target.value as MapPath['kind'] })}
                   style={{ ...inputStyle, width: '100%' }}>
                   {(['river','road','border'] as const).map(k => (
                     <option key={k} value={k}>{mapLabel(k)}</option>
@@ -727,7 +805,7 @@ export default function AdminMapEditor({ initialConfig }: { initialConfig: MapCo
               </div>
               <div style={fieldStyle}>
                 <label style={labelStyle}>LITUR</label>
-                <select value={editPathColor} onChange={e => setEditPathColor(e.target.value as MapPath['colorKey'])} onBlur={commitPath}
+                <select value={selPath.colorKey} onChange={e => updatePath(selPath.id, { colorKey: e.target.value as MapPath['colorKey'] })}
                   style={{ ...inputStyle, width: '100%' }}>
                   {(['blue','orange','green','purple'] as const).map(c => (
                     <option key={c} value={c}>{mapLabel(c)}</option>
@@ -735,10 +813,6 @@ export default function AdminMapEditor({ initialConfig }: { initialConfig: MapCo
                 </select>
               </div>
               <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                <button onClick={commitPath}
-                  style={{ fontFamily: mono, fontSize: '0.5rem', letterSpacing: '0.1em', padding: '0.3rem 0.6rem', border: `1px solid ${green}44`, background: green + '18', color: green, cursor: 'pointer' }}>
-                  NOTA
-                </button>
                 <button onClick={deleteSelected}
                   style={{ fontFamily: mono, fontSize: '0.5rem', letterSpacing: '0.1em', padding: '0.3rem 0.6rem', border: '1px solid #ff446633', background: 'transparent', color: '#ff4466', cursor: 'pointer' }}>
                   EYÐA
@@ -756,7 +830,7 @@ export default function AdminMapEditor({ initialConfig }: { initialConfig: MapCo
                   ? `Smelltu á kortið til að\nbæta við: ${mapLabel(placing ?? '')}.`
                   : drawing
                   ? `Smelltu til að bæta við punktum.\nTvísmelltu til að ljúka.\nEsc til að hætta við.`
-                  : `Smelltu á pinna eða form\ntil að velja og breyta.\n\nDragðu til að færa.\nNotaðu handföng til að breyta stærð.\nSmelltu á línu til að velja hana.`}
+                  : `Smelltu á pinna eða form\ntil að velja og breyta.\n\nDragðu til að færa.\nNotaðu handföng til að breyta stærð.\nSmelltu á línu til að velja hana.\n\nHver pinni getur haft mynd\nsem birtist þegar smellt er\ná hann á vefnum.\n\nMundu að vista kortið.`}
               </p>
             </div>
           )}
@@ -814,12 +888,143 @@ export default function AdminMapEditor({ initialConfig }: { initialConfig: MapCo
                   }}>
                   <span style={{ width: '6px', height: '6px', background: color, flexShrink: 0 }}/>
                   <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{loc.label}</span>
+                  {loc.photoId && photoById.get(loc.photoId) ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={photoById.get(loc.photoId)!.filename} alt="" title="Mynd tengd" style={{ width: '18px', height: '14px', objectFit: 'cover', flexShrink: 0, border: '1px solid #2a2a2a' }}/>
+                  ) : (
+                    <span title="Engin mynd" style={{ width: '18px', height: '14px', flexShrink: 0, border: '1px dashed #2a2a2a' }}/>
+                  )}
                   <span style={{ color: '#333', fontSize: '0.45rem', flexShrink: 0 }}>{loc.x},{loc.y}</span>
                 </button>
               );
             })}
           </div>
 
+        </div>
+      </div>
+
+      {pickerOpen && selPin && (
+        <PhotoPicker
+          photos={photos}
+          locations={locations}
+          currentId={selPin.photoId ?? null}
+          pin={selPin}
+          error={photosError}
+          uploading={uploading}
+          onPick={id => { linkPhoto(selPin.id, id); setPickerOpen(false); }}
+          onUpload={file => uploadForPin(selPin, file)}
+          onClose={() => setPickerOpen(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+function serialize(cfg: MapConfig): string {
+  return JSON.stringify({ locations: cfg.locations, zones: cfg.zones, paths: cfg.paths ?? [] });
+}
+
+function smallBtn(color: string): React.CSSProperties {
+  return {
+    fontFamily: mono, fontSize: '0.5rem', letterSpacing: '0.1em', padding: '0.3rem 0.6rem',
+    border: `1px solid ${color}55`, background: color + '14', color, cursor: 'pointer',
+    display: 'inline-block',
+  };
+}
+
+// ─── Photo picker ──────────────────────────────────────────────────────────────
+
+function PhotoPicker({ photos, locations, currentId, pin, error, uploading, onPick, onUpload, onClose }: {
+  photos: AdminPhoto[];
+  locations: MapLocation[];
+  currentId: string | null;
+  pin: MapLocation;
+  error: string;
+  uploading: boolean;
+  onPick: (id: string) => void;
+  onUpload: (file: File) => void;
+  onClose: () => void;
+}) {
+  const [query, setQuery] = useState('');
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [onClose]);
+
+  // Which pin (in the editor's unsaved state) currently shows each photo
+  const pinByPhoto = new Map<string, MapLocation>();
+  for (const l of locations) if (l.photoId) pinByPhoto.set(l.photoId, l);
+
+  const q = query.trim().toLocaleLowerCase('is-IS');
+  const shown = [...photos]
+    .sort((a, b) => a.order - b.order)
+    .filter(p => !q || p.title.toLocaleLowerCase('is-IS').includes(q) || p.sublabel.toLocaleLowerCase('is-IS').includes(q));
+
+  return (
+    <div onClick={onClose} role="dialog" aria-modal="true" aria-label="Velja mynd fyrir pinna"
+      style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+      <div onClick={e => e.stopPropagation()}
+        style={{ width: 'min(900px, 100%)', maxHeight: '90vh', display: 'flex', flexDirection: 'column', background: '#0d0d0d', border: '1px solid #2a2a2a' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem', borderBottom: '1px solid #1a1a1a', flexWrap: 'wrap' }}>
+          <p style={{ fontFamily: mono, fontSize: '0.55rem', letterSpacing: '0.2em', color: green }}>
+            VELJA MYND FYRIR PINNA #{pin.id} · {pin.label || 'án heitis'}
+          </p>
+          <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Leita eftir titli…" autoFocus
+            style={{ background: '#080808', border: '1px solid #2a2a2a', color: '#f0f0f0', fontFamily: mono, fontSize: '0.6rem', padding: '0.3rem 0.5rem', outline: 'none', flex: 1, minWidth: '10rem' }}/>
+          <label style={{ ...smallBtn('#38bdf8'), cursor: uploading ? 'wait' : 'pointer' }}>
+            {uploading ? 'HLEÐ UPP…' : '+ HLAÐA UPP NÝRRI MYND'}
+            <input type="file" accept="image/*" disabled={uploading} style={{ display: 'none' }}
+              onChange={e => { const f = e.target.files?.[0]; e.target.value = ''; if (f) onUpload(f); }}/>
+          </label>
+          <button onClick={onClose} aria-label="Loka"
+            style={{ fontFamily: mono, fontSize: '0.6rem', background: 'none', color: '#666', border: '1px solid #2a2a2a', padding: '0.25rem 0.5rem', cursor: 'pointer' }}>✕</button>
+        </div>
+
+        <div style={{ overflowY: 'auto', padding: '1rem' }}>
+          {error && <p style={{ fontFamily: mono, fontSize: '0.6rem', color: '#ff4466', marginBottom: '0.75rem' }}>{error}</p>}
+          {!error && photos.length === 0 && (
+            <p style={{ fontFamily: mono, fontSize: '0.6rem', color: '#444' }}>Engar myndir í safninu enn. Hladdu upp mynd hér að ofan.</p>
+          )}
+          {photos.length > 0 && shown.length === 0 && (
+            <p style={{ fontFamily: mono, fontSize: '0.6rem', color: '#444' }}>Engin mynd passar við leitina.</p>
+          )}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '0.6rem' }}>
+            {shown.map(p => {
+              const isCurrent = p.id === currentId;
+              const usedBy = pinByPhoto.get(p.id);
+              const usedElsewhere = usedBy && usedBy.id !== pin.id ? usedBy : null;
+              return (
+                <button key={p.id} onClick={() => onPick(p.id)} title={p.title}
+                  style={{
+                    textAlign: 'left', padding: 0, cursor: 'pointer', background: '#111',
+                    border: `1px solid ${isCurrent ? green : '#2a2a2a'}`, outline: isCurrent ? `1px solid ${green}` : 'none',
+                    opacity: p.active ? 1 : 0.55,
+                  }}>
+                  <div style={{ position: 'relative', aspectRatio: '4/3', overflow: 'hidden', background: '#080808' }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={p.filename} alt={p.title} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}/>
+                    {isCurrent && (
+                      <span style={{ position: 'absolute', top: '0.3rem', left: '0.3rem', fontFamily: mono, fontSize: '0.45rem', letterSpacing: '0.15em', color: green, background: '#000c', padding: '0.15rem 0.4rem' }}>VALIN</span>
+                    )}
+                    {!p.active && (
+                      <span style={{ position: 'absolute', top: '0.3rem', right: '0.3rem', fontFamily: mono, fontSize: '0.45rem', letterSpacing: '0.15em', color: '#f0a500', background: '#000c', padding: '0.15rem 0.4rem' }}>FALIN</span>
+                    )}
+                  </div>
+                  <div style={{ padding: '0.4rem 0.5rem' }}>
+                    <p style={{ fontFamily: mono, fontSize: '0.55rem', color: '#ccc', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.title}</p>
+                    <p style={{ fontFamily: mono, fontSize: '0.45rem', color: usedElsewhere ? '#f0a500' : '#444', marginTop: '0.15rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {usedElsewhere ? `Á pinna #${usedElsewhere.id} · ${usedElsewhere.label}` : (p.sublabel || '—')}
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          <p style={{ fontFamily: mono, fontSize: '0.5rem', color: '#333', marginTop: '1rem', lineHeight: 1.6 }}>
+            Hver mynd getur aðeins verið á einum pinna. Sé mynd valin sem er þegar á öðrum pinna flyst hún hingað. Vistaðu kortið á eftir.
+          </p>
         </div>
       </div>
     </div>

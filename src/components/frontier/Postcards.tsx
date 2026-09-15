@@ -40,7 +40,7 @@ export default function Postcards({ plates }: { plates: Plate[] }) {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={p.src} alt={p.title} loading={i < 4 ? 'eager' : 'lazy'} decoding="async" />
               <span className="j-polaroid__no">{i + 1}</span>
-              <span className="j-polaroid__cap"><b>{p.title}</b>, {p.sub.toLowerCase()}</span>
+              <span className="j-polaroid__cap"><b>{p.title}</b>{p.sub && <>, {p.sub}</>}</span>
             </button>
           ))}
         </div>

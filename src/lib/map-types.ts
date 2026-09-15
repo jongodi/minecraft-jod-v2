@@ -7,6 +7,8 @@ export interface MapLocation {
   x:        number;
   y:        number;
   type:     'surface' | 'underground' | 'island' | 'aerial';
+  /** Gallery photo shown when the pin is selected on the public map. `null` = no photo. */
+  photoId?: string | null;
 }
 
 export interface MapZone {
@@ -37,17 +39,17 @@ export interface MapConfig {
 }
 
 export const DEFAULT_LOCATIONS: MapLocation[] = [
-  { id: 1,  label: 'Kastali Goða',      sublabel: 'Fjarlæg lönd',         x: 162, y: 345, type: 'surface'     },
-  { id: 2,  label: 'Joðbær',        sublabel: 'Gamla byggðin · upphafsstaður',        x: 262, y: 172, type: 'surface'     },
-  { id: 3,  label: 'Bleika setrið',      sublabel: 'Gamla byggðin',                x: 258, y: 210, type: 'surface'     },
-  { id: 4,  label: 'J-klúbburinn',           sublabel: 'Leynilegur klúbbur neðanjarðar', x: 306, y: 210, type: 'underground' },
-  { id: 5,  label: 'Sveppaeyja',  sublabel: 'Sveppaparadís',          x: 872, y: 260, type: 'island'      },
-  { id: 6,  label: 'Seyðaturninn',    sublabel: 'Nýja byggðin',                x: 408, y: 488, type: 'surface'     },
-  { id: 7,  label: 'Feneyjar',           sublabel: 'Nýja byggðin · við ströndina',      x: 568, y: 415, type: 'surface'     },
-  { id: 8,  label: 'Ráðhúsið',        sublabel: 'Nýja byggðin',                x: 438, y: 448, type: 'surface'     },
-  { id: 9,  label: 'Þorpið',      sublabel: 'Nýja byggðin · aðalgatan',  x: 472, y: 502, type: 'surface'     },
-  { id: 10, label: 'Blöðruparadís', sublabel: 'Nýja byggðin · úr lofti',   x: 426, y: 472, type: 'aerial'      },
-  { id: 11, label: 'Nýibær',         sublabel: 'Nýja byggðin · að nóttu',        x: 405, y: 508, type: 'surface'     },
+  { id: 1,  label: 'Kastali Goða',      sublabel: 'Fjarlæg lönd',         x: 162, y: 345, photoId: '1', type: 'surface'     },
+  { id: 2,  label: 'Joðbær',        sublabel: 'Gamla byggðin · upphafsstaður',        x: 262, y: 172, photoId: '2', type: 'surface'     },
+  { id: 3,  label: 'Bleika setrið',      sublabel: 'Gamla byggðin',                x: 258, y: 210, photoId: '3', type: 'surface'     },
+  { id: 4,  label: 'J-klúbburinn',           sublabel: 'Leynilegur klúbbur neðanjarðar', x: 306, y: 210, photoId: '4', type: 'underground' },
+  { id: 5,  label: 'Sveppaeyja',  sublabel: 'Sveppaparadís',          x: 872, y: 260, photoId: '5', type: 'island'      },
+  { id: 6,  label: 'Seyðaturninn',    sublabel: 'Nýja byggðin',                x: 408, y: 488, photoId: '6', type: 'surface'     },
+  { id: 7,  label: 'Feneyjar',           sublabel: 'Nýja byggðin · við ströndina',      x: 568, y: 415, photoId: '7', type: 'surface'     },
+  { id: 8,  label: 'Ráðhúsið',        sublabel: 'Nýja byggðin',                x: 438, y: 448, photoId: '8', type: 'surface'     },
+  { id: 9,  label: 'Þorpið',      sublabel: 'Nýja byggðin · aðalgatan',  x: 472, y: 502, photoId: '9', type: 'surface'     },
+  { id: 10, label: 'Blöðruparadís', sublabel: 'Nýja byggðin · úr lofti',   x: 426, y: 472, photoId: '10', type: 'aerial'      },
+  { id: 11, label: 'Nýibær',         sublabel: 'Nýja byggðin · að nóttu',        x: 405, y: 508, photoId: '11', type: 'surface'     },
 ];
 
 export const DEFAULT_ZONES: MapZone[] = [
