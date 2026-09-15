@@ -1,3 +1,4 @@
+import { localizeContent } from './icelandic';
 import { readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import {
@@ -18,7 +19,7 @@ const KV_KEY = 'map:config';
 const DEFAULT_CONFIG: MapConfig = { locations: DEFAULT_LOCATIONS, zones: DEFAULT_ZONES, paths: DEFAULT_PATHS };
 
 /** Read the full map config (Redis override → filesystem → hardcoded defaults). */
-export async function readMap(): Promise<MapConfig> {
+async function readStoredMap(): Promise<MapConfig> {
   // 1. Try Redis
   if (process.env.REDIS_URL) {
     try {
@@ -52,4 +53,16 @@ export async function writeMap(cfg: MapConfig): Promise<void> {
   const dir = join(process.cwd(), 'data');
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, 'map.json'), JSON.stringify(cfg, null, 2), 'utf8');
+}
+
+export async function readMap(): Promise<MapConfig> {
+  const config = await readStoredMap();
+  return {
+    ...config,
+    locations: config.locations.map(location => ({
+      ...location, label: localizeContent(location.label), sublabel: localizeContent(location.sublabel),
+    })),
+    zones: config.zones.map(zone => ({ ...zone, label: localizeContent(zone.label) })),
+    paths: config.paths?.map(path => ({ ...path, label: localizeContent(path.label) })),
+  };
 }

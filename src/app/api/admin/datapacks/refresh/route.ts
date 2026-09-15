@@ -1,3 +1,4 @@
+import { errorMessage } from '@/lib/icelandic';
 import { NextResponse } from 'next/server';
 import { requireAdmin, unauthorizedResponse } from '@/lib/auth';
 import { getExarotonServerId } from '@/lib/exaroton';
@@ -68,7 +69,7 @@ export async function POST() {
 
   const token = process.env.EXAROTON_API_KEY;
   if (!token) {
-    return NextResponse.json({ error: 'EXAROTON_API_KEY not configured' }, { status: 503 });
+    return NextResponse.json({ error: 'EXAROTON_API_KEY hefur ekki verið stilltur.' }, { status: 503 });
   }
 
   try {
@@ -80,7 +81,7 @@ export async function POST() {
     );
     if (!listRes.ok) {
       return NextResponse.json(
-        { error: 'datapacks folder not found — is the server online and world loaded?' },
+        { error: 'Gagnapakkamappan fannst ekki. Er kveikt á þjóninum og heimurinn hlaðinn?' },
         { status: 404 }
       );
     }
@@ -152,7 +153,7 @@ export async function POST() {
   } catch (err) {
     console.error('Datapack refresh failed:', err instanceof Error ? err.message : err);
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'Unexpected error' },
+      { error: errorMessage(err, 'Óvænt villa kom upp.') },
       { status: 500 }
     );
   }

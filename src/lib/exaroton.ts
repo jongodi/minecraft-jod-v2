@@ -24,10 +24,10 @@ export async function getExarotonServerId(token: string): Promise<string> {
     headers: { Authorization: `Bearer ${token}` },
     cache: 'no-store',
   });
-  if (!res.ok) throw new Error(`Exaroton list failed: ${res.status}`);
+  if (!res.ok) throw new Error(`Ekki tókst að sækja þjónalista frá Exaroton: ${res.status}`);
   const data = await res.json() as { data: ExarotonServer[] };
   const host = getServerHost();
   const match = data.data.find((s) => s.address === host);
-  if (!match) throw new Error('Server not found in Exaroton account');
+  if (!match) throw new Error('Þjónninn fannst ekki á Exaroton-reikningnum');
   return match.id;
 }

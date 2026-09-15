@@ -31,31 +31,31 @@ export default function CrewPage() {
       <div className="j-grain" aria-hidden="true" />
       <TrailNav links={PAGE_LINKS} always />
       <main className="j-wrap j-page">
-        <Link href="/" className="j-back"><Arrow flip /> back to the trail</Link>
+        <Link href="/" className="j-back"><Arrow flip /> aftur á forsíðu</Link>
         <div className="j-page__head">
           <div>
-            <Stamp r={-4}>The crew</Stamp>
-            <h1 className="j-page__title" style={{ marginTop: '0.75rem' }}>Riders of the JOÐ</h1>
-            <p className="j-note">everyone on the whitelist. each page has a bio, tallies from the world, posts and screenshots</p>
+            <Stamp r={-4}>Hópurinn</Stamp>
+            <h1 className="j-page__title" style={{ marginTop: '0.75rem' }}>JOÐ-félagar</h1>
+            <p className="j-note">öll sem hafa aðgang. Á hverri síðu eru kynning, tölur úr leiknum, færslur og myndir</p>
           </div>
           <div className="j-tags" style={{ marginBottom: 0 }} role="tablist">
             {(['members', 'feed'] as const).map((t, i) => (
               <button key={t} role="tab" aria-selected={tab === t} className={`j-tag${tab === t ? ' is-active' : ''}`} style={{ '--r': `${TAGT[i]}deg` } as CSSProperties} onClick={() => setTab(t)}>
-                <Pin />{t === 'members' ? 'Members' : `Latest posts${feed.length ? ` (${feed.length})` : ''}`}
+                <Pin />{t === 'members' ? 'Félagar' : `Nýjustu færslur${feed.length ? ` (${feed.length})` : ''}`}
               </button>
             ))}
           </div>
         </div>
 
         {tab === 'members' && (
-          crew === null ? <p className="j-empty">loading the roster…</p> :
+          crew === null ? <p className="j-empty">sæki félagalistann…</p> :
           <div className="j-rollcall">
             {crew.map((m, i) => (
               <Link key={m.username} href={`/crew/${m.username}`} className="j-peg" style={{ '--r': `${TILT[i % TILT.length]}deg` } as CSSProperties}>
                 <span className="j-peg__clip" aria-hidden="true" />
                 <span className="j-peg__frame"><PlayerHead name={m.username} size={128} /></span>
                 <span className="j-peg__name">{m.username}</span>
-                <span className="j-peg__meta">{m.bio || `${m.postCount} post${m.postCount === 1 ? '' : 's'}, ${m.photoCount} photo${m.photoCount === 1 ? '' : 's'}`}</span>
+                <span className="j-peg__meta">{m.bio || `Færslur: ${m.postCount} · Myndir: ${m.photoCount}`}</span>
               </Link>
             ))}
           </div>
@@ -63,7 +63,7 @@ export default function CrewPage() {
 
         {tab === 'feed' && (
           feed.length === 0 ? (
-            <p className="j-empty">nothing posted yet. crew members write posts from their own page</p>
+            <p className="j-empty">engar færslur enn. Félagar geta skrifað færslur á eigin síðu</p>
           ) : (
             <ul className="j-feed">
               {feed.map(post => (

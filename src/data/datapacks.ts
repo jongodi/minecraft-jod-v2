@@ -30,7 +30,7 @@ export const DATAPACKS: DatapackMeta[] = [
   {
     id:             1,
     name:           'MVP',
-    description:    'More Vanilla Paintings',
+    description:    'Fleiri málverk í stíl við upprunalega leikinn',
     category:       'BUILD',
     source:         'modrinth',
     modrinthSlug:   'mvp',
@@ -41,7 +41,7 @@ export const DATAPACKS: DatapackMeta[] = [
   {
     id:             2,
     name:           'Banner Flags',
-    description:    'Plant banners as flags anywhere in the world',
+    description:    'Settu fána niður hvar sem er í heiminum',
     category:       'BUILD',
     source:         'modrinth',
     modrinthSlug:   'banner-flags',
@@ -52,7 +52,7 @@ export const DATAPACKS: DatapackMeta[] = [
   {
     id:             3,
     name:           'Call of the King',
-    description:    'Makes mobs HUGE!',
+    description:    'Gerir verurnar RISASTÓRAR!',
     category:       'COMBAT',
     source:         'modrinth',
     modrinthSlug:   'call-of-the-king',
@@ -63,7 +63,7 @@ export const DATAPACKS: DatapackMeta[] = [
   {
     id:             4,
     name:           'Colored Name Teams',
-    description:    'Color-coded team nametags visible above players',
+    description:    'Sýnir lituð liðsnöfn fyrir ofan leikmenn',
     category:       'SOCIAL',
     source:         'modrinth',
     modrinthSlug:   'colorednameteams',
@@ -74,7 +74,7 @@ export const DATAPACKS: DatapackMeta[] = [
   {
     id:             5,
     name:           'Dungeons & Taverns',
-    description:    'Overhauled dungeons and tavern structures in worldgen',
+    description:    'Ný og endurbætt dýflissu- og kráarmannvirki í heiminum',
     category:       'STRUCTURE',
     source:         'modrinth',
     modrinthSlug:   'dungeons-and-taverns',
@@ -85,7 +85,7 @@ export const DATAPACKS: DatapackMeta[] = [
   {
     id:             6,
     name:           'Ghast Mayhem',
-    description:    'Speedy ghasts!',
+    description:    'Elddraugar á fullri ferð!',
     category:       'COMBAT',
     source:         'modrinth',
     modrinthSlug:   'ghast-mayhem',
@@ -96,7 +96,7 @@ export const DATAPACKS: DatapackMeta[] = [
   {
     id:             7,
     name:           'Holographic Tags',
-    description:    'Floating holographic text displayed!',
+    description:    'Sýnir svífandi textamerki',
     category:       'SOCIAL',
     source:         'modrinth',
     modrinthSlug:   'gm4-holographic-tags',
@@ -107,7 +107,7 @@ export const DATAPACKS: DatapackMeta[] = [
   {
     id:             8,
     name:           'LY Graves',
-    description:    'A grave marks your death — your loot stays safe',
+    description:    'Gröf birtist þar sem þú deyrð og dótið þitt helst öruggt',
     category:       'SURVIVAL',
     source:         'modrinth',
     modrinthSlug:   'ly-graves',
@@ -118,7 +118,7 @@ export const DATAPACKS: DatapackMeta[] = [
   {
     id:             9,
     name:           'Show Player Health',
-    description:    "See other players' health in TAB list",
+    description:    "Sjáðu heilsu annarra leikmanna í listanum sem opnast með Tab",
     category:       'SOCIAL',
     source:         'modrinth',
     modrinthSlug:   'show-player-health',
@@ -129,7 +129,7 @@ export const DATAPACKS: DatapackMeta[] = [
   {
     id:             10,
     name:           'Better Mineshaft',
-    description:    'Completely redesigned mineshaft structures to explore',
+    description:    'Alveg endurhannaðar námur til að kanna',
     category:       'STRUCTURE',
     source:         'modrinth',
     modrinthSlug:   'hopo-better-mineshaft',
@@ -140,7 +140,7 @@ export const DATAPACKS: DatapackMeta[] = [
   {
     id:             11,
     name:           'MC Paint',
-    description:    'Create custom pixel-art paintings in-game',
+    description:    'Búðu til þín eigin myndpunktamálverk í leiknum',
     category:       'BUILD',
     source:         'modrinth',
     modrinthSlug:   'mc-paint',
@@ -151,7 +151,7 @@ export const DATAPACKS: DatapackMeta[] = [
   {
     id:             12,
     name:           'Waystones',
-    description:    'Place waystones to fast-travel across the world',
+    description:    'Settu niður ferðasteina til að ferðast hratt um heiminn',
     category:       'QOL',
     source:         'modrinth',
     modrinthSlug:   'waystones-data-pack',
@@ -162,7 +162,7 @@ export const DATAPACKS: DatapackMeta[] = [
   {
     id:             13,
     name:           'Vanilla Refresh',
-    description:    'New items, recipes and mechanics that feel vanilla',
+    description:    'Nýir hlutir, uppskriftir og eiginleikar í anda upprunalega leiksins',
     category:       'QOL',
     source:         'modrinth',
     modrinthSlug:   'vanilla-refresh',
@@ -172,7 +172,7 @@ export const DATAPACKS: DatapackMeta[] = [
   {
     id:             14,
     name:           'Wabi-Sabi Structures',
-    description:    'Japanese-inspired structures scattered across the world',
+    description:    'Mannvirki innblásin af Japan á víð og dreif um heiminn',
     category:       'STRUCTURE',
     source:         'modrinth',
     modrinthSlug:   'wabi-sabi-structures',

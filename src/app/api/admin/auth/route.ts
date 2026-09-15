@@ -6,13 +6,13 @@ export async function POST(req: NextRequest) {
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
   const { limited } = await checkRateLimit(ip, 'admin-auth');
   if (limited) {
-    return NextResponse.json({ error: 'Too many attempts. Try again later.' }, { status: 429 });
+    return NextResponse.json({ error: 'Of margar tilraunir. Reyndu aftur síðar.' }, { status: 429 });
   }
 
   const { token } = await req.json() as { token?: string };
 
   if (!token || !isValidAdminToken(token)) {
-    return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+    return NextResponse.json({ error: 'Aðgangslykillinn er ekki réttur.' }, { status: 401 });
   }
 
   const res = NextResponse.json({ ok: true });

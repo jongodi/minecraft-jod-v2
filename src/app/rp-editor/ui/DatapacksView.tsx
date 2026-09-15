@@ -38,8 +38,8 @@ export function DatapacksView({
   return (
     <div className="rp-scroll">
       <div className="rp-sh">
-        <span className="rp-label">04 — Datapacks</span>
-        <h2>Coverage</h2>
+        <span className="rp-label">04 — Gagnapakkar</span>
+        <h2>Umfang</h2>
       </div>
 
       {/* Add datapacks */}
@@ -51,12 +51,12 @@ export function DatapacksView({
         <div onDragOver={(e) => { e.preventDefault(); setDrag(true); }} onDragLeave={() => setDrag(false)}
           onDrop={(e) => { e.preventDefault(); setDrag(false); handleFiles(e.dataTransfer.files); }}>
           <div style={{ fontSize: '0.82rem', color: 'var(--ink)', marginBottom: 6 }}>
-            {analysis.datapacks.length > 0 ? 'Add more datapacks' : 'Add your datapacks to complete the picture'}
+            {analysis.datapacks.length > 0 ? 'Bæta við fleiri gagnapökkum' : 'Bættu gagnapökkunum þínum við til að fá heildarmyndina'}
           </div>
           <div style={{ fontSize: '0.7rem', color: 'var(--ink-dim)', lineHeight: 1.6, maxWidth: 520, margin: '0 auto' }}>
-            Drop datapack <b>.zip</b> files here. The editor scans functions, loot tables, recipes and advancements for
-            <code> item_model</code>, <code> custom_model_data</code> and <code> font</code> references, then resolves them
-            through this pack — so a texture used only by a datapack is never mis-flagged as unused.
+            Slepptu <b>.zip</b>-skrám gagnapakka hér. Ritillinn leitar að tilvísunum í
+            <code> item_model</code>, <code> custom_model_data</code> og <code> font</code> í aðgerðum, fengjatöflum, uppskriftum og afrekum.
+            Hann rekur þær svo í gegnum pakkann til að finna áferðir sem aðeins gagnapakki notar.
           </div>
           <input ref={inputRef} type="file" accept=".zip" multiple style={{ display: 'none' }} onChange={(e) => handleFiles(e.target.files)} />
         </div>
@@ -71,9 +71,9 @@ export function DatapacksView({
       {/* Side-by-side: pack item models vs datapack invocations */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
         <Glass style={{ padding: 18 }}>
-          <div className="rp-label" style={{ marginBottom: 12 }}>Item definitions in the pack ({itemDefs.length})</div>
+          <div className="rp-label" style={{ marginBottom: 12 }}>Hlutaskilgreiningar í pakkanum ({itemDefs.length})</div>
           {itemDefs.length === 0 ? (
-            <div style={{ fontSize: '0.7rem', color: 'var(--ink-dim)' }}>This pack uses no 1.21.4+ item definitions.</div>
+            <div style={{ fontSize: '0.7rem', color: 'var(--ink-dim)' }}>Þessi pakki notar ekki hlutaskilgreiningar úr útgáfu 1.21.4 eða nýrri.</div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 340, overflowY: 'auto' }}>
               {itemDefs.map((p) => {
@@ -81,7 +81,7 @@ export function DatapacksView({
                 const invoked = n?.datapackRefs.length ? 'used' : n?.verdict === 'used' ? 'used' : 'review';
                 return (
                   <div key={p} style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: '0.68rem' }}>
-                    <Chip tone={invoked === 'used' ? 'used' : 'warning'}>{invoked === 'used' ? (n?.datapackRefs.length ? 'datapack' : 'vanilla') : 'orphan'}</Chip>
+                    <Chip tone={invoked === 'used' ? 'used' : 'warning'}>{invoked === 'used' ? (n?.datapackRefs.length ? 'gagnapakki' : 'upprunalegt') : 'án tilvísana'}</Chip>
                     <a className="src" style={{ color: 'var(--accent)', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} onClick={() => onOpen(p)}>{p.replace(/^assets\/[^/]+\/items\//, '').replace(/\.json$/, '')}</a>
                   </div>
                 );
@@ -91,9 +91,9 @@ export function DatapacksView({
         </Glass>
 
         <Glass style={{ padding: 18 }}>
-          <div className="rp-label" style={{ marginBottom: 12 }}>Datapack references ({rows.length})</div>
+          <div className="rp-label" style={{ marginBottom: 12 }}>Tilvísanir gagnapakka ({rows.length})</div>
           {rows.length === 0 ? (
-            <div style={{ fontSize: '0.7rem', color: 'var(--ink-dim)' }}>No item_model / custom_model_data / font references found in the loaded datapacks.</div>
+            <div style={{ fontSize: '0.7rem', color: 'var(--ink-dim)' }}>Engar tilvísanir í item_model, custom_model_data eða font fundust í gagnapökkunum sem voru opnaðir.</div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 340, overflowY: 'auto' }}>
               {rows.map((r, i) => (

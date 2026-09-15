@@ -20,11 +20,11 @@ export default function Postcards({ plates }: { plates: Plate[] }) {
       <div className="j-wrap">
         <div className="j-album__head">
           <div>
-            <Stamp r={-3}>Postcards</Stamp>
-            <p className="j-note j-note--big" style={{ marginTop: '0.75rem' }}>{plates.length} pictures from around the world</p>
-            <p className="j-note">in the order the builds went up</p>
+            <Stamp r={-3}>Myndaalbúm</Stamp>
+            <p className="j-note j-note--big" style={{ marginTop: '0.75rem' }}>{plates.length} myndir úr heiminum okkar</p>
+            <p className="j-note">í þeirri röð sem byggingarnar risu</p>
           </div>
-          <p className="j-note j-note--faint">they colour in when you hover, tap to see one big <Arrow /></p>
+          <p className="j-note j-note--faint">myndirnar fá lit þegar þú bendir á þær; smelltu til að stækka <Arrow /></p>
         </div>
 
         <div className="j-album">
@@ -34,7 +34,7 @@ export default function Postcards({ plates }: { plates: Plate[] }) {
               className={`j-polaroid${WIDE.has(i) ? ' j-polaroid--wide' : ''}`}
               style={{ '--r': `${TILT[i % TILT.length]}deg` } as CSSProperties}
               onClick={() => setOpen(i)}
-              aria-label={`Open ${p.title}`}
+              aria-label={`Opna mynd: ${p.title}`}
             >
               <Tape at="top" r={i % 2 ? 3 : -3} />
               {/* eslint-disable-next-line @next/next/no-img-element */}

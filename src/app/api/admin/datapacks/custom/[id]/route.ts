@@ -10,7 +10,7 @@ export async function DELETE(
   const { id } = await params;
   const numId = Number(id);
   if (!Number.isInteger(numId) || numId < 1000) {
-    return NextResponse.json({ error: 'invalid id — only custom packs (id ≥ 1000) can be deleted' }, { status: 400 });
+    return NextResponse.json({ error: 'Ógilt auðkenni — aðeins er hægt að eyða eigin pökkum (id ≥ 1000).' }, { status: 400 });
   }
   await deleteCustomPack(numId);
   return NextResponse.json({ ok: true });

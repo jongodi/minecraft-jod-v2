@@ -28,7 +28,7 @@ export default function Lightbox({ photos, index, onClose, onPrev, onNext }: Pro
       className="j-lb"
       role="dialog"
       aria-modal="true"
-      aria-label={photo.title ?? 'Photo'}
+      aria-label={photo.title ?? 'Mynd'}
       onClick={onClose}
       onTouchStart={e => { touchX.current = e.touches[0].clientX; }}
       onTouchEnd={e => {
@@ -38,7 +38,7 @@ export default function Lightbox({ photos, index, onClose, onPrev, onNext }: Pro
         if (Math.abs(dx) > 48) { dx > 0 ? onPrev() : onNext(); }
       }}
     >
-      <button className="j-lb__close" onClick={onClose} aria-label="Close">✕</button>
+      <button className="j-lb__close" onClick={onClose} aria-label="Loka">✕</button>
       <div className="j-lb__img" onClick={e => e.stopPropagation()}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={photo.src} alt={photo.title ?? ''} />
@@ -48,8 +48,8 @@ export default function Lightbox({ photos, index, onClose, onPrev, onNext }: Pro
         {photos.length > 1 && (
           <div className="j-inline">
             <span className="j-lb__count">{index + 1} / {photos.length}</span>
-            <button className="j-arrowbtn" onClick={onPrev} aria-label="Previous">←</button>
-            <button className="j-arrowbtn" onClick={onNext} aria-label="Next">→</button>
+            <button className="j-arrowbtn" onClick={onPrev} aria-label="Fyrri mynd">←</button>
+            <button className="j-arrowbtn" onClick={onNext} aria-label="Næsta mynd">→</button>
           </div>
         )}
       </div>

@@ -11,10 +11,10 @@ import '@fontsource/jetbrains-mono/600.css';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'JOÐ, private Minecraft survival',
+  title: 'JOÐ, Minecraft-heimurinn okkar',
   description:
-    'A private Minecraft survival world for eight friends, running since 2024. Live server status, the world map, screenshots and player stats. play.jodcraft.world',
-  keywords: ['minecraft', 'survival', 'private server', 'JOD', 'JOÐ', 'datapacks'],
+    'Minecraft-heimur átta vina frá 2024. Staða þjónsins, landakort, myndir úr leiknum og tölfræði leikmanna. play.jodcraft.world',
+  keywords: ['Minecraft', 'lífsbarátta', 'einkaþjónn', 'JOÐ', 'gagnapakkar'],
   icons: {
     icon: [
       { url: '/icon.svg', type: 'image/svg+xml' },
@@ -25,9 +25,10 @@ export const metadata: Metadata = {
     apple: '/apple-touch-icon.png',
   },
   openGraph: {
-    title: 'JOÐ, private Minecraft survival',
-    description: 'Eight friends, one survival world, since 2024. play.jodcraft.world',
+    title: 'JOÐ, Minecraft-heimurinn okkar',
+    description: 'Átta vinir, einn Minecraft-heimur, frá 2024. play.jodcraft.world',
     type: 'website',
+    locale: 'is_IS',
     images: ['/screenshots/the-castle.webp'],
   },
 };
@@ -40,7 +41,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    <html lang="is">
       <body>{children}</body>
     </html>
   );

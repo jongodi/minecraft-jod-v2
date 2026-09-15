@@ -48,7 +48,7 @@ export function LayeredPreview({ layers, size = 240 }: { layers: PreviewLayer[];
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'center' }}>
           {layers.map((l) => (
             <button key={l.key} className={`rp-btn sm${hidden.has(l.key) ? '' : ' active'}`}
-              onClick={() => toggle(l.key)} title={hidden.has(l.key) ? 'Show layer' : 'Hide layer'}>
+              onClick={() => toggle(l.key)} title={hidden.has(l.key) ? 'Sýna lag' : 'Fela lag'}>
               {hidden.has(l.key) ? '○' : '●'} {l.label}
             </button>
           ))}

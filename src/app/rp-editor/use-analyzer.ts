@@ -1,5 +1,7 @@
 'use client';
 
+import { errorMessage } from '@/lib/icelandic';
+
 // ─────────────────────────────────────────────────────────────────────────────
 // useAnalyzer — drives the analysis worker, with a main-thread fallback.
 //
@@ -47,7 +49,7 @@ export function useAnalyzer() {
   };
 
   const run = useCallback(async (packFile: File, datapackFiles: File[]) => {
-    setState({ status: 'running', phase: 'Loading zip', progress: 0, result: null, error: null });
+    setState({ status: 'running', phase: 'Opna zip-skrá', progress: 0, result: null, error: null });
     let packBuffer: ArrayBuffer;
     let datapacks: { name: string; buffer: ArrayBuffer }[];
     try {
@@ -56,7 +58,7 @@ export function useAnalyzer() {
         datapackFiles.map(async (f) => ({ name: f.name, buffer: await f.arrayBuffer() })),
       );
     } catch (e: any) {
-      setState({ status: 'error', phase: '', progress: 0, result: null, error: e?.message ?? 'Could not read the file.' });
+      setState({ status: 'error', phase: '', progress: 0, result: null, error: errorMessage(e, 'Ekki tókst að lesa skrána.') });
       return;
     }
 
@@ -67,7 +69,7 @@ export function useAnalyzer() {
         if (m.type === 'progress') {
           setState((s) => ({ ...s, phase: m.phase, progress: m.total ? m.done / m.total : s.progress }));
         } else if (m.type === 'result') {
-          setState({ status: 'done', phase: 'Complete', progress: 1,
+          setState({ status: 'done', phase: 'Lokið', progress: 1,
             result: { packName: m.packName, fileData: m.fileData, rawFiles: m.rawFiles, datapacks: m.datapacks ?? [], analysis: m.analysis },
             error: null });
         } else if (m.type === 'error') {
@@ -75,7 +77,7 @@ export function useAnalyzer() {
         }
       };
       w.onerror = (e) => {
-        setState({ status: 'error', phase: '', progress: 0, result: null, error: e.message || 'Worker failed.' });
+        setState({ status: 'error', phase: '', progress: 0, result: null, error: errorMessage(e.message, 'Bakgrunnsvinnsla mistókst.') });
       };
       const transfer = [packBuffer, ...datapacks.map((d) => d.buffer)];
       w.postMessage({ type: 'analyze', packBuffer, packName: packFile.name, datapacks }, transfer);
@@ -87,19 +89,19 @@ export function useAnalyzer() {
       const { extractZip } = await import('./engine/extract');
       const { analyze } = await import('./engine/analyze');
       const pack = await extractZip(packBuffer, (done, total) =>
-        setState((s) => ({ ...s, phase: 'Reading pack files', progress: total ? done / total : 0 })));
+        setState((s) => ({ ...s, phase: 'Les skrár pakkans', progress: total ? done / total : 0 })));
       const dps = [];
       for (const d of datapacks) {
         const ex = await extractZip(d.buffer);
         dps.push({ label: d.name, files: ex.rawFiles });
       }
-      setState((s) => ({ ...s, phase: 'Analysing dependency graph' }));
+      setState((s) => ({ ...s, phase: 'Greini tengsl skráa' }));
       const analysis = analyze({ files: pack.rawFiles, datapacks: dps });
-      setState({ status: 'done', phase: 'Complete', progress: 1,
+      setState({ status: 'done', phase: 'Lokið', progress: 1,
         result: { packName: packFile.name, fileData: pack.fileData, rawFiles: pack.rawFiles, datapacks: dps, analysis },
         error: null });
     } catch (e: any) {
-      setState({ status: 'error', phase: '', progress: 0, result: null, error: e?.message ?? 'Analysis failed.' });
+      setState({ status: 'error', phase: '', progress: 0, result: null, error: errorMessage(e, 'Greining mistókst.') });
     }
   }, []);
 

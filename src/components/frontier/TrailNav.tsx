@@ -33,14 +33,14 @@ export default function TrailNav({ links, activeId, always = false }: Props) {
       <header className={`j-bar${shown || open ? ' is-shown' : ''}`}>
         <div className="j-wrap j-bar__inner">
           <Link href="/" className="j-bar__mark" onClick={() => setOpen(false)}>JOÐ</Link>
-          <nav className="j-bar__links" aria-label="Sections">
+          <nav className="j-bar__links" aria-label="Efnisyfirlit">
             {links.map(l => (
               <Link key={l.href} href={l.href} className={`j-bar__link${activeId && l.id === activeId ? ' is-active' : ''}`}>{l.label}</Link>
             ))}
           </nav>
           <div className="j-bar__right">
-            <span className="j-bar__addr">{SERVER_IP}<button onClick={copy}>{copied ? 'copied' : 'copy'}</button></span>
-            <button className={`j-burger${open ? ' is-open' : ''}`} onClick={() => setOpen(o => !o)} aria-expanded={open} aria-controls="j-menu" aria-label={open ? 'Close menu' : 'Open menu'}>
+            <span className="j-bar__addr">{SERVER_IP}<button onClick={copy}>{copied ? 'afritað' : 'afrita'}</button></span>
+            <button className={`j-burger${open ? ' is-open' : ''}`} onClick={() => setOpen(o => !o)} aria-expanded={open} aria-controls="j-menu" aria-label={open ? 'Loka valmynd' : 'Opna valmynd'}>
               <span /><span /><span />
             </button>
           </div>
@@ -54,8 +54,8 @@ export default function TrailNav({ links, activeId, always = false }: Props) {
           </Link>
         ))}
         <div className="j-menu__foot">
-          <button className={`j-btn${copied ? ' is-copied' : ''}`} onClick={copy}>{copied ? 'Address copied' : `Copy ${SERVER_IP}`}</button>
-          <p className="j-note j-note--faint">Java Edition · whitelist by invitation</p>
+          <button className={`j-btn${copied ? ' is-copied' : ''}`} onClick={copy}>{copied ? 'Vistfang afritað' : `Afrita ${SERVER_IP}`}</button>
+          <p className="j-note j-note--faint">Java-útgáfa · aðgangur með boði</p>
         </div>
       </div>
     </>
@@ -67,7 +67,7 @@ const TILT = [-2.5, 1.5, -1, 2.5, -2, 1];
 /** The wooden signpost in the hero: one plank per section. */
 export function Signpost({ links, activeId }: { links: NavLink[]; activeId?: string | null }) {
   return (
-    <nav className="j-sign" aria-label="Sections">
+    <nav className="j-sign" aria-label="Efnisyfirlit">
       <span className="j-sign__pole" aria-hidden="true" />
       {links.map((l, i) => (
         <Link

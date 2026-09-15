@@ -8,7 +8,7 @@ export async function GET(
   const { username } = await params;
   const valid = CREW_USERNAMES.map(u => u.toLowerCase());
   if (!valid.includes(username.toLowerCase())) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    return NextResponse.json({ error: 'Fannst ekki.' }, { status: 404 });
   }
   const profile = await readProfile(username);
   return NextResponse.json(profile);

@@ -5,8 +5,8 @@ import type { AnalysisResult, AssetNode } from '../engine/types';
 import { verdictTone } from './bits';
 
 const KIND_SHORT: Record<string, string> = {
-  texture: 'TEX', model: 'MDL', blockstate: 'BST', item_definition: 'ITEM',
-  font: 'FONT', particle: 'PTL', equipment: 'EQP', atlas: 'ATLAS', sound: 'SND',
+  texture: 'ÁFERÐ', model: 'LÍKAN', blockstate: 'KUBBUR', item_definition: 'HLUTUR',
+  font: 'LETUR', particle: 'ÖGN', equipment: 'BÚNAÐUR', atlas: 'SAFN', sound: 'HLJÓÐ',
 };
 
 function short(path: string) {
@@ -71,7 +71,7 @@ export function GraphView({ analysis, onOpen }: { analysis: AnalysisResult; onOp
   }, [graph, node, focus]);
 
   if (!node || !graph || !layout) {
-    return <div className="rp-scroll"><div style={{ color: 'var(--ink-faint)' }}>Nothing to graph yet.</div></div>;
+    return <div className="rp-scroll"><div style={{ color: 'var(--ink-faint)' }}>Engin tengsl til að sýna enn.</div></div>;
   }
 
   const nodeW = 200, nodeH = 26;
@@ -83,12 +83,12 @@ export function GraphView({ analysis, onOpen }: { analysis: AnalysisResult; onOp
   return (
     <div className="rp-scroll">
       <div className="rp-sh">
-        <span className="rp-label">05 — Graph</span>
-        <h2>Dependency trace</h2>
+        <span className="rp-label">05 — Tengsl</span>
+        <h2>Rekja tengsl</h2>
       </div>
 
       <div className="rp-filters">
-        <input className="rp-search" placeholder="Focus on a file…" value={q} onChange={(e) => setQ(e.target.value)} />
+        <input className="rp-search" placeholder="Finna skrá…" value={q} onChange={(e) => setQ(e.target.value)} />
         {searchResults.length > 0 && (
           <div style={{ position: 'relative' }}>
             <div style={{ position: 'absolute', top: 4, left: 0, zIndex: 30, background: 'var(--bg-card)', border: '1px solid var(--hair-strong)', borderRadius: 8, maxHeight: 240, overflowY: 'auto', minWidth: 320, boxShadow: '0 14px 40px -12px rgba(0,0,0,0.6)' }}>
@@ -101,13 +101,13 @@ export function GraphView({ analysis, onOpen }: { analysis: AnalysisResult; onOp
             </div>
           </div>
         )}
-        <span style={{ fontSize: '0.65rem', color: 'var(--ink-faint)' }}>Click any node to refocus · double-click to open</span>
+        <span style={{ fontSize: '0.65rem', color: 'var(--ink-faint)' }}>Smelltu á skrá til að skoða tengsl hennar · tvísmelltu til að opna</span>
       </div>
 
       <div style={{ overflowX: 'auto', border: '1px solid var(--hair)', borderRadius: 12, background: 'rgba(0,0,0,0.15)' }}>
         <svg width={W + colGap} height={layout.height} style={{ display: 'block', minWidth: W }}>
           {/* column labels */}
-          {[['Depended on by', 40], ['Focus', 40 + colGap], ['Directly uses', 40 + colGap * 2], ['Transitively', 40 + colGap * 3]].map(([lbl, x]) => (
+          {[['Notað af', 40], ['Valin skrá', 40 + colGap], ['Notar beint', 40 + colGap * 2], ['Notar óbeint', 40 + colGap * 3]].map(([lbl, x]) => (
             <text key={lbl as string} x={(x as number) + nodeW / 2} y={16} textAnchor="middle" fill="var(--ink-faint)" style={{ fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', fontFamily: 'var(--font-mono)' }}>{lbl}</text>
           ))}
           {/* edges: dependents -> focus */}
@@ -151,7 +151,7 @@ export function GraphView({ analysis, onOpen }: { analysis: AnalysisResult; onOp
 
       <div style={{ marginTop: 12, fontSize: '0.7rem', color: 'var(--ink-dim)' }}>
         Tracing <b style={{ color: 'var(--ink)' }}>{short(focus!)}</b> — {node.usedBy.length} dependent{node.usedBy.length !== 1 ? 's' : ''}, {node.refs.length} direct dependenc{node.refs.length !== 1 ? 'ies' : 'y'}.
-        <button className="rp-btn sm" style={{ marginLeft: 10 }} onClick={() => onOpen(focus!)}>Open in editor</button>
+        <button className="rp-btn sm" style={{ marginLeft: 10 }} onClick={() => onOpen(focus!)}>Opna í ritli</button>
       </div>
     </div>
   );

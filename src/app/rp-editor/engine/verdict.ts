@@ -1,3 +1,4 @@
+import { verdictLabel, assetKindLabel } from '@/lib/icelandic';
 // ─────────────────────────────────────────────────────────────────────────────
 // Verdicts + findings
 //
@@ -70,7 +71,7 @@ export function computeAnalysis(input: VerdictInput): AnalysisResult {
     node.verdict = tex.verdict === 'error' ? 'review' : tex.verdict;
     node.confidence = tex.confidence;
     node.evidence = [
-      { kind: 'note', detail: `Animation metadata for ${tex.path.split('/').pop()} — follows its texture's verdict (${tex.verdict}).` },
+      { kind: 'note', detail: `Hreyfilýsigögn fyrir ${tex.path.split('/').pop()} — fylgja niðurstöðu áferðarinnar (${verdictLabel(tex.verdict)}).` },
       ...tex.evidence.slice(0, 2),
     ];
   }
@@ -83,24 +84,24 @@ export function computeAnalysis(input: VerdictInput): AnalysisResult {
   // pack.mcmeta / version findings.
   for (const err of meta.errors) {
     findings.push({ id: nextId(), severity: 'error', category: 'pack-meta',
-      title: 'pack.mcmeta problem', detail: err, path: 'pack.mcmeta',
+      title: 'Vandamál í pack.mcmeta', detail: err, path: 'pack.mcmeta',
       evidence: [{ kind: 'note', detail: err, source: 'pack.mcmeta' }], confidence: 'certain' });
   }
   // System / format mismatch — either system used against the wrong format.
   const hasItemDefs = graph.byKind.item_definition.length > 0;
   if (meta.itemSystem === 'legacy-overrides' && hasItemDefs) {
     findings.push({ id: nextId(), severity: 'warning', category: 'system-mismatch',
-      title: 'Item definitions present but pack_format predates them',
-      detail: `This pack declares pack_format ${meta.packFormat} (${meta.versionLabel}), but ships assets/<ns>/items/ definitions, which Minecraft only reads from 1.21.4 (format 46) onward. Those files will be ignored on the declared version.`,
+      title: 'Hlutaskilgreiningar eru til staðar en pack_format er of gamalt',
+      detail: `Pakkinn skilgreinir pack_format ${meta.packFormat} (${meta.versionLabel}) en inniheldur assets/<ns>/items/-skilgreiningar sem Minecraft les aðeins frá útgáfu 1.21.4 (snið 46). Þessar skrár verða hunsaðar í tilgreindri útgáfu.`,
       path: 'pack.mcmeta', confidence: 'high',
-      evidence: [{ kind: 'note', detail: `${graph.byKind.item_definition.length} item definition file(s) found.` }] });
+      evidence: [{ kind: 'note', detail: `Hlutaskilgreiningar fundust: ${graph.byKind.item_definition.length}.` }] });
   }
   if (meta.itemSystem === 'item-definition' && graph.hasLegacyOverrides && !hasItemDefs) {
     findings.push({ id: nextId(), severity: 'warning', category: 'system-mismatch',
-      title: 'Legacy custom_model_data overrides on a version that ignores them',
-      detail: `This pack declares pack_format ${meta.packFormat} (${meta.versionLabel}), where item model "overrides" with custom_model_data predicates no longer work — Minecraft 1.21.4+ reads item models from assets/<ns>/items/ instead. These overrides render nothing; migrate them to item definitions.`,
+      title: 'Gamlar custom_model_data-yfirskriftir í útgáfu sem hunsar þær',
+      detail: `Pakkinn skilgreinir pack_format ${meta.packFormat} (${meta.versionLabel}), þar sem "overrides" með custom_model_data-skilyrðum virka ekki lengur. Minecraft 1.21.4 og nýrra les hlutalíkön úr assets/<ns>/items/. Þessar yfirskriftir birta því ekkert; færðu þær yfir í hlutaskilgreiningar.`,
       path: 'pack.mcmeta', confidence: 'high',
-      evidence: [{ kind: 'note', detail: 'Models with an "overrides" array were found, but no assets/<ns>/items/ definitions exist.' }] });
+      evidence: [{ kind: 'note', detail: 'Líkön með "overrides"-lista fundust en engar skilgreiningar í assets/<ns>/items/.' }] });
   }
 
   // Graph issues → findings.
@@ -118,11 +119,11 @@ export function computeAnalysis(input: VerdictInput): AnalysisResult {
   // custom_model_data collisions.
   for (const c of graph.cmd) {
     findings.push({ id: nextId(), severity: 'warning', category: 'cmd-collision',
-      title: `custom_model_data ${c.value} is assigned twice on ${c.baseItem}`,
-      detail: `The ${c.system === 'legacy-overrides' ? 'legacy overrides' : 'item definition'} for ${c.baseItem} map the same custom_model_data value (${c.value}) to more than one model. In-game only one wins — the others are dead.`,
+      title: `custom_model_data ${c.value} er úthlutað tvisvar á ${c.baseItem}`,
+      detail: `${c.system === 'legacy-overrides' ? 'Gömlu yfirskriftirnar' : 'Hlutaskilgreiningin'} fyrir ${c.baseItem} tengja sama custom_model_data-gildi (${c.value}) við fleiri en eitt líkan. Aðeins eitt þeirra birtist í leiknum.`,
       refs: c.entries.map((e) => e.model), confidence: 'high',
       evidence: c.entries.map((e) => ({ kind: 'note' as const, detail: `→ ${e.model}`, source: e.source })),
-      consequence: 'Give each variant a distinct custom_model_data value, or remove the duplicate.' });
+      consequence: 'Gefðu hverju afbrigði eigið custom_model_data-gildi eða fjarlægðu tvítekninguna.' });
   }
 
   // Duplicate textures.
@@ -130,16 +131,16 @@ export function computeAnalysis(input: VerdictInput): AnalysisResult {
     const [keep, ...rest] = g.members;
     findings.push({ id: nextId(), severity: 'cleanup', category: g.kind === 'exact' ? 'duplicate-exact' : 'duplicate-near',
       title: g.kind === 'exact'
-        ? `${g.members.length} identical textures`
-        : `${g.members.length} near-identical textures (aHash distance ${g.distance})`,
+        ? `Nákvæmlega eins áferðir: ${g.members.length}`
+        : `Næstum eins áferðir: ${g.members.length} (aHash-fjarlægð ${g.distance})`,
       detail: g.kind === 'exact'
-        ? `These are identical copies of the same file. You can collapse them to one and repoint references.`
-        : `These look almost the same. Review whether they should be a single texture.`,
+        ? `Þetta eru nákvæmlega eins afrit af sömu skrá. Þú getur sameinað þau og uppfært tilvísanir.`
+        : `Þessar áferðir líta næstum eins út. Athugaðu hvort þær eigi að vera ein áferð.`,
       refs: g.members, path: keep, confidence: g.kind === 'exact' ? 'high' : 'low',
-      evidence: g.members.map((m) => ({ kind: 'note' as const, detail: m === keep ? `${m} (keep)` : `${m} (duplicate of keep)`, source: m })),
+      evidence: g.members.map((m) => ({ kind: 'note' as const, detail: m === keep ? `${m} (halda)` : `${m} (afrit skrárinnar sem er haldið)`, source: m })),
       consequence: g.kind === 'exact'
-        ? 'Identical files — safe to merge, but confirm nothing depends on the exact path.'
-        : 'Near-duplicate — do NOT auto-merge; the difference may be intentional.' });
+        ? 'Skrárnar eru eins og má sameina. Staðfestu fyrst að ekkert reiði sig á nákvæma slóð þeirra.'
+        : 'Skrárnar eru næstum eins — ekki sameina þær sjálfvirkt; munurinn gæti verið viljandi.' });
   }
 
   // Cleanup + review findings from node verdicts.
@@ -147,7 +148,7 @@ export function computeAnalysis(input: VerdictInput): AnalysisResult {
   const review = Object.values(nodes).filter((n) => n.verdict === 'review');
   for (const n of safeRemove) {
     findings.push({ id: nextId(), severity: 'cleanup', category: 'unreferenced',
-      title: `Unreferenced ${labelKind(n.kind)}`,
+      title: `Engar tilvísanir: ${labelKind(n.kind)}`,
       detail: describeUnreferenced(n),
       path: n.path, confidence: n.confidence,
       evidence: evidenceFor(n, graph),
@@ -157,11 +158,11 @@ export function computeAnalysis(input: VerdictInput): AnalysisResult {
     // Only surface review items that are genuine entry points or leaves worth a look.
     if (n.kind === 'texture' || n.kind === 'model' || isEntryKind(n.kind)) {
       findings.push({ id: nextId(), severity: 'info', category: 'review',
-        title: `Review: ${labelKind(n.kind)} with no verified use`,
+        title: `Yfirferð: ${labelKind(n.kind)} án staðfestrar notkunar`,
         detail: describeReview(n),
         path: n.path, confidence: n.confidence,
         evidence: evidenceFor(n, graph),
-        consequence: 'Keep unless you can confirm nothing invokes it — the editor cannot see plugin/mod code or macro-built NBT.' });
+        consequence: 'Haltu skránni nema þú getir staðfest að ekkert noti hana. Ritillinn sér ekki kóða viðbóta eða NBT sem er búið til með fjölvum.' });
     }
   }
 
@@ -184,7 +185,7 @@ export function computeAnalysis(input: VerdictInput): AnalysisResult {
 
   const blindSpots = buildBlindSpots(datapackRefs, datapacks, graph);
   if (meta.overlays.length > 0) {
-    blindSpots.push(`This pack declares ${meta.overlays.length} overlay directory(ies) (${meta.overlays.join(', ')}). Overlay assets load on specific versions and are analysed separately — files inside them are surfaced for review, never flagged for removal.`);
+    blindSpots.push(`Pakkinn skilgreinir möppur fyrir útgáfusértækar yfirskriftir: ${meta.overlays.length} (${meta.overlays.join(', ')}). Þær eru hlaðnar í tilteknum útgáfum og greindar sérstaklega. Skrár í þeim eru merktar til yfirferðar, aldrei eyðingar.`);
   }
 
   const brokenRefs = graph.issues
@@ -248,7 +249,7 @@ function assignVerdict(node: AssetNode, ctx: VerdictCtx) {
       // Also reachable from a certain root (e.g. a custom font pulled in by the
       // default font's reference provider) — provably used, don't demote it.
       node.verdict = 'used'; node.confidence = 'certain';
-      ev.push({ kind: 'referenced-by', detail: 'Reachable from a certainly-loaded file, in addition to being an entry point itself.' });
+      ev.push({ kind: 'referenced-by', detail: 'Tilvísun kemur úr skrá sem er örugglega hlaðið, auk þess sem þessi skrá er sjálf upphafspunktur.' });
     } else {
       // Uncertain root: an entry point we cannot confirm is invoked.
       const dpUsed = node.datapackRefs.length > 0;
@@ -258,7 +259,7 @@ function assignVerdict(node: AssetNode, ctx: VerdictCtx) {
       } else {
         node.verdict = 'review'; node.confidence = 'medium';
         ev.push({ kind: 'ambiguity', detail: ctx.root.reason });
-        ev.push({ kind: 'no-reference', detail: 'No datapack given references this entry point.' });
+        ev.push({ kind: 'no-reference', detail: 'Enginn af opnu gagnapökkunum vísar í þennan upphafspunkt.' });
       }
     }
     node.evidence = ev; return;
@@ -272,7 +273,7 @@ function assignVerdict(node: AssetNode, ctx: VerdictCtx) {
   if (ctx.usedAny) {
     // Reachable only through an uncertain entry point.
     node.verdict = 'used'; node.confidence = 'medium';
-    ev.push({ kind: 'referenced-by', detail: 'Reachable only through a custom entry point whose use is unverified.' });
+    ev.push({ kind: 'referenced-by', detail: 'Aðeins er vísað í þetta gegnum sérsniðinn upphafspunkt með óstaðfesta notkun.' });
     node.evidence = ev; return;
   }
 
@@ -282,7 +283,7 @@ function assignVerdict(node: AssetNode, ctx: VerdictCtx) {
 
 /** Decide safe-remove vs review for a genuinely unreferenced asset. */
 function classifyUnreferenced(node: AssetNode) {
-  const ev: Evidence[] = [{ kind: 'no-reference', detail: 'Nothing in the resource pack, no vanilla path, and no supplied datapack references this file.' }];
+  const ev: Evidence[] = [{ kind: 'no-reference', detail: 'Hvorki útlitspakkinn, upprunaleg slóð í leiknum né opnir gagnapakkar vísa í þessa skrá.' }];
   if (node.kind === 'texture') {
     const loc = texturePathToLoc(node.path);
     if (!loc) {
@@ -290,10 +291,10 @@ function classifyUnreferenced(node: AssetNode) {
       // overlay directory, whose internal references we do not resolve. Never
       // flag these for removal — keep for review.
       node.verdict = 'review'; node.confidence = 'low';
-      ev.push({ kind: 'ambiguity', detail: 'This texture is not under a standard assets/<ns>/textures/ path — it may live in a pack overlay directory whose references are resolved separately in-game. Kept for review, not flagged for removal.' });
+      ev.push({ kind: 'ambiguity', detail: 'Áferðin er ekki á hefðbundinni assets/<ns>/textures/-slóð. Hún gæti verið í möppu fyrir útgáfusértækar yfirskriftir sem leikurinn les sérstaklega. Hún er því merkt til yfirferðar, ekki eyðingar.' });
     } else if (loc.namespace !== 'minecraft') {
       node.verdict = 'safe-remove'; node.confidence = 'high';
-      ev.push({ kind: 'note', detail: `Custom namespace "${loc.namespace}" — cannot be a vanilla override, so nothing loads it by convention.` });
+      ev.push({ kind: 'note', detail: `Eigið nafnarými "${loc.namespace}" — getur ekki komið í stað upprunalegrar skrár og er því ekki hlaðið sjálfkrafa.` });
     } else if (isStrongOverridePath(loc.path)) {
       // Shouldn't reach here (handled as convention), but guard anyway.
       node.verdict = 'used'; node.confidence = 'certain';
@@ -305,36 +306,36 @@ function classifyUnreferenced(node: AssetNode) {
       // clock_04, pre-1.13 blocks/ items/ layouts), and if the name IS vanilla,
       // vanilla's own model still loads it — so this must never be safe-remove.
       node.verdict = 'review'; node.confidence = 'medium';
-      ev.push({ kind: 'ambiguity', detail: 'Minecraft-namespace texture not in our vanilla manifest — but if it overrides a vanilla texture by a name we do not recognise (animation frames, older layouts), vanilla still loads it. Kept for review, never flagged for removal.' });
+      ev.push({ kind: 'ambiguity', detail: 'Áferð í minecraft-nafnarýminu sem er ekki í skránni okkar yfir upprunaleg tilföng. Leikurinn gæti samt hlaðið henni ef hún kemur í stað upprunalegrar áferðar með óþekktu heiti, svo sem hreyfiramma eða eldri skrá. Hún er því merkt til yfirferðar, aldrei eyðingar.' });
     }
   } else if (node.kind === 'texture_meta') {
     // Mirrored to its paired texture in a post-pass; this default only applies
     // to unpaired edge cases. Keep, never remove blindly.
     node.verdict = 'review'; node.confidence = 'medium';
-    ev.push({ kind: 'note', detail: 'Animation metadata — follows its paired texture.' });
+    ev.push({ kind: 'note', detail: 'Hreyfilýsigögn — fylgja tilheyrandi áferð.' });
   } else if (node.kind === 'model') {
     const loc = modelPathToLoc(node.path);
     if (!loc) {
       // Not under a standard assets/<ns>/models/ path — most often a pack
       // overlay directory. Never flag those for removal.
       node.verdict = 'review'; node.confidence = 'low';
-      ev.push({ kind: 'ambiguity', detail: 'This model is not under a standard assets/<ns>/models/ path — it may live in a pack overlay directory whose references are resolved separately in-game. Kept for review, not flagged for removal.' });
+      ev.push({ kind: 'ambiguity', detail: 'Líkanið er ekki á hefðbundinni assets/<ns>/models/-slóð. Það gæti verið í möppu fyrir útgáfusértækar yfirskriftir sem leikurinn les sérstaklega. Það er því merkt til yfirferðar, ekki eyðingar.' });
     } else if (loc.namespace !== 'minecraft') {
       node.verdict = 'safe-remove'; node.confidence = 'high';
-      ev.push({ kind: 'note', detail: 'Custom-namespace model reached by no blockstate, item definition, override, or parent link.' });
+      ev.push({ kind: 'note', detail: 'Líkan í eigin nafnarými sem hvorki kubbaástand, hlutaskilgreining, yfirskrift né tengill á yfirlíkan vísar í.' });
     } else {
       // Vanilla model names our registry-derived heuristic can miss (door
       // left/right variants, pulling_0 frames, template_*) would still be
       // rendered by vanilla's own blockstates — never safe-remove on a guess.
       node.verdict = 'review'; node.confidence = 'medium';
-      ev.push({ kind: 'ambiguity', detail: 'Minecraft-namespace model not referenced inside the pack and not at a vanilla model name we positively recognise. If it overrides a vanilla model (multi-part or animation-frame names are easy to miss), vanilla still renders it — kept for review.' });
+      ev.push({ kind: 'ambiguity', detail: 'Líkan í minecraft-nafnarýminu án tilvísana innan pakkans og með heiti sem við þekkjum ekki úr upprunalega leiknum. Ef það kemur í stað upprunalegs líkans birtir leikurinn það samt. Það er því merkt til yfirferðar.' });
     }
   } else if (node.kind === 'sound') {
     node.verdict = 'review'; node.confidence = 'medium';
-    ev.push({ kind: 'ambiguity', detail: 'Not listed in any sounds.json. It may be played by a datapack /playsound using its path directly, which we cannot fully verify.' });
+    ev.push({ kind: 'ambiguity', detail: 'Ekki skráð í neinu sounds.json. Gagnapakki gæti spilað það með /playsound og beinni slóð, sem við getum ekki staðfest að fullu.' });
   } else {
     node.verdict = 'review'; node.confidence = 'low';
-    ev.push({ kind: 'ambiguity', detail: 'No static reference found, but a dynamic one may exist.' });
+    ev.push({ kind: 'ambiguity', detail: 'Engin föst tilvísun fannst en tilvísun gæti verið búin til við keyrslu.' });
   }
   node.evidence = ev;
 }
@@ -344,43 +345,43 @@ function evidenceFor(node: AssetNode, graph: Graph): Evidence[] {
   const ev = [...node.evidence];
   // Add provenance: who uses this.
   for (const from of node.usedBy.slice(0, 12)) {
-    ev.push({ kind: 'referenced-by', detail: `Referenced by ${from.split('/').slice(-2).join('/')}`, source: from });
+    ev.push({ kind: 'referenced-by', detail: `Vísað í af ${from.split('/').slice(-2).join('/')}`, source: from });
   }
-  if (node.usedBy.length > 12) ev.push({ kind: 'note', detail: `…and ${node.usedBy.length - 12} more.` });
+  if (node.usedBy.length > 12) ev.push({ kind: 'note', detail: `…og ${node.usedBy.length - 12} til viðbótar.` });
   // What this references.
   for (const to of node.refs.slice(0, 8)) {
-    ev.push({ kind: 'references', detail: `Uses ${to.split('/').slice(-2).join('/')}`, source: to });
+    ev.push({ kind: 'references', detail: `Notar ${to.split('/').slice(-2).join('/')}`, source: to });
   }
   return ev;
 }
 
 function describeUnreferenced(n: AssetNode): string {
   const size = n.bytes ? ` (${fmtBytes(n.bytes)})` : '';
-  return `${n.path}${size} is reached by nothing — no model, blockstate, item definition, atlas source, font, particle, equipment, or supplied datapack points at it.`;
+  return `Ekkert vísar í ${n.path}${size}: hvorki líkan, kubbaástand, hlutaskilgreining, áferðarsafn, letur, ögn, búnaður né opinn gagnapakki.`;
 }
 
 function describeReview(n: AssetNode): string {
-  return `${n.path} has no verified use, but a reference could exist somewhere the editor cannot see.`;
+  return `Notkun ${n.path} er óstaðfest, en tilvísun gæti verið til staðar þar sem ritillinn sér ekki.`;
 }
 
 function consequenceFor(n: AssetNode): string {
   if (n.confidence === 'high') {
-    return `Removing this deletes ${fmtBytes(n.bytes ?? 0)} with no known effect in-game. Confirm no server plugin references it by hardcoded path before deleting.`;
+    return `Eyðing losar ${fmtBytes(n.bytes ?? 0)} án þekktra áhrifa á leikinn. Staðfestu fyrst að engin þjónsviðbót vísi í skrána eftir fastri slóð.`;
   }
-  return `Likely safe to remove, BUT: if this overrides a vanilla asset by exact name, or a plugin loads it by path, removing it changes the game. Review before deleting.`;
+  return `Líklega óhætt að fjarlægja. Ef skráin kemur í stað upprunalegs tilfangs með sama heiti eða viðbót hleður henni eftir slóð hefur eyðing þó áhrif á leikinn. Farðu yfir þetta áður en þú eyðir.`;
 }
 
 function buildBlindSpots(datapackRefs: DatapackRef[], datapacks: string[], graph: Graph): string[] {
   const spots: string[] = [];
   if (datapacks.length === 0) {
-    spots.push('No datapacks were provided. Any texture/model/font invoked only by a datapack (item_model, custom_model_data, font) will look unreferenced here — add your datapacks for a complete picture.');
+    spots.push('Engir gagnapakkar voru opnaðir. Áferðir, líkön og letur sem aðeins gagnapakki notar (item_model, custom_model_data, font) virðast því ónotuð hér. Bættu gagnapökkunum þínum við til að fá heildarmyndina.');
   }
-  spots.push('Server plugins (Bukkit/Paper/Spigot) and mods live outside the pack and can reference assets by hardcoded path — the editor cannot see those.');
+  spots.push('Þjónsviðbætur (Bukkit/Paper/Spigot) og leikjaviðbætur eru utan pakkans og geta vísað í tilföng eftir föstum slóðum. Ritillinn sér ekki þær tilvísanir.');
   if (datapackRefs.some((r) => r.value === '(object)')) {
-    spots.push('Some datapack custom_model_data values are objects/macros that cannot be fully resolved statically; the affected item entry points are flagged for review rather than confirmed.');
+    spots.push('Sum custom_model_data-gildi gagnapakka eru hlutir eða fjölvar sem ekki er hægt að greina að fullu án keyrslu. Viðkomandi upphafspunktar hluta eru því merktir til yfirferðar.');
   }
   if (graph.byKind.atlas.length === 0 && graph.byKind.texture.length > 0) {
-    spots.push('No atlas files were found. If your server relies on an atlas directory source we did not see, some GUI/runtime textures could be used without a model reference.');
+    spots.push('Engin áferðarsöfn fundust. Ef þjónninn notar möppu sem uppsprettu áferðarsafns sem við sáum ekki gætu sumar áferðir verið í notkun án tilvísunar úr líkani.');
   }
   return spots;
 }
@@ -390,12 +391,7 @@ function isEntryKind(k: AssetKind): boolean {
   return k === 'item_definition' || k === 'font' || k === 'particle' || k === 'equipment' || k === 'atlas' || k === 'blockstate';
 }
 function labelKind(k: AssetKind): string {
-  const map: Partial<Record<AssetKind, string>> = {
-    texture: 'texture', texture_meta: 'animation metadata', model: 'model',
-    blockstate: 'blockstate', item_definition: 'item definition', font: 'font',
-    particle: 'particle', equipment: 'equipment', atlas: 'atlas', sound: 'sound',
-  };
-  return map[k] ?? k;
+  return assetKindLabel(k);
 }
 function sevRank(s: Finding['severity']): number {
   return { error: 0, warning: 1, cleanup: 2, info: 3 }[s];
@@ -409,6 +405,6 @@ export function compareFindings(a: Finding, b: Finding): number {
 }
 export function fmtBytes(b: number): string {
   if (b < 1024) return `${b} B`;
-  if (b < 1024 * 1024) return `${(b / 1024).toFixed(1)} KB`;
-  return `${(b / 1024 / 1024).toFixed(1)} MB`;
+  if (b < 1024 * 1024) return `${(b / 1024).toLocaleString('is-IS', { maximumFractionDigits: 1 })} KB`;
+  return `${(b / 1024 / 1024).toLocaleString('is-IS', { maximumFractionDigits: 1 })} MB`;
 }

@@ -1,5 +1,7 @@
 'use client';
 
+import { errorMessage } from '@/lib/icelandic';
+
 import Link from 'next/link';
 import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
@@ -27,7 +29,7 @@ import { generateReportMarkdown, generateCleanupJson, download } from './ui/expo
 
 const ModelViewer3D = dynamic(() => import('./model-viewer-3d'), {
   ssr: false,
-  loading: () => <div style={{ height: 380, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-faint)', fontSize: 12, border: '1px solid var(--hair)', borderRadius: 8 }}>Loading 3D viewer…</div>,
+  loading: () => <div style={{ height: 380, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-faint)', fontSize: 12, border: '1px solid var(--hair)', borderRadius: 8 }}>Hleð þrívíðri forskoðun…</div>,
 });
 
 const IMG = /\.(png|jpg|jpeg)$/i;
@@ -64,7 +66,7 @@ export default function App() {
   const [selectedContent, setSelectedContent] = useState<string | null>(null);
   const [editorTab, setEditorTab] = useState('preview');
   const [revision, setRevision] = useState(0);
-  const [status, setStatus] = useState('No pack loaded');
+  const [status, setStatus] = useState('Enginn pakki opinn');
   const [dragging, setDragging] = useState(false);
   const [painting3dTex, setPainting3dTex] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -81,9 +83,9 @@ export default function App() {
       setAnalysis(r.analysis);
       setFilePaths(Object.keys(r.fileData));
       setSelected(null); setSelectedContent(null); setTab('overview');
-      setStatus(`Analysed ${Object.keys(r.fileData).length} files · ${r.analysis.summary.errors} errors · ${r.analysis.summary.safeRemove} removable`);
+      setStatus(`Skrár greindar: ${Object.keys(r.fileData).length} · Villur: ${r.analysis.summary.errors} · Má fjarlægja: ${r.analysis.summary.safeRemove}`);
     } else if (state.status === 'error') {
-      setStatus(`Error: ${state.error}`);
+      setStatus(`Villa: ${state.error}`);
     }
   }, [state.status, state.result, state.error]);
 
@@ -101,7 +103,7 @@ export default function App() {
 
   const loadFiles = useCallback((packFile: File, datapacks: File[]) => {
     run(packFile, datapacks);
-    setStatus(`Loading ${packFile.name}…`);
+    setStatus(`Opna ${packFile.name}…`);
   }, [run]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -143,7 +145,7 @@ export default function App() {
     fileDataRef.current[selected] = dataUrl;
     setSelectedContent(dataUrl);
     setRevision((r) => r + 1);
-    setStatus(`Saved edits to ${selected.split('/').pop()}`);
+    setStatus(`Breytingar vistaðar í ${selected.split('/').pop()}`);
   }, [selected]);
 
   // Repoint one broken reference: replace occurrences of `oldValue` in the file
@@ -154,11 +156,11 @@ export default function App() {
     const content = fileDataRef.current[file];
     if (!content) return;
     const { text, applied } = replaceRefsInJson(content, [{ from: oldValue, to: newValue, kind }]);
-    if (!applied) { setStatus(`No occurrence of "${oldValue}" found in ${file.split('/').pop()}`); return; }
+    if (!applied) { setStatus(`"${oldValue}" fannst ekki í ${file.split('/').pop()}`); return; }
     setFile(file, text, true);
     if (selected === file) setSelectedContent(text);
     reanalyze();
-    setStatus(`Repointed "${oldValue}" → "${newValue}" in ${file.split('/').pop()}`);
+    setStatus(`Tilvísun breytt: "${oldValue}" → "${newValue}" í ${file.split('/').pop()}`);
   }, [selected, reanalyze]);
 
   // Apply many repoints at once, grouped per file so each file is parsed once.
@@ -176,7 +178,7 @@ export default function App() {
       if (applied > 0) { setFile(file, text, true); if (selected === file) setSelectedContent(text); total += applied; files++; }
     }
     reanalyze();
-    setStatus(total ? `Repointed ${total} reference${total !== 1 ? 's' : ''} across ${files} file${files !== 1 ? 's' : ''}` : 'No references were changed');
+    setStatus(total ? `Tilvísanir uppfærðar: ${total} · Skrár: ${files}` : 'Engum tilvísunum var breytt');
   }, [selected, reanalyze]);
 
   const deleteFiles = useCallback((paths: string[]) => {
@@ -184,7 +186,7 @@ export default function App() {
     setFilePaths(Object.keys(fileDataRef.current));
     if (selected && paths.includes(selected)) { setSelected(null); setSelectedContent(null); }
     reanalyze();
-    setStatus(`Deleted ${paths.length} file${paths.length !== 1 ? 's' : ''}`);
+    setStatus(`Skrám eytt: ${paths.length}`);
   }, [selected, reanalyze]);
 
   const updateFiles = useCallback((updates: Record<string, string>) => {
@@ -195,7 +197,7 @@ export default function App() {
     }
     setFilePaths(Object.keys(fileDataRef.current));
     reanalyze();
-    setStatus(`Updated ${Object.keys(updates).length} file(s)`);
+    setStatus(`Skrár uppfærðar: ${Object.keys(updates).length}`);
   }, [reanalyze]);
 
   // Rename a file and repoint every reference to it. References are matched by
@@ -243,19 +245,19 @@ export default function App() {
     setFilePaths(Object.keys(data));
     if (selected === oldPath) { setSelected(newPath); setSelectedContent(data[newPath]); }
     reanalyze();
-    setStatus(`Renamed ${oldPath.split('/').pop()} → ${newPath.split('/').pop()}`);
+    setStatus(`Endurnefnt: ${oldPath.split('/').pop()} → ${newPath.split('/').pop()}`);
   }, [selected, reanalyze]);
 
   const addDatapacks = useCallback(async (files: File[]) => {
-    setStatus('Reading datapacks…');
+    setStatus('Les gagnapakka…');
     for (const f of files) {
       try {
         const ex = await extractZip(await f.arrayBuffer());
         dpRef.current = [...dpRef.current.filter((d) => d.label !== f.name), { label: f.name, files: ex.rawFiles }];
-      } catch (e: any) { setStatus('Datapack read failed: ' + e.message); }
+      } catch (e: any) { setStatus(errorMessage(e, 'Ekki tókst að lesa gagnapakkann. Athugaðu zip-skrána.')); }
     }
     reanalyze();
-    setStatus(`Loaded ${files.length} datapack(s) — coverage updated`);
+    setStatus(`Gagnapakkar opnaðir: ${files.length} — umfang uppfært`);
   }, [reanalyze]);
 
   // Save painted pixels to an arbitrary texture path (used by the Textures studio).
@@ -263,7 +265,7 @@ export default function App() {
     fileDataRef.current[path] = dataUrl;
     if (selected === path) setSelectedContent(dataUrl);
     setRevision((r) => r + 1);
-    setStatus(`Saved ${path.split('/').pop()}`);
+    setStatus(`Vistað: ${path.split('/').pop()}`);
   }, [selected]);
 
   // Add an overlay layer (layer1+) to a generated item model: create a
@@ -272,7 +274,7 @@ export default function App() {
     const content = fileDataRef.current[modelPath];
     if (!content) return null;
     let json: any;
-    try { json = JSON.parse(content); } catch { setStatus('Cannot add overlay: model JSON is invalid'); return null; }
+    try { json = JSON.parse(content); } catch { setStatus('Ekki hægt að bæta við lagi: JSON líkansins er ógilt'); return null; }
     const tex = (json.textures && typeof json.textures === 'object') ? json.textures : {};
     const ns = modelPath.match(/^assets\/([^/]+)\//)?.[1] ?? 'minecraft';
     const layerKeys = Object.keys(tex).filter((k) => /^layer\d+$/.test(k));
@@ -292,7 +294,7 @@ export default function App() {
     if (selected === modelPath) setSelectedContent(updated);
     setFilePaths(Object.keys(fileDataRef.current));
     reanalyze();
-    setStatus(`Added overlay layer${nextIdx} to ${modelPath.split('/').pop()} — paint it now`);
+    setStatus(`Viðbótarlagi layer${nextIdx} bætt við ${modelPath.split('/').pop()} — nú geturðu málað það`);
     return overlayPath;
   }, [selected, reanalyze]);
 
@@ -317,7 +319,7 @@ export default function App() {
     if (selected === modelPath) setSelectedContent(updated);
     setFilePaths(Object.keys(fileDataRef.current));
     reanalyze();
-    setStatus(`Removed ${layerKey} from ${modelPath.split('/').pop()}`);
+    setStatus(`${layerKey} fjarlægt úr ${modelPath.split('/').pop()}`);
   }, [selected, reanalyze]);
 
   const exportZip = useCallback(async () => {
@@ -331,8 +333,8 @@ export default function App() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a'); a.href = url; a.download = packName || 'resource_pack.zip'; a.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
-      setStatus('Exported pack .zip');
-    } catch (e: any) { setStatus('Export error: ' + e.message); }
+      setStatus('Pakki fluttur út sem .zip');
+    } catch (e: any) { setStatus(errorMessage(e, 'Ekki tókst að flytja pakkann út.')); }
   }, [packName]);
 
   const exportReport = useCallback((kind: 'report' | 'cleanup') => {
@@ -340,7 +342,7 @@ export default function App() {
     const base = (packName || 'pack').replace(/\.zip$/i, '');
     if (kind === 'report') download(`${base}-report.md`, generateReportMarkdown(analysis, packName), 'text/markdown');
     else download(`${base}-cleanup.json`, generateCleanupJson(analysis, packName), 'application/json');
-    setStatus(`Exported ${kind}`);
+    setStatus(`Flutt út: ${kind === 'report' ? 'skýrsla' : 'tiltektarlisti'}`);
   }, [analysis, packName]);
 
   // ── Derived ─────────────────────────────────────────────────────────────────
@@ -354,19 +356,19 @@ export default function App() {
   const isJson = ext === 'json' && !isMeta;
 
   // Navigation: the four everyday destinations up front, everything else under
-  // "More" — every option stays one click away without a 9-tab wall.
+  // "Meira" — every option stays one click away without a 9-tab wall.
   const PRIMARY_TABS = [
-    { id: 'overview', label: 'Overview' },
-    { id: 'report', label: 'Report', badge: issueCount + (analysis?.summary.safeRemove ?? 0) },
-    { id: 'textures', label: 'Textures' },
-    { id: 'editor', label: 'Files' },
+    { id: 'overview', label: 'Yfirlit' },
+    { id: 'report', label: 'Skýrsla', badge: issueCount + (analysis?.summary.safeRemove ?? 0) },
+    { id: 'textures', label: 'Áferðir' },
+    { id: 'editor', label: 'Skrár' },
   ];
   const MORE_TABS = [
-    { id: 'assets', label: 'Assets', hint: 'every file + verdicts' },
-    { id: 'datapacks', label: 'Datapacks', hint: 'load for coverage' },
-    { id: 'graph', label: 'Graph', hint: 'dependency map' },
-    { id: 'diff', label: 'Diff', hint: 'compare two packs' },
-    { id: 'discs', label: 'Discs', hint: 'custom music' },
+    { id: 'assets', label: 'Tilföng', hint: 'allar skrár og niðurstöður' },
+    { id: 'datapacks', label: 'Gagnapakkar', hint: 'bæta við í greiningu' },
+    { id: 'graph', label: 'Tengsl', hint: 'kort af tengslum skráa' },
+    { id: 'diff', label: 'Samanburður', hint: 'bera saman tvo pakka' },
+    { id: 'discs', label: 'Hljómplötur', hint: 'eigin tónlist' },
   ];
 
   const busy = state.status === 'running';
@@ -381,7 +383,7 @@ export default function App() {
         <div className="rp-overlay">
           <Glass style={{ padding: '30px 44px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
             <div className="rp-spin" />
-            <div style={{ fontSize: '0.6rem', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--accent)' }}>{state.phase || 'Processing'}</div>
+            <div style={{ fontSize: '0.6rem', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--accent)' }}>{state.phase || 'Vinn úr gögnum'}</div>
             <div className="rp-progress"><i style={{ width: `${Math.round(state.progress * 100)}%` }} /></div>
           </Glass>
         </div>
@@ -389,11 +391,11 @@ export default function App() {
 
       {/* Top bar */}
       <div className="rp-top">
-        <Link href="/" style={{ textDecoration: 'none' }}><button className="rp-btn sm">← Home</button></Link>
-        <div className="rp-brand">JOÐ<b>craft</b><span>Pack Assay</span></div>
+        <Link href="/" style={{ textDecoration: 'none' }}><button className="rp-btn sm">← Forsíða</button></Link>
+        <div className="rp-brand">JOÐ<span>Pakkagreining</span></div>
         <div style={{ flex: 1 }} />
-        {fileCount > 0 && <button className="rp-btn sm" onClick={exportZip}>Export .zip</button>}
-        <button className="rp-btn sm active" onClick={() => fileInputRef.current?.click()}>{fileCount > 0 ? 'Load new' : 'Open .zip'}</button>
+        {fileCount > 0 && <button className="rp-btn sm" onClick={exportZip}>Flytja út .zip</button>}
+        <button className="rp-btn sm active" onClick={() => fileInputRef.current?.click()}>{fileCount > 0 ? 'Opna annan' : 'Opna .zip'}</button>
         <input ref={fileInputRef} type="file" accept=".zip" style={{ display: 'none' }} onChange={handleFileChange} />
       </div>
 
@@ -417,9 +419,9 @@ export default function App() {
             onDrop={handleDrop} onDragOver={(e) => { e.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)}>
             <div style={{ width: '100%', maxWidth: 560 }}>
               <div style={{ textAlign: 'center', marginBottom: 28 }}>
-                <div className="rp-label" style={{ marginBottom: 14 }}>JOÐcraft · Resource Pack Assay</div>
+                <div className="rp-label" style={{ marginBottom: 14 }}>JOÐ · Greining útlitspakka</div>
                 <div className="rp-title" style={{ fontSize: 'clamp(1.6rem, 4vw, 2.6rem)', color: 'var(--ink)', lineHeight: 1.05, marginBottom: 14 }}>
-                  Find what’s broken.<br />Prove what’s safe to remove.
+                  Finndu það sem er bilað.<br />Sjáðu hvað má fjarlægja.
                 </div>
                 <div style={{ fontSize: '0.78rem', color: 'var(--ink-dim)', lineHeight: 1.7, maxWidth: 440, margin: '0 auto' }}>
                   A Minecraft-accurate dependency analyser. It resolves your parent chains, blockstates, item definitions,
@@ -428,9 +430,9 @@ export default function App() {
               </div>
               <Glass className={`rp-drop${dragging ? ' drag' : ''}`} onClick={() => fileInputRef.current?.click()}>
                 <div style={{ fontSize: 30, marginBottom: 14, color: 'var(--accent)' }}>◫</div>
-                <div style={{ fontSize: '0.9rem', color: 'var(--ink)', marginBottom: 6 }}>Drop your resource pack .zip</div>
-                <div style={{ fontSize: '0.7rem', color: 'var(--ink-faint)', marginBottom: 18 }}>or click to browse · analysed locally in your browser, nothing is uploaded</div>
-                <span className="rp-btn primary">Choose file</span>
+                <div style={{ fontSize: '0.9rem', color: 'var(--ink)', marginBottom: 6 }}>Slepptu .zip-skrá útlitspakkans hér</div>
+                <div style={{ fontSize: '0.7rem', color: 'var(--ink-faint)', marginBottom: 18 }}>eða smelltu til að velja · greiningin fer fram í vafranum þínum, ekkert er sent út</div>
+                <span className="rp-btn primary">Velja skrá</span>
               </Glass>
             </div>
           </div>
@@ -452,7 +454,7 @@ export default function App() {
                 fileData={fileDataRef.current} filePaths={filePaths} revision={revision}
                 updateContent={updateContent} saveTexture={saveTexture}
                 painting3dTex={painting3dTex} setPainting3dTex={setPainting3dTex}
-                onSave3d={(p: string, d: string) => { fileDataRef.current[p] = d; setRevision((r) => r + 1); setStatus(`Saved ${p.split('/').pop()}`); }}
+                onSave3d={(p: string, d: string) => { fileDataRef.current[p] = d; setRevision((r) => r + 1); setStatus(`Vistað: ${p.split('/').pop()}`); }}
               />
             )}
           </>
@@ -463,10 +465,10 @@ export default function App() {
       <div className="rp-status">
         <span>{status}</span>
         {fileCount > 0 && analysis && <>
-          <span><b>{fileCount}</b> files</span>
-          <span><b>{analysis.summary.textures}</b> textures</span>
-          {analysis.summary.errors > 0 && <span style={{ color: 'var(--sev-error)' }}><b>{analysis.summary.errors}</b> errors</span>}
-          {analysis.summary.safeRemove > 0 && <span style={{ color: 'var(--sev-warning)' }}><b>{analysis.summary.safeRemove}</b> removable</span>}
+          <span><b>{fileCount}</b> skrár</span>
+          <span><b>{analysis.summary.textures}</b> áferðir</span>
+          {analysis.summary.errors > 0 && <span style={{ color: 'var(--sev-error)' }}><b>{analysis.summary.errors}</b> villur</span>}
+          {analysis.summary.safeRemove > 0 && <span style={{ color: 'var(--sev-warning)' }}><b>{analysis.summary.safeRemove}</b> má fjarlægja</span>}
           <span style={{ marginLeft: 'auto', color: 'var(--ink-faint)' }}>{analysis.meta.versionLabel}</span>
         </>}
       </div>
@@ -474,7 +476,7 @@ export default function App() {
   );
 }
 
-// ── "More" tab dropdown — secondary destinations, one click away ──────────────
+// ── "Meira" tab dropdown — secondary destinations, one click away ──────────────
 // The menu is portaled to <body> with fixed positioning: the tab bar scrolls
 // horizontally (overflow-x:auto), and a scrollable ancestor clips vertical
 // overflow too — an in-place absolute menu would be trapped inside the bar.
@@ -512,7 +514,7 @@ function MoreTabs({ items, tab, setTab }: {
   return (
     <div ref={triggerRef} className="rp-more">
       <div className={`rp-tab${active ? ' active' : ''}`} onClick={toggle}>
-        {active ? active.label : 'More'} <span style={{ fontSize: 8 }}>▾</span>
+        {active ? active.label : 'Meira'} <span style={{ fontSize: 8 }}>▾</span>
       </div>
       {open && pos && createPortal(
         <div ref={menuRef} className="rp-more-menu rp-rise" style={{ top: pos.top, right: pos.right }}>
@@ -538,7 +540,7 @@ function EditorPane({
   return (
     <div className="rp-editor-layout">
       <div className="rp-sidebar">
-        <div className="rp-sidebar-title">Pack files · double-click to rename</div>
+        <div className="rp-sidebar-title">Skrár pakkans · tvísmelltu til að endurnefna</div>
         <div className="rp-tree">
           {Object.entries(tree).sort(([, a], [, b]: any) => (typeof a === 'object' && a !== null ? -1 : 0) - (typeof b === 'object' && b !== null ? -1 : 0)).map(([k, v]) => (
             <TreeNode key={k} name={k} node={v} path="" depth={0} selected={selected} onSelect={openInEditor} onRename={renameFile} />
@@ -548,18 +550,18 @@ function EditorPane({
       <div className="rp-center">
         {!selected ? (
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-faint)', flexDirection: 'column', gap: 8 }}>
-            <div style={{ fontSize: 28 }}>◫</div><div>Select a file from the tree</div>
+            <div style={{ fontSize: 28 }}>◫</div><div>Veldu skrá úr listanum</div>
           </div>
         ) : (
           <>
             <div className="rp-tabbar">
-              {isImage && <div className={`rp-subtab${editorTab === 'preview' ? ' active' : ''}`} onClick={() => setEditorTab('preview')}>Preview</div>}
-              {isImage && <div className={`rp-subtab${editorTab === 'paint' ? ' active' : ''}`} onClick={() => setEditorTab('paint')}>✏ Paint</div>}
-              {isAudio && <div className={`rp-subtab${editorTab === 'audio' ? ' active' : ''}`} onClick={() => setEditorTab('audio')}>♪ Audio</div>}
-              {isMeta && <div className={`rp-subtab${editorTab === 'meta' ? ' active' : ''}`} onClick={() => setEditorTab('meta')}>Form</div>}
+              {isImage && <div className={`rp-subtab${editorTab === 'preview' ? ' active' : ''}`} onClick={() => setEditorTab('preview')}>Forskoðun</div>}
+              {isImage && <div className={`rp-subtab${editorTab === 'paint' ? ' active' : ''}`} onClick={() => setEditorTab('paint')}>✏ Mála</div>}
+              {isAudio && <div className={`rp-subtab${editorTab === 'audio' ? ' active' : ''}`} onClick={() => setEditorTab('audio')}>♪ Hljóð</div>}
+              {isMeta && <div className={`rp-subtab${editorTab === 'meta' ? ' active' : ''}`} onClick={() => setEditorTab('meta')}>Eyðublað</div>}
               {(isJson || isMeta) && <div className={`rp-subtab${editorTab === 'editor' ? ' active' : ''}`} onClick={() => setEditorTab('editor')}>JSON</div>}
-              {isJson && <div className={`rp-subtab${editorTab === '3d' ? ' active' : ''}`} onClick={() => setEditorTab('3d')}>◈ 3D View</div>}
-              {!isImage && !isAudio && !isJson && !isMeta && <div className={`rp-subtab${editorTab === 'editor' ? ' active' : ''}`} onClick={() => setEditorTab('editor')}>Raw</div>}
+              {isJson && <div className={`rp-subtab${editorTab === '3d' ? ' active' : ''}`} onClick={() => setEditorTab('3d')}>◈ Þrívídd</div>}
+              {!isImage && !isAudio && !isJson && !isMeta && <div className={`rp-subtab${editorTab === 'editor' ? ' active' : ''}`} onClick={() => setEditorTab('editor')}>Hrátt</div>}
               <div style={{ padding: '8px 12px', fontSize: '0.65rem', color: 'var(--ink-faint)', marginLeft: 'auto', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selected.split('/').slice(-2).join('/')}</div>
             </div>
             {editorTab === '3d' && isJson ? (
@@ -580,13 +582,13 @@ function EditorPane({
                   </div>
                 ) : (
                   <div style={{ width: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-faint)', fontSize: '0.7rem', padding: 20, textAlign: 'center', flexShrink: 0, borderLeft: '1px solid var(--hair)' }}>
-                    <div><div style={{ fontSize: 26, marginBottom: 8, color: 'var(--hair-strong)' }}>◈</div>Click a texture below the 3D view to paint it</div>
+                    <div><div style={{ fontSize: 26, marginBottom: 8, color: 'var(--hair-strong)' }}>◈</div>Smelltu á áferð undir þrívíðu sýninni til að mála hana</div>
                   </div>
                 )}
               </div>
             ) : (
               <div className="rp-editarea">
-                {editorTab === 'preview' && isImage && <div><img src={selectedContent} style={{ imageRendering: 'pixelated', border: '1px solid var(--hair)', borderRadius: 8, maxWidth: '100%' }} alt={selected} /><div style={{ marginTop: 8, fontSize: '0.7rem', color: 'var(--ink-faint)' }}>Switch to ✏ Paint to edit pixels</div></div>}
+                {editorTab === 'preview' && isImage && <div><img src={selectedContent} style={{ imageRendering: 'pixelated', border: '1px solid var(--hair)', borderRadius: 8, maxWidth: '100%' }} alt={selected} /><div style={{ marginTop: 8, fontSize: '0.7rem', color: 'var(--ink-faint)' }}>Veldu ✏ Mála til að breyta myndpunktum</div></div>}
                 {editorTab === 'paint' && isImage && <PixelPainter dataUrl={selectedContent} onSave={saveTexture} />}
                 {editorTab === 'audio' && isAudio && <AudioPlayer dataUrl={selectedContent} name={selected.split('/').pop()} />}
                 {editorTab === 'meta' && isMeta && <PackMetaEditor content={selectedContent} onChange={updateContent} />}
@@ -594,7 +596,7 @@ function EditorPane({
                 {editorTab === 'editor' && !isJson && !isMeta && !isImage && !isAudio && (
                   selectedContent?.startsWith('data:application/octet-stream')
                     ? <div style={{ padding: 20, fontSize: '0.72rem', color: 'var(--ink-dim)', lineHeight: 1.7 }}>
-                        Binary file — kept as-is and included unchanged when you export the pack.
+                        Tvíundarskrá — helst óbreytt og fylgir með þegar þú flytur pakkann út.
                       </div>
                     : <textarea className="rp-code" value={selectedContent || ''} onChange={(e) => updateContent(e.target.value)} spellCheck={false} />
                 )}

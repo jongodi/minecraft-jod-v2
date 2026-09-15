@@ -1,3 +1,4 @@
+import { errorMessage } from '@/lib/icelandic';
 import { NextResponse } from 'next/server';
 import { type DatapackMeta } from '@/data/datapacks';
 import { getAllPacks } from '@/lib/custom-datapacks';
@@ -59,7 +60,7 @@ async function checkModrinth(pack: DatapackMeta): Promise<DatapackUpdateResult> 
         }
       );
       if (!res2.ok) {
-        return { ...base, error: `Modrinth returned ${res.status}` };
+        return { ...base, error: `Modrinth skilaði stöðukóðanum ${res.status}` };
       }
       const versions = await res2.json();
       return extractModrinthVersion(base, pack, versions);
@@ -68,7 +69,7 @@ async function checkModrinth(pack: DatapackMeta): Promise<DatapackUpdateResult> 
     const versions = await res.json();
     return extractModrinthVersion(base, pack, versions);
   } catch (err) {
-    return { ...base, error: String(err) };
+    return { ...base, error: errorMessage(err) };
   }
 }
 
@@ -84,7 +85,7 @@ function extractModrinthVersion(
   versions: ModrinthVersion[]
 ): DatapackUpdateResult {
   if (!Array.isArray(versions) || versions.length === 0) {
-    return { ...base, error: 'No versions found on Modrinth' };
+    return { ...base, error: 'Engar útgáfur fundust á Modrinth.' };
   }
 
   // Modrinth returns versions sorted by date descending — first is latest
@@ -135,7 +136,7 @@ async function checkGitHub(pack: DatapackMeta): Promise<DatapackUpdateResult> {
       }
     );
 
-    if (!res.ok) return { ...base, error: `GitHub returned ${res.status}` };
+    if (!res.ok) return { ...base, error: `GitHub skilaði stöðukóðanum ${res.status}` };
 
     const release       = await res.json() as { tag_name: string; assets?: Array<{ name: string; browser_download_url: string }>; html_url: string; body?: string };
     const latestVersion = normalizeVersion(release.tag_name);
@@ -156,7 +157,7 @@ async function checkGitHub(pack: DatapackMeta): Promise<DatapackUpdateResult> {
       changelog:   release.body ?? null,
     };
   } catch (err) {
-    return { ...base, error: String(err) };
+    return { ...base, error: errorMessage(err) };
   }
 }
 

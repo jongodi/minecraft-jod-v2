@@ -483,7 +483,7 @@ export default function ModelViewer3D({
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 180, color: DIM, gap: 8, fontSize: 12, border: `1px solid ${BORDER}`, borderRadius: 8, background: '#090c10' }}>
           <span style={{ fontSize: 24 }}>{isItem ? '◈' : '⬡'}</span>
           <div style={{ textAlign: 'center', lineHeight: 1.6 }}>
-            {isItem ? '2D item sprite — edit it in the painter' : 'No geometry (parent/entity model not resolved)'}
+            {isItem ? '2D item sprite — edit it in the painter' : 'Engin lögun (yfirlíkan eða verulíkan fannst ekki)'}
           </div>
         </div>
         {isItem && firstTex && <img src={firstTex} style={{ imageRendering: 'pixelated', border: `1px solid ${BORDER}`, width: 64, height: 64, objectFit: 'contain', background: '#070910' }} alt="item" />}
@@ -495,8 +495,8 @@ export default function ModelViewer3D({
     <div>
       {editable && (
         <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'center', marginBottom: 8 }}>
-          <button className={`rp-btn sm${mode === 'paint' ? ' active' : ''}`} onClick={() => setMode('paint')}>✎ Paint</button>
-          <button className={`rp-btn sm${mode === 'rotate' ? ' active' : ''}`} onClick={() => setMode('rotate')}>⟳ Rotate</button>
+          <button className={`rp-btn sm${mode === 'paint' ? ' active' : ''}`} onClick={() => setMode('paint')}>✎ Mála</button>
+          <button className={`rp-btn sm${mode === 'rotate' ? ' active' : ''}`} onClick={() => setMode('rotate')}>⟳ Snúa</button>
           <span style={{ width: 1, height: 18, background: BORDER, margin: '0 3px' }} />
           {(['pen', 'eraser', 'pick'] as const).map((t) => (
             <button key={t} className={`rp-btn sm${tool === t ? ' active' : ''}`} onClick={() => { setTool(t); setMode('paint'); }}>{t === 'pen' ? '✏' : t === 'eraser' ? '◻' : '✦'}</button>
@@ -504,25 +504,25 @@ export default function ModelViewer3D({
           <input type="color" value={color} onChange={(e) => setColor(e.target.value)} style={{ width: 26, height: 24, padding: 2, background: 'var(--bg-card)', border: `1px solid ${BORDER}`, cursor: 'pointer' }} />
           {[1, 2, 3].map((b) => <button key={b} className={`rp-btn sm${brush === b ? ' active' : ''}`} onClick={() => setBrush(b)}>{b}px</button>)}
           <span style={{ width: 1, height: 18, background: BORDER, margin: '0 3px' }} />
-          <button className="rp-btn sm" title="Undo (Ctrl+Z)" disabled={histRef.current.past.length === 0} onClick={() => undoFnRef.current()}>↶</button>
-          <button className="rp-btn sm" title="Redo (Ctrl+Shift+Z)" disabled={histRef.current.future.length === 0} onClick={() => redoFnRef.current()}>↷</button>
+          <button className="rp-btn sm" title="Afturkalla (Ctrl+Z)" disabled={histRef.current.past.length === 0} onClick={() => undoFnRef.current()}>↶</button>
+          <button className="rp-btn sm" title="Endurtaka (Ctrl+Shift+Z)" disabled={histRef.current.future.length === 0} onClick={() => redoFnRef.current()}>↷</button>
         </div>
       )}
       <div style={{ position: 'relative', width: '100%', height, border: `1px solid ${BORDER}`, borderRadius: 8, overflow: 'hidden' }}>
         <div ref={mountRef} style={{ width: '100%', height: '100%' }} />
         <div style={{ position: 'absolute', top: 8, left: 8, fontSize: 9, color: '#556', letterSpacing: '1px', background: 'rgba(9,12,16,0.7)', padding: '2px 6px', borderRadius: 4 }}>
-          {editable && mode === 'paint' ? 'CLICK/DRAG TO PAINT · CTRL+Z UNDO · ⟳ TO ROTATE' : 'DRAG TO ROTATE · SCROLL TO ZOOM'}
+          {editable && mode === 'paint' ? 'SMELLTU EÐA DRAGÐU TIL AÐ MÁLA · CTRL+Z AFTURKALLAR · ⟳ TIL AÐ SNÚA' : 'DRAGÐU TIL AÐ SNÚA · SKRUNAÐU TIL AÐ ÞYSJA'}
         </div>
         {entityMode && <div style={{ position: 'absolute', top: 8, right: 8, fontSize: 9, color: 'var(--sev-warning)', letterSpacing: '1px', background: 'rgba(9,12,16,0.7)', padding: '2px 6px', borderRadius: 4 }}>{entityMode.name.toUpperCase()} · APPROX</div>}
       </div>
 
       {texSlots.length > 0 && (
         <div style={{ marginTop: 10 }}>
-          <div style={{ fontSize: 9, color: DIM, letterSpacing: '3px', textTransform: 'uppercase', marginBottom: 8 }}>Textures in this model</div>
+          <div style={{ fontSize: 9, color: DIM, letterSpacing: '3px', textTransform: 'uppercase', marginBottom: 8 }}>Áferðir í þessu líkani</div>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {texSlots.map(({ key, value, dataUrl, packPath }) => (
               <div key={key} onClick={() => packPath && onSelectTexture?.(packPath)}
-                title={`${key}: ${value}${packPath ? '\nClick to edit texture' : '\n(not found in pack)'}`}
+                title={`${key}: ${value}${packPath ? '\nSmelltu til að breyta áferð' : '\n(fannst ekki í pakkanum)'}`}
                 style={{ cursor: packPath ? 'pointer' : 'default', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, background: '#0d0f12', border: `1px solid ${packPath ? BORDER : '#3a1a1a'}`, borderRadius: 6, padding: '6px 8px', width: 60 }}>
                 {dataUrl ? <img src={dataUrl} style={{ width: 30, height: 30, imageRendering: 'pixelated', objectFit: 'contain' }} alt={key} />
                   : <div style={{ width: 30, height: 30, background: '#1a0a0a', border: '1px solid #3a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, color: '#f87171' }}>✕</div>}

@@ -116,7 +116,7 @@ export function useAgo(ts: number | null): string {
   }, []);
   if (!ts) return '';
   const s = Math.max(0, Math.round((Date.now() - ts) / 1000));
-  if (s < 10) return 'just now';
-  if (s < 60) return `${s}s ago`;
-  return `${Math.floor(s / 60)} min ago`;
+  if (s < 10) return 'rétt í þessu';
+  if (s < 60) return `fyrir ${s} sek.`;
+  return `fyrir ${Math.floor(s / 60)} mín.`;
 }

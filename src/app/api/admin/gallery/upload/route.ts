@@ -10,12 +10,12 @@ export async function POST(req: NextRequest) {
 
   const formData = await req.formData();
   const file     = formData.get('file')     as File | null;
-  const title    = (formData.get('title')    as string | null) ?? 'NEW SCREENSHOT';
+  const title    = (formData.get('title')    as string | null) ?? 'NÝ MYND ÚR LEIKNUM';
   const sublabel = (formData.get('sublabel') as string | null) ?? '';
 
-  if (!file) return NextResponse.json({ error: 'No file provided' }, { status: 400 });
-  if (!file.type.startsWith('image/')) return NextResponse.json({ error: 'Only image files are allowed' }, { status: 400 });
-  if (file.size > 10 * 1024 * 1024)   return NextResponse.json({ error: 'File too large (max 10 MB)' }, { status: 400 });
+  if (!file) return NextResponse.json({ error: 'Engin skrá valin.' }, { status: 400 });
+  if (!file.type.startsWith('image/')) return NextResponse.json({ error: 'Aðeins er hægt að hlaða upp myndum.' }, { status: 400 });
+  if (file.size > 10 * 1024 * 1024)   return NextResponse.json({ error: 'Skráin er of stór (hámark 10 MB).' }, { status: 400 });
 
   const ext = file.name.split('.').pop()?.toLowerCase() ?? 'png';
   const id  = randomUUID();

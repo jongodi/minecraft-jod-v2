@@ -40,7 +40,7 @@ export async function PUT(req: NextRequest) {
   if (!(await requireAdmin())) return unauthorizedResponse();
   const { versions } = await req.json() as { versions?: Record<string, string> };
   if (!versions || typeof versions !== 'object') {
-    return NextResponse.json({ error: 'versions object required' }, { status: 400 });
+    return NextResponse.json({ error: 'Útgáfuupplýsingar vantar.' }, { status: 400 });
   }
 
   // Only keep entries for known pack IDs (static + custom) and non-empty values

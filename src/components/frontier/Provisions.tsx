@@ -2,8 +2,8 @@ import { DATAPACKS } from '@/data/datapacks';
 import { Arrow, Stamp } from './Bits';
 
 const CATEGORY: Record<string, string> = {
-  BUILD: 'BUILDING', COMBAT: 'COMBAT', QOL: 'QUALITY OF LIFE',
-  SOCIAL: 'SOCIAL', STRUCTURE: 'STRUCTURES', SURVIVAL: 'SURVIVAL',
+  BUILD: 'BYGGINGAR', COMBAT: 'BARDAGAR', QOL: 'ÞÆGINDI',
+  SOCIAL: 'SAMSPIL', STRUCTURE: 'MANNVIRKI', SURVIVAL: 'LÍFSBARÁTTA',
 };
 
 export default function Provisions() {
@@ -13,15 +13,15 @@ export default function Provisions() {
       <div className="j-wrap">
         <div className="j-store__head">
           <div>
-            <p className="j-note j-note--big">What&rsquo;s loaded on the server</p>
-            <p className="j-note">{DATAPACKS.length} datapacks. nothing to install on your side, the resource pack comes down when you ride in</p>
+            <p className="j-note j-note--big">Það sem er uppsett á þjóninum</p>
+            <p className="j-note">{DATAPACKS.length} gagnapakkar. Þú þarft ekkert að setja upp; útlitspakkinn sækist þegar þú tengist</p>
           </div>
-          <p className="j-note j-note--faint">kept the receipt <Arrow /></p>
+          <p className="j-note j-note--faint">við geymdum kvittunina <Arrow /></p>
         </div>
 
         <div className="j-receipt">
-          <p className="j-receipt__title">JOÐ GENERAL STORE</p>
-          <p className="j-receipt__meta">play.jodcraft.world<br />Minecraft {versions.join(' / ')} · Java Edition</p>
+          <p className="j-receipt__title">JOÐ KAUPFÉLAG</p>
+          <p className="j-receipt__meta">play.jodcraft.world<br />Minecraft {versions.join(' / ')} · Java-útgáfa</p>
           <hr className="j-receipt__hr" />
           {DATAPACKS.map((d, i) => (
             <div key={d.id}>
@@ -35,12 +35,12 @@ export default function Provisions() {
             </div>
           ))}
           <hr className="j-receipt__hr" />
-          <div className="j-receipt__total"><span>PACKS LOADED</span><span>{DATAPACKS.length}</span></div>
-          <div className="j-receipt__total"><span>TO PAY</span><span>NOTHING</span></div>
+          <div className="j-receipt__total"><span>UPPSETTIR PAKKAR</span><span>{DATAPACKS.length}</span></div>
+          <div className="j-receipt__total"><span>TIL GREIÐSLU</span><span>EKKERT</span></div>
           <hr className="j-receipt__hr" />
-          <p className="j-receipt__foot">THANK YOU · RIDE SAFE</p>
+          <p className="j-receipt__foot">TAKK FYRIR · GÓÐA FERÐ</p>
           <div className="j-receipt__code" aria-hidden="true" />
-          <Stamp small r={-12}>Paid in full</Stamp>
+          <Stamp small r={-12}>Greitt að fullu</Stamp>
         </div>
       </div>
     </section>

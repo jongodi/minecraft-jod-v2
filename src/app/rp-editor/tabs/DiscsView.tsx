@@ -7,26 +7,26 @@ import { BG, BG2, BG3, BORDER, ACCENT, ACCENT2, DIM, TEXT, TEXT2, WARN, ERR } fr
 
 // duration = vanilla track length in seconds (used to warn when upload is longer)
 const VANILLA_DISCS = [
-  { id: '13',               vanillaName: 'Music Disc',  vanillaDesc: 'C418 - 13',                         color: '#f97316', duration: 178 },
-  { id: 'cat',              vanillaName: 'Music Disc',  vanillaDesc: 'C418 - cat',                        color: '#eab308', duration: 185 },
-  { id: 'blocks',           vanillaName: 'Music Disc',  vanillaDesc: 'C418 - blocks',                     color: '#22c55e', duration: 345 },
-  { id: 'chirp',            vanillaName: 'Music Disc',  vanillaDesc: 'C418 - chirp',                      color: '#f87171', duration: 185 },
-  { id: 'far',              vanillaName: 'Music Disc',  vanillaDesc: 'C418 - far',                        color: '#6366f1', duration: 174 },
-  { id: 'mall',             vanillaName: 'Music Disc',  vanillaDesc: 'C418 - mall',                       color: '#ec4899', duration: 197 },
-  { id: 'mellohi',          vanillaName: 'Music Disc',  vanillaDesc: 'C418 - mellohi',                    color: '#8b5cf6', duration:  96 },
-  { id: 'stal',             vanillaName: 'Music Disc',  vanillaDesc: 'C418 - stal',                       color: '#a78bfa', duration: 150 },
-  { id: 'strad',            vanillaName: 'Music Disc',  vanillaDesc: 'C418 - strad',                      color: '#34d399', duration: 188 },
-  { id: 'ward',             vanillaName: 'Music Disc',  vanillaDesc: 'C418 - ward',                       color: '#22d3ee', duration: 251 },
-  { id: '11',               vanillaName: 'Music Disc',  vanillaDesc: 'C418 - 11',                         color: '#94a3b8', duration:  71 },
-  { id: 'wait',             vanillaName: 'Music Disc',  vanillaDesc: 'C418 - wait',                       color: '#38bdf8', duration: 238 },
-  { id: 'otherside',        vanillaName: 'Music Disc',  vanillaDesc: 'Lena Raine - otherside',            color: '#c084fc', duration: 195 },
-  { id: '5',                vanillaName: 'Music Disc',  vanillaDesc: 'Samuel Åberg - 5',                  color: '#fb923c', duration: 178 },
-  { id: 'pigstep',          vanillaName: 'Music Disc',  vanillaDesc: 'Lena Raine - Pigstep',              color: '#f472b6', duration: 148 },
-  { id: 'relic',            vanillaName: 'Music Disc',  vanillaDesc: 'Aaron Cherof - Relic',              color: '#a3e635', duration: 218 },
-  { id: 'precipice',        vanillaName: 'Music Disc',  vanillaDesc: 'Aaron Cherof - Precipice',          color: '#4ade80', duration: 299 },
-  { id: 'creator',          vanillaName: 'Music Disc',  vanillaDesc: 'Lena Raine - Creator',              color: '#e879f9', duration: 176 },
-  { id: 'creator_music_box',vanillaName: 'Music Disc',  vanillaDesc: 'Lena Raine - Creator (Music Box)',  color: '#f0abfc', duration:  74 },
-  { id: 'tears',            vanillaName: 'Music Disc',  vanillaDesc: 'Lena Raine - Tears',                color: '#67e8f9', duration: 287 },
+  { id: '13',               vanillaName: 'Hljómplata',  vanillaDesc: 'C418 - 13',                         color: '#f97316', duration: 178 },
+  { id: 'cat',              vanillaName: 'Hljómplata',  vanillaDesc: 'C418 - cat',                        color: '#eab308', duration: 185 },
+  { id: 'blocks',           vanillaName: 'Hljómplata',  vanillaDesc: 'C418 - blocks',                     color: '#22c55e', duration: 345 },
+  { id: 'chirp',            vanillaName: 'Hljómplata',  vanillaDesc: 'C418 - chirp',                      color: '#f87171', duration: 185 },
+  { id: 'far',              vanillaName: 'Hljómplata',  vanillaDesc: 'C418 - far',                        color: '#6366f1', duration: 174 },
+  { id: 'mall',             vanillaName: 'Hljómplata',  vanillaDesc: 'C418 - mall',                       color: '#ec4899', duration: 197 },
+  { id: 'mellohi',          vanillaName: 'Hljómplata',  vanillaDesc: 'C418 - mellohi',                    color: '#8b5cf6', duration:  96 },
+  { id: 'stal',             vanillaName: 'Hljómplata',  vanillaDesc: 'C418 - stal',                       color: '#a78bfa', duration: 150 },
+  { id: 'strad',            vanillaName: 'Hljómplata',  vanillaDesc: 'C418 - strad',                      color: '#34d399', duration: 188 },
+  { id: 'ward',             vanillaName: 'Hljómplata',  vanillaDesc: 'C418 - ward',                       color: '#22d3ee', duration: 251 },
+  { id: '11',               vanillaName: 'Hljómplata',  vanillaDesc: 'C418 - 11',                         color: '#94a3b8', duration:  71 },
+  { id: 'wait',             vanillaName: 'Hljómplata',  vanillaDesc: 'C418 - wait',                       color: '#38bdf8', duration: 238 },
+  { id: 'otherside',        vanillaName: 'Hljómplata',  vanillaDesc: 'Lena Raine - otherside',            color: '#c084fc', duration: 195 },
+  { id: '5',                vanillaName: 'Hljómplata',  vanillaDesc: 'Samuel Åberg - 5',                  color: '#fb923c', duration: 178 },
+  { id: 'pigstep',          vanillaName: 'Hljómplata',  vanillaDesc: 'Lena Raine - Pigstep',              color: '#f472b6', duration: 148 },
+  { id: 'relic',            vanillaName: 'Hljómplata',  vanillaDesc: 'Aaron Cherof - Relic',              color: '#a3e635', duration: 218 },
+  { id: 'precipice',        vanillaName: 'Hljómplata',  vanillaDesc: 'Aaron Cherof - Precipice',          color: '#4ade80', duration: 299 },
+  { id: 'creator',          vanillaName: 'Hljómplata',  vanillaDesc: 'Lena Raine - Creator',              color: '#e879f9', duration: 176 },
+  { id: 'creator_music_box',vanillaName: 'Hljómplata',  vanillaDesc: 'Lena Raine - Creator (Music Box)',  color: '#f0abfc', duration:  74 },
+  { id: 'tears',            vanillaName: 'Hljómplata',  vanillaDesc: 'Lena Raine - Tears',                color: '#67e8f9', duration: 287 },
 ] as const;
 
 type VanillaDiscId = typeof VANILLA_DISCS[number]['id'];
@@ -183,36 +183,36 @@ function TxtIn({ value, onChange, placeholder, mono }: { value: string; onChange
 // ─── Minecraft color system ───────────────────────────────────────────────────
 
 const MC_COLORS = [
-  { code: '0', hex: '#000000', name: 'Black' },
-  { code: '1', hex: '#0000AA', name: 'Dark Blue' },
-  { code: '2', hex: '#00AA00', name: 'Dark Green' },
-  { code: '3', hex: '#00AAAA', name: 'Dark Aqua' },
-  { code: '4', hex: '#AA0000', name: 'Dark Red' },
-  { code: '5', hex: '#AA00AA', name: 'Dark Purple' },
-  { code: '6', hex: '#FFAA00', name: 'Gold' },
-  { code: '7', hex: '#AAAAAA', name: 'Gray' },
-  { code: '8', hex: '#555555', name: 'Dark Gray' },
-  { code: '9', hex: '#5555FF', name: 'Blue' },
-  { code: 'a', hex: '#55FF55', name: 'Green' },
-  { code: 'b', hex: '#55FFFF', name: 'Aqua' },
-  { code: 'c', hex: '#FF5555', name: 'Red' },
-  { code: 'd', hex: '#FF55FF', name: 'Light Purple' },
-  { code: 'e', hex: '#FFFF55', name: 'Yellow' },
-  { code: 'f', hex: '#FFFFFF', name: 'White' },
+  { code: '0', hex: '#000000', name: 'Svartur' },
+  { code: '1', hex: '#0000AA', name: 'Dökkblár' },
+  { code: '2', hex: '#00AA00', name: 'Dökkgrænn' },
+  { code: '3', hex: '#00AAAA', name: 'Dökkgrænblár' },
+  { code: '4', hex: '#AA0000', name: 'Dökkrauður' },
+  { code: '5', hex: '#AA00AA', name: 'Dökkfjólublár' },
+  { code: '6', hex: '#FFAA00', name: 'Gylltur' },
+  { code: '7', hex: '#AAAAAA', name: 'Grár' },
+  { code: '8', hex: '#555555', name: 'Dökkgrár' },
+  { code: '9', hex: '#5555FF', name: 'Blár' },
+  { code: 'a', hex: '#55FF55', name: 'Grænn' },
+  { code: 'b', hex: '#55FFFF', name: 'Grænblár' },
+  { code: 'c', hex: '#FF5555', name: 'Rauður' },
+  { code: 'd', hex: '#FF55FF', name: 'Ljósfjólublár' },
+  { code: 'e', hex: '#FFFF55', name: 'Gulur' },
+  { code: 'f', hex: '#FFFFFF', name: 'Hvítur' },
 ] as const;
 
 const MC_FORMAT = [
-  { code: 'l', label: 'B', title: 'Bold',          style: { fontWeight: 700 } },
-  { code: 'o', label: 'I', title: 'Italic',         style: { fontStyle: 'italic' } },
-  { code: 'n', label: 'U', title: 'Underline',      style: { textDecoration: 'underline' } },
-  { code: 'm', label: 'S', title: 'Strikethrough',  style: { textDecoration: 'line-through' } },
-  { code: 'r', label: '↩', title: 'Reset all',      style: {} },
+  { code: 'l', label: 'B', title: 'Feitletrun',          style: { fontWeight: 700 } },
+  { code: 'o', label: 'I', title: 'Skáletrun',         style: { fontStyle: 'italic' } },
+  { code: 'n', label: 'U', title: 'Undirstrikun',      style: { textDecoration: 'underline' } },
+  { code: 'm', label: 'S', title: 'Gegnumstrikun',  style: { textDecoration: 'line-through' } },
+  { code: 'r', label: '↩', title: 'Núllstilla allt',      style: {} },
 ] as const;
 
 // Parse §-code string into styled spans for preview
 function MCPreview({ text, fallback }: { text: string; fallback?: string }) {
   const display = text || fallback || '';
-  if (!display) return <span style={{ color: DIM, fontStyle: 'italic', fontSize: 11 }}>empty</span>;
+  if (!display) return <span style={{ color: DIM, fontStyle: 'italic', fontSize: 11 }}>tómt</span>;
 
   const parts: { text: string; color: string; bold: boolean; italic: boolean; underline: boolean; strike: boolean }[] = [];
   let cur = { color: '#FFFFFF', bold: false, italic: false, underline: false, strike: false };
@@ -309,11 +309,11 @@ function ColorTextField({ value, onChange, placeholder }: { value: string; onCha
         borderBottom: 'none', display: 'flex', alignItems: 'center', gap: 8,
         minHeight: 26,
       }}>
-        <span style={{ fontSize: 9, color: DIM, letterSpacing: '1px', flexShrink: 0 }}>PREVIEW</span>
+        <span style={{ fontSize: 9, color: DIM, letterSpacing: '1px', flexShrink: 0 }}>FORSKOÐUN</span>
         <MCPreview text={value} fallback={placeholder}/>
         <button
           onMouseDown={e => { e.preventDefault(); setOpen(o => !o); }}
-          title="Color & formatting palette"
+          title="Litir og textasnið"
           style={{
             marginLeft: 'auto', background: currentColor ? currentColor.hex : BG3,
             border: `1px solid ${BORDER}`, width: 16, height: 16, cursor: 'pointer',
@@ -326,7 +326,7 @@ function ColorTextField({ value, onChange, placeholder }: { value: string; onCha
       {open && (
         <div style={{ padding: '7px 8px', background: '#0a0c10', border: `1px solid ${BORDER}`, borderBottom: 'none', display: 'flex', flexDirection: 'column', gap: 6 }}>
           <div style={{ fontSize: 9, color: DIM, marginBottom: 2 }}>
-            Select text in the input below, then click a color/format to apply it to only that part
+            Veldu texta í reitnum hér fyrir neðan og smelltu svo á lit eða snið til að breyta aðeins þeim hluta
           </div>
           {/* Color swatches */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
@@ -344,7 +344,7 @@ function ColorTextField({ value, onChange, placeholder }: { value: string; onCha
           </div>
           {/* Formatting codes */}
           <div style={{ display: 'flex', gap: 3, alignItems: 'center', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 9, color: DIM, marginRight: 2 }}>FORMAT</span>
+            <span style={{ fontSize: 9, color: DIM, marginRight: 2 }}>SNIÐ</span>
             {MC_FORMAT.map(f => (
               <button
                 key={f.code}
@@ -358,7 +358,7 @@ function ColorTextField({ value, onChange, placeholder }: { value: string; onCha
               >{f.label}</button>
             ))}
             <button
-              title="Remove all §-codes from this field"
+              title="Fjarlægja alla §-kóða úr þessum reit"
               onMouseDown={e => { e.preventDefault(); onChange(value.replace(/[§&][0-9a-fk-or]/gi, '')); }}
               style={{ padding: '2px 7px', background: BG3, border: `1px solid ${BORDER}44`, color: DIM, cursor: 'pointer', fontSize: 9, outline: 'none' }}>
               clear all codes
@@ -406,7 +406,7 @@ function AddCustomDisc({ onAdd }: { onAdd: (id: string) => void }) {
         autoFocus
         value={newId}
         onChange={e => setNewId((e.target as HTMLInputElement).value.toLowerCase().replace(/[^a-z0-9_]/g, '_'))}
-        placeholder="disc_id (a-z, 0-9, _)"
+        placeholder="auðkenni_plötu (a-z, 0-9, _)"
         style={{ ...inputCss, padding: '4px 8px', fontSize: 11, borderColor: ACCENT2 }}
         onKeyDown={e => {
           if (e.key === 'Enter') commit();
@@ -414,7 +414,7 @@ function AddCustomDisc({ onAdd }: { onAdd: (id: string) => void }) {
         }}
       />
       <div style={{ display: 'flex', gap: 4 }}>
-        <button className="btn sm" style={{ flex: 1, borderColor: `${ACCENT}44`, color: ACCENT }} onClick={commit}>Create</button>
+        <button className="btn sm" style={{ flex: 1, borderColor: `${ACCENT}44`, color: ACCENT }} onClick={commit}>Búa til</button>
         <button className="btn sm" onClick={() => { setOpen(false); setNewId(''); }}>✕</button>
       </div>
     </div>
@@ -439,10 +439,10 @@ function MiniPlayer({ url, label }: { url: string; label?: string }) {
         {playing ? '■' : '▶'}
       </button>
       <span style={{ fontSize: 10, color: DIM, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
-        {label ?? 'sound file'}
+        {label ?? 'hljóðskrá'}
       </span>
       {playing && (
-        <span style={{ fontSize: 8, color: ACCENT, letterSpacing: '2px', animation: 'fadein 0.2s ease' }}>PLAYING</span>
+        <span style={{ fontSize: 8, color: ACCENT, letterSpacing: '2px', animation: 'fadein 0.2s ease' }}>Í SPILUN</span>
       )}
     </div>
   );
@@ -481,13 +481,13 @@ export default function DiscsView({ fileData, filePaths, onUpdateFiles, onDelete
   const soundsJson = useMemo(() => parseSoundsJson(fileData, filePaths), [fileData, filePaths]);
   const langJson   = useMemo(() => parseLangFile(fileData, filePaths),   [fileData, filePaths]);
 
-  // Full disc list = vanilla + any custom ones detected in pack
+  // Full disc list = vanilla + any custom ones detected í pakkanum
   const allDiscs = useMemo<DiscDef[]>(() => {
     const list: DiscDef[] = VANILLA_DISCS.map(d => ({ ...d }));
     for (const p of filePaths) {
       const m = p.match(/assets\/minecraft\/textures\/item\/music_disc_(.+?)\.png$/i);
       if (m && !VANILLA_IDS.has(m[1])) {
-        list.push({ id: m[1], vanillaName: 'Music Disc', vanillaDesc: `Custom · ${m[1]}`, color: '#4ade80', isCustom: true, duration: undefined });
+        list.push({ id: m[1], vanillaName: 'Hljómplata', vanillaDesc: `Sérsniðið · ${m[1]}`, color: '#4ade80', isCustom: true, duration: undefined });
       }
     }
     return list;
@@ -530,7 +530,7 @@ export default function DiscsView({ fileData, filePaths, onUpdateFiles, onDelete
     setEditSoundData(null);
     setEditSoundDuration(null);
     const disc = allDiscs.find(d => d.id === id);
-    setEditName(langJson[nameKey(id)]  ?? disc?.vanillaName ?? 'Music Disc');
+    setEditName(langJson[nameKey(id)]  ?? disc?.vanillaName ?? 'Hljómplata');
     setEditDesc(getDesc(id) ?? disc?.vanillaDesc ?? '');
     setEditJukeTitle(langJson[jukeKey(id)] ?? '');
     setEditSoundRef(getSoundRef(id, soundsJson) ?? `records/${id}`);
@@ -571,7 +571,7 @@ export default function DiscsView({ fileData, filePaths, onUpdateFiles, onDelete
     // 1. Texture
     if (editTexUrl) updates[texPath(selectedId)] = editTexUrl;
 
-    // 2. Model — only needed for truly custom discs (vanilla models already exist in the game)
+    // 2. Model — only needed for truly custom discs (upprunalegt líkans already exist in the game)
     if (disc?.isCustom && !fileData[modelPath(selectedId)]) {
       updates[modelPath(selectedId)] = makeDiscModel(selectedId);
     }
@@ -590,7 +590,7 @@ export default function DiscsView({ fileData, filePaths, onUpdateFiles, onDelete
     newSounds[sndKey(selectedId)] = { sounds: [{ name: sndRef, stream: true }] };
     updates['assets/minecraft/sounds.json'] = JSON.stringify(newSounds, null, 2);
 
-    // 5. Uploaded .ogg
+    // 5. Hlaðið upp .ogg
     if (editSoundData) {
       updates[sndOggPath(sndRef)] = editSoundData.url;
     }
@@ -602,13 +602,13 @@ export default function DiscsView({ fileData, filePaths, onUpdateFiles, onDelete
   // Remove all RP overrides for the selected disc
   const clearOverrides = useCallback(() => {
     if (!selectedId) return;
-    if (!confirm(`Remove all resource pack overrides for disc "${selectedId}"? This will revert it to vanilla.`)) return;
+    if (!confirm(`Fjarlægja allar breytingar útlitspakkans á plötunni "${selectedId}"? Hún fer þá aftur í upprunalegt horf.`)) return;
 
     // Files to delete
     const toDelete: string[] = [];
     if (fileData[texPath(selectedId)])   toDelete.push(texPath(selectedId));
     if (fileData[modelPath(selectedId)]) toDelete.push(modelPath(selectedId));
-    // Remove the sound file path if it's in the pack
+    // Remove the hljóðskrá path if it's in the pack
     const sndRef = getSoundRef(selectedId, soundsJson);
     if (sndRef && fileData[sndOggPath(sndRef)]) toDelete.push(sndOggPath(sndRef));
 
@@ -631,7 +631,7 @@ export default function DiscsView({ fileData, filePaths, onUpdateFiles, onDelete
     onUpdateFiles(updates);
     if (toDelete.length > 0) onDeleteFiles(toDelete);
 
-    // Re-load edit state to show vanilla defaults
+    // Re-load edit state to show upprunalegt gildis
     setTimeout(() => selectDisc(selectedId), 50);
   }, [selectedId, fileData, soundsJson, langJson, onUpdateFiles, onDeleteFiles, selectDisc]);
 
@@ -666,13 +666,13 @@ export default function DiscsView({ fileData, filePaths, onUpdateFiles, onDelete
         {/* Header */}
         <div style={{ padding: '10px 12px', borderBottom: `1px solid ${BORDER}`, flexShrink: 0 }}>
           <div style={{ fontSize: 9, color: DIM, letterSpacing: '2px', textTransform: 'uppercase', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-            💿 Music Discs
-            {overrideCount > 0 && <span style={{ color: ACCENT, background: `${ACCENT}15`, border: `1px solid ${ACCENT}33`, padding: '1px 5px', fontSize: 9, letterSpacing: 0 }}>{overrideCount} overridden</span>}
+            💿 Hljómplatas
+            {overrideCount > 0 && <span style={{ color: ACCENT, background: `${ACCENT}15`, border: `1px solid ${ACCENT}33`, padding: '1px 5px', fontSize: 9, letterSpacing: 0 }}>{overrideCount} breytt</span>}
           </div>
           <input
             value={search}
             onChange={e => setSearch((e.target as HTMLInputElement).value)}
-            placeholder="Search discs…"
+            placeholder="Leita að hljómplötum…"
             style={{ ...inputCss, padding: '4px 8px', fontSize: 11, marginBottom: 6 }}
           />
           <div style={{ display: 'flex', gap: 3 }}>
@@ -680,7 +680,7 @@ export default function DiscsView({ fileData, filePaths, onUpdateFiles, onDelete
               <button key={f} className={`btn sm${filter === f ? ' active' : ''}`}
                 onClick={() => setFilter(f)}
                 style={{ flex: 1, padding: '2px 0', fontSize: 9, textTransform: 'uppercase' }}>
-                {f === 'all' ? `All (${allDiscs.length})` : f === 'overridden' ? `✓ ${overrideCount}` : 'Vanilla'}
+                {f === 'all' ? `Allar (${allDiscs.length})` : f === 'overridden' ? `✓ ${overrideCount}` : 'Upprunalegt'}
               </button>
             ))}
           </div>
@@ -689,7 +689,7 @@ export default function DiscsView({ fileData, filePaths, onUpdateFiles, onDelete
         {/* Disc rows */}
         <div style={{ flex: 1, overflowY: 'auto' }}>
           {filtered.length === 0 && (
-            <div style={{ padding: '20px 12px', fontSize: 10, color: DIM, textAlign: 'center' }}>No discs match filter</div>
+            <div style={{ padding: '20px 12px', fontSize: 10, color: DIM, textAlign: 'center' }}>Engar hljómplötur passa við síuna</div>
           )}
           {filtered.map(d => {
             const isSel  = selectedId === d.id;
@@ -723,9 +723,9 @@ export default function DiscsView({ fileData, filePaths, onUpdateFiles, onDelete
                 </div>
                 {over && (
                   <div style={{ display: 'flex', gap: 1, flexShrink: 0 }}>
-                    {hasTex && <span title="Texture overridden" style={{ fontSize: 9, color: ACCENT2 }}>🎨</span>}
-                    {hasSnd && <span title="Sound overridden"   style={{ fontSize: 9, color: ACCENT  }}>♪</span>}
-                    {hasLng && <span title="Text overridden"    style={{ fontSize: 9, color: WARN    }}>T</span>}
+                    {hasTex && <span title="Áferð breytt" style={{ fontSize: 9, color: ACCENT2 }}>🎨</span>}
+                    {hasSnd && <span title="Hljóði breytt"   style={{ fontSize: 9, color: ACCENT  }}>♪</span>}
+                    {hasLng && <span title="Texta breytt"    style={{ fontSize: 9, color: WARN    }}>T</span>}
                   </div>
                 )}
               </div>
@@ -743,8 +743,8 @@ export default function DiscsView({ fileData, filePaths, onUpdateFiles, onDelete
       {!disc ? (
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: DIM, flexDirection: 'column', gap: 10 }}>
           <div style={{ fontSize: 56, opacity: 0.12 }}>💿</div>
-          <div style={{ fontSize: 13 }}>Select a disc to edit</div>
-          <div style={{ fontSize: 10, color: DIM, opacity: 0.5 }}>All 20 vanilla discs · custom discs in your pack</div>
+          <div style={{ fontSize: 13 }}>Veldu hljómplötu til að breyta</div>
+          <div style={{ fontSize: 10, color: DIM, opacity: 0.5 }}>Allar 20 upprunalegu hljómplöturnar · eigin plötur í pakkanum þínum</div>
         </div>
       ) : (
         <div style={{ flex: 1, overflowY: 'auto', padding: '22px 28px' }}>
@@ -758,26 +758,26 @@ export default function DiscsView({ fileData, filePaths, onUpdateFiles, onDelete
               </div>
               <div style={{ fontSize: 11, color: TEXT2 }}>{editDesc || disc.vanillaDesc}</div>
               {editJukeTitle && (
-                <div style={{ fontSize: 10, color: ACCENT2, marginTop: 3 }}>♪ Now Playing: {editJukeTitle}</div>
+                <div style={{ fontSize: 10, color: ACCENT2, marginTop: 3 }}>♪ Í spilun: {editJukeTitle}</div>
               )}
               <div style={{ display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap' }}>
                 {disc.isCustom && (
-                  <span style={{ fontSize: 9, padding: '2px 7px', border: `1px solid ${ACCENT2}44`, color: ACCENT2, letterSpacing: '1px' }}>CUSTOM DISC</span>
+                  <span style={{ fontSize: 9, padding: '2px 7px', border: `1px solid ${ACCENT2}44`, color: ACCENT2, letterSpacing: '1px' }}>EIGIN HLJÓMPLATA</span>
                 )}
                 {hasOverride(disc.id) ? (
-                  <span style={{ fontSize: 9, padding: '2px 7px', border: `1px solid ${ACCENT}44`, color: ACCENT, letterSpacing: '1px' }}>● OVERRIDDEN IN PACK</span>
+                  <span style={{ fontSize: 9, padding: '2px 7px', border: `1px solid ${ACCENT}44`, color: ACCENT, letterSpacing: '1px' }}>● BREYTT Í PAKKANUM</span>
                 ) : (
-                  <span style={{ fontSize: 9, padding: '2px 7px', border: `1px solid ${BORDER}`, color: DIM, letterSpacing: '1px' }}>○ VANILLA — no overrides yet</span>
+                  <span style={{ fontSize: 9, padding: '2px 7px', border: `1px solid ${BORDER}`, color: DIM, letterSpacing: '1px' }}>○ UPPRUNALEGT — engar breytingar enn</span>
                 )}
                 {saved && (
-                  <span style={{ fontSize: 9, padding: '2px 7px', border: `1px solid ${ACCENT}`, color: ACCENT, letterSpacing: '1px', background: `${ACCENT}10` }}>✓ SAVED TO PACK</span>
+                  <span style={{ fontSize: 9, padding: '2px 7px', border: `1px solid ${ACCENT}`, color: ACCENT, letterSpacing: '1px', background: `${ACCENT}10` }}>✓ VISTAÐ Í PAKKA</span>
                 )}
               </div>
             </div>
           </div>
 
           {/* ── TEXTURE ── */}
-          <Sec title="Disc Texture">
+          <Sec title="Áferð hljómplötu">
             <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
               {/* Preview box */}
               <div>
@@ -787,28 +787,28 @@ export default function DiscsView({ fileData, filePaths, onUpdateFiles, onDelete
                     : <DiscIcon color={disc.color} size={66}/>}
                 </div>
                 <div style={{ fontSize: 8, color: DIM, marginTop: 3, textAlign: 'center', letterSpacing: '0.5px' }}>
-                  {currentTexUrl ? (editTexUrl ? 'pending upload' : 'in pack') : 'vanilla'}
+                  {currentTexUrl ? (editTexUrl ? 'bíður vistunar' : 'í pakkanum') : 'vanilla'}
                 </div>
               </div>
               {/* Controls */}
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <div style={{ fontSize: 10, color: TEXT2, lineHeight: 1.5 }}>
                   {currentTexUrl
-                    ? `Custom texture${editTexUrl ? ' (not yet saved)' : ' — in pack'}`
-                    : 'No custom texture. The vanilla disc texture will show in-game.'}
+                    ? `Eigin áferð${editTexUrl ? ' (ekki vistað enn)' : ' — í pakkanum'}`
+                    : 'Engin eigin áferð. Upprunaleg áferð hljómplötunnar birtist í leiknum.'}
                 </div>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                   <button className="btn sm" style={{ borderColor: `${ACCENT2}55`, color: ACCENT2 }}
                     onClick={() => texInputRef.current?.click()}>
-                    ↑ Upload PNG
+                    ↑ Hlaða upp PNG
                   </button>
                   {fileData[texPath(disc.id)] && (
                     <button className="btn sm" onClick={() => onOpenInEditor(texPath(disc.id))}>
-                      ✏ Open in Pixel Painter
+                      ✏ Opna í myndritli
                     </button>
                   )}
                   {editTexUrl && (
-                    <button className="btn sm danger" onClick={() => setEditTexUrl(null)}>✕ Remove pending</button>
+                    <button className="btn sm danger" onClick={() => setEditTexUrl(null)}>✕ Hætta við breytingu</button>
                   )}
                 </div>
                 <input ref={texInputRef} type="file" accept=".png" style={{ display: 'none' }} onChange={handleTexUpload}/>
@@ -820,46 +820,46 @@ export default function DiscsView({ fileData, filePaths, onUpdateFiles, onDelete
           </Sec>
 
           {/* ── NAMES & TEXT ── */}
-          <Sec title="Names & Display Text">
-            <Fld label="Item display name" hint={`Lang key: ${nameKey(disc.id)}`}>
+          <Sec title="Nöfn og sýnilegur texti">
+            <Fld label="Heiti hlutar í leiknum" hint={`Tungumálalykill: ${nameKey(disc.id)}`}>
               <ColorTextField value={editName} onChange={v => { setEditName(v); setSaved(false); }} placeholder={disc.vanillaName}/>
             </Fld>
-            <Fld label="Tooltip / description (shown when holding the disc)" hint={`Lang key: ${descKey(disc.id)}`}>
+            <Fld label="Lýsing (birtist þegar haldið er á plötunni)" hint={`Tungumálalykill: ${descKey(disc.id)}`}>
               <ColorTextField value={editDesc} onChange={v => { setEditDesc(v); setSaved(false); }} placeholder={disc.vanillaDesc}/>
             </Fld>
             <Fld
-              label={`Jukebox "Now Playing" title (1.21+)`}
-              hint={`Lang key: ${jukeKey(disc.id)} — leave blank to keep vanilla / not override`}>
-              <ColorTextField value={editJukeTitle} onChange={v => { setEditJukeTitle(v); setSaved(false); }} placeholder="e.g. Artist Name - Song Title"/>
+              label={`Titill undir „Í spilun“ í plötuspilaranum (1.21+)`}
+              hint={`Tungumálalykill: ${jukeKey(disc.id)} — hafðu reitinn auðan til að halda upprunalega gildinu`}>
+              <ColorTextField value={editJukeTitle} onChange={v => { setEditJukeTitle(v); setSaved(false); }} placeholder="t.d. Flytjandi - Lagatitill"/>
             </Fld>
             <div style={{ fontSize: 10, color: DIM, background: BG3, padding: '7px 10px', border: `1px solid ${BORDER}`, lineHeight: 1.7 }}>
-              All text is written to <span style={{ color: TEXT2 }}>{getLangPath(fileData, filePaths) || 'assets/minecraft/lang/en_us.json'}</span>
+              Allur texti er skrifaður í <span style={{ color: TEXT2 }}>{getLangPath(fileData, filePaths) || 'assets/minecraft/lang/en_us.json'}</span>
               {!fileData[getLangPath(fileData, filePaths)] && !fileData['assets/minecraft/lang/en_US.json'] && (
-                <span style={{ color: WARN }}> · lang file will be created</span>
+                <span style={{ color: WARN }}> · tungumálaskrá verður búin til</span>
               )}
             </div>
           </Sec>
 
           {/* ── SOUND ── */}
-          <Sec title="Sound / Music">
+          <Sec title="Hljóð og tónlist">
 
             {/* Duration info bar */}
             {disc.duration != null && (
               <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginBottom: 14, padding: '8px 12px', background: BG3, border: `1px solid ${BORDER}`, flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ fontSize: 9, color: DIM, letterSpacing: '1px', textTransform: 'uppercase' }}>Vanilla length</span>
+                  <span style={{ fontSize: 9, color: DIM, letterSpacing: '1px', textTransform: 'uppercase' }}>Upprunaleg lengd</span>
                   <span style={{ fontSize: 13, fontFamily: 'monospace', color: ACCENT2, fontWeight: 700 }}>{fmtDur(disc.duration)}</span>
                 </div>
                 {editSoundDuration != null && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ fontSize: 9, color: DIM, letterSpacing: '1px', textTransform: 'uppercase' }}>Uploaded</span>
+                    <span style={{ fontSize: 9, color: DIM, letterSpacing: '1px', textTransform: 'uppercase' }}>Hlaðið upp</span>
                     <span style={{ fontSize: 13, fontFamily: 'monospace', fontWeight: 700, color: editSoundDuration > disc.duration ? ERR : ACCENT }}>
                       {fmtDur(editSoundDuration)}
                     </span>
                   </div>
                 )}
                 {editSoundDuration == null && editSoundData && (
-                  <span style={{ fontSize: 9, color: DIM }}>detecting length…</span>
+                  <span style={{ fontSize: 9, color: DIM }}>athuga lengd…</span>
                 )}
               </div>
             )}
@@ -867,36 +867,36 @@ export default function DiscsView({ fileData, filePaths, onUpdateFiles, onDelete
             {/* Over-length warning */}
             {disc.duration != null && editSoundDuration != null && editSoundDuration > disc.duration && (
               <div style={{ marginBottom: 12, padding: '8px 12px', background: `${ERR}0d`, border: `1px solid ${ERR}44`, fontSize: 10, color: ERR, lineHeight: 1.6 }}>
-                ⚠ Your song ({fmtDur(editSoundDuration)}) is longer than the vanilla track ({fmtDur(disc.duration)}).
-                Minecraft will cut playback at {fmtDur(disc.duration)} because the sound event length is defined by the vanilla game data.
-                Choose a different (shorter) disc to override, or trim your song to fit.
+                ⚠ Lagið þitt ({fmtDur(editSoundDuration)}) er lengra en upprunalega lagið ({fmtDur(disc.duration)}).
+                Minecraft stöðvar spilun eftir {fmtDur(disc.duration)} því lengd hljóðatburðarins er skilgreind í upprunalegum leikjagögnum.
+                Veldu aðra, styttri plötu til að breyta eða klipptu lagið svo það passi.
               </div>
             )}
 
             {/* Current playback */}
             {curSoundUrl && (
               <div style={{ marginBottom: 12 }}>
-                <div style={{ fontSize: 9, color: DIM, letterSpacing: '1px', marginBottom: 4 }}>CURRENT SOUND IN PACK</div>
-                <MiniPlayer url={curSoundUrl} label={editSoundData?.filename ?? (curSoundRef ?? 'sound file')}/>
+                <div style={{ fontSize: 9, color: DIM, letterSpacing: '1px', marginBottom: 4 }}>NÚVERANDI HLJÓÐ Í PAKKANUM</div>
+                <MiniPlayer url={curSoundUrl} label={editSoundData?.filename ?? (curSoundRef ?? 'hljóðskrá')}/>
               </div>
             )}
             {editSoundData && !curSoundUrl && (
               <div style={{ marginBottom: 12 }}>
-                <div style={{ fontSize: 9, color: DIM, letterSpacing: '1px', marginBottom: 4 }}>PENDING UPLOAD (not saved yet)</div>
+                <div style={{ fontSize: 9, color: DIM, letterSpacing: '1px', marginBottom: 4 }}>BÍÐUR VISTUNAR</div>
                 <MiniPlayer url={editSoundData.url} label={`${editSoundData.filename}.ogg`}/>
               </div>
             )}
             {!curSoundUrl && !editSoundData && (
               <div style={{ marginBottom: 12, padding: '8px 10px', background: BG3, border: `1px solid ${BORDER}`, fontSize: 10, color: DIM }}>
                 {hasSound(disc.id)
-                  ? `Sound event set → "${editSoundRef}" but the .ogg file is not in this pack`
-                  : `No custom sound. The game plays the vanilla ${disc.id} music disc track.`}
+                  ? `Hljóðatburður stilltur → "${editSoundRef}", en .ogg-skrána vantar í pakkann`
+                  : `Ekkert eigið hljóð. Leikurinn spilar upprunalega lagið á ${disc.id}.`}
               </div>
             )}
 
             <Fld
-              label="Sound event reference path"
-              hint={`Sound event key: ${sndKey(disc.id)}   →   file: assets/minecraft/sounds/${editSoundRef || `records/${disc.id}`}.ogg`}>
+              label="Tilvísunarslóð hljóðatburðar"
+              hint={`Lykill hljóðatburðar: ${sndKey(disc.id)}   →   skrá: assets/minecraft/sounds/${editSoundRef || `records/${disc.id}`}.ogg`}>
               <TxtIn
                 value={editSoundRef}
                 onChange={v => { setEditSoundRef(v); setSaved(false); }}
@@ -908,7 +908,7 @@ export default function DiscsView({ fileData, filePaths, onUpdateFiles, onDelete
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 8 }}>
               <button className="btn sm" style={{ borderColor: `${ACCENT}44`, color: ACCENT }}
                 onClick={() => soundInputRef.current?.click()}>
-                ↑ Upload .ogg
+                ↑ Hlaða upp .ogg
               </button>
               {availableOggs.length > 0 && (
                 <select
@@ -918,7 +918,7 @@ export default function DiscsView({ fileData, filePaths, onUpdateFiles, onDelete
                     if (v) { setEditSoundRef(v); setSaved(false); }
                   }}
                   style={{ background: BG3, border: `1px solid ${BORDER}`, color: TEXT2, padding: '3px 8px', fontFamily: 'monospace', fontSize: 11, outline: 'none', flex: 1, minWidth: 0 }}>
-                  <option value="" disabled>Pick existing .ogg from pack…</option>
+                  <option value="" disabled>Veldu .ogg-skrá úr pakkanum…</option>
                   {availableOggs.map(o => <option key={o.path} value={o.ref}>{o.ref}</option>)}
                 </select>
               )}
@@ -929,27 +929,27 @@ export default function DiscsView({ fileData, filePaths, onUpdateFiles, onDelete
               <div style={{ padding: '6px 10px', background: '#0a1a0a', border: `1px solid ${ACCENT}44`, fontSize: 10, color: ACCENT, display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
                 <span>↑</span>
                 <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  Will write: {editSoundData.filename}.ogg → assets/minecraft/sounds/{editSoundRef || `records/${disc.id}`}.ogg
+                  Verður skrifað: {editSoundData.filename}.ogg → assets/minecraft/sounds/{editSoundRef || `records/${disc.id}`}.ogg
                 </span>
                 <button className="btn sm danger" onClick={() => { setEditSoundData(null); setSaved(false); }}>✕</button>
               </div>
             )}
 
             <div style={{ fontSize: 10, color: DIM, background: BG3, padding: '7px 10px', border: `1px solid ${BORDER}`, lineHeight: 1.7, marginTop: 10 }}>
-              The sound path is relative to <span style={{ color: TEXT2 }}>assets/minecraft/sounds/</span>.
-              Standard vanilla format is <span style={{ color: TEXT2 }}>records/disc_name</span>.
-              The sounds.json entry will use <span style={{ color: ACCENT }}>"stream": true</span> (required for long tracks).
+              Hljóðslóðin er afstæð við <span style={{ color: TEXT2 }}>assets/minecraft/sounds/</span>.
+              Upprunalegt snið er <span style={{ color: TEXT2 }}>records/disc_name</span>.
+              Færslan í sounds.json notar <span style={{ color: ACCENT }}>"stream": true</span> (nauðsynlegt fyrir löng lög).
             </div>
           </Sec>
 
           {/* ── FILES THAT WILL BE WRITTEN ── */}
           {willWrite.length > 0 && (
-            <Sec title="Files That Will Be Written on Apply">
+            <Sec title="Skrár sem verða skrifaðar við vistun">
               <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 {willWrite.map(({ path, kind }) => (
                   <div key={path} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 10, fontFamily: 'monospace' }}>
                     <span style={{ color: kind === 'new' ? ACCENT2 : kind === 'generated' ? ACCENT : WARN, flexShrink: 0, width: 70 }}>
-                      {kind === 'new' ? '+ CREATE' : kind === 'generated' ? '+ GENERATE' : '~ PATCH'}
+                      {kind === 'new' ? '+ BÚA TIL' : kind === 'generated' ? '+ MYNDA' : '~ BREYTA'}
                     </span>
                     <span style={{ color: TEXT2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{path}</span>
                   </div>
@@ -964,17 +964,17 @@ export default function DiscsView({ fileData, filePaths, onUpdateFiles, onDelete
               className="btn"
               style={{ borderColor: `${ACCENT}66`, color: ACCENT, background: `${ACCENT}10`, padding: '7px 16px' }}
               onClick={applyChanges}>
-              ✓ Apply Changes to Pack
+              ✓ Vista breytingar í pakka
             </button>
             {hasOverride(disc.id) && (
               <button className="btn danger"
                 style={{ color: ERR, borderColor: `${ERR}44` }}
                 onClick={clearOverrides}>
-                ✕ Clear All Overrides
+                ✕ Fjarlægja allar breytingar
               </button>
             )}
             {saved && (
-              <span style={{ fontSize: 11, color: ACCENT }}>✓ Saved — export zip to use the pack</span>
+              <span style={{ fontSize: 11, color: ACCENT }}>✓ Vistað — flyttu út zip-skrá til að nota pakkann</span>
             )}
           </div>
 

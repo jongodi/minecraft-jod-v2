@@ -1,3 +1,4 @@
+import { jsonErrorMessage } from '@/lib/icelandic';
 // ─────────────────────────────────────────────────────────────────────────────
 // Resource-pack dependency graph
 //
@@ -119,8 +120,8 @@ export function buildGraph(files: RawFile[]): Graph {
       try {
         textParsed.set(f.path, JSON.parse(f.text));
       } catch (e: any) {
-        parseErrors.set(f.path, e.message ?? 'parse error');
-        node.parseError = e.message ?? 'parse error';
+        parseErrors.set(f.path, jsonErrorMessage(e));
+        node.parseError = jsonErrorMessage(e);
       }
     }
   }
@@ -152,8 +153,8 @@ export function buildGraph(files: RawFile[]): Graph {
     casingSeen.add(k);
     issues.push({
       severity: 'warning', category: 'casing-mismatch',
-      title: 'Reference casing does not match the file',
-      detail: `"${ref}" only resolves to ${actual} when case is ignored. Minecraft is case-sensitive on Linux servers, so this will render as missing there even though it may work on Windows.`,
+      title: 'Há- og lágstafir í tilvísun passa ekki við skráarheitið',
+      detail: `"${ref}" finnst aðeins sem ${actual} ef há- og lágstafir eru hunsaðir. Minecraft á Linux-þjónum gerir greinarmun á þeim, svo tilfangið mun vanta þar þótt það virki mögulega á Windows.`,
       path: referrer, refs: [actual],
     });
   }
@@ -192,7 +193,7 @@ export function buildGraph(files: RawFile[]): Graph {
     if (hit) return { status: 'found', path: hit.path, casing: hit.casing };
     // Synthesized at runtime by a paletted_permutations atlas source — valid.
     if (generatedSprites.has(`${namespace}:${path.replace(/^textures\//, '')}`)) return { status: 'vanilla' };
-    // Absent: minecraft namespace → vanilla default (inherited, not broken).
+    // Absent: minecraft namespace → upprunalegt gildi (inherited, not broken).
     if (namespace === 'minecraft') return { status: 'vanilla' };
     return { status: 'broken' };
   }
@@ -284,26 +285,26 @@ export function buildGraph(files: RawFile[]): Graph {
   for (const mp of byKind.model) {
     const res = models[mp];
     if (res.parseError) {
-      issues.push({ severity: 'error', category: 'invalid-json', title: 'Malformed model JSON',
+      issues.push({ severity: 'error', category: 'invalid-json', title: 'Ógilt JSON í líkani',
         detail: `${res.parseError}`, path: mp });
       continue;
     }
     if (res.brokenParent) {
-      issues.push({ severity: 'error', category: 'broken-parent', title: 'Model parent not found',
-        detail: `Parent "${res.brokenParent}" is a custom-namespace model that does not exist in the pack.`,
+      issues.push({ severity: 'error', category: 'broken-parent', title: 'Yfirlíkan fannst ekki',
+        detail: `Yfirlíkanið "${res.brokenParent}" er í eigin nafnarými en vantar í pakkann.`,
         path: mp, refs: [] });
     }
     for (const t of res.textures) {
       if (t.status === 'broken') {
         issues.push({ severity: 'error', category: 'broken-reference',
-          title: 'Model references a missing texture',
-          detail: `Texture variable "${t.key}" → "${t.value}" is a custom-namespace texture that does not exist in the pack.`,
+          title: 'Líkan vísar í áferð sem vantar',
+          detail: `Áferðarbreytan "${t.key}" → "${t.value}" vísar í áferð úr eigin nafnarými sem vantar í pakkann.`,
           path: mp,
-          fix: { file: mp, value: t.value, targetKind: 'texture', context: `texture "${t.key}"`, reason: 'custom-namespace texture missing from pack' } });
+          fix: { file: mp, value: t.value, targetKind: 'texture', context: `áferð "${t.key}"`, reason: 'áferð úr eigin nafnarými vantar í pakkann' } });
       } else if (t.status === 'unresolved-var') {
         issues.push({ severity: 'warning', category: 'unresolved-variable',
-          title: 'Texture variable has no definition',
-          detail: `"${t.key}" aliases "${t.value}" but that variable is never defined in this model or its parents.`,
+          title: 'Áferðarbreyta hefur enga skilgreiningu',
+          detail: `"${t.key}" vísar í breytuna "${t.value}" sem er hvorki skilgreind í þessu líkani né yfirlíkönum þess.`,
           path: mp });
       }
     }
@@ -313,7 +314,7 @@ export function buildGraph(files: RawFile[]): Graph {
   for (const bp of byKind.blockstate) {
     const json = textParsed.get(bp);
     if (parseErrors.has(bp)) {
-      issues.push({ severity: 'error', category: 'invalid-json', title: 'Malformed blockstate JSON',
+      issues.push({ severity: 'error', category: 'invalid-json', title: 'Ógilt JSON í kubbaástandi',
         detail: parseErrors.get(bp)!, path: bp });
       continue;
     }
@@ -321,8 +322,8 @@ export function buildGraph(files: RawFile[]): Graph {
     roots.set(bp, {
       path: bp, kind: ns === 'minecraft' ? 'certain' : 'uncertain',
       reason: ns === 'minecraft'
-        ? 'Blockstate overrides a vanilla block (loaded by the game for that block id).'
-        : 'Custom-namespace blockstate — assumes a mod/plugin registers this block.',
+        ? 'Kubbaástand kemur í stað upprunalegs kubbs og leikurinn hleður því fyrir það kubbaauðkenni.'
+        : 'Kubbaástand í eigin nafnarými — gert er ráð fyrir að viðbót skrái kubbinn.',
     });
     const modelRefs: string[] = [];
     const collect = (v: any) => {
@@ -341,9 +342,9 @@ export function buildGraph(files: RawFile[]): Graph {
       if (mr.status === 'found') { addEdge(bp, mr.path); if (mr.casing) casingIssue(bp, ref, mr.path); }
       else if (mr.status === 'broken') {
         issues.push({ severity: 'error', category: 'broken-reference',
-          title: 'Blockstate references a missing model',
-          detail: `"${ref}" is a custom-namespace model not present in the pack.`, path: bp,
-          fix: { file: bp, value: ref, targetKind: 'model', context: 'blockstate model', reason: 'custom-namespace model missing from pack' } });
+          title: 'Kubbaástand vísar í líkan sem vantar',
+          detail: `"${ref}" er líkan í eigin nafnarými sem vantar í pakkann.`, path: bp,
+          fix: { file: bp, value: ref, targetKind: 'model', context: 'líkan í kubbaástandi', reason: 'líkan úr eigin nafnarými vantar í pakkann' } });
       }
     }
   }
@@ -352,7 +353,7 @@ export function buildGraph(files: RawFile[]): Graph {
   for (const ip of byKind.item_definition) {
     const json = textParsed.get(ip);
     if (parseErrors.has(ip)) {
-      issues.push({ severity: 'error', category: 'invalid-json', title: 'Malformed item definition',
+      issues.push({ severity: 'error', category: 'invalid-json', title: 'Ógild skilgreining hlutar',
         detail: parseErrors.get(ip)!, path: ip });
       continue;
     }
@@ -362,8 +363,8 @@ export function buildGraph(files: RawFile[]): Graph {
     roots.set(ip, {
       path: ip, kind: vanilla ? 'certain' : 'uncertain',
       reason: vanilla
-        ? `Item definition overrides the vanilla item "${name}".`
-        : `Custom item model "${loc?.namespace}:${name}" — used only if a datapack/plugin sets it via the item_model component.`,
+        ? `Hlutaskilgreining kemur í stað upprunalega hlutarins "${name}".`
+        : `Eigin hlutalíkan "${loc?.namespace}:${name}" — aðeins notað ef gagnapakki eða viðbót velur það með item_model.`,
     });
     const modelRefs: string[] = [];
     const cmdEntries: CmdEntry[] = [];
@@ -373,9 +374,9 @@ export function buildGraph(files: RawFile[]): Graph {
       if (mr.status === 'found') { addEdge(ip, mr.path); if (mr.casing) casingIssue(ip, ref, mr.path); }
       else if (mr.status === 'broken') {
         issues.push({ severity: 'error', category: 'broken-reference',
-          title: 'Item definition references a missing model',
-          detail: `"${ref}" is a custom-namespace model not present in the pack.`, path: ip,
-          fix: { file: ip, value: ref, targetKind: 'model', context: 'item-definition model', reason: 'custom-namespace model missing from pack' } });
+          title: 'Skilgreining hlutar vísar í líkan sem vantar',
+          detail: `"${ref}" er líkan í eigin nafnarými sem vantar í pakkann.`, path: ip,
+          fix: { file: ip, value: ref, targetKind: 'model', context: 'líkan í skilgreiningu hlutar', reason: 'líkan úr eigin nafnarými vantar í pakkann' } });
       }
     }
     if (cmdEntries.length > 1) {
@@ -399,7 +400,7 @@ export function buildGraph(files: RawFile[]): Graph {
       (loc.path.startsWith('item/') || loc.path.startsWith('block/'));
     if (isBaseVanilla) {
       roots.set(mp, { path: mp, kind: 'certain',
-        reason: `Base model for vanilla item/block "${baseItem}" (overrides the default).` });
+        reason: `Grunnlíkan upprunalegs hlutar eða kubbs "${baseItem}" (kemur í stað sjálfgefins líkans).` });
     }
     const cmdEntries: CmdEntry[] = [];
     for (const ov of json.overrides) {
@@ -408,10 +409,10 @@ export function buildGraph(files: RawFile[]): Graph {
       if (mr.status === 'found') { addEdge(mp, mr.path); if (mr.casing) casingIssue(mp, ov.model, mr.path); }
       else if (mr.status === 'broken') {
         issues.push({ severity: 'error', category: 'broken-reference',
-          title: 'Override references a missing model',
-          detail: `custom_model_data override in "${baseItem}" points at "${ov.model}", which is not in the pack.`,
+          title: 'Yfirskrift vísar í líkan sem vantar',
+          detail: `custom_model_data-yfirskrift í "${baseItem}" vísar í "${ov.model}" sem vantar í pakkann.`,
           path: mp,
-          fix: { file: mp, value: ov.model, targetKind: 'model', context: 'override model', reason: 'custom-namespace model missing from pack' } });
+          fix: { file: mp, value: ov.model, targetKind: 'model', context: 'yfirskriftarlíkan', reason: 'líkan úr eigin nafnarými vantar í pakkann' } });
       }
       const cmdv = ov.predicate?.custom_model_data;
       // Key by the FULL predicate: two overrides only collide when their entire
@@ -430,9 +431,9 @@ export function buildGraph(files: RawFile[]): Graph {
 
   // ── Vanilla model overrides (convention roots) ──────────────────────────────
   // A minecraft-namespace model at models/block|item/<vanilla-name> overrides a
-  // vanilla model that vanilla's own blockstate/item still points at — so it is
+  // upprunalegt líkan that vanilla's own blockstate/item still points at — so it is
   // used even with NO in-pack reference. Rooting these prevents a false-unused
-  // for packs that replace vanilla models directly (a classic trap).
+  // for packs that replace upprunalegt líkans directly (a classic trap).
   for (const mp of byKind.model) {
     if (roots.has(mp)) continue;
     const loc = modelPathToLoc(mp);
@@ -447,7 +448,7 @@ export function buildGraph(files: RawFile[]): Graph {
     const baseBlock = base.replace(/_(inner|outer|top|bottom|side|open|on|lit|horizontal|vertical|\d+)$/g, '');
     if ((isItem && isVanillaItem(base)) || (isBlock && (isVanillaBlock(base) || isVanillaBlock(baseBlock)))) {
       roots.set(mp, { path: mp, kind: 'certain',
-        reason: `Overrides the vanilla ${isItem ? 'item' : 'block'} model "${base}" (vanilla still renders it).` });
+        reason: `Kemur í stað upprunalegs ${isItem ? 'hlutalíkans' : 'kubbalíkans'} "${base}" (leikurinn birtir það enn).` });
     }
   }
 
@@ -455,7 +456,7 @@ export function buildGraph(files: RawFile[]): Graph {
   for (const fp of byKind.font) {
     const json = textParsed.get(fp);
     if (parseErrors.has(fp)) {
-      issues.push({ severity: 'error', category: 'invalid-json', title: 'Malformed font JSON',
+      issues.push({ severity: 'error', category: 'invalid-json', title: 'Ógilt JSON í letri',
         detail: parseErrors.get(fp)!, path: fp });
       continue;
     }
@@ -464,8 +465,8 @@ export function buildGraph(files: RawFile[]): Graph {
     roots.set(fp, {
       path: fp, kind: vanillaFont ? 'certain' : 'uncertain',
       reason: vanillaFont
-        ? `Vanilla font "${fname}" (loaded by the game).`
-        : `Custom font "${fname}" — used only if a text component references it via "font".`,
+        ? `Upprunalegt letur "${fname}" (hlaðið af leiknum).`
+        : `Eigið letur "${fname}" — aðeins notað ef textahluti vísar í það með "font".`,
     });
     const providers = Array.isArray(json?.providers) ? json.providers : [];
     for (const prov of providers) {
@@ -475,9 +476,9 @@ export function buildGraph(files: RawFile[]): Graph {
         if (tr.status === 'found') addEdge(fp, tr.path);
         else if (tr.status === 'broken') {
           issues.push({ severity: 'error', category: 'broken-reference',
-            title: 'Font references a missing bitmap',
-            detail: `bitmap provider file "${prov.file}" is not present in the pack.`, path: fp,
-            fix: { file: fp, value: prov.file, targetKind: 'font', context: 'font bitmap', reason: 'bitmap texture missing from pack' } });
+            title: 'Letur vísar í mynd sem vantar',
+            detail: `Leturmyndina "${prov.file}" vantar í pakkann.`, path: fp,
+            fix: { file: fp, value: prov.file, targetKind: 'font', context: 'leturmynd', reason: 'myndáferð vantar í pakkann' } });
         }
       } else if ((prov.type === 'ttf' || prov.type === 'unihex') &&
                  typeof (prov.file ?? prov.hex_file) === 'string') {
@@ -498,7 +499,7 @@ export function buildGraph(files: RawFile[]): Graph {
   for (const pp of byKind.particle) {
     const json = textParsed.get(pp);
     if (parseErrors.has(pp)) {
-      issues.push({ severity: 'error', category: 'invalid-json', title: 'Malformed particle JSON',
+      issues.push({ severity: 'error', category: 'invalid-json', title: 'Ógilt JSON í ögnum',
         detail: parseErrors.get(pp)!, path: pp });
       continue;
     }
@@ -507,8 +508,8 @@ export function buildGraph(files: RawFile[]): Graph {
     roots.set(pp, {
       path: pp, kind: vanillaParticle ? 'certain' : 'uncertain',
       reason: vanillaParticle
-        ? `Vanilla particle "${pname}" definition (loaded by the game).`
-        : `Custom particle "${pname}" — requires a mod to be emitted; cannot be verified here.`,
+        ? `Upprunaleg agnaskilgreining "${pname}" (hlaðið af leiknum).`
+        : `Eigin ögn "${pname}" — þarf viðbót til að birtast; ekki hægt að staðfesta hér.`,
     });
     const texs = Array.isArray(json?.textures) ? json.textures : [];
     for (const t of texs) {
@@ -518,9 +519,9 @@ export function buildGraph(files: RawFile[]): Graph {
       if (hit) addEdge(pp, hit.path);
       else if (parseLoc(t).namespace !== 'minecraft') {
         issues.push({ severity: 'error', category: 'broken-reference',
-          title: 'Particle references a missing texture',
-          detail: `"${t}" → ${target} is not present in the pack.`, path: pp,
-          fix: { file: pp, value: t, targetKind: 'texture', context: 'particle texture', reason: 'particle texture missing from pack' } });
+          title: 'Ögn vísar í áferð sem vantar',
+          detail: `"${t}" → ${target} vantar í pakkann.`, path: pp,
+          fix: { file: pp, value: t, targetKind: 'texture', context: 'agnaáferð', reason: 'agnaáferð vantar í pakkann' } });
       }
     }
   }
@@ -529,7 +530,7 @@ export function buildGraph(files: RawFile[]): Graph {
   for (const ep of byKind.equipment) {
     const json = textParsed.get(ep);
     if (parseErrors.has(ep)) {
-      issues.push({ severity: 'error', category: 'invalid-json', title: 'Malformed equipment JSON',
+      issues.push({ severity: 'error', category: 'invalid-json', title: 'Ógilt JSON í búnaði',
         detail: parseErrors.get(ep)!, path: ep });
       continue;
     }
@@ -538,8 +539,8 @@ export function buildGraph(files: RawFile[]): Graph {
     roots.set(ep, {
       path: ep, kind: vanillaEquip ? 'certain' : 'uncertain',
       reason: vanillaEquip
-        ? `Vanilla equipment asset "${ename}" (worn armor/elytra overlay).`
-        : `Custom equipment "${ename}" — used only if an item's equippable component points at it (datapack).`,
+        ? `Upprunalegt búnaðartilfang "${ename}" (herklæði eða svifvængir).`
+        : `Eigin búnaður "${ename}" — aðeins notaður ef equippable-hluti hlutar vísar í hann úr gagnapakka.`,
     });
     const layers = json?.layers && typeof json.layers === 'object' ? json.layers : {};
     for (const [layerType, arr] of Object.entries(layers)) {
@@ -551,9 +552,9 @@ export function buildGraph(files: RawFile[]): Graph {
         if (hit) addEdge(ep, hit.path);
         else if (parseLoc(layer.texture).namespace !== 'minecraft') {
           issues.push({ severity: 'error', category: 'broken-reference',
-            title: 'Equipment references a missing texture',
-            detail: `layer "${layerType}" texture "${layer.texture}" → ${target} is not present.`, path: ep,
-            fix: { file: ep, value: layer.texture, targetKind: 'texture', context: `equipment layer "${layerType}"`, reason: 'equipment texture missing from pack' } });
+            title: 'Búnaður vísar í áferð sem vantar',
+            detail: `Áferð "${layer.texture}" í lagi "${layerType}" → ${target} vantar.`, path: ep,
+            fix: { file: ep, value: layer.texture, targetKind: 'texture', context: `búnaðarlag "${layerType}"`, reason: 'búnaðaráferð vantar í pakkann' } });
         }
       }
     }
@@ -564,7 +565,7 @@ export function buildGraph(files: RawFile[]): Graph {
   for (const ap of byKind.atlas) {
     const json = textParsed.get(ap);
     if (parseErrors.has(ap)) {
-      issues.push({ severity: 'error', category: 'invalid-json', title: 'Malformed atlas JSON',
+      issues.push({ severity: 'error', category: 'invalid-json', title: 'Ógilt JSON í áferðarsafni',
         detail: parseErrors.get(ap)!, path: ap });
       continue;
     }
@@ -572,8 +573,8 @@ export function buildGraph(files: RawFile[]): Graph {
     roots.set(ap, {
       path: ap, kind: VANILLA_ATLASES.has(aname) ? 'certain' : 'uncertain',
       reason: VANILLA_ATLASES.has(aname)
-        ? `Extends the vanilla "${aname}" atlas (loaded by the game).`
-        : `Custom atlas "${aname}".`,
+        ? `Bætir við upprunalega áferðarsafnið "${aname}" (hlaðið af leiknum).`
+        : `Eigið áferðarsafn "${aname}".`,
     });
     const sources = Array.isArray(json?.sources) ? json.sources : [];
     for (const src of sources) {
@@ -586,36 +587,36 @@ export function buildGraph(files: RawFile[]): Graph {
         for (const tf of textureFiles) {
           if (dirRe.test(tf)) {
             addEdge(ap, tf);
-            markConvention(tf, `Stitched into the "${aname}" atlas by a directory source ("${src.source}").`);
+            markConvention(tf, `Sett í áferðarsafnið "${aname}" úr möppu ("${src.source}").`);
           }
         }
       } else if (src.type === 'single' && typeof src.resource === 'string') {
         const tr = resolveTextureRef(src.resource);
         if (tr.status === 'found') {
           addEdge(ap, tr.path);
-          markConvention(tr.path, `Referenced by a single source in the "${aname}" atlas.`);
+          markConvention(tr.path, `Tilvísun úr stakri uppsprettu í áferðarsafninu "${aname}".`);
         }
       } else if (src.type === 'paletted_permutations') {
         const texs = Array.isArray(src.textures) ? src.textures : [];
         for (const t of texs) {
           if (typeof t !== 'string') continue;
           const tr = resolveTextureRef(t);
-          if (tr.status === 'found') { addEdge(ap, tr.path); markConvention(tr.path, `Base texture for the "${aname}" atlas permutations.`); }
+          if (tr.status === 'found') { addEdge(ap, tr.path); markConvention(tr.path, `Grunnáferð afbrigða í áferðarsafninu "${aname}".`); }
         }
         if (typeof src.palette_key === 'string') {
           const tr = resolveTextureRef(src.palette_key);
-          if (tr.status === 'found') { addEdge(ap, tr.path); markConvention(tr.path, `Palette key for the "${aname}" atlas.`); }
+          if (tr.status === 'found') { addEdge(ap, tr.path); markConvention(tr.path, `Litalykill áferðarsafnsins "${aname}".`); }
         }
         // The permutation VALUES are real palette texture files too.
         const perms = src.permutations && typeof src.permutations === 'object' ? Object.values(src.permutations) : [];
         for (const p of perms) {
           if (typeof p !== 'string') continue;
           const tr = resolveTextureRef(p);
-          if (tr.status === 'found') { addEdge(ap, tr.path); markConvention(tr.path, `Colour palette for the "${aname}" atlas permutations.`); }
+          if (tr.status === 'found') { addEdge(ap, tr.path); markConvention(tr.path, `Litatafla afbrigða í áferðarsafninu "${aname}".`); }
         }
       } else if (src.type === 'unstitch' && typeof src.resource === 'string') {
         const tr = resolveTextureRef(src.resource);
-        if (tr.status === 'found') { addEdge(ap, tr.path); markConvention(tr.path, `Unstitched by the "${aname}" atlas.`); }
+        if (tr.status === 'found') { addEdge(ap, tr.path); markConvention(tr.path, `Skipt upp af áferðarsafninu "${aname}".`); }
       }
     }
   }
@@ -631,8 +632,8 @@ export function buildGraph(files: RawFile[]): Graph {
       addEdge(hit.path, mp);
     } else {
       issues.push({ severity: 'warning', category: 'orphan-mcmeta',
-        title: 'Orphaned .mcmeta file',
-        detail: `${mp} has no paired texture (${texPath.split('/').pop()}). It animates nothing.`,
+        title: '.mcmeta-skrá án tilheyrandi áferðar',
+        detail: `${mp} hefur enga tilheyrandi áferð (${texPath.split('/').pop()}) og hreyfir því ekkert.`,
         path: mp });
     }
   }
@@ -641,12 +642,12 @@ export function buildGraph(files: RawFile[]): Graph {
   for (const sp of byKind.sounds_json) {
     const json = textParsed.get(sp);
     if (parseErrors.has(sp)) {
-      issues.push({ severity: 'error', category: 'invalid-json', title: 'Malformed sounds.json',
+      issues.push({ severity: 'error', category: 'invalid-json', title: 'Ógilt sounds.json',
         detail: parseErrors.get(sp)!, path: sp });
       continue;
     }
     const ns = sp.match(/^assets\/([^/]+)\/sounds\.json$/)?.[1] ?? 'minecraft';
-    roots.set(sp, { path: sp, kind: 'certain', reason: 'sounds.json is loaded by the game by convention.' });
+    roots.set(sp, { path: sp, kind: 'certain', reason: 'Leikurinn hleður sounds.json sjálfkrafa.' });
     for (const [event, val] of Object.entries(json ?? {})) {
       const sounds = (val as any)?.sounds;
       if (!Array.isArray(sounds)) continue;
@@ -667,8 +668,8 @@ export function buildGraph(files: RawFile[]): Graph {
           // Only a custom namespace is provably broken — vanilla ships the
           // minecraft-namespace sounds, so those may resolve outside the pack.
           issues.push({ severity: 'error', category: 'missing-sound',
-            title: 'sounds.json points at a missing file',
-            detail: `Event "${event}" references ${candidates[0]}, which is not in the pack.`, path: sp });
+            title: 'sounds.json vísar í skrá sem vantar',
+            detail: `Atburðurinn "${event}" vísar í ${candidates[0]} sem vantar í pakkann.`, path: sp });
         }
       }
     }
@@ -676,9 +677,9 @@ export function buildGraph(files: RawFile[]): Graph {
 
   // ── lang files are convention roots ─────────────────────────────────────────
   for (const lp of byKind.lang) {
-    roots.set(lp, { path: lp, kind: 'certain', reason: 'Language file — loaded by the game for translations.' });
+    roots.set(lp, { path: lp, kind: 'certain', reason: 'Tungumálaskrá — leikurinn notar hana fyrir þýðingar.' });
     if (parseErrors.has(lp)) {
-      issues.push({ severity: 'error', category: 'invalid-json', title: 'Malformed language file',
+      issues.push({ severity: 'error', category: 'invalid-json', title: 'Ógild tungumálaskrá',
         detail: parseErrors.get(lp)!, path: lp });
     }
   }
@@ -690,9 +691,9 @@ export function buildGraph(files: RawFile[]): Graph {
     const ns = loc.namespace;
     if (ns === 'minecraft') {
       if (isStrongOverridePath(loc.path)) {
-        markConvention(tp, `Sits at a hardcoded vanilla path (textures/${loc.path.split('/')[0]}/…) — Minecraft loads it directly.`);
+        markConvention(tp, `Er á fastri upprunalegri slóð (textures/${loc.path.split('/')[0]}/…) — Minecraft hleður henni beint.`);
       } else if (isKnownVanillaTexture(loc.path)) {
-        markConvention(tp, `Overrides the vanilla texture "${loc.path}" (vanilla's own model still points here).`);
+        markConvention(tp, `Kemur í stað upprunalegu áferðarinnar "${loc.path}" (upprunalega líkanið vísar enn hingað).`);
       }
     }
   }
