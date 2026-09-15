@@ -10,6 +10,7 @@ import { formatDate } from '@/lib/format';
 import TrailNav from '@/components/frontier/TrailNav';
 import Footer from '@/components/frontier/Footer';
 import PlayerHead from '@/components/frontier/PlayerHead';
+import Atmosphere from '@/components/frontier/Atmosphere';
 import Lightbox from '@/components/frontier/Lightbox';
 import { Arrow, Pin, Star, Tape } from '@/components/frontier/Bits';
 import { PAGE_LINKS, STAT_TABS } from '@/components/frontier/data';
@@ -227,160 +228,163 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
   const badges = playerStats ? earnedBadges(playerStats) : [];
 
   return (
-    <div className="j">
-      <div className="j-grain" aria-hidden="true" />
-      <TrailNav links={PAGE_LINKS} always />
-      <main className="j-wrap j-page">
-        <Link href="/crew" className="j-back"><Arrow flip /> allur hópurinn</Link>
+    <div className="j-desk">
+      <div className="j">
+        <div className="j-grain" aria-hidden="true" />
+        <Atmosphere />
+        <TrailNav links={PAGE_LINKS} always />
+        <main className="j-wrap j-page">
+          <Link href="/crew" className="j-back"><Arrow flip /> allur hópurinn</Link>
 
-        {notFound ? (
-          <p className="j-empty">enginn með nafnið {username} hefur aðgang</p>
-        ) : !profile ? (
-          <p className="j-empty">loading {username}…</p>
-        ) : (
-          <>
-            <section className="j-profile">
-              <Pin />
-              <div className="j-profile__head"><PlayerHead name={profile.username} size={128} /></div>
-              <div>
-                <div className="j-profile__top">
-                  <div>
-                    <div className="j-profile__wanted">Eftirlýst · JOÐ-félagi</div>
-                    <h1 className="j-profile__name">{profile.username}</h1>
+          {notFound ? (
+            <p className="j-empty">enginn með nafnið {username} hefur aðgang</p>
+          ) : !profile ? (
+            <p className="j-empty">loading {username}…</p>
+          ) : (
+            <>
+              <section className="j-profile">
+                <Pin />
+                <div className="j-profile__head"><PlayerHead name={profile.username} size={128} /></div>
+                <div>
+                  <div className="j-profile__top">
+                    <div>
+                      <div className="j-profile__wanted">Eftirlýst · JOÐ-félagi</div>
+                      <h1 className="j-profile__name">{profile.username}</h1>
+                    </div>
+                    {isOwner ? (
+                      <button className="j-btn j-btn--ghost j-btn--small" onClick={logout}>Skrá út</button>
+                    ) : (
+                      <button className="j-btn j-btn--ghost j-btn--small" onClick={() => setShowLogin(true)}>Þetta er ég</button>
+                    )}
                   </div>
-                  {isOwner ? (
-                    <button className="j-btn j-btn--ghost j-btn--small" onClick={logout}>Skrá út</button>
+
+                  {editingBio && isOwner ? (
+                    <div className="j-profile__biorow">
+                      <textarea className={`j-textarea${bioError ? ' is-error' : ''}`} value={bioText} onChange={e => setBioText(e.target.value)} maxLength={280} placeholder="Ein eða tvær línur um þig" style={{ flex: '1 1 18rem' }} />
+                      <div className="j-inline">
+                        <button className="j-btn j-btn--small" onClick={saveBio}>Vista</button>
+                        <button className="j-btn j-btn--ghost j-btn--small" onClick={() => { setEditingBio(false); setBioError(''); setBioText(profile.bio); }}>Hætta við</button>
+                      </div>
+                      {bioError && <p className="j-err" style={{ width: '100%' }}>{bioError}</p>}
+                    </div>
                   ) : (
-                    <button className="j-btn j-btn--ghost j-btn--small" onClick={() => setShowLogin(true)}>Þetta er ég</button>
+                    <div className="j-profile__biorow">
+                      <p className={`j-profile__bio${profile.bio ? '' : ' is-empty'}`}>
+                        {profile.bio || (isOwner ? 'þú átt eftir að skrifa kynningu' : 'engin kynning enn')}
+                      </p>
+                      {isOwner && <button className="j-btn j-btn--ghost j-btn--small" onClick={() => setEditingBio(true)}>Breyta kynningu</button>}
+                    </div>
+                  )}
+
+                  {playerStats && (
+                    <>
+                      <dl className="j-stats">
+                        {STAT_TABS.map(t => (
+                          <div key={t.id} className="j-stat">
+                            <dt className="j-stat__k">{t.label}</dt>
+                            <dd className="j-stat__v">{t.unit(playerStats[t.id])}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                      {badges.length > 0 && (
+                        <ul className="j-badges" aria-label="Afrek">
+                          {badges.map(b => <li key={b.id} className="j-badge"><Star className="j-star" />{b.label}</li>)}
+                        </ul>
+                      )}
+                      {statsMeta?.source === 'cached' && statsMeta.cachedAt && (
+                        <p className="j-note j-note--faint" style={{ marginTop: '0.75rem' }}>slökkt á þjóninum, þessar tölur eru frá {formatDate(statsMeta.cachedAt)}</p>
+                      )}
+                    </>
                   )}
                 </div>
+              </section>
 
-                {editingBio && isOwner ? (
-                  <div className="j-profile__biorow">
-                    <textarea className={`j-textarea${bioError ? ' is-error' : ''}`} value={bioText} onChange={e => setBioText(e.target.value)} maxLength={280} placeholder="Ein eða tvær línur um þig" style={{ flex: '1 1 18rem' }} />
-                    <div className="j-inline">
-                      <button className="j-btn j-btn--small" onClick={saveBio}>Vista</button>
-                      <button className="j-btn j-btn--ghost j-btn--small" onClick={() => { setEditingBio(false); setBioError(''); setBioText(profile.bio); }}>Hætta við</button>
-                    </div>
-                    {bioError && <p className="j-err" style={{ width: '100%' }}>{bioError}</p>}
-                  </div>
-                ) : (
-                  <div className="j-profile__biorow">
-                    <p className={`j-profile__bio${profile.bio ? '' : ' is-empty'}`}>
-                      {profile.bio || (isOwner ? 'þú átt eftir að skrifa kynningu' : 'engin kynning enn')}
-                    </p>
-                    {isOwner && <button className="j-btn j-btn--ghost j-btn--small" onClick={() => setEditingBio(true)}>Breyta kynningu</button>}
-                  </div>
-                )}
-
-                {playerStats && (
-                  <>
-                    <dl className="j-stats">
-                      {STAT_TABS.map(t => (
-                        <div key={t.id} className="j-stat">
-                          <dt className="j-stat__k">{t.label}</dt>
-                          <dd className="j-stat__v">{t.unit(playerStats[t.id])}</dd>
-                        </div>
-                      ))}
-                    </dl>
-                    {badges.length > 0 && (
-                      <ul className="j-badges" aria-label="Afrek">
-                        {badges.map(b => <li key={b.id} className="j-badge"><Star className="j-star" />{b.label}</li>)}
-                      </ul>
-                    )}
-                    {statsMeta?.source === 'cached' && statsMeta.cachedAt && (
-                      <p className="j-note j-note--faint" style={{ marginTop: '0.75rem' }}>slökkt á þjóninum, þessar tölur eru frá {formatDate(statsMeta.cachedAt)}</p>
-                    )}
-                  </>
-                )}
-              </div>
-            </section>
-
-            {/* posts */}
-            <section className="j-block">
-              <div className="j-block__head">
-                <p className="j-note j-note--big">Færslur{profile.posts.length > 0 && <span className="j-note j-note--faint"> · {profile.posts.length}</span>}</p>
-              </div>
-              {isOwner && (
-                <form className="j-compose" onSubmit={submitPost}>
-                  <textarea className={`j-textarea${postError ? ' is-error' : ''}`} value={newPost} onChange={e => setNewPost(e.target.value)} maxLength={500} placeholder="Hvað er að gerast á þjóninum?" />
-                  <div className="j-compose__row">
-                    <span className="j-compose__count">{newPost.length} / 500</span>
-                    <button type="submit" className="j-btn j-btn--small" disabled={posting || !newPost.trim()}>{posting ? 'Birti…' : 'Birta'}</button>
-                  </div>
-                  {postError && <p className="j-err">{postError}</p>}
-                </form>
-              )}
-              {profile.posts.length === 0 ? (
-                <p className="j-empty">{isOwner ? 'ekkert komið enn; skrifaðu fyrstu færsluna hér fyrir ofan' : 'engar færslur enn'}</p>
-              ) : (
-                <ul className="j-feed" style={{ maxWidth: 'none' }}>
-                  {profile.posts.map(post => (
-                    <li key={post.id} className="j-post j-post--plain">
-                      {editingPostId === post.id ? (
-                        <div>
-                          <textarea className="j-textarea" value={editText} onChange={e => setEditText(e.target.value)} maxLength={500} autoFocus />
-                          <div className="j-inline" style={{ marginTop: '0.6rem' }}>
-                            <button className="j-btn j-btn--small" onClick={() => saveEditPost(post.id)} disabled={editSaving || !editText.trim()}>{editSaving ? 'Vista…' : 'Vista'}</button>
-                            <button className="j-btn j-btn--ghost j-btn--small" onClick={cancelEditPost}>Hætta við</button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div>
-                          <p className="j-post__text" style={{ marginTop: 0 }}>{post.text}</p>
-                          <div className="j-post__meta" style={{ marginTop: '0.5rem' }}>
-                            <span>{formatDate(post.createdAt)}</span>
-                            {isOwner && (
-                              <span className="j-post__actions">
-                                <button onClick={() => startEditPost(post)}>breyta</button>
-                                <button onClick={() => deletePost(post.id)}>eyða</button>
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
-
-            {/* photos */}
-            <section className="j-block">
-              <div className="j-block__head">
-                <p className="j-note j-note--big">Myndir úr leiknum{profile.photos.length > 0 && <span className="j-note j-note--faint"> · {profile.photos.length}</span>}</p>
-                {isOwner && (
-                  <>
-                    <input ref={fileRef} type="file" accept="image/*" onChange={uploadPhoto} style={{ display: 'none' }} id="crew-photo-upload" />
-                    <label htmlFor="crew-photo-upload" className="j-btn j-btn--ghost j-btn--small" style={{ cursor: uploading ? 'wait' : 'pointer' }}>{uploading ? 'Hleð upp…' : 'Hlaða upp'}</label>
-                  </>
-                )}
-              </div>
-              {photoError && <p className="j-err" style={{ marginBottom: '0.75rem' }}>{photoError}</p>}
-              {profile.photos.length === 0 ? (
-                <p className="j-empty">{isOwner ? 'engar myndir enn; hentu inn nokkrum af því sem þú hefur byggt' : 'engar myndir enn'}</p>
-              ) : (
-                <div className="j-shots">
-                  {profile.photos.map((photo, idx) => (
-                    <button key={photo.id} className="j-polaroid" style={{ '--r': `${TILT[idx % TILT.length]}deg` } as CSSProperties} onClick={() => setLightboxIdx(idx)} aria-label={photo.caption || `Mynd úr leiknum ${idx + 1}`}>
-                      <Tape at="top" r={idx % 2 ? 3 : -3} />
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={photo.filename} alt={photo.caption || ''} loading="lazy" />
-                      <span className="j-polaroid__cap">{photo.caption || formatDate(photo.uploadedAt)}</span>
-                    </button>
-                  ))}
+              {/* posts */}
+              <section className="j-block">
+                <div className="j-block__head">
+                  <p className="j-note j-note--big">Færslur{profile.posts.length > 0 && <span className="j-note j-note--faint"> · {profile.posts.length}</span>}</p>
                 </div>
-              )}
-            </section>
-          </>
-        )}
-      </main>
-      <Footer />
+                {isOwner && (
+                  <form className="j-compose" onSubmit={submitPost}>
+                    <textarea className={`j-textarea${postError ? ' is-error' : ''}`} value={newPost} onChange={e => setNewPost(e.target.value)} maxLength={500} placeholder="Hvað er að gerast á þjóninum?" />
+                    <div className="j-compose__row">
+                      <span className="j-compose__count">{newPost.length} / 500</span>
+                      <button type="submit" className="j-btn j-btn--small" disabled={posting || !newPost.trim()}>{posting ? 'Birti…' : 'Birta'}</button>
+                    </div>
+                    {postError && <p className="j-err">{postError}</p>}
+                  </form>
+                )}
+                {profile.posts.length === 0 ? (
+                  <p className="j-empty">{isOwner ? 'ekkert komið enn; skrifaðu fyrstu færsluna hér fyrir ofan' : 'engar færslur enn'}</p>
+                ) : (
+                  <ul className="j-feed" style={{ maxWidth: 'none' }}>
+                    {profile.posts.map(post => (
+                      <li key={post.id} className="j-post j-post--plain">
+                        {editingPostId === post.id ? (
+                          <div>
+                            <textarea className="j-textarea" value={editText} onChange={e => setEditText(e.target.value)} maxLength={500} autoFocus />
+                            <div className="j-inline" style={{ marginTop: '0.6rem' }}>
+                              <button className="j-btn j-btn--small" onClick={() => saveEditPost(post.id)} disabled={editSaving || !editText.trim()}>{editSaving ? 'Vista…' : 'Vista'}</button>
+                              <button className="j-btn j-btn--ghost j-btn--small" onClick={cancelEditPost}>Hætta við</button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div>
+                            <p className="j-post__text" style={{ marginTop: 0 }}>{post.text}</p>
+                            <div className="j-post__meta" style={{ marginTop: '0.5rem' }}>
+                              <span>{formatDate(post.createdAt)}</span>
+                              {isOwner && (
+                                <span className="j-post__actions">
+                                  <button onClick={() => startEditPost(post)}>breyta</button>
+                                  <button onClick={() => deletePost(post.id)}>eyða</button>
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
 
-      {showLogin && <LoginModal username={username} onSuccess={onLoginSuccess} onClose={() => setShowLogin(false)} />}
-      {lightboxIdx !== null && profile && (
-        <Lightbox photos={profile.photos.map(p => ({ src: p.filename, title: p.caption || undefined, sub: formatDate(p.uploadedAt) }))} index={lightboxIdx} onClose={closeLightbox} onPrev={prevPhoto} onNext={nextPhoto} />
-      )}
+              {/* photos */}
+              <section className="j-block">
+                <div className="j-block__head">
+                  <p className="j-note j-note--big">Myndir úr leiknum{profile.photos.length > 0 && <span className="j-note j-note--faint"> · {profile.photos.length}</span>}</p>
+                  {isOwner && (
+                    <>
+                      <input ref={fileRef} type="file" accept="image/*" onChange={uploadPhoto} style={{ display: 'none' }} id="crew-photo-upload" />
+                      <label htmlFor="crew-photo-upload" className="j-btn j-btn--ghost j-btn--small" style={{ cursor: uploading ? 'wait' : 'pointer' }}>{uploading ? 'Hleð upp…' : 'Hlaða upp'}</label>
+                    </>
+                  )}
+                </div>
+                {photoError && <p className="j-err" style={{ marginBottom: '0.75rem' }}>{photoError}</p>}
+                {profile.photos.length === 0 ? (
+                  <p className="j-empty">{isOwner ? 'engar myndir enn; hentu inn nokkrum af því sem þú hefur byggt' : 'engar myndir enn'}</p>
+                ) : (
+                  <div className="j-shots">
+                    {profile.photos.map((photo, idx) => (
+                      <button key={photo.id} className="j-polaroid" style={{ '--r': `${TILT[idx % TILT.length]}deg` } as CSSProperties} onClick={() => setLightboxIdx(idx)} aria-label={photo.caption || `Mynd úr leiknum ${idx + 1}`}>
+                        <Tape at="top" r={idx % 2 ? 3 : -3} />
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={photo.filename} alt={photo.caption || ''} loading="lazy" />
+                        <span className="j-polaroid__cap">{photo.caption || formatDate(photo.uploadedAt)}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </section>
+            </>
+          )}
+        </main>
+        <Footer />
+
+        {showLogin && <LoginModal username={username} onSuccess={onLoginSuccess} onClose={() => setShowLogin(false)} />}
+        {lightboxIdx !== null && profile && (
+          <Lightbox photos={profile.photos.map(p => ({ src: p.filename, title: p.caption || undefined, sub: formatDate(p.uploadedAt) }))} index={lightboxIdx} onClose={closeLightbox} onPrev={prevPhoto} onNext={nextPhoto} />
+        )}
+      </div>
     </div>
   );
 }

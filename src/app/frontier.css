@@ -7,7 +7,17 @@
    default; things sit where a hand would put them.
    ═══════════════════════════════════════════════════════════════ */
 
-/* ─── the sheet ──────────────────────────────────────────────── */
+/* ─── the desk and the sheet ─────────────────────────────────── */
+.j-desk { position: relative; padding: clamp(0rem, 2vw, 1.75rem) clamp(0rem, 2.5vw, 2.25rem); }
+.j-desk::before {
+  /* the sheet's shadow lives on the desk, because a mask clips box-shadow */
+  content: '';
+  position: absolute;
+  inset: clamp(0.4rem, 2.4vw, 2.1rem) clamp(0.2rem, 2.7vw, 2.4rem) clamp(-0.2rem, 1.6vw, 1.4rem);
+  background: rgba(0, 0, 0, 0.001);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), 0 4px 10px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
 .j {
   position: relative;
   overflow: clip;
@@ -16,7 +26,33 @@
     radial-gradient(28rem 28rem at 88% 8%, rgba(120, 80, 30, 0.10), transparent 60%),
     radial-gradient(22rem 22rem at 6% 42%, rgba(120, 80, 30, 0.08), transparent 60%),
     radial-gradient(34rem 34rem at 70% 78%, rgba(120, 80, 30, 0.08), transparent 60%),
+    linear-gradient(90deg, rgba(43, 29, 18, 0.10), transparent 3%, transparent 97%, rgba(43, 29, 18, 0.08)),
     var(--paper);
+}
+@media (min-width: 720px) {
+  .j {
+    /* deckled left and right edges: two repeating edge strips plus a solid middle, unioned */
+    -webkit-mask:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 240' preserveAspectRatio='none'%3E%3Cpath d='M24 0 L24 240 L6 240 C2 226 10 214 5 200 C1 188 9 176 4 164 C0 150 8 138 3 124 C0 110 9 98 5 84 C1 70 8 58 4 44 C0 30 9 18 5 0 Z' fill='%23000'/%3E%3C/svg%3E") left top / 24px 240px repeat-y,
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 240' preserveAspectRatio='none'%3E%3Cpath d='M0 0 L0 240 L18 240 C22 228 14 216 19 202 C23 190 15 178 20 166 C24 152 16 140 21 126 C24 112 15 100 19 86 C23 72 16 60 20 46 C24 32 15 20 19 0 Z' fill='%23000'/%3E%3C/svg%3E") right top / 24px 240px repeat-y,
+      linear-gradient(#000, #000) 24px 0 / calc(100% - 48px) 100% no-repeat;
+    mask:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 240' preserveAspectRatio='none'%3E%3Cpath d='M24 0 L24 240 L6 240 C2 226 10 214 5 200 C1 188 9 176 4 164 C0 150 8 138 3 124 C0 110 9 98 5 84 C1 70 8 58 4 44 C0 30 9 18 5 0 Z' fill='%23000'/%3E%3C/svg%3E") left top / 24px 240px repeat-y,
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 240' preserveAspectRatio='none'%3E%3Cpath d='M0 0 L0 240 L18 240 C22 228 14 216 19 202 C23 190 15 178 20 166 C24 152 16 140 21 126 C24 112 15 100 19 86 C23 72 16 60 20 46 C24 32 15 20 19 0 Z' fill='%23000'/%3E%3C/svg%3E") right top / 24px 240px repeat-y,
+      linear-gradient(#000, #000) 24px 0 / calc(100% - 48px) 100% no-repeat;
+  }
+}
+/* fold line down the middle of the sheet */
+.j::after {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0;
+  left: 50%;
+  width: 6px;
+  margin-left: -3px;
+  background: linear-gradient(90deg, transparent, rgba(43, 29, 18, 0.05) 45%, rgba(255, 250, 235, 0.35) 52%, transparent);
+  pointer-events: none;
+  z-index: 0;
 }
 .j-grain {
   position: fixed;
@@ -28,6 +64,18 @@
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.42 0 0 0 0 0.30 0 0 0 0 0.16 0 0 0 0.5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   background-size: 240px 240px;
 }
+.j-lantern {
+  position: fixed;
+  top: 0; left: 0;
+  width: 1200px; height: 1200px;
+  z-index: 89;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(255, 196, 110, 0.16), rgba(255, 170, 80, 0.06) 35%, transparent 62%);
+  mix-blend-mode: soft-light;
+  will-change: transform;
+}
+.j-motes { position: fixed; inset: 0; z-index: 88; pointer-events: none; opacity: 0.9; }
+@media (pointer: coarse) { .j-lantern { display: none; } }
 /* coffee ring */
 .j-ring {
   position: absolute;
@@ -40,6 +88,7 @@
   pointer-events: none;
   mix-blend-mode: multiply;
 }
+@media (max-width: 899px) { .j-ring { right: 0 !important; } }
 .j-trailline {
   position: absolute;
   inset: 0;
@@ -59,7 +108,7 @@
 .j-wrap { position: relative; z-index: 1; width: 100%; max-width: 1200px; margin-inline: auto; padding-inline: clamp(1.25rem, 5vw, 3rem); }
 .j-sec { position: relative; padding-block: clamp(3.5rem, 8vw, 6.5rem); }
 
-.j-wood { font-family: var(--font-wood); font-weight: 400; }
+.j-wood { font-family: var(--font-wood); font-weight: 400; letter-spacing: 0.01em; }
 .j-hand { font-family: var(--font-hand); }
 .j-sc   { font-variant: small-caps; letter-spacing: 0.14em; font-weight: 600; }
 
@@ -80,6 +129,10 @@
 .j-tape--tr { top: -0.6rem; right: -1.6rem; --r: 5deg; }
 .j-tape--br { bottom: -0.6rem; right: -1.6rem; --r: -6deg; }
 .j-tape--top { top: -0.7rem; left: 50%; margin-left: -3.25rem; --r: -2deg; }
+@media (max-width: 899px) {
+  .j-tape--tl { left: 0; }
+  .j-tape--tr, .j-tape--br { right: 0; }
+}
 
 .j-pin {
   position: absolute;
@@ -106,6 +159,9 @@
   mix-blend-mode: multiply;
   opacity: 0.88;
   white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
   transition: transform 0.15s ease, opacity 0.15s ease;
 }
 .j-stamp--btn { cursor: pointer; }
@@ -113,6 +169,7 @@
 .j-stamp--btn:active { transform: rotate(var(--r, -5deg)) scale(0.97); }
 .j-stamp.is-copied { color: var(--moss); border-color: var(--moss); }
 .j-stamp--small { font-size: 0.8rem; padding: 0.2rem 0.55rem; border-width: 2px; }
+@media (max-width: 480px) { .j-stamp { font-size: 0.9rem; padding: 0.3rem 0.6rem; } }
 
 .j-note { font-family: var(--font-hand); font-size: 1.35rem; line-height: 1.2; color: var(--ink-soft); }
 .j-note--big { font-size: clamp(1.9rem, 4vw, 2.6rem); color: var(--ink); }
@@ -213,12 +270,13 @@
 /* ─── hero: the first page of the journal ────────────────────── */
 .j-hero { padding-top: clamp(4.5rem, 9vw, 7rem); padding-bottom: clamp(2rem, 5vw, 4rem); }
 .j-hero__grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2.5rem; align-items: start; }
+.j-hero__grid > * { min-width: 0; }
 @media (min-width: 900px) { .j-hero__grid { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 2rem; } }
 .j-hero__mark {
   font-family: var(--font-wood);
   font-size: clamp(5.2rem, 20vw, 15rem);
   line-height: 0.9;
-  letter-spacing: 0.01em;
+  letter-spacing: -0.02em;
   color: var(--ink);
   text-shadow: 3px 3px 0 var(--paper-2), 5px 5px 0 rgba(43, 29, 18, 0.18);
 }
@@ -279,7 +337,7 @@
   border: 1px solid var(--ink-faint);
   box-shadow: 0 6px 14px rgba(43, 29, 18, 0.22);
   transform: rotate(var(--r, 2deg));
-  min-width: 15rem;
+  min-width: min(15rem, 100%);
 }
 .j-slip__head { display: flex; justify-content: space-between; gap: 1rem; font-variant: small-caps; letter-spacing: 0.16em; font-weight: 600; font-size: 0.78rem; color: var(--ink-faint); border-bottom: 1px dashed var(--ink-faint); padding-bottom: 0.4rem; }
 .j-slip__word { margin-top: 0.4rem; font-family: var(--font-wood); font-size: 1.7rem; line-height: 1.1; }
@@ -296,6 +354,7 @@
 .j-camp__title { max-width: 30rem; }
 .j-rope { position: relative; padding-top: 2rem; }
 .j-rope__line { position: absolute; left: -2rem; right: -2rem; top: 0; height: 4rem; width: calc(100% + 4rem); color: #7a5636; pointer-events: none; }
+@media (max-width: 899px) { .j-rope { overflow: clip; padding-inline: 0.5rem; } }
 .j-rope__row { display: flex; gap: clamp(0.5rem, 2vw, 1.25rem); overflow-x: auto; scroll-snap-type: x proximity; padding: 0 0.5rem 1.25rem; scrollbar-width: none; }
 .j-rope__row::-webkit-scrollbar { display: none; }
 @media (min-width: 900px) { .j-rope__row { justify-content: space-between; overflow: visible; padding-inline: 0; } }
@@ -506,7 +565,7 @@
     repeating-linear-gradient(90deg, rgba(255, 210, 150, 0.03) 0 3px, transparent 3px 9px),
     linear-gradient(180deg, #6b4a2b, #4f3520);
 }
-.j-board__sign { position: relative; display: inline-block; margin-bottom: 1.5rem; padding: 0.6rem 2.2rem 0.7rem; background: linear-gradient(180deg, #d9c39a, #c4ab7c); color: var(--ink); font-family: var(--font-wood); font-size: clamp(1.8rem, 5vw, 3rem); line-height: 1; letter-spacing: 0.06em; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.35); transform: rotate(-1.5deg); }
+.j-board__sign { position: relative; display: inline-block; margin-bottom: 1.5rem; padding: 0.6rem 2.2rem 0.7rem; background: linear-gradient(180deg, #d9c39a, #c4ab7c); color: var(--ink); font-family: var(--font-wood); font-size: clamp(1.8rem, 5vw, 3rem); line-height: 1; letter-spacing: 0.03em; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.35); transform: rotate(-1.5deg); }
 .j-board__sign .j-pin { top: 0.5rem; }
 .j-board__head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 1rem 2rem; margin-bottom: 1.5rem; }
 .j-board__head .j-note { color: var(--paper-2); }
@@ -728,7 +787,7 @@
 .j-back { font-family: var(--font-hand); font-size: 1.25rem; color: var(--ink-soft); text-decoration: none; }
 .j-back:hover { color: var(--rust); }
 .j-page__head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 1rem 2rem; margin: 1rem 0 2.5rem; }
-.j-page__title { font-family: var(--font-wood); font-size: clamp(2.4rem, 7vw, 4.5rem); line-height: 1; }
+.j-page__title { font-family: var(--font-wood); font-size: clamp(2.4rem, 7vw, 4.5rem); line-height: 1; letter-spacing: -0.015em; }
 .j-rollcall { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2.25rem 1rem; }
 @media (min-width: 640px) { .j-rollcall { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2.5rem 1.5rem; } }
 .j-rollcall .j-peg { flex: none; width: 100%; max-width: 11rem; margin-inline: auto; }
