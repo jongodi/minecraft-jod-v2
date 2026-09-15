@@ -402,29 +402,14 @@
 .j-rope__row { display: flex; gap: clamp(0.5rem, 2vw, 1.25rem); overflow-x: auto; scroll-snap-type: x proximity; padding: 0 0.5rem 1.25rem; scrollbar-width: none; }
 .j-rope__row::-webkit-scrollbar { display: none; }
 @media (min-width: 900px) { .j-rope__row { justify-content: space-between; overflow: visible; padding-inline: 0; } }
-.j-peg {
-  position: relative;
-  flex: 0 0 8.2rem;
-  scroll-snap-align: center;
-  text-decoration: none;
-  color: var(--ink);
-  text-align: center;
-  transform: rotate(var(--r, 0deg));
-  transform-origin: 50% -1rem;
-  transition: transform 0.2s ease;
-}
+.j-peg { position: relative; flex: 0 0 8.2rem; scroll-snap-align: center; text-decoration: none; color: var(--ink); text-align: center; }
 @media (min-width: 900px) { .j-peg { flex: 0 1 8.4rem; } }
-.j-peg:hover { transform: rotate(0deg); }
-.j-peg.is-swing { animation: j-swing 1.4s ease-out; }
-@keyframes j-swing {
-  0% { transform: rotate(calc(var(--r, 0deg) + 9deg)); }
-  30% { transform: rotate(calc(var(--r, 0deg) - 6deg)); }
-  60% { transform: rotate(calc(var(--r, 0deg) + 3deg)); }
-  100% { transform: rotate(var(--r, 0deg)); }
-}
+.j-peg__swing { position: relative; display: block; transform-origin: 50% -1rem; will-change: transform; }
 .j-peg__clip { position: absolute; top: -1.15rem; left: 50%; width: 0.7rem; height: 1.7rem; margin-left: -0.35rem; background: linear-gradient(90deg, #b0865a, #d8b07a 50%, #a67d50); border-radius: 2px; box-shadow: 0 1px 2px rgba(43, 29, 18, 0.4); z-index: 2; }
 .j-peg__clip::after { content: ''; position: absolute; left: 0.22rem; top: 0.25rem; width: 0.25rem; height: 0.5rem; background: #6d4b2a; border-radius: 1px; }
-.j-peg__frame { display: block; padding: 5px; background: linear-gradient(160deg, #3a2718, #1c130d); box-shadow: 0 6px 14px rgba(43, 29, 18, 0.32); }
+.j-peg__glow { position: absolute; inset: -1.2rem -1.2rem 1rem; border-radius: 50%; background: radial-gradient(circle, rgba(255, 190, 90, 0.55), rgba(255, 170, 60, 0.18) 45%, transparent 70%); filter: blur(6px); mix-blend-mode: multiply; animation: j-lantern 3.4s ease-in-out infinite; pointer-events: none; }
+@keyframes j-lantern { 0%, 100% { opacity: 0.75; } 50% { opacity: 1; } }
+.j-peg__frame { position: relative; display: block; padding: 5px; background: linear-gradient(160deg, #3a2718, #1c130d); box-shadow: 0 6px 14px rgba(43, 29, 18, 0.32), inset 0 1px 0 rgba(255, 224, 176, 0.12); }
 .j-peg__frame img { width: 100%; aspect-ratio: 1; object-fit: cover; image-rendering: pixelated; filter: sepia(0.85) contrast(0.9) brightness(0.72); transition: filter 0.35s ease; }
 .j-peg.is-in img, .j-peg:hover img { filter: none; }
 .j-peg__name { display: block; margin-top: 0.5rem; font-family: var(--font-hand); font-size: 1.3rem; line-height: 1.1; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
