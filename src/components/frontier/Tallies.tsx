@@ -3,10 +3,12 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import type { CSSProperties } from 'react';
+import { LayoutGroup, motion } from 'framer-motion';
 import PlayerHead from './PlayerHead';
 import { Arrow, Pin } from './Bits';
 import { STAT_TABS, type StatKey } from './data';
 import type { StatsState } from './hooks';
+import { SPRING } from './motion';
 
 const PLACE = ['1. sæti', '2. sæti', '3. sæti'];
 const TILT  = [-2, 1.2, 2.2];
@@ -42,18 +44,20 @@ export default function Tallies({ stats }: { stats: StatsState }) {
         {rows.length === 0 ? (
           <p className="j-empty">{stats.source === null ? 'sæki tölurnar…' : 'engar tölur enn; þær birtast þegar þjónninn hefur verið í gangi'}</p>
         ) : (
-          <>
+          <LayoutGroup>
             <div className="j-posters">
               {top.map((r, i) => (
-                <Link key={r.name} href={`/crew/${r.name}`} className="j-poster" style={{ '--r': `${TILT[i]}deg` } as CSSProperties}>
-                  <Pin />
-                  <div className="j-poster__wanted">Eftirlýst</div>
-                  <div className="j-poster__place">{PLACE[i]} · {meta.label}</div>
-                  <div className="j-poster__img"><PlayerHead name={r.name} size={128} /></div>
-                  <div className="j-poster__name">{r.name}</div>
-                  <div className="j-poster__reward">Verðlaun</div>
-                  <div className="j-poster__val">{meta.unit(r.val)}</div>
-                </Link>
+                <motion.div key={r.name} layout="position" layoutId={`rank-${r.name}`} transition={SPRING} className="j-poster__slot">
+                  <Link href={`/crew/${r.name}`} className="j-poster" style={{ '--r': `${TILT[i]}deg` } as CSSProperties}>
+                    <span className="j-nail" aria-hidden="true" />
+                    <div className="j-poster__wanted">Eftirlýst</div>
+                    <div className="j-poster__place">{PLACE[i]} · {meta.label}</div>
+                    <div className="j-poster__img"><PlayerHead name={r.name} size={128} /></div>
+                    <div className="j-poster__name">{r.name}</div>
+                    <div className="j-poster__reward">Verðlaun</div>
+                    <div className="j-poster__val">{meta.unit(r.val)}</div>
+                  </Link>
+                </motion.div>
               ))}
             </div>
 
@@ -61,16 +65,18 @@ export default function Tallies({ stats }: { stats: StatsState }) {
               <div className="j-ledger">
                 <p className="j-ledger__title">hin í bókinni: {meta.label.toLowerCase()}</p>
                 {rest.map((r, i) => (
-                  <Link key={r.name} href={`/crew/${r.name}`} className="j-ledger__row">
-                    <span className="j-ledger__rank">{i + 4}.</span>
-                    <span className="j-ledger__head"><PlayerHead name={r.name} size={64} /></span>
-                    <span className="j-ledger__name">{r.name}</span>
-                    <span className="j-ledger__val">{meta.unit(r.val)}</span>
-                  </Link>
+                  <motion.div key={r.name} layout="position" layoutId={`rank-${r.name}`} transition={SPRING}>
+                    <Link href={`/crew/${r.name}`} className="j-ledger__row">
+                      <span className="j-ledger__rank">{i + 4}.</span>
+                      <span className="j-ledger__head"><PlayerHead name={r.name} size={64} /></span>
+                      <span className="j-ledger__name">{r.name}</span>
+                      <span className="j-ledger__val">{meta.unit(r.val)}</span>
+                    </Link>
+                  </motion.div>
                 ))}
               </div>
             )}
-          </>
+          </LayoutGroup>
         )}
 
         {stats.source && (

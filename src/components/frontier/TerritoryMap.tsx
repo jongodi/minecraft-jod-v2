@@ -2,10 +2,13 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
+import { motion, useMotionValue, useReducedMotion, animate } from 'framer-motion';
+import type { MotionValue } from 'framer-motion';
 import type { MapLocation, MapZone, MapPath } from '@/lib/map-types';
 import { DEFAULT_LOCATIONS, DEFAULT_ZONES, DEFAULT_PATHS } from '@/lib/map-types';
 import { Arrow, Stamp, Tape } from './Bits';
 import { handCase, titleCase, type Plate } from './data';
+import { clamp, rubberband, SPRING } from './motion';
 
 const TYPE: Record<MapLocation['type'], string> = {
   surface: 'á yfirborði', underground: 'neðanjarðar', island: 'eyja', aerial: 'úr lofti',
@@ -18,6 +21,11 @@ const WATER  = '#6b7f7a';
 const BRASS  = '#c9a24a';
 const WAX    = '#9b3b2a';
 const LAND_PATH = 'M 435 60 C 528 45, 674 78, 752 142 C 810 194, 822 262, 818 330 C 814 402, 786 460, 746 502 C 700 550, 635 582, 555 596 C 476 610, 396 604, 320 582 C 232 558, 155 512, 110 458 C 62 400, 50 336, 56 278 C 62 218, 88 166, 132 136 C 182 100, 298 70, 435 60 Z';
+const VB_W = 1000, VB_H = 650;
+const MIN_Z = 1, MAX_Z = 3.2;
+
+const spring = (mv: MotionValue<number>, to: number) =>
+  animate(mv.get(), to, { ...SPRING, onUpdate: (v: number) => mv.set(v) });
 
 export default function TerritoryMap({ plates }: { plates: Plate[] }) {
   const [locations, setLocations] = useState<MapLocation[]>(DEFAULT_LOCATIONS);
@@ -26,6 +34,107 @@ export default function TerritoryMap({ plates }: { plates: Plate[] }) {
   const [selectedId, setSelected] = useState<number>(DEFAULT_LOCATIONS[0]?.id ?? 0);
   const [surveyed, setSurveyed]   = useState(false);
   const sheet = useRef<HTMLDivElement>(null);
+
+  const reduce = useReducedMotion();
+  const x = useMotionValue(0), y = useMotionValue(0), z = useMotionValue(1);
+  const drag = useRef<{ id: number; sx: number; sy: number; ox: number; oy: number; moved: boolean } | null>(null);
+  const lastMoved = useRef(false);
+
+  /* pan limits for the current zoom, in CSS px of the sheet */
+  const limits = () => {
+    const el = sheet.current!;
+    const w = el.clientWidth, h = el.clientHeight, s = z.get();
+    return { minX: w - w * s, minY: h - h * s, w, h };
+  };
+  const settle = () => {
+    const { minX, minY } = limits();
+    const tx = clamp(x.get(), minX, 0), ty = clamp(y.get(), minY, 0);
+    spring(x, tx); spring(y, ty);
+  };
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    if (reduce) return;
+    drag.current = { id: e.pointerId, sx: e.clientX, sy: e.clientY, ox: x.get(), oy: y.get(), moved: false };
+    x.stop(); y.stop();
+  };
+  const onPointerMove = (e: React.PointerEvent) => {
+    const d = drag.current;
+    if (!d || d.id !== e.pointerId) return;
+    const dx = e.clientX - d.sx, dy = e.clientY - d.sy;
+    if (!d.moved && Math.abs(dx) + Math.abs(dy) > 6) {
+      d.moved = true;
+      try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* pointer may already be gone */ }
+    }
+    const { minX, minY, w, h } = limits();
+    let nx = d.ox + dx, ny = d.oy + dy;
+    if (nx > 0)    nx = rubberband(nx, w);
+    if (nx < minX) nx = minX + rubberband(nx - minX, w);
+    if (ny > 0)    ny = rubberband(ny, h);
+    if (ny < minY) ny = minY + rubberband(ny - minY, h);
+    x.set(nx); y.set(ny);
+  };
+  const onPointerUp = (e: React.PointerEvent) => {
+    if (drag.current?.id !== e.pointerId) return;
+    lastMoved.current = drag.current.moved;
+    drag.current = null;
+    settle();
+  };
+  const onWheel = (e: React.WheelEvent) => {
+    const s0 = z.get();
+    const zoomIntent = e.ctrlKey || e.metaKey;      // trackpad pinch arrives as ctrl+wheel
+    if (reduce || !zoomIntent) return;              // plain wheel scrolls the page
+    const s1 = clamp(s0 * (e.deltaY < 0 ? 1.12 : 1 / 1.12), MIN_Z, MAX_Z);
+    if (s1 === s0) return;                          // nothing to do, let the page scroll
+    e.preventDefault();
+    const el = sheet.current!;
+    const r = el.getBoundingClientRect();
+    const px = e.clientX - r.left, py = e.clientY - r.top;
+    /* keep the point under the cursor fixed */
+    x.set(px - (px - x.get()) * (s1 / s0));
+    y.set(py - (py - y.get()) * (s1 / s0));
+    z.set(s1);
+    settle();
+  };
+  /** Zoom by `factor`, centred on the sheet, springing to the new state. */
+  const zoomBy = (factor: number) => {
+    if (reduce) return;
+    const el = sheet.current;
+    if (!el) return;
+    const w = el.clientWidth, h = el.clientHeight;
+    const s0 = z.get();
+    const s1 = clamp(s0 * factor, MIN_Z, MAX_Z);
+    if (s1 === s0) return;
+    const cx = w / 2, cy = h / 2;
+    const nx = cx - (cx - x.get()) * (s1 / s0);
+    const ny = cy - (cy - y.get()) * (s1 / s0);
+    const minX = w - w * s1, minY = h - h * s1;
+    spring(z, s1);
+    spring(x, clamp(nx, minX, 0));
+    spring(y, clamp(ny, minY, 0));
+  };
+  /** Spring the view so `loc` sits at the centre at zoom 2. */
+  const flyTo = (loc: MapLocation) => {
+    setSelected(loc.id);
+    if (reduce) return;
+    const el = sheet.current!;
+    const w = el.clientWidth, h = el.clientHeight;
+    const s = 2;
+    const cx = (loc.x / VB_W) * w * s, cy = (loc.y / VB_H) * h * s;
+    spring(z, s);
+    spring(x, clamp(w / 2 - cx, w - w * s, 0));
+    spring(y, clamp(h / 2 - cy, h - h * s, 0));
+  };
+  const resetView = () => { spring(z, 1); spring(x, 0); spring(y, 0); };
+
+  useEffect(() => {
+    const el = sheet.current;
+    if (!el) return;
+    const h = (e: WheelEvent) => onWheel(e as unknown as React.WheelEvent);
+    el.addEventListener('wheel', h, { passive: false });
+    return () => el.removeEventListener('wheel', h);
+  // onWheel reads motion values only; recreating it is harmless
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reduce]);
 
   useEffect(() => {
     fetch('/api/map')
@@ -54,18 +163,30 @@ export default function TerritoryMap({ plates }: { plates: Plate[] }) {
       <div className="j-wrap j-map">
         <div className="j-map__wrap">
           <span className="j-map__label"><Stamp r={-4}>Landakort</Stamp></span>
-          <div ref={sheet} className={`j-map__sheet${surveyed ? ' is-surveyed' : ''}`}>
-            <svg viewBox="0 0 1000 650" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Landakort af JOÐ-heiminum">
+          <div ref={sheet} className={`j-map__sheet${surveyed ? ' is-surveyed' : ''}`}
+            onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}
+            onDoubleClick={resetView}>
+            <svg className="j-map__paper" viewBox="0 0 1000 650" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <defs>
-                <filter id="jBurn" x="-5%" y="-5%" width="110%" height="110%">
+                <filter id="jBurn2" x="-5%" y="-5%" width="110%" height="110%">
                   <feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="3" seed="4" result="n" />
                   <feDisplacementMap in="SourceGraphic" in2="n" scale="18" xChannelSelector="R" yChannelSelector="G" />
                 </filter>
-                <radialGradient id="jAge" cx="0.5" cy="0.5" r="0.72">
+                <radialGradient id="jAge2" cx="0.5" cy="0.5" r="0.72">
                   <stop offset="0.55" stopColor={PAPER} />
                   <stop offset="0.86" stopColor="#c9b184" />
                   <stop offset="1" stopColor="#7a5230" />
                 </radialGradient>
+                <pattern id="jHatch2" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                  <line x1="0" y1="0" x2="0" y2="7" stroke={WATER} strokeOpacity="0.45" strokeWidth="1" />
+                </pattern>
+              </defs>
+              <rect x="14" y="14" width="972" height="622" fill="url(#jAge2)" filter="url(#jBurn2)" />
+              <rect x="14" y="14" width="972" height="622" fill="url(#jHatch2)" filter="url(#jBurn2)" opacity="0.9" />
+            </svg>
+            <motion.div className="j-map__view" style={{ x, y, scale: z, transformOrigin: '0 0' }}>
+            <svg viewBox="0 0 1000 650" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Landakort af JOÐ-heiminum">
+              <defs>
                 <pattern id="jHatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
                   <line x1="0" y1="0" x2="0" y2="7" stroke={WATER} strokeOpacity="0.45" strokeWidth="1" />
                 </pattern>
@@ -75,10 +196,8 @@ export default function TerritoryMap({ plates }: { plates: Plate[] }) {
                 <radialGradient id="jWax" cx="0.35" cy="0.3" r="0.8">
                   <stop offset="0" stopColor="#c25a45" /><stop offset="0.7" stopColor={WAX} /><stop offset="1" stopColor="#5e2116" />
                 </radialGradient>
+                <radialGradient id="jShine" cx="0.3" cy="0.25" r="0.5"><stop offset="0" stopColor="#fff" stopOpacity="0.7" /><stop offset="1" stopColor="#fff" stopOpacity="0" /></radialGradient>
               </defs>
-
-              <rect x="14" y="14" width="972" height="622" fill="url(#jAge)" filter="url(#jBurn)" />
-              <rect x="14" y="14" width="972" height="622" fill="url(#jHatch)" filter="url(#jBurn)" opacity="0.9" />
 
               <path d={LAND_PATH} fill={LAND} stroke={INK} strokeWidth="1.5" />
               <path d={LAND_PATH} fill="none" stroke={INK} strokeOpacity="0.4" strokeWidth="0.8" transform="translate(500 325) scale(1.035) translate(-500 -325)" />
@@ -130,7 +249,7 @@ export default function TerritoryMap({ plates }: { plates: Plate[] }) {
               {locations.map(loc => {
                 const active = loc.id === selected?.id;
                 return (
-                  <g key={loc.id} className="j-pin-map" onClick={() => setSelected(loc.id)} role="button" tabIndex={0}
+                  <g key={loc.id} className="j-pin-map" onClick={() => { if (!lastMoved.current) setSelected(loc.id); }} role="button" tabIndex={0}
                     aria-label={`${loc.label}, ${TYPE[loc.type]}`}
                     onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelected(loc.id); } }}>
                     <circle className="j-pin-map__hit" cx={loc.x} cy={loc.y} r="26" />
@@ -138,6 +257,7 @@ export default function TerritoryMap({ plates }: { plates: Plate[] }) {
                     <g className="j-pin-map__body">
                       <ellipse cx={loc.x + 2} cy={loc.y + 3} rx="13" ry="12" fill={INK} fillOpacity="0.35" />
                       <circle cx={loc.x} cy={loc.y} r="13" fill={active ? 'url(#jWax)' : 'url(#jTack)'} stroke={INK} strokeWidth="1" />
+                      <circle cx={loc.x} cy={loc.y} r="13" fill="url(#jShine)" pointerEvents="none" />
                       <text x={loc.x} y={loc.y + 5} textAnchor="middle" fill={active ? '#f8f1de' : INK} fontSize="14" fontFamily="var(--font-hand)" fontWeight="600">{loc.id}</text>
                     </g>
                     {loc.type === 'underground' && <line x1={loc.x} y1={loc.y + 15} x2={loc.x} y2={loc.y + 27} stroke={INK} strokeWidth="1.5" strokeDasharray="2 2" />}
@@ -157,10 +277,26 @@ export default function TerritoryMap({ plates }: { plates: Plate[] }) {
               <text x="44" y="78" fill={INK} fillOpacity="0.75" fontSize="15" fontFamily="var(--font-hand)">{locations.length} staðir á kortinu, 2024 til {new Date().getFullYear()}</text>
               <rect x="30" y="30" width="940" height="590" fill="none" stroke={INK} strokeOpacity="0.55" strokeWidth="1" />
             </svg>
+            </motion.div>
+            {!reduce && <button type="button" className="j-map__reset j-stamp j-stamp--small" style={{ '--r': '3deg' } as CSSProperties} onClick={resetView}>Allt kortið</button>}
+            {!reduce && (
+              <div className="j-map__zoom">
+                <button type="button" aria-label="Stækka kortið" onClick={() => zoomBy(1.4)}>+</button>
+                <button type="button" aria-label="Minnka kortið" onClick={() => zoomBy(1 / 1.4)}>−</button>
+              </div>
+            )}
           </div>
 
           {selected && (
-            <figure className="j-print j-map__print" style={{ '--r': '4deg' } as CSSProperties} aria-live="polite">
+            <motion.figure
+              key={selected.id}
+              className="j-print j-map__print"
+              style={{ '--r': '4deg' } as CSSProperties}
+              initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.6, x: -120, y: -80, rotate: -6 }}
+              animate={reduce ? { opacity: 1 } : { opacity: 1, scale: 1, x: 0, y: 0, rotate: 0 }}
+              transition={reduce ? { duration: 0.2 } : SPRING}
+              aria-live="polite"
+            >
               <Tape at="top" />
               {plate ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -171,7 +307,7 @@ export default function TerritoryMap({ plates }: { plates: Plate[] }) {
               <figcaption className="j-print__cap">
                 {selected.id}. {titleCase(selected.label)}{selected.sublabel && <>, {handCase(selected.sublabel).replace(/\s*·\s*/g, ', ')}</>}
               </figcaption>
-            </figure>
+            </motion.figure>
           )}
         </div>
 
@@ -181,7 +317,7 @@ export default function TerritoryMap({ plates }: { plates: Plate[] }) {
           <ol className="j-index">
             {locations.map(loc => (
               <li key={loc.id}>
-                <button className={loc.id === selected?.id ? 'is-active' : ''} onClick={() => setSelected(loc.id)}>
+                <button className={loc.id === selected?.id ? 'is-active' : ''} onClick={() => flyTo(loc)}>
                   <span className="j-index__no">{loc.id}.</span>
                   <span className="j-index__label">{titleCase(loc.label)}</span>
                   <span className="j-index__type">{TYPE[loc.type]}</span>

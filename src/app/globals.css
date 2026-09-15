@@ -51,14 +51,20 @@
   --font-display:  var(--font-text);
   --font-body:     var(--font-text);
   --radius:        2px;
+
+  --desk: #1d130b;
 }
 
 /* ─── Reset & base ────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-html { background: var(--paper); color: var(--ink); -webkit-text-size-adjust: 100%; }
+html { background: var(--desk); color: var(--ink); -webkit-text-size-adjust: 100%; }
 body {
-  background: var(--paper);
+  background:
+    radial-gradient(90% 60% at 50% 0%, rgba(120, 78, 40, 0.28), transparent 70%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.75 0 0 0 0 0.55 0 0 0 0 0.35 0 0 0 0.10 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+    var(--desk);
+  background-size: auto, 200px 200px, auto;
   color: var(--ink);
   font-family: var(--font-text);
   font-size: 1.0625rem;
@@ -75,9 +81,8 @@ a { color: inherit; }
 :focus-visible { outline: 2px solid var(--rust); outline-offset: 3px; }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+  .j-lantern, .j-motes, .j-peg__glow, .j-arena__heat { display: none !important; }
+  .j-pan__img { transform: none !important; }
+  .j-print, .j-polaroid, .j-poster, .j-tag, .j-peg__swing { transition: opacity 0.2s ease !important; }
 }
