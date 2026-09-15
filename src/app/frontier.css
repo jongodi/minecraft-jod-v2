@@ -21,7 +21,16 @@
 .j {
   position: relative;
   overflow: clip;
+  isolation: isolate;
   color: var(--ink);
+  background: transparent;
+}
+.j::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
   background:
     radial-gradient(28rem 28rem at 88% 8%, rgba(120, 80, 30, 0.10), transparent 60%),
     radial-gradient(22rem 22rem at 6% 42%, rgba(120, 80, 30, 0.08), transparent 60%),
@@ -30,7 +39,7 @@
     var(--paper);
 }
 @media (min-width: 720px) {
-  .j {
+  .j::before {
     /* deckled left and right edges: two repeating edge strips plus a solid middle, unioned */
     -webkit-mask:
       url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 240' preserveAspectRatio='none'%3E%3Cpath d='M24 0 L24 240 L6 240 C2 226 10 214 5 200 C1 188 9 176 4 164 C0 150 8 138 3 124 C0 110 9 98 5 84 C1 70 8 58 4 44 C0 30 9 18 5 0 Z' fill='%23000'/%3E%3C/svg%3E") left top / 24px 240px repeat-y,
@@ -350,10 +359,10 @@
 @media (min-width: 1180px) {
   .j-sign--fixed {
     display: block; position: fixed; right: clamp(1rem, 3vw, 2.5rem); top: 50%; z-index: 38; width: 13rem; padding-left: 1.4rem;
-    opacity: 0; transform: translateY(-50%) translateX(1.5rem); pointer-events: none;
-    transition: opacity 0.3s cubic-bezier(.2, .8, .2, 1), transform 0.3s cubic-bezier(.2, .8, .2, 1);
+    opacity: 0; visibility: hidden; transform: translateY(-50%) translateX(1.5rem); pointer-events: none;
+    transition: opacity 0.3s cubic-bezier(.2, .8, .2, 1), transform 0.3s cubic-bezier(.2, .8, .2, 1), visibility 0s linear 0.3s;
   }
-  .j-sign--fixed.is-shown { opacity: 1; transform: translateY(-50%); pointer-events: auto; }
+  .j-sign--fixed.is-shown { opacity: 1; visibility: visible; transform: translateY(-50%); pointer-events: auto; transition: opacity 0.3s cubic-bezier(.2, .8, .2, 1), transform 0.3s cubic-bezier(.2, .8, .2, 1), visibility 0s; }
 }
 
 .j-print {

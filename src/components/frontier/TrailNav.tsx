@@ -32,6 +32,13 @@ export default function TrailNav({ links, activeId, always = false }: Props) {
     return () => { document.body.style.overflow = ''; };
   }, [open]);
 
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open]);
+
   const onDragEnd = (_: unknown, info: PanInfo) => {
     /* where the flick would land decides, not where the finger let go */
     const landing = info.offset.x + project(info.velocity.x);
@@ -107,10 +114,14 @@ export function Signpost({ links, activeId, fixed = false }: { links: NavLink[];
   }, [fixed]);
 
   return (
-    <nav className={`j-sign${fixed ? ' j-sign--fixed' : ''}${fixed && shown ? ' is-shown' : ''}`} aria-label="Efnisyfirlit">
+    <nav
+      className={`j-sign${fixed ? ' j-sign--fixed' : ''}${fixed && shown ? ' is-shown' : ''}`}
+      aria-label={fixed ? undefined : 'Vegvísir'}
+      aria-hidden={fixed ? true : undefined}
+    >
       <span className="j-sign__pole" aria-hidden="true" />
       {links.map((l, i) => (
-        <Link key={l.href} href={l.href} className={`j-sign__plank${activeId && l.id === activeId ? ' is-active' : ''}`} style={{ '--r': `${TILT[i % TILT.length]}deg` } as CSSProperties}>
+        <Link key={l.href} href={l.href} className={`j-sign__plank${activeId && l.id === activeId ? ' is-active' : ''}`} style={{ '--r': `${TILT[i % TILT.length]}deg` } as CSSProperties} tabIndex={fixed ? -1 : undefined}>
           {l.label}
         </Link>
       ))}

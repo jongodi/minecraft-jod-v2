@@ -31,13 +31,14 @@ export default function Lightbox({ photos, index, onClose, onPrev, onNext, origi
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape')     requestClose();
+      if (closing) return;
       if (e.key === 'ArrowLeft')  { setDir(-1); onPrev(); }
       if (e.key === 'ArrowRight') { setDir(1);  onNext(); }
     };
     window.addEventListener('keydown', onKey);
     document.body.style.overflow = 'hidden';
     return () => { window.removeEventListener('keydown', onKey); document.body.style.overflow = ''; };
-  }, [requestClose, onPrev, onNext]);
+  }, [requestClose, onPrev, onNext, closing]);
 
   if (!photo) return null;
 
@@ -84,8 +85,8 @@ export default function Lightbox({ photos, index, onClose, onPrev, onNext, origi
         {photos.length > 1 && (
           <div className="j-inline">
             <span className="j-lb__count">{index + 1} / {photos.length}</span>
-            <button className="j-arrowbtn" onClick={() => { setDir(-1); onPrev(); }} aria-label="Fyrri mynd">←</button>
-            <button className="j-arrowbtn" onClick={() => { setDir(1); onNext(); }} aria-label="Næsta mynd">→</button>
+            <button className="j-arrowbtn" onClick={() => { if (closing) return; setDir(-1); onPrev(); }} aria-label="Fyrri mynd">←</button>
+            <button className="j-arrowbtn" onClick={() => { if (closing) return; setDir(1); onNext(); }} aria-label="Næsta mynd">→</button>
           </div>
         )}
       </div>

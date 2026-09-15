@@ -14,12 +14,16 @@ export default function Atmosphere() {
     if (reduce || !window.matchMedia('(pointer: fine)').matches) return;
     const el = glow.current;
     if (!el) return;
-    let tx = window.innerWidth * 0.6, ty = window.innerHeight * 0.3, x = tx, y = ty, raf = 0;
-    const onMove = (e: PointerEvent) => { tx = e.clientX; ty = e.clientY; };
+    let tx = window.innerWidth * 0.6, ty = window.innerHeight * 0.3, x = tx, y = ty, raf = 0, idle = false;
     const tick = () => {
       x += (tx - x) * 0.04; y += (ty - y) * 0.04;
       el.style.transform = `translate3d(${x - 600}px, ${y - 600}px, 0)`;
+      if (Math.abs(tx - x) + Math.abs(ty - y) < 0.5) { idle = true; return; }
       raf = requestAnimationFrame(tick);
+    };
+    const onMove = (e: PointerEvent) => {
+      tx = e.clientX; ty = e.clientY;
+      if (idle) { idle = false; raf = requestAnimationFrame(tick); }
     };
     window.addEventListener('pointermove', onMove, { passive: true });
     raf = requestAnimationFrame(tick);

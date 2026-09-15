@@ -51,8 +51,8 @@ Icelandic copy, section order.
   enter/exit path.
 
 ### 4. Camp
-- Pegs swing on a real spring driven by pointer velocity; damping ~0.8,
-  settle to their tilt.
+- Pegs swing on a real spring driven by pointer velocity; under-damped
+  (`stiffness 140, damping 9, mass 0.9`), settle to their tilt.
 - Online players get a warm lantern glow behind the frame.
 
 ### 5. Map
@@ -60,6 +60,8 @@ Icelandic copy, section order.
   and pinch, rubber-banding at the edges.
 - Picking a place from the index springs the view to the pin.
 - The photo print animates from the pin to its corner (shared origin).
+- Pinch-to-zoom is left to the browser on touch devices (`touch-action:
+  pan-y`); wheel zoom needs ctrl/⌘, plus +/− buttons.
 - Pins: brass/wax with highlight and hover lift. Trail draws as now.
 
 ### 6. Album

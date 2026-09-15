@@ -24,12 +24,8 @@ const LAND_PATH = 'M 435 60 C 528 45, 674 78, 752 142 C 810 194, 822 262, 818 33
 const VB_W = 1000, VB_H = 650;
 const MIN_Z = 1, MAX_Z = 3.2;
 
-/* framer-motion 11 types animate() for numbers; drive the MotionValue from onUpdate.
-   The cast below is needed because animate()'s overloads can't express "Transition plus an
-   onUpdate callback" without widening to the full Transition union, whose `{ type: false }` /
-   string-`from` variants then fail assignability — the merged object is correct at runtime. */
 const spring = (mv: MotionValue<number>, to: number) =>
-  animate(mv.get(), to, { ...SPRING, onUpdate: (v: number) => mv.set(v) } as any);
+  animate(mv.get(), to, { ...SPRING, onUpdate: (v: number) => mv.set(v) });
 
 export default function TerritoryMap({ plates }: { plates: Plate[] }) {
   const [locations, setLocations] = useState<MapLocation[]>(DEFAULT_LOCATIONS);
