@@ -344,7 +344,7 @@ export function buildGraph(files: RawFile[]): Graph {
         issues.push({ severity: 'error', category: 'broken-reference',
           title: 'Kubbaástand vísar í líkan sem vantar',
           detail: `"${ref}" er líkan í eigin nafnarými sem vantar í pakkann.`, path: bp,
-          fix: { file: bp, value: ref, targetKind: 'model', context: 'blockstate model', reason: 'líkan úr eigin nafnarými vantar í pakkann' } });
+          fix: { file: bp, value: ref, targetKind: 'model', context: 'líkan í kubbaástandi', reason: 'líkan úr eigin nafnarými vantar í pakkann' } });
       }
     }
   }

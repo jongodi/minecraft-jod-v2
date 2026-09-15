@@ -30,6 +30,6 @@ export async function POST(
     return NextResponse.json(post, { status: 201 });
   } catch (e) {
     console.error('POST /api/crew/[username]/posts error:', e);
-    return NextResponse.json({ error: 'Ekki tókst að vista. post — storage error' }, { status: 500 });
+    return NextResponse.json({ error: 'Ekki tókst að vista færsluna. Reyndu aftur.' }, { status: 500 });
   }
 }
