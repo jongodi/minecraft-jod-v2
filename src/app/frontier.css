@@ -682,7 +682,8 @@
   font-size: 0.82rem;
   line-height: 1.5;
   box-shadow: 0 12px 24px rgba(43, 29, 18, 0.28);
-  transform: rotate(1.2deg);
+  transform: rotate(1.2deg) perspective(900px) rotateX(2deg);
+  transform-origin: top center;
 }
 .j-receipt::before, .j-receipt::after {
   content: '';
@@ -694,6 +695,8 @@
 }
 .j-receipt::before { top: -10px; }
 .j-receipt::after { bottom: -10px; transform: scaleY(-1); }
+.j-receipt__hole { position: absolute; top: 0.6rem; left: 50%; width: 9px; height: 9px; margin-left: -4.5px; border-radius: 50%; background: var(--paper); box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35); }
+.j-receipt__string { position: absolute; left: 50%; top: -2.2rem; width: 2px; height: 2.6rem; margin-left: -1px; background: linear-gradient(180deg, transparent, #8a6d45 30%, #8a6d45); transform: rotate(3deg); transform-origin: bottom; }
 .j-receipt__title { text-align: center; font-weight: 600; font-size: 1rem; letter-spacing: 0.12em; }
 .j-receipt__meta { text-align: center; color: #6a6258; }
 .j-receipt__hr { border: 0; border-top: 1px dashed #b7ae9d; margin: 0.8rem 0; }
@@ -800,7 +803,7 @@
 .j-plate::before { left: 0.7rem; }
 .j-plate::after { right: 0.7rem; }
 .j-plate:hover { filter: brightness(1.07); }
-.j-plate:active { transform: translateY(1px); }
+.j-plate:active { transform: translateY(2px); box-shadow: inset 0 1px 0 rgba(255, 240, 200, 0.75), inset 0 -1px 0 rgba(90, 60, 15, 0.6), 0 1px 2px rgba(0, 0, 0, 0.55); }
 .j-plate__addr {
   font-family: var(--font-mono);
   font-weight: 600;

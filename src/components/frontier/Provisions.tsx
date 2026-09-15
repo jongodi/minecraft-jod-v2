@@ -20,6 +20,8 @@ export default function Provisions() {
         </div>
 
         <div className="j-receipt">
+          <span className="j-receipt__string" aria-hidden="true" />
+          <span className="j-receipt__hole" aria-hidden="true" />
           <p className="j-receipt__title">JOÐ KAUPFÉLAG</p>
           <p className="j-receipt__meta">play.jodcraft.world<br />Minecraft {versions.join(' / ')} · Java-útgáfa</p>
           <hr className="j-receipt__hr" />

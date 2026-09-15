@@ -28,7 +28,7 @@ export default function RideIn() {
             <span className="j-brandmark__text">JOÐ</span>
           </div>
 
-          <button className={`j-plate${copied ? ' is-copied' : ''}`} onClick={copy} aria-label="Afrita vistfang þjónsins">
+          <button className={`j-plate${copied ? ' is-copied' : ''}`} onPointerDown={copy} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); copy(); } }} aria-label="Afrita vistfang þjónsins">
             <span className="j-plate__addr">{copied ? 'vistfang afritað' : SERVER_IP}</span>
             <span className="j-plate__hint">{copied ? 'límdu það nú inn í leikinn' : 'smelltu á plötuna til að afrita'}</span>
           </button>
