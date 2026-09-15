@@ -12,7 +12,8 @@ import Footer from '@/components/frontier/Footer';
 import PlayerHead from '@/components/frontier/PlayerHead';
 import Atmosphere from '@/components/frontier/Atmosphere';
 import Lightbox from '@/components/frontier/Lightbox';
-import { Arrow, Pin, Star, Tape } from '@/components/frontier/Bits';
+import { AnimatePresence } from 'framer-motion';
+import { Arrow, Star, Tape } from '@/components/frontier/Bits';
 import { PAGE_LINKS, STAT_TABS } from '@/components/frontier/data';
 
 // ─── Badges: the highest earned tier per category ─────────────────────────────
@@ -106,6 +107,7 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
   const [editText,      setEditText]      = useState('');
   const [editSaving,    setEditSaving]    = useState(false);
   const [lightboxIdx,   setLightboxIdx]   = useState<number | null>(null);
+  const [origin,        setOrigin]        = useState<DOMRect | null>(null);
 
   const fileRef = useRef<HTMLInputElement>(null);
   const isOwner = !!session && session.toLowerCase() === username.toLowerCase();
@@ -242,14 +244,16 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
             <p className="j-empty">loading {username}…</p>
           ) : (
             <>
+              <div className="j-profile__slot">
               <section className="j-profile">
-                <Pin />
+                <span className="j-nail" aria-hidden="true" />
                 <div className="j-profile__head"><PlayerHead name={profile.username} size={128} /></div>
                 <div>
                   <div className="j-profile__top">
                     <div>
                       <div className="j-profile__wanted">Eftirlýst · JOÐ-félagi</div>
                       <h1 className="j-profile__name">{profile.username}</h1>
+                      {playerStats && <div className="j-profile__bounty"><span className="j-poster__reward">Verðlaun</span> <span className="j-poster__val">{STAT_TABS[0].unit(playerStats.playTimeHours)}</span></div>}
                     </div>
                     {isOwner ? (
                       <button className="j-btn j-btn--ghost j-btn--small" onClick={logout}>Skrá út</button>
@@ -298,6 +302,7 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
                   )}
                 </div>
               </section>
+              </div>
 
               {/* posts */}
               <section className="j-block">
@@ -317,9 +322,9 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
                 {profile.posts.length === 0 ? (
                   <p className="j-empty">{isOwner ? 'ekkert komið enn; skrifaðu fyrstu færsluna hér fyrir ofan' : 'engar færslur enn'}</p>
                 ) : (
-                  <ul className="j-feed" style={{ maxWidth: 'none' }}>
+                  <ul className="j-ledgerfeed">
                     {profile.posts.map(post => (
-                      <li key={post.id} className="j-post j-post--plain">
+                      <li key={post.id} className="j-ledgerfeed__row">
                         {editingPostId === post.id ? (
                           <div>
                             <textarea className="j-textarea" value={editText} onChange={e => setEditText(e.target.value)} maxLength={500} autoFocus />
@@ -365,7 +370,7 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
                 ) : (
                   <div className="j-shots">
                     {profile.photos.map((photo, idx) => (
-                      <button key={photo.id} className="j-polaroid" style={{ '--r': `${TILT[idx % TILT.length]}deg` } as CSSProperties} onClick={() => setLightboxIdx(idx)} aria-label={photo.caption || `Mynd úr leiknum ${idx + 1}`}>
+                      <button key={photo.id} className="j-polaroid" style={{ '--r': `${TILT[idx % TILT.length]}deg` } as CSSProperties} onClick={e => { setOrigin(e.currentTarget.getBoundingClientRect()); setLightboxIdx(idx); }} aria-label={photo.caption || `Mynd úr leiknum ${idx + 1}`}>
                         <Tape at="top" r={idx % 2 ? 3 : -3} />
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={photo.filename} alt={photo.caption || ''} loading="lazy" />
@@ -381,9 +386,11 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
         <Footer />
 
         {showLogin && <LoginModal username={username} onSuccess={onLoginSuccess} onClose={() => setShowLogin(false)} />}
-        {lightboxIdx !== null && profile && (
-          <Lightbox photos={profile.photos.map(p => ({ src: p.filename, title: p.caption || undefined, sub: formatDate(p.uploadedAt) }))} index={lightboxIdx} onClose={closeLightbox} onPrev={prevPhoto} onNext={nextPhoto} />
-        )}
+        <AnimatePresence>
+          {lightboxIdx !== null && profile && (
+            <Lightbox key="lb" photos={profile.photos.map(p => ({ src: p.filename, title: p.caption || undefined, sub: formatDate(p.uploadedAt) }))} index={lightboxIdx} origin={origin} onClose={closeLightbox} onPrev={prevPhoto} onNext={nextPhoto} />
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
