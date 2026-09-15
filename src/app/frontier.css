@@ -425,7 +425,7 @@
 .j-map__sheet:active { cursor: grabbing; }
 .j-map__view { will-change: transform; }
 .j-map__view svg { width: 100%; height: auto; display: block; }
-.j-map__reset { position: absolute; right: 0.8rem; bottom: 0.8rem; z-index: 4; cursor: pointer; }
+.j-map__reset { position: absolute; top: 0.8rem; right: 0.8rem; z-index: 4; cursor: pointer; }
 .j-map__label { position: absolute; top: -1.4rem; left: -0.6rem; z-index: 3; }
 .j-map__print { position: relative; margin: -2rem auto 0; width: min(100%, 22rem); z-index: 3; }
 @media (min-width: 720px) { .j-map__print { position: absolute; right: -1.5rem; bottom: -2.5rem; width: 16rem; margin: 0; } }
