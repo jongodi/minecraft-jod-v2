@@ -84,18 +84,37 @@ export default function TerritoryMap({ plates }: { plates: Plate[] }) {
     settle();
   };
   const onWheel = (e: React.WheelEvent) => {
-    if (reduce || !e.ctrlKey && Math.abs(e.deltaY) < 1) return;
+    const s0 = z.get();
+    const zoomIntent = e.ctrlKey || e.metaKey;      // trackpad pinch arrives as ctrl+wheel
+    if (reduce || !zoomIntent) return;              // plain wheel scrolls the page
+    const s1 = clamp(s0 * (e.deltaY < 0 ? 1.12 : 1 / 1.12), MIN_Z, MAX_Z);
+    if (s1 === s0) return;                          // nothing to do, let the page scroll
     e.preventDefault();
     const el = sheet.current!;
     const r = el.getBoundingClientRect();
     const px = e.clientX - r.left, py = e.clientY - r.top;
-    const s0 = z.get();
-    const s1 = clamp(s0 * (e.deltaY < 0 ? 1.12 : 1 / 1.12), MIN_Z, MAX_Z);
     /* keep the point under the cursor fixed */
     x.set(px - (px - x.get()) * (s1 / s0));
     y.set(py - (py - y.get()) * (s1 / s0));
     z.set(s1);
     settle();
+  };
+  /** Zoom by `factor`, centred on the sheet, springing to the new state. */
+  const zoomBy = (factor: number) => {
+    if (reduce) return;
+    const el = sheet.current;
+    if (!el) return;
+    const w = el.clientWidth, h = el.clientHeight;
+    const s0 = z.get();
+    const s1 = clamp(s0 * factor, MIN_Z, MAX_Z);
+    if (s1 === s0) return;
+    const cx = w / 2, cy = h / 2;
+    const nx = cx - (cx - x.get()) * (s1 / s0);
+    const ny = cy - (cy - y.get()) * (s1 / s0);
+    const minX = w - w * s1, minY = h - h * s1;
+    spring(z, s1);
+    spring(x, clamp(nx, minX, 0));
+    spring(y, clamp(ny, minY, 0));
   };
   /** Spring the view so `loc` sits at the centre at zoom 2. */
   const flyTo = (loc: MapLocation) => {
@@ -151,18 +170,27 @@ export default function TerritoryMap({ plates }: { plates: Plate[] }) {
           <div ref={sheet} className={`j-map__sheet${surveyed ? ' is-surveyed' : ''}`}
             onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}
             onDoubleClick={resetView}>
-            <motion.div className="j-map__view" style={{ x, y, scale: z, transformOrigin: '0 0' }}>
-            <svg viewBox="0 0 1000 650" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Landakort af JOÐ-heiminum">
+            <svg className="j-map__paper" viewBox="0 0 1000 650" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <defs>
-                <filter id="jBurn" x="-5%" y="-5%" width="110%" height="110%">
+                <filter id="jBurn2" x="-5%" y="-5%" width="110%" height="110%">
                   <feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="3" seed="4" result="n" />
                   <feDisplacementMap in="SourceGraphic" in2="n" scale="18" xChannelSelector="R" yChannelSelector="G" />
                 </filter>
-                <radialGradient id="jAge" cx="0.5" cy="0.5" r="0.72">
+                <radialGradient id="jAge2" cx="0.5" cy="0.5" r="0.72">
                   <stop offset="0.55" stopColor={PAPER} />
                   <stop offset="0.86" stopColor="#c9b184" />
                   <stop offset="1" stopColor="#7a5230" />
                 </radialGradient>
+                <pattern id="jHatch2" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                  <line x1="0" y1="0" x2="0" y2="7" stroke={WATER} strokeOpacity="0.45" strokeWidth="1" />
+                </pattern>
+              </defs>
+              <rect x="14" y="14" width="972" height="622" fill="url(#jAge2)" filter="url(#jBurn2)" />
+              <rect x="14" y="14" width="972" height="622" fill="url(#jHatch2)" filter="url(#jBurn2)" opacity="0.9" />
+            </svg>
+            <motion.div className="j-map__view" style={{ x, y, scale: z, transformOrigin: '0 0' }}>
+            <svg viewBox="0 0 1000 650" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Landakort af JOÐ-heiminum">
+              <defs>
                 <pattern id="jHatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
                   <line x1="0" y1="0" x2="0" y2="7" stroke={WATER} strokeOpacity="0.45" strokeWidth="1" />
                 </pattern>
@@ -174,9 +202,6 @@ export default function TerritoryMap({ plates }: { plates: Plate[] }) {
                 </radialGradient>
                 <radialGradient id="jShine" cx="0.3" cy="0.25" r="0.5"><stop offset="0" stopColor="#fff" stopOpacity="0.7" /><stop offset="1" stopColor="#fff" stopOpacity="0" /></radialGradient>
               </defs>
-
-              <rect x="14" y="14" width="972" height="622" fill="url(#jAge)" filter="url(#jBurn)" />
-              <rect x="14" y="14" width="972" height="622" fill="url(#jHatch)" filter="url(#jBurn)" opacity="0.9" />
 
               <path d={LAND_PATH} fill={LAND} stroke={INK} strokeWidth="1.5" />
               <path d={LAND_PATH} fill="none" stroke={INK} strokeOpacity="0.4" strokeWidth="0.8" transform="translate(500 325) scale(1.035) translate(-500 -325)" />
@@ -258,6 +283,12 @@ export default function TerritoryMap({ plates }: { plates: Plate[] }) {
             </svg>
             </motion.div>
             {!reduce && <button type="button" className="j-map__reset j-stamp j-stamp--small" style={{ '--r': '3deg' } as CSSProperties} onClick={resetView}>Allt kortið</button>}
+            {!reduce && (
+              <div className="j-map__zoom">
+                <button type="button" aria-label="Stækka kortið" onClick={() => zoomBy(1.4)}>+</button>
+                <button type="button" aria-label="Minnka kortið" onClick={() => zoomBy(1 / 1.4)}>−</button>
+              </div>
+            )}
           </div>
 
           {selected && (
