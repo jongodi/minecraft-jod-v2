@@ -34,6 +34,7 @@ export default function TerritoryMap({ plates }: { plates: Plate[] }) {
   const reduce = useReducedMotion();
   const x = useMotionValue(0), y = useMotionValue(0), z = useMotionValue(1);
   const drag = useRef<{ id: number; sx: number; sy: number; ox: number; oy: number; moved: boolean } | null>(null);
+  const lastMoved = useRef(false);
 
   /* pan limits for the current zoom, in CSS px of the sheet */
   const limits = () => {
@@ -49,7 +50,6 @@ export default function TerritoryMap({ plates }: { plates: Plate[] }) {
 
   const onPointerDown = (e: React.PointerEvent) => {
     if (reduce) return;
-    e.currentTarget.setPointerCapture(e.pointerId);
     drag.current = { id: e.pointerId, sx: e.clientX, sy: e.clientY, ox: x.get(), oy: y.get(), moved: false };
     x.stop(); y.stop();
   };
@@ -57,7 +57,10 @@ export default function TerritoryMap({ plates }: { plates: Plate[] }) {
     const d = drag.current;
     if (!d || d.id !== e.pointerId) return;
     const dx = e.clientX - d.sx, dy = e.clientY - d.sy;
-    if (Math.abs(dx) + Math.abs(dy) > 6) d.moved = true;
+    if (!d.moved && Math.abs(dx) + Math.abs(dy) > 6) {
+      d.moved = true;
+      try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* pointer may already be gone */ }
+    }
     const { minX, minY, w, h } = limits();
     let nx = d.ox + dx, ny = d.oy + dy;
     if (nx > 0)    nx = rubberband(nx, w);
@@ -68,6 +71,7 @@ export default function TerritoryMap({ plates }: { plates: Plate[] }) {
   };
   const onPointerUp = (e: React.PointerEvent) => {
     if (drag.current?.id !== e.pointerId) return;
+    lastMoved.current = drag.current.moved;
     drag.current = null;
     settle();
   };
@@ -216,7 +220,7 @@ export default function TerritoryMap({ plates }: { plates: Plate[] }) {
               {locations.map(loc => {
                 const active = loc.id === selected?.id;
                 return (
-                  <g key={loc.id} className="j-pin-map" onClick={() => { if (!drag.current?.moved) setSelected(loc.id); }} role="button" tabIndex={0}
+                  <g key={loc.id} className="j-pin-map" onClick={() => { if (!lastMoved.current) setSelected(loc.id); }} role="button" tabIndex={0}
                     aria-label={`${loc.label}, ${TYPE[loc.type]}`}
                     onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelected(loc.id); } }}>
                     <circle className="j-pin-map__hit" cx={loc.x} cy={loc.y} r="26" />
