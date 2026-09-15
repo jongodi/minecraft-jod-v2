@@ -1,0 +1,197 @@
+'use client';
+
+// Photo uploader for the admin gallery: pick or drop several photos, each is shrunk in the
+// browser, sent straight to Vercel Blob (or to the server in local dev) and then registered.
+import { useCallback, useEffect, useRef, useState, type DragEvent } from 'react';
+import { upload } from '@vercel/blob/client';
+import type { GalleryPhoto } from '@/lib/gallery';
+import { prepareImage, formatBytes } from '@/lib/client-image';
+
+export type AdminPhoto = GalleryPhoto & { locationId: number | null };
+
+interface StorageInfo { mode: 'blob' | 'local' | 'none'; access: 'public' | 'private' | null; maxBytes: number; error: string | null }
+
+type Stage = 'queued' | 'preparing' | 'uploading' | 'saving' | 'done' | 'error';
+interface Job { key: string; name: string; size: number; stage: Stage; progress: number; note?: string }
+
+const mono  = "'JetBrains Mono', monospace";
+const green = '#c8960c';
+const red   = '#ff4466';
+
+const STAGE_LABEL: Record<Stage, string> = {
+  queued: 'Bíður', preparing: 'Undirbý', uploading: 'Hleð upp', saving: 'Skrái', done: 'Tilbúin', error: 'Mistókst',
+};
+
+function titleFromName(name: string): string {
+  return name.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function newId(): string {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID();
+  // RFC 4122 v4 layout from Math.random — only for very old browsers
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = (Math.random() * 16) | 0;
+    return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
+
+/** Read an error message out of any response, JSON or not (Vercel's 413 page is plain text). */
+async function errorFrom(res: Response): Promise<string> {
+  const text = await res.text().catch(() => '');
+  try {
+    const j = JSON.parse(text) as { error?: string; message?: string };
+    if (j.error || j.message) return j.error ?? j.message!;
+  } catch { /* not json */ }
+  if (res.status === 413) return 'Skráin er of stór fyrir þjóninn.';
+  if (res.status === 401) return 'Innskráningin er útrunnin. Skráðu þig inn aftur.';
+  return `Villa ${res.status}${res.statusText ? ` (${res.statusText})` : ''}`;
+}
+
+export default function GalleryUploader({ onUploaded }: { onUploaded: (photo: AdminPhoto, first: boolean) => void }) {
+  const [storage, setStorage] = useState<StorageInfo | null>(null);
+  const [jobs,    setJobs]    = useState<Job[]>([]);
+  const [dragging, setDragging] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const busyRef  = useRef(false);
+
+  useEffect(() => {
+    fetch('/api/admin/gallery/upload', { cache: 'no-store' })
+      .then(r => (r.ok ? r.json() : null))
+      .then((s: StorageInfo | null) => setStorage(s ?? { mode: 'none', access: null, maxBytes: 0, error: 'Náði ekki í stillingar geymslunnar.' }))
+      .catch(() => setStorage({ mode: 'none', access: null, maxBytes: 0, error: 'Náði ekki í stillingar geymslunnar.' }));
+  }, []);
+
+  const patch = useCallback((key: string, p: Partial<Job>) => {
+    setJobs(js => js.map(j => (j.key === key ? { ...j, ...p } : j)));
+  }, []);
+
+  const uploadOne = useCallback(async (file: File, key: string, first: boolean) => {
+    const info = storage!;
+    patch(key, { stage: 'preparing', progress: 0 });
+    const prepared = await prepareImage(file);
+    if (prepared.blob.size > info.maxBytes) throw new Error(`Of stór eftir minnkun (${formatBytes(prepared.blob.size)}, hámark ${formatBytes(info.maxBytes)}).`);
+    const note = prepared.resized ? `${formatBytes(file.size)} → ${formatBytes(prepared.blob.size)} · ${prepared.width}×${prepared.height}` : formatBytes(file.size);
+    patch(key, { stage: 'uploading', note });
+
+    const title = titleFromName(file.name);
+    let photo: AdminPhoto;
+
+    if (info.mode === 'blob') {
+      const id = newId();
+      const blob = await upload(`gallery/${id}.${prepared.ext}`, prepared.blob, {
+        access:          info.access ?? 'public',
+        handleUploadUrl: '/api/admin/gallery/upload',
+        contentType:     prepared.contentType,
+        multipart:       prepared.blob.size > 8 * 1024 * 1024,
+        onUploadProgress: ({ percentage }) => patch(key, { progress: percentage }),
+      });
+      patch(key, { stage: 'saving', progress: 100 });
+      const res = await fetch('/api/admin/gallery', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ url: blob.url, pathname: blob.pathname, title, sublabel: '' }),
+      });
+      if (!res.ok) throw new Error(await errorFrom(res));
+      photo = await res.json() as AdminPhoto;
+    } else {
+      const fd = new FormData();
+      fd.append('file', new File([prepared.blob], `${titleFromName(file.name) || 'mynd'}.${prepared.ext}`, { type: prepared.contentType }));
+      fd.append('title', title);
+      fd.append('sublabel', '');
+      const res = await fetch('/api/admin/gallery/upload', { method: 'POST', body: fd });
+      if (!res.ok) throw new Error(await errorFrom(res));
+      patch(key, { stage: 'saving', progress: 100 });
+      photo = await res.json() as AdminPhoto;
+    }
+
+    patch(key, { stage: 'done', progress: 100 });
+    onUploaded(photo, first);
+  }, [storage, patch, onUploaded]);
+
+  const run = useCallback(async (files: File[]) => {
+    if (!storage || storage.mode === 'none' || busyRef.current) return;
+    const images = files.filter(f => f.type.startsWith('image/'));
+    if (images.length === 0) { setJobs([{ key: newId(), name: files[0]?.name ?? '', size: 0, stage: 'error', progress: 0, note: 'Aðeins er hægt að hlaða upp myndum.' }]); return; }
+
+    busyRef.current = true;
+    const queue = images.map(f => ({ file: f, key: newId() }));
+    setJobs(queue.map(({ file, key }) => ({ key, name: file.name, size: file.size, stage: 'queued' as Stage, progress: 0 })));
+    let first = true;
+    for (const { file, key } of queue) {
+      try {
+        await uploadOne(file, key, first);
+        first = false;
+      } catch (e) {
+        patch(key, { stage: 'error', note: e instanceof Error ? e.message : 'Upphleðsla mistókst.' });
+      }
+    }
+    busyRef.current = false;
+    if (inputRef.current) inputRef.current.value = '';
+  }, [storage, uploadOne, patch]);
+
+  const busy = jobs.some(j => j.stage !== 'done' && j.stage !== 'error');
+  const disabled = !storage || storage.mode === 'none' || busy;
+
+  function onDrop(e: DragEvent) {
+    e.preventDefault(); setDragging(false);
+    if (disabled) return;
+    run(Array.from(e.dataTransfer.files));
+  }
+
+  const doneCount = jobs.filter(j => j.stage === 'done').length;
+  const failCount = jobs.filter(j => j.stage === 'error').length;
+
+  return (
+    <div style={{ marginBottom: '1.5rem' }}>
+      <div
+        onDragOver={e => { e.preventDefault(); if (!disabled) setDragging(true); }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={onDrop}
+        style={{
+          display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap',
+          padding: '0.75rem', border: `1px dashed ${dragging ? green : '#2a2a2a'}`,
+          background: dragging ? green + '0c' : 'transparent', transition: 'border-color 0.15s, background 0.15s',
+        }}
+      >
+        <input ref={inputRef} type="file" accept="image/*" multiple disabled={disabled} onChange={e => run(Array.from(e.target.files ?? []))} style={{ display: 'none' }} id="gallery-upload" />
+        <label
+          htmlFor="gallery-upload"
+          aria-disabled={disabled}
+          style={{ fontFamily: mono, fontSize: '0.6rem', letterSpacing: '0.15em', textTransform: 'uppercase', padding: '0.5rem 1rem', cursor: disabled ? 'not-allowed' : 'pointer', border: `1px solid ${green}44`, color: disabled ? '#555' : green, background: green + '08' }}
+        >
+          {busy ? 'HLEÐ UPP…' : '+ HLAÐA UPP MYNDUM'}
+        </label>
+        <span style={{ fontFamily: mono, fontSize: '0.55rem', color: '#555' }}>
+          {!storage ? 'Athuga geymslu…'
+            : storage.mode === 'none' ? <span style={{ color: red }}>✗ {storage.error ?? 'Myndageymsla er ekki stillt. Bættu BLOB_READ_WRITE_TOKEN við á Vercel.'}</span>
+            : storage.error ? <span style={{ color: red }}>✗ {storage.error}</span>
+            : <>Dragðu myndir hingað eða veldu þær · stórar myndir eru minnkaðar í {2560} px og vistaðar sem WebP · hámark {formatBytes(storage.maxBytes)}{storage.mode === 'local' ? ' · vistast í /public/screenshots' : storage.access === 'private' ? ' · lokuð Blob-geymsla, myndir birtar um /api/blob' : ''}</>}
+        </span>
+      </div>
+
+      {jobs.length > 0 && (
+        <ul style={{ listStyle: 'none', margin: '0.5rem 0 0', padding: 0, display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+          {jobs.map(j => (
+            <li key={j.key} style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 5rem auto', gap: '0.75rem', alignItems: 'center', fontFamily: mono, fontSize: '0.55rem' }}>
+              <span style={{ color: '#aaa', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {j.name}
+                {j.note && <span style={{ color: j.stage === 'error' ? red : '#555', marginLeft: '0.5rem' }}>{j.note}</span>}
+              </span>
+              <span aria-hidden="true" style={{ height: 3, background: '#1a1a1a', position: 'relative', overflow: 'hidden' }}>
+                <span style={{ position: 'absolute', inset: 0, width: `${j.stage === 'done' ? 100 : j.progress}%`, background: j.stage === 'error' ? red : green, transition: 'width 0.2s' }} />
+              </span>
+              <span style={{ color: j.stage === 'error' ? red : j.stage === 'done' ? green : '#777', letterSpacing: '0.1em', textTransform: 'uppercase', minWidth: '5rem', textAlign: 'right' }}>
+                {j.stage === 'error' ? '✗' : j.stage === 'done' ? '✓' : ''} {STAGE_LABEL[j.stage]}{j.stage === 'uploading' ? ` ${Math.round(j.progress)}%` : ''}
+              </span>
+            </li>
+          ))}
+          {!busy && jobs.length > 1 && (
+            <li style={{ fontFamily: mono, fontSize: '0.55rem', color: failCount ? red : green, marginTop: '0.25rem' }}>
+              {doneCount}/{jobs.length} myndum hlaðið upp{failCount ? ` · ${failCount} mistókst` : ''}
+            </li>
+          )}
+        </ul>
+      )}
+    </div>
+  );
+}

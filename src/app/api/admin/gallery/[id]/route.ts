@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { readGallery, writeGallery } from '@/lib/gallery';
 import { linkPhotoToLocation, unlinkPhoto } from '@/lib/map';
 import { requireAdmin, unauthorizedResponse } from '@/lib/auth';
-import { promises as fs } from 'fs';
-import path from 'path';
+import { deleteStoredImage } from '@/lib/blob-store';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,7 +38,7 @@ export async function PATCH(
   return NextResponse.json({ ...gallery[idx], ...(linkedLocationId !== undefined && { locationId: linkedLocationId }) });
 }
 
-// DELETE — remove photo from the gallery, from any map pin, and optionally from disk
+// DELETE — remove photo from the gallery, from any map pin, and from storage
 export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -55,16 +54,8 @@ export async function DELETE(
   await writeGallery(remaining);
   try { await unlinkPhoto(id); } catch (e) { console.error('unlinkPhoto error:', e); }
 
-  // Remove the actual file if it's a local /public/screenshots/ path
-  try {
-    const safeBase = path.join(process.cwd(), 'public', 'screenshots');
-    const absPath  = path.resolve(process.cwd(), 'public', photo.filename.replace(/^\//, ''));
-    if (absPath.startsWith(safeBase + path.sep)) {
-      await fs.unlink(absPath);
-    }
-  } catch {
-    // File may not exist — not a fatal error
-  }
+  // Remove the file itself: from Blob or from /public/screenshots
+  await deleteStoredImage(photo.filename);
 
   return NextResponse.json({ ok: true });
 }

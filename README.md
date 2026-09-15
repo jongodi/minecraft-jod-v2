@@ -19,7 +19,6 @@ Blaðið liggur á dökku leðri með rifnum brúnum. Ljós frá lukt fylgir ben
 | Einvígi | Viðbragðsleikur með þremur umferðum. Blossi gefur merki, svo birtast reykur og skotgat. Besti tíminn vistast í vafranum. |
 | Tölfræði | Stigatafla á eftirlýsingaspjöldum. Þrjú efstu fá spjald, hin birtast í bókinni fyrir neðan. |
 | Pakkar | Uppsettir gagnapakkar á kvittun úr kaupfélaginu. |
-| Komdu inn | Merki brennt í leður og vistfang á málmplötu. Smelltu til að afrita. |
 
 Á `/crew` er félagalistinn. Á `/crew/<name>` eru kynning, tölfræði, afrek, færslur og myndir hvers leikmanns. Félagar skrá sig inn með sínum aðgangslykli.
 
@@ -48,7 +47,8 @@ Afritaðu `.env.local.example` sem `.env.local` og fylltu inn gildin.
 | `GITHUB_TOKEN` | Hefðbundinn GitHub-aðgangslykill án aðgangssviða; hækkar fyrirspurnamörk við athugun gagnapakka, valfrjálst |
 | `CREW_TOKEN_<USERNAME>` | Aðgangslykill hvers félaga, t.d. `CREW_TOKEN_STEBBIAS=...` |
 | `REDIS_URL` | Redis-tenging fyrir prófíla, færslur, myndalýsigögn og vistuð tölfræðigögn |
-| `BLOB_READ_WRITE_TOKEN` | Vercel Blob-aðgangur fyrir myndir sem er hlaðið upp |
+| `BLOB_READ_WRITE_TOKEN` | Vercel Blob-aðgangur fyrir myndir sem er hlaðið upp. Geymslan má vera opin eða lokuð; myndir úr lokaðri geymslu eru birtar um `/api/blob/…` |
+| `BLOB_ACCESS` | `public` eða `private`; valfrjálst, sleppir sjálfvirkri athugun á aðgangsstigi Blob-geymslunnar |
 
 ## Þróun
 
