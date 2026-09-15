@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion, type PanInfo } from 'framer-motion';
 import { SPRING, SPRING_THROW, project } from './motion';
 
@@ -19,18 +19,25 @@ interface Props {
 export default function Lightbox({ photos, index, onClose, onPrev, onNext, origin }: Props) {
   const reduce = useReducedMotion();
   const [dir, setDir] = useState(0);
+  const [closing, setClosing] = useState(false);
   const photo = photos[index];
+
+  const requestClose = useCallback(() => {
+    if (reduce || !origin) { onClose(); return; }
+    setDir(0);
+    setClosing(true);
+  }, [reduce, origin, onClose]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape')     onClose();
+      if (e.key === 'Escape')     requestClose();
       if (e.key === 'ArrowLeft')  { setDir(-1); onPrev(); }
       if (e.key === 'ArrowRight') { setDir(1);  onNext(); }
     };
     window.addEventListener('keydown', onKey);
     document.body.style.overflow = 'hidden';
     return () => { window.removeEventListener('keydown', onKey); document.body.style.overflow = ''; };
-  }, [onClose, onPrev, onNext]);
+  }, [requestClose, onPrev, onNext]);
 
   if (!photo) return null;
 
@@ -41,25 +48,26 @@ export default function Lightbox({ photos, index, onClose, onPrev, onNext, origi
   const onDragEnd = (_: unknown, info: PanInfo) => {
     const lx = info.offset.x + project(info.velocity.x);
     const ly = info.offset.y + project(info.velocity.y);
-    if (Math.abs(ly) > window.innerHeight * 0.35 && Math.abs(ly) > Math.abs(lx)) { onClose(); return; }
+    if (Math.abs(ly) > window.innerHeight * 0.35 && Math.abs(ly) > Math.abs(lx)) { requestClose(); return; }
     if (photos.length > 1 && Math.abs(lx) > window.innerWidth * 0.3) { setDir(lx < 0 ? 1 : -1); (lx < 0 ? onNext : onPrev)(); }
   };
 
   return (
-    <motion.div className="j-lb" role="dialog" aria-modal="true" aria-label={photo.title ?? 'Mynd'} onClick={onClose}
+    <motion.div className="j-lb" role="dialog" aria-modal="true" aria-label={photo.title ?? 'Mynd'} onClick={requestClose}
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-      <button className="j-lb__close" onClick={onClose} aria-label="Loka">✕</button>
+      <button className="j-lb__close" onClick={requestClose} aria-label="Loka">✕</button>
       <div className="j-lb__img">
-        <AnimatePresence initial={false} custom={dir} mode="popLayout">
+        <AnimatePresence custom={dir} mode="popLayout">
           <motion.div
-            key={photo.src}
+            key={index}
             className="j-lb__card"
             custom={dir}
             initial={reduce ? { opacity: 0 } : dir === 0 ? from : { x: dir * window.innerWidth * 0.6, rotate: dir * 6, opacity: 0 }}
-            animate={{ x: 0, y: 0, scale: 1, rotate: 0, opacity: 1 }}
+            animate={closing ? from : { x: 0, y: 0, scale: 1, rotate: 0, opacity: 1 }}
             exit={reduce ? { opacity: 0 } : dir === 0 ? from : { x: -dir * window.innerWidth * 0.6, rotate: -dir * 6, opacity: 0 }}
             transition={reduce ? { duration: 0.2 } : dir === 0 ? SPRING : SPRING_THROW}
-            drag={!reduce}
+            onAnimationComplete={() => { if (closing) onClose(); }}
+            drag={!reduce && !closing}
             dragElastic={0.9}
             dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
             dragTransition={{ bounceStiffness: 400, bounceDamping: 30 }}
