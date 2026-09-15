@@ -3,10 +3,11 @@
 import { useRef } from 'react';
 import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion';
 import { Arrow, Pin, Stamp, Under } from './Bits';
-import { SERVER_IP } from './data';
+import { Signpost } from './TrailNav';
+import { HOME_LINKS, SERVER_IP } from './data';
 import { useAgo, useCopy, type ServerState } from './hooks';
 
-export default function Hero({ server }: { server: ServerState }) {
+export default function Hero({ server, activeId }: { server: ServerState; activeId: string | null }) {
   const [copied, copy] = useCopy(SERVER_IP);
   const { online, players, checkedAt } = server;
   const ago = useAgo(checkedAt);
@@ -41,6 +42,7 @@ export default function Hero({ server }: { server: ServerState }) {
         </div>
 
         <div className="j-hero__side">
+          <Signpost links={HOME_LINKS} activeId={activeId} />
           <div className="j-slip" style={{ '--r': '2deg' } as React.CSSProperties}>
             <Pin red style={{ top: -6, left: '50%', marginLeft: -7 }} />
             <div className="j-slip__head"><span>Símskeyti</span><span>{checkedAt ? (ago || 'rétt í þessu') : '…'}</span></div>

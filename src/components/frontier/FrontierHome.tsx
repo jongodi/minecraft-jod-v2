@@ -48,7 +48,7 @@ export default function FrontierHome() {
         <TrailNav links={HOME_LINKS} activeId={active} />
         <Signpost links={HOME_LINKS} activeId={active} fixed />
         <main>
-          <Hero server={server} />
+          <Hero server={server} activeId={active} />
           <Camp server={server} />
           <TerritoryMap plates={plates} />
           <Postcards plates={plates} />

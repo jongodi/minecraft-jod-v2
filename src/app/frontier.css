@@ -311,12 +311,12 @@
 .j-hero__body { margin-top: 1.4rem; max-width: 42ch; font-size: 1.1rem; line-height: 1.6; }
 .j-hero__meta { margin-top: 1.5rem; display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 1.5rem; }
 .j-hero__scroll { margin-top: 2.5rem; display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; }
-.j-hero__side { display: flex; justify-content: flex-end; padding-top: 6rem; }
-@media (max-width: 899px) { .j-hero__side { justify-content: flex-start; padding-top: 0; } }
+.j-hero__side { display: flex; flex-direction: column; align-items: flex-end; gap: 1.75rem; }
+@media (max-width: 899px) { .j-hero__side { align-items: flex-start; } }
 
 .j-sign { display: none; }
-@media (min-width: 1180px) {
-  .j-sign--fixed { display: block; position: fixed; right: clamp(1rem, 3vw, 2.5rem); top: 50%; transform: translateY(-50%); z-index: 38; width: 13rem; padding-left: 1.4rem; }
+@media (min-width: 900px) {
+  .j-sign:not(.j-sign--fixed) { display: block; position: relative; width: 13rem; padding-left: 1.4rem; }
   .j-sign__pole { position: absolute; left: 0.55rem; top: -1rem; bottom: -1rem; width: 0.9rem; background: linear-gradient(90deg, #4a321f, #7a5636 45%, #4a321f); border-radius: 3px; box-shadow: 2px 0 3px rgba(0, 0, 0, 0.5); }
   .j-sign__plank {
     position: relative; display: block; margin: 0.45rem 0; padding: 0.45rem 1.4rem 0.45rem 0.9rem;
@@ -331,6 +331,14 @@
   .j-sign__plank:hover { transform: rotate(var(--r, 0deg)) translateX(4px); background: linear-gradient(180deg, #8f6a44, #6b4a2d); }
   .j-sign__plank:active { transform: rotate(var(--r, 0deg)) translateX(2px) scale(0.98); }
   .j-sign__plank.is-active { background: linear-gradient(180deg, #a5442e, #7a2e1f); }
+}
+@media (min-width: 1180px) {
+  .j-sign--fixed {
+    display: block; position: fixed; right: clamp(1rem, 3vw, 2.5rem); top: 50%; z-index: 38; width: 13rem; padding-left: 1.4rem;
+    opacity: 0; transform: translateY(-50%) translateX(1.5rem); pointer-events: none;
+    transition: opacity 0.3s cubic-bezier(.2, .8, .2, 1), transform 0.3s cubic-bezier(.2, .8, .2, 1);
+  }
+  .j-sign--fixed.is-shown { opacity: 1; transform: translateY(-50%); pointer-events: auto; }
 }
 
 .j-print {
