@@ -15,11 +15,10 @@ export default function Hero({ server, activeId }: { server: ServerState; active
       <div className="j-wrap j-hero__grid">
         <div>
           <h1 className="j-hero__mark">JOÐ</h1>
-          <p className="j-note j-note--big j-hero__sub">okkar eigin Minecraft-heimur, frá sumrinu 2024</p>
+          <p className="j-note j-note--big j-hero__sub">Kubbaveröld, frá sumrinu 2024</p>
           <Under />
           <p className="j-hero__body">
-            Átta vinir, einn heimur og ekkert verið að byrja upp á nýtt. Við erum með eigin gagnapakka
-            og útlitspakka, og þú þarft boð til að komast inn. Hér höldum við utan um það sem er að gerast.
+            Átta vinir, einn heimur og ekkert verið að byrja upp á nýtt. Við erum með sérsmíðaða JOÐ gagnapakka og útlitspakka, og þú þarft boð til að komast inn. Hér höldum við utan um það sem er að gerast.
           </p>
           <div className="j-hero__meta">
             <Stamp r={-6} onClick={copy} copied={copied}>{copied ? 'Afritað' : SERVER_IP}</Stamp>
