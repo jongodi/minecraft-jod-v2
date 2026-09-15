@@ -3,7 +3,7 @@
 import '@/app/frontier.css';
 import { useEffect, useState } from 'react';
 import type { GalleryPhoto } from '@/lib/gallery';
-import TrailNav from './TrailNav';
+import TrailNav, { Signpost } from './TrailNav';
 import Hero from './Hero';
 import Camp from './Camp';
 import TerritoryMap from './TerritoryMap';
@@ -46,8 +46,9 @@ export default function FrontierHome() {
         <span className="j-ring" style={{ top: '46%', right: '-2rem', width: '8rem', height: '8rem' }} aria-hidden="true" />
         <span className="j-ring" style={{ top: '79%', left: '4%', width: '9rem', height: '9rem' }} aria-hidden="true" />
         <TrailNav links={HOME_LINKS} activeId={active} />
+        <Signpost links={HOME_LINKS} activeId={active} fixed />
         <main>
-          <Hero server={server} activeId={active} />
+          <Hero server={server} />
           <Camp server={server} />
           <TerritoryMap plates={plates} />
           <Postcards plates={plates} />

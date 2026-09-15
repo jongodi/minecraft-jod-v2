@@ -64,18 +64,13 @@ export default function TrailNav({ links, activeId, always = false }: Props) {
 
 const TILT = [-2.5, 1.5, -1, 2.5, -2, 1];
 
-/** The wooden signpost in the hero: one plank per section. */
-export function Signpost({ links, activeId }: { links: NavLink[]; activeId?: string | null }) {
+/** The wooden signpost: one plank per section. */
+export function Signpost({ links, activeId, fixed = false }: { links: NavLink[]; activeId?: string | null; fixed?: boolean }) {
   return (
-    <nav className="j-sign" aria-label="Efnisyfirlit">
+    <nav className={`j-sign${fixed ? ' j-sign--fixed' : ''}`} aria-label="Efnisyfirlit">
       <span className="j-sign__pole" aria-hidden="true" />
       {links.map((l, i) => (
-        <Link
-          key={l.href}
-          href={l.href}
-          className={`j-sign__plank${activeId && l.id === activeId ? ' is-active' : ''}`}
-          style={{ '--r': `${TILT[i % TILT.length]}deg` } as CSSProperties}
-        >
+        <Link key={l.href} href={l.href} className={`j-sign__plank${activeId && l.id === activeId ? ' is-active' : ''}`} style={{ '--r': `${TILT[i % TILT.length]}deg` } as CSSProperties}>
           {l.label}
         </Link>
       ))}
