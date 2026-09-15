@@ -543,8 +543,11 @@
 }
 @media (min-width: 640px) { .j-arena { aspect-ratio: 16 / 9; } }
 .j-arena.is-draw { cursor: crosshair; }
-.j-arena.is-result.is-hit { animation: j-shake 0.3s ease; }
-@keyframes j-shake { 0%, 100% { transform: none; } 20% { transform: translate(-4px, 2px); } 40% { transform: translate(4px, -2px); } 60% { transform: translate(-3px, 1px); } 80% { transform: translate(2px, -1px); } }
+.j-arena__heat { animation: j-heat 2.6s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: center; }
+@keyframes j-heat { from { transform: scaleX(0.98) translateY(0); opacity: 0.8; } to { transform: scaleX(1.02) translateY(-2px); opacity: 1; } }
+.j-case { position: absolute; right: 0.35rem; bottom: 0.35rem; width: 7px; height: 16px; border-radius: 2px 2px 1px 1px; background: linear-gradient(90deg, #8a6a28, #e2c06a 45%, #9a7a30); box-shadow: 0 1px 1px rgba(0, 0, 0, 0.4); transform: rotate(22deg); animation: j-eject 0.5s cubic-bezier(0.2, 0.8, 0.2, 1); }
+@keyframes j-eject { 0% { transform: translate(-18px, -26px) rotate(-80deg); opacity: 0; } 100% { transform: rotate(22deg); opacity: 1; } }
+.j-stub { overflow: visible; }
 .j-arena svg { position: absolute; inset: 0; width: 100%; height: 100%; }
 .j-arena__rays { transform-origin: 400px 250px; animation: j-spin 60s linear infinite; }
 @keyframes j-spin { to { transform: rotate(360deg); } }

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
+import { motion, useAnimation, useReducedMotion } from 'framer-motion';
 import { Arrow, BulletHole, Star } from './Bits';
 
 /* One game is three draws. Each draw: a random hold, then the call.
@@ -53,6 +54,9 @@ export default function QuickDraw() {
   const t0    = useRef(0);
   const fired = useRef(false);
 
+  const reduce = useReducedMotion();
+  const kick = useAnimation();
+
   useEffect(() => { try { const v = Number(localStorage.getItem(BEST_KEY)); if (v > 0) setBest(v); } catch {} }, []);
   useEffect(() => { if (best !== null) { try { localStorage.setItem(BEST_KEY, String(best)); } catch {} } }, [best]);
   useEffect(() => () => clearTimeout(timer.current), []);
@@ -84,7 +88,13 @@ export default function QuickDraw() {
   const last       = shots[shots.length - 1];
   const lastIsHit  = phase === 'result' && typeof last === 'number';
   const lastIsFoul = phase === 'result' && last === null;
-  const arenaCls   = ['j-arena', `is-${phase}`, lastIsHit ? 'is-hit' : '', lastIsFoul ? 'is-foul' : ''].filter(Boolean).join(' ');
+  const arenaCls   = ['j-arena', `is-${phase}`, lastIsFoul ? 'is-foul' : ''].filter(Boolean).join(' ');
+
+  useEffect(() => {
+    if (lastIsHit && !reduce) kick.start({ x: [0, -6, 5, -3, 0], y: [0, 3, -2, 1, 0], transition: { type: 'spring', bounce: 0.35, duration: 0.45 } });
+    // fire once per hit
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lastIsHit, shots.length]);
 
   const call =
     phase === 'idle'   ? { big: 'Hádegi', small: 'smelltu til að byrja, bíddu eftir merkinu og smelltu aftur' } :
@@ -107,8 +117,9 @@ export default function QuickDraw() {
         </div>
 
         <div className="j-noon__grid">
-          <div
+          <motion.div
             className={arenaCls}
+            animate={kick}
             onPointerDown={e => {
               if (e.pointerType === 'mouse' && e.button !== 0) return;
               const r = e.currentTarget.getBoundingClientRect();
@@ -129,6 +140,10 @@ export default function QuickDraw() {
               <path d="M0 330 L70 330 L110 280 L190 280 L230 330 L350 330 L400 265 L470 265 L515 330 L640 330 L690 295 L760 295 L800 330 L800 450 L0 450 Z" fill="#2a1c13" />
               <path d="M0 372 L800 372 L800 450 L0 450 Z" fill="#1c130d" />
               <path d="M0 400 L800 400 L800 450 L0 450 Z" fill="#15100b" />
+              <g className="j-arena__heat" aria-hidden="true">
+                <ellipse cx="400" cy="335" rx="420" ry="12" fill="#e6c979" fillOpacity="0.08" />
+                <ellipse cx="400" cy="338" rx="380" ry="8" fill="#ffffff" fillOpacity="0.05" />
+              </g>
               <Gunslinger x={150} cls="j-fig--you" />
               <Gunslinger x={650} flip cls="j-fig--foe" />
             </svg>
@@ -142,7 +157,7 @@ export default function QuickDraw() {
                 {call.small && <div className="j-arena__small">{call.small}</div>}
               </div>
             </div>
-          </div>
+          </motion.div>
 
           <div className="j-noon__side">
             <div className="j-stubs">
@@ -153,6 +168,7 @@ export default function QuickDraw() {
                   <div key={i} className={`j-stub${live ? ' is-live' : ''}${s === null ? ' is-foul' : ''}`} style={{ '--r': `${TILT[i]}deg` } as CSSProperties}>
                     <div className="j-stub__k">Umferð {NUMERAL[i]}</div>
                     <div className="j-stub__v">{typeof s === 'number' ? `${s} ms` : s === null ? 'Fallið' : live ? '…' : '·'}</div>
+                    {typeof s === 'number' && <span className="j-case" aria-hidden="true" />}
                   </div>
                 );
               })}
