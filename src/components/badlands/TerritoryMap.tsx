@@ -8,6 +8,7 @@ import type { MapLocation, MapZone, MapPath } from '@/lib/map-types';
 import { DEFAULT_LOCATIONS, DEFAULT_ZONES, DEFAULT_PATHS } from '@/lib/map-types';
 import { Strata } from './Bits';
 import { handCase, titleCase, type Plate } from './data';
+import { MAP_CELL, MAP_GRID } from './mapGrid';
 import { useReducedMotionPref } from './hooks';
 import { clamp, rubberband, SPRING } from './motion';
 
@@ -17,12 +18,37 @@ const TYPE: Record<MapLocation['type'], string> = {
 
 /* Map colours are tokens; SVG presentation attributes accept var(). */
 const INK    = 'var(--map-ink)';
-const PAPER  = 'var(--map-paper)';
 const LAND   = 'var(--map-land)';
+const LAND_2 = 'var(--map-land-2)';
+const SHORE  = 'var(--map-shore)';
+const GRASS  = 'var(--map-grass)';
 const WATER  = 'var(--map-water)';
+const WATER_2 = 'var(--map-water-2)';
 const BRASS  = 'var(--map-pin)';
 const WAX    = 'var(--map-wax)';
-const LAND_PATH = 'M 435 60 C 528 45, 674 78, 752 142 C 810 194, 822 262, 818 330 C 814 402, 786 460, 746 502 C 700 550, 635 582, 555 596 C 476 610, 396 604, 320 582 C 232 558, 155 512, 110 458 C 62 400, 50 336, 56 278 C 62 218, 88 166, 132 136 C 182 100, 298 70, 435 60 Z';
+
+/* One path per terrain kind: every matching block becomes a closed square. */
+function blocks(kind: string): string {
+  let d = '';
+  MAP_GRID.forEach((row, r) => {
+    for (let c = 0; c < row.length; c++) if (row[c] === kind) d += `M${c * MAP_CELL} ${r * MAP_CELL}h${MAP_CELL}v${MAP_CELL}h-${MAP_CELL}z`;
+  });
+  return d;
+}
+const LAND_D  = blocks('L');
+const SHORE_D = blocks('S');
+
+/* Rivers and roads walk the grid: each leg goes across, then down. */
+const STEP = MAP_CELL / 2;
+function stepped(points: [number, number][]): string {
+  const snap = (v: number) => Math.round(v / STEP) * STEP;
+  let d = '';
+  points.forEach(([x, y], i) => {
+    const sx = snap(x), sy = snap(y);
+    d += i === 0 ? `M${sx} ${sy}` : `H${sx}V${sy}`;
+  });
+  return d;
+}
 const VB_W = 1000, VB_H = 650;
 const MIN_Z = 1, MAX_Z = 3.2;
 
@@ -178,83 +204,66 @@ export default function TerritoryMap({ plates }: { plates: Plate[] }) {
             onDoubleClick={resetView}>
             <svg className="b-map__paper" viewBox="0 0 1000 650" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <defs>
-                <filter id="jBurn2" x="-5%" y="-5%" width="110%" height="110%">
-                  <feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="3" seed="4" result="n" />
-                  <feDisplacementMap in="SourceGraphic" in2="n" scale="18" xChannelSelector="R" yChannelSelector="G" />
-                </filter>
-                <radialGradient id="jAge2" cx="0.5" cy="0.5" r="0.72">
-                  <stop offset="0.55" stopColor={PAPER} />
-                  <stop offset="0.86" stopColor="#c9b184" />
-                  <stop offset="1" stopColor="#7a5230" />
-                </radialGradient>
-                <pattern id="jHatch2" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-                  <line x1="0" y1="0" x2="0" y2="7" stroke={WATER} strokeOpacity="0.45" strokeWidth="1" />
+                <pattern id="jWater" width="40" height="40" patternUnits="userSpaceOnUse">
+                  <rect width="40" height="40" fill={WATER} />
+                  <rect x="0" y="0" width="20" height="20" fill={WATER_2} />
+                  <rect x="20" y="20" width="20" height="20" fill={WATER_2} />
                 </pattern>
               </defs>
-              <rect x="14" y="14" width="972" height="622" fill="url(#jAge2)" filter="url(#jBurn2)" />
-              <rect x="14" y="14" width="972" height="622" fill="url(#jHatch2)" filter="url(#jBurn2)" opacity="0.9" />
+              <rect width="1000" height="650" fill="url(#jWater)" />
             </svg>
             <motion.div className="b-map__view" style={{ x, y, scale: z, transformOrigin: '0 0' }}>
-            <svg viewBox="0 0 1000 650" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Landakort af JOÐ-heiminum">
+            <svg viewBox="0 0 1000 650" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Landakort af JOÐ-heiminum" shapeRendering="crispEdges">
               <defs>
-                <pattern id="jHatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-                  <line x1="0" y1="0" x2="0" y2="7" stroke={WATER} strokeOpacity="0.45" strokeWidth="1" />
+                <pattern id="jLandTex" width="60" height="60" patternUnits="userSpaceOnUse">
+                  <rect x="20" y="0" width="20" height="20" fill={LAND_2} />
+                  <rect x="0" y="40" width="20" height="20" fill={LAND_2} />
                 </pattern>
-                <radialGradient id="jTack" cx="0.35" cy="0.3" r="0.8">
-                  <stop offset="0" stopColor="#f0d98a" /><stop offset="0.6" stopColor={BRASS} /><stop offset="1" stopColor="#7a5c1e" />
-                </radialGradient>
-                <radialGradient id="jWax" cx="0.35" cy="0.3" r="0.8">
-                  <stop offset="0" stopColor="#c25a45" /><stop offset="0.7" stopColor={WAX} /><stop offset="1" stopColor="#5e2116" />
-                </radialGradient>
-                <radialGradient id="jShine" cx="0.3" cy="0.25" r="0.5"><stop offset="0" stopColor="#fff" stopOpacity="0.7" /><stop offset="1" stopColor="#fff" stopOpacity="0" /></radialGradient>
+                <pattern id="jGrass" width="140" height="100" patternUnits="userSpaceOnUse">
+                  <rect x="40" y="20" width="20" height="20" fill={GRASS} />
+                  <rect x="60" y="20" width="20" height="20" fill={GRASS} />
+                  <rect x="100" y="60" width="20" height="20" fill={GRASS} />
+                  <rect x="0" y="80" width="20" height="20" fill={GRASS} />
+                </pattern>
               </defs>
 
-              <path d={LAND_PATH} fill={LAND} stroke={INK} strokeWidth="1.5" />
-              <path d={LAND_PATH} fill="none" stroke={INK} strokeOpacity="0.4" strokeWidth="0.8" transform="translate(500 325) scale(1.035) translate(-500 -325)" />
-              <path d={LAND_PATH} fill="none" stroke={INK} strokeOpacity="0.2" strokeWidth="0.8" transform="translate(500 325) scale(1.07) translate(-500 -325)" />
+              <path d={SHORE_D} fill={SHORE} />
+              <path d={LAND_D} fill={LAND} />
+              <path d={LAND_D} fill="url(#jLandTex)" />
+              <path d={LAND_D} fill="url(#jGrass)" />
 
               {zones.filter(z => z.kind === 'land').map(z => (
-                <ellipse key={z.id} cx={z.cx} cy={z.cy} rx={z.rx} ry={z.ry} fill={LAND} stroke={INK} strokeOpacity="0.6" />
+                <rect key={z.id} x={z.cx - z.rx} y={z.cy - z.ry} width={z.rx * 2} height={z.ry * 2} fill={LAND} />
               ))}
               {zones.filter(z => z.kind === 'lake').map(z => (
                 <g key={z.id}>
-                  <ellipse cx={z.cx} cy={z.cy} rx={z.rx} ry={z.ry} fill="url(#jHatch)" stroke={INK} strokeOpacity="0.55" />
+                  <rect x={z.cx - z.rx} y={z.cy - z.ry} width={z.rx * 2} height={z.ry * 2} fill="url(#jWater)" />
                   {z.label && <text x={z.cx} y={z.cy + z.ry + 16} textAnchor="middle" fill={INK} fillOpacity="0.75" fontSize="14" fontFamily="var(--font-text)">{handCase(z.label)}</text>}
                 </g>
               ))}
               {zones.filter(z => z.kind === 'mountain').map(z => (
-                <g key={z.id} fill="none" stroke={INK} strokeOpacity="0.75">
-                  <polygon points={`${z.cx},${z.cy - z.ry} ${z.cx - z.rx},${z.cy + z.ry} ${z.cx + z.rx},${z.cy + z.ry}`} fill={PAPER} />
-                  <line x1={z.cx} y1={z.cy - z.ry} x2={z.cx + z.rx * 0.35} y2={z.cy + z.ry * 0.4} />
-                  {z.label && <text x={z.cx} y={z.cy + z.ry + 16} textAnchor="middle" fill={INK} fillOpacity="0.75" stroke="none" fontSize="14" fontFamily="var(--font-text)">{handCase(z.label)}</text>}
+                <g key={z.id}>
+                  <path d={`M${z.cx - z.rx} ${z.cy + z.ry}H${z.cx + z.rx}V${z.cy + z.ry * 0.3}H${z.cx + z.rx * 0.5}V${z.cy - z.ry * 0.4}H${z.cx + z.rx * 0.2}V${z.cy - z.ry}H${z.cx - z.rx * 0.2}V${z.cy - z.ry * 0.4}H${z.cx - z.rx * 0.5}V${z.cy + z.ry * 0.3}H${z.cx - z.rx}Z`} fill={INK} fillOpacity="0.55" />
+                  {z.label && <text x={z.cx} y={z.cy + z.ry + 16} textAnchor="middle" fill={INK} fillOpacity="0.75" fontSize="14" fontFamily="var(--font-text)">{handCase(z.label)}</text>}
                 </g>
               ))}
               {zones.filter(z => z.kind === 'zone').map(z => (
                 <g key={z.id}>
-                  <ellipse cx={z.cx} cy={z.cy} rx={z.rx} ry={z.ry} fill="none" stroke={WAX} strokeOpacity="0.75" strokeWidth="1.2" strokeDasharray="6 4" />
-                  <text x={z.cx} y={z.cy - z.ry - 8} textAnchor="middle" fill={WAX} fontSize="16" fontFamily="var(--font-text)" fontWeight="600">{handCase(z.label)}</text>
+                  <rect x={z.cx - z.rx} y={z.cy - z.ry} width={z.rx * 2} height={z.ry * 2} fill="none" stroke={WAX} strokeOpacity="0.8" strokeWidth="3" strokeDasharray="10 10" />
+                  <text x={z.cx - z.rx + 10} y={z.cy - z.ry + 22} fill={WAX} fontSize="16" fontFamily="var(--font-text)" fontWeight="600">{handCase(z.label)}</text>
                 </g>
               ))}
 
               {paths.map(p => {
                 if (p.points.length < 2) return null;
-                const pts = p.points.map(([x, y]) => `${x},${y}`).join(' ');
                 const river = p.kind === 'river';
                 return (
-                  <g key={p.id} fill="none" strokeLinecap="round" strokeLinejoin="round">
-                    {river && <polyline className="b-trail" points={pts} stroke={WATER} strokeOpacity="0.4" strokeWidth="7" />}
-                    <polyline className="b-trail" points={pts} stroke={river ? WATER : INK} strokeWidth={river ? 2 : 1.5} />
+                  <g key={p.id} fill="none" strokeLinecap="butt" strokeLinejoin="miter">
+                    {river && <path className="b-trail" d={stepped(p.points)} stroke={WATER_2} strokeWidth="14" />}
+                    <path className="b-trail" d={stepped(p.points)} stroke={river ? WATER : INK} strokeWidth={river ? 8 : 4} strokeDasharray={river ? undefined : '8 8'} />
                   </g>
                 );
               })}
-
-              <ellipse cx="872" cy="260" rx="56" ry="44" fill={LAND} stroke={INK} strokeWidth="1.2" />
-              {[[856, 247], [878, 238], [894, 256], [864, 268], [886, 272]].map(([x, y], i) => (
-                <circle key={i} cx={x} cy={y} r="4" fill="none" stroke={WAX} strokeWidth="1.2" />
-              ))}
-              <ellipse cx="895" cy="490" rx="20" ry="14" fill={LAND} stroke={INK} strokeOpacity="0.7" />
-              <ellipse cx="68"  cy="545" rx="24" ry="16" fill={LAND} stroke={INK} strokeOpacity="0.7" />
-              <ellipse cx="780" cy="120" rx="16" ry="11" fill={LAND} stroke={INK} strokeOpacity="0.7" />
 
               {locations.map(loc => {
                 const active = loc.id === selected?.id;
@@ -262,30 +271,31 @@ export default function TerritoryMap({ plates }: { plates: Plate[] }) {
                   <g key={loc.id} className="b-pin-map" onClick={() => { if (!lastMoved.current) setSelected(loc.id); }} role="button" tabIndex={0}
                     aria-label={`${loc.label}, ${TYPE[loc.type]}`}
                     onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelected(loc.id); } }}>
-                    <circle className="b-pin-map__hit" cx={loc.x} cy={loc.y} r="26" />
-                    {active && <circle cx={loc.x} cy={loc.y} r="22" fill="none" stroke={WAX} strokeWidth="1" strokeDasharray="3 3" />}
+                    <rect className="b-pin-map__hit" x={loc.x - 22} y={loc.y - 30} width="44" height="44" />
                     <g className="b-pin-map__body">
-                      <ellipse cx={loc.x + 2} cy={loc.y + 3} rx="13" ry="12" fill={INK} fillOpacity="0.35" />
-                      <circle cx={loc.x} cy={loc.y} r="13" fill={active ? 'url(#jWax)' : 'url(#jTack)'} stroke={INK} strokeWidth="1" />
-                      <circle cx={loc.x} cy={loc.y} r="13" fill="url(#jShine)" pointerEvents="none" />
-                      <text x={loc.x} y={loc.y + 5} textAnchor="middle" fill={active ? '#f8f1de' : INK} fontSize="14" fontFamily="var(--font-text)" fontWeight="600">{loc.id}</text>
+                      {/* a pixel banner: pole, flag, base; the number rides beside it */}
+                      <rect x={loc.x - 6} y={loc.y - 20} width="4" height="24" fill={INK} />
+                      <rect x={loc.x - 2} y={loc.y - 22} width="16" height="12" fill={active ? WAX : BRASS} />
+                      <rect x={loc.x - 2} y={loc.y - 12} width="16" height="2" fill={INK} fillOpacity="0.45" />
+                      <rect x={loc.x - 10} y={loc.y + 2} width="12" height="4" fill={INK} />
+                      {active && <rect x={loc.x - 14} y={loc.y - 30} width="36" height="40" fill="none" stroke={WAX} strokeWidth="2" strokeDasharray="4 4" />}
+                      <text x={loc.x + 17} y={loc.y - 12} fill={INK} fontSize="13" fontFamily="var(--font-data)">{loc.id}</text>
                     </g>
-                    {loc.type === 'underground' && <line x1={loc.x} y1={loc.y + 15} x2={loc.x} y2={loc.y + 27} stroke={INK} strokeWidth="1.5" strokeDasharray="2 2" />}
-                    {loc.type === 'aerial' && <circle cx={loc.x} cy={loc.y - 21} r="5" fill="none" stroke={INK} strokeWidth="1.2" />}
+                    {loc.type === 'underground' && <rect x={loc.x - 6} y={loc.y + 8} width="4" height="12" fill={INK} fillOpacity="0.5" />}
+                    {loc.type === 'aerial' && <rect x={loc.x - 8} y={loc.y - 34} width="8" height="8" fill="none" stroke={INK} strokeWidth="2" />}
                   </g>
                 );
               })}
 
-              <g transform="translate(930 572)" fill="none" stroke={INK}>
-                <circle r="30" strokeOpacity="0.7" /><circle r="22" strokeOpacity="0.35" />
-                <path d="M0 -30 L6 -6 L0 -10 L-6 -6 Z" fill={WAX} stroke="none" />
-                <path d="M0 30 L6 6 L0 10 L-6 6 Z M30 0 L6 6 L10 0 L6 -6 Z M-30 0 L-6 6 L-10 0 L-6 -6 Z" fill={INK} fillOpacity="0.7" stroke="none" />
-                <circle r="2.2" fill={INK} stroke="none" />
-                <text y="-36" textAnchor="middle" fill={INK} stroke="none" fontSize="14" fontFamily="var(--font-text)" fontWeight="600">N</text>
+              <g transform="translate(930 170)" fill={INK}>
+                <rect x="-4" y="-40" width="8" height="80" fillOpacity="0.5" />
+                <rect x="-40" y="-4" width="80" height="8" fillOpacity="0.5" />
+                <rect x="-4" y="-40" width="8" height="36" fill={WAX} />
+                <rect x="-8" y="-8" width="16" height="16" />
+                <text y="-46" textAnchor="middle" fontSize="14" fontFamily="var(--font-data)">N</text>
               </g>
               <text x="44" y="56" fill={INK} fontSize="20" fontFamily="var(--font-display)">JOÐ · Heimurinn okkar</text>
-              <text x="44" y="78" fill={INK} fillOpacity="0.75" fontSize="15" fontFamily="var(--font-text)">{locations.length} staðir á kortinu, 2024 til {new Date().getFullYear()}</text>
-              <rect x="30" y="30" width="940" height="590" fill="none" stroke={INK} strokeOpacity="0.55" strokeWidth="1" />
+              <text x="44" y="78" fill={INK} fillOpacity="0.75" fontSize="13" fontFamily="var(--font-data)">{locations.length} staðir, 2024 til {new Date().getFullYear()}</text>
             </svg>
             </motion.div>
             <button type="button" className="b-map__reset b-btn b-btn--small b-btn--solid" onClick={resetView}>Allt kortið</button>

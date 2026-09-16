@@ -56,10 +56,19 @@
   /* ── map sheet ── */
   --map-paper:  var(--paper);
   --map-land:   #D9C79E;
-  --map-water:  #6F7F78;
+  --map-land-2: #CDB98C;
+  --map-shore:  #E6D8B4;
+  --map-grass:  #B5B283;
+  --map-water:  #5F7378;
+  --map-water-2:#566A6F;
   --map-ink:    #3B2719;
   --map-pin:    var(--tc-yellow);
   --map-wax:    var(--tc-red);
+
+  /* ── wood: frames, shelves, crates ── */
+  --wood:       var(--tc-brown);
+  --wood-light: #6B4A2E;
+  --wood-dark:  #35221A;
 
   /* ── status ── */
   --online:  #8FB06A;
@@ -101,9 +110,14 @@
   --tap:    2.75rem;    /* minimum tap target */
 
   /* ── shape ── */
-  --radius: 2px;
+  --radius: 0;
   --line:   1px;
   --px:     2px;        /* one "pixel" of the pixel art at 1x */
+  /* a block's bevel: light on the top and left, shadow below and right */
+  --bevel:    inset var(--px) var(--px) 0 rgba(255, 240, 210, 0.35), inset calc(var(--px) * -1) calc(var(--px) * -1) 0 rgba(21, 16, 13, 0.35);
+  --bevel-in: inset var(--px) var(--px) 0 rgba(21, 16, 13, 0.35), inset calc(var(--px) * -1) calc(var(--px) * -1) 0 rgba(255, 240, 210, 0.2);
+  /* notched corners, one pixel each */
+  --notch: polygon(var(--px) 0, calc(100% - var(--px)) 0, 100% var(--px), 100% calc(100% - var(--px)), calc(100% - var(--px)) 100%, var(--px) 100%, 0 calc(100% - var(--px)), 0 var(--px));
 
   /* ── motion ── */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);

@@ -16,11 +16,11 @@ Letur: Alfa Slab One fyrir fyrirsagnir, Literata fyrir meginmál og Silkscreen f
 |---|---|
 | Sólsetur | Merkið, vistfangið sem er afritað með einum smelli, og lukt með stöðu þjónsins. Himinninn dökknar og stjörnurnar koma með skruni. |
 | Búðirnar | Hvað þjónninn er, og myndir af átta félögum. Lukt logar á bak við þau sem eru inni. Staðan uppfærist á mínútu fresti. |
-| Landakort | Kort heimsins. Má draga, stækka og láta fljúga að pinna. Kortinu er breytt í stjórnborðinu. |
-| Myndaalbúm | Myndir úr leiknum. Smelltu til að stækka. Myndunum er stjórnað í stjórnborðinu. |
+| Landakort | Kort heimsins í kubbum, með ám sem fylgja ristinni og fánum fyrir staði. Má draga, stækka og láta fljúga að fána. Kortinu er breytt í stjórnborðinu. |
+| Myndaalbúm | Myndir úr leiknum í trérömmum á plankavegg. Smelltu á ramma til að stækka. Myndunum er stjórnað í stjórnborðinu. |
 | Einvígi | Viðbragðsleikur með þremur umferðum í náttmyrkri. Besti tíminn vistast í vafranum. |
-| Eftirlýst | Tölfræði leikmanna á tilkynningum á pappír. Þrjú efstu fá spjald, hin eru í bókinni fyrir neðan. |
-| Uppsett | Uppsettir gagnapakkar sem ein löng tilkynning, hver með sinni pixlamynd. |
+| Eftirlýst | Tölfræði leikmanna á eftirlýsingaspjöldum með rifnum brúnum. Þrjú efstu fá spjald, hin eru í bókinni fyrir neðan. |
+| Kaupfélagið | Uppsettir gagnapakkar sem kassar á hillum, hver með sinni pixlamynd og útgáfumiða. |
 | Komdu inn | Leiðin inn í þremur skrefum, og vistfangið aftur. |
 
 Áhrif (himinn, mesa-lög með dýpt, ryk og glæður, luktarljós sem fylgir bendlinum, vindur og eldur úr Web Audio) eru hvert um sig sjálfstæð eining í `src/effects/` og slökkva á sér undir `prefers-reduced-motion`.

@@ -9,39 +9,41 @@ const CATEGORY: Record<string, string> = {
   SOCIAL: 'samspil', STRUCTURE: 'mannvirki', SURVIVAL: 'lífsbarátta',
 };
 
-/** Night: what is installed, posted as one long notice. */
+/** Night: the general store. Every installed pack sits on a shelf as a
+    labelled crate, its version on a hanging tag. Nothing is for sale. */
 export default function Provisions() {
   const versions = Array.from(new Set(DATAPACKS.map(d => d.gameVersion))).sort();
   return (
     <section id="provisions" className="b-sec b-sec--night" aria-labelledby="provisions-title">
-      <Strata flip />
+      <Strata />
       <div className="b-wrap">
         <div className="b-head">
           <div>
-            <h2 id="provisions-title" className="b-title">Uppsett á þjóninum</h2>
-            <p className="b-lede">{DATAPACKS.length} gagnapakkar. Þú þarft ekkert að setja upp; útlitspakkinn sækist þegar þú tengist.</p>
+            <h2 id="provisions-title" className="b-title">Kaupfélagið</h2>
+            <p className="b-lede">{DATAPACKS.length} gagnapakkar uppsettir á þjóninum. Þú þarft ekkert að setja upp; útlitspakkinn sækist þegar þú tengist.</p>
           </div>
+          <p className="b-note">{SERVER_IP}. Minecraft {versions.join(' og ')}, Java-útgáfa.</p>
         </div>
 
-        <article className="b-paper b-notice">
-          <span className="b-paper__nail" aria-hidden="true" />
-          <p className="b-paper__kicker">Tilkynning</p>
-          <h3 className="b-paper__title">Gagnapakkar</h3>
-          <p className="b-notice__meta">{SERVER_IP}. Minecraft {versions.join(' og ')}, Java-útgáfa.</p>
-          <hr className="b-paper__rule" />
-          <ol className="b-notice__list">
-            {DATAPACKS.map((d, i) => (
-              <li key={d.id} className="b-notice__row">
-                <span className="b-notice__no">{String(i + 1).padStart(2, '0')}</span>
-                <span className="b-notice__glyph">{PACK_GLYPHS[d.name] && <PixelGlyph rows={PACK_GLYPHS[d.name]} />}</span>
-                <span className="b-notice__name">{d.name}</span>
-                <span className="b-notice__ver">{d.currentVersion ? `útgáfa ${d.currentVersion}` : ''}</span>
-                <span className="b-notice__desc">{d.description} <small>({CATEGORY[d.category] ?? d.category.toLowerCase()})</small></span>
+        <div className="b-store">
+          <div className="b-store__sign" aria-hidden="true">
+            <span className="b-store__signtext">Kaupfélag JOÐ</span>
+            <span className="b-store__signsub">opið allan sólarhringinn</span>
+          </div>
+          <ol className="b-shelf" aria-label="Uppsettir gagnapakkar">
+            {DATAPACKS.map(d => (
+              <li key={d.id} className="b-crate">
+                <span className="b-crate__box" aria-hidden="true">
+                  <span className="b-crate__label">{PACK_GLYPHS[d.name] && <PixelGlyph rows={PACK_GLYPHS[d.name]} />}</span>
+                </span>
+                {d.currentVersion && <span className="b-crate__tag">útg. {d.currentVersion}</span>}
+                <span className="b-crate__name">{d.name}</span>
+                <span className="b-crate__desc">{d.description}</span>
+                <span className="b-crate__cat">{CATEGORY[d.category] ?? d.category.toLowerCase()}</span>
               </li>
             ))}
           </ol>
-          <div className="b-notice__foot"><span>Uppsettir pakkar</span><span>{DATAPACKS.length}</span></div>
-        </article>
+        </div>
       </div>
     </section>
   );
