@@ -58,7 +58,13 @@
   --map-land:   #D9C79E;
   --map-land-2: #CDB98C;
   --map-shore:  #E6D8B4;
-  --map-grass:  #B5B283;
+  --map-grass:  #A8AE79;
+  --map-grass-2:#939A66;
+  --map-sand:   #E6D8B4;
+  --map-rock:   #B07048;
+  --map-rock-2: #96593A;
+  --map-forest: #6E8055;
+  --map-forest-2:#56653F;
   --map-water:  #5F7378;
   --map-water-2:#566A6F;
   --map-ink:    #3B2719;
