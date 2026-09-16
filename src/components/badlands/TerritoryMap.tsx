@@ -2,12 +2,13 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
-import { motion, useMotionValue, useReducedMotion, animate } from 'framer-motion';
+import { motion, useMotionValue, animate } from 'framer-motion';
 import type { MotionValue } from 'framer-motion';
 import type { MapLocation, MapZone, MapPath } from '@/lib/map-types';
 import { DEFAULT_LOCATIONS, DEFAULT_ZONES, DEFAULT_PATHS } from '@/lib/map-types';
 import { Strata } from './Bits';
 import { handCase, titleCase, type Plate } from './data';
+import { useReducedMotionPref } from './hooks';
 import { clamp, rubberband, SPRING } from './motion';
 
 const TYPE: Record<MapLocation['type'], string> = {
@@ -36,8 +37,10 @@ export default function TerritoryMap({ plates }: { plates: Plate[] }) {
   const [surveyed, setSurveyed]   = useState(false);
   const sheet = useRef<HTMLDivElement>(null);
 
-  const reduce = useReducedMotion();
+  const reduce = useReducedMotionPref();
   const x = useMotionValue(0), y = useMotionValue(0), z = useMotionValue(1);
+  /* Under reduced motion the view still moves, it just does not spring. */
+  const go = (mv: MotionValue<number>, to: number) => { if (reduce) mv.set(to); else spring(mv, to); };
   const drag = useRef<{ id: number; sx: number; sy: number; ox: number; oy: number; moved: boolean } | null>(null);
   const lastMoved = useRef(false);
 
@@ -98,7 +101,6 @@ export default function TerritoryMap({ plates }: { plates: Plate[] }) {
   };
   /** Zoom by `factor`, centred on the sheet, springing to the new state. */
   const zoomBy = (factor: number) => {
-    if (reduce) return;
     const el = sheet.current;
     if (!el) return;
     const w = el.clientWidth, h = el.clientHeight;
@@ -109,23 +111,22 @@ export default function TerritoryMap({ plates }: { plates: Plate[] }) {
     const nx = cx - (cx - x.get()) * (s1 / s0);
     const ny = cy - (cy - y.get()) * (s1 / s0);
     const minX = w - w * s1, minY = h - h * s1;
-    spring(z, s1);
-    spring(x, clamp(nx, minX, 0));
-    spring(y, clamp(ny, minY, 0));
+    go(z, s1);
+    go(x, clamp(nx, minX, 0));
+    go(y, clamp(ny, minY, 0));
   };
   /** Spring the view so `loc` sits at the centre at zoom 2. */
   const flyTo = (loc: MapLocation) => {
     setSelected(loc.id);
-    if (reduce) return;
     const el = sheet.current!;
     const w = el.clientWidth, h = el.clientHeight;
     const s = 2;
     const cx = (loc.x / VB_W) * w * s, cy = (loc.y / VB_H) * h * s;
-    spring(z, s);
-    spring(x, clamp(w / 2 - cx, w - w * s, 0));
-    spring(y, clamp(h / 2 - cy, h - h * s, 0));
+    go(z, s);
+    go(x, clamp(w / 2 - cx, w - w * s, 0));
+    go(y, clamp(h / 2 - cy, h - h * s, 0));
   };
-  const resetView = () => { spring(z, 1); spring(x, 0); spring(y, 0); };
+  const resetView = () => { go(z, 1); go(x, 0); go(y, 0); };
 
   useEffect(() => {
     const el = sheet.current;
@@ -287,13 +288,11 @@ export default function TerritoryMap({ plates }: { plates: Plate[] }) {
               <rect x="30" y="30" width="940" height="590" fill="none" stroke={INK} strokeOpacity="0.55" strokeWidth="1" />
             </svg>
             </motion.div>
-            {!reduce && <button type="button" className="b-map__reset b-btn b-btn--small b-btn--solid" onClick={resetView}>Allt kortið</button>}
-            {!reduce && (
-              <div className="b-map__zoom">
-                <button type="button" aria-label="Stækka kortið" onClick={() => zoomBy(1.4)}>+</button>
-                <button type="button" aria-label="Minnka kortið" onClick={() => zoomBy(1 / 1.4)}>−</button>
-              </div>
-            )}
+            <button type="button" className="b-map__reset b-btn b-btn--small b-btn--solid" onClick={resetView}>Allt kortið</button>
+            <div className="b-map__zoom">
+              <button type="button" aria-label="Stækka kortið" onClick={() => zoomBy(1.4)}>+</button>
+              <button type="button" aria-label="Minnka kortið" onClick={() => zoomBy(1 / 1.4)}>−</button>
+            </div>
           </div>
 
           {selected && (

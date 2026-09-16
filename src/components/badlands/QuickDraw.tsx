@@ -101,7 +101,7 @@ export default function QuickDraw() {
   }, [lastIsHit, shots.length]);
 
   const call =
-    phase === 'idle'   ? { big: 'Einvígi', small: 'smelltu til að byrja, bíddu eftir ljósinu og smelltu aftur' } :
+    phase === 'idle'   ? { big: 'Tilbúin?', small: 'smelltu til að byrja, bíddu eftir ljósinu og smelltu aftur' } :
     phase === 'hold'   ? { big: 'Bíddu…',     small: 'ekki strax' } :
     phase === 'draw'   ? { big: 'SKJÓTTU',      small: '' } :
     phase === 'result' ? (lastIsHit ? { big: `${last} ms`, small: rankOf(last) } : { big: 'Of snemma', small: 'þessi umferð er fallin' }) :

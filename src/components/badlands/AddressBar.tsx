@@ -56,7 +56,7 @@ export default function AddressBar({ links, activeId, always = false }: Props) {
     <>
       <header className={`b-bar${shown || open ? ' is-shown' : ''}`}>
         <div className="b-wrap b-bar__inner">
-          <Link href="/" className="b-bar__mark" onClick={() => setOpen(false)}><Mark />JOÐ</Link>
+          <Link href="/" className="b-bar__mark" onClick={() => setOpen(false)} aria-label="JOÐ, forsíða"><Mark /><span>JOÐ</span></Link>
           <nav className="b-bar__links" aria-label="Efnisyfirlit">
             {links.map(l => (
               <Link key={l.href} href={l.href} className={`b-bar__link${activeId && l.id === activeId ? ' is-active' : ''}`}>{l.label}</Link>

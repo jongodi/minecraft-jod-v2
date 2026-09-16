@@ -59,7 +59,7 @@ The existing order is kept. Each section gets an hour.
 
 ## Palette (locked as tokens)
 
-Tuned against the terracotta block textures: the in-game blocks are dustier than the starting values, so the four colored terracottas were desaturated slightly and the yellow was warmed.
+Checked by eye against the terracotta block textures and kept as given: the starting values already sit between the lit and shaded faces of the in-game blocks. The sky values were added so the sunset is built from the same family.
 
 | Token | Hex | Role |
 |---|---|---|
@@ -88,7 +88,7 @@ Three families, all self-hosted through `@fontsource`, all verified to render þ
 | Text | Literata | A book serif designed for long reading on screens, with an optical-size axis so it stays sturdy small and calm large. |
 | Data | Silkscreen | Drawn on an 8 px grid, so it stays crisp when sized in whole multiples. Used only for live server data. |
 
-Rye, Caveat, Lora and JetBrains Mono are removed from the public site. JetBrains Mono stays only if the admin tools still reference it.
+Rye, Caveat and Lora are removed. JetBrains Mono stays for the admin panel and the pack editor, which are out of scope.
 
 ## Motion
 
@@ -101,7 +101,7 @@ One scroll value drives the evening. Effects are separate modules, each switchab
 - Cursor light: fine pointers only. A warm radial light follows the pointer and lifts the paper texture under it. Off on touch.
 - Copy address: a telegraph ticker types the confirmation, the button takes a stamp; Clipboard API with a textarea fallback; announced via `aria-live`.
 - Ambient sound: wind and a distant fire from Web Audio noise and filters, off by default, toggle in the lantern rail, remembered in localStorage.
-- Reduced motion: no parallax, no particles, no scroll scrubbing. The page shows a fixed dusk-to-night composition.
+- Reduced motion: no parallax, no particles, no scroll scrubbing, no sun. The page shows a fixed dusk-to-night composition with the stars out.
 
 Gestures that need physics (map drag and zoom, lightbox throw, phone drawer) keep `framer-motion`, which is already installed. Everything that CSS can do is done in CSS.
 

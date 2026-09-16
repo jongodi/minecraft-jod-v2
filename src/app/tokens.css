@@ -76,7 +76,7 @@
   --fs-lg:   1.25rem;
   --fs-xl:   clamp(1.5rem, 1.1rem + 1.8vw, 2.2rem);
   --fs-2xl:  clamp(2rem, 1.4rem + 3vw, 3.4rem);
-  --fs-hero: clamp(4.5rem, 2rem + 15vw, 14rem);
+  --fs-hero: clamp(5.5rem, 2rem + 15vw, 14rem);
   --fs-data: 1rem;      /* Silkscreen is drawn on 8px; keep multiples of 0.5rem */
   --fs-data-lg: 1.5rem;
   --fs-data-xl: 2rem;

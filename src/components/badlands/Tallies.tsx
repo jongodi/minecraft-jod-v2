@@ -79,7 +79,7 @@ export default function Tallies({ stats }: { stats: StatsState }) {
           </LayoutGroup>
         )}
 
-        {stats.source && (
+        {stats.source && rows.length > 0 && (
           <p className="b-source">
             {stats.source === 'live' ? `beint frá þjóninum${when ? `, sótt ${when}` : ''}` :
              stats.source === 'cached' ? `slökkt á þjóninum, síðast sótt ${when ?? 'við síðustu uppfærslu'}` :

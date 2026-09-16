@@ -2,27 +2,32 @@
 
 Vefur fyrir Minecraft-einkaþjón JOÐ á **play.jodcraft.world**.
 
-Byggt með Next.js 15, TypeScript og CSS. Almennu síðurnar nota ekkert viðmótsrammaverk.
+Byggt með Next.js 15, TypeScript og CSS. Almennu síðurnar nota ekkert viðmótsrammaverk; `framer-motion` sér aðeins um bendlahreyfingar (kort, myndir, valmynd).
 
 ## Vefurinn
 
-Útlitið minnir á ferðadagbók á gömlum pappír: myndir límdar inn á ská, símskeyti fest á síðuna, vistfangið sem stimpill og handskrifaðar athugasemdir á spássíunum. Punktalína teiknast niður síðuna þegar skrunað er. Rye er notað fyrir stóru fyrirsagnirnar, Caveat fyrir handskriftina og Lora fyrir meginmálið. Letrið fylgir vefnum í gegnum `@fontsource`.
+Vefurinn er eitt kvöld á þjóninum. Gesturinn kemur að sólsetri yfir Minecraft-eyðimörk (badlands) og skrunar inn í nóttina; þegar bærinn kveikir á luktunum. Skrun er tími sem líður. Hönnunin er skjalfest í `DESIGN.md`.
 
-Blaðið liggur á dökku leðri með rifnum brúnum. Kortið má draga, stækka og láta fljúga að pinna. Í myndaalbúminu opnast myndin út úr rammanum sem smellt var á og henni má fleygja til hliðar eða sleppa niður til að loka.
+Fimm reglur halda útlitinu saman: terracotta-lög eyðimerkurinnar eru skilrúm og grunnur merkisins; gulbrúnt luktarljós er eingöngu á því sem hægt er að smella á; pixlaletur er eingöngu fyrir lifandi gögn frá þjóninum (vistfang, staða, fjöldi inni, útgáfa, tölfræði); pappír er fyrir það sem var fest upp (tölfræði, uppsettir pakkar, leiðin inn); og yfirborð eru hlý og dökk, aldrei kaldgrá.
+
+Letur: Alfa Slab One fyrir fyrirsagnir, Literata fyrir meginmál og Silkscreen fyrir gögn. Öll þrjú fylgja vefnum í gegnum `@fontsource` og eru hlaðin með `next/font/local`. Allir litir, stærðir, bil og tímasetningar eru í `src/app/tokens.css`.
 
 | Hluti | Innihald |
 |---|---|
-| Forsíða | Merkið, mynd úr leiknum, vegvísir að efni síðunnar og símskeyti með stöðu þjónsins. Smellur á stimpilinn afritar vistfangið. |
-| Búðirnar | Myndir af átta félögum hanga á snúru. Litur og „Inni“-stimpill sýna hver er að spila. Staðan uppfærist á mínútu fresti. |
-| Landakort | Kort heimsins á blaði með sviðnum brúnum og látúnspinnum. Mynd af völdum stað birtist yfir horninu. Kortinu er breytt í stjórnborðinu, þar sem hverjum pinna er tengd mynd úr myndasafninu, annaðhvort úr kortaritlinum eða úr myndasafninu sjálfu. |
-| Myndaalbúm | Myndir úr leiknum, sem fá lit þegar bent er á þær. Smelltu til að stækka. Myndunum er stjórnað í stjórnborðinu. |
-| Einvígi | Viðbragðsleikur með þremur umferðum. Blossi gefur merki, svo birtast reykur og skotgat. Besti tíminn vistast í vafranum. |
-| Tölfræði | Stigatafla á eftirlýsingaspjöldum. Þrjú efstu fá spjald, hin birtast í bókinni fyrir neðan. |
-| Pakkar | Uppsettir gagnapakkar á kvittun úr kaupfélaginu. |
+| Sólsetur | Merkið, vistfangið sem er afritað með einum smelli, og lukt með stöðu þjónsins. Himinninn dökknar og stjörnurnar koma með skruni. |
+| Búðirnar | Hvað þjónninn er, og myndir af átta félögum. Lukt logar á bak við þau sem eru inni. Staðan uppfærist á mínútu fresti. |
+| Landakort | Kort heimsins. Má draga, stækka og láta fljúga að pinna. Kortinu er breytt í stjórnborðinu. |
+| Myndaalbúm | Myndir úr leiknum. Smelltu til að stækka. Myndunum er stjórnað í stjórnborðinu. |
+| Einvígi | Viðbragðsleikur með þremur umferðum í náttmyrkri. Besti tíminn vistast í vafranum. |
+| Eftirlýst | Tölfræði leikmanna á tilkynningum á pappír. Þrjú efstu fá spjald, hin eru í bókinni fyrir neðan. |
+| Uppsett | Uppsettir gagnapakkar sem ein löng tilkynning. |
+| Komdu inn | Leiðin inn í þremur skrefum, og vistfangið aftur. |
+
+Áhrif (himinn, mesa-lög með dýpt, ryk og glæður, luktarljós sem fylgir bendlinum, vindur og eldur úr Web Audio) eru hvert um sig sjálfstæð eining í `src/effects/` og slökkva á sér undir `prefers-reduced-motion`.
 
 Á `/crew` er félagalistinn. Á `/crew/<name>` eru kynning, tölfræði, afrek, færslur og myndir hvers leikmanns. Félagar skrá sig inn með sínum aðgangslykli.
 
-Kóðinn er í `src/components/frontier/`, útlitsreglur í `src/app/frontier.css` og sameiginleg grunngildi í `src/app/globals.css`.
+Kóðinn er í `src/components/badlands/`, útlitsreglur í `src/app/badlands.css` og `src/app/board.css`, grunngildi í `src/app/tokens.css` og `src/app/globals.css`.
 
 ## Verkfæri
 
@@ -59,10 +64,21 @@ npm run dev
 
 Opnaðu [vefinn á localhost:3000](http://localhost:3000).
 
+Áður en breytingar eru sendar:
+
+```bash
+npm run lint
+npx tsc --noEmit
+npm run build
+node scripts/shots.mjs shots / /crew        # skjámyndir og yfirflæðisathugun á 1440 og 390 px
+SECTIONS=1 WIDTHS=390,1440 node scripts/shots.mjs shots /   # ein mynd á hvern hluta
+REDUCE=1 node scripts/shots.mjs shots-reduce /             # með prefers-reduced-motion
+```
+
 ## Bæta við félaga
 
 1. Bættu notandanafninu við `CREW_USERNAMES` í `src/lib/crew.ts`.
-2. Bættu því við `CREW` í `src/components/frontier/data.ts`.
+2. Bættu því við `CREW` í `src/components/badlands/data.ts`.
 3. Stilltu `CREW_TOKEN_<UPPERCASE_USERNAME>` í umhverfisbreytunum.
 
 ## Fylgjast með uppfærslum gagnapakka

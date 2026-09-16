@@ -15,7 +15,7 @@ export default function StatusLantern({ server }: { server: ServerState }) {
   return (
     <Link href="#camp" className={`b-status${state}`} aria-label={`${word}. Sjá hver er inni.`}>
       <Lantern lit={!!online} />
-      <span>
+      <span className="b-status__text">
         <span className="b-status__word" role="status" aria-live="polite">{word}</span>
         <span className="b-status__row">
           {online === null ? 'bíð eftir svari' :
