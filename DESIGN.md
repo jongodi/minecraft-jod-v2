@@ -85,7 +85,7 @@ Three families, all self-hosted through `@fontsource`, all verified to render þ
 | Role | Family | Why |
 |---|---|---|
 | Display | Alfa Slab One | A Clarendon-descended fat slab, the shape of wood type on a real poster. Used only for the server name and section titles. |
-| Text | Literata | A book serif designed for long reading on screens, with an optical-size axis so it stays sturdy small and calm large. |
+| Text | Literata | A book serif designed for long reading on screens, sturdy at small sizes. Loaded as the weight-only variable cut, since the site sets no italics. |
 | Data | Silkscreen | Drawn on an 8 px grid, so it stays crisp when sized in whole multiples. Used only for live server data. |
 
 Rye, Caveat and Lora are removed. JetBrains Mono stays for the admin panel and the pack editor, which are out of scope.

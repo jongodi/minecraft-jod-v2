@@ -14,10 +14,8 @@ const display = localFont({
   display: 'swap',
 });
 const text = localFont({
-  src: [
-    { path: '../../node_modules/@fontsource-variable/literata/files/literata-latin-opsz-normal.woff2', style: 'normal' },
-    { path: '../../node_modules/@fontsource-variable/literata/files/literata-latin-opsz-italic.woff2', style: 'italic' },
-  ],
+  /* the weight-only cut: half the size of the optical-size cut, and the site sets no italics */
+  src: '../../node_modules/@fontsource-variable/literata/files/literata-latin-wght-normal.woff2',
   weight: '200 900',
   variable: '--font-text-loaded',
   display: 'swap',
