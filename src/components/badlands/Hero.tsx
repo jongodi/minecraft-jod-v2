@@ -1,0 +1,25 @@
+'use client';
+
+import Mesa from './Mesa';
+import CopyAddress from './CopyAddress';
+import StatusLantern from './StatusLantern';
+import type { ServerState } from './hooks';
+
+export default function Hero({ server }: { server: ServerState }) {
+  return (
+    <section id="top" className="b-hero" aria-label="Sólsetur">
+      <div className="b-wrap b-hero__grid">
+        <div>
+          <h1 className="b-hero__mark">JOÐ</h1>
+          <p className="b-hero__sub">Minecraft-heimur átta vina, frá sumrinu 2024.</p>
+          <div className="b-hero__action"><CopyAddress /></div>
+        </div>
+        <div className="b-hero__side">
+          <StatusLantern server={server} />
+          {server.version && <p className="b-hero__version">Minecraft {server.version}</p>}
+        </div>
+      </div>
+      <Mesa />
+    </section>
+  );
+}

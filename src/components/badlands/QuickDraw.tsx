@@ -1,9 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { CSSProperties } from 'react';
 import { motion, useAnimation, useReducedMotion } from 'framer-motion';
-import { Arrow, BulletHole, Star } from './Bits';
+import { BulletHole, Star, Strata } from './Bits';
 
 /* One game is three draws. Each draw: a random hold, then the call.
    Tapping during the hold is a foul and that draw is lost. */
@@ -11,7 +10,6 @@ const ROUNDS     = 3;
 const NEXT_DELAY = 1600;
 const BEST_KEY   = 'jod-qd-best';
 const NUMERAL    = ['I', 'II', 'III'];
-const TILT       = [-2, 1.5, -1];
 
 type Phase = 'idle' | 'hold' | 'draw' | 'result' | 'done';
 type Shot  = number | null;
@@ -23,20 +21,26 @@ function rankOf(ms: number) {
   return 'Nýliði';
 }
 
+/* The night scene: a pixel moon, a few stars and two mesas. */
+const MOON: Array<[number, number, number]> = [[606, 40, 24], [600, 46, 36], [594, 52, 48], [594, 58, 48], [594, 64, 48], [594, 70, 48], [600, 76, 36], [606, 82, 24]];
+const STARS: Array<[number, number]> = [[60, 40], [140, 90], [220, 30], [330, 70], [420, 120], [500, 50], [700, 110], [760, 30], [90, 150], [660, 160]];
+const MESA_FAR  = 'M0 330 H70 V280 H110 V300 H190 V260 H230 V330 H350 V265 H470 V300 H515 V330 H640 V295 H760 V330 H800 V450 H0 Z';
+const MESA_NEAR = 'M0 372 H120 V340 H200 V372 H460 V350 H540 V372 H800 V450 H0 Z';
+
 function Gunslinger({ x, flip, cls }: { x: number; flip?: boolean; cls: string }) {
   return (
     <g transform={`translate(${x} 400) scale(${flip ? -1 : 1} 1)`} fill="currentColor">
-      <g className={`j-fig ${cls}`}>
+      <g className={`b-fig ${cls}`}>
         <rect x="-14" y="-60" width="12" height="60" />
         <rect x="2"   y="-60" width="12" height="60" />
         <rect x="-16" y="-124" width="32" height="66" />
         <rect x="-16" y="-156" width="32" height="32" />
         <rect x="-30" y="-160" width="60" height="7" />
         <rect x="-16" y="-178" width="32" height="20" />
-        <g className="j-arm">
+        <g className="b-arm">
           <rect x="20" y="-118" width="12" height="58" />
           <rect x="20" y="-70" width="24" height="9" />
-          <circle className="j-arena__smoke" cx="52" cy="-66" r="10" fill="#f8f1de" />
+          <rect className="b-arena__smoke" x="44" y="-74" width="16" height="16" fill="var(--paper)" />
         </g>
         <rect x="-28" y="-118" width="12" height="52" />
       </g>
@@ -88,7 +92,7 @@ export default function QuickDraw() {
   const last       = shots[shots.length - 1];
   const lastIsHit  = phase === 'result' && typeof last === 'number';
   const lastIsFoul = phase === 'result' && last === null;
-  const arenaCls   = ['j-arena', `is-${phase}`, lastIsHit ? 'is-hit' : '', lastIsFoul ? 'is-foul' : ''].filter(Boolean).join(' ');
+  const arenaCls   = ['b-arena', `is-${phase}`, lastIsHit ? 'is-hit' : '', lastIsFoul ? 'is-foul' : ''].filter(Boolean).join(' ');
 
   useEffect(() => {
     if (lastIsHit && !reduce) kick.start({ x: [0, -6, 5, -3, 0], y: [0, 3, -2, 1, 0], transition: { type: 'spring', bounce: 0.35, duration: 0.45 } });
@@ -97,7 +101,7 @@ export default function QuickDraw() {
   }, [lastIsHit, shots.length]);
 
   const call =
-    phase === 'idle'   ? { big: 'Hádegi', small: 'smelltu til að byrja, bíddu eftir merkinu og smelltu aftur' } :
+    phase === 'idle'   ? { big: 'Tilbúin?', small: 'smelltu til að byrja, bíddu eftir ljósinu og smelltu aftur' } :
     phase === 'hold'   ? { big: 'Bíddu…',     small: 'ekki strax' } :
     phase === 'draw'   ? { big: 'SKJÓTTU',      small: '' } :
     phase === 'result' ? (lastIsHit ? { big: `${last} ms`, small: rankOf(last) } : { big: 'Of snemma', small: 'þessi umferð er fallin' }) :
@@ -105,17 +109,18 @@ export default function QuickDraw() {
                          { big: 'Þrjár fallnar umferðir', small: 'rólegur á gikknum! Smelltu til að reyna aftur' };
 
   return (
-    <section id="showdown" className="j-sec j-noon">
-      <div className="j-wrap">
-        <div className="j-noon__head">
+    <section id="showdown" className="b-sec b-sec--dusk-2" aria-labelledby="showdown-title">
+      <Strata />
+      <div className="b-wrap">
+        <div className="b-head">
           <div>
-            <p className="j-note j-note--big">Hver er fljótastur á gikknum?</p>
-            <p className="j-note">þrjár umferðir í leik; besti tíminn vistast í þessu tæki</p>
+            <h2 id="showdown-title" className="b-title">Einvígi</h2>
+            <p className="b-lede">Hver er fljótastur á gikknum? Þrjár umferðir í leik; besti tíminn vistast í þessu tæki.</p>
           </div>
-          <p className="j-note">undir 200 ms og stjarnan er þín <Arrow /></p>
+          <p className="b-note">undir 200 ms og stjarnan er þín</p>
         </div>
 
-        <div className="j-noon__grid">
+        <div className="b-duel">
           <motion.div
             className={arenaCls}
             animate={kick}
@@ -130,56 +135,48 @@ export default function QuickDraw() {
             onKeyDown={e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); tap(); } }}
           >
             <svg viewBox="0 0 800 450" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
-              <g className="j-arena__rays" stroke="#e6c979" strokeOpacity="0.18" strokeWidth="14">
-                {Array.from({ length: 12 }, (_, i) => (
-                  <line key={i} x1="400" y1="250" x2={400 + Math.cos((i * Math.PI) / 6) * 700} y2={250 + Math.sin((i * Math.PI) / 6) * 700} />
-                ))}
-              </g>
-              <circle cx="400" cy="250" r="64" fill="#e6c979" fillOpacity="0.9" />
-              <path d="M0 330 L70 330 L110 280 L190 280 L230 330 L350 330 L400 265 L470 265 L515 330 L640 330 L690 295 L760 295 L800 330 L800 450 L0 450 Z" fill="#2a1c13" />
-              <path d="M0 372 L800 372 L800 450 L0 450 Z" fill="#1c130d" />
-              <path d="M0 400 L800 400 L800 450 L0 450 Z" fill="#15100b" />
-              <g className="j-arena__heat" aria-hidden="true">
-                <ellipse cx="400" cy="335" rx="420" ry="12" fill="#e6c979" fillOpacity="0.08" />
-                <ellipse cx="400" cy="338" rx="380" ry="8" fill="#ffffff" fillOpacity="0.05" />
-              </g>
-              <Gunslinger x={150} cls="j-fig--you" />
-              <Gunslinger x={650} flip cls="j-fig--foe" />
+              {MOON.map(([x, y, w]) => <rect key={`${x}-${y}`} x={x} y={y} width={w} height="6" fill="var(--sun)" />)}
+              {STARS.map(([x, y]) => <rect key={`${x}-${y}`} x={x} y={y} width="3" height="3" fill="var(--star)" />)}
+              <path d={MESA_FAR} fill="var(--tc-red)" />
+              <path d={MESA_NEAR} fill="var(--tc-brown)" />
+              <rect x="0" y="372" width="800" height="78" fill="var(--dusk-2)" />
+              <rect x="0" y="400" width="800" height="50" fill="var(--night)" />
+              <Gunslinger x={150} cls="b-fig--you" />
+              <Gunslinger x={650} flip cls="b-fig--foe" />
             </svg>
-            <div className="j-arena__flash" />
+            <div className="b-arena__flash" />
             {hole && <BulletHole x={hole.x} y={hole.y} />}
-            <span className="j-arena__corner">Umferð {NUMERAL[Math.min(round, ROUNDS - 1)]} af {NUMERAL[ROUNDS - 1]}</span>
-            {best !== null && <span className="j-arena__corner j-arena__corner--r">Best: {best} ms</span>}
-            <div className="j-arena__call" aria-live="polite">
+            <span className="b-arena__corner">Umferð {NUMERAL[Math.min(round, ROUNDS - 1)]} af {NUMERAL[ROUNDS - 1]}</span>
+            {best !== null && <span className="b-arena__corner b-arena__corner--r">Best: {best} ms</span>}
+            <div className="b-arena__call" aria-live="polite">
               <div>
-                <div className="j-arena__big">{call.big}</div>
-                {call.small && <div className="j-arena__small">{call.small}</div>}
+                <div className="b-arena__big">{call.big}</div>
+                {call.small && <div className="b-arena__small">{call.small}</div>}
               </div>
             </div>
           </motion.div>
 
-          <div className="j-noon__side">
-            <div className="j-stubs">
+          <div className="b-duel__side">
+            <div className="b-stubs">
               {Array.from({ length: ROUNDS }, (_, i) => {
                 const s = shots[i];
                 const live = i === round && (phase === 'hold' || phase === 'draw');
                 return (
-                  <div key={i} className={`j-stub${live ? ' is-live' : ''}${s === null ? ' is-foul' : ''}`} style={{ '--r': `${TILT[i]}deg` } as CSSProperties}>
-                    <div className="j-stub__k">Umferð {NUMERAL[i]}</div>
-                    <div className="j-stub__v">{typeof s === 'number' ? `${s} ms` : s === null ? 'Fallið' : live ? '…' : '·'}</div>
-                    {typeof s === 'number' && <span className="j-case" aria-hidden="true" />}
+                  <div key={i} className={`b-stub b-paper${live ? ' is-live' : ''}${s === null ? ' is-foul' : ''}`}>
+                    <div className="b-stub__k">Umferð {NUMERAL[i]}</div>
+                    <div className="b-stub__v">{typeof s === 'number' ? `${s} ms` : s === null ? 'Fallið' : live ? '…' : '·'}</div>
                   </div>
                 );
               })}
             </div>
-            <div className="j-noon__readout">
-              <div><div className="j-noon__k">Meðaltal leiks</div><div className="j-noon__v">{gameAvg !== null ? `${gameAvg} ms` : '·'}</div></div>
-              <div><div className="j-noon__k">Staða</div><div className="j-noon__v">{gameBest !== null && gameBest < 200 && <Star className="j-star" />}{gameBest !== null ? rankOf(gameBest) : '·'}</div></div>
+            <div className="b-duel__readout">
+              <div><div className="b-duel__k">Meðaltal leiks</div><div className="b-duel__v">{gameAvg !== null ? `${gameAvg} ms` : '·'}</div></div>
+              <div><div className="b-duel__k">Staða</div><div className="b-duel__v">{gameBest !== null && gameBest < 200 && <Star className="b-star" />}{gameBest !== null ? rankOf(gameBest) : '·'}</div></div>
             </div>
-            <button className="j-btn" onClick={() => tap()} disabled={phase === 'result'}>
+            <button type="button" className="b-btn b-btn--solid" onClick={() => tap()} disabled={phase === 'result'}>
               {phase === 'idle' ? 'Hefja einvígi' : phase === 'done' ? 'Spila aftur' : phase === 'draw' ? 'Skjóttu' : phase === 'result' ? 'Hleð aftur…' : 'Bíddu…'}
             </button>
-            <p className="j-noon__rules">Sýslumaður undir 200 ms, aðstoðarsýslumaður undir 300 og kúreki undir 450. Annars ertu nýliði.</p>
+            <p className="b-duel__rules">Sýslumaður undir 200 ms, aðstoðarsýslumaður undir 300 og kúreki undir 450. Annars ertu nýliði.</p>
           </div>
         </div>
       </div>
