@@ -5,6 +5,91 @@
 export const GLYPH_SIZE = 12;
 
 export const PACK_GLYPHS: Record<string, readonly string[]> = {
+  /* generic labels a pack can be given in the admin panel */
+  'Kista': [
+    '............',
+    '.##########.',
+    '#..........#',
+    '#..........#',
+    '############',
+    '#....rr....#',
+    '#....rr....#',
+    '#..........#',
+    '#..........#',
+    '#..........#',
+    '.##########.',
+    '............',
+  ],
+  'Sverð': [
+    '..........##',
+    '.........###',
+    '........###.',
+    '.......###..',
+    '......###...',
+    '.yy..###....',
+    '..yy###.....',
+    '...yyy......',
+    '..yyyy......',
+    '.yy.yy......',
+    'yy...y......',
+    '............',
+  ],
+  'Bók': [
+    '............',
+    '.#########..',
+    '.#rrrrrrr#..',
+    '.#rrrrrrr##.',
+    '.#rrrrrrr.#.',
+    '.#rrrrrrr.#.',
+    '.#rrrrrrr.#.',
+    '.#rrrrrrr.#.',
+    '.#rrrrrrr##.',
+    '.#########..',
+    '............',
+    '............',
+  ],
+  'Stjarna': [
+    '.....yy.....',
+    '.....yy.....',
+    '....yyyy....',
+    '....yyyy....',
+    'yyyyyyyyyyyy',
+    '.yyyyyyyyyy.',
+    '..yyyyyyyy..',
+    '...yyyyyy...',
+    '..yyy..yyy..',
+    '.yy......yy.',
+    'y..........y',
+    '............',
+  ],
+  'Hús': [
+    '.....##.....',
+    '....#rr#....',
+    '...#rrrr#...',
+    '..#rrrrrr#..',
+    '.#rrrrrrrr#.',
+    '############',
+    '.#........#.',
+    '.#.yy..##.#.',
+    '.#.yy..##.#.',
+    '.#.....##.#.',
+    '.#.....##.#.',
+    '.##########.',
+  ],
+  'Merki JOÐ': [
+    '############',
+    '#..........#',
+    '#..#####...#',
+    '#.....#....#',
+    '#.....#....#',
+    '#.....#....#',
+    '#.....#....#',
+    '#.#...#....#',
+    '#.#...#....#',
+    '#..###.....#',
+    '#..........#',
+    '############',
+  ],
   /* MVP: a framed painting */
   'MVP': [
     '############',
@@ -216,3 +301,11 @@ export const PACK_GLYPHS: Record<string, readonly string[]> = {
     '............',
   ],
 };
+
+/** The generic labels, offered as choices in the admin panel. */
+export const GENERIC_GLYPHS = ['Kista', 'Sverð', 'Bók', 'Stjarna', 'Hús', 'Merki JOÐ'] as const;
+
+/** The drawing for a pack: its chosen glyph, else the one drawn for its name, else the chest. */
+export function glyphFor(pack: { name: string; glyph?: string | null }): readonly string[] {
+  return (pack.glyph && PACK_GLYPHS[pack.glyph]) || PACK_GLYPHS[pack.name] || PACK_GLYPHS['Kista'];
+}

@@ -5,7 +5,7 @@
 import { useCallback, useEffect, useRef, useState, type DragEvent } from 'react';
 import { upload } from '@vercel/blob/client';
 import type { GalleryPhoto } from '@/lib/gallery';
-import { prepareImage, formatBytes } from '@/lib/client-image';
+import { prepareImage, formatBytes, MAX_EDGE } from '@/lib/client-image';
 
 export type AdminPhoto = GalleryPhoto & { locationId: number | null };
 
@@ -13,10 +13,6 @@ interface StorageInfo { mode: 'blob' | 'local' | 'none'; access: 'public' | 'pri
 
 type Stage = 'queued' | 'preparing' | 'uploading' | 'saving' | 'done' | 'error';
 interface Job { key: string; name: string; size: number; stage: Stage; progress: number; note?: string }
-
-const mono  = "'JetBrains Mono', monospace";
-const green = '#c8960c';
-const red   = '#ff4466';
 
 const STAGE_LABEL: Record<Stage, string> = {
   queued: 'Bíður', preparing: 'Undirbý', uploading: 'Hleð upp', saving: 'Skrái', done: 'Tilbúin', error: 'Mistókst',
@@ -142,53 +138,38 @@ export default function GalleryUploader({ onUploaded }: { onUploaded: (photo: Ad
   const failCount = jobs.filter(j => j.stage === 'error').length;
 
   return (
-    <div style={{ marginBottom: '1.5rem' }}>
+    <div>
       <div
+        className={`a-drop${dragging ? ' is-over' : ''}`}
         onDragOver={e => { e.preventDefault(); if (!disabled) setDragging(true); }}
         onDragLeave={() => setDragging(false)}
         onDrop={onDrop}
-        style={{
-          display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap',
-          padding: '0.75rem', border: `1px dashed ${dragging ? green : '#2a2a2a'}`,
-          background: dragging ? green + '0c' : 'transparent', transition: 'border-color 0.15s, background 0.15s',
-        }}
       >
         <input ref={inputRef} type="file" accept="image/*" multiple disabled={disabled} onChange={e => run(Array.from(e.target.files ?? []))} style={{ display: 'none' }} id="gallery-upload" />
-        <label
-          htmlFor="gallery-upload"
-          aria-disabled={disabled}
-          style={{ fontFamily: mono, fontSize: '0.6rem', letterSpacing: '0.15em', textTransform: 'uppercase', padding: '0.5rem 1rem', cursor: disabled ? 'not-allowed' : 'pointer', border: `1px solid ${green}44`, color: disabled ? '#555' : green, background: green + '08' }}
-        >
-          {busy ? 'HLEÐ UPP…' : '+ HLAÐA UPP MYNDUM'}
-        </label>
-        <span style={{ fontFamily: mono, fontSize: '0.55rem', color: '#555' }}>
-          {!storage ? 'Athuga geymslu…'
-            : storage.mode === 'none' ? <span style={{ color: red }}>✗ {storage.error ?? 'Myndageymsla er ekki stillt. Bættu BLOB_READ_WRITE_TOKEN við á Vercel.'}</span>
-            : storage.error ? <span style={{ color: red }}>✗ {storage.error}</span>
-            : <>Dragðu myndir hingað eða veldu þær · stórar myndir eru minnkaðar í {2560} px og vistaðar sem WebP · hámark {formatBytes(storage.maxBytes)}{storage.mode === 'local' ? ' · vistast í /public/screenshots' : storage.access === 'private' ? ' · lokuð Blob-geymsla, myndir birtar um /api/blob' : ''}</>}
+        <label htmlFor="gallery-upload" className={`a-btn a-btn--primary${disabled ? '' : ''}`} aria-disabled={disabled}>{busy ? 'Hleð upp' : 'Hlaða upp myndum'}</label>
+        <span className="a-help">
+          {!storage ? 'Athuga geymslu'
+            : storage.mode === 'none' ? <span className="a-update--err">{storage.error ?? 'Myndageymsla er ekki stillt. Bættu BLOB_READ_WRITE_TOKEN við á Vercel.'}</span>
+            : storage.error ? <span className="a-update--err">{storage.error}</span>
+            : <>Dragðu myndir hingað eða veldu þær. Stórar myndir eru minnkaðar í {MAX_EDGE} px og vistaðar sem WebP, hámark {formatBytes(storage.maxBytes)}.{storage.mode === 'local' ? ' Vistast í /public/screenshots.' : storage.access === 'private' ? ' Lokuð Blob-geymsla, myndir birtar um /api/blob.' : ''}</>}
         </span>
       </div>
 
       {jobs.length > 0 && (
-        <ul style={{ listStyle: 'none', margin: '0.5rem 0 0', padding: 0, display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+        <ul className="a-jobs">
           {jobs.map(j => (
-            <li key={j.key} style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 5rem auto', gap: '0.75rem', alignItems: 'center', fontFamily: mono, fontSize: '0.55rem' }}>
-              <span style={{ color: '#aaa', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {j.name}
-                {j.note && <span style={{ color: j.stage === 'error' ? red : '#555', marginLeft: '0.5rem' }}>{j.note}</span>}
+            <li key={j.key} className="a-job">
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {j.name}{j.note && <span className={j.stage === 'error' ? 'a-update--err' : 'a-muted'}> {j.note}</span>}
               </span>
-              <span aria-hidden="true" style={{ height: 3, background: '#1a1a1a', position: 'relative', overflow: 'hidden' }}>
-                <span style={{ position: 'absolute', inset: 0, width: `${j.stage === 'done' ? 100 : j.progress}%`, background: j.stage === 'error' ? red : green, transition: 'width 0.2s' }} />
-              </span>
-              <span style={{ color: j.stage === 'error' ? red : j.stage === 'done' ? green : '#777', letterSpacing: '0.1em', textTransform: 'uppercase', minWidth: '5rem', textAlign: 'right' }}>
-                {j.stage === 'error' ? '✗' : j.stage === 'done' ? '✓' : ''} {STAGE_LABEL[j.stage]}{j.stage === 'uploading' ? ` ${Math.round(j.progress)}%` : ''}
+              <span className={`a-progress${j.stage === 'error' ? ' is-err' : ''}`} aria-hidden="true" style={{ '--p': `${j.stage === 'done' ? 100 : j.progress}%` } as React.CSSProperties}><span /></span>
+              <span className={j.stage === 'error' ? 'a-update--err' : j.stage === 'done' ? 'a-update--ok' : 'a-muted'}>
+                {STAGE_LABEL[j.stage]}{j.stage === 'uploading' ? ` ${Math.round(j.progress)}%` : ''}
               </span>
             </li>
           ))}
           {!busy && jobs.length > 1 && (
-            <li style={{ fontFamily: mono, fontSize: '0.55rem', color: failCount ? red : green, marginTop: '0.25rem' }}>
-              {doneCount}/{jobs.length} myndum hlaðið upp{failCount ? ` · ${failCount} mistókst` : ''}
-            </li>
+            <li className={failCount ? 'a-update--err' : 'a-update--ok'}>{doneCount} af {jobs.length} myndum hlaðið upp{failCount ? `, ${failCount} mistókst` : ''}.</li>
           )}
         </ul>
       )}

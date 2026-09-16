@@ -131,6 +131,6 @@ Gestures that need physics (map drag and zoom, lightbox throw, phone drawer) kee
 
 ## Out of scope
 
-`/admin` and `/rp-editor` keep their own dark roots and are not restyled. They read the generic token names (`--bg`, `--accent`, `--text`) that stay defined in `globals.css`. The API layer and data files are untouched except where the status endpoint needs caching and a timeout.
+`/admin` is a tool, so it uses the same tokens in a quieter register (`src/app/admin/admin.css`): night surfaces, amber only on actions, the display slab for panel titles, pixel type for live values. Its map editor draws the same block map as the public site through the shared `MapArt` component, so what the admin sees is what visitors see. `/rp-editor` keeps its own dark root and reads the generic token names (`--bg`, `--accent`, `--text`) that stay defined in `globals.css`.
 
 The crew pages (`/crew`, `/crew/[username]`) share the nav, footer and stylesheet, so they get the new tokens, type and board treatment while keeping their structure.

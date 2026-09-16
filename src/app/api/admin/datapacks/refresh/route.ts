@@ -2,11 +2,9 @@ import { errorMessage } from '@/lib/icelandic';
 import { NextResponse } from 'next/server';
 import { requireAdmin, unauthorizedResponse } from '@/lib/auth';
 import { getExarotonServerId } from '@/lib/exaroton';
-import { getAllPacks } from '@/lib/custom-datapacks';
+import { getPacksView, saveSettings } from '@/lib/datapacks-store';
 
 export const dynamic = 'force-dynamic';
-
-const KV_KEY = 'datapacks:versions';
 
 export interface RefreshResult {
   scanned:   string[];
@@ -94,7 +92,7 @@ export async function POST() {
       .filter(f => f.name.endsWith('.zip') || f.isDirectory)
       .map(f => f.name);
 
-    const allPacks = await getAllPacks();
+    const allPacks = await getPacksView();
     const matched:   RefreshResult['matched'] = [];
     const unmatched: string[]                 = [];
 
@@ -125,28 +123,14 @@ export async function POST() {
       }
     }
 
-    // Merge into existing overrides; only write entries where a version was extracted
-    let existing: Record<number, string> = {};
-    if (process.env.REDIS_URL) {
-      try {
-        const { rGet } = await import('@/lib/redis');
-        existing = (await rGet<Record<number, string>>(KV_KEY)) ?? {};
-      } catch { /* non-fatal */ }
-    }
-
-    let updated = 0;
-    const newOverrides = { ...existing };
+    // Write every version the scan found that differs from what is recorded
+    const patch: Record<number, { version: string }> = {};
     for (const m of matched) {
-      if (m.version && newOverrides[m.id] !== m.version) {
-        newOverrides[m.id] = m.version;
-        updated++;
-      }
+      const current = allPacks.find(p => p.id === m.id)?.currentVersion ?? null;
+      if (m.version && m.version !== current) patch[m.id] = { version: m.version };
     }
-
-    if (updated > 0 && process.env.REDIS_URL) {
-      const { rSet } = await import('@/lib/redis');
-      await rSet(KV_KEY, newOverrides);
-    }
+    const updated = Object.keys(patch).length;
+    if (updated > 0) await saveSettings(patch);
 
     return NextResponse.json({ scanned: entries, matched, unmatched, updated } satisfies RefreshResult);
 

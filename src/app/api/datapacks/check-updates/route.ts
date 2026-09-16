@@ -1,7 +1,7 @@
 import { errorMessage } from '@/lib/icelandic';
 import { NextResponse } from 'next/server';
 import { type DatapackMeta } from '@/data/datapacks';
-import { getAllPacks } from '@/lib/custom-datapacks';
+import { getPacksView } from '@/lib/datapacks-store';
 
 export interface DatapackUpdateResult {
   id:              number;
@@ -163,22 +163,8 @@ async function checkGitHub(pack: DatapackMeta): Promise<DatapackUpdateResult> {
 
 // ─── Route handler ────────────────────────────────────────────────────────────
 
-async function getVersionOverrides(): Promise<Record<number, string>> {
-  if (!process.env.REDIS_URL) return {};
-  try {
-    const { rGet } = await import('@/lib/redis');
-    return (await rGet<Record<number, string>>('datapacks:versions')) ?? {};
-  } catch { return {}; }
-}
-
 export async function GET() {
-  const [all, overrides] = await Promise.all([getAllPacks(), getVersionOverrides()]);
-
-  // Merge Redis version overrides into all packs (static + custom)
-  const packs = all.map(p => ({
-    ...p,
-    currentVersion: overrides[p.id] ?? p.currentVersion,
-  }));
+  const packs = await getPacksView();
 
   const results = await Promise.all(
     packs.map(async (pack): Promise<DatapackUpdateResult> => {
