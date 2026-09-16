@@ -16,11 +16,11 @@ Letur: Alfa Slab One fyrir fyrirsagnir, Literata fyrir meginmál og Silkscreen f
 |---|---|
 | Sólsetur | Merkið, vistfangið sem er afritað með einum smelli, og lukt með stöðu þjónsins. Himinninn dökknar og stjörnurnar koma með skruni. |
 | Búðirnar | Hvað þjónninn er, og myndir af átta félögum. Lukt logar á bak við þau sem eru inni. Staðan uppfærist á mínútu fresti. |
-| Landakort | Kort heimsins. Má draga, stækka og láta fljúga að pinna. Kortinu er breytt í stjórnborðinu. |
-| Myndaalbúm | Myndir úr leiknum. Smelltu til að stækka. Myndunum er stjórnað í stjórnborðinu. |
+| Landakort | Kort heimsins í kubbum, með ám sem fylgja ristinni og fánum fyrir staði. Má draga, stækka og láta fljúga að fána. Kortinu er breytt í stjórnborðinu. |
+| Myndaalbúm | Myndir úr leiknum í trérömmum á plankavegg. Smelltu á ramma til að stækka. Myndunum er stjórnað í stjórnborðinu. |
 | Einvígi | Viðbragðsleikur með þremur umferðum í náttmyrkri. Besti tíminn vistast í vafranum. |
-| Eftirlýst | Tölfræði leikmanna á tilkynningum á pappír. Þrjú efstu fá spjald, hin eru í bókinni fyrir neðan. |
-| Uppsett | Uppsettir gagnapakkar sem ein löng tilkynning, hver með sinni pixlamynd. |
+| Eftirlýst | Tölfræði leikmanna á eftirlýsingaspjöldum með rifnum brúnum. Þrjú efstu fá spjald, hin eru í bókinni fyrir neðan. |
+| Kaupfélagið | Uppsettir gagnapakkar sem kassar á hillum, hver með sinni pixlamynd og útgáfumiða. |
 | Komdu inn | Leiðin inn í þremur skrefum, og vistfangið aftur. |
 
 Áhrif (himinn, mesa-lög með dýpt, ryk og glæður, luktarljós sem fylgir bendlinum, vindur og eldur úr Web Audio) eru hvert um sig sjálfstæð eining í `src/effects/` og slökkva á sér undir `prefers-reduced-motion`.
@@ -32,7 +32,7 @@ Kóðinn er í `src/components/badlands/`, útlitsreglur í `src/app/badlands.cs
 ## Verkfæri
 
 - **Pakkaritill** (`/rp-editor`): Greinir og breytir útlitspökkum í vafranum. Greining í bakgrunnsþræði rekur yfirlíkön, kubbaástand, hlutaskilgreiningar og yfirskriftir, letur, agnir, búnað, áferðarsöfn og gagnapakka. Hún sýnir bilaðar tilvísanir og skrár sem eru sannanlega ónotaðar. Þar eru líka tengslakort, leit að árekstrum í `custom_model_data`, leit að tvíteknum áferðum, sjálfvirkar leiðréttingar, útflutningur skýrslna og myndritill með þrívíðri forskoðun.
-- **Stjórnborð** (`/admin`): Ræsa, stöðva og endurræsa þjóninn, fylgjast með uppfærslum gagnapakka og breyta myndasafni og korti. Heiti staða, svæða og mynda eru vistuð nákvæmlega eins og þau eru skrifuð.
+- **Stjórnborð** (`/admin`): Fjórir flipar. **Þjónn**: staða, leikmenn inni, ræsa, stöðva og endurræsa á Exaroton, uppfærist sjálfkrafa. **Gagnapakkar**: allt um pakkana á einum stað; hvaða pakkar birtast í kaupfélaginu á vefnum (sýna eða fela), röðin á hillunum, uppsett útgáfa, athugun á nýrri útgáfu á Modrinth eða GitHub, lestur skráarheita beint af þjóninum, og eigin pakkar (til dæmis JOÐ-pakkarnir) sem má bæta við, breyta, gefa mynd og eyða. **Myndasafn**: upphleðsla, titlar, röð, sýna eða fela, og tenging við stað á kortinu. **Landakort**: ritill sem sýnir kortið nákvæmlega eins og gestir sjá það, með afturköllun, rist, örvatökkum, afritun staða og myndavali. Heiti staða, svæða og mynda eru vistuð nákvæmlega eins og þau eru skrifuð.
 
 ## Tungumál
 
@@ -81,9 +81,11 @@ REDUCE=1 node scripts/shots.mjs shots-reduce /             # með prefers-reduce
 2. Bættu því við `CREW` í `src/components/badlands/data.ts`.
 3. Stilltu `CREW_TOKEN_<UPPERCASE_USERNAME>` í umhverfisbreytunum.
 
-## Fylgjast með uppfærslum gagnapakka
+## Gagnapakkar
 
-Stilltu hvern gagnapakka í `src/data/datapacks.ts`:
+Grunnlistinn er í `src/data/datapacks.ts`. Allt sem er breytt í stjórnborðinu (eigin pakkar, sýnileiki, röð, uppsett útgáfa, mynd) vistast í Redis og er lesið saman við grunnlistann í `src/lib/datapacks-store.ts`. Vefurinn sækir listann um `/api/datapacks`, svo faldir pakkar birtast ekki og eigin pakkar birtast strax.
+
+Stilltu hvern pakka í grunnlistanum eða í stjórnborðinu:
 
 - `source: 'modrinth'` og `modrinthSlug`: athugar Modrinth.
 - `source: 'github'` og `githubRepo` (`owner/repo`): athugar útgáfur á GitHub.

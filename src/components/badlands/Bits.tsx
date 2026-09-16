@@ -87,20 +87,25 @@ export function Stars({ className }: { className?: string }) {
   );
 }
 
-/** The campfire in the footer. */
+const FLAMES: ReadonlyArray<ReadonlyArray<[number, number, number, number, string]>> = [
+  /* x, y, w, h, colour: three frames of the same fire */
+  [[7, 2, 2, 2, 'var(--sun)'], [6, 4, 4, 2, 'var(--sun)'], [5, 6, 6, 2, 'var(--ember)'], [4, 8, 8, 3, 'var(--ember)'], [6, 6, 2, 4, 'var(--sun)']],
+  [[8, 1, 2, 3, 'var(--sun)'], [6, 4, 5, 2, 'var(--sun)'], [4, 6, 7, 2, 'var(--ember)'], [4, 8, 8, 3, 'var(--ember)'], [7, 6, 2, 4, 'var(--sun)']],
+  [[6, 3, 2, 2, 'var(--sun)'], [5, 5, 5, 1, 'var(--sun)'], [5, 6, 6, 2, 'var(--ember)'], [3, 8, 10, 3, 'var(--ember)'], [6, 6, 3, 4, 'var(--sun)']],
+];
+
+/** The campfire in the footer: a three-frame pixel flame on two logs. */
 export function Campfire() {
   return (
     <span className="b-fire" aria-hidden="true">
       <svg viewBox="0 0 16 16">
-        <g className="b-fire__flame">
-          <rect x="7" y="2" width="2" height="2" fill="var(--sun)" />
-          <rect x="6" y="4" width="4" height="2" fill="var(--sun)" />
-          <rect x="5" y="6" width="6" height="2" fill="var(--ember)" />
-          <rect x="4" y="8" width="8" height="3" fill="var(--ember)" />
-          <rect x="6" y="6" width="2" height="4" fill="var(--sun)" />
-        </g>
-        <rect x="2" y="11" width="12" height="2" fill="var(--tc-brown)" />
-        <rect x="1" y="13" width="14" height="1" fill="var(--tc-brown)" />
+        {FLAMES.map((frame, i) => (
+          <g key={i} className="b-fire__frame" style={{ animationDelay: `${-i * 300}ms` }}>
+            {frame.map(([x, y, w, h, fill]) => <rect key={`${x}-${y}`} x={x} y={y} width={w} height={h} fill={fill} />)}
+          </g>
+        ))}
+        <rect x="2" y="11" width="12" height="2" fill="var(--wood)" />
+        <rect x="1" y="13" width="14" height="1" fill="var(--wood)" />
         <rect x="3" y="12" width="3" height="1" fill="var(--tc-red)" />
         <rect x="10" y="12" width="3" height="1" fill="var(--tc-red)" />
       </svg>

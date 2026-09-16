@@ -1,52 +1,28 @@
-import { errorMessage } from '@/lib/icelandic';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin, unauthorizedResponse } from '@/lib/auth';
-import { getCustomPacks, addCustomPack } from '@/lib/custom-datapacks';
-import type { DatapackSource } from '@/data/datapacks';
+import { addCustomPack, getCustomPacks, getPacksView, saveSettings } from '@/lib/datapacks-store';
+import { parsePackBody } from './fields';
+import { errorMessage } from '@/lib/icelandic';
 
-// GET — list all custom packs
+export const dynamic = 'force-dynamic';
+
+// GET — the custom packs only
 export async function GET() {
   if (!(await requireAdmin())) return unauthorizedResponse();
   return NextResponse.json(await getCustomPacks());
 }
 
-// POST — create a new custom pack
-// Body: { name, description, category, source, modrinthSlug?, githubRepo?, gameVersion, serverFile? }
+// POST — create a custom pack. Body: pack fields plus optional { glyph, hidden }.
 export async function POST(req: NextRequest) {
   if (!(await requireAdmin())) return unauthorizedResponse();
-
-  const body = await req.json() as Record<string, unknown>;
-  const { name, description, category, source, modrinthSlug, githubRepo, gameVersion, serverFile } = body;
-
-  if (!name || typeof name !== 'string' || !name.trim()) {
-    return NextResponse.json({ error: 'Nafn vantar.' }, { status: 400 });
-  }
-  if (!description || typeof description !== 'string' || !description.trim()) {
-    return NextResponse.json({ error: 'Lýsingu vantar.' }, { status: 400 });
-  }
-  if (!category || typeof category !== 'string' || !category.trim()) {
-    return NextResponse.json({ error: 'Flokk vantar.' }, { status: 400 });
-  }
-  if (!source || !['modrinth', 'github', 'manual'].includes(source as string)) {
-    return NextResponse.json({ error: 'Uppruni verður að vera modrinth, github eða manual.' }, { status: 400 });
-  }
-
+  const body = await req.json().catch(() => null) as Record<string, unknown> | null;
+  const parsed = parsePackBody(body ?? {}, { requireAll: true });
+  if ('error' in parsed) return NextResponse.json({ error: parsed.error }, { status: 400 });
   try {
-    const pack = await addCustomPack({
-      name:         name.trim(),
-      description:  (description as string).trim(),
-      category:     (category as string).trim().toUpperCase(),
-      source:       source as DatapackSource,
-      modrinthSlug: typeof modrinthSlug === 'string' && modrinthSlug.trim() ? modrinthSlug.trim() : undefined,
-      githubRepo:   typeof githubRepo   === 'string' && githubRepo.trim()   ? githubRepo.trim()   : undefined,
-      gameVersion:  typeof gameVersion  === 'string' && gameVersion.trim()  ? gameVersion.trim()  : '26.1',
-      serverFile:   typeof serverFile   === 'string' && serverFile.trim()   ? serverFile.trim()   : undefined,
-    });
-    return NextResponse.json(pack, { status: 201 });
+    const pack = await addCustomPack(parsed.fields as Parameters<typeof addCustomPack>[0]);
+    if (parsed.settings) await saveSettings({ [pack.id]: parsed.settings });
+    return NextResponse.json({ pack, packs: await getPacksView() }, { status: 201 });
   } catch (err) {
-    return NextResponse.json(
-      { error: errorMessage(err, 'Ekki tókst að vista.') },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: errorMessage(err, 'Ekki tókst að vista.') }, { status: 500 });
   }
 }

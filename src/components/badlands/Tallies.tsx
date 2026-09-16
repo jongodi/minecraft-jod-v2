@@ -48,8 +48,9 @@ export default function Tallies({ stats }: { stats: StatsState }) {
             <div className="b-posters">
               {top.map((r, i) => (
                 <motion.div key={r.name} layout="position" layoutId={`rank-${r.name}`} transition={SPRING}>
-                  <Link href={`/crew/${r.name}`} className="b-paper b-poster">
-                    <span className="b-paper__nail" aria-hidden="true" />
+                  <Link href={`/crew/${r.name}`} className="b-paper b-paper--torn b-poster">
+                    <span className="b-paper__nail b-paper__nail--l" aria-hidden="true" />
+                    <span className="b-paper__nail b-paper__nail--r" aria-hidden="true" />
                     <span className="b-paper__title">Eftirlýst</span>
                     <span className="b-poster__place">{PLACE[i]}, {meta.label}</span>
                     <span className="b-poster__img"><PlayerHead name={r.name} size={128} /></span>

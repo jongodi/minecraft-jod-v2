@@ -5,8 +5,9 @@ export const CREW = [
   'Gamla123', 'fafnir1994', 'IMlonely', 'eikibleiki',
 ] as const;
 
-export const headUrl = (name: string, size = 128) => `https://mc-heads.net/head/${name}/${size}`;
-export const headFallback = (name: string, size = 128) => `https://minotar.net/helm/${name}/${size}`;
+/* Heads are asked for at four times their CSS size so the 8 by 8 face stays sharp on any screen. */
+export const headUrl = (name: string, size = 512) => `https://mc-heads.net/head/${name}/${size}`;
+export const headFallback = (name: string, size = 512) => `https://minotar.net/helm/${name}/${size}`;
 
 export interface NavLink { label: string; href: string; id?: string }
 

@@ -54,9 +54,9 @@ export default function Particles({ heroId, fireId }: Props) {
       m.size = p.size * (Math.random() < 0.3 ? 2 : 1);
       m.life = 1;
       if (mode === 'embers') {
-        const r = fire.getBoundingClientRect();
-        m.x = r.left + r.width * (0.35 + Math.random() * 0.3);
-        m.y = fresh ? r.top + r.height * Math.random() : r.top + r.height * 0.6;
+        const r = (fire.querySelector('.b-fire') ?? fire).getBoundingClientRect();
+        m.x = r.left + r.width * (0.3 + Math.random() * 0.4);
+        m.y = fresh ? r.top + r.height * (0.2 + Math.random() * 0.5) : r.top + r.height * 0.55;
         m.vx = (Math.random() - 0.5) * EMBER.drift;
         m.vy = -EMBER.speed * (0.6 + Math.random() * 0.8);
       } else {

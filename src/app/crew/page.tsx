@@ -50,8 +50,9 @@ export default function CrewPage() {
             <div className="b-rollcall">
               {crew.map(m => (
                 <div key={m.username}>
-                  <Link href={`/crew/${m.username}`} className="b-paper b-poster b-poster--crew">
-                    <span className="b-paper__nail" aria-hidden="true" />
+                  <Link href={`/crew/${m.username}`} className="b-paper b-paper--torn b-poster b-poster--crew">
+                    <span className="b-paper__nail b-paper__nail--l" aria-hidden="true" />
+                    <span className="b-paper__nail b-paper__nail--r" aria-hidden="true" />
                     <div className="b-poster__img"><PlayerHead name={m.username} size={128} /></div>
                     <div className="b-poster__name">{m.username}</div>
                     <div className="b-poster__note">{m.bio || (m.lastPost ? `skrifaði ${formatAge(m.lastPost)}` : 'ekkert heyrst enn')}</div>
