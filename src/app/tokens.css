@@ -1,0 +1,125 @@
+/* ═══════════════════════════════════════════════════════════════
+   JOÐ design tokens. Every colour, size, radius and timing the
+   public site uses lives here. Components reference names only.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Time of day. 0 is sunset, 1 is full night. Driven by scroll in
+   the hero (see badlands.css), fixed under reduced motion. */
+@property --evening {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+
+:root {
+  /* ── surfaces ── */
+  --night:      #15100D;
+  --dusk:       #2A1A14;
+  --dusk-2:     #21150F;
+
+  /* ── terracotta strata (badlands) ── */
+  --tc-red:     #8F3D2E;
+  --tc-orange:  #A15325;
+  --tc-yellow:  #BA8523;
+  --tc-white:   #D1B2A1;
+  --tc-brown:   #4D3323;
+
+  /* ── lantern: interactive only ── */
+  --lantern:      #F2A63B;
+  --lantern-deep: #C9801F;
+  --lantern-glow: rgba(242, 166, 59, 0.35);
+
+  /* ── paper and ink: notices ── */
+  --paper:      #E8DCC4;
+  --paper-2:    #DCCDB0;
+  --ink:        #1E1611;
+  --ink-soft:   #5A4634;
+  --ink-faint:  #6E5A45;
+
+  /* ── text on night ── */
+  --text:       var(--paper);
+  --text-soft:  var(--tc-white);
+  --text-faint: #9A8272;
+
+  /* ── sky ── */
+  --sky-sunset-top:     #3B1A20;
+  --sky-sunset-mid:     #8F3D2E;
+  --sky-sunset-low:     #D8712F;
+  --sky-sunset-horizon: #E9B24A;
+  --sky-night-top:      #0C0A14;
+  --sky-night-low:      #15100D;
+  --sun:                #F4D394;
+  --star:               #E8DCC4;
+  --dust:               #C99A5A;
+  --ember:              #E0602A;
+
+  /* ── map sheet ── */
+  --map-paper:  var(--paper);
+  --map-land:   #D9C79E;
+  --map-water:  #6F7F78;
+  --map-ink:    #3B2719;
+  --map-pin:    var(--tc-yellow);
+  --map-wax:    var(--tc-red);
+
+  /* ── status ── */
+  --online:  #8FB06A;
+  --offline: var(--tc-red);
+
+  /* ── type ── */
+  --font-display: var(--font-display-loaded, 'Alfa Slab One'), Georgia, serif;
+  --font-text:    var(--font-text-loaded, 'Literata'), Georgia, serif;
+  --font-data:    var(--font-data-loaded, 'Silkscreen'), 'Courier New', monospace;
+
+  --fs-xs:   0.8rem;
+  --fs-sm:   0.9rem;
+  --fs-md:   1.0625rem;
+  --fs-lg:   1.25rem;
+  --fs-xl:   clamp(1.5rem, 1.1rem + 1.8vw, 2.2rem);
+  --fs-2xl:  clamp(2rem, 1.4rem + 3vw, 3.4rem);
+  --fs-hero: clamp(4.5rem, 2rem + 15vw, 14rem);
+  --fs-data: 1rem;      /* Silkscreen is drawn on 8px; keep multiples of 0.5rem */
+  --fs-data-lg: 1.5rem;
+  --fs-data-xl: 2rem;
+  --lh-tight: 1.05;
+  --lh-text:  1.6;
+  --lh-night: 1.7;      /* light-on-dark reads lighter, so it gets more air */
+  --measure:  62ch;
+
+  /* ── spacing ── */
+  --sp-1: 0.25rem;
+  --sp-2: 0.5rem;
+  --sp-3: 0.75rem;
+  --sp-4: 1rem;
+  --sp-5: 1.5rem;
+  --sp-6: 2rem;
+  --sp-7: 3rem;
+  --sp-8: 4rem;
+  --sec:    clamp(4rem, 2rem + 8vw, 8rem);
+  --gutter: clamp(1rem, 0.5rem + 3vw, 3rem);
+  --wrap:   1160px;
+  --rail:   4.5rem;     /* lantern rail width on desktop */
+  --tap:    2.75rem;    /* minimum tap target */
+
+  /* ── shape ── */
+  --radius: 2px;
+  --line:   1px;
+  --px:     2px;        /* one "pixel" of the pixel art at 1x */
+
+  /* ── motion ── */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in:  cubic-bezier(0.55, 0, 1, 0.45);
+  --dur-1: 120ms;
+  --dur-2: 240ms;
+  --dur-3: 480ms;
+  --dur-lantern: 3400ms;
+  --dur-draw: 1600ms;
+
+  /* ── layers ── */
+  --z-sky: -1;
+  --z-rail: 40;
+  --z-bar: 41;
+  --z-drawer: 42;
+  --z-light: 45;
+  --z-lightbox: 60;
+  --z-modal: 70;
+}

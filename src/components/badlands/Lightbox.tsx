@@ -54,14 +54,14 @@ export default function Lightbox({ photos, index, onClose, onPrev, onNext, origi
   };
 
   return (
-    <motion.div className="j-lb" role="dialog" aria-modal="true" aria-label={photo.title ?? 'Mynd'} onClick={requestClose}
+    <motion.div className="b-lb" role="dialog" aria-modal="true" aria-label={photo.title ?? 'Mynd'} onClick={requestClose}
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-      <button className="j-lb__close" onClick={requestClose} aria-label="Loka">✕</button>
-      <div className="j-lb__img">
+      <button className="b-lb__close" onClick={requestClose} aria-label="Loka">✕</button>
+      <div className="b-lb__img">
         <AnimatePresence custom={dir} mode="popLayout">
           <motion.div
             key={index}
-            className="j-lb__card"
+            className="b-lb__card"
             custom={dir}
             initial={reduce ? { opacity: 0 } : dir === 0 ? from : { x: dir * window.innerWidth * 0.6, rotate: dir * 6, opacity: 0 }}
             animate={closing ? from : { x: 0, y: 0, scale: 1, rotate: 0, opacity: 1 }}
@@ -80,13 +80,13 @@ export default function Lightbox({ photos, index, onClose, onPrev, onNext, origi
           </motion.div>
         </AnimatePresence>
       </div>
-      <div className="j-lb__bar" onClick={e => e.stopPropagation()}>
-        <div className="j-lb__cap">{photo.title}{photo.sub && <small>{photo.sub}</small>}</div>
+      <div className="b-lb__bar" onClick={e => e.stopPropagation()}>
+        <div className="b-lb__cap">{photo.title}{photo.sub && <small>{photo.sub}</small>}</div>
         {photos.length > 1 && (
-          <div className="j-inline">
-            <span className="j-lb__count">{index + 1} / {photos.length}</span>
-            <button className="j-arrowbtn" onClick={() => { if (closing) return; setDir(-1); onPrev(); }} aria-label="Fyrri mynd">←</button>
-            <button className="j-arrowbtn" onClick={() => { if (closing) return; setDir(1); onNext(); }} aria-label="Næsta mynd">→</button>
+          <div className="b-inline">
+            <span className="b-lb__count">{index + 1} / {photos.length}</span>
+            <button className="b-arrowbtn" onClick={() => { if (closing) return; setDir(-1); onPrev(); }} aria-label="Fyrri mynd">←</button>
+            <button className="b-arrowbtn" onClick={() => { if (closing) return; setDir(1); onNext(); }} aria-label="Næsta mynd">→</button>
           </div>
         )}
       </div>

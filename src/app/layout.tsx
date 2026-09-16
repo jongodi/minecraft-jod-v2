@@ -1,19 +1,42 @@
 import type { Metadata, Viewport } from 'next';
-import '@fontsource/rye/400.css';
-import '@fontsource/caveat/400.css';
-import '@fontsource/caveat/600.css';
-import '@fontsource/lora/400.css';
-import '@fontsource/lora/400-italic.css';
-import '@fontsource/lora/600.css';
-import '@fontsource/lora/700.css';
+import localFont from 'next/font/local';
 import '@fontsource/jetbrains-mono/400.css';
 import '@fontsource/jetbrains-mono/600.css';
 import './globals.css';
+import { SERVER_IP } from '@/components/badlands/data';
+
+/* Three families, self-hosted. Each is verified to carry þ ð æ ö á é í ó ú ý;
+   the Latin-1 block lives in the "latin" subset files. */
+const display = localFont({
+  src: '../../node_modules/@fontsource/alfa-slab-one/files/alfa-slab-one-latin-400-normal.woff2',
+  weight: '400',
+  variable: '--font-display-loaded',
+  display: 'swap',
+});
+const text = localFont({
+  src: [
+    { path: '../../node_modules/@fontsource-variable/literata/files/literata-latin-opsz-normal.woff2', style: 'normal' },
+    { path: '../../node_modules/@fontsource-variable/literata/files/literata-latin-opsz-italic.woff2', style: 'italic' },
+  ],
+  weight: '200 900',
+  variable: '--font-text-loaded',
+  display: 'swap',
+});
+const data = localFont({
+  src: '../../node_modules/@fontsource/silkscreen/files/silkscreen-latin-400-normal.woff2',
+  weight: '400',
+  variable: '--font-data-loaded',
+  display: 'swap',
+  adjustFontFallback: false,
+});
+
+const TITLE = 'JOÐ, Minecraft-heimurinn okkar';
+const DESCRIPTION = `Minecraft-heimur átta vina frá sumrinu 2024. Staða þjónsins, hver er inni, landakort, myndir úr leiknum og tölfræði leikmanna. ${SERVER_IP}`;
 
 export const metadata: Metadata = {
-  title: 'JOÐ, Minecraft-heimurinn okkar',
-  description:
-    'Minecraft-heimur átta vina frá 2024. Staða þjónsins, landakort, myndir úr leiknum og tölfræði leikmanna. play.jodcraft.world',
+  metadataBase: new URL('https://play.jodcraft.world'),
+  title: TITLE,
+  description: DESCRIPTION,
   keywords: ['Minecraft', 'lífsbarátta', 'einkaþjónn', 'JOÐ', 'gagnapakkar'],
   icons: {
     icon: [
@@ -25,23 +48,22 @@ export const metadata: Metadata = {
     apple: '/apple-touch-icon.png',
   },
   openGraph: {
-    title: 'JOÐ, Minecraft-heimurinn okkar',
-    description: 'Átta vinir, einn Minecraft-heimur, frá 2024. play.jodcraft.world',
+    title: TITLE,
+    description: `Átta vinir, einn Minecraft-heimur, frá 2024. ${SERVER_IP}`,
     type: 'website',
     locale: 'is_IS',
-    images: ['/screenshots/the-castle.webp'],
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: '#efe3c6',
+  themeColor: '#15100D',
   width: 'device-width',
   initialScale: 1,
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="is">
+    <html lang="is" className={`${display.variable} ${text.variable} ${data.variable}`}>
       <body>{children}</body>
     </html>
   );

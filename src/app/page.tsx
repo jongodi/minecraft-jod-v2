@@ -1,5 +1,5 @@
-import FrontierHome from '@/components/frontier/FrontierHome';
+import BadlandsHome from '@/components/badlands/BadlandsHome';
 
 export default function Home() {
-  return <FrontierHome />;
+  return <BadlandsHome />;
 }
