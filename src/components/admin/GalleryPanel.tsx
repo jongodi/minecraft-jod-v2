@@ -76,14 +76,17 @@ export default function GalleryPanel() {
     try { await api('/api/admin/gallery/reorder', { method: 'POST', body: JSON.stringify({ ids: renumbered.map(p => p.id) }) }); }
     catch (e) { setMsg(errText(e)); load(); }
   }
-  function moveBy(photo: AdminPhoto, dir: -1 | 1) {
-    const i = sorted.findIndex(p => p.id === photo.id);
-    const j = i + dir;
-    if (j < 0 || j >= sorted.length) return;
+  /** Put a photo at a given 1-based position, sliding the rest along. */
+  function moveTo(photo: AdminPhoto, pos: number) {
+    const target = Math.max(1, Math.min(sorted.length, Math.round(pos))) - 1;
+    const from = sorted.findIndex(p => p.id === photo.id);
+    if (from === -1 || from === target) return;
     const next = [...sorted];
-    [next[i], next[j]] = [next[j], next[i]];
+    const [moved] = next.splice(from, 1);
+    next.splice(target, 0, moved);
     reorder(next);
   }
+  const moveBy = (photo: AdminPhoto, dir: -1 | 1) => moveTo(photo, photo.order + dir);
   function drop(targetId: string) {
     if (!dragId || dragId === targetId) { setDragId(null); setOverId(null); return; }
     const next = [...sorted];
@@ -106,7 +109,7 @@ export default function GalleryPanel() {
   return (
     <Panel
       title="Myndasafn"
-      sub={`${counts.shown} af ${photos.length} sýnilegar á vefnum, ${counts.linked} tengdar stað á kortinu. Röðin hér er röðin í albúminu: dragðu mynd eða notaðu örvarnar.`}
+      sub={`${counts.shown} af ${photos.length} sýnilegar á vefnum, ${counts.linked} tengdar stað á kortinu. Röðin hér er röðin í albúminu á vefnum: dragðu mynd, notaðu örvarnar eða skrifaðu sæti í reitinn efst á myndinni og ýttu á Enter.`}
       tools={(['all', 'shown', 'hidden', 'unlinked'] as Filter[]).map(f => (
         <Button key={f} tone="ghost" small on={filter === f} onClick={() => setFilter(f)}>{{ all: 'Allar', shown: 'Sýndar', hidden: 'Faldar', unlinked: 'Án staðar' }[f]}</Button>
       ))}
@@ -133,7 +136,20 @@ export default function GalleryPanel() {
                   <div className="a-card__img">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={photo.filename} alt={photo.title} loading="lazy" />
-                    <span className="a-card__badge">{photo.order}</span>
+                    <label className="a-card__pos" title="Sláðu inn nýtt sæti og ýttu á Enter">
+                      <span className="a-sr">Sæti myndarinnar</span>
+                      <input
+                        className="a-card__posinput"
+                        type="number"
+                        min={1}
+                        max={sorted.length}
+                        defaultValue={photo.order}
+                        key={`pos-${photo.id}-${photo.order}`}
+                        onClick={e => e.stopPropagation()}
+                        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); moveTo(photo, Number((e.target as HTMLInputElement).value)); } }}
+                        onBlur={e => { const v = Number(e.target.value); if (v !== photo.order) moveTo(photo, v); }}
+                      />
+                    </label>
                     {!photo.active && <span className="a-card__badge a-card__badge--r">falin</span>}
                   </div>
                   <div className="a-card__body">
@@ -164,8 +180,10 @@ export default function GalleryPanel() {
                           <Button tone="ghost" small onClick={() => startEdit(photo)}>Breyta</Button>
                           <Button tone="ghost" small onClick={() => patch(photo, { active: !photo.active }, photo.active ? '✓ Myndin er falin á vefnum og á kortinu.' : '✓ Myndin er sýnd á vefnum.')}>{photo.active ? 'Fela' : 'Sýna'}</Button>
                           <span className="a-card__order">
-                            <Button tone="ghost" small icon onClick={() => moveBy(photo, -1)} aria-label="Færa framar">←</Button>
-                            <Button tone="ghost" small icon onClick={() => moveBy(photo, 1)} aria-label="Færa aftar">→</Button>
+                            <Button tone="ghost" small icon onClick={() => moveTo(photo, 1)} disabled={photo.order === 1} aria-label="Fremst" title="Fremst">⇤</Button>
+                            <Button tone="ghost" small icon onClick={() => moveBy(photo, -1)} disabled={photo.order === 1} aria-label="Færa framar" title="Færa framar">←</Button>
+                            <Button tone="ghost" small icon onClick={() => moveBy(photo, 1)} disabled={photo.order === sorted.length} aria-label="Færa aftar" title="Færa aftar">→</Button>
+                            <Button tone="ghost" small icon onClick={() => moveTo(photo, sorted.length)} disabled={photo.order === sorted.length} aria-label="Aftast" title="Aftast">⇥</Button>
                           </span>
                           <Button tone="danger" small onClick={() => remove(photo)}>Eyða</Button>
                         </div>

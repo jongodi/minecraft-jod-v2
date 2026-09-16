@@ -5,6 +5,147 @@
 export const GLYPH_SIZE = 12;
 
 export const PACK_GLYPHS: Record<string, readonly string[]> = {
+  /* one per category, so no pack ever falls back to a bare chest */
+  'Hamar': [
+    '.....#####..',
+    '....#######.',
+    '....#######.',
+    '.....#####..',
+    '.......y....',
+    '.......y....',
+    '......y.....',
+    '......y.....',
+    '.....y......',
+    '.....y......',
+    '....y.......',
+    '............',
+  ],
+  'Skjöldur': [
+    '.##########.',
+    '#rrrrrrrrrr#',
+    '#rrr####rrr#',
+    '#rr######rr#',
+    '#rrr####rrr#',
+    '#rrrrrrrrrr#',
+    '.#rrrrrrrr#.',
+    '..#rrrrrr#..',
+    '...#rrrr#...',
+    '....#rr#....',
+    '.....##.....',
+    '............',
+  ],
+  'Epli': [
+    '.....##.....',
+    '....##......',
+    '...######...',
+    '..rrrrrrrr..',
+    '.rrrrrrrrrr.',
+    'rrrrrrrrrrrr',
+    'rrrrrrrrrrrr',
+    'rrrrrrrrrrrr',
+    '.rrrrrrrrrr.',
+    '..rrrrrrrr..',
+    '...rr..rr...',
+    '............',
+  ],
+  'Tannhjól': [
+    '..#..##..#..',
+    '..##.##.##..',
+    '.###yyyy###.',
+    '..yyyyyyyy..',
+    '..yy#..#yy..',
+    '..yy....yy..',
+    '..yy#..#yy..',
+    '..yyyyyyyy..',
+    '.###yyyy###.',
+    '..##.##.##..',
+    '..#..##..#..',
+    '............',
+  ],
+  'Turn': [
+    '#.#.#.#.#.#.',
+    '############',
+    '#..........#',
+    '#..######..#',
+    '#..#....#..#',
+    '#..#....#..#',
+    '#..######..#',
+    '#..........#',
+    '############',
+    '#...####...#',
+    '#...#..#...#',
+    '#...#..#...#',
+  ],
+  'Talblaðra': [
+    '.##########.',
+    '#..........#',
+    '#.rr.rr.rr.#',
+    '#..........#',
+    '#..........#',
+    '.##########.',
+    '...##.......',
+    '..##........',
+    '.##.........',
+    '............',
+    '............',
+    '............',
+  ],
+  'Smaragður': [
+    '....####....',
+    '..##rrrr##..',
+    '.#rrrrrrrr#.',
+    '#rrrrrrrrrr#',
+    '#rrr####rrr#',
+    '#rr#....#rr#',
+    '#rr#....#rr#',
+    '#rrr####rrr#',
+    '#rrrrrrrrrr#',
+    '.#rrrrrrrr#.',
+    '..##rrrr##..',
+    '....####....',
+  ],
+  'Steðji': [
+    '..########..',
+    '..########..',
+    '...######...',
+    '....####....',
+    '...######...',
+    '..########..',
+    '.##########.',
+    '.##########.',
+    '....####....',
+    '...######...',
+    '..########..',
+    '............',
+  ],
+  'Tré': [
+    '....####....',
+    '...######...',
+    '..########..',
+    '.##########.',
+    '..########..',
+    '...######...',
+    '....####....',
+    '.....##.....',
+    '.....##.....',
+    '....yyyy....',
+    '...yyyyyy...',
+    '............',
+  ],
+  'Herobrine': [
+    '############',
+    '#..........#',
+    '#.##....##.#',
+    '#.##....##.#',
+    '#..........#',
+    '#..........#',
+    '#...####...#',
+    '#..........#',
+    '#.########.#',
+    '#..........#',
+    '############',
+    '............',
+  ],
   /* generic labels a pack can be given in the admin panel */
   'Kista': [
     '............',
@@ -303,9 +444,21 @@ export const PACK_GLYPHS: Record<string, readonly string[]> = {
 };
 
 /** The generic labels, offered as choices in the admin panel. */
-export const GENERIC_GLYPHS = ['Kista', 'Sverð', 'Bók', 'Stjarna', 'Hús', 'Merki JOÐ'] as const;
+export const GENERIC_GLYPHS = [
+  'Kista', 'Sverð', 'Bók', 'Stjarna', 'Hús', 'Merki JOÐ',
+  'Hamar', 'Skjöldur', 'Epli', 'Tannhjól', 'Turn', 'Talblaðra', 'Smaragður', 'Steðji', 'Tré',
+] as const;
 
-/** The drawing for a pack: its chosen glyph, else the one drawn for its name, else the chest. */
-export function glyphFor(pack: { name: string; glyph?: string | null }): readonly string[] {
-  return (pack.glyph && PACK_GLYPHS[pack.glyph]) || PACK_GLYPHS[pack.name] || PACK_GLYPHS['Kista'];
+/** Every category has a drawing, so a pack without its own still gets a real icon. */
+const CATEGORY_GLYPH: Record<string, string> = {
+  BUILD: 'Hamar', COMBAT: 'Skjöldur', SURVIVAL: 'Epli', QOL: 'Tannhjól',
+  STRUCTURE: 'Turn', SOCIAL: 'Talblaðra', LOOT: 'Kista', TRADE: 'Smaragður',
+  CRAFT: 'Steðji', WORLD: 'Tré',
+};
+
+/** The drawing for a pack: the one it was given, else one drawn for its name, else its category's. */
+export function glyphFor(pack: { name: string; glyph?: string | null; category?: string }): readonly string[] {
+  if (pack.glyph && PACK_GLYPHS[pack.glyph]) return PACK_GLYPHS[pack.glyph];
+  if (PACK_GLYPHS[pack.name]) return PACK_GLYPHS[pack.name];
+  return PACK_GLYPHS[CATEGORY_GLYPH[(pack.category ?? '').toUpperCase()] ?? 'Kista'];
 }

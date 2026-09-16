@@ -32,6 +32,7 @@
 .a-stack { display: grid; gap: var(--sp-4); }
 .a-inline { display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: center; }
 .a-muted { color: var(--text-faint); font-size: var(--fs-xs); }
+.a-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .a-data { font-family: var(--font-data); font-size: 0.75rem; color: var(--paper); }
 .a-kbd { display: inline-block; padding: 0 0.35em; border: var(--line) solid var(--text-faint); border-radius: var(--radius); font-family: var(--font-data); font-size: 0.65rem; color: var(--text-soft); }
 
@@ -125,7 +126,12 @@
 .a-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); gap: var(--sp-3); }
 .a-card { position: relative; background: var(--night); border: var(--line) solid rgba(209, 178, 161, 0.14); display: grid; grid-template-rows: auto 1fr; }
 .a-card.is-off { opacity: 0.5; }
-.a-card.is-target { border-color: var(--lantern); }
+.a-card.is-target { border-color: var(--lantern); box-shadow: 0 0 0 var(--px) var(--lantern); }
+.a-card[draggable='true'] { cursor: grab; }
+.a-card[draggable='true']:active { cursor: grabbing; }
+.a-card__pos { position: absolute; top: var(--sp-1); left: var(--sp-1); z-index: 1; }
+.a-card__posinput { width: 2.75rem; padding: 0 var(--sp-1); background: rgba(21, 16, 13, 0.85); border: var(--line) solid rgba(209, 178, 161, 0.3); color: var(--paper); font-family: var(--font-data); font-size: 0.7rem; line-height: 1.6; text-align: center; }
+.a-card__posinput:focus { border-color: var(--lantern); outline: none; }
 .a-card__img { position: relative; aspect-ratio: 16 / 9; overflow: hidden; background: var(--dusk-2); }
 .a-card__img img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .a-card__badge { position: absolute; top: var(--sp-1); left: var(--sp-1); padding: 0 var(--sp-1); background: rgba(21, 16, 13, 0.8); font-family: var(--font-data); font-size: 0.6rem; color: var(--paper); }
@@ -136,6 +142,7 @@
 .a-card__pin.is-linked { color: var(--lantern); }
 .a-card__actions { display: flex; flex-wrap: wrap; gap: var(--sp-1); margin-top: var(--sp-1); }
 .a-card__order { display: inline-flex; gap: 2px; }
+.a-card__order .a-btn { width: 1.75rem; min-height: 1.75rem; }
 
 /* ─── modal ───────────────────────────────────────────────────── */
 .a-modal { position: fixed; inset: 0; z-index: var(--z-modal); background: rgba(12, 10, 20, 0.75); display: flex; align-items: center; justify-content: center; padding: var(--sp-4); }

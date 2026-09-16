@@ -41,8 +41,8 @@ The existing order is kept. Each section gets an hour.
 |---|---|---|---|
 | Sunset | Arrival | top | Full-viewport hero. Layered pixel-art mesa silhouettes with parallax, a low sun, the server name in the display slab, one primary action (copy the address), and the status lantern: lit with the player count when online, dark and labelled when offline. |
 | Dusk | The town: who is in tonight | camp | The intro sentences move here from the hero, followed by the eight crew portraits. Lit lanterns behind the ones who are online; the others sit in dusk. |
-| Twilight | The land | territory | The map stays interactive (drag, zoom, pins). The coastline is rasterised once into 20 by 20 blocks, rivers walk the grid, places are pixel banners, and the sheet sits in a wooden pixel frame. |
-| Twilight | Pictures | postcards | The album stays. Pictures hang in wooden item frames on a plank wall, each on a nail with a paper tag; layout rhythm comes from the existing wide-frame logic, not a uniform grid. |
+| Twilight | The land | territory | The map sheet takes the full width of the page, so the world is big enough to read. The coastline is rasterised once into 20 by 20 blocks, rivers walk the grid, places are pixel banners, and the sheet sits in a wooden pixel frame. The places are listed under it as a grid of cards, each with the photo it holds. |
+| Twilight | Pictures | postcards | Pictures hang in wooden item frames butted against each other on a plank wall, each with its title on a plate in the bottom rail. Every fifth is hung double size, and only while a whole block of five follows, so the wall tiles without holes. Nothing is reflowed, so the order on screen is exactly the order set in the admin panel. |
 | Night | Duel | showdown | The reaction game stays. The arena is the mesa at night; the flash is lantern light. |
 | Night | Tallies | tallies | Stats become wanted posters with pixel-torn edges and two nails: three for the top three, a ledger below. Heads are fetched at four times their drawn size so the 8 by 8 face stays sharp. Values in pixel type because they come from the game. |
 | Night | The general store | provisions | Installed packs are crates on wooden shelves under a hanging sign, each with its own 12 by 12 pixel glyph on a paper label and its version on a tag. |
@@ -120,7 +120,8 @@ Gestures that need physics (map drag and zoom, lightbox throw, phone drawer) kee
 | Ride in restored | The brief asks for join steps ending at the address, and the steps already existed in the repo. |
 | No rules section | No rules exist in the content and nothing may be invented. |
 | Lanterns as navigation | Section navigation doubles as the visible clock of the evening. |
-| One pixel glyph per pack | A drawn glyph tells a visitor what a pack does faster than its name, and keeps the store from reading as a table. |
+| One pixel glyph per pack | A drawn glyph tells a visitor what a pack does faster than its name, and keeps the store from reading as a table. Every category has its own drawing, so a pack the site has never seen still gets a real icon instead of a stand-in chest. |
+| No dense packing in the album | Dense grid packing moves tiles into earlier holes, so the wall stopped matching the order the admin set. Source order is now the only thing that decides where a picture hangs. |
 | Blocks everywhere | Square corners, one-pixel notches, bevelled solid buttons and a block-rasterised map keep every surface reading as Minecraft, not as a web template. |
 | Cursor light lifts paper texture | The one desktop-only effect rewards a fine pointer without hiding anything from touch. |
 | Fewer layers and particles on phones | Holds 60 fps on a mid-range phone where the effect would otherwise be the first thing to stutter. |

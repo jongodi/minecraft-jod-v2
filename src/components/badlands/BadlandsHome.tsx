@@ -34,7 +34,7 @@ export default function BadlandsHome() {
 
   /* The admin panel manages the gallery; fall back to the bundled list. */
   useEffect(() => {
-    fetch('/api/gallery')
+    fetch('/api/gallery', { cache: 'no-store' })
       .then(r => (r.ok ? r.json() : null))
       .then((photos: GalleryPhoto[] | null) => {
         if (!photos?.length) return;

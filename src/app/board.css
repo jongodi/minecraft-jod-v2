@@ -130,9 +130,9 @@
 .b-store__sign::after { right: var(--sp-3); }
 .b-store__signtext { display: block; font-family: var(--font-display); font-size: var(--fs-xl); line-height: 1.1; letter-spacing: 0.02em; text-transform: uppercase; }
 .b-store__signsub { display: block; margin-top: var(--sp-1); font-size: var(--fs-xs); color: var(--tc-white); letter-spacing: 0.1em; text-transform: uppercase; }
-.b-shelf { list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-@media (min-width: 560px) { .b-shelf { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-@media (min-width: 900px) { .b-shelf { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+.b-shelf { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr)); }
+@media (min-width: 560px) { .b-shelf { grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr)); } }
+@media (min-width: 900px) { .b-shelf { grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); } }
 .b-crate {
   position: relative;
   display: grid;
@@ -140,7 +140,7 @@
   align-content: end;
   gap: var(--sp-1);
   min-width: 0;
-  padding: var(--sp-6) var(--sp-3) var(--sp-4);
+  padding: var(--sp-5) var(--sp-2) var(--sp-3);
   text-align: center;
   /* the shelf: a plank across the whole row, drawn by every crate on it */
   border-bottom: calc(var(--px) * 5) solid var(--wood);
@@ -150,8 +150,8 @@
   position: relative;
   display: grid;
   place-items: center;
-  width: 5rem;
-  height: 5rem;
+  width: 3.5rem;
+  height: 3.5rem;
   background: var(--wood-light);
   box-shadow: inset 0 0 0 calc(var(--px) * 2) var(--wood), inset 0 0 0 calc(var(--px) * 3) var(--wood-light), var(--bevel);
   transition: transform var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out);
@@ -159,14 +159,14 @@
 .b-crate__box::before, .b-crate__box::after { content: ''; position: absolute; left: 50%; top: 50%; width: 120%; height: calc(var(--px) * 2); margin: calc(var(--px) * -1) 0 0 -60%; background: var(--wood); opacity: 0.55; }
 .b-crate__box::before { transform: rotate(45deg); }
 .b-crate__box::after { transform: rotate(-45deg); }
-.b-crate__label { position: relative; z-index: 1; display: grid; place-items: center; width: 3rem; height: 3rem; padding: var(--px); background: var(--paper); clip-path: var(--notch); }
+.b-crate__label { position: relative; z-index: 1; display: grid; place-items: center; width: 2.25rem; height: 2.25rem; padding: var(--px); background: var(--paper); clip-path: var(--notch); }
 .b-crate__label svg { width: 100%; height: 100%; display: block; }
 .b-crate:hover .b-crate__box, .b-crate:focus-within .b-crate__box { transform: translateY(calc(var(--px) * -1)); box-shadow: inset 0 0 0 calc(var(--px) * 2) var(--wood), inset 0 0 0 calc(var(--px) * 3) var(--wood-light), var(--bevel), 0 0 0 var(--px) var(--lantern); }
-.b-crate__tag { position: absolute; top: var(--sp-2); right: var(--sp-2); padding: var(--px) var(--sp-2); background: var(--paper); color: var(--ink); font-size: var(--fs-xs); font-variant-numeric: tabular-nums; clip-path: var(--notch); }
+.b-crate__tag { position: absolute; top: var(--sp-1); right: var(--sp-1); max-width: calc(100% - var(--sp-4)); padding: 0 var(--sp-1); background: var(--paper); color: var(--ink); font-size: 0.6rem; line-height: 1.6; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; clip-path: var(--notch); }
 .b-crate__tag::before { content: ''; position: absolute; left: 50%; top: 100%; width: var(--px); height: var(--sp-2); background: var(--tc-white); opacity: 0.6; }
-.b-crate__name { width: 100%; margin-top: var(--sp-2); font-weight: 600; font-size: var(--fs-sm); line-height: 1.25; color: var(--paper); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.b-crate__desc { min-height: 2.8em; font-size: var(--fs-xs); line-height: 1.4; color: var(--text-soft); max-width: 18ch; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.b-crate__cat { font-family: var(--font-data); font-size: 0.6rem; letter-spacing: 0.04em; color: var(--text-faint); text-transform: uppercase; }
+.b-crate__name { width: 100%; margin-top: var(--sp-2); font-weight: 600; font-size: var(--fs-xs); line-height: 1.3; color: var(--paper); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.b-crate__desc { min-height: 2.6em; font-size: 0.68rem; line-height: 1.3; color: var(--text-soft); max-width: 20ch; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.b-crate__cat { font-family: var(--font-data); font-size: 0.55rem; letter-spacing: 0.02em; color: var(--text-faint); text-transform: uppercase; }
 
 /* ─── ride in: the trail to the address ───────────────────────── */
 .b-trail-sec { max-width: 40rem; }
