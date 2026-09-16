@@ -21,7 +21,7 @@ const CATEGORY: Record<string, string> = {
 export default function Provisions() {
   const [packs, setPacks] = useState<PublicPack[]>(SEED);
   useEffect(() => {
-    fetch('/api/datapacks')
+    fetch('/api/datapacks', { cache: 'no-store' })
       .then(r => (r.ok ? r.json() : null))
       .then((list: PublicPack[] | null) => { if (Array.isArray(list)) setPacks(list); })
       .catch(() => {});
@@ -51,8 +51,8 @@ export default function Provisions() {
                   <span className="b-crate__label"><PixelGlyph rows={glyphFor(d)} /></span>
                 </span>
                 {d.currentVersion && <span className="b-crate__tag">útg. {d.currentVersion}</span>}
-                <span className="b-crate__name">{d.name}</span>
-                <span className="b-crate__desc">{d.description}</span>
+                <span className="b-crate__name" title={d.name}>{d.name}</span>
+                <span className="b-crate__desc" title={d.description}>{d.description}</span>
                 <span className="b-crate__cat">{CATEGORY[d.category] ?? d.category.toLowerCase()}</span>
               </li>
             ))}

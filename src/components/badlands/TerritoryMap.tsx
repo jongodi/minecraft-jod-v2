@@ -132,7 +132,7 @@ export default function TerritoryMap({ plates }: { plates: Plate[] }) {
   }, [reduce]);
 
   useEffect(() => {
-    fetch('/api/map')
+    fetch('/api/map', { cache: 'no-store' })
       .then(r => (r.ok ? r.json() : null))
       .then((cfg: { locations?: MapLocation[]; zones?: MapZone[]; paths?: MapPath[] } | null) => {
         if (cfg?.locations?.length) setLocations(cfg.locations);
@@ -160,11 +160,11 @@ export default function TerritoryMap({ plates }: { plates: Plate[] }) {
         <div className="b-head">
           <div>
             <h2 id="territory-title" className="b-title">Landakort</h2>
-            <p className="b-lede">Allir staðirnir í heiminum okkar. Dragðu kortið til, smelltu á pinna eða nafn til að sjá mynd.</p>
+            <p className="b-lede">Allir staðirnir í heiminum okkar. Dragðu kortið til, veldu fána eða nafn til að sjá myndina.</p>
           </div>
         </div>
       </div>
-      <div className="b-wrap b-map">
+      <div className="b-wrap">
         <div className="b-map__wrap">
           <div ref={sheet} className={`b-map__sheet${surveyed ? ' is-surveyed' : ''}`}
             onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}
@@ -198,8 +198,8 @@ export default function TerritoryMap({ plates }: { plates: Plate[] }) {
             <motion.figure
               key={selected.id}
               className="b-print b-map__print"
-              initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.6, x: -120, y: -80, rotate: -6 }}
-              animate={reduce ? { opacity: 1 } : { opacity: 1, scale: 1, x: 0, y: 0, rotate: 0 }}
+              initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.7, y: 20 }}
+              animate={reduce ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
               transition={reduce ? { duration: 0.2 } : SPRING}
               aria-live="polite"
             >
@@ -216,20 +216,32 @@ export default function TerritoryMap({ plates }: { plates: Plate[] }) {
           )}
         </div>
 
-        <aside aria-label="Staðir á kortinu">
+        <div className="b-index__head">
+          <h3 className="b-index__title">Staðirnir</h3>
           <p className="b-note">{locations.length} staðir. Veldu einn og kortið flýgur þangað.</p>
-          <ol className="b-index">
-            {locations.map(loc => (
+        </div>
+        <ol className="b-index" aria-label="Staðir á kortinu">
+          {locations.map(loc => {
+            const thumb = loc.photoId ? plates.find(p => p.id === loc.photoId) ?? null : null;
+            return (
               <li key={loc.id}>
-                <button className={loc.id === selected?.id ? 'is-active' : ''} onClick={() => flyTo(loc)}>
-                  <span className="b-index__no">{loc.id}.</span>
-                  <span className="b-index__label">{titleCase(loc.label)}</span>
-                  <span className="b-index__type">{TYPE[loc.type]}</span>
+                <button type="button" className={loc.id === selected?.id ? 'is-active' : ''} onClick={() => flyTo(loc)}>
+                  <span className="b-index__thumb">
+                    {thumb
+                      // eslint-disable-next-line @next/next/no-img-element
+                      ? <img src={thumb.src} alt="" loading="lazy" />
+                      : <span className="b-index__thumb--empty" aria-hidden="true" />}
+                    <span className="b-index__no">{loc.id}</span>
+                  </span>
+                  <span className="b-index__text">
+                    <span className="b-index__label">{titleCase(loc.label)}</span>
+                    <span className="b-index__type">{TYPE[loc.type]}</span>
+                  </span>
                 </button>
               </li>
-            ))}
-          </ol>
-        </aside>
+            );
+          })}
+        </ol>
       </div>
     </section>
   );

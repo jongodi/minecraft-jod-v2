@@ -6,24 +6,22 @@ import Lightbox from './Lightbox';
 import { Strata } from './Bits';
 import type { Plate } from './data';
 
-const COLS = 4;
+const BLOCK = 5;
 
-/* Some frames span two columns. How many is decided by the count, so the
-   last row of the wall is always full; they are spread evenly, first one first. */
-function wideIndices(n: number): Set<number> {
-  const k = (COLS - (n % COLS)) % COLS;
-  return new Set(Array.from({ length: k }, (_, i) => Math.floor((i * n) / k)));
-}
+/* Every fifth picture is hung double size, but only while a whole block of five
+   follows it, so the last row never ends on a hole. The wall is laid out in
+   source order with no reflow, so it always matches the order set in the admin
+   panel. */
+const isHero = (i: number, n: number) => i % BLOCK === 0 && i + BLOCK <= n;
 
-/** Twilight: the pictures hang in item frames on a plank wall. A frame
-    lights when pointed at; the nail and the tag are part of the frame. */
+/** Twilight: the pictures hang in item frames on a plank wall, butted up
+    against each other, each with its title on a plate in the bottom rail. */
 export default function Postcards({ plates }: { plates: Plate[] }) {
   const [open, setOpen] = useState<number | null>(null);
   const [origin, setOrigin] = useState<DOMRect | null>(null);
   const prev  = useCallback(() => setOpen(i => (i === null ? null : (i - 1 + plates.length) % plates.length)), [plates.length]);
   const next  = useCallback(() => setOpen(i => (i === null ? null : (i + 1) % plates.length)), [plates.length]);
   const close = useCallback(() => setOpen(null), []);
-  const wide  = wideIndices(plates.length);
 
   return (
     <section id="postcards" className="b-sec b-sec--wall" aria-labelledby="postcards-title">
@@ -42,16 +40,13 @@ export default function Postcards({ plates }: { plates: Plate[] }) {
             <button
               key={p.id}
               type="button"
-              className={`b-frame${wide.has(i) ? ' b-frame--wide' : ''}`}
+              className={`b-frame${isHero(i, plates.length) ? ' b-frame--hero' : ''}`}
               onClick={e => { setOrigin(e.currentTarget.getBoundingClientRect()); setOpen(i); }}
               aria-label={`Opna mynd: ${p.title}`}
             >
-              <span className="b-frame__nail" aria-hidden="true" />
-              <span className="b-frame__wood">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={p.src} alt={p.title} loading="lazy" decoding="async" width={wide.has(i) ? 640 : 480} height={480} />
-              </span>
-              <span className="b-frame__tag">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={p.src} alt={p.title} loading={i < 5 ? 'eager' : 'lazy'} decoding="async" width={480} height={480} />
+              <span className="b-frame__plate">
                 <span className="b-frame__no">{String(i + 1).padStart(2, '0')}</span>
                 <span className="b-frame__cap"><b>{p.title}</b>{p.sub && <>, {p.sub}</>}</span>
               </span>

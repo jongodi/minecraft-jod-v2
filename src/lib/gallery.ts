@@ -43,20 +43,17 @@ async function readFromDisk(): Promise<GalleryPhoto[]> {
 }
 
 async function readStoredGallery(): Promise<GalleryPhoto[]> {
-  if (hasKV()) {
-    try {
-      const { rGet, rSet } = await import('./redis');
-      const data = await rGet<GalleryPhoto[]>(KV_KEY);
-      if (data) return data;
-      // First run: seed Redis from the committed gallery.json
-      const seed = await readFromDisk();
-      if (seed.length > 0) await rSet(KV_KEY, seed);
-      return seed;
-    } catch {
-      return readFromDisk();
-    }
-  }
-  return readFromDisk();
+  if (!hasKV()) return readFromDisk();
+  /* With Redis configured it is the only source of truth. Falling back to the
+     bundled gallery.json on a read error would quietly serve the original
+     order and hide the failure, so a failed read is raised instead. */
+  const { rGet, rSet } = await import('./redis');
+  const data = await rGet<GalleryPhoto[]>(KV_KEY);
+  if (data) return data;
+  // Genuinely empty: seed from the committed gallery.json, once.
+  const seed = await readFromDisk();
+  if (seed.length > 0) await rSet(KV_KEY, seed);
+  return seed;
 }
 
 export async function writeGallery(photos: GalleryPhoto[]): Promise<void> {
