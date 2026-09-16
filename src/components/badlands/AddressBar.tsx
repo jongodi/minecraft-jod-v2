@@ -70,6 +70,15 @@ export default function AddressBar({ links, activeId, always = false }: Props) {
             <span /><span /><span />
           </button>
         </div>
+        {!always && (
+          <nav className="b-strip" aria-label="Hlutar síðunnar">
+            {links.filter(l => l.id).map((l, i) => (
+              <Link key={l.href} href={l.href} className={`b-strip__item${l.id === activeId ? ' is-here' : ''}`} aria-label={l.label} aria-current={l.id === activeId ? 'location' : undefined}>
+                <Lantern lit={reachedIndex >= 0 && i <= reachedIndex} />
+              </Link>
+            ))}
+          </nav>
+        )}
       </header>
 
       <AnimatePresence>

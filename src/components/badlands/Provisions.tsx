@@ -1,5 +1,7 @@
 import { DATAPACKS } from '@/data/datapacks';
 import { Strata } from './Bits';
+import PixelGlyph from './PixelGlyph';
+import { PACK_GLYPHS } from './packGlyphs';
 import { SERVER_IP } from './data';
 
 const CATEGORY: Record<string, string> = {
@@ -31,6 +33,7 @@ export default function Provisions() {
             {DATAPACKS.map((d, i) => (
               <li key={d.id} className="b-notice__row">
                 <span className="b-notice__no">{String(i + 1).padStart(2, '0')}</span>
+                <span className="b-notice__glyph">{PACK_GLYPHS[d.name] && <PixelGlyph rows={PACK_GLYPHS[d.name]} />}</span>
                 <span className="b-notice__name">{d.name}</span>
                 <span className="b-notice__ver">{d.currentVersion ? `útgáfa ${d.currentVersion}` : ''}</span>
                 <span className="b-notice__desc">{d.description} <small>({CATEGORY[d.category] ?? d.category.toLowerCase()})</small></span>

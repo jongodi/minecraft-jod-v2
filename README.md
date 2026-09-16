@@ -20,7 +20,7 @@ Letur: Alfa Slab One fyrir fyrirsagnir, Literata fyrir meginmál og Silkscreen f
 | Myndaalbúm | Myndir úr leiknum. Smelltu til að stækka. Myndunum er stjórnað í stjórnborðinu. |
 | Einvígi | Viðbragðsleikur með þremur umferðum í náttmyrkri. Besti tíminn vistast í vafranum. |
 | Eftirlýst | Tölfræði leikmanna á tilkynningum á pappír. Þrjú efstu fá spjald, hin eru í bókinni fyrir neðan. |
-| Uppsett | Uppsettir gagnapakkar sem ein löng tilkynning. |
+| Uppsett | Uppsettir gagnapakkar sem ein löng tilkynning, hver með sinni pixlamynd. |
 | Komdu inn | Leiðin inn í þremur skrefum, og vistfangið aftur. |
 
 Áhrif (himinn, mesa-lög með dýpt, ryk og glæður, luktarljós sem fylgir bendlinum, vindur og eldur úr Web Audio) eru hvert um sig sjálfstæð eining í `src/effects/` og slökkva á sér undir `prefers-reduced-motion`.

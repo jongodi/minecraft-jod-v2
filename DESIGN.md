@@ -45,7 +45,7 @@ The existing order is kept. Each section gets an hour.
 | Twilight | Pictures | postcards | The album stays. Prints sit on the night surface with paper borders; layout rhythm comes from the existing wide-print logic, not a uniform grid. |
 | Night | Duel | showdown | The reaction game stays. The arena is the mesa at night; the flash is lantern light. |
 | Night | Tallies | tallies | Stats become letterpress notices on the board: three posted sheets for the top three, a ledger below. Values in pixel type because they come from the game. |
-| Night | Posted: what is installed | provisions | The datapack list becomes one long notice on the board. |
+| Night | Posted: what is installed | provisions | The datapack list becomes one long notice on the board, each pack with its own 12 by 12 pixel glyph in ink and one terracotta accent. |
 | Deep night | Ride in | ride | Restored from #45 with its original three steps as trail markers, ending at the address. |
 | Campfire | Footer | footer | Links and the Mojang note, small, beside a pixel campfire with a few embers. |
 
@@ -97,7 +97,7 @@ One scroll value drives the evening. Effects are separate modules, each switchab
 - Sky: CSS scroll-driven animation on the hero (`animation-timeline: scroll()`), with an IntersectionObserver plus requestAnimationFrame fallback that sets the same custom property.
 - Parallax: four mesa layers on desktop, two on phones, SVG with `shape-rendering: crispEdges`, moved in whole pixels.
 - Particles: one canvas, dust at sunset that becomes embers at the campfire, paused off-screen and when the tab is hidden, DPR capped at 2, fewer on phones.
-- Lantern navigation: a column of lanterns, one per section, in a side rail on desktop and a compact row on phones. Each lights when its section arrives. They are links, so amber is correct.
+- Lantern navigation: a column of lanterns, one per section, in a side rail on desktop and a compact strip under the address bar on phones and tablets. Each lights when its section arrives. They are links, so amber is correct.
 - Cursor light: fine pointers only. A warm radial light follows the pointer and lifts the paper texture under it. Off on touch.
 - Copy address: a telegraph ticker types the confirmation, the button takes a stamp; Clipboard API with a textarea fallback; announced via `aria-live`.
 - Ambient sound: wind and a distant fire from Web Audio noise and filters, off by default, toggle in the lantern rail, remembered in localStorage.
@@ -120,6 +120,7 @@ Gestures that need physics (map drag and zoom, lightbox throw, phone drawer) kee
 | Ride in restored | The brief asks for join steps ending at the address, and the steps already existed in the repo. |
 | No rules section | No rules exist in the content and nothing may be invented. |
 | Lanterns as navigation | Section navigation doubles as the visible clock of the evening. |
+| One pixel glyph per pack | A drawn glyph tells a visitor what a pack does faster than its name, and keeps the notice from reading as a table. |
 | Cursor light lifts paper texture | The one desktop-only effect rewards a fine pointer without hiding anything from touch. |
 | Fewer layers and particles on phones | Holds 60 fps on a mid-range phone where the effect would otherwise be the first thing to stutter. |
 | Sticky address bar after the hero | The address is the site's single purpose, so it stays reachable once the hero scrolls away. |

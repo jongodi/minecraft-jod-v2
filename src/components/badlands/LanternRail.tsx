@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Lantern, Mark } from './Bits';
+import { Lantern } from './Bits';
 import { SECTIONS } from './data';
 import AmbienceToggle from '@/effects/AmbienceToggle';
 
@@ -11,7 +11,6 @@ export default function LanternRail({ activeId }: { activeId: string | null }) {
   const reached = Math.max(0, SECTIONS.findIndex(s => s.id === activeId));
   return (
     <nav className="b-rail" aria-label="Efnisyfirlit">
-      <Link href="#top" className="b-rail__mark" aria-label="JOÐ, efst á síðuna"><Mark /></Link>
       <span className="b-rail__post" aria-hidden="true" />
       {SECTIONS.map((s, i) => (
         <Link key={s.id} href={s.href} className={`b-rail__item${i === reached ? ' is-here' : ''}`} aria-current={i === reached ? 'location' : undefined}>
