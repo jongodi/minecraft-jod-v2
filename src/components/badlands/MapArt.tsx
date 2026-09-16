@@ -1,37 +1,20 @@
 import type { SVGProps } from 'react';
 import type { MapLocation, MapPath, MapZone } from '@/lib/map-types';
 import { handCase } from './data';
-import { MAP_CELL, MAP_GRID } from './mapGrid';
+import { DEFAULT_TERRAIN, normalizeTerrain, terrainPaths, withBeaches } from '@/lib/terrain';
 
-/* The map as blocks. Drawn once here so the public map and the admin
-   editor show the same picture; the editor adds its handles on top. */
+/* The map as blocks. Drawn once here so the public map and the admin editor
+   show the same world; the editor adds its tools on top. */
 
 export const MAP_W = 1000;
 export const MAP_H = 650;
 
 const INK     = 'var(--map-ink)';
-const LAND    = 'var(--map-land)';
-const LAND_2  = 'var(--map-land-2)';
-const SHORE   = 'var(--map-shore)';
-const GRASS   = 'var(--map-grass)';
-const WATER   = 'var(--map-water)';
-const WATER_2 = 'var(--map-water-2)';
 const BRASS   = 'var(--map-pin)';
 const WAX     = 'var(--map-wax)';
 
-/* One path per terrain kind: every matching block becomes a closed square. */
-function blocks(kind: string): string {
-  let d = '';
-  MAP_GRID.forEach((row, r) => {
-    for (let c = 0; c < row.length; c++) if (row[c] === kind) d += `M${c * MAP_CELL} ${r * MAP_CELL}h${MAP_CELL}v${MAP_CELL}h-${MAP_CELL}z`;
-  });
-  return d;
-}
-const LAND_D  = blocks('L');
-const SHORE_D = blocks('S');
-
 /* Rivers and roads walk the grid: each leg goes across, then down. */
-const STEP = MAP_CELL / 2;
+const STEP = 10;
 export function stepped(points: [number, number][]): string {
   const snap = (v: number) => Math.round(v / STEP) * STEP;
   let d = '';
@@ -52,9 +35,10 @@ export interface MapArtProps {
   locations: MapLocation[];
   zones: MapZone[];
   paths: MapPath[];
+  /** The painted world. Falls back to the world the site shipped with. */
+  terrain?: readonly string[];
   /** The place drawn with the red banner. */
   selectedId?: number | null;
-  /** Extra props for each pin group, zone group and path group: handlers, cursors, aria. */
   pinProps?: (loc: MapLocation) => G;
   zoneProps?: (zone: MapZone) => G;
   pathProps?: (path: MapPath) => G;
@@ -62,26 +46,62 @@ export interface MapArtProps {
   title?: boolean;
 }
 
-/** Shared <defs>: the water and land patterns. Render once per <svg>. */
+/** Shared <defs>: one pattern per ground material, all aligned to the block grid. */
 export function MapDefs() {
   return (
     <defs>
       <pattern id="jWater" width="40" height="40" patternUnits="userSpaceOnUse">
-        <rect width="40" height="40" fill={WATER} />
-        <rect x="0" y="0" width="20" height="20" fill={WATER_2} />
-        <rect x="20" y="20" width="20" height="20" fill={WATER_2} />
+        <rect width="40" height="40" fill="var(--map-water)" />
+        <rect x="0" y="0" width="20" height="20" fill="var(--map-water-2)" />
+        <rect x="20" y="20" width="20" height="20" fill="var(--map-water-2)" />
       </pattern>
       <pattern id="jLandTex" width="60" height="60" patternUnits="userSpaceOnUse">
-        <rect x="20" y="0" width="20" height="20" fill={LAND_2} />
-        <rect x="0" y="40" width="20" height="20" fill={LAND_2} />
+        <rect x="20" y="0" width="20" height="20" fill="var(--map-land-2)" />
+        <rect x="0" y="40" width="20" height="20" fill="var(--map-land-2)" />
       </pattern>
-      <pattern id="jGrass" width="140" height="100" patternUnits="userSpaceOnUse">
-        <rect x="40" y="20" width="20" height="20" fill={GRASS} />
-        <rect x="60" y="20" width="20" height="20" fill={GRASS} />
-        <rect x="100" y="60" width="20" height="20" fill={GRASS} />
-        <rect x="0" y="80" width="20" height="20" fill={GRASS} />
+      <pattern id="jGrassTex" width="20" height="20" patternUnits="userSpaceOnUse">
+        <rect x="4" y="6" width="4" height="4" fill="var(--map-grass-2)" />
+        <rect x="12" y="13" width="4" height="4" fill="var(--map-grass-2)" />
+      </pattern>
+      <pattern id="jRockTex" width="20" height="20" patternUnits="userSpaceOnUse">
+        <rect x="0" y="3" width="20" height="3" fill="var(--map-rock-2)" />
+        <rect x="0" y="11" width="20" height="2" fill="var(--map-rock-2)" />
+        <rect x="0" y="16" width="20" height="3" fill="var(--tc-yellow)" fillOpacity="0.35" />
+      </pattern>
+      <pattern id="jForestTex" width="20" height="20" patternUnits="userSpaceOnUse">
+        <rect x="8" y="4" width="4" height="4" fill="var(--map-forest-2)" />
+        <rect x="6" y="8" width="8" height="4" fill="var(--map-forest-2)" />
+        <rect x="9" y="12" width="2" height="4" fill="var(--map-ink)" fillOpacity="0.5" />
+      </pattern>
+      <pattern id="jSandTex" width="20" height="20" patternUnits="userSpaceOnUse">
+        <rect x="6" y="9" width="6" height="2" fill="var(--map-land-2)" fillOpacity="0.5" />
       </pattern>
     </defs>
+  );
+}
+
+const GROUND: Array<{ code: string; fill: string; tex?: string }> = [
+  { code: 's', fill: 'var(--map-sand)',   tex: 'jSandTex' },
+  { code: 'l', fill: 'var(--map-land)',   tex: 'jLandTex' },
+  { code: 'g', fill: 'var(--map-grass)',  tex: 'jGrassTex' },
+  { code: 'r', fill: 'var(--map-rock)',   tex: 'jRockTex' },
+  { code: 'f', fill: 'var(--map-forest)', tex: 'jForestTex' },
+];
+
+/** The ground on its own, so the editor can draw its tools over it. */
+export function Terrain({ terrain }: { terrain?: readonly string[] }) {
+  const grid = withBeaches(normalizeTerrain(terrain ?? DEFAULT_TERRAIN));
+  const d = terrainPaths(grid);
+  return (
+    <g shapeRendering="crispEdges">
+      <rect width={MAP_W} height={MAP_H} fill="url(#jWater)" />
+      {GROUND.map(({ code, fill, tex }) => d[code] ? (
+        <g key={code}>
+          <path d={d[code]} fill={fill} />
+          {tex && <path d={d[code]} fill={`url(#${tex})`} />}
+        </g>
+      ) : null)}
+    </g>
   );
 }
 
@@ -101,27 +121,23 @@ export function MapPin({ loc, active }: { loc: MapLocation; active: boolean }) {
   );
 }
 
-export default function MapArt({ locations, zones, paths, selectedId = null, pinProps, zoneProps, pathProps, title = true }: MapArtProps) {
-  const label = (z: MapZone, y: number, fill = INK, opacity = 0.75) =>
-    z.label ? <text x={z.cx} y={y} textAnchor="middle" fill={fill} fillOpacity={opacity} fontSize="14" fontFamily="var(--font-text)">{handCase(z.label)}</text> : null;
+/** Everything that sits on the ground: areas, lines and places. */
+export function MapMarks({ locations, zones, paths, selectedId = null, pinProps, zoneProps, pathProps, title = true }: Omit<MapArtProps, 'terrain'>) {
+  const label = (z: MapZone, y: number) =>
+    z.label ? <text x={z.cx} y={y} textAnchor="middle" fill={INK} fillOpacity="0.75" fontSize="14" fontFamily="var(--font-text)">{handCase(z.label)}</text> : null;
 
   return (
     <g shapeRendering="crispEdges">
-      <rect width={MAP_W} height={MAP_H} fill="url(#jWater)" />
-      <path d={SHORE_D} fill={SHORE} />
-      <path d={LAND_D} fill={LAND} />
-      <path d={LAND_D} fill="url(#jLandTex)" />
-      <path d={LAND_D} fill="url(#jGrass)" />
-
-      {zones.filter(z => z.kind === 'land').map(z => (
-        <g key={z.id} {...zoneProps?.(z)}>
-          <rect x={z.cx - z.rx} y={z.cy - z.ry} width={z.rx * 2} height={z.ry * 2} fill={LAND} />
-          {label(z, z.cy + z.ry + 16)}
-        </g>
-      ))}
       {zones.filter(z => z.kind === 'lake').map(z => (
         <g key={z.id} {...zoneProps?.(z)}>
           <rect x={z.cx - z.rx} y={z.cy - z.ry} width={z.rx * 2} height={z.ry * 2} fill="url(#jWater)" />
+          {label(z, z.cy + z.ry + 16)}
+        </g>
+      ))}
+      {zones.filter(z => z.kind === 'land').map(z => (
+        <g key={z.id} {...zoneProps?.(z)}>
+          <rect x={z.cx - z.rx} y={z.cy - z.ry} width={z.rx * 2} height={z.ry * 2} fill="var(--map-land)" />
+          <rect x={z.cx - z.rx} y={z.cy - z.ry} width={z.rx * 2} height={z.ry * 2} fill="url(#jLandTex)" />
           {label(z, z.cy + z.ry + 16)}
         </g>
       ))}
@@ -144,8 +160,8 @@ export default function MapArt({ locations, zones, paths, selectedId = null, pin
         const d = stepped(p.points);
         return (
           <g key={p.id} fill="none" strokeLinecap="butt" strokeLinejoin="miter" {...pathProps?.(p)}>
-            {river && <path className="b-trail" d={d} stroke={WATER_2} strokeWidth="14" />}
-            <path className="b-trail" d={d} stroke={river ? WATER : INK} strokeWidth={river ? 8 : 4} strokeDasharray={river ? undefined : '8 8'} />
+            {river && <path className="b-trail" d={d} stroke="var(--map-water-2)" strokeWidth="14" />}
+            <path className="b-trail" d={d} stroke={river ? 'var(--map-water)' : INK} strokeWidth={river ? 8 : 4} strokeDasharray={river ? undefined : '8 8'} />
           </g>
         );
       })}
@@ -171,5 +187,14 @@ export default function MapArt({ locations, zones, paths, selectedId = null, pin
         </>
       )}
     </g>
+  );
+}
+
+export default function MapArt({ terrain, ...marks }: MapArtProps) {
+  return (
+    <>
+      <Terrain terrain={terrain} />
+      <MapMarks {...marks} />
+    </>
   );
 }

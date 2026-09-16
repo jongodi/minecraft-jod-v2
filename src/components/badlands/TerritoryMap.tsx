@@ -26,6 +26,7 @@ export default function TerritoryMap({ plates }: { plates: Plate[] }) {
   const [locations, setLocations] = useState<MapLocation[]>(DEFAULT_LOCATIONS);
   const [zones,     setZones]     = useState<MapZone[]>(DEFAULT_ZONES);
   const [paths,     setPaths]     = useState<MapPath[]>(DEFAULT_PATHS);
+  const [terrain,   setTerrain]   = useState<string[] | undefined>(undefined);
   const [selectedId, setSelected] = useState<number>(DEFAULT_LOCATIONS[0]?.id ?? 0);
   const [surveyed, setSurveyed]   = useState(false);
   const sheet = useRef<HTMLDivElement>(null);
@@ -134,10 +135,11 @@ export default function TerritoryMap({ plates }: { plates: Plate[] }) {
   useEffect(() => {
     fetch('/api/map', { cache: 'no-store' })
       .then(r => (r.ok ? r.json() : null))
-      .then((cfg: { locations?: MapLocation[]; zones?: MapZone[]; paths?: MapPath[] } | null) => {
+      .then((cfg: { locations?: MapLocation[]; zones?: MapZone[]; paths?: MapPath[]; terrain?: string[] } | null) => {
         if (cfg?.locations?.length) setLocations(cfg.locations);
         if (cfg?.zones?.length)     setZones(cfg.zones);
         if (cfg?.paths)             setPaths(cfg.paths);
+        if (cfg?.terrain?.length)   setTerrain(cfg.terrain);
       })
       .catch(() => {});
   }, []);
@@ -176,6 +178,7 @@ export default function TerritoryMap({ plates }: { plates: Plate[] }) {
                 locations={locations}
                 zones={zones}
                 paths={paths}
+                terrain={terrain}
                 selectedId={selected?.id ?? null}
                 pinProps={loc => ({
                   role: 'button',

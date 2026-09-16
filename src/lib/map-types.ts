@@ -36,6 +36,8 @@ export interface MapConfig {
   locations: MapLocation[];
   zones:     MapZone[];
   paths?:    MapPath[];
+  /** The painted world: one character per block, one string per row. See lib/terrain. */
+  terrain?:  string[];
 }
 
 export const DEFAULT_LOCATIONS: MapLocation[] = [

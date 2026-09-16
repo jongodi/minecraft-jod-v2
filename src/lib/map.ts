@@ -11,6 +11,7 @@ import {
   type MapZone,
   type MapPath,
 } from '@/lib/map-types';
+import { normalizeTerrain } from './terrain';
 
 export type { MapConfig, MapLocation, MapZone, MapPath };
 export { DEFAULT_LOCATIONS, DEFAULT_ZONES, DEFAULT_PATHS };
@@ -193,5 +194,7 @@ export function sanitizeMapConfig(body: unknown): { error: string } | { config: 
     });
   }
 
-  return { config: { locations, zones, paths } };
+  const terrain = Array.isArray(b.terrain) ? normalizeTerrain(b.terrain as string[]) : undefined;
+
+  return { config: { locations, zones, paths, ...(terrain ? { terrain } : {}) } };
 }

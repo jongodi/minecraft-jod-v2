@@ -3,17 +3,22 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { MapConfig, MapLocation, MapPath, MapZone } from '@/lib/map-types';
 import { mapLabel } from '@/lib/icelandic';
-import MapArt, { MapDefs, MAP_H, MAP_W } from '@/components/badlands/MapArt';
+import {
+  DEFAULT_TERRAIN, MATERIALS, TERRAIN_CELL, TERRAIN_COLS, TERRAIN_ROWS,
+  fill as floodFill, normalizeTerrain, paint as paintBrush, terrainCounts,
+  type Material,
+} from '@/lib/terrain';
+import { MapDefs, MapMarks, Terrain, MAP_H, MAP_W } from '@/components/badlands/MapArt';
 import type { AdminPhoto } from './GalleryPanel';
 import PhotoPicker from './PhotoPicker';
 import { Button, Field, Kbd, Notice, api, errText } from './ui';
 
 /* ─── model ─────────────────────────────────────────────────────────────────── */
 
-interface Doc { locations: MapLocation[]; zones: MapZone[]; paths: MapPath[] }
+interface Doc { locations: MapLocation[]; zones: MapZone[]; paths: MapPath[]; terrain: string[] }
 type Selection = { kind: 'pin'; id: number } | { kind: 'zone'; id: string } | { kind: 'path'; id: string } | null;
+type Tool = 'select' | 'brush' | 'fill';
 type Placing = 'pin' | 'zone' | 'land' | 'lake' | 'mountain' | null;
-type Drawing = MapPath['kind'] | null;
 type Drag =
   | { kind: 'pin'; id: number; ox: number; oy: number }
   | { kind: 'zone'; id: string; ox: number; oy: number }
@@ -23,7 +28,7 @@ type Drag =
 
 const GRID = 10;
 const HISTORY = 60;
-const NUDGE = { step: 1, big: 10 };
+const BRUSH_SIZES = [1, 2, 3, 5, 8];
 const ZONE_DEFAULTS: Record<Exclude<Placing, 'pin' | null>, { label: string; color: MapZone['colorKey']; rx: number; ry: number }> = {
   zone: { label: 'Nýtt svæði', color: 'purple', rx: 80, ry: 60 },
   land: { label: 'Ný landspilda', color: 'green', rx: 80, ry: 60 },
@@ -32,7 +37,7 @@ const ZONE_DEFAULTS: Record<Exclude<Placing, 'pin' | null>, { label: string; col
 };
 const PATH_LABEL: Record<MapPath['kind'], string> = { river: 'Á', road: 'Vegur', border: 'Mörk' };
 
-const serialize = (d: Doc) => JSON.stringify({ locations: d.locations, zones: d.zones, paths: d.paths });
+const serialize = (d: Doc) => JSON.stringify([d.locations, d.zones, d.paths, d.terrain]);
 const clampX = (v: number) => Math.max(0, Math.min(MAP_W, Math.round(v)));
 const clampY = (v: number) => Math.max(0, Math.min(MAP_H, Math.round(v)));
 
@@ -41,33 +46,46 @@ function useHistory(initial: Doc) {
   const [doc, setDoc] = useState<Doc>(initial);
   const past = useRef<Doc[]>([]);
   const future = useRef<Doc[]>([]);
+  const [depth, setDepth] = useState({ past: 0, future: 0 });
+  const sync = () => setDepth({ past: past.current.length, future: future.current.length });
+  const push = (d: Doc) => { past.current = [...past.current.slice(-HISTORY + 1), d]; future.current = []; };
   const commit = useCallback((next: Doc | ((d: Doc) => Doc)) => {
     setDoc(d => {
       const n = typeof next === 'function' ? next(d) : next;
       if (serialize(n) === serialize(d)) return d;
-      past.current = [...past.current.slice(-HISTORY + 1), d];
-      future.current = [];
+      push(d);
       return n;
     });
+    sync();
   }, []);
-  /* live updates during a drag do not create steps; the drag start does */
+  /* live updates during a drag or a brush stroke do not add steps; `mark` opens one */
   const replace = useCallback((next: (d: Doc) => Doc) => setDoc(next), []);
-  const mark = useCallback(() => setDoc(d => { past.current = [...past.current.slice(-HISTORY + 1), d]; future.current = []; return d; }), []);
-  const undo = useCallback(() => setDoc(d => { const p = past.current.pop(); if (!p) return d; future.current.push(d); return p; }), []);
-  const redo = useCallback(() => setDoc(d => { const f = future.current.pop(); if (!f) return d; past.current.push(d); return f; }), []);
-  const reset = useCallback((d: Doc) => { past.current = []; future.current = []; setDoc(d); }, []);
-  return { doc, commit, replace, mark, undo, redo, reset, canUndo: past.current.length > 0, canRedo: future.current.length > 0 };
+  const mark = useCallback(() => { setDoc(d => { push(d); return d; }); sync(); }, []);
+  const undo = useCallback(() => { setDoc(d => { const p = past.current.pop(); if (!p) return d; future.current.push(d); return p; }); sync(); }, []);
+  const redo = useCallback(() => { setDoc(d => { const f = future.current.pop(); if (!f) return d; past.current.push(d); return f; }); sync(); }, []);
+  const reset = useCallback((d: Doc) => { past.current = []; future.current = []; setDoc(d); sync(); }, []);
+  return { doc, commit, replace, mark, undo, redo, reset, canUndo: depth.past > 0, canRedo: depth.future > 0 };
 }
+
+const toDoc = (cfg: MapConfig): Doc => ({
+  locations: cfg.locations, zones: cfg.zones, paths: cfg.paths ?? [],
+  terrain: normalizeTerrain(cfg.terrain ?? DEFAULT_TERRAIN),
+});
 
 /* ─── the editor ────────────────────────────────────────────────────────────── */
 
 export default function MapEditor({ initialConfig }: { initialConfig: MapConfig }) {
-  const h = useHistory({ locations: initialConfig.locations, zones: initialConfig.zones, paths: initialConfig.paths ?? [] });
+  const h = useHistory(toDoc(initialConfig));
   const { doc, commit, replace, mark } = h;
   const [saved, setSaved] = useState(() => serialize(h.doc));
   const [selected, setSelected] = useState<Selection>(null);
+  const [tool, setTool] = useState<Tool>('select');
+  const [material, setMaterial] = useState<Material>('l');
+  const [brush, setBrush] = useState(3);
+  const [showGrid, setShowGrid] = useState(true);
+  const [hover, setHover] = useState<[number, number] | null>(null);
   const [placing, setPlacing] = useState<Placing>(null);
-  const [drawing, setDrawing] = useState<Drawing>(null);
+  const [drawing, setDrawing] = useState<MapPath['kind'] | null>(null);
   const [drawPoints, setDrawPoints] = useState<[number, number][]>([]);
   const [snap, setSnap] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -78,9 +96,12 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
   const [uploading, setUploading] = useState(false);
   const svgRef = useRef<SVGSVGElement>(null);
   const drag = useRef<Drag>(null);
+  const painting = useRef(false);
+  const strokeStart = useRef<[number, number] | null>(null);
   const moved = useRef(false);
 
   const dirty = serialize(doc) !== saved;
+  const painty = tool === 'brush' || tool === 'fill';
   const snapTo = useCallback((v: number) => (snap ? Math.round(v / GRID) * GRID : Math.round(v)), [snap]);
 
   const loadPhotos = useCallback(async () => {
@@ -103,6 +124,10 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
     const r = svg.getBoundingClientRect();
     return [(cx - r.left) * (MAP_W / r.width), (cy - r.top) * (MAP_H / r.height)];
   }, []);
+  const toCell = useCallback((cx: number, cy: number): [number, number] => {
+    const [x, y] = toSvg(cx, cy);
+    return [Math.floor(x / TERRAIN_CELL), Math.floor(y / TERRAIN_CELL)];
+  }, [toSvg]);
 
   /* ─── selection helpers ─── */
   const selPin  = selected?.kind === 'pin'  ? doc.locations.find(l => l.id === selected.id) ?? null : null;
@@ -110,6 +135,11 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
   const selPath = selected?.kind === 'path' ? doc.paths.find(p => p.id === selected.id) ?? null : null;
   const selPhoto = selPin?.photoId ? photos.find(p => p.id === selPin.photoId) ?? null : null;
   const photoById = useMemo(() => new Map(photos.map(p => [p.id, p])), [photos]);
+  const land = useMemo(() => {
+    const counts = terrainCounts(doc.terrain);
+    const total = TERRAIN_COLS * TERRAIN_ROWS;
+    return { counts, total, dry: total - (counts['~'] ?? 0) };
+  }, [doc.terrain]);
 
   const updatePin  = (id: number, patch: Partial<MapLocation>) => commit(d => ({ ...d, locations: d.locations.map(l => l.id === id ? { ...l, ...patch } : l) }));
   const updateZone = (id: string, patch: Partial<MapZone>)     => commit(d => ({ ...d, zones: d.zones.map(z => z.id === id ? { ...z, ...patch } : z) }));
@@ -134,9 +164,21 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
     return next;
   }
 
+  /* ─── painting the ground ─── */
+  const applyBrush = useCallback((cx: number, cy: number, straight = false) => {
+    let [c, r] = toCell(cx, cy);
+    /* Shift keeps a stroke on one axis, which is how a straight coast gets drawn. */
+    const start = strokeStart.current;
+    if (straight && start) {
+      if (Math.abs(c - start[0]) >= Math.abs(r - start[1])) r = start[1];
+      else c = start[0];
+    }
+    if (c < 0 || c >= TERRAIN_COLS || r < 0 || r >= TERRAIN_ROWS) return;
+    replace(d => ({ ...d, terrain: paintBrush(d.terrain, c, r, brush, material) }));
+  }, [toCell, replace, brush, material]);
+
   /* ─── pointer: drag, place, draw ─── */
   const startDrag = (e: React.PointerEvent, d: Exclude<Drag, null>) => {
-    if (placing || drawing) return;
     e.stopPropagation();
     (e.currentTarget as Element).setPointerCapture(e.pointerId);
     drag.current = d; moved.current = false;
@@ -162,7 +204,20 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
     setSelected({ kind: 'path', id: p.id });
   };
 
+  const onSvgDown = (e: React.PointerEvent<SVGSVGElement>) => {
+    if (tool !== 'brush' || placing || drawing) return;
+    e.preventDefault();
+    svgRef.current?.setPointerCapture(e.pointerId);
+    painting.current = true;
+    moved.current = true;
+    strokeStart.current = toCell(e.clientX, e.clientY);
+    mark();
+    applyBrush(e.clientX, e.clientY, e.shiftKey);
+  };
+
   const onMove = (e: React.PointerEvent<SVGSVGElement>) => {
+    if (painty) setHover(toCell(e.clientX, e.clientY));
+    if (painting.current) { applyBrush(e.clientX, e.clientY, e.shiftKey); return; }
     const d = drag.current;
     if (!d) return;
     moved.current = true;
@@ -174,9 +229,14 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
       replace(doc => ({ ...doc, zones: doc.zones.map(z => z.id === d.id ? { ...z, [d.axis]: Math.max(10, snapTo(d.start + delta)) } : z) }));
     } else if (d.kind === 'point') replace(doc => ({ ...doc, paths: doc.paths.map(p => p.id === d.id ? { ...p, points: p.points.map((pt, i) => i === d.idx ? [clampX(snapTo(mx - d.ox)), clampY(snapTo(my - d.oy))] as [number, number] : pt) } : p) }));
   };
-  const onUp = () => { drag.current = null; };
+  const onUp = () => { drag.current = null; painting.current = false; strokeStart.current = null; };
 
   const onClick = (e: React.MouseEvent<SVGSVGElement>) => {
+    if (tool === 'fill' && !placing && !drawing) {
+      const [c, r] = toCell(e.clientX, e.clientY);
+      if (c >= 0 && c < TERRAIN_COLS && r >= 0 && r < TERRAIN_ROWS) commit(d => ({ ...d, terrain: floodFill(d.terrain, c, r, material) }));
+      return;
+    }
     if (moved.current) { moved.current = false; return; }
     const [rx, ry] = toSvg(e.clientX, e.clientY);
     const mx = clampX(snapTo(rx)), my = clampY(snapTo(ry));
@@ -218,12 +278,22 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
       if (mod && e.key.toLowerCase() === 'z') { e.preventDefault(); if (e.shiftKey) h.redo(); else h.undo(); return; }
       if (mod && e.key.toLowerCase() === 'y') { e.preventDefault(); h.redo(); return; }
       if (mod && e.key.toLowerCase() === 's') { e.preventDefault(); save(); return; }
+      if (mod) return;
+      const key = e.key.toLowerCase();
+      if (key === 'v') { setTool('select'); return; }
+      if (key === 'b') { setTool('brush'); setPlacing(null); setDrawing(null); return; }
+      if (key === 'f') { setTool('fill'); setPlacing(null); setDrawing(null); return; }
+      if (key === 'g') { setShowGrid(s => !s); return; }
+      if (key === '[') { setBrush(b => BRUSH_SIZES[Math.max(0, BRUSH_SIZES.indexOf(b) - 1)]); return; }
+      if (key === ']') { setBrush(b => BRUSH_SIZES[Math.min(BRUSH_SIZES.length - 1, BRUSH_SIZES.indexOf(b) + 1)]); return; }
+      const slot = Number(e.key);
+      if (slot >= 1 && slot <= MATERIALS.length) { setMaterial(MATERIALS[slot - 1].code); if (tool === 'select') setTool('brush'); return; }
       if ((e.key === 'Delete' || e.key === 'Backspace') && selected) { e.preventDefault(); deleteSelected(); return; }
       if (e.key === 'Enter' && drawing) { e.preventDefault(); finishDrawing(); return; }
       const arrow = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
       if (arrow && selected && selected.kind !== 'path') {
         e.preventDefault();
-        const step = (e.shiftKey ? NUDGE.big : NUDGE.step);
+        const step = e.shiftKey ? 10 : 1;
         const dx = arrow[0] * step, dy = arrow[1] * step;
         if (selected.kind === 'pin') commit(d => ({ ...d, locations: d.locations.map(l => l.id === selected.id ? { ...l, x: clampX(l.x + dx), y: clampY(l.y + dy) } : l) }));
         else commit(d => ({ ...d, zones: d.zones.map(z => z.id === selected.id ? { ...z, cx: clampX(z.cx + dx), cy: clampY(z.cy + dy) } : z) }));
@@ -238,7 +308,7 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
     setSaving(true);
     try {
       const r = await api<{ config?: MapConfig }>('/api/admin/map', { method: 'PUT', body: JSON.stringify(cfg) });
-      const stored: Doc = r.config ? { locations: r.config.locations, zones: r.config.zones, paths: r.config.paths ?? [] } : cfg;
+      const stored = r.config ? toDoc(r.config) : cfg;
       h.reset(stored);
       setSaved(serialize(stored));
       loadPhotos();
@@ -251,10 +321,14 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
     if (!confirm('Henda óvistuðum breytingum og sækja síðustu vistuðu útgáfu kortsins?')) return;
     try {
       const cfg = await api<MapConfig>('/api/admin/map');
-      h.reset({ locations: cfg.locations, zones: cfg.zones, paths: cfg.paths ?? [] });
-      setSaved(serialize({ locations: cfg.locations, zones: cfg.zones, paths: cfg.paths ?? [] }));
+      h.reset(toDoc(cfg));
+      setSaved(serialize(toDoc(cfg)));
       setSelected(null); setMsg('✓ Síðasta vistaða útgáfa sótt.');
     } catch (e) { setMsg(errText(e)); }
+  }
+  function resetTerrain() {
+    if (!confirm('Setja landslagið aftur í upprunalega heiminn? Staðir, svæði og línur haldast.')) return;
+    commit(d => ({ ...d, terrain: normalizeTerrain(DEFAULT_TERRAIN) }));
   }
   async function uploadForPin(pin: MapLocation, file: File) {
     setUploading(true); setMsg('');
@@ -271,19 +345,52 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
   }
 
   /* ─── tool buttons ─── */
-  const tool = (label: string, active: boolean, onClick: () => void) => <Button small tone="ghost" on={active} onClick={onClick}>{label}</Button>;
-  const place = (mode: Exclude<Placing, null>, label: string) => tool(label, placing === mode, () => { setPlacing(placing === mode ? null : mode); setDrawing(null); setDrawPoints([]); setSelected(null); });
-  const draw  = (mode: MapPath['kind'], label: string) => tool(label, drawing === mode, () => { if (drawing === mode) finishDrawing(); else { setDrawing(mode); setDrawPoints([]); setPlacing(null); setSelected(null); } });
-  const handleStyle = { cursor: 'grab' as const };
+  const pick = (label: string, active: boolean, onClick: () => void, title?: string) =>
+    <Button key={label} small tone="ghost" on={active} onClick={onClick} title={title}>{label}</Button>;
+  const place = (mode: Exclude<Placing, null>, label: string) =>
+    pick(label, placing === mode, () => { setTool('select'); setPlacing(placing === mode ? null : mode); setDrawing(null); setDrawPoints([]); setSelected(null); });
+  const draw = (mode: MapPath['kind'], label: string) =>
+    pick(label, drawing === mode, () => { setTool('select'); if (drawing === mode) finishDrawing(); else { setDrawing(mode); setDrawPoints([]); setPlacing(null); setSelected(null); } });
+
+  const cursorClass = painty ? ' is-painting' : (placing || drawing) ? ' is-placing' : '';
 
   return (
     <div className="a-stack">
+      {/* ground tools */}
+      <div className="a-toolbar">
+        {pick('Velja', tool === 'select' && !placing && !drawing, () => { setTool('select'); setPlacing(null); setDrawing(null); }, 'V')}
+        {pick('Pensill', tool === 'brush', () => { setTool('brush'); setPlacing(null); setDrawing(null); setSelected(null); }, 'B')}
+        {pick('Fylla', tool === 'fill', () => { setTool('fill'); setPlacing(null); setDrawing(null); setSelected(null); }, 'F')}
+        <span className="a-toolbar__sep" />
+        <div className="a-swatches" role="radiogroup" aria-label="Landslagsefni">
+          {MATERIALS.map((m, i) => (
+            <button
+              key={m.code}
+              type="button"
+              role="radio"
+              aria-checked={material === m.code}
+              className={`a-swatch${material === m.code ? ' is-on' : ''}`}
+              title={`${m.hint} (${i + 1})`}
+              onClick={() => { setMaterial(m.code); if (tool === 'select') setTool('brush'); }}
+            >
+              <span className="a-swatch__chip" style={{ background: m.fill }} aria-hidden="true" />
+              {m.label}
+            </button>
+          ))}
+        </div>
+        <span className="a-toolbar__sep" />
+        <span className="a-muted">Pensill</span>
+        {BRUSH_SIZES.map(s => pick(String(s), brush === s, () => { setBrush(s); if (tool !== 'brush') setTool('brush'); }, `${s}×${s} reitir`))}
+      </div>
+
+      {/* marks and document */}
       <div className="a-toolbar">
         {place('pin', '+ Staður')}{place('zone', '+ Svæði')}{place('land', '+ Land')}{place('lake', '+ Vatn')}{place('mountain', '+ Fjall')}
         <span className="a-toolbar__sep" />
         {draw('river', 'Teikna á')}{draw('road', 'Teikna veg')}{draw('border', 'Teikna mörk')}
         <span className="a-toolbar__sep" />
-        {tool(`Rist ${snap ? 'á' : 'af'}`, snap, () => setSnap(s => !s))}
+        {pick('Rist', showGrid, () => setShowGrid(g => !g), 'G')}
+        {pick(`Grip ${snap ? 'á' : 'af'}`, snap, () => setSnap(s => !s), 'Staðir grípa í ristina')}
         <Button small tone="ghost" onClick={h.undo} disabled={!h.canUndo} title="Ctrl+Z">Afturkalla</Button>
         <Button small tone="ghost" onClick={h.redo} disabled={!h.canRedo} title="Ctrl+Shift+Z">Endurtaka</Button>
         <span className="a-toolbar__spacer" />
@@ -294,28 +401,51 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
       <Notice text={msg} />
 
       <div className="a-editor">
-        <div className={`a-editor__map${placing || drawing ? ' is-placing' : ''}`}>
-          <svg ref={svgRef} viewBox={`0 0 ${MAP_W} ${MAP_H}`} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} onClick={onClick} aria-label="Kortaritill">
+        <div className={`a-editor__map${cursorClass}`}>
+          <svg
+            ref={svgRef}
+            viewBox={`0 0 ${MAP_W} ${MAP_H}`}
+            onPointerDown={onSvgDown}
+            onPointerMove={onMove}
+            onPointerUp={onUp}
+            onPointerCancel={onUp}
+            onPointerLeave={() => setHover(null)}
+            onClick={onClick}
+            aria-label="Kortaritill"
+          >
             <MapDefs />
-            <MapArt
+            <Terrain terrain={doc.terrain} />
+            {showGrid && (
+              <g className="a-editor__grid" aria-hidden="true">
+                {Array.from({ length: TERRAIN_COLS - 1 }, (_, i) => <line key={`v${i}`} x1={(i + 1) * TERRAIN_CELL} y1={0} x2={(i + 1) * TERRAIN_CELL} y2={MAP_H} />)}
+                {Array.from({ length: TERRAIN_ROWS - 1 }, (_, i) => <line key={`h${i}`} x1={0} y1={(i + 1) * TERRAIN_CELL} x2={MAP_W} y2={(i + 1) * TERRAIN_CELL} />)}
+              </g>
+            )}
+            <MapMarks
               locations={doc.locations} zones={doc.zones} paths={doc.paths}
               selectedId={selPin?.id ?? null}
-              pinProps={loc => ({ onPointerDown: e => pinDown(e, loc), style: { cursor: placing || drawing ? 'crosshair' : 'grab' } })}
-              zoneProps={z => ({ onPointerDown: e => zoneDown(e, z), style: { cursor: placing || drawing ? 'crosshair' : 'move' } })}
-              pathProps={p => ({ onClick: e => { if (!drawing && !placing) { e.stopPropagation(); setSelected({ kind: 'path', id: p.id }); } }, style: { cursor: 'pointer' } })}
+              pinProps={loc => (tool === 'select' && !placing && !drawing
+                ? { onPointerDown: (e: React.PointerEvent) => pinDown(e, loc), style: { cursor: 'grab' } }
+                : { style: { pointerEvents: 'none' } })}
+              zoneProps={z => (tool === 'select' && !placing && !drawing
+                ? { onPointerDown: (e: React.PointerEvent) => zoneDown(e, z), style: { cursor: 'move' } }
+                : { style: { pointerEvents: 'none' } })}
+              pathProps={p => (tool === 'select' && !placing && !drawing
+                ? { onClick: (e: React.MouseEvent) => { e.stopPropagation(); setSelected({ kind: 'path', id: p.id }); }, style: { cursor: 'pointer' } }
+                : { style: { pointerEvents: 'none' } })}
             />
-            {/* editor overlays: selection, handles, drawing preview */}
+            {/* editor overlays: selection, handles, drawing preview, brush */}
             <g shapeRendering="crispEdges" fill="none">
               {selZone && (
                 <>
                   <rect x={selZone.cx - selZone.rx} y={selZone.cy - selZone.ry} width={selZone.rx * 2} height={selZone.ry * 2} stroke="var(--lantern)" strokeWidth="3" strokeDasharray="6 6" pointerEvents="none" />
-                  {[['rx', selZone.cx + selZone.rx, selZone.cy], ['rx', selZone.cx - selZone.rx, selZone.cy], ['ry', selZone.cx, selZone.cy + selZone.ry], ['ry', selZone.cx, selZone.cy - selZone.ry]].map(([axis, x, y], i) => (
-                    <rect key={i} x={(x as number) - 7} y={(y as number) - 7} width="14" height="14" fill="var(--lantern)" stroke="var(--night)" strokeWidth="2" style={{ cursor: axis === 'rx' ? 'ew-resize' : 'ns-resize' }} onPointerDown={e => sizeDown(e, selZone, axis as 'rx' | 'ry')} />
+                  {([['rx', selZone.cx + selZone.rx, selZone.cy], ['rx', selZone.cx - selZone.rx, selZone.cy], ['ry', selZone.cx, selZone.cy + selZone.ry], ['ry', selZone.cx, selZone.cy - selZone.ry]] as const).map(([axis, x, y], i) => (
+                    <rect key={i} x={x - 7} y={y - 7} width="14" height="14" fill="var(--lantern)" stroke="var(--night)" strokeWidth="2" style={{ cursor: axis === 'rx' ? 'ew-resize' : 'ns-resize' }} onPointerDown={e => sizeDown(e, selZone, axis)} />
                   ))}
                 </>
               )}
               {selPath && selPath.points.map(([x, y], i) => (
-                <rect key={i} x={x - 7} y={y - 7} width="14" height="14" fill="var(--lantern)" stroke="var(--night)" strokeWidth="2" style={handleStyle}
+                <rect key={i} x={x - 7} y={y - 7} width="14" height="14" fill="var(--lantern)" stroke="var(--night)" strokeWidth="2" style={{ cursor: 'grab' }}
                   onPointerDown={e => pointDown(e, selPath, i)}
                   onDoubleClick={e => { e.stopPropagation(); if (selPath.points.length > 2) updatePath(selPath.id, { points: selPath.points.filter((_, k) => k !== i) }); }} />
               ))}
@@ -325,17 +455,52 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
                   {drawPoints.map(([x, y], i) => <rect key={i} x={x - 5} y={y - 5} width="10" height="10" fill="var(--lantern)" pointerEvents="none" />)}
                 </>
               )}
+              {painty && hover && (
+                <rect
+                  pointerEvents="none"
+                  x={(hover[0] - Math.floor(((tool === 'brush' ? brush : 1) - 1) / 2)) * TERRAIN_CELL}
+                  y={(hover[1] - Math.floor(((tool === 'brush' ? brush : 1) - 1) / 2)) * TERRAIN_CELL}
+                  width={(tool === 'brush' ? brush : 1) * TERRAIN_CELL}
+                  height={(tool === 'brush' ? brush : 1) * TERRAIN_CELL}
+                  fill="var(--lantern)" fillOpacity="0.22" stroke="var(--lantern)" strokeWidth="3"
+                />
+              )}
             </g>
           </svg>
-          {(placing || drawing) && (
+          {(placing || drawing || painty) && (
             <span className="a-editor__hint">
-              {placing ? `Smelltu þar sem ${mapLabel(placing).toLowerCase()} á að vera. Esc hættir við.` : `Smelltu til að bæta við punktum (${drawPoints.length}). Tvísmelltu eða Enter lýkur teikningu, Esc hættir við.`}
+              {placing ? `Smelltu þar sem ${mapLabel(placing).toLowerCase()} á að vera. Esc hættir við.`
+                : drawing ? `Smelltu til að bæta við punktum (${drawPoints.length}). Tvísmelltu eða Enter lýkur, Esc hættir við.`
+                : tool === 'fill' ? `Smelltu á svæði til að fylla það af: ${MATERIALS.find(m => m.code === material)?.label.toLowerCase()}.`
+                : `Dragðu til að mála: ${MATERIALS.find(m => m.code === material)?.label.toLowerCase()}, pensill ${brush}×${brush}. Haltu Shift niðri fyrir beina línu.`}
             </span>
           )}
         </div>
 
         <aside className="a-editor__side">
-          {selPin ? (
+          {painty ? (
+            <div className="a-side">
+              <p className="a-side__title"><span>Landslag</span><Button tone="ghost" small onClick={resetTerrain}>Núllstilla</Button></p>
+              <p className="a-help">
+                Málaðu heiminn beint á kortið. Strönd teiknast sjálfkrafa þar sem land mætir sjó, svo hafið lítur rétt út án þess að þú málir hana.
+              </p>
+              <ul className="a-legend">
+                {MATERIALS.map(m => (
+                  <li key={m.code}>
+                    <span className="a-swatch__chip" style={{ background: m.fill }} aria-hidden="true" />
+                    <span>{m.label}</span>
+                    <span className="a-muted">{Math.round(((land.counts[m.code] ?? 0) / land.total) * 100)}%</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="a-help">
+                Þurrlendi þekur {Math.round((land.dry / land.total) * 100)}% af kortinu.
+              </p>
+              <p className="a-help">
+                <Kbd>B</Kbd> pensill, <Kbd>F</Kbd> fylla, <Kbd>V</Kbd> velja, <Kbd>G</Kbd> rist, <Kbd>1</Kbd>–<Kbd>6</Kbd> efni, <Kbd>[</Kbd> <Kbd>]</Kbd> stærð.
+              </p>
+            </div>
+          ) : selPin ? (
             <div className="a-side">
               <p className="a-side__title"><span>Staður {selPin.id}</span><Button tone="ghost" small onClick={() => duplicatePin(selPin)}>Afrita</Button></p>
               <Field label="Heiti"><input className="a-input" value={selPin.label} onChange={e => updatePin(selPin.id, { label: e.target.value })} maxLength={100} /></Field>
@@ -397,7 +562,7 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
                   {(['river', 'road', 'border'] as const).map(k => <option key={k} value={k}>{mapLabel(k)}</option>)}
                 </select>
               </Field>
-              <p className="a-help">{selPath.points.length} punktar. Dragðu punkt til að færa hann, tvísmelltu á punkt til að fjarlægja hann. Línur fylgja ristinni á vefnum.</p>
+              <p className="a-help">{selPath.points.length} punktar. Dragðu punkt til að færa hann, tvísmelltu á punkt til að fjarlægja hann.</p>
               <div className="a-inline">
                 <Button small tone="ghost" onClick={() => { const last = selPath.points[selPath.points.length - 1]; updatePath(selPath.id, { points: [...selPath.points, [clampX(last[0] + 40), clampY(last[1] + 20)]] }); }}>Bæta við punkti</Button>
                 <Button tone="danger" small onClick={deleteSelected}>Eyða</Button>
@@ -406,8 +571,8 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
           ) : (
             <div className="a-side">
               <p className="a-side__title"><span>Ritillinn</span></p>
-              <p className="a-help">Smelltu á stað, svæði eða línu til að breyta. Dragðu til að færa. <Kbd>Ctrl</Kbd>+<Kbd>Z</Kbd> afturkallar, <Kbd>Ctrl</Kbd>+<Kbd>S</Kbd> vistar, <Kbd>Del</Kbd> eyðir því sem er valið, örvatakkar færa það.</p>
-              <p className="a-help">Hver staður getur haft eina mynd sem birtist þegar smellt er á hann á vefnum. Tölurnar á fánunum eru auðkenni staðanna.</p>
+              <p className="a-help">Smelltu á stað, svæði eða línu til að breyta. Dragðu til að færa. Veldu <b>Pensil</b> til að mála land, sjó, gras, skóg, kletta og sand beint á kortið.</p>
+              <p className="a-help"><Kbd>Ctrl</Kbd>+<Kbd>Z</Kbd> afturkallar, <Kbd>Ctrl</Kbd>+<Kbd>S</Kbd> vistar, <Kbd>Del</Kbd> eyðir því sem er valið, örvatakkar færa það.</p>
             </div>
           )}
 
@@ -417,7 +582,7 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
               {doc.locations.map(loc => {
                 const ph = loc.photoId ? photoById.get(loc.photoId) : null;
                 return (
-                  <button key={loc.id} type="button" className={`a-list__item${selPin?.id === loc.id ? ' is-active' : ''}`} onClick={() => setSelected(s => s?.kind === 'pin' && s.id === loc.id ? null : { kind: 'pin', id: loc.id })}>
+                  <button key={loc.id} type="button" className={`a-list__item${selPin?.id === loc.id ? ' is-active' : ''}`} onClick={() => { setTool('select'); setSelected(s => s?.kind === 'pin' && s.id === loc.id ? null : { kind: 'pin', id: loc.id }); }}>
                     <span>{loc.id}. {loc.label || 'án heitis'}</span>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     {ph ? <img className="a-list__thumb" src={ph.filename} alt="" /> : <span className="a-list__thumb a-list__thumb--empty" title="Engin mynd" />}
@@ -431,12 +596,12 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
               <p className="a-side__title"><span>Svæði og línur ({doc.zones.length + doc.paths.length})</span></p>
               <div className="a-list">
                 {doc.zones.map(z => (
-                  <button key={z.id} type="button" className={`a-list__item${selZone?.id === z.id ? ' is-active' : ''}`} onClick={() => setSelected(s => s?.kind === 'zone' && s.id === z.id ? null : { kind: 'zone', id: z.id })}>
+                  <button key={z.id} type="button" className={`a-list__item${selZone?.id === z.id ? ' is-active' : ''}`} onClick={() => { setTool('select'); setSelected(s => s?.kind === 'zone' && s.id === z.id ? null : { kind: 'zone', id: z.id }); }}>
                     <span>{z.label || 'án heitis'}</span><span className="a-muted">{mapLabel(z.kind)}</span>
                   </button>
                 ))}
                 {doc.paths.map(p => (
-                  <button key={p.id} type="button" className={`a-list__item${selPath?.id === p.id ? ' is-active' : ''}`} onClick={() => setSelected(s => s?.kind === 'path' && s.id === p.id ? null : { kind: 'path', id: p.id })}>
+                  <button key={p.id} type="button" className={`a-list__item${selPath?.id === p.id ? ' is-active' : ''}`} onClick={() => { setTool('select'); setSelected(s => s?.kind === 'path' && s.id === p.id ? null : { kind: 'path', id: p.id }); }}>
                     <span>{p.label || 'án heitis'}</span><span className="a-muted">{mapLabel(p.kind)}</span>
                   </button>
                 ))}

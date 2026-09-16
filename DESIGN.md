@@ -122,6 +122,7 @@ Gestures that need physics (map drag and zoom, lightbox throw, phone drawer) kee
 | Lanterns as navigation | Section navigation doubles as the visible clock of the evening. |
 | One pixel glyph per pack | A drawn glyph tells a visitor what a pack does faster than its name, and keeps the store from reading as a table. Every category has its own drawing, so a pack the site has never seen still gets a real icon instead of a stand-in chest. |
 | No dense packing in the album | Dense grid packing moves tiles into earlier holes, so the wall stopped matching the order the admin set. Source order is now the only thing that decides where a picture hangs. |
+| The world is painted, not baked | The coastline used to be a constant nobody could change. Terrain is now data the admin paints block by block, so the map can follow the world as it grows. |
 | Blocks everywhere | Square corners, one-pixel notches, bevelled solid buttons and a block-rasterised map keep every surface reading as Minecraft, not as a web template. |
 | Cursor light lifts paper texture | The one desktop-only effect rewards a fine pointer without hiding anything from touch. |
 | Fewer layers and particles on phones | Holds 60 fps on a mid-range phone where the effect would otherwise be the first thing to stutter. |
@@ -132,6 +133,6 @@ Gestures that need physics (map drag and zoom, lightbox throw, phone drawer) kee
 
 ## Out of scope
 
-`/admin` is a tool, so it uses the same tokens in a quieter register (`src/app/admin/admin.css`): night surfaces, amber only on actions, the display slab for panel titles, pixel type for live values. Its map editor draws the same block map as the public site through the shared `MapArt` component, so what the admin sees is what visitors see. `/rp-editor` keeps its own dark root and reads the generic token names (`--bg`, `--accent`, `--text`) that stay defined in `globals.css`.
+`/admin` is a tool, so it uses the same tokens in a quieter register (`src/app/admin/admin.css`): night surfaces, amber only on actions, the display slab for panel titles, pixel type for live values. Its map editor draws the same block map as the public site through the shared `MapArt` component, so what the admin sees is what visitors see. The world itself is painted there: the terrain is a grid of blocks (`src/lib/terrain.ts`) saved with the map, and the coastline's beach is derived from it rather than painted, so a hand-drawn coast still looks right. `/rp-editor` keeps its own dark root and reads the generic token names (`--bg`, `--accent`, `--text`) that stay defined in `globals.css`.
 
 The crew pages (`/crew`, `/crew/[username]`) share the nav, footer and stylesheet, so they get the new tokens, type and board treatment while keeping their structure.
