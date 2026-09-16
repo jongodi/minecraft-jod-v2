@@ -52,7 +52,8 @@ export default function Tallies({ stats }: { stats: StatsState }) {
                     <span className="b-paper__nail b-paper__nail--l" aria-hidden="true" />
                     <span className="b-paper__nail b-paper__nail--r" aria-hidden="true" />
                     <span className="b-paper__title">Eftirlýst</span>
-                    <span className="b-poster__place">{PLACE[i]}, {meta.label}</span>
+                    <span className="b-poster__place">{PLACE[i]} · {meta.label}</span>
+                    <span className="b-poster__rule" aria-hidden="true" />
                     <span className="b-poster__img"><PlayerHead name={r.name} size={128} /></span>
                     <span className="b-poster__name">{r.name}</span>
                     <span className="b-poster__reward">Verðlaun</span>

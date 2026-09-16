@@ -88,15 +88,27 @@
 .b-posters { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-5); max-width: 20rem; margin-inline: auto; }
 @media (min-width: 640px) { .b-posters { grid-template-columns: repeat(3, minmax(0, 1fr)); max-width: none; gap: clamp(1rem, 3vw, 2.5rem); align-items: start; } }
 .b-posters > * { min-width: 0; }
-.b-poster { display: block; text-decoration: none; text-align: center; padding: var(--sp-7) var(--sp-4) var(--sp-6); transition: transform var(--dur-2) var(--ease-out); }
+/* A grid, so every line is its own row: the poster reads top to bottom
+   however it is marked up, and nothing collapses onto one line. */
+.b-poster {
+  display: grid;
+  align-content: start;
+  text-decoration: none;
+  text-align: center;
+  padding: var(--sp-7) var(--sp-4) var(--sp-5);
+  transition: transform var(--dur-2) var(--ease-out);
+}
+.b-poster > * { min-width: 0; max-width: 100%; }
 .b-poster:hover, .b-poster:focus-visible { transform: translateY(calc(var(--px) * -1)); }
 .b-poster:hover .b-poster__img, .b-poster:focus-visible .b-poster__img { box-shadow: 0 0 0 var(--px) var(--lantern-deep); }
-.b-poster__place { margin-top: var(--sp-2); font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
+.b-poster .b-paper__title { line-height: 1; }
+.b-poster__place { margin-top: var(--sp-2); font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); line-height: 1.4; }
+.b-poster__rule { height: var(--px); margin-top: var(--sp-3); background: var(--ink); opacity: 0.22; }
 .b-poster__img { margin: var(--sp-4) auto 0; width: min(100%, 9rem); padding: calc(var(--px) * 2); background: var(--wood); box-shadow: inset 0 0 0 var(--px) var(--wood-light); transition: box-shadow var(--dur-2) var(--ease-out); }
-.b-poster__img img { width: 100%; aspect-ratio: 1; object-fit: cover; image-rendering: pixelated; }
-.b-poster__name { margin-top: var(--sp-3); font-family: var(--font-display); font-size: clamp(1.1rem, 2.2vw, 1.5rem); line-height: 1.1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink); }
-.b-poster__reward { margin-top: var(--sp-3); font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
-.b-poster__val { margin-top: var(--sp-1); font-family: var(--font-data); font-size: var(--fs-data-lg); line-height: 1.2; color: var(--ink); }
+.b-poster__img img { width: 100%; aspect-ratio: 1; object-fit: cover; image-rendering: pixelated; display: block; }
+.b-poster__name { margin-top: var(--sp-4); font-family: var(--font-display); font-size: clamp(1.1rem, 2.2vw, 1.4rem); line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink); }
+.b-poster__reward { margin-top: var(--sp-4); padding-top: var(--sp-3); border-top: var(--line) dashed var(--ink-faint); font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); }
+.b-poster__val { margin-top: var(--sp-2); font-family: var(--font-data); font-size: var(--fs-data-lg); line-height: 1.3; color: var(--ink); overflow-wrap: anywhere; }
 .b-poster__note { margin-top: var(--sp-2); font-size: var(--fs-sm); color: var(--ink-soft); line-height: 1.4; }
 .b-ledger { margin: var(--sp-6) auto 0; max-width: 44rem; padding: var(--sp-4) var(--sp-5); }
 .b-ledger__title { font-size: var(--fs-sm); color: var(--ink-faint); padding-bottom: var(--sp-2); border-bottom: var(--px) solid var(--ink); }
@@ -258,8 +270,9 @@
 .b-page__head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--sp-4) var(--sp-6); margin: var(--sp-4) 0 var(--sp-6); }
 .b-rollcall { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-5) var(--sp-3); }
 @media (min-width: 640px) { .b-rollcall { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp-6) var(--sp-5); } }
-.b-poster--crew { padding-top: var(--sp-5); }
+.b-poster--crew { padding: var(--sp-6) var(--sp-3) var(--sp-4); }
 .b-poster--crew .b-poster__img { margin-top: 0; width: min(100%, 7.5rem); }
+.b-poster--crew .b-poster__name { margin-top: var(--sp-3); }
 .b-poster__meta { margin-top: var(--sp-2); font-size: var(--fs-xs); color: var(--ink-faint); }
 .b-poster__note { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .b-feed { list-style: none; max-width: 44rem; margin-inline: auto; display: grid; gap: var(--sp-3); }
