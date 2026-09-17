@@ -280,37 +280,88 @@
 .b-trail-end { margin-top: var(--sp-7); }
 
 /* ─── campfire: the footer ────────────────────────────────────── */
-.b-foot { position: relative; padding-top: var(--sp-8); overflow: clip; }
-.b-foot__inner { position: relative; display: grid; gap: var(--sp-6); align-items: end; padding-bottom: 0; }
-@media (min-width: 800px) { .b-foot__inner { grid-template-columns: 11rem minmax(0, 1fr); gap: var(--sp-8); } }
-.b-foot__camp { position: relative; display: flex; justify-content: center; align-items: flex-end; height: 8rem; }
+/* One band of ground, no taller than it needs to be. The sections of the
+   evening are already on the rail, in the bar and in the drawer, so the footer
+   posts only what is not part of the evening and gives the room to the fire. */
+.b-foot { position: relative; --ground: calc(var(--px) * 14); padding-top: var(--sp-6); overflow: clip; }
+.b-foot__inner {
+  position: relative;
+  z-index: 2;   /* the fire stands on the ground strip and its light falls across it */
+  display: grid;
+  grid-template-areas: 'nav' 'up' 'credit' 'camp';
+  justify-items: center;
+  text-align: center;
+  gap: var(--sp-4);
+  /* the floor: how high the text stands above the ground, so it clears the
+     ridge behind it and the fire has a horizon to burn in front of */
+  --floor: 3.25rem;
+  padding-bottom: var(--floor);
+}
+@media (min-width: 720px) {
+  .b-foot__inner {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      'camp nav    up'
+      'camp credit up';
+    align-items: end;
+    justify-items: start;
+    text-align: left;
+    column-gap: var(--sp-6);
+    row-gap: var(--sp-2);
+  }
+}
+
+/* the fire, and its light pooled across the band */
+.b-foot__camp { grid-area: camp; position: relative; display: flex; justify-content: center; align-items: flex-end; margin-bottom: calc(var(--floor) * -1); }
 .b-foot__camp::before {
-  /* the fire's light on the ground */
   content: '';
   position: absolute;
   left: 50%;
-  bottom: -2rem;
-  width: 22rem;
+  bottom: -1.5rem;
+  width: 26rem;
   height: 9rem;
-  margin-left: -11rem;
-  background: radial-gradient(closest-side, rgba(224, 96, 42, 0.32), transparent);
+  margin-left: -13rem;
+  background: radial-gradient(closest-side, rgba(224, 96, 42, 0.30), transparent);
   animation: b-flicker var(--dur-lantern) ease-in-out infinite;
   pointer-events: none;
 }
-.b-fire { position: relative; width: 6rem; height: 6rem; margin-bottom: calc(var(--px) * -2); }
+.b-fire { position: relative; width: 5.5rem; height: 5.5rem; margin-bottom: calc(var(--px) * -2); }
 .b-fire svg { width: 100%; height: 100%; display: block; shape-rendering: crispEdges; overflow: visible; }
 .b-fire__frame { opacity: 0; animation: b-frames 900ms steps(1, end) infinite; }
 @keyframes b-frames { 0%, 33.33% { opacity: 1; } 33.34%, 100% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .b-fire__frame { animation: none; } .b-fire__frame:first-child { opacity: 1; } }
-.b-foot__log { display: none; }
-.b-foot__board { display: grid; gap: var(--sp-3); padding-bottom: var(--sp-6); }
-.b-foot__nav { display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-4); }
+
+/* the mesas the evening opened over, back as a silhouette behind the camp */
+.b-ridge {
+  position: absolute;
+  inset-inline: 0;
+  bottom: var(--ground);                 /* the ridge stands on the ground strip */
+  height: clamp(3rem, 7vw, 5rem);
+  color: color-mix(in oklab, var(--tc-brown), var(--night) 52%);
+  pointer-events: none;
+}
+.b-ridge svg { width: 100%; height: 100%; display: block; shape-rendering: crispEdges; }
+
+/* the three rooms off the evening */
+.b-foot__nav { grid-area: nav; display: flex; flex-wrap: wrap; justify-content: center; gap: var(--sp-1) var(--sp-5); }
+@media (min-width: 720px) { .b-foot__nav { justify-content: flex-start; } }
 .b-foot__link { display: inline-flex; align-items: center; min-height: var(--tap); padding-inline: var(--sp-1); color: var(--lantern); font-size: var(--fs-sm); font-weight: 600; text-decoration: none; border-bottom: var(--px) solid transparent; }
 .b-foot__link:hover, .b-foot__link:focus-visible { border-bottom-color: var(--lantern); color: var(--paper); }
-.b-foot__credit { font-size: var(--fs-sm); color: var(--text-soft); }
-.b-foot__small { font-size: var(--fs-xs); color: var(--text-faint); line-height: 1.5; }
+
+/* the way back up the evening */
+.b-foot__up { grid-area: up; gap: var(--sp-2); }
+@media (min-width: 720px) { .b-foot__up { align-self: center; justify-self: end; } }
+.b-foot__upchev { width: 0.875rem; height: 0.875rem; flex-shrink: 0; transform: rotate(180deg); transition: transform var(--dur-2) var(--ease-out); }
+.b-foot__up:hover .b-foot__upchev, .b-foot__up:focus-visible .b-foot__upchev { transform: rotate(180deg) translateY(calc(var(--px) * 1.5)); }
+
+.b-foot__credit { grid-area: credit; }
+.b-foot__credit p { font-size: var(--fs-sm); color: var(--text-soft); line-height: 1.5; }
+.b-foot__credit .b-foot__small { font-size: var(--fs-xs); color: var(--text-faint); }
+
 .b-ground {
-  height: calc(var(--px) * 14);
+  position: relative;
+  z-index: 1;
+  height: var(--ground);
   background:
     linear-gradient(180deg, var(--tc-brown) 0 calc(var(--px) * 2), var(--dusk) calc(var(--px) * 2) calc(var(--px) * 6), var(--dusk-2) calc(var(--px) * 6) calc(var(--px) * 10), var(--night) calc(var(--px) * 10));
   background-size: 100% 100%;

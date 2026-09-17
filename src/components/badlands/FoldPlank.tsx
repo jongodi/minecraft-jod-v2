@@ -1,17 +1,6 @@
 'use client';
 
-/* A pixel chevron, chunky enough to read at the size of a nail head. */
-function Chevron() {
-  return (
-    <svg className="b-fold__chev" viewBox="0 0 16 16" aria-hidden="true" fill="currentColor" shapeRendering="crispEdges">
-      <rect x="2" y="5" width="2" height="2" />
-      <rect x="12" y="5" width="2" height="2" />
-      <rect x="4" y="7" width="2" height="2" />
-      <rect x="10" y="7" width="2" height="2" />
-      <rect x="6" y="9" width="4" height="2" />
-    </svg>
-  );
-}
+import { Chevron } from './Bits';
 
 interface Props {
   open: boolean;
@@ -40,7 +29,7 @@ export default function FoldPlank({ open, onToggle, controls, openLabel, closeLa
       <span className="b-fold__nail" aria-hidden="true" />
       <span className="b-fold__label">{open ? closeLabel : openLabel}</span>
       {!open && count !== undefined && <span className="b-fold__count">{count}</span>}
-      <Chevron />
+      <Chevron className="b-fold__chev" />
       <span className="b-fold__nail b-fold__nail--r" aria-hidden="true" />
     </button>
   );

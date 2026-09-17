@@ -22,6 +22,7 @@ Letur: Alfa Slab One fyrir fyrirsagnir, Literata fyrir meginmál og Silkscreen f
 | Eftirlýst | Tölfræði leikmanna á eftirlýsingaspjöldum með rifnum brúnum. Þrjú efstu fá spjald, hin eru í bókinni fyrir neðan. |
 | Kaupfélagið | Lokað er kaupfélagið lagerinn sjálfur: hver pakki er lítill kassi á hillu og sá sem þú bendir á fær miðann sinn lesinn upp á búðarborðinu fyrir neðan. Plankinn opnar hillurnar þar sem hver kassi ber sitt eigið heiti, lýsingu og útgáfumiða. Hver flokkur á sína pixlateikningu, svo enginn pakki er án myndar. |
 | Komdu inn | Leiðin inn í þremur skrefum, og vistfangið aftur. |
+| Varðeldurinn | Ein landræma neðst: varðeldur á jörðinni með ljósinu sínu og glæðum, og fjöllin úr sólsetrinu aftur sem dökk útlína. Hlutar kvöldsins eru ekki endurteknir þar, aðeins það sem stendur utan við þá — hópurinn, pakkaritillinn og stjórnborðið — og leiðin aftur upp í sólsetrið. |
 
 Áhrif (himinn, mesa-lög með dýpt, ryk og glæður, luktarljós sem fylgir bendlinum, vindur og eldur úr Web Audio) eru hvert um sig sjálfstæð eining í `src/effects/` og slökkva á sér undir `prefers-reduced-motion`.
 

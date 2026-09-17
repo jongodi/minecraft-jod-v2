@@ -47,7 +47,7 @@ The existing order is kept. Each section gets an hour.
 | Night | Tallies | tallies | Stats become wanted posters with pixel-torn edges and two nails: three for the top three, a ledger below. Heads are fetched at four times their drawn size so the 8 by 8 face stays sharp. Values in pixel type because they come from the game. |
 | Night | The general store | provisions | Closed, the store is its stock: every pack a small crate stacked on the back shelves under the hanging sign, and whichever one you point at has its label read out on the counter below, on paper, with its kind, version and description. The plank opens the shelves proper, where each crate carries its own text and a hanging version tag. Every pack keeps its own 12 by 12 pixel glyph on a paper label in both. |
 | Deep night | Ride in | ride | Restored from #45 with its original three steps as trail markers, ending at the address. |
-| Campfire | Footer | footer | A three-frame pixel campfire on a strip of ground, its light on the earth, embers rising from the flame; the links posted beside it. |
+| Campfire | Footer | campfire | One band of ground, no taller than it needs to be. A three-frame pixel campfire stands on the earth with its light pooled across it and embers rising from the flame, and behind it the far mesas of the hero return as a dark silhouette, so the page closes on the landscape it opened over. The evening's own sections are not posted again: the rail, the address bar and the drawer already carry them. What is posted is what is not part of the evening — the crew, the pack editor, the admin panel — and the way back up to the sunset, which rewinds the sky as it climbs. |
 
 ## Identity pillars
 
@@ -131,6 +131,9 @@ Gestures that need physics (map drag and zoom, lightbox throw, phone drawer) kee
 | One plank folds both | The same wooden control in both places is learned once, and it says what it opens and how much is in there before it is pressed. |
 | The store's label goes on the counter | A crate you point at is read out in full on paper below, so the stock can stay small without the text being lost. |
 | Folding scrolls the section's top back | A section that shrinks under the visitor would leave them standing below it wondering what happened. |
+| The footer stops repeating the evening | The sections are already on the lantern rail, in the address bar and in the drawer, so posting them a fourth time made the last thing on the page its longest list. |
+| The way back is named an hour, not a direction | Scrolling is time here, so the climb back is "aftur í sólsetrið" and the sky really does rewind on the way up. |
+| The mesas come back as a silhouette | The page opened over that ridge; closing on it bookends the evening, and it costs no height because it sits behind the band. |
 | Sticky address bar after the hero | The address is the site's single purpose, so it stays reachable once the hero scrolls away. |
 | `framer-motion` kept for gestures only | Drag physics cannot be done in CSS; everything else can, so it is. |
 | Tokens in one file | Components reference names, never values, so the palette can be retuned in one place. |
