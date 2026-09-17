@@ -49,14 +49,27 @@ export default function Particles({ heroId, fireId }: Props) {
     let hidden = document.hidden;
     let heroIn = false, fireIn = false;
 
+    /* Where the flame sits on the page. Measured when the fire comes into
+       view and on resize, never while spawning: a getBoundingClientRect per
+       ember is a forced layout in the middle of an animation frame, and
+       embers respawn several times a second. The viewport position is then
+       just the document position less the scroll. */
+    const flame = (fire.querySelector('.b-fire') ?? fire) as HTMLElement;
+    let box = { left: 0, top: 0, width: 0, height: 0 };   // document coordinates
+    let seat = { left: 0, top: 0 };                       // and the same in the viewport, this frame
+    const measureFlame = () => {
+      const r = flame.getBoundingClientRect();
+      box = { left: r.left + window.scrollX, top: r.top + window.scrollY, width: r.width, height: r.height };
+    };
+    const seatFlame = () => { seat = { left: box.left - window.scrollX, top: box.top - window.scrollY }; };
+
     const spawn = (m: Mote, fresh: boolean) => {
       const p = mode === 'embers' ? EMBER : DUST;
       m.size = p.size * (Math.random() < 0.3 ? 2 : 1);
       m.life = 1;
       if (mode === 'embers') {
-        const r = (fire.querySelector('.b-fire') ?? fire).getBoundingClientRect();
-        m.x = r.left + r.width * (0.3 + Math.random() * 0.4);
-        m.y = fresh ? r.top + r.height * (0.2 + Math.random() * 0.5) : r.top + r.height * 0.55;
+        m.x = seat.left + box.width * (0.3 + Math.random() * 0.4);
+        m.y = fresh ? seat.top + box.height * (0.2 + Math.random() * 0.5) : seat.top + box.height * 0.55;
         m.vx = (Math.random() - 0.5) * EMBER.drift;
         m.vy = -EMBER.speed * (0.6 + Math.random() * 0.8);
       } else {
@@ -71,6 +84,7 @@ export default function Particles({ heroId, fireId }: Props) {
     const frame = () => {
       raf = 0;
       if (!mode || hidden) { ctx.clearRect(0, 0, w, h); return; }
+      if (mode === 'embers') seatFlame();   // the fire scrolls; read the offset once, not once per ember
       ctx.clearRect(0, 0, w, h);
       ctx.fillStyle = mode === 'embers' ? colours.embers : colours.dust;
       for (const m of motes) {
@@ -88,7 +102,7 @@ export default function Particles({ heroId, fireId }: Props) {
     const run = () => { if (!raf) raf = requestAnimationFrame(frame); };
     const decide = () => {
       const next: Mode = fireIn ? 'embers' : heroIn ? 'dust' : null;
-      if (next !== mode) { mode = next; if (mode) fill(); }
+      if (next !== mode) { mode = next; if (mode === 'embers') { measureFlame(); seatFlame(); } if (mode) fill(); }
       run();
     };
 
@@ -101,13 +115,19 @@ export default function Particles({ heroId, fireId }: Props) {
     }, { threshold: 0.05 });
     obs.observe(hero); obs.observe(fire);
 
+    /* Folding a section open above the footer moves the fire down the page. */
+    const ro = new ResizeObserver(() => { if (mode === 'embers') measureFlame(); });
+    ro.observe(document.documentElement);
+
     const onVis = () => { hidden = document.hidden; run(); };
     document.addEventListener('visibilitychange', onVis);
-    window.addEventListener('resize', resize, { passive: true });
+    const onResize = () => { resize(); if (mode === 'embers') measureFlame(); };
+    window.addEventListener('resize', onResize, { passive: true });
     return () => {
       obs.disconnect();
+      ro.disconnect();
       document.removeEventListener('visibilitychange', onVis);
-      window.removeEventListener('resize', resize);
+      window.removeEventListener('resize', onResize);
       cancelAnimationFrame(raf);
     };
   }, [heroId, fireId]);
