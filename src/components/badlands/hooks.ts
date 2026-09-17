@@ -166,3 +166,17 @@ export function useReducedMotionPref(): boolean {
   }, []);
   return reduce;
 }
+
+/** Folding a long section away can leave the visitor standing below it. When a
+    section closes while its top has already scrolled past, bring that top back. */
+export function useKeepInView(open: boolean, ref: React.RefObject<HTMLElement>) {
+  const was = useRef(open);
+  const reduce = useReducedMotionPref();
+  useEffect(() => {
+    const el = ref.current;
+    if (was.current && !open && el && el.getBoundingClientRect().top < 0) {
+      el.scrollIntoView({ block: 'start', behavior: reduce ? 'auto' : 'smooth' });
+    }
+    was.current = open;
+  }, [open, ref, reduce]);
+}

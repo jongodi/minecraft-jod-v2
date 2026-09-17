@@ -17,10 +17,10 @@ Letur: Alfa Slab One fyrir fyrirsagnir, Literata fyrir meginmál og Silkscreen f
 | Sólsetur | Merkið, vistfangið sem er afritað með einum smelli, og lukt með stöðu þjónsins. Himinninn dökknar og stjörnurnar koma með skruni. |
 | Búðirnar | Hvað þjónninn er, og myndir af átta félögum. Lukt logar á bak við þau sem eru inni. Staðan uppfærist á mínútu fresti. |
 | Landakort | Kort heimsins í kubbum yfir alla breidd síðunnar, með ám sem fylgja ristinni og fánum fyrir staði. Má draga, stækka og láta fljúga að fána. Staðirnir eru taldir upp fyrir neðan með myndunum sínum. Kortinu er breytt í stjórnborðinu. |
-| Myndaalbúm | Myndir úr leiknum í trérömmum sem liggja þétt saman á plankavegg, hver fimmta stærri. Röðin á vefnum er nákvæmlega röðin í stjórnborðinu. Smelltu á ramma til að stækka. |
+| Myndaalbúm | Veggurinn kemur samanbrotinn: ein röð af trérömmum sem rennur til hliðar og dofnar út í myrkrið á báðum endum. Allar myndirnar eru þar, og plankinn neðst hengir upp allan vegginn þar sem þær liggja þétt saman, hver fimmta stærri. Röðin á vefnum er nákvæmlega röðin í stjórnborðinu. Smelltu á ramma til að stækka. |
 | Einvígi | Viðbragðsleikur með þremur umferðum í náttmyrkri. Besti tíminn vistast í vafranum. |
 | Eftirlýst | Tölfræði leikmanna á eftirlýsingaspjöldum með rifnum brúnum. Þrjú efstu fá spjald, hin eru í bókinni fyrir neðan. |
-| Kaupfélagið | Uppsettir gagnapakkar sem kassar á hillum, hver með sinni pixlamynd og útgáfumiða. Hver flokkur á sína teikningu, svo enginn pakki er án myndar. |
+| Kaupfélagið | Lokað er kaupfélagið lagerinn sjálfur: hver pakki er lítill kassi á hillu og sá sem þú bendir á fær miðann sinn lesinn upp á búðarborðinu fyrir neðan. Plankinn opnar hillurnar þar sem hver kassi ber sitt eigið heiti, lýsingu og útgáfumiða. Hver flokkur á sína pixlateikningu, svo enginn pakki er án myndar. |
 | Komdu inn | Leiðin inn í þremur skrefum, og vistfangið aftur. |
 
 Áhrif (himinn, mesa-lög með dýpt, ryk og glæður, luktarljós sem fylgir bendlinum, vindur og eldur úr Web Audio) eru hvert um sig sjálfstæð eining í `src/effects/` og slökkva á sér undir `prefers-reduced-motion`.
