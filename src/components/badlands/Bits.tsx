@@ -122,6 +122,19 @@ export function CopyIcon() {
   );
 }
 
+/** A chunky pixel chevron, pointing down. Rotate it for the other three ways. */
+export function Chevron({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" aria-hidden="true" fill="currentColor" shapeRendering="crispEdges">
+      <rect x="2"  y="5" width="2" height="2" />
+      <rect x="12" y="5" width="2" height="2" />
+      <rect x="4"  y="7" width="2" height="2" />
+      <rect x="10" y="7" width="2" height="2" />
+      <rect x="6"  y="9" width="4" height="2" />
+    </svg>
+  );
+}
+
 /** A pixel arrow pointing left or right. */
 export function ArrowIcon({ flip }: { flip?: boolean }) {
   return (

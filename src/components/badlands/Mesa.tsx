@@ -41,6 +41,20 @@ function Layer({ d, mod, children }: { d: string; mod: string; children?: React.
   );
 }
 
+/** The same far ridge, low and dark, for the foot of the page: the evening
+    opened over these mesas, and the campfire burns in front of them once they
+    are out of the light. Squashed to the band's height on purpose, so a whole
+    horizon fits in three centimetres of page. */
+export function Ridge() {
+  return (
+    <div className="b-ridge" aria-hidden="true">
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
+        <path d={FAR_D} fill="currentColor" />
+      </svg>
+    </div>
+  );
+}
+
 export default function Mesa() {
   return (
     <div className="b-mesa" aria-hidden="true">

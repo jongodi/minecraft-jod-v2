@@ -466,6 +466,117 @@
 .b-frame__cap b { font-weight: 600; color: var(--ink); }
 @media (min-width: 720px) { .b-frame--hero .b-frame__cap { font-size: var(--fs-sm); } }
 
+/* ─── the wall, folded: one rail of frames ───────────────────── */
+/* Folded, the wall is a single rail you walk along by lantern light: every
+   picture is still hanging, it just stops taking the whole evening to scroll
+   past. Both ends fall off into the dark, and the plank at the foot hangs the
+   rest of the wall up in source order. */
+.b-wallrail { position: relative; }
+.b-wall--rail {
+  display: flex;
+  gap: var(--sp-3);
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-block: 6px;                 /* room for the focus ring and the lit border */
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  --fade: clamp(2rem, 6vw, 4.5rem);
+  --fade-l: var(--fade);
+  --fade-r: var(--fade);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent 100%);
+          mask-image: linear-gradient(90deg, transparent 0, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent 100%);
+}
+.b-wall--rail::-webkit-scrollbar { display: none; }
+.b-wall--rail.at-start { --fade-l: 0px; }
+.b-wall--rail.at-end   { --fade-r: 0px; }
+/* nothing is dimmed while the keyboard is walking the frames: the focus ring
+   has to be as visible on the frame at the edge as on the one in the middle */
+.b-wall--rail:focus-within { -webkit-mask-image: none; mask-image: none; }
+.b-wall--rail > .b-frame { flex: 0 0 clamp(10rem, 40vw, 13rem); scroll-snap-align: start; }
+
+/* Lanterns held up at the ends of the rail. Fine pointers only; a finger drags
+   the wall and a keyboard walks the frames. */
+.b-wallrail__arrow {
+  position: absolute;
+  top: 50%;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--tap);
+  height: var(--tap);
+  margin-top: calc(var(--tap) / -2 - 0.6rem);
+  background: rgba(21, 16, 13, 0.82);
+  color: var(--lantern);
+  box-shadow: inset 0 0 0 var(--px) var(--lantern-glow);
+  clip-path: var(--notch);
+  transition: opacity var(--dur-2) var(--ease-out), background var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) { .b-wallrail__arrow { display: inline-flex; } }
+.b-wallrail__arrow--l { left: calc(var(--sp-2) * -1); }
+.b-wallrail__arrow--r { right: calc(var(--sp-2) * -1); }
+.b-wallrail__arrow svg { width: 1.25rem; height: 1.25rem; }
+.b-wallrail__arrow:hover, .b-wallrail__arrow:focus-visible { background: var(--lantern); color: var(--night); box-shadow: none; }
+.b-wallrail__arrow[disabled] { opacity: 0; pointer-events: none; }
+
+/* Hanging the wall: the frames go up one after another, left to right. */
+@keyframes b-hang {
+  0%   { opacity: 0; transform: translateY(calc(var(--px) * -8)) rotate(-1.5deg); }
+  60%  { opacity: 1; transform: translateY(0) rotate(0.6deg); }
+  100% { opacity: 1; transform: none; }
+}
+.b-wall--hung > .b-frame { animation: b-hang var(--dur-3) var(--ease-out) backwards; animation-delay: calc(var(--i, 0) * 26ms); }
+
+/* ─── the plank that folds a long section away ───────────────── */
+/* Wood, two nails and lantern light: the one control that opens the album and
+   the store. Folded it says what it will show and how much of it there is. */
+.b-fold {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-3);
+  width: 100%;
+  min-height: var(--tap);
+  margin-top: var(--sp-5);
+  padding: var(--sp-2) var(--sp-6);
+  background: var(--wood);
+  color: var(--lantern);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: center;
+  clip-path: var(--notch);
+  box-shadow: inset 0 0 0 calc(var(--px) * 1.5) var(--wood-light), 0 0 0 var(--px) var(--wood-dark);
+  transition: background var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
+}
+.b-fold::before {
+  /* the grain of the plank */
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(90deg, rgba(21, 16, 13, 0.16) 0 var(--px), transparent var(--px) 9px);
+}
+.b-fold:hover, .b-fold:focus-visible { background: var(--wood-light); color: var(--paper); }
+.b-fold__nail {
+  position: absolute;
+  left: var(--sp-3);
+  top: 50%;
+  width: calc(var(--px) * 2);
+  height: calc(var(--px) * 2);
+  margin-top: calc(var(--px) * -1);
+  background: var(--wood-dark);
+  box-shadow: var(--px) var(--px) 0 rgba(255, 240, 210, 0.16);
+}
+.b-fold__nail--r { left: auto; right: var(--sp-3); }
+.b-fold__label { position: relative; }
+.b-fold__count { position: relative; padding: 0 var(--sp-2); background: var(--paper); color: var(--ink); font-size: var(--fs-xs); letter-spacing: 0; clip-path: var(--notch); }
+.b-fold__chev { position: relative; width: 1rem; height: 1rem; flex-shrink: 0; transition: transform var(--dur-2) var(--ease-out); }
+.b-fold.is-open .b-fold__chev { transform: rotate(180deg); }
+@media (max-width: 480px) { .b-fold { padding-inline: var(--sp-5); font-size: var(--fs-xs); } }
+
 /* ─── lightbox ────────────────────────────────────────────────── */
 .b-lb { position: fixed; inset: 0; z-index: var(--z-lightbox); background: rgba(12, 10, 20, 0.94); color: var(--paper); display: grid; grid-template-rows: 1fr auto; padding: 3.5rem var(--sp-4) var(--sp-5); }
 .b-lb__img { min-height: 0; display: grid; place-items: center; overflow: hidden; }
