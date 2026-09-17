@@ -10,6 +10,7 @@ import { Strata } from './Bits';
 import { handCase, titleCase, type Plate } from './data';
 import MapArt, { MapDefs, MAP_H, MAP_W } from './MapArt';
 import { useReducedMotionPref } from './hooks';
+import { photoProps, PHOTO_SIZES } from './photo';
 import { clamp, rubberband, SPRING } from './motion';
 
 const TYPE: Record<MapLocation['type'], string> = {
@@ -208,7 +209,7 @@ function TerritoryMap({ plates }: { plates: Plate[] }) {
             >
               {plate ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={plate.src} alt={plate.title} loading="lazy" />
+                <img {...photoProps(plate.src, PHOTO_SIZES.print)} alt={plate.title} loading="lazy" decoding="async" />
               ) : (
                 <div className="b-print__empty" aria-hidden="true"><span>engin mynd enn</span></div>
               )}
@@ -232,7 +233,7 @@ function TerritoryMap({ plates }: { plates: Plate[] }) {
                   <span className="b-index__thumb">
                     {thumb
                       // eslint-disable-next-line @next/next/no-img-element
-                      ? <img src={thumb.src} alt="" loading="lazy" />
+                      ? <img {...photoProps(thumb.src, PHOTO_SIZES.thumb)} alt="" loading="lazy" decoding="async" />
                       : <span className="b-index__thumb--empty" aria-hidden="true" />}
                     <span className="b-index__no">{loc.id}</span>
                   </span>

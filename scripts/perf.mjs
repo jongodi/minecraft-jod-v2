@@ -82,12 +82,22 @@ for (const size of SIZES) {
   await page.waitForTimeout(2500);                 // effects mount, lazy images settle
 
   const decoded = await page.evaluate(() => {
+    /* naturalWidth is density-corrected once an image comes from a srcset, so
+       it reports the CSS size, not the bitmap. The real decoded width is the
+       candidate that was chosen: read it back off currentSrc where it is a
+       width the optimiser was asked for. */
+    const chosenWidth = img => {
+      const m = (img.currentSrc || '').match(/[?&]w=(\d+)/);
+      return m ? Number(m[1]) : img.naturalWidth;
+    };
     let px = 0, over = 0;
     for (const img of document.images) {
       if (!img.naturalWidth) continue;
-      px += img.naturalWidth * img.naturalHeight;
+      const w = chosenWidth(img);
+      const h = Math.round(w * (img.naturalHeight / img.naturalWidth));
+      px += w * h;
       const shown = Math.max(img.clientWidth, 1) * window.devicePixelRatio;
-      if (img.naturalWidth > shown * 1.6) over++;
+      if (w > shown * 1.6) over++;
     }
     /* transferSize is what actually crossed the wire, including headers */
     const bytes = { image: 0, script: 0, css: 0, font: 0 };

@@ -2,6 +2,24 @@
 const nextConfig = {
   reactStrictMode: true,
 
+  images: {
+    /* Screenshots are 1920px and admin uploads up to 2560px, while the wall
+       hangs them at ~200px and the map index at ~52px. These widths are what
+       next/image is allowed to generate; the components ask for a slot with
+       `sizes` and the browser picks. */
+    deviceSizes: [360, 480, 640, 828, 1080, 1440, 1920],
+    imageSizes: [64, 96, 128, 192, 256],
+    formats: ['image/avif', 'image/webp'],
+    /* 75 for the wall and the map, 82 for the lightbox's full-size view */
+    qualities: [75, 82],
+    /* Photos are immutable once uploaded: the admin panel writes a new name. */
+    minimumCacheTTL: 31536000,
+    remotePatterns: [
+      { protocol: 'https', hostname: 'blob.vercel-storage.com' },
+      { protocol: 'https', hostname: '*.blob.vercel-storage.com' },
+    ],
+  },
+
   async headers() {
     const isDev = process.env.NODE_ENV !== 'production';
     const csp = [

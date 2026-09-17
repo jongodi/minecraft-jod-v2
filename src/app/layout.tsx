@@ -1,7 +1,5 @@
 import type { Metadata, Viewport } from 'next';
 import localFont from 'next/font/local';
-import '@fontsource/jetbrains-mono/400.css';
-import '@fontsource/jetbrains-mono/600.css';
 import './globals.css';
 import { SERVER_IP } from '@/components/badlands/data';
 
@@ -62,6 +60,12 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="is" className={`${display.variable} ${text.variable} ${data.variable}`}>
+      <head>
+        {/* Player portraits come from these two; opening the connections while
+            the page is still parsing saves a DNS + TLS round trip each. */}
+        <link rel="preconnect" href="https://mc-heads.net" />
+        <link rel="preconnect" href="https://minotar.net" />
+      </head>
       <body>{children}</body>
     </html>
   );

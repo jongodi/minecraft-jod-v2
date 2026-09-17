@@ -94,16 +94,58 @@ Rye, Caveat and Lora are removed. JetBrains Mono stays for the admin panel and t
 
 One scroll value drives the evening. Effects are separate modules, each switchable on its own: sky, parallax, particles, cursor light, audio.
 
-- Sky: CSS scroll-driven animation on the hero (`animation-timeline: scroll()`), with an IntersectionObserver plus requestAnimationFrame fallback that sets the same custom property.
+- Sky: CSS scroll-driven animation (`animation-timeline: scroll(root)`), with a requestAnimationFrame fallback that sets the same custom property where scroll timelines are missing. Night is a second gradient cross-faded over the sunset, not one gradient whose stops are interpolated, so a scroll frame composites a layer instead of re-rasterising the viewport.
 - Parallax: four mesa layers on desktop, two on phones, SVG with `shape-rendering: crispEdges`, moved in whole pixels.
 - Particles: one canvas, dust at sunset that becomes embers at the campfire, paused off-screen and when the tab is hidden, DPR capped at 2, fewer on phones.
 - Lantern navigation: a column of lanterns, one per section, in a side rail on desktop and a compact strip under the address bar on phones and tablets. Each lights when its section arrives. They are links, so amber is correct.
-- Cursor light: fine pointers only. A warm radial light follows the pointer and lifts the paper texture under it. Off on touch.
+- Cursor light: fine pointers only. One pre-rasterised disc of warm light follows the pointer, moved by transform. Off on touch.
 - Copy address: a telegraph ticker types the confirmation, the button takes a stamp; Clipboard API with a textarea fallback; announced via `aria-live`.
 - Ambient sound: wind and a distant fire from Web Audio noise and filters, off by default, toggle in the lantern rail, remembered in localStorage.
 - Reduced motion: no parallax, no particles, no scroll scrubbing, no sun. The page shows a fixed dusk-to-night composition with the stars out.
 
 Gestures that need physics (map drag and zoom, lightbox throw, phone drawer) keep `framer-motion`, which is already installed. Everything that CSS can do is done in CSS.
+
+### What an animated frame is allowed to touch
+
+The evening and the cursor light both run at frame rate, and both were once
+driven by custom properties set on `:root`. Custom properties inherit, so each
+frame invalidated the computed style of every element on the page: a scripted
+scroll from top to bottom spent five seconds in style recalculation on desktop
+and twenty-five on a throttled phone, against eight milliseconds in layout.
+
+Three rules keep that from coming back.
+
+- **Nothing animated at frame rate is set on `:root`.** `--evening` is
+  registered with `inherits: false`, and every element that reads it — the sky's
+  night layer, the stars, the sun, the mesa layers and their band — carries the
+  scroll-driven animation itself. The JS fallback writes to the same set. An
+  element that reads `--evening` should therefore be a leaf, or own few children.
+- **Per-frame values move a layer; they do not repaint one.** The cursor light
+  is a fixed-size disc translated by `transform`, not a viewport-sized gradient
+  painted at a moving position. `background-attachment: fixed` and
+  `mix-blend-mode` on repeated elements are the expensive version of this and
+  are not used.
+- **A scroll handler reads `scrollY` and nothing else.** Section offsets are
+  measured once and on resize, never inside the handler, so scrolling forces no
+  layout. Handlers coalesce into one `requestAnimationFrame` and commit state
+  only when the value actually changed.
+
+`scripts/perf.mjs` measures all of this against a running server: image bytes
+and decoded pixels, frame pacing over a full-page scroll and a pointer sweep,
+and the time spent in style, layout and script. Run it before and after
+anything that touches the sky, the parallax, the effects or the scroll
+handlers.
+
+### Photographs
+
+Screenshots ship at 1920px and the admin panel accepts up to 2560px, while the
+page hangs them at anything from a 52px map thumbnail to a full-screen
+lightbox. Every one of them goes through `photoProps` in
+`src/components/badlands/photo.ts`, which names the slot and hands back a
+`srcset`, so the browser fetches roughly what it will draw. It uses
+`getImageProps` rather than `<Image>` because the stylesheet already frames
+each picture with its own box, border and `object-fit`. Player heads stay raw
+`<img>`: they are 8 by 8 textures and must not be resampled.
 
 ## Every major decision and its purpose
 
@@ -124,7 +166,7 @@ Gestures that need physics (map drag and zoom, lightbox throw, phone drawer) kee
 | No dense packing in the album | Dense grid packing moves tiles into earlier holes, so the wall stopped matching the order the admin set. Source order is now the only thing that decides where a picture hangs. |
 | The world is painted, not baked | The coastline used to be a constant nobody could change. Terrain is now data the admin paints block by block, so the map can follow the world as it grows. |
 | Blocks everywhere | Square corners, one-pixel notches, bevelled solid buttons and a block-rasterised map keep every surface reading as Minecraft, not as a web template. |
-| Cursor light lifts paper texture | The one desktop-only effect rewards a fine pointer without hiding anything from touch. |
+| Cursor light is one moving layer | The one desktop-only effect rewards a fine pointer without hiding anything from touch, and costs a composite rather than a repaint. |
 | Fewer layers and particles on phones | Holds 60 fps on a mid-range phone where the effect would otherwise be the first thing to stutter. |
 | Long sections arrive folded | The album and the store were a screen and a half of scrolling each before anything else could be reached; folded they are a glance, and the visitor decides when to open them. |
 | The folded album is a rail, not a short grid | Cutting the wall to the first few pictures would hide the rest behind a button; a rail keeps every picture one sideways push away, so folding costs the visitor nothing. |

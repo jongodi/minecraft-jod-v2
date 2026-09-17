@@ -7,6 +7,7 @@ import { ArrowIcon, Strata } from './Bits';
 import FoldPlank from './FoldPlank';
 import { useKeepInView, useReducedMotionPref } from './hooks';
 import type { Plate } from './data';
+import { photoProps, PHOTO_SIZES } from './photo';
 
 const BLOCK = 5;
 
@@ -84,23 +85,34 @@ function Postcards({ plates }: { plates: Plate[] }) {
             onScroll={onRailScroll}
             className={`b-wall ${hung ? 'b-wall--hung' : 'b-wall--rail'}${edges.start ? ' at-start' : ''}${edges.end ? ' at-end' : ''}`}
           >
-            {plates.map((p, i) => (
+            {plates.map((p, i) => {
+              const hero = isHero(i, plates.length);
+              return (
               <button
                 key={p.id}
                 type="button"
                 style={{ '--i': i } as CSSProperties}
-                className={`b-frame${isHero(i, plates.length) ? ' b-frame--hero' : ''}`}
+                className={`b-frame${hero ? ' b-frame--hero' : ''}`}
                 onClick={e => { setOrigin(e.currentTarget.getBoundingClientRect()); setOpen(i); }}
                 aria-label={`Opna mynd: ${p.title}`}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={p.src} alt={p.title} loading={i < 3 ? 'eager' : 'lazy'} decoding="async" width={480} height={480} />
+                <img
+                  {...photoProps(p.src, !hung ? PHOTO_SIZES.railFrame : hero ? PHOTO_SIZES.frameHero : PHOTO_SIZES.frame)}
+                  alt={p.title}
+                  loading={i < 3 ? 'eager' : 'lazy'}
+                  fetchPriority={i === 0 ? 'high' : undefined}
+                  decoding="async"
+                  width={480}
+                  height={480}
+                />
                 <span className="b-frame__plate">
                   <span className="b-frame__no">{String(i + 1).padStart(2, '0')}</span>
                   <span className="b-frame__cap"><b>{p.title}</b>{p.sub && <>, {p.sub}</>}</span>
                 </span>
               </button>
-            ))}
+              );
+            })}
           </div>
 
           {!hung && (
