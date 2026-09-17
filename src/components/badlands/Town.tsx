@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import Link from 'next/link';
 import PlayerHead from './PlayerHead';
 import { Strata } from './Bits';
@@ -8,7 +9,7 @@ import type { ServerState } from './hooks';
 
 /** Dusk: what the server is, and who is in tonight. Portraits of the eight
     sit on the town wall; a lantern burns behind the ones who are online. */
-export default function Town({ server }: { server: ServerState }) {
+function Town({ server }: { server: ServerState }) {
   const { online, players, list } = server;
   const lower = list.map(n => n.toLowerCase());
   const inside = CREW.filter(n => lower.includes(n.toLowerCase())).length;
@@ -48,3 +49,7 @@ export default function Town({ server }: { server: ServerState }) {
     </section>
   );
 }
+
+/* Memoised: the home page also re-renders on stats and on the active
+   section, and this section reads neither. */
+export default memo(Town);

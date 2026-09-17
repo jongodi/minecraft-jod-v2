@@ -32,17 +32,6 @@
     radial-gradient(50% 50% at 10% 100%, rgba(77, 51, 35, 0.10), transparent 70%),
     repeating-linear-gradient(90deg, rgba(77, 51, 35, 0.025) 0 1px, transparent 1px 3px);
 }
-.b-paper::after {
-  /* the lantern cursor lifts the texture here; --cx and --cy are set by the cursor light */
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: var(--cursor-on, 0);
-  background: radial-gradient(220px circle at var(--cx, -999px) var(--cy, -999px), rgba(255, 226, 170, 0.22), transparent 70%);
-  background-attachment: fixed;
-  mix-blend-mode: multiply;
-}
 .b-paper > * { position: relative; }
 .b-paper__nail {
   position: absolute;
@@ -370,14 +359,24 @@
 
 /* ─── effects ─────────────────────────────────────────────────── */
 .b-particles { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+/* One pre-rasterised disc of light, parked at the origin and moved by
+   transform. Painting the gradient at a moving position instead would
+   repaint the whole viewport on every pointer frame. */
 .b-light {
   position: fixed;
-  inset: 0;
+  left: 0;
+  top: 0;
+  width: 520px;
+  height: 520px;
+  margin: -260px 0 0 -260px;
   z-index: var(--z-light);
   pointer-events: none;
-  background: radial-gradient(260px circle at var(--cx, -999px) var(--cy, -999px), rgba(242, 166, 59, 0.10), transparent 70%);
+  opacity: 0;
+  background: radial-gradient(closest-side circle, rgba(242, 166, 59, 0.10), transparent 70%);
   mix-blend-mode: screen;
+  will-change: transform;
 }
+.b-light.is-on { opacity: 1; }
 
 /* ─── crew pages ──────────────────────────────────────────────── */
 .b-page { padding-block: clamp(5rem, 9vw, 7rem) clamp(3rem, 8vw, 6rem); }

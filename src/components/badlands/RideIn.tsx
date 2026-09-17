@@ -1,9 +1,10 @@
+import { memo } from 'react';
 import CopyAddress from './CopyAddress';
 import { Lantern, Strata } from './Bits';
 import { RIDE_STEPS } from './data';
 
 /** Deep night: the trail in. Three markers, then the address again. */
-export default function RideIn() {
+function RideIn() {
   return (
     <section id="ride" className="b-sec b-sec--sky" aria-labelledby="ride-title">
       <Strata />
@@ -27,3 +28,7 @@ export default function RideIn() {
     </section>
   );
 }
+
+/* Memoised: the home page re-renders whenever the server ping, the stats or
+   the active section changes, and this section depends on none of them. */
+export default memo(RideIn);

@@ -1,11 +1,12 @@
 'use client';
 
+import { memo } from 'react';
 import Mesa from './Mesa';
 import CopyAddress from './CopyAddress';
 import StatusLantern from './StatusLantern';
 import type { ServerState } from './hooks';
 
-export default function Hero({ server }: { server: ServerState }) {
+function Hero({ server }: { server: ServerState }) {
   return (
     <section id="top" className="b-hero" aria-label="Sólsetur">
       <div className="b-wrap b-hero__grid">
@@ -23,3 +24,7 @@ export default function Hero({ server }: { server: ServerState }) {
     </section>
   );
 }
+
+/* Memoised: the home page also re-renders on stats and on the active
+   section, and this section reads neither. */
+export default memo(Hero);

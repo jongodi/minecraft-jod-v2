@@ -6,28 +6,51 @@
    you can act on, pixel type only for what the server says.
    ═══════════════════════════════════════════════════════════════ */
 
-/* ─── the evening: one number, driven by scroll ───────────────── */
+/* ─── the evening: one number, driven by scroll ─────────────────
+   --evening does not inherit (see tokens.css), so every element that
+   reads it runs the animation itself. Animating it on one ancestor
+   instead would invalidate the computed style of everything beneath it
+   on every scroll frame, and the readers below carry whole pixel-art
+   SVGs underneath them. */
 @keyframes b-evening { from { --evening: 0; } to { --evening: 1; } }
 @supports (animation-timeline: scroll()) {
-  html { animation: b-evening linear both; animation-timeline: scroll(root); animation-range: 0 120svh; }
+  .b-sky__night, .b-sky__stars, .b-sky__sun, .b-mesa__layer, .b-mesa__band {
+    animation: b-evening linear both;
+    animation-timeline: scroll(root);
+    animation-range: 0 120svh;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
-  html { animation: none !important; --evening: 0.7; }
+  .b-sky__night, .b-sky__stars, .b-sky__sun, .b-mesa__layer, .b-mesa__band { animation: none !important; --evening: 0.7; }
   .b-sky__sun { display: none; }
 }
 
+/* The sky is the sunset; night is a second layer fading in over it.
+   Interpolating the gradient's own stops would re-rasterise the whole
+   viewport every frame, where a layer's opacity is a composite. */
 .b-sky {
   position: fixed;
   inset: 0;
   z-index: var(--z-sky);
   pointer-events: none;
   background: linear-gradient(180deg,
-    color-mix(in oklab, var(--sky-sunset-top),     var(--sky-night-top) calc(var(--evening) * 100%)) 0%,
-    color-mix(in oklab, var(--sky-sunset-mid),     var(--sky-night-top) calc(var(--evening) * 100%)) 42%,
-    color-mix(in oklab, var(--sky-sunset-low),     var(--sky-night-low) calc(var(--evening) * 100%)) 72%,
-    color-mix(in oklab, var(--sky-sunset-horizon), var(--sky-night-low) calc(var(--evening) * 100%)) 100%);
+    var(--sky-sunset-top)     0%,
+    var(--sky-sunset-mid)    42%,
+    var(--sky-sunset-low)    72%,
+    var(--sky-sunset-horizon) 100%);
 }
-.b-sky__stars { position: absolute; inset: 0; width: 100%; height: 100%; color: var(--star); opacity: calc((var(--evening) - 0.45) * 1.8); }
+.b-sky__night {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg,
+    var(--sky-night-top)  0%,
+    var(--sky-night-top) 42%,
+    var(--sky-night-low) 72%,
+    var(--sky-night-low) 100%);
+  opacity: var(--evening);
+  will-change: opacity;
+}
+.b-sky__stars { position: absolute; inset: 0; width: 100%; height: 100%; color: var(--star); opacity: calc((var(--evening) - 0.45) * 1.8); will-change: opacity; }
 .b-sky__sun {
   position: absolute;
   right: clamp(8%, 14vw, 24%);
@@ -37,6 +60,7 @@
   color: var(--sun);
   transform: translateY(calc(var(--evening) * 75svh));
   opacity: calc(1.6 - var(--evening) * 1.6);
+  will-change: transform, opacity;
 }
 .b-sky svg { display: block; shape-rendering: crispEdges; }
 
@@ -343,7 +367,9 @@
 .b-hero__version { font-family: var(--font-data); font-size: var(--fs-xs); color: var(--tc-white); }
 
 .b-mesa { position: absolute; inset-inline: 0; bottom: 0; height: clamp(9rem, 32svh, 20rem); pointer-events: none; }
-.b-mesa__layer { position: absolute; inset: 0; will-change: transform; transform: translateY(round(nearest, calc(var(--evening) * var(--depth)), 1px)); }
+/* No will-change here: the layer's colour is animated too, so it has to be
+   repainted either way and promoting it only costs texture memory. */
+.b-mesa__layer { position: absolute; inset: 0; transform: translateY(round(nearest, calc(var(--evening) * var(--depth)), 1px)); }
 .b-mesa__layer svg { width: 100%; height: 100%; display: block; shape-rendering: crispEdges; }
 .b-mesa__layer--far  { --depth: 56px; color: color-mix(in oklab, var(--tc-red), var(--sky-night-low) calc(var(--evening) * 65%)); }
 .b-mesa__layer--mid  { --depth: 36px; color: color-mix(in oklab, var(--tc-orange), var(--night) calc(var(--evening) * 70%)); }

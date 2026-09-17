@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { motion, useAnimation, useReducedMotion } from 'framer-motion';
 import { BulletHole, Star, Strata } from './Bits';
 
@@ -48,7 +48,7 @@ function Gunslinger({ x, flip, cls }: { x: number; flip?: boolean; cls: string }
   );
 }
 
-export default function QuickDraw() {
+function QuickDraw() {
   const [phase, setPhase] = useState<Phase>('idle');
   const [shots, setShots] = useState<Shot[]>([]);
   const [round, setRound] = useState(0);
@@ -183,3 +183,7 @@ export default function QuickDraw() {
     </section>
   );
 }
+
+/* Memoised: the home page re-renders whenever the server ping, the stats or
+   the active section changes, and this section depends on none of them. */
+export default memo(QuickDraw);

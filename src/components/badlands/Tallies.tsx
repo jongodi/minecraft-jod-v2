@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import Link from 'next/link';
 import { LayoutGroup, motion } from 'framer-motion';
 import PlayerHead from './PlayerHead';
@@ -14,7 +14,7 @@ const PLACE = ['1. sæti', '2. sæti', '3. sæti'];
 /** Night: the numbers from the game, posted on the board. Three notices for
     the top three, a ledger for the rest. Values are pixel type: they come
     straight from the server's stat files. */
-export default function Tallies({ stats }: { stats: StatsState }) {
+function Tallies({ stats }: { stats: StatsState }) {
   const [tab, setTab] = useState<StatKey>('playTimeHours');
   const meta = STAT_TABS.find(t => t.id === tab)!;
   const rows = stats.players.map(p => ({ name: p.username, val: p[tab] ?? 0 })).sort((a, b) => b.val - a.val);
@@ -92,3 +92,7 @@ export default function Tallies({ stats }: { stats: StatsState }) {
     </section>
   );
 }
+
+/* Memoised: the home page also re-renders on the server ping and on the
+   active section, and this section reads neither. */
+export default memo(Tallies);

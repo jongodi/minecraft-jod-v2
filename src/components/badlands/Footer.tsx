@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import Link from 'next/link';
 import { Campfire, Chevron } from './Bits';
 import { Ridge } from './Mesa';
@@ -16,7 +17,7 @@ const LINKS = [
 /** The campfire: the last light. One band of ground at the foot of the page, the
     fire burning in front of the same mesas the evening opened over. Climbing
     back to the sunset rewinds the sky on the way up, because the sky is scroll. */
-export default function Footer() {
+function Footer() {
   return (
     <footer id="campfire" className="b-foot">
       <Ridge />
@@ -41,3 +42,7 @@ export default function Footer() {
     </footer>
   );
 }
+
+/* Memoised: the home page re-renders whenever the server ping, the stats or
+   the active section changes, and this section depends on none of them. */
+export default memo(Footer);

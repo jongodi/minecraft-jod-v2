@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
+import { memo, useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import Lightbox from './Lightbox';
 import { ArrowIcon, Strata } from './Bits';
@@ -20,7 +20,7 @@ const isHero = (i: number, n: number) => i % BLOCK === 0 && i + BLOCK <= n;
     is one rail of frames you walk along by lantern light; every picture is still
     there, it just does not take the whole evening to scroll past. The plank at
     the foot hangs the rest of the wall. */
-export default function Postcards({ plates }: { plates: Plate[] }) {
+function Postcards({ plates }: { plates: Plate[] }) {
   const [open, setOpen] = useState<number | null>(null);
   const [origin, setOrigin] = useState<DOMRect | null>(null);
   const [hung, setHung] = useState(false);
@@ -33,18 +33,30 @@ export default function Postcards({ plates }: { plates: Plate[] }) {
   const next  = useCallback(() => setOpen(i => (i === null ? null : (i + 1) % plates.length)), [plates.length]);
   const close = useCallback(() => setOpen(null), []);
 
-  /* Which end of the rail we are at: the arrows and the dark falloff read it. */
+  /* Which end of the rail we are at: the arrows and the dark falloff read it.
+     Sampled once per frame, and only committed when it actually changed, so
+     dragging the rail does not re-render every frame it moves. */
+  const raf = useRef(0);
   const measure = useCallback(() => {
+    raf.current = 0;
     const el = rail.current;
     if (!el) return;
     const max = el.scrollWidth - el.clientWidth;
-    setEdges({ start: el.scrollLeft <= 2, end: el.scrollLeft >= max - 2 });
+    const next = { start: el.scrollLeft <= 2, end: el.scrollLeft >= max - 2 };
+    setEdges(prev => (prev.start === next.start && prev.end === next.end ? prev : next));
   }, []);
+  const onRailScroll = useCallback(() => {
+    if (!raf.current) raf.current = requestAnimationFrame(measure);
+  }, [measure]);
   useEffect(() => {
     measure();
-    window.addEventListener('resize', measure);
-    return () => window.removeEventListener('resize', measure);
-  }, [measure, plates.length, hung]);
+    window.addEventListener('resize', onRailScroll, { passive: true });
+    return () => {
+      window.removeEventListener('resize', onRailScroll);
+      cancelAnimationFrame(raf.current);
+      raf.current = 0;
+    };
+  }, [measure, onRailScroll, plates.length, hung]);
 
   const nudge = (dir: 1 | -1) => {
     const el = rail.current;
@@ -69,7 +81,7 @@ export default function Postcards({ plates }: { plates: Plate[] }) {
           <div
             id="postcards-wall"
             ref={rail}
-            onScroll={measure}
+            onScroll={onRailScroll}
             className={`b-wall ${hung ? 'b-wall--hung' : 'b-wall--rail'}${edges.start ? ' at-start' : ''}${edges.end ? ' at-end' : ''}`}
           >
             {plates.map((p, i) => (
@@ -125,3 +137,7 @@ export default function Postcards({ plates }: { plates: Plate[] }) {
     </section>
   );
 }
+
+/* Memoised: the home page re-renders whenever the server ping, the stats or
+   the active section changes, and this section depends on none of them. */
+export default memo(Postcards);

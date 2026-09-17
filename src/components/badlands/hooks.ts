@@ -99,27 +99,49 @@ function legacyCopy(text: string) {
   document.body.removeChild(ta);
 }
 
-/** Which of the given section ids is closest above the marker line. */
+/** Which of the given section ids is closest above the marker line.
+
+    The section tops are measured once and re-measured only when the page
+    resizes, so a scroll frame reads `scrollY` and nothing else. Measuring
+    inside the scroll handler instead would force a layout per section per
+    frame, and the sections do not move while you scroll. */
 export function useScrollSpy(ids: string[]): string | null {
   const [active, setActive] = useState<string | null>(null);
   const key = ids.join('|');
   useEffect(() => {
+    const list = key.split('|');
+    let tops: Array<{ id: string; top: number }> = [];
     let raf = 0;
+
     const measure = () => {
-      raf = 0;
-      const marker = window.innerHeight * 0.4;
-      let current: string | null = null;
-      for (const id of key.split('|')) {
-        const el = document.getElementById(id);
-        if (el && el.getBoundingClientRect().top <= marker) current = id;
-      }
-      setActive(current);
+      const y = window.scrollY;
+      tops = list
+        .map(id => { const el = document.getElementById(id); return el ? { id, top: el.getBoundingClientRect().top + y } : null; })
+        .filter((v): v is { id: string; top: number } => v !== null);
     };
-    const onScroll = () => { if (!raf) raf = requestAnimationFrame(measure); };
+    const pick = () => {
+      raf = 0;
+      const marker = window.scrollY + window.innerHeight * 0.4;
+      let current: string | null = null;
+      for (const s of tops) if (s.top <= marker) current = s.id;
+      setActive(prev => (prev === current ? prev : current));
+    };
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(pick); };
+    const remeasure = () => { measure(); onScroll(); };
+
     measure();
+    pick();
     window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll, { passive: true });
-    return () => { window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', onScroll); cancelAnimationFrame(raf); };
+    window.addEventListener('resize', remeasure, { passive: true });
+    /* Sections grow as photos arrive and as folded sections open. */
+    const ro = new ResizeObserver(remeasure);
+    ro.observe(document.documentElement);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', remeasure);
+      ro.disconnect();
+      cancelAnimationFrame(raf);
+    };
   }, [key]);
   return active;
 }

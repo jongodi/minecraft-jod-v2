@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { motion, useMotionValue, animate } from 'framer-motion';
 import type { MotionValue } from 'framer-motion';
@@ -22,7 +22,7 @@ const MIN_Z = 1, MAX_Z = 3.2;
 const spring = (mv: MotionValue<number>, to: number) =>
   animate(mv.get(), to, { ...SPRING, onUpdate: (v: number) => mv.set(v) });
 
-export default function TerritoryMap({ plates }: { plates: Plate[] }) {
+function TerritoryMap({ plates }: { plates: Plate[] }) {
   const [locations, setLocations] = useState<MapLocation[]>(DEFAULT_LOCATIONS);
   const [zones,     setZones]     = useState<MapZone[]>(DEFAULT_ZONES);
   const [paths,     setPaths]     = useState<MapPath[]>(DEFAULT_PATHS);
@@ -249,3 +249,7 @@ export default function TerritoryMap({ plates }: { plates: Plate[] }) {
     </section>
   );
 }
+
+/* Memoised: the home page re-renders whenever the server ping, the stats or
+   the active section changes, and this section depends on none of them. */
+export default memo(TerritoryMap);

@@ -4,10 +4,15 @@
    ═══════════════════════════════════════════════════════════════ */
 
 /* Time of day. 0 is sunset, 1 is full night. Driven by scroll in
-   the hero (see badlands.css), fixed under reduced motion. */
+   the hero (see badlands.css), fixed under reduced motion.
+
+   It does not inherit: it is animated on every scroll frame, and an
+   inherited custom property invalidates the computed style of the whole
+   subtree under whatever it is set on. Each element that reads it carries
+   the animation itself, so a frame touches only those elements. */
 @property --evening {
   syntax: '<number>';
-  inherits: true;
+  inherits: false;
   initial-value: 0;
 }
 
