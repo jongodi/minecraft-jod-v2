@@ -2,6 +2,7 @@
 
 import { memo, useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
+import Link from 'next/link';
 import { motion, useMotionValue, animate } from 'framer-motion';
 import type { MotionValue } from 'framer-motion';
 import type { MapLocation, MapZone, MapPath } from '@/lib/map-types';
@@ -165,6 +166,7 @@ function TerritoryMap({ plates }: { plates: Plate[] }) {
             <h2 id="territory-title" className="b-title">Landakort</h2>
             <p className="b-lede">Allir staðirnir í heiminum okkar. Dragðu kortið til, veldu fána eða nafn til að sjá myndina.</p>
           </div>
+          <Link href="/heimskort" className="b-btn b-btn--small">Heimasvæðið í þrívídd</Link>
         </div>
       </div>
       <div className="b-wrap">

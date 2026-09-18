@@ -34,6 +34,19 @@ const nextConfig = {
       "frame-ancestors 'none'",
     ].join('; ');
 
+    // The BlueMap viewer under /bluemap is framed by /heimskort, so it may be framed
+    // by the site itself. It loads block textures as data: URLs and may start workers.
+    const bluemapCsp = [
+      "default-src 'self'",
+      `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
+      "worker-src 'self' blob:",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' blob: data:",
+      "connect-src 'self' blob: data:",
+      "font-src 'self' data:",
+      "frame-ancestors 'self'",
+    ].join('; ');
+
     return [
       {
         source: '/(.*)',
@@ -44,6 +57,14 @@ const nextConfig = {
           { key: 'Permissions-Policy',         value: 'camera=(), microphone=(), geolocation=()' },
           { key: 'Strict-Transport-Security',  value: 'max-age=63072000; includeSubDomains; preload' },
           { key: 'Content-Security-Policy',    value: csp },
+        ],
+      },
+      {
+        // listed after the catch-all so these two headers replace its values here
+        source: '/bluemap/:path*',
+        headers: [
+          { key: 'X-Frame-Options',         value: 'SAMEORIGIN' },
+          { key: 'Content-Security-Policy', value: bluemapCsp },
         ],
       },
     ];

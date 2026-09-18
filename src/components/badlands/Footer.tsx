@@ -6,10 +6,11 @@ import { SERVER_IP } from './data';
 
 /* The evening's own sections are on the lantern rail, in the address bar and in
    the drawer on phones, so the footer does not post them a second time. What is
-   left is what is not part of the evening: the three rooms off the page, and
-   the way back to the hour it started at. */
+   left is what is not part of the evening: the rooms off the page, and the way
+   back to the hour it started at. */
 const LINKS = [
   { href: '/crew',      label: 'Hópurinn' },
+  { href: '/heimskort', label: 'Heimskort' },
   { href: '/rp-editor', label: 'Pakkaritill' },
   { href: '/admin',     label: 'Stjórnborð' },
 ];

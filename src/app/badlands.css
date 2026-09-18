@@ -426,6 +426,15 @@
 .b-map__zoom { position: absolute; left: var(--sp-3); bottom: var(--sp-3); z-index: 4; display: flex; gap: var(--sp-1); }
 .b-map__zoom button { width: var(--tap); height: var(--tap); border: var(--px) solid var(--lantern-deep); border-radius: var(--radius); background: var(--paper); color: var(--ink); font-family: var(--font-display); font-size: var(--fs-lg); }
 .b-map__zoom button:hover { background: var(--lantern); }
+
+/* ─── the world map: BlueMap on /heimskort, in the same frame ─────
+   Its own viewer draws the 3D scene inside; the frame only has to match
+   the land map's wood and hold a size the scene can fill. */
+.b-world { position: relative; border: calc(var(--px) * 4) solid var(--wood); box-shadow: 0 0 0 calc(var(--px) * 2) var(--wood-light), 0 0 0 calc(var(--px) * 4) var(--wood-dark); background: var(--night); }
+.b-world__view { display: block; width: 100%; height: clamp(24rem, 72vh, 56rem); border: 0; opacity: 0; transition: opacity var(--dur-2) var(--ease-out); }
+.b-world__view.is-ready { opacity: 1; }
+.b-world__wait { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; }
+@media (prefers-reduced-motion: reduce) { .b-world__view { transition: none; } }
 .b-print { position: relative; display: block; width: 100%; padding: var(--sp-2) var(--sp-2) var(--sp-3); background: var(--paper); color: var(--ink); border: var(--px) solid var(--tc-brown); }
 .b-print img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
 .b-print__empty { display: grid; place-items: center; aspect-ratio: 4 / 3; background: var(--paper-2); border: var(--line) dashed var(--ink-faint); }

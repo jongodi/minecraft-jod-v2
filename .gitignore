@@ -27,3 +27,6 @@ data/
 shots/
 shots-before/
 shots-reduce/
+
+# half-written downloads from npm run map:sync
+*.part

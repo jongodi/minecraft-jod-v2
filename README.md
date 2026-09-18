@@ -35,6 +35,21 @@ Kóðinn er í `src/components/badlands/`, útlitsreglur í `src/app/badlands.cs
 - **Pakkaritill** (`/rp-editor`): Greinir og breytir útlitspökkum í vafranum. Greining í bakgrunnsþræði rekur yfirlíkön, kubbaástand, hlutaskilgreiningar og yfirskriftir, letur, agnir, búnað, áferðarsöfn og gagnapakka. Hún sýnir bilaðar tilvísanir og skrár sem eru sannanlega ónotaðar. Þar eru líka tengslakort, leit að árekstrum í `custom_model_data`, leit að tvíteknum áferðum, sjálfvirkar leiðréttingar, útflutningur skýrslna og myndritill með þrívíðri forskoðun.
 - **Stjórnborð** (`/admin`): Fjórir flipar. **Þjónn**: staða, leikmenn inni, ræsa, stöðva og endurræsa á Exaroton, uppfærist sjálfkrafa. **Gagnapakkar**: allt um pakkana á einum stað; hvaða pakkar birtast í kaupfélaginu á vefnum (sýna eða fela), röðin á hillunum, uppsett útgáfa, athugun á nýrri útgáfu á Modrinth eða GitHub, lestur skráarheita beint af þjóninum, og eigin pakkar (til dæmis JOÐ-pakkarnir) sem má bæta við, breyta, gefa mynd og eyða. **Myndasafn**: upphleðsla, titlar, röð, sýna eða fela, og tenging við stað á kortinu. **Landakort**: ritill sem sýnir kortið nákvæmlega eins og gestir sjá það. Landslagið sjálft er málað þar: pensill og fylling mála sjó, land, gras, skóg, kletta og sand í kubbaristina, strönd teiknast sjálfkrafa þar sem land mætir sjó, og Shift heldur strokunni beinni. Að auki: afturköllun, rist, örvatakkar, afritun staða og myndaval. Heiti staða, svæða og mynda eru vistuð nákvæmlega eins og þau eru skrifuð.
 
+## Heimskortið
+
+Á `/heimskort` er heimasvæðið í þrívídd, teiknað af BlueMap á þjóninum. Exaroton leyfir ekki fleiri gáttir, svo vefþjónn BlueMap er óvirkur og vefurinn sækir kortið sjálfur í gegnum Exaroton-forritaskilin (`src/app/bluemap/[[...path]]/route.ts`). Hnappur í Landakortinu og hlekkur við varðeldinn vísa þangað.
+
+Meðan þjónninn er í gangi koma reitir kortsins og staða leikmanna beint frá honum. Þegar hann er stöðvaður afhendir Exaroton skrár allt of hægt, svo þá er notað afrit sem geymt er á vefnum sjálfum:
+
+```bash
+npm run map:sync            # sækir það sem hefur breyst
+npm run map:sync -- --full  # sækir allt upp á nýtt
+```
+
+Skipunin vistar skoðarann í `public/bluemap`, kortagögnin í `public/bluemap-data` og skráalista í `src/lib/bluemap-snapshot.json`. Síðan sýnir dagsetningu afritsins. Afritið birtist á vefnum þegar breytingunum hefur verið ýtt á GitHub. Best er að keyra skipunina meðan þjónninn er í gangi.
+
+Í `plugins/BlueMap/webapp.conf` á þjóninum þarf að vera `client-decompression: true`, annars finnur skoðarinn ekki þjöppuðu skrárnar í afritinu. Breytingar á `webapp.conf` birtast á vefnum eftir næstu afritun.
+
 ## Tungumál
 
 Viðmótið, villuskilaboð, sjálfgefnir myndatextar og greiningarskýrslur eru á íslensku. Dagsetningar og tölur nota `is-IS`.

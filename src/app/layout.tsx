@@ -76,7 +76,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <link rel="preconnect" href="https://mc-heads.net" />
         <link rel="preconnect" href="https://minotar.net" />
       </head>
-      <body>{children}</body>
+      {/* extensions like Grammarly write their own attributes onto <body> before React loads */}
+      <body suppressHydrationWarning>{children}</body>
     </html>
   );
 }

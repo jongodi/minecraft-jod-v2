@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "shots": "node scripts/shots.mjs"
+    "shots": "node scripts/shots.mjs",
+    "map:sync": "node scripts/sync-map.mjs"
   },
   "dependencies": {
     "@fontsource/alfa-slab-one": "^5.3.0",
