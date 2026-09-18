@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion, type PanInfo } from 'framer-motion';
 import { SPRING, SPRING_THROW, project } from './motion';
+import { photoProps, PHOTO_SIZES } from './photo';
 
 export interface LightboxPhoto { src: string; title?: string; sub?: string }
 
@@ -75,8 +76,9 @@ export default function Lightbox({ photos, index, onClose, onPrev, onNext, origi
             onDragEnd={onDragEnd}
             onClick={e => e.stopPropagation()}
           >
+            {/* no width/height: the card takes the photograph's own shape */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={photo.src} alt={photo.title ?? ''} draggable={false} />
+            <img {...photoProps(photo.src, PHOTO_SIZES.lightbox, 82)} alt={photo.title ?? ''} draggable={false} />
           </motion.div>
         </AnimatePresence>
       </div>

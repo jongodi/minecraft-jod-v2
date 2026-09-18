@@ -8,9 +8,9 @@ Byggt með Next.js 15, TypeScript og CSS. Almennu síðurnar nota ekkert viðmó
 
 Vefurinn er eitt kvöld á þjóninum. Gesturinn kemur að sólsetri yfir Minecraft-eyðimörk (badlands) og skrunar inn í nóttina; þegar bærinn kveikir á luktunum. Skrun er tími sem líður. Hönnunin er skjalfest í `DESIGN.md`.
 
-Fimm reglur halda útlitinu saman: terracotta-lög eyðimerkurinnar eru skilrúm og grunnur merkisins; gulbrúnt luktarljós er eingöngu á því sem hægt er að smella á; pixlaletur er eingöngu fyrir lifandi gögn frá þjóninum (vistfang, staða, fjöldi inni, útgáfa, tölfræði); pappír er fyrir það sem var fest upp (tölfræði, uppsettir pakkar, leiðin inn); og yfirborð eru hlý og dökk, aldrei kaldgrá.
+Fimm reglur halda útlitinu saman: terracotta-lög eyðimerkurinnar eru skilrúm og grunnur merkisins; gulbrúnt luktarljós er eingöngu á því sem hægt er að smella á; allt letur er teiknað á pixlarist, og pixlaleturgerðin sjálf er á öllum stuttum strengjum (valmynd, hnappar, myndatextar, merkimiðar, tölur og það sem þjónninn segir); pappír er fyrir það sem var fest upp (tölfræði, uppsettir pakkar, leiðin inn); og yfirborð eru hlý og dökk, aldrei kaldgrá.
 
-Letur: Alfa Slab One fyrir fyrirsagnir, Literata fyrir meginmál og Silkscreen fyrir gögn. Öll þrjú fylgja vefnum í gegnum `@fontsource` og eru hlaðin með `next/font/local`. Allir litir, stærðir, bil og tímasetningar eru í `src/app/tokens.css`.
+Letur: Alfa Slab One fyrir fyrirsagnir, Pixelify Sans fyrir meginmál og Silkscreen fyrir merkimiða og gögn — allar þrjár teiknaðar á pixlarist. Þær fylgja vefnum í gegnum `@fontsource` og eru hlaðnar með `next/font/local`. Allir litir, stærðir, bil og tímasetningar eru í `src/app/tokens.css`.
 
 | Hluti | Innihald |
 |---|---|

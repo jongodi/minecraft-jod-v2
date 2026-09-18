@@ -6,28 +6,51 @@
    you can act on, pixel type only for what the server says.
    ═══════════════════════════════════════════════════════════════ */
 
-/* ─── the evening: one number, driven by scroll ───────────────── */
+/* ─── the evening: one number, driven by scroll ─────────────────
+   --evening does not inherit (see tokens.css), so every element that
+   reads it runs the animation itself. Animating it on one ancestor
+   instead would invalidate the computed style of everything beneath it
+   on every scroll frame, and the readers below carry whole pixel-art
+   SVGs underneath them. */
 @keyframes b-evening { from { --evening: 0; } to { --evening: 1; } }
 @supports (animation-timeline: scroll()) {
-  html { animation: b-evening linear both; animation-timeline: scroll(root); animation-range: 0 120svh; }
+  .b-sky__night, .b-sky__stars, .b-sky__sun, .b-mesa__layer, .b-mesa__band {
+    animation: b-evening linear both;
+    animation-timeline: scroll(root);
+    animation-range: 0 120svh;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
-  html { animation: none !important; --evening: 0.7; }
+  .b-sky__night, .b-sky__stars, .b-sky__sun, .b-mesa__layer, .b-mesa__band { animation: none !important; --evening: 0.7; }
   .b-sky__sun { display: none; }
 }
 
+/* The sky is the sunset; night is a second layer fading in over it.
+   Interpolating the gradient's own stops would re-rasterise the whole
+   viewport every frame, where a layer's opacity is a composite. */
 .b-sky {
   position: fixed;
   inset: 0;
   z-index: var(--z-sky);
   pointer-events: none;
   background: linear-gradient(180deg,
-    color-mix(in oklab, var(--sky-sunset-top),     var(--sky-night-top) calc(var(--evening) * 100%)) 0%,
-    color-mix(in oklab, var(--sky-sunset-mid),     var(--sky-night-top) calc(var(--evening) * 100%)) 42%,
-    color-mix(in oklab, var(--sky-sunset-low),     var(--sky-night-low) calc(var(--evening) * 100%)) 72%,
-    color-mix(in oklab, var(--sky-sunset-horizon), var(--sky-night-low) calc(var(--evening) * 100%)) 100%);
+    var(--sky-sunset-top)     0%,
+    var(--sky-sunset-mid)    42%,
+    var(--sky-sunset-low)    72%,
+    var(--sky-sunset-horizon) 100%);
 }
-.b-sky__stars { position: absolute; inset: 0; width: 100%; height: 100%; color: var(--star); opacity: calc((var(--evening) - 0.45) * 1.8); }
+.b-sky__night {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg,
+    var(--sky-night-top)  0%,
+    var(--sky-night-top) 42%,
+    var(--sky-night-low) 72%,
+    var(--sky-night-low) 100%);
+  opacity: var(--evening);
+  will-change: opacity;
+}
+.b-sky__stars { position: absolute; inset: 0; width: 100%; height: 100%; color: var(--star); opacity: calc((var(--evening) - 0.45) * 1.8); will-change: opacity; }
 .b-sky__sun {
   position: absolute;
   right: clamp(8%, 14vw, 24%);
@@ -37,6 +60,7 @@
   color: var(--sun);
   transform: translateY(calc(var(--evening) * 75svh));
   opacity: calc(1.6 - var(--evening) * 1.6);
+  will-change: transform, opacity;
 }
 .b-sky svg { display: block; shape-rendering: crispEdges; }
 
@@ -198,6 +222,10 @@
   color: var(--text-soft);
   text-decoration: none;
   transition: border-color var(--dur-1) var(--ease-out);
+  /* The hero puts this in an auto column beside the mark. The pixel face sets
+     a longer line than the serif did, so the panel is capped and its status
+     line wraps instead of taking width off JOÐ. */
+  max-width: 22rem;
 }
 .b-status:hover, .b-status:focus-visible { border-color: var(--lantern); }
 .b-status .b-lantern { width: 2.25rem; height: 3.4rem; }
@@ -205,7 +233,7 @@
 .b-status__word { font-family: var(--font-data); font-size: var(--fs-data); color: var(--paper); line-height: 1.3; }
 .b-status.is-on .b-status__word { color: var(--online); }
 .b-status.is-off .b-status__word { color: var(--tc-white); }
-.b-status__row { font-size: var(--fs-sm); color: var(--text-faint); line-height: 1.4; }
+.b-status__row { font-size: var(--fs-xs); color: var(--text-faint); line-height: 1.5; }
 .b-status__row b { font-family: var(--font-data); font-weight: 400; font-size: var(--fs-data); color: var(--paper); }
 
 /* ─── lantern rail: navigation as the evening's clock ─────────── */
@@ -238,7 +266,7 @@
     color: var(--paper);
     border: var(--line) solid rgba(232, 220, 196, 0.18);
     border-radius: var(--radius);
-    font-size: var(--fs-sm);
+    font-size: 0.75rem;
     white-space: nowrap;
     opacity: 0;
     transform: translateX(-4px);
@@ -280,8 +308,10 @@
 .b-bar__addr span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .b-bar__addr b { font-family: var(--font-text); font-weight: 600; font-size: var(--fs-xs); color: var(--lantern); letter-spacing: 0.02em; }
 .b-bar__addr:hover b { color: var(--paper); }
-.b-bar__links { display: none; gap: var(--sp-5); }
-.b-bar__link { font-size: var(--fs-sm); font-weight: 600; color: var(--text-soft); text-decoration: none; padding-block: var(--sp-2); border-bottom: var(--px) solid transparent; white-space: nowrap; }
+/* Seven section names in the pixel face, beside the mark and the address,
+   inside a 1160px wrap: they only fit small and close together. */
+.b-bar__links { display: none; gap: var(--sp-4); }
+.b-bar__link { font-size: 0.75rem; font-weight: 400; letter-spacing: 0; color: var(--text-soft); text-decoration: none; padding-block: var(--sp-2); border-bottom: var(--px) solid transparent; white-space: nowrap; }
 .b-bar__link:hover { color: var(--lantern); }
 .b-bar__link.is-active { color: var(--lantern); border-bottom-color: var(--lantern); }
 .b-burger { display: inline-flex; flex-direction: column; justify-content: center; align-items: center; gap: 5px; width: var(--tap); height: var(--tap); border: var(--px) solid var(--lantern); border-radius: var(--radius); }
@@ -343,7 +373,9 @@
 .b-hero__version { font-family: var(--font-data); font-size: var(--fs-xs); color: var(--tc-white); }
 
 .b-mesa { position: absolute; inset-inline: 0; bottom: 0; height: clamp(9rem, 32svh, 20rem); pointer-events: none; }
-.b-mesa__layer { position: absolute; inset: 0; will-change: transform; transform: translateY(round(nearest, calc(var(--evening) * var(--depth)), 1px)); }
+/* No will-change here: the layer's colour is animated too, so it has to be
+   repainted either way and promoting it only costs texture memory. */
+.b-mesa__layer { position: absolute; inset: 0; transform: translateY(round(nearest, calc(var(--evening) * var(--depth)), 1px)); }
 .b-mesa__layer svg { width: 100%; height: 100%; display: block; shape-rendering: crispEdges; }
 .b-mesa__layer--far  { --depth: 56px; color: color-mix(in oklab, var(--tc-red), var(--sky-night-low) calc(var(--evening) * 65%)); }
 .b-mesa__layer--mid  { --depth: 36px; color: color-mix(in oklab, var(--tc-orange), var(--night) calc(var(--evening) * 70%)); }
@@ -645,3 +677,76 @@
 .b-duel__v { margin-top: var(--sp-1); font-family: var(--font-data); font-size: var(--fs-data); color: var(--paper); display: inline-flex; align-items: center; gap: var(--sp-2); }
 .b-star { width: 1.1rem; height: 1.1rem; color: var(--tc-yellow); flex-shrink: 0; }
 .b-duel__rules { font-size: var(--fs-sm); line-height: 1.5; color: var(--text-faint); max-width: 34ch; }
+
+/* ═══════════════════════════════════════════════════════════════
+   Label type
+   Everything on the page that is a short string — navigation, controls,
+   captions, tags, counts, notes — is set in the pixel face. Only running
+   prose stays in the text face: the hero line, a section's opening
+   sentence, a crew member's own words. Collected here rather than spread
+   through the file so the line between the two is one thing to read, and
+   placed last so it settles any earlier font-family on the same selector.
+   ═══════════════════════════════════════════════════════════════ */
+
+.b-note,
+.b-btn,
+.b-input,
+.b-err,
+.b-copy__hint,
+.b-status__row,
+.b-rail__label,
+.b-bar__link,
+.b-bar__addr b,
+.b-drawer__link,
+.b-folk__name,
+.b-index__label,
+.b-index__type,
+.b-frame__cap,
+.b-print__cap,
+.b-map__zoom button,
+.b-arena__small,
+.b-stub__k,
+.b-duel__k,
+.b-duel__rules,
+.b-lb__cap,
+.b-wallrail__arrow,
+.b-arrowbtn,
+.b-lb__close {
+  font-family: var(--font-data);
+}
+
+/* Silkscreen carries a real bold, so 600 resolves to it and nothing is
+   synthetically emboldened; a faux-bold bitmap face smears. */
+.b-note,
+.b-copy__hint,
+.b-status__row,
+.b-rail__label,
+.b-folk__name,
+.b-index__type,
+.b-frame__cap,
+.b-print__cap,
+.b-duel__rules,
+.b-arena__small {
+  font-weight: 400;
+}
+
+/* The pixel face is already wide; the tracking that opened up the serif's
+   small caps would push these labels out of their boxes. */
+.b-fold,
+.b-btn {
+  font-family: var(--font-data);
+  letter-spacing: 0.02em;
+}
+
+/* Two-digit chips, sized straight onto the 8px grid so they stay crisp. */
+.b-index__no,
+.b-frame__no {
+  font-size: var(--fs-chip);
+  line-height: 2;
+}
+
+/* The place list is there to name places: at the serif's size the longest
+   names ("Blöðruparadís", "Seyðaturninn") lost their tails to the ellipsis
+   in the wider face, so the label steps down rather than the column out. */
+.b-index__label { font-size: var(--fs-xs); }
+.b-index__type  { font-size: 0.625rem; }

@@ -32,17 +32,6 @@
     radial-gradient(50% 50% at 10% 100%, rgba(77, 51, 35, 0.10), transparent 70%),
     repeating-linear-gradient(90deg, rgba(77, 51, 35, 0.025) 0 1px, transparent 1px 3px);
 }
-.b-paper::after {
-  /* the lantern cursor lifts the texture here; --cx and --cy are set by the cursor light */
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: var(--cursor-on, 0);
-  background: radial-gradient(220px circle at var(--cx, -999px) var(--cy, -999px), rgba(255, 226, 170, 0.22), transparent 70%);
-  background-attachment: fixed;
-  mix-blend-mode: multiply;
-}
 .b-paper > * { position: relative; }
 .b-paper__nail {
   position: absolute;
@@ -370,14 +359,24 @@
 
 /* ─── effects ─────────────────────────────────────────────────── */
 .b-particles { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+/* One pre-rasterised disc of light, parked at the origin and moved by
+   transform. Painting the gradient at a moving position instead would
+   repaint the whole viewport on every pointer frame. */
 .b-light {
   position: fixed;
-  inset: 0;
+  left: 0;
+  top: 0;
+  width: 520px;
+  height: 520px;
+  margin: -260px 0 0 -260px;
   z-index: var(--z-light);
   pointer-events: none;
-  background: radial-gradient(260px circle at var(--cx, -999px) var(--cy, -999px), rgba(242, 166, 59, 0.10), transparent 70%);
+  opacity: 0;
+  background: radial-gradient(closest-side circle, rgba(242, 166, 59, 0.10), transparent 70%);
   mix-blend-mode: screen;
+  will-change: transform;
 }
+.b-light.is-on { opacity: 1; }
 
 /* ─── crew pages ──────────────────────────────────────────────── */
 .b-page { padding-block: clamp(5rem, 9vw, 7rem) clamp(3rem, 8vw, 6rem); }
@@ -440,3 +439,67 @@
 .b-modal__title { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-lg); color: var(--ink); }
 .b-modal__sub { font-size: var(--fs-sm); color: var(--ink-soft); margin: var(--sp-1) 0 var(--sp-4); }
 .b-modal__actions { display: flex; gap: var(--sp-2); margin-top: var(--sp-4); }
+
+/* ═══════════════════════════════════════════════════════════════
+   Label type on the board
+   Same line as badlands.css draws: short strings in the pixel face,
+   running prose in the text face. What stays prose here is a crew
+   member's bio, the text of a post, and the paragraph under each step
+   of the trail. Last in the file so it settles earlier declarations.
+   ═══════════════════════════════════════════════════════════════ */
+
+.b-paper__kicker,
+.b-tab,
+.b-poster__place,
+.b-poster__reward,
+.b-poster__meta,
+.b-poster__note,
+.b-ledger__title,
+.b-ledger__name,
+.b-empty,
+.b-source,
+.b-store__signsub,
+.b-crate__name,
+.b-crate__desc,
+.b-crate__tag,
+.b-counter__name,
+.b-counter__meta,
+.b-counter__desc,
+.b-foot__link,
+.b-foot__credit p,
+.b-back,
+.b-feed__meta,
+.b-feed__who,
+.b-stat__k,
+.b-badges,
+.b-post__meta,
+.b-post__actions button,
+.b-block__head,
+.b-compose__row {
+  font-family: var(--font-data);
+}
+
+/* Tracking that suited the serif's small caps is too much for a face this
+   wide; enough is left to keep the uppercase labels from closing up. */
+.b-paper__kicker,
+.b-poster__place,
+.b-poster__reward,
+.b-counter__meta,
+.b-store__signsub {
+  letter-spacing: 0.04em;
+}
+
+/* An empty state is a whole sentence; at body size the pixel face shouts it. */
+.b-empty { font-size: var(--fs-sm); }
+
+/* No synthetic bold on the bitmap face: these read as labels, not emphasis. */
+.b-poster__note,
+.b-crate__name,
+.b-crate__desc,
+.b-counter__desc,
+.b-feed__meta,
+.b-stat__k,
+.b-source,
+.b-empty {
+  font-weight: 400;
+}

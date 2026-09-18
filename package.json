@@ -10,9 +10,9 @@
     "shots": "node scripts/shots.mjs"
   },
   "dependencies": {
-    "@fontsource-variable/literata": "^5.3.0",
     "@fontsource/alfa-slab-one": "^5.3.0",
     "@fontsource/jetbrains-mono": "^5.3.0",
+    "@fontsource/pixelify-sans": "^5.3.0",
     "@fontsource/silkscreen": "^5.3.0",
     "@types/three": "^0.183.1",
     "@vercel/blob": "^2.3.3",

@@ -4,10 +4,15 @@
    ═══════════════════════════════════════════════════════════════ */
 
 /* Time of day. 0 is sunset, 1 is full night. Driven by scroll in
-   the hero (see badlands.css), fixed under reduced motion. */
+   the hero (see badlands.css), fixed under reduced motion.
+
+   It does not inherit: it is animated on every scroll frame, and an
+   inherited custom property invalidates the computed style of the whole
+   subtree under whatever it is set on. Each element that reads it carries
+   the animation itself, so a frame touches only those elements. */
 @property --evening {
   syntax: '<number>';
-  inherits: true;
+  inherits: false;
   initial-value: 0;
 }
 
@@ -80,9 +85,13 @@
   --online:  #8FB06A;
   --offline: var(--tc-red);
 
-  /* ── type ── */
+  /* ── type ──
+     Three pixel-drawn families. Display is the sign painter's slab, text is
+     the one face that carries a paragraph, and data is the label face: every
+     short string on the site — navigation, buttons, captions, counts, tags,
+     and anything the server says. */
   --font-display: var(--font-display-loaded, 'Alfa Slab One'), Georgia, serif;
-  --font-text:    var(--font-text-loaded, 'Literata'), Georgia, serif;
+  --font-text:    var(--font-text-loaded, 'Pixelify Sans'), 'Trebuchet MS', sans-serif;
   --font-data:    var(--font-data-loaded, 'Silkscreen'), 'Courier New', monospace;
 
   --fs-xs:   0.8rem;
@@ -92,6 +101,7 @@
   --fs-xl:   clamp(1.5rem, 1.1rem + 1.8vw, 2.2rem);
   --fs-2xl:  clamp(2rem, 1.4rem + 3vw, 3.4rem);
   --fs-hero: clamp(5.5rem, 2rem + 15vw, 14rem);
+  --fs-chip: 0.5rem;    /* the numeral chips on frames and map pins: 8px, dead on the grid */
   --fs-data: 1rem;      /* Silkscreen is drawn on 8px; keep multiples of 0.5rem */
   --fs-data-lg: 1.5rem;
   --fs-data-xl: 2rem;

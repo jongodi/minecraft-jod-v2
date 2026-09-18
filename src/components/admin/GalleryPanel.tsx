@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { GalleryPhoto } from '@/lib/gallery';
 import type { MapConfig, MapLocation } from '@/lib/map-types';
 import GalleryUploader from './GalleryUploader';
+import ScreenshotFormat from './ScreenshotFormat';
 import { Button, Field, Notice, Panel, api, errText } from './ui';
 
 /** A gallery photo as the admin API returns it: with the id of the map pin it is linked to. */
@@ -115,6 +116,7 @@ export default function GalleryPanel() {
       ))}
     >
       <div className="a-stack">
+        <ScreenshotFormat onChanged={load} />
         <GalleryUploader onUploaded={onUploaded} />
         <Notice text={msg} />
         {loading ? <p className="a-muted">Sæki myndir</p> : shown.length === 0 ? <p className="a-muted">Engin mynd passar við síuna.</p> : (

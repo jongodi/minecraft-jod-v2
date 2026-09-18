@@ -1,4 +1,4 @@
-import type { SVGProps } from 'react';
+import { memo, useMemo, type SVGProps } from 'react';
 import type { MapLocation, MapPath, MapZone } from '@/lib/map-types';
 import { handCase } from './data';
 import { DEFAULT_TERRAIN, normalizeTerrain, terrainPaths, withBeaches } from '@/lib/terrain';
@@ -88,10 +88,12 @@ const GROUND: Array<{ code: string; fill: string; tex?: string }> = [
   { code: 'f', fill: 'var(--map-forest)', tex: 'jForestTex' },
 ];
 
-/** The ground on its own, so the editor can draw its tools over it. */
-export function Terrain({ terrain }: { terrain?: readonly string[] }) {
-  const grid = withBeaches(normalizeTerrain(terrain ?? DEFAULT_TERRAIN));
-  const d = terrainPaths(grid);
+/** The ground on its own, so the editor can draw its tools over it.
+    Walking 1600 blocks into path data is memoised on the grid: picking a
+    place on the map re-renders this, and the ground has not changed. */
+export const Terrain = memo(function Terrain({ terrain }: { terrain?: readonly string[] }) {
+  const source = terrain ?? DEFAULT_TERRAIN;
+  const d = useMemo(() => terrainPaths(withBeaches(normalizeTerrain(source))), [source]);
   return (
     <g shapeRendering="crispEdges">
       <rect width={MAP_W} height={MAP_H} fill="url(#jWater)" />
@@ -103,7 +105,7 @@ export function Terrain({ terrain }: { terrain?: readonly string[] }) {
       ) : null)}
     </g>
   );
-}
+});
 
 /** A pixel banner for a place: pole, flag, base, and the number beside it. */
 export function MapPin({ loc, active }: { loc: MapLocation; active: boolean }) {

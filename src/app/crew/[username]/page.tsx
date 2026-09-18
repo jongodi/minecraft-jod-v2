@@ -11,6 +11,7 @@ import AddressBar from '@/components/badlands/AddressBar';
 import Footer from '@/components/badlands/Footer';
 import PlayerHead from '@/components/badlands/PlayerHead';
 import Lightbox from '@/components/badlands/Lightbox';
+import { photoProps, PHOTO_SIZES } from '@/components/badlands/photo';
 import { AnimatePresence } from 'framer-motion';
 import { ArrowIcon, Star } from '@/components/badlands/Bits';
 import { PAGE_LINKS, STAT_TABS } from '@/components/badlands/data';
@@ -367,7 +368,7 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
                     {profile.photos.map((photo, idx) => (
                       <button key={photo.id} type="button" className="b-print-btn" onClick={e => { setOrigin(e.currentTarget.getBoundingClientRect()); setLightboxIdx(idx); }} aria-label={photo.caption || `Mynd úr leiknum ${idx + 1}`}>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={photo.filename} alt={photo.caption || ''} loading="lazy" />
+                        <img {...photoProps(photo.filename, PHOTO_SIZES.shot)} alt={photo.caption || ''} loading="lazy" decoding="async" />
                         <span className="b-print-btn__cap">{photo.caption || formatDate(photo.uploadedAt)}</span>
                       </button>
                     ))}

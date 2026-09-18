@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { memo, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { DATAPACKS } from '@/data/datapacks';
 import type { PublicPack } from '@/lib/datapacks-store';
 import { Strata } from './Bits';
@@ -23,7 +23,7 @@ const categoryName = (c: string) => CATEGORY[c] ?? c.toLowerCase();
     shelves: point at one and the shopkeeper puts its label on the counter. The
     plank opens the shelves proper, where every crate carries its own text.
     Nothing is for sale. */
-export default function Provisions() {
+function Provisions() {
   const [packs, setPacks] = useState<PublicPack[]>(SEED);
   const [shelves, setShelves] = useState(false);
   const [pinned, setPinned] = useState<number | null>(null);
@@ -137,3 +137,7 @@ export default function Provisions() {
     </section>
   );
 }
+
+/* Memoised: the home page re-renders whenever the server ping, the stats or
+   the active section changes, and this section depends on none of them. */
+export default memo(Provisions);
