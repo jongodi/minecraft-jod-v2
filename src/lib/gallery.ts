@@ -78,6 +78,14 @@ export async function readGallery(): Promise<GalleryPhoto[]> {
   }));
 }
 
+/** The gallery exactly as it is stored, with titles unlocalised. Anything that
+    writes the gallery back should start here: readGallery() runs titles and
+    sublabels through localizeContent(), and saving those would persist the
+    rendered text over the text that was typed. */
+export async function readGalleryRaw(): Promise<GalleryPhoto[]> {
+  return readStoredGallery();
+}
+
 /** Append a stored image to the gallery as a visible photo at the end of the order. */
 export async function addGalleryPhoto(input: { id: string; fileUrl: string; title: string; sublabel: string }): Promise<GalleryPhoto> {
   const gallery  = await readStoredGallery();
