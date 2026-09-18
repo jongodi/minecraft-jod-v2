@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { MAP_URL } from './data';
 
 /* BlueMap's own viewer, hung in the same wooden frame as the land map on the
    home page. It runs in an iframe so its three.js scene and its styles stay
@@ -21,7 +22,7 @@ export default function WorldMap() {
         {!ready && <p className="b-empty b-world__wait">sæki kortið…</p>}
         <iframe
           ref={frame}
-          src="/bluemap/index.html"
+          src={MAP_URL}
           title="Þrívíddarkort af heimasvæðinu"
           className={`b-world__view${ready ? ' is-ready' : ''}`}
           onLoad={() => setReady(true)}

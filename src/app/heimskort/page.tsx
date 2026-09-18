@@ -6,7 +6,7 @@ import AddressBar from '@/components/badlands/AddressBar';
 import Footer from '@/components/badlands/Footer';
 import WorldMap from '@/components/badlands/WorldMap';
 import { ArrowIcon } from '@/components/badlands/Bits';
-import { PAGE_LINKS } from '@/components/badlands/data';
+import { MAP_URL, PAGE_LINKS } from '@/components/badlands/data';
 import snapshot from '@/lib/bluemap-snapshot.json';
 
 export const metadata: Metadata = {
@@ -14,8 +14,8 @@ export const metadata: Metadata = {
   description: 'Heimasvæðið á JOÐ í þrívídd, teiknað beint upp úr heiminum á þjóninum.',
 };
 
-/* When the copy kept on the site was taken: that is the map visitors see
-   while the server is stopped. */
+/* When the copy kept on the site was taken: the map is drawn from that copy,
+   and only the players on it come live from the server. */
 const syncedAt = (snapshot as { syncedAt: string | null }).syncedAt;
 const syncedOn = syncedAt
   ? new Date(syncedAt).toLocaleDateString('is-IS', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Atlantic/Reykjavik' })
@@ -33,12 +33,12 @@ export default function HeimskortPage() {
               <h1 className="b-title">Heimskortið</h1>
               <p className="b-lede">Heimasvæðið okkar í þrívídd, teiknað beint upp úr heiminum á þjóninum.</p>
               <p className="b-note">
-                Meðan þjónninn er í gangi er kortið lifandi.
-                {syncedOn && ` Annars sést það eins og það var ${syncedOn}.`}
+                {syncedOn && `Kortið sýnir heiminn eins og hann var ${syncedOn}. `}
+                Leikmenn birtast á því meðan þjónninn er í gangi.
               </p>
             </div>
             {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- BlueMap's own app, not a Next page: a full page load is what it needs */}
-            <a href="/bluemap/index.html" className="b-btn b-btn--small">Opna á heilum skjá</a>
+            <a href={MAP_URL} className="b-btn b-btn--small">Opna á heilum skjá</a>
           </div>
           <WorldMap />
         </main>

@@ -9,9 +9,11 @@ import snapshotFile from '@/lib/bluemap-snapshot.json';
 
    `npm run map:sync` keeps a copy of the map in the site itself: the viewer in
    public/bluemap (served before this route is ever asked) and the map data in
-   public/bluemap-data. While the server is running, map data still comes live
-   from exaroton. Once it stops, exaroton hands out files far too slowly to draw
-   a map, so requests are sent to the copy instead. */
+   public/bluemap-data. With map-data-root pointed at that copy in BlueMap's
+   webapp.conf, the viewer loads the map straight from the CDN and only live
+   data (players, markers) comes through here. Anything else that still arrives
+   is served live while the server runs and from the copy once it stops, since
+   exaroton hands out files far too slowly then to draw a map. */
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

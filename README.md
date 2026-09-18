@@ -39,7 +39,7 @@ Kóðinn er í `src/components/badlands/`, útlitsreglur í `src/app/badlands.cs
 
 Á `/heimskort` er heimasvæðið í þrívídd, teiknað af BlueMap á þjóninum. Exaroton leyfir ekki fleiri gáttir, svo vefþjónn BlueMap er óvirkur og vefurinn sækir kortið sjálfur í gegnum Exaroton-forritaskilin (`src/app/bluemap/[[...path]]/route.ts`). Hnappur í Landakortinu og hlekkur við varðeldinn vísa þangað.
 
-Meðan þjónninn er í gangi koma reitir kortsins og staða leikmanna beint frá honum. Þegar hann er stöðvaður afhendir Exaroton skrár allt of hægt, svo þá er notað afrit sem geymt er á vefnum sjálfum:
+Kortið sjálft er teiknað upp úr afriti sem geymt er á vefnum, svo það hleðst hratt hvort sem þjónninn er í gangi eða ekki. Aðeins staða leikmanna kemur beint frá þjóninum, meðan hann er í gangi. Afritið er sótt svona:
 
 ```bash
 npm run map:sync            # sækir það sem hefur breyst
@@ -48,7 +48,7 @@ npm run map:sync -- --full  # sækir allt upp á nýtt
 
 Skipunin vistar skoðarann í `public/bluemap`, kortagögnin í `public/bluemap-data` og skráalista í `src/lib/bluemap-snapshot.json`. Síðan sýnir dagsetningu afritsins. Afritið birtist á vefnum þegar breytingunum hefur verið ýtt á GitHub. Best er að keyra skipunina meðan þjónninn er í gangi.
 
-Í `plugins/BlueMap/webapp.conf` á þjóninum þarf að vera `client-decompression: true`, annars finnur skoðarinn ekki þjöppuðu skrárnar í afritinu. Breytingar á `webapp.conf` birtast á vefnum eftir næstu afritun.
+Í `plugins/BlueMap/webapp.conf` á þjóninum þarf að vera `client-decompression: true`, `map-data-root: "/bluemap-data/maps"` og `live-data-root: "maps"`. Fyrsta stillingin lætur skoðarann afpakka þjöppuðu skrárnar sjálfur, hinar tvær láta hann sækja kortið í afritið en stöðu leikmanna til þjónsins. Breytingar á `webapp.conf` birtast á vefnum eftir næstu afritun.
 
 ## Tungumál
 
