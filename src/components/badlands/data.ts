@@ -35,7 +35,7 @@ export const PAGE_LINKS: NavLink[] = HOME_LINKS.map(l => (l.href.startsWith('#')
    full screen, frame the view you want and copy everything after the # in the
    address bar. Passing it in the link beats webapp.conf's start-location, which
    has to survive the server, the sync and whatever the viewer remembered. */
-export const MAP_START_VIEW = 'world:-6915:58:-8925:65:2.32:1.1:0:0:perspective';
+export const MAP_START_VIEW = 'world:-6890:57:-8919:65:2.03:1.08:0:0:perspective';
 export const MAP_URL = `/bluemap/index.html#${MAP_START_VIEW}`;
 
 export interface Plate { id: string; src: string; title: string; sub: string }
