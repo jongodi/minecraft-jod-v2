@@ -50,10 +50,13 @@ const nextConfig = {
     ].join('; ');
 
     // The BlueMap viewer under /bluemap is framed by /heimskort, so it may be framed
-    // by the site itself. It loads block textures as data: URLs and may start workers.
+    // by the site itself. It loads block textures as data: URLs and may start workers,
+    // and its translations (vue-i18n) compile each message with new Function(), so it
+    // needs 'unsafe-eval' in production too. This applies to BlueMap's own files only;
+    // the site's pages keep the stricter policy above.
     const bluemapCsp = [
       "default-src 'self'",
-      `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
       "worker-src 'self' blob:",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' blob: data:",
