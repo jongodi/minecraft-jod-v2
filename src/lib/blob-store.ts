@@ -114,9 +114,10 @@ export async function deleteStoredImage(url: string): Promise<void> {
       const { del } = await import('@vercel/blob');
       await del(url);
     } else if (url.startsWith('/screenshots/')) {
-      const safeBase = path.join(process.cwd(), 'public', 'screenshots');
-      const absPath  = path.resolve(process.cwd(), 'public', url.replace(/^\//, ''));
-      if (absPath.startsWith(safeBase + path.sep)) await fs.unlink(absPath);
+      /* Built from the screenshots folder and a bare file name, so the build's file
+         tracer only pulls public/screenshots into functions, not all of public/. */
+      const absPath = path.join(process.cwd(), 'public', 'screenshots', path.basename(url));
+      await fs.unlink(absPath);
     }
   } catch (e) {
     console.error('deleteStoredImage:', e);

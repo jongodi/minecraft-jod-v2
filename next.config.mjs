@@ -1,6 +1,21 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+
+  /* A stray package-lock.json higher up (in the home folder) made Next guess that
+     folder as the project root, which also skews what the file tracer matches. */
+  outputFileTracingRoot: path.dirname(fileURLToPath(import.meta.url)),
+
+  /* blob-store.ts builds paths into public/ at runtime (local screenshots), so the
+     file tracer copies what it can reach under public/ into every function that
+     imports it. The BlueMap copy is hundreds of MB of static files the functions
+     never read: the CDN serves it, and the /bluemap route only redirects to it. */
+  outputFileTracingExcludes: {
+    '*': ['**/public/bluemap/**', '**/public/bluemap-data/**'],
+  },
 
   images: {
     /* Screenshots are 1920px and admin uploads up to 2560px, while the wall
