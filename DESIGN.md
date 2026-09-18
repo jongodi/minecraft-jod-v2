@@ -44,7 +44,7 @@ The existing order is kept. Each section gets an hour.
 | Twilight | The land | territory | The map sheet takes the full width of the page, so the world is big enough to read. The coastline is rasterised once into 20 by 20 blocks, rivers walk the grid, places are pixel banners, and the sheet sits in a wooden pixel frame. The places are listed under it as a grid of cards, each with the photo it holds. |
 | Twilight | Pictures | postcards | The wall arrives folded: one rail of item frames you walk along sideways, its ends falling off into the dark, with the next picture peeking in so there is something to walk towards. Every picture is on that rail, so nothing is hidden; the plank at the foot hangs the whole wall instead. Hung, the frames butt against each other on the planks, each with its title on a plate in the bottom rail, every fifth double size and only while a whole block of five follows, so the wall tiles without holes. Nothing is reflowed either way, so the order on screen is exactly the order set in the admin panel. |
 | Night | Duel | showdown | The reaction game stays. The arena is the mesa at night; the flash is lantern light. |
-| Night | Tallies | tallies | Stats become wanted posters with pixel-torn edges and two nails: three for the top three, a ledger below. Heads are fetched at four times their drawn size so the 8 by 8 face stays sharp. Values in pixel type because they come from the game. |
+| Night | Tallies | tallies | Stats become wanted posters with pixel-torn edges and two nails: three for the top three, a ledger below. Heads are fetched at four times their drawn size so the 8 by 8 face stays sharp. Values in the label face, like every other short string on the page. |
 | Night | The general store | provisions | Closed, the store is its stock: every pack a small crate stacked on the back shelves under the hanging sign, and whichever one you point at has its label read out on the counter below, on paper, with its kind, version and description. The plank opens the shelves proper, where each crate carries its own text and a hanging version tag. Every pack keeps its own 12 by 12 pixel glyph on a paper label in both. |
 | Deep night | Ride in | ride | Restored from #45 with its original three steps as trail markers, ending at the address. |
 | Campfire | Footer | campfire | One band of ground, no taller than it needs to be. A three-frame pixel campfire stands on the earth with its light pooled across it and embers rising from the flame, and behind it the far mesas of the hero return as a dark silhouette, so the page closes on the landscape it opened over. The evening's own sections are not posted again: the rail, the address bar and the drawer already carry them. What is posted is what is not part of the evening — the crew, the pack editor, the admin panel — and the way back up to the sunset, which rewinds the sky as it climbs. |
@@ -53,7 +53,7 @@ The existing order is kept. Each section gets an hour.
 
 1. **Terracotta strata.** The banded terracotta layers of the badlands are the core motif: section dividers, the frame of the map, the base of the logo mark. Purpose: it is the one Western landscape native to Minecraft, so the brand reads Western and Minecraft in a single shape.
 2. **Lantern light means interactive.** Amber is reserved for things you can act on. Purpose: light becomes the wayfinding system, so a visitor never has to guess what is clickable.
-3. **Pixel type means live game data.** The pixel face appears only on the address, online status, player count, version and stat values. Purpose: when the visitor sees pixels, the actual server is talking.
+3. **Everything is drawn on a pixel grid.** All three families are pixel faces: the slab for headings, a text face for running prose, and the bitmap face for every short string — navigation, controls, captions, tags, counts, and what the server says. Purpose: the type belongs to the same world the screenshots come from, so nothing on the page reads as borrowed from a different site.
 4. **Printed paper means notices.** Stats, the installed-pack list and the join steps sit on weathered paper as letterpress notices. Purpose: on the frontier things were posted on a board, not listed in a UI.
 5. **Night is the canvas.** Surfaces are warm off-black. Only the sky itself reaches blue-black at full night. Purpose: warmth keeps the page from reading as a generic dark theme.
 
@@ -85,10 +85,12 @@ Three families, all self-hosted through `@fontsource`, all verified to render þ
 | Role | Family | Why |
 |---|---|---|
 | Display | Alfa Slab One | A Clarendon-descended fat slab, the shape of wood type on a real poster. Used only for the server name and section titles. |
-| Text | Literata | A book serif designed for long reading on screens, sturdy at small sizes. Loaded as the weight-only variable cut, since the site sets no italics. |
-| Data | Silkscreen | Drawn on an 8 px grid, so it stays crisp when sized in whole multiples. Used only for live server data. |
+| Text | Pixelify Sans | The one pixel face with text proportions, so a paragraph still reads at length. Carries running prose only: the hero line, a section's opening sentence, a crew member's own words, the body of a post. Two real cuts, 400 and 600. |
+| Label | Silkscreen | Drawn on an 8 px grid, so it stays crisp when sized in whole multiples. Everything that is a short string: navigation, buttons, captions, tags, counts, notices, and live server data. Two real cuts, 400 and 700. |
 
-Rye, Caveat and Lora are removed. JetBrains Mono stays for the admin panel and the pack editor, which are out of scope.
+Both label and text carry a real bold, so nothing is ever synthetically emboldened — faux bold smears a bitmap face. Which selectors sit on which side of the prose/label line is collected in one block at the foot of `badlands.css` and `board.css` rather than spread through them, so the line is one thing to read.
+
+Literata, Rye, Caveat and Lora are removed. JetBrains Mono stays for the admin panel and the pack editor, which are out of scope.
 
 ## Motion
 

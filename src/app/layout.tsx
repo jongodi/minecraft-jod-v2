@@ -3,24 +3,34 @@ import localFont from 'next/font/local';
 import './globals.css';
 import { SERVER_IP } from '@/components/badlands/data';
 
-/* Three families, self-hosted. Each is verified to carry þ ð æ ö á é í ó ú ý;
-   the Latin-1 block lives in the "latin" subset files. */
+/* Three families, self-hosted, all three drawn on a pixel grid. Each is
+   verified to carry þ ð æ ö á é í ó ú ý; the Latin-1 block lives in the
+   "latin" subset files, not in "latin-ext". */
 const display = localFont({
   src: '../../node_modules/@fontsource/alfa-slab-one/files/alfa-slab-one-latin-400-normal.woff2',
   weight: '400',
   variable: '--font-display-loaded',
   display: 'swap',
 });
+/* Running prose. A pixel face with text proportions, so a paragraph still
+   reads at length where Silkscreen would not. */
 const text = localFont({
-  /* the weight-only cut: half the size of the optical-size cut, and the site sets no italics */
-  src: '../../node_modules/@fontsource-variable/literata/files/literata-latin-wght-normal.woff2',
-  weight: '200 900',
+  src: [
+    { path: '../../node_modules/@fontsource/pixelify-sans/files/pixelify-sans-latin-400-normal.woff2', weight: '400', style: 'normal' },
+    { path: '../../node_modules/@fontsource/pixelify-sans/files/pixelify-sans-latin-600-normal.woff2', weight: '600', style: 'normal' },
+  ],
   variable: '--font-text-loaded',
   display: 'swap',
+  adjustFontFallback: false,
 });
+/* Labels, navigation, data: everything that is a short string. Both cuts are
+   real, so nothing on the page is ever synthetically bolded — faux bold
+   smears a bitmap face. */
 const data = localFont({
-  src: '../../node_modules/@fontsource/silkscreen/files/silkscreen-latin-400-normal.woff2',
-  weight: '400',
+  src: [
+    { path: '../../node_modules/@fontsource/silkscreen/files/silkscreen-latin-400-normal.woff2', weight: '400', style: 'normal' },
+    { path: '../../node_modules/@fontsource/silkscreen/files/silkscreen-latin-700-normal.woff2', weight: '700', style: 'normal' },
+  ],
   variable: '--font-data-loaded',
   display: 'swap',
   adjustFontFallback: false,
