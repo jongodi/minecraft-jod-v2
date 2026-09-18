@@ -67,7 +67,12 @@ async function main() {
   let fetched = 0, unchanged = 0, done = 0;
   await pool(found, async ({ rel, size }) => {
     const file = target(rel);
-    const current = !FULL && typeof size === 'number' && existsSync(file) && statSync(file).size === size;
+    /* Tiles and the texture atlas are the bulk and change size whenever they are
+       redrawn, so a matching size means nothing changed. Everything else is small
+       and can change without changing size (settings.json, say), so it is always
+       fetched. */
+    const trustSize = /^maps\/[^/]+\/(tiles\/|textures\.json)/.test(rel);
+    const current = !FULL && trustSize && typeof size === 'number' && existsSync(file) && statSync(file).size === size;
     if (current) {
       unchanged++;
     } else {
