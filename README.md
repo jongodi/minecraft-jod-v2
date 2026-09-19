@@ -24,13 +24,23 @@ Valmyndin er þrjár dyr, hver sín lukt: Heimurinn, Eftirlýst, Hillan. Fyrstu 
 
 Áhrif (himinn, mesa-lög með dýpt, ryk og glæður, luktarljós sem fylgir bendlinum, vindur og eldur úr Web Audio) eru hvert um sig sjálfstæð eining í `src/effects/` og slökkva á sér undir `prefers-reduced-motion`.
 
-Á `/crew` er félagalistinn. Á `/crew/<name>` eru skinnið í heild, kynning, tölfræði, afrek, færslur og myndir hvers leikmanns. Hausar og skinn koma frá minotar.net, með mc-heads.net til vara. Félagar skrá sig inn með sínum aðgangslykli.
+Á `/crew` er félagalistinn og taflan með því nýjasta af öllum veggjum. Á `/crew/<name>` er veggur hvers félaga: eftirlýsingaspjaldið efst (skinnið í heild, kynning, verðlaun, tölfræði, afrek og það sem viðkomandi byggði), og þar undir allt sem félaginn hefur fest upp, nýjast efst. Hausar og skinn koma frá minotar.net, með mc-heads.net til vara. Sjá **Veggirnir** hér að neðan.
 
 Kóðinn er í `src/components/badlands/`, útlitsreglur í `src/app/badlands.css` og `src/app/board.css`, grunngildi í `src/app/tokens.css` og `src/app/globals.css`. Endurhönnunin er skjalfest í `DESIGN.md`.
 
+## Veggirnir
+
+Hver félagi á vegg á `/crew/<name>`. Á honum hangir hvað sem er: miði, mynd, eða miði með myndum. Ein færsla (`CrewEntry`) er texti, núll eða fleiri myndir með myndatexta hver, staður á kortinu ef við á, luktir þeirra sem kveiktu undir henni og stutt svör frá öðrum félögum. Eldri veggir með aðskildum færslum og myndum eru lesnir í þetta form við lestur (`normalizeProfile` í `src/lib/crew-types.ts`); ekkert þarf að flytja handvirkt.
+
+**Að festa eitthvað upp.** Eigandi veggjarins sér pinnann efst: dragðu skjámyndir hvert sem er á síðuna, límdu þær (Ctrl+V), eða veldu þær; hver mynd fer strax upp í geymsluna (minnkuð í 2560 px WebP í vafranum og send beint í Vercel Blob, eins og í stjórnborðinu), fær myndatexta, og sé hún nefnd eins og leikurinn nefnir skjámyndir (`2026-09-10_20.15.33.png`) er dagsetningin lesin af nafninu. Staður er valinn úr stöðunum á kortinu. Færslu má breyta eftir á: texta, myndatexta, stað, taka myndir niður, og setja eina þeirra á plakatið, þar sem hún stendur fölnuð á bak við spjaldið og á tengilspjaldinu (`/crew/<name>/opengraph-image`) þegar veggnum er deilt.
+
+**Innskráning.** Stjórnborðið býr til innskráningartengil (og QR-kóða) fyrir hvern félaga undir **Hópurinn**. Tengillinn gildir í viku og virkar einu sinni; tækið sem opnar hann er skráð inn í eitt ár. Innskráður félagi sér hausinn sinn logandi í stikunni á öllum síðum og kemst þaðan á vegginn sinn. Aðgangslyklarnir í umhverfisbreytum virka áfram sem varaleið undir „Þetta er ég“.
+
+**Veggirnir annars staðar.** Í Eftirlýst-herberginu á forsíðunni er „Á töflunni“: það nýjasta af veggjunum, og fjöldi mynda undir hverjum haus. Í heiminum ber staður sem eitthvað hefur verið fest við töluna á flísinni sinni, og póstkortið sýnir myndir félaganna af staðnum, hverja eitt smell frá veggnum sínum. Staður getur líka borið hverjir byggðu hann (stillt í kortaritlinum); póstkortið segir það og veggur hvers og eins telur upp það sem viðkomandi byggði. Einvígið við varðeldinn sendir besta tímann á vegginn þegar félagi er innskráður; sá fljótasti er eftirlýstur sem **Fógetinn**.
+
 ## Verkfæri
 
-- **Stjórnborð** (`/admin`): Fjórir flipar. **Þjónn**: staða, leikmenn inni, ræsa, stöðva og endurræsa á Exaroton, uppfærist sjálfkrafa. **Gagnapakkar**: allt um pakkana á einum stað; hvaða pakkar birtast í kaupfélaginu á vefnum (sýna eða fela), röðin á hillunum, uppsett útgáfa, athugun á nýrri útgáfu á Modrinth eða GitHub, lestur skráarheita beint af þjóninum, og eigin pakkar (til dæmis JOÐ-pakkarnir) sem má bæta við, breyta, gefa mynd og eyða. **Myndasafn**: upphleðsla, titlar, röð, sýna eða fela, og tenging við stað á kortinu. **Landakort**: ritill sem sýnir kortið nákvæmlega eins og gestir sjá það. Landslagið sjálft er málað þar: pensill og fylling mála sjó, land, gras, skóg, kletta og sand í kubbaristina, strönd teiknast sjálfkrafa þar sem land mætir sjó, og Shift heldur strokunni beinni. Að auki: afturköllun, rist, örvatakkar, afritun staða og myndaval. Heiti staða, svæða og mynda eru vistuð nákvæmlega eins og þau eru skrifuð.
+- **Stjórnborð** (`/admin`): Fjórir flipar. **Þjónn**: staða, leikmenn inni, ræsa, stöðva og endurræsa á Exaroton, uppfærist sjálfkrafa. **Gagnapakkar**: allt um pakkana á einum stað; hvaða pakkar birtast í kaupfélaginu á vefnum (sýna eða fela), röðin á hillunum, uppsett útgáfa, athugun á nýrri útgáfu á Modrinth eða GitHub, lestur skráarheita beint af þjóninum, og eigin pakkar (til dæmis JOÐ-pakkarnir) sem má bæta við, breyta, gefa mynd og eyða. **Myndasafn**: upphleðsla, titlar, röð, sýna eða fela, og tenging við stað á kortinu. **Hópurinn**: félagarnir, hvort aðgangslykill sé stilltur, hvað hangir á hverjum vegg, og innskráningartengill með QR-kóða fyrir hvern og einn. **Landakort**: ritill sem sýnir kortið nákvæmlega eins og gestir sjá það. Landslagið sjálft er málað þar: pensill og fylling mála sjó, land, gras, skóg, kletta og sand í kubbaristina, strönd teiknast sjálfkrafa þar sem land mætir sjó, og Shift heldur strokunni beinni. Að auki: afturköllun, rist, örvatakkar, afritun staða og myndaval. Heiti staða, svæða og mynda eru vistuð nákvæmlega eins og þau eru skrifuð.
 
 ## Heimskortið
 
@@ -60,7 +70,7 @@ Upphafssjónarhornið er `MAP_START_VIEW` í `src/components/badlands/data.ts`; 
 
 ## Tungumál
 
-Viðmótið, villuskilaboð og sjálfgefnir myndatextar eru á íslensku. Dagsetningar og tölur nota `is-IS`.
+Viðmótið, villuskilaboð og sjálfgefnir myndatextar eru á íslensku. Dagsetningar og tölur nota `is-IS`. Það sem félagi skrifar á vegginn sinn er geymt eins og það var slegið inn; React sér um að birta það örugglega.
 
 Auðkenni, slóðir, Minecraft-lyklar, notendanöfn og eiginheiti utanaðkomandi pakka og laga haldast óbreytt.  Í `src/lib/icelandic.ts` eru birtingarheiti fyrir innri auðkenni og samsvaranir fyrir eldri enska myndatexta og kortaheiti. Þekktur eldri texti er þýddur við lestur, án þess að skrifa yfir nýtt efni notenda í gagnagrunni.
 
@@ -74,7 +84,8 @@ Afritaðu `.env.local.example` sem `.env.local` og fylltu inn gildin.
 | `EXAROTON_SERVER_ID` | Auðkenni þjónsins á exaroton.com; valfrjálst, sparar auka uppflettingu |
 | `ADMIN_TOKEN` | Lykilorð að stjórnborðinu á `/admin`, að minnsta kosti 8 stafir |
 | `GITHUB_TOKEN` | Hefðbundinn GitHub-aðgangslykill án aðgangssviða; hækkar fyrirspurnamörk við athugun gagnapakka, valfrjálst |
-| `CREW_TOKEN_<USERNAME>` | Aðgangslykill hvers félaga, t.d. `CREW_TOKEN_STEBBIAS=...` |
+| `CREW_TOKEN_<USERNAME>` | Aðgangslykill hvers félaga, t.d. `CREW_TOKEN_STEBBIAS=...`; varaleið, innskráningartenglar úr stjórnborðinu þurfa engan |
+| `NEXT_PUBLIC_SITE_URL` | Valfrjálst; slóð vefsins í innskráningartenglum, annars slóðin sem stjórnborðið var opnað á |
 | `REDIS_URL` | Redis-tenging fyrir prófíla, færslur, myndalýsigögn og vistuð tölfræðigögn |
 | `BLOB_READ_WRITE_TOKEN` | Vercel Blob-aðgangur fyrir myndir sem er hlaðið upp og fyrir kortagögnin. Geymslan má vera opin eða lokuð; myndir úr lokaðri geymslu eru birtar um `/api/blob/…` og kortagögn um `/bluemap-data/…` |
 | `BLOB_ACCESS` | `public` eða `private`; valfrjálst, sleppir sjálfvirkri athugun á aðgangsstigi Blob-geymslunnar |
@@ -92,6 +103,7 @@ Opnaðu [vefinn á localhost:3000](http://localhost:3000).
 
 ```bash
 npm run lint
+npm test                                    # einingaprófin (vitest) í src/lib/__tests__
 npx tsc --noEmit
 npm run build
 node scripts/shots.mjs shots / /crew        # skjámyndir og yfirflæðisathugun á 1440 og 390 px
@@ -101,9 +113,9 @@ REDUCE=1 node scripts/shots.mjs shots-reduce /             # með prefers-reduce
 
 ## Bæta við félaga
 
-1. Bættu notandanafninu við `CREW_USERNAMES` í `src/lib/crew.ts`.
+1. Bættu notandanafninu við `CREW_USERNAMES` í `src/lib/crew-types.ts`.
 2. Bættu því við `CREW` í `src/components/badlands/data.ts`.
-3. Stilltu `CREW_TOKEN_<UPPERCASE_USERNAME>` í umhverfisbreytunum.
+3. Búðu til innskráningartengil í stjórnborðinu undir **Hópurinn**, eða stilltu `CREW_TOKEN_<UPPERCASE_USERNAME>` í umhverfisbreytunum.
 
 ## Gagnapakkar
 

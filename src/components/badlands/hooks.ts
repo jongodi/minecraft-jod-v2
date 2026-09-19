@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import type { PlayerStat, StatsResponse } from '@/app/api/stats/route';
 import type { StatusResponse } from '@/app/api/server-status/route';
 
@@ -202,3 +202,60 @@ export function useReducedMotionPref(): boolean {
   return reduce;
 }
 
+
+/* ─── who is signed in ─────────────────────────────────────────────────────
+   One answer shared by every component that asks (the bar, the wall, the
+   duel), fetched once and refreshed after a sign-in or sign-out. */
+type Me = string | null | undefined;   // undefined while the first answer is in flight
+let meValue: Me = undefined;
+let meInFlight: Promise<void> | null = null;
+const meListeners = new Set<() => void>();
+const notifyMe = () => meListeners.forEach(l => l());
+
+async function fetchMe(): Promise<void> {
+  try {
+    const res = await fetch('/api/crew/me', { cache: 'no-store' });
+    const data = (res.ok ? await res.json() : null) as { username: string | null } | null;
+    meValue = data?.username ?? null;
+  } catch {
+    meValue = null;
+  }
+  notifyMe();
+}
+function refreshMe(): Promise<void> {
+  if (!meInFlight) meInFlight = fetchMe().finally(() => { meInFlight = null; });
+  return meInFlight;
+}
+const subscribeMe = (l: () => void) => { meListeners.add(l); return () => { meListeners.delete(l); }; };
+
+/** The signed-in member's username, null when nobody is, undefined until known. */
+export function useCrewSession(): { me: Me; refresh: () => Promise<void>; signOut: () => Promise<void> } {
+  const me = useSyncExternalStore(subscribeMe, () => meValue, () => undefined);
+  useEffect(() => { if (meValue === undefined) refreshMe(); }, []);
+  const signOut = useCallback(async () => {
+    await fetch('/api/crew/auth', { method: 'DELETE' }).catch(() => {});
+    meValue = null;
+    notifyMe();
+  }, []);
+  return { me, refresh: refreshMe, signOut };
+}
+
+/** `inert` on an element, set as a property. React 18 has no attribute for it
+    and warns about the empty string the attribute form needs. */
+export function useInert<T extends HTMLElement>(inert: boolean): React.RefObject<T> {
+  const ref = useRef<T>(null);
+  useEffect(() => {
+    const el = ref.current as (T & { inert: boolean }) | null;
+    if (el) el.inert = inert;
+  }, [inert]);
+  return ref;
+}
+
+/** False on the server and for the first client render, true after mount.
+    Dates and ages are formatted by the browser's own locale data, which the
+    server's may not match, so they are drawn only once the page is mounted. */
+export function useMounted(): boolean {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+  return mounted;
+}

@@ -2,8 +2,10 @@
 
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { MapConfig } from '@/lib/map-types';
+import type { PlacePrints } from '@/app/api/crew/places/route';
 import { DEFAULT_CONFIG } from '@/lib/map-types';
 import { Lantern } from './Bits';
 import Drawer from './Drawer';
@@ -11,7 +13,7 @@ import PlayerHead from './PlayerHead';
 import Rail, { revealRailItem } from './Rail';
 import { CREW, MAP_POSTER, MAP_URL, handCase, titleCase, type Plate, type RoomId } from './data';
 import type { ServerState } from './hooks';
-import { useMediaQuery, useReducedMotionPref } from './hooks';
+import { useInert, useMediaQuery, useReducedMotionPref } from './hooks';
 import { SPRING } from './motion';
 import { photoProps, PHOTO_SIZES } from './photo';
 
@@ -46,7 +48,13 @@ function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
   const [ready, setReady]     = useState(false);
   /* A room stays mounted once it has been opened, so its fetches happen once. */
   const [visited, setVisited] = useState<Record<RoomId, boolean>>({ hopur: false, hillan: false });
-  const places = useRef<HTMLDivElement>(null);
+  /* what the crew pinned at each place, from their walls */
+  const [pinned, setPinned]   = useState<Record<string, PlacePrints>>({});
+  /* While a room is open, the world's own controls are out of reach. */
+  const shut = room !== null;
+  const places = useInert<HTMLDivElement>(shut);
+  const tools  = useInert<HTMLDivElement>(shut);
+  const mid    = useInert<HTMLDivElement>(shut);
   const reduce = useReducedMotionPref();
   /* On phones the viewer opens full screen instead of inside the page, so
      BlueMap's drag and pinch never fight the page scroll. */
@@ -58,8 +66,17 @@ function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
       .then((cfg: Partial<MapConfig> | null) => {
         if (!cfg?.locations?.length) return;
         setConfig({ locations: cfg.locations, zones: cfg.zones ?? [], paths: cfg.paths ?? [], terrain: cfg.terrain });
+        /* a link from a wall names its place: /?stadur=<id>#heimur */
+        const wanted = Number(new URLSearchParams(window.location.search).get('stadur'));
+        if (wanted && cfg.locations.some(l => l.id === wanted)) { setSelect(wanted); setTimeout(() => revealRailItem(wanted, places.current), 300); }
       })
       .catch(() => {});
+    fetch('/api/crew/places', { cache: 'no-store' })
+      .then(r => (r.ok ? r.json() : null))
+      .then((data: Record<string, PlacePrints> | null) => { if (data) setPinned(data); })
+      .catch(() => {});
+  // places is a ref
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -78,7 +95,7 @@ function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
   const choose = useCallback((id: number) => {
     setSelect(cur => (cur === id ? null : id));
     revealRailItem(id, places.current);
-  }, []);
+  }, [places]);
 
   useEffect(() => {
     if (selected === null) return;
@@ -91,8 +108,7 @@ function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
   const plate = place?.photoId ? plates.find(p => p.id === place.photoId) ?? null : null;
   const lower = server.list.map(n => n.toLowerCase());
   const inside = CREW.filter(n => lower.includes(n.toLowerCase()));
-  /* While a room is open, the world's own controls are out of reach. */
-  const shut = room !== null;
+  const here = place ? pinned[String(place.id)] ?? null : null;
 
   return (
     <section id="heimur" className="b-world" aria-labelledby="heimur-title">
@@ -149,11 +165,7 @@ function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
                 )}
               </p>
             </div>
-            <div
-              className="b-hud__tools"
-              // @ts-expect-error inert is not in React 18's types yet
-              inert={shut ? '' : undefined}
-            >
+            <div ref={tools} className="b-hud__tools">
               <button type="button" className={`b-btn b-btn--small b-btn--ghost${drawn ? ' is-on' : ''}`} aria-pressed={drawn} onClick={() => setDrawn(v => !v)}>Teiknað kort</button>
               <button type="button" className="b-btn b-btn--small b-btn--ghost" onClick={() => setAlbum(true)}>Myndir · {plates.length}</button>
               {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- BlueMap's own app, not a Next page */}
@@ -161,11 +173,7 @@ function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
             </div>
           </div>
 
-          <div
-            className="b-hud__mid"
-            // @ts-expect-error inert is not in React 18's types yet
-            inert={shut ? '' : undefined}
-          >
+          <div ref={mid} className="b-hud__mid">
             {!live && !drawn && (
               phone ? (
                 // eslint-disable-next-line @next/next/no-html-link-for-pages
@@ -207,27 +215,40 @@ function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
                 <span>
                   <b className="b-card__name">{titleCase(place.label)}</b>
                   {place.sublabel && <span className="b-card__sub">{handCase(place.sublabel).replace(/\s*·\s*/g, ', ')}</span>}
+                  {place.builders && place.builders.length > 0 && (
+                    <span className="b-card__builders">byggt af {place.builders.map((b, i) => <span key={b}>{i > 0 && ', '}<Link href={`/crew/${b}`}>{b}</Link></span>)}</span>
+                  )}
                 </span>
                 <button type="button" className="b-card__x" onClick={() => setSelect(null)} aria-label="Loka">✕</button>
               </figcaption>
+              {/* what the crew pinned here, each print a tap from its wall */}
+              {here && here.prints.length > 0 && (
+                <div className="b-card__prints" aria-label="Myndir félaga af þessum stað">
+                  {here.prints.slice(0, 4).map(p => (
+                    <Link key={p.id} href={`/crew/${p.username}#${p.entryId}`} className="b-card__print" title={`${p.username}${p.caption ? `: ${p.caption}` : ''}`}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img {...photoProps(p.filename, PHOTO_SIZES.thumb)} alt={p.caption || `Mynd frá ${p.username}`} loading="lazy" decoding="async" width={56} height={40} />
+                      <PlayerHead name={p.username} size={16} className="b-card__printhead" />
+                    </Link>
+                  ))}
+                  <span className="b-card__more">{here.count} {here.count === 1 ? 'færsla' : 'færslur'} af veggjum</span>
+                </div>
+              )}
             </motion.figure>
           )}
         </AnimatePresence>
 
         {/* The places: a rail along the foot of the world, each with its photo. */}
-        <div
-          ref={places}
-          className="b-places"
-          // @ts-expect-error inert is not in React 18's types yet
-          inert={shut ? '' : undefined}
-        >
+        <div ref={places} className="b-places">
           <p className="b-places__head">Staðir · {config.locations.length} · veldu stað til að sjá myndina</p>
           <Rail label="Staðir" prevLabel="Fyrri staðir" nextLabel="Næstu staðir" count={config.locations.length}>
             {config.locations.map(loc => {
               const thumb = loc.photoId ? plates.find(p => p.id === loc.photoId) ?? null : null;
+              const count = pinned[String(loc.id)]?.count ?? 0;
               return (
                 <button key={loc.id} type="button" data-rail-item={loc.id}
                   className={`b-chip${loc.id === selected ? ' is-on' : ''}`} aria-pressed={loc.id === selected} onClick={() => choose(loc.id)}>
+                  {count > 0 && <span className="b-chip__count" aria-label={`${count} færslur frá hópnum`}>{count}</span>}
                   <span className="b-chip__thumb">
                     {thumb
                       // eslint-disable-next-line @next/next/no-img-element

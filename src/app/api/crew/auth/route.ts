@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { getCrewToken, createCrewSession, deleteCrewSession, CREW_COOKIE } from '@/lib/crew';
+import { getCrewToken, createCrewSession, deleteCrewSession, CREW_COOKIE, SESSION_TTL, isCrewUsername, canonicalUsername } from '@/lib/crew';
 import { checkRateLimit } from '@/lib/rateLimit';
 import { timingSafeEqual } from 'crypto';
 
@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Innskráningarupplýsingar vantar.' }, { status: 400 });
   }
 
-  const expected = getCrewToken(username);
+  const expected = isCrewUsername(username) ? getCrewToken(username) : undefined;
   if (
     !expected ||
     token.length !== expected.length ||
@@ -25,13 +25,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Innskráningarupplýsingarnar eru ekki réttar.' }, { status: 401 });
   }
 
-  const sessionId = await createCrewSession(username);
-  const res = NextResponse.json({ ok: true, username });
+  const name = canonicalUsername(username);
+  const sessionId = await createCrewSession(name);
+  const res = NextResponse.json({ ok: true, username: name });
+  /* a year: signing in is a one-time thing, and the link the admin hands out
+     sets the same cookie with the same life */
   res.cookies.set(CREW_COOKIE, sessionId, {
     httpOnly: true,
-    sameSite: 'strict',
+    sameSite: 'lax',
     path:     '/',
-    maxAge:   60 * 60 * 24 * 30, // 30 days
+    maxAge:   SESSION_TTL,
     secure:   process.env.NODE_ENV === 'production',
   });
   return res;

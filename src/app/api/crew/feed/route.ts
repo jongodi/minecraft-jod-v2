@@ -1,29 +1,26 @@
-import { NextResponse } from 'next/server';
-import { CREW_USERNAMES, readProfile } from '@/lib/crew';
+import { NextRequest, NextResponse } from 'next/server';
+import { readAllProfiles, type CrewEntry } from '@/lib/crew';
 
 export const dynamic = 'force-dynamic';
 
-export interface FeedPost {
-  id:        string;
-  username:  string;
-  text:      string;
-  createdAt: string;
-}
+/** An entry with the wall it hangs on. */
+export interface FeedEntry extends CrewEntry { username: string }
 
-export async function GET() {
-  const profiles = await Promise.all(CREW_USERNAMES.map(u => readProfile(u)));
+const DEFAULT_LIMIT = 30;
+const MAX_LIMIT = 200;
 
-  const posts: FeedPost[] = profiles.flatMap(p =>
-    p.posts.map(post => ({
-      id:        post.id,
-      username:  p.username,
-      text:      post.text,
-      createdAt: post.createdAt,
-    }))
-  );
+/** What was pinned last, across every wall, newest first. `?limit=` caps it,
+    `?photos=1` keeps only entries with a print. */
+export async function GET(req: NextRequest) {
+  const q = req.nextUrl.searchParams;
+  const limit = Math.min(MAX_LIMIT, Math.max(1, Number(q.get('limit')) || DEFAULT_LIMIT));
+  const onlyPhotos = q.get('photos') === '1';
 
-  // Sort newest first, cap at 30
-  posts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const profiles = await readAllProfiles();
+  const entries: FeedEntry[] = profiles.flatMap(p => p.entries.map(e => ({ ...e, username: p.username })));
+  const shown = (onlyPhotos ? entries.filter(e => e.photos.length > 0) : entries)
+    .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
+    .slice(0, limit);
 
-  return NextResponse.json(posts.slice(0, 30));
+  return NextResponse.json(shown, { headers: { 'Cache-Control': 'no-store' } });
 }

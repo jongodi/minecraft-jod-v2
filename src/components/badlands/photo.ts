@@ -23,6 +23,12 @@ export const PHOTO_SIZES = {
   thumb:    '56px',
   /* a crew member's screenshots: three columns inside a 1160px wrap, two on phones */
   shot:     '(min-width: 1280px) 350px, (min-width: 640px) 31vw, 46vw',
+  /* one print alone on a member's wall: the sheet's width inside a 52rem column */
+  print:    '(min-width: 900px) 760px, calc(100vw - 2rem)',
+  /* the print faded behind a member's poster: the poster's width */
+  cover:    '(min-width: 900px) 832px, 100vw',
+  /* a print on the notice strip in the room, and on the roll call */
+  strip:    '160px',
   /* the lightbox card: min(90vw, 1100px) */
   lightbox: '(min-width: 1223px) 1100px, 90vw',
 } as const;

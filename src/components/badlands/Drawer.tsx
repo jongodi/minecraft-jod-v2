@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, type ReactNode } from 'react';
+import { useInert } from './hooks';
 
 interface Props {
   id: string;
@@ -20,6 +21,7 @@ export default function Drawer({ id, open, title, note, onClose, children }: Pro
   const close = useRef<HTMLButtonElement>(null);
   const body = useRef<HTMLDivElement>(null);
   const wasOpen = useRef(false);
+  const root = useInert<HTMLElement>(!open);
 
   /* Focus lands on the way out when the room opens, and the room starts at
      its top each time. */
@@ -33,12 +35,11 @@ export default function Drawer({ id, open, title, note, onClose, children }: Pro
 
   return (
     <section
+      ref={root}
       id={`${id}-room`}
       className={`b-room${open ? ' is-open' : ''}`}
       aria-labelledby={`${id}-title`}
       aria-hidden={!open}
-      // @ts-expect-error inert is not in React 18's types yet
-      inert={open ? undefined : ''}
     >
       <div className="b-room__plank">
         <h2 id={`${id}-title`} className="b-room__title">{title}</h2>

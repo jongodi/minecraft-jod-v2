@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { MapConfig, MapLocation, MapPath, MapZone } from '@/lib/map-types';
+import { CREW_USERNAMES } from '@/lib/crew-types';
 import { mapLabel } from '@/lib/icelandic';
 import {
   DEFAULT_TERRAIN, MATERIALS, TERRAIN_CELL, TERRAIN_COLS, TERRAIN_ROWS,
@@ -11,7 +12,7 @@ import {
 import { MapDefs, MapMarks, Terrain, MAP_H, MAP_W } from '@/components/badlands/MapArt';
 import type { AdminPhoto } from './GalleryPanel';
 import PhotoPicker from './PhotoPicker';
-import { Button, Field, Kbd, Notice, api, errText } from './ui';
+import { Button, Field, Kbd, Notice, Toggle, api, errText } from './ui';
 
 /* ─── model ─────────────────────────────────────────────────────────────────── */
 
@@ -510,6 +511,18 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
                   {(['surface', 'underground', 'island', 'aerial'] as const).map(t => <option key={t} value={t}>{mapLabel(t)}</option>)}
                 </select>
               </Field>
+              <div className="a-field">
+                <span className="a-label">Byggt af</span>
+                <div className="a-inline a-builders">
+                  {CREW_USERNAMES.map(name => {
+                    const on = (selPin.builders ?? []).includes(name);
+                    return (
+                      <Toggle key={name} checked={on} label={name} onChange={v => updatePin(selPin.id, { builders: v ? [...(selPin.builders ?? []), name] : (selPin.builders ?? []).filter(b => b !== name) })} />
+                    );
+                  })}
+                </div>
+                <span className="a-help">Póstkortið segir hver byggði staðinn og veggur hvers og eins telur upp það sem viðkomandi byggði.</span>
+              </div>
               <div className="a-inline">
                 <Field label="X"><input className="a-input a-input--num a-input--data" type="number" min={0} max={MAP_W} value={selPin.x} onChange={e => updatePin(selPin.id, { x: clampX(Number(e.target.value)) })} /></Field>
                 <Field label="Y"><input className="a-input a-input--num a-input--data" type="number" min={0} max={MAP_H} value={selPin.y} onChange={e => updatePin(selPin.id, { y: clampY(Number(e.target.value)) })} /></Field>
