@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Lantern, Mark } from './Bits';
+import { Lantern, Mark, Strata } from './Bits';
 import { SECTIONS, SERVER_IP, type NavLink } from './data';
 import { useCopy } from './hooks';
 
@@ -48,6 +48,8 @@ export default function AddressBar({ links, activeId, always = false }: Props) {
             <b aria-live="polite">{copied ? 'afritað' : 'afrita'}</b>
           </button>
         </div>
+        {/* the ground under the plank: the same slice of strata that divides the hours */}
+        <Strata className="b-bar__strata" />
       </header>
 
       {!always && (

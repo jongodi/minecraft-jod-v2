@@ -248,30 +248,36 @@
   padding-top: env(safe-area-inset-top, 0px);
   transition: background var(--dur-3) var(--ease-out), box-shadow var(--dur-3) var(--ease-out);
 }
-/* over the sunset it is only its contents; once the page moves it takes a surface */
-/* once the page moves it becomes a plank across the top: dark wood with its
-   grain, a slice of strata along the bottom edge, the mark on a paper tag */
+/* Over the sunset the bar is only its contents. Once the page moves it becomes
+   a plank hung across the top: wood with its grain and a bevelled edge, the
+   same slice of strata the hours are divided by along its foot, the address on
+   a paper tag nailed to it. */
 .b-bar.is-solid {
   background:
-    repeating-linear-gradient(90deg, rgba(21, 16, 13, 0.22) 0 var(--px), transparent var(--px) 11px),
-    linear-gradient(180deg, var(--wood-dark), var(--dusk-2));
-  box-shadow:
-    inset 0 var(--px) 0 rgba(255, 240, 210, 0.08),
-    0 calc(var(--px) * 1) 0 var(--tc-red),
-    0 calc(var(--px) * 2) 0 var(--tc-orange),
-    0 calc(var(--px) * 3) 0 var(--tc-yellow),
-    0 calc(var(--px) * 4) 0 rgba(21, 16, 13, 0.6);
+    repeating-linear-gradient(90deg, rgba(21, 16, 13, 0.18) 0 var(--px), transparent var(--px) 13px),
+    repeating-linear-gradient(90deg, transparent 0 37px, rgba(255, 240, 210, 0.04) 37px 39px),
+    linear-gradient(180deg, var(--wood-light) 0 var(--px), var(--wood) var(--px) calc(100% - var(--px) * 2), var(--wood-dark) calc(100% - var(--px) * 2));
+  box-shadow: inset 0 0 0 var(--px) rgba(21, 16, 13, 0.35);
 }
-.b-bar.is-solid .b-bar__mark { padding: var(--px) var(--sp-2) var(--px) var(--px); background: var(--paper); color: var(--ink); clip-path: var(--notch); }
-.b-bar.is-solid .b-bar__mark:hover { color: var(--tc-red); }
+.b-bar__strata { pointer-events: none; opacity: 0; transition: opacity var(--dur-3) var(--ease-out); }
+.b-bar .b-bar__strata { top: 100%; height: 12px; transform: none; filter: drop-shadow(0 4px 0 rgba(21, 16, 13, 0.45)); }
+.b-bar.is-solid .b-bar__strata { opacity: 1; }
+.b-bar.is-solid .b-bar__mark { color: var(--paper); text-shadow: 0 var(--px) 0 var(--wood-dark); }
+.b-bar.is-solid .b-bar__mark:hover { color: var(--lantern); }
 .b-bar.is-solid .b-door { color: var(--tc-white); }
-.b-bar.is-solid .b-door:hover, .b-bar.is-solid .b-door.is-here { color: var(--lantern); }
+.b-bar.is-solid .b-door:hover { color: var(--paper); }
+.b-bar.is-solid .b-door.is-here { color: var(--paper); border-bottom-color: var(--lantern); }
+/* the address: a paper tag with a nail through its corner */
+.b-bar.is-solid .b-bar__addr { position: relative; min-height: 2.25rem; padding-inline: var(--sp-4) var(--sp-3); background: var(--paper); color: var(--ink); clip-path: var(--notch); box-shadow: 0 var(--px) 0 var(--wood-dark); }
+.b-bar.is-solid .b-bar__addr::before { content: ''; position: absolute; left: var(--sp-2); top: 50%; width: calc(var(--px) * 2); height: calc(var(--px) * 2); margin-top: calc(var(--px) * -1); background: var(--ink); box-shadow: 1px 1px 0 rgba(30, 22, 17, 0.25); }
+.b-bar.is-solid .b-bar__addr b { color: var(--tc-red); }
+.b-bar.is-solid .b-bar__addr:hover b { color: var(--ink); }
 @media (prefers-reduced-motion: reduce) { .b-bar { transition: none; } }
 .b-bar__inner { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); min-height: var(--bar); }
 .b-bar__mark { display: inline-flex; align-items: center; gap: var(--sp-2); font-family: var(--font-display); font-size: var(--fs-lg); color: var(--paper); text-decoration: none; transition: background var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease-out); }
 .b-bar__mark svg { width: 1.5rem; height: 1.5rem; shape-rendering: crispEdges; }
 .b-bar__mark:hover { color: var(--lantern); }
-.b-bar__addr { display: inline-flex; align-items: center; gap: var(--sp-3); min-height: var(--tap); padding-inline: var(--sp-2); font-family: var(--font-data); font-size: var(--fs-xs); color: var(--paper); border-radius: var(--radius); }
+.b-bar__addr { display: inline-flex; align-items: center; gap: var(--sp-3); min-height: var(--tap); padding-inline: var(--sp-2); font-family: var(--font-data); font-size: var(--fs-xs); color: var(--paper); border-radius: var(--radius); transition: background var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease-out); }
 .b-bar__addr span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .b-bar__addr b { font-family: var(--font-text); font-weight: 600; font-size: var(--fs-xs); color: var(--lantern); letter-spacing: 0.02em; }
 .b-bar__addr:hover b { color: var(--paper); }
