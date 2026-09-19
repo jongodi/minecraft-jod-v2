@@ -7,10 +7,10 @@ import snapshotFile from '@/lib/bluemap-snapshot.json';
    no storage of its own. Vercel's CDN keeps what it can, so exaroton is only
    asked for a tile again once the cached copy has gone stale.
 
-   `npm run map:sync` keeps a copy of the map in the site itself: the viewer in
-   public/bluemap (served before this route is ever asked) and the map data in
-   public/bluemap-data. With map-data-root pointed at that copy in BlueMap's
-   webapp.conf, the viewer loads the map straight from the CDN and only live
+   `npm run map:sync` keeps a copy of the map: the viewer in public/bluemap
+   (served before this route is ever asked) and the map data in Vercel Blob,
+   reached as /bluemap-data. With map-data-root pointed at that copy in
+   BlueMap's webapp.conf, the viewer loads the map from the store and only live
    data (players, markers) comes through here. Anything else that still arrives
    is served live while the server runs and from the copy once it stops, since
    exaroton hands out files far too slowly then to draw a map. */
@@ -29,7 +29,7 @@ const SEGMENT = /^[A-Za-z0-9_-][A-Za-z0-9_.-]*$/;
 const MAX_DEPTH = 16;
 
 const SNAPSHOT_ROOT = '/bluemap-data';
-const snapshot = snapshotFile as { syncedAt: string | null; files: string[] };
+const snapshot = snapshotFile as { syncedAt: string | null; files: string[]; blob?: { base: string; access: string } };
 const inSnapshot = new Set(snapshot.files);
 
 const LIVE     = /^maps\/[^/]+\/live\//;

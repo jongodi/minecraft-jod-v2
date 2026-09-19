@@ -30,3 +30,6 @@ shots-reduce/
 
 # half-written downloads from npm run map:sync
 *.part
+
+# the map data: a local copy for development, served from Vercel Blob on the site
+public/bluemap-data/
