@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useEffect, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { DATAPACKS } from '@/data/datapacks';
 import type { PublicPack } from '@/lib/datapacks-store';
 import { Strata } from './Bits';
@@ -23,6 +23,16 @@ function Shelf({ version }: { version: string | null }) {
   const [packs, setPacks] = useState<PublicPack[]>(SEED);
   const [pinned, setPinned] = useState<number | null>(null);
   const [pointed, setPointed] = useState<number | null>(null);
+  /* The label stays on the counter for a moment after the pointer leaves a
+     crate, so walking along the shelf reads as one slip replacing another
+     rather than the stock list flashing up between every two. */
+  const leaving = useRef<ReturnType<typeof setTimeout>>();
+  const point = (id: number) => { clearTimeout(leaving.current); setPointed(id); };
+  const unpoint = (id: number) => {
+    clearTimeout(leaving.current);
+    leaving.current = setTimeout(() => setPointed(p => (p === id ? null : p)), 320);
+  };
+  useEffect(() => () => clearTimeout(leaving.current), []);
 
   useEffect(() => {
     fetch('/api/datapacks', { cache: 'no-store' })
@@ -61,10 +71,10 @@ function Shelf({ version }: { version: string | null }) {
                   className={`b-stock__crate${shown?.id === d.id ? ' is-shown' : ''}`}
                   aria-pressed={pinned === d.id}
                   aria-label={`${d.name}, ${categoryName(d.category)}${d.currentVersion ? `, útgáfa ${d.currentVersion}` : ''}: ${d.description}`}
-                  onPointerEnter={() => setPointed(d.id)}
-                  onPointerLeave={() => setPointed(p => (p === d.id ? null : p))}
-                  onFocus={() => setPointed(d.id)}
-                  onBlur={() => setPointed(p => (p === d.id ? null : p))}
+                  onPointerEnter={() => point(d.id)}
+                  onPointerLeave={() => unpoint(d.id)}
+                  onFocus={() => point(d.id)}
+                  onBlur={() => unpoint(d.id)}
                   onClick={() => setPinned(p => (p === d.id ? null : d.id))}
                 >
                   <span className="b-stock__label"><PixelGlyph rows={glyphFor(d)} /></span>
@@ -73,22 +83,25 @@ function Shelf({ version }: { version: string | null }) {
             ))}
           </ul>
 
-          {/* keyed on the pack, so the label slides onto the counter each time a different crate is picked */}
-          <div className="b-counter b-paper" key={shown?.id ?? 'none'}>
-            <span className="b-counter__glyph">{shown && <PixelGlyph rows={glyphFor(shown)} />}</span>
-            {shown ? (
-              <span className="b-counter__text">
-                <span className="b-counter__name">{shown.name}</span>
-                <span className="b-counter__meta">{categoryName(shown.category)}{shown.currentVersion && ` · útg. ${shown.currentVersion}`}</span>
-                <span className="b-counter__desc">{shown.description}</span>
-              </span>
-            ) : (
-              <span className="b-counter__text">
-                <span className="b-counter__name">{packs.length} kassar á hillunni</span>
-                <span className="b-counter__meta">{tally.map(([c, n]) => `${categoryName(c)} ${n}`).join(' · ')}</span>
-                <span className="b-counter__desc">Bentu á kassa til að lesa miðann.</span>
-              </span>
-            )}
+          {/* The counter stays put; only the slip on it changes. Keyed on the pack,
+              so each new label slides across the paper as the last one lifts. */}
+          <div className={`b-counter b-paper${shown ? ' is-reading' : ''}`}>
+            <div className="b-counter__slip" key={shown?.id ?? 'none'}>
+              <span className="b-counter__glyph">{shown && <PixelGlyph rows={glyphFor(shown)} />}</span>
+              {shown ? (
+                <span className="b-counter__text">
+                  <span className="b-counter__name">{shown.name}</span>
+                  <span className="b-counter__meta">{categoryName(shown.category)}{shown.currentVersion && ` · útg. ${shown.currentVersion}`}</span>
+                  <span className="b-counter__desc">{shown.description}</span>
+                </span>
+              ) : (
+                <span className="b-counter__text">
+                  <span className="b-counter__name">{packs.length} kassar á hillunni</span>
+                  <span className="b-counter__meta">{tally.map(([c, n]) => `${categoryName(c)} ${n}`).join(' · ')}</span>
+                  <span className="b-counter__desc">Bentu á kassa til að lesa miðann.</span>
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>
