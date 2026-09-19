@@ -26,6 +26,10 @@ async function launch() {
     process.exit(1);
   }
 }
+try { await fetch(`${BASE}/bluemap/settings.json`); } catch {
+  console.error(`Enginn vefþjónn á ${BASE}. Keyrðu \`npm run dev\` í öðrum glugga fyrst.`);
+  process.exit(1);
+}
 const browser = await launch();
 const page = await (await browser.newContext({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1 })).newPage();
 await page.goto(`${BASE}/bluemap/index.html#${view}`, { waitUntil: 'load' });
