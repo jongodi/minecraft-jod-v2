@@ -244,7 +244,7 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
             <>
               <section className="b-paper b-profile">
                 <span className="b-paper__nail" aria-hidden="true" />
-                <div className="b-profile__head"><PlayerHead name={profile.username} size={128} /></div>
+                <div className="b-profile__skin"><PlayerHead name={profile.username} size={96} full /></div>
                 <div>
                   <div className="b-profile__top">
                     <div>

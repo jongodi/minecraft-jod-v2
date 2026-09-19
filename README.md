@@ -24,7 +24,7 @@ Valmyndin er þrjár dyr, hver sín lukt: Heimurinn, Hópurinn, Hillan. Á tölv
 
 Áhrif (himinn, mesa-lög með dýpt, ryk og glæður, luktarljós sem fylgir bendlinum, vindur og eldur úr Web Audio) eru hvert um sig sjálfstæð eining í `src/effects/` og slökkva á sér undir `prefers-reduced-motion`.
 
-Á `/crew` er félagalistinn. Á `/crew/<name>` eru kynning, tölfræði, afrek, færslur og myndir hvers leikmanns. Félagar skrá sig inn með sínum aðgangslykli.
+Á `/crew` er félagalistinn. Á `/crew/<name>` eru skinnið í heild, kynning, tölfræði, afrek, færslur og myndir hvers leikmanns. Hausar og skinn koma frá minotar.net, með mc-heads.net til vara. Félagar skrá sig inn með sínum aðgangslykli.
 
 Kóðinn er í `src/components/badlands/`, útlitsreglur í `src/app/badlands.css` og `src/app/board.css`, grunngildi í `src/app/tokens.css` og `src/app/globals.css`. Endurhönnunin er skjalfest í `DESIGN.md`.
 
