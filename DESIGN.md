@@ -34,19 +34,25 @@ Not present anywhere: server rules, testimonials, uptime or player-count history
 
 ## The evening, section by section
 
-The page is shorter because it has fewer rooms, not less in them. Nine sections became four: the 3D world is the page, and everything else hangs off it or folds into one band.
+The page is shorter because it has fewer rooms, not less in them. The page is two screens and a campfire: the sunset, then the world, which is the page. Everything else is folded into the world's frame: the places, the photos and the painted map as its tools, and the crew and the shelf as two rooms that rise from the foot of the frame when their door is opened, leaving the world in view above them. Nothing scrolls past the world; the page ends where it started, in front of the mesas.
 
 | Hour | Section | id | What it holds |
 |---|---|---|---|
 | Sunset | Arrival | top | Full-viewport hero. Layered pixel-art mesa silhouettes with parallax, a low sun, the server name in the display slab, one primary action (copy the address), and the status lantern: lit with the player count, the heads of who is in and the game version when online, dark and labelled when offline. |
 | Dusk | The world | heimur | BlueMap fills the viewport directly under the mesas, so the badlands sit on top of the real world. The frame opens as a still (`public/map-poster.webp`, taken by `map:poster` at the start view); the viewer, an iframe with its own three.js, boots only when the lantern in the middle is pressed, and on phones it opens full screen instead so its drag and pinch never fight the page scroll. A thin HUD lies over it: the title and the sync date, the heads of who is in, and three tools. *Teiknað kort* lays the painted paper map over the same frame (`MapSheet`, the same `MapArt` the admin edits); *Myndir* opens the whole wall as an overlay in the admin's order; *Heill skjár* hands over to the viewer alone. The eleven places ride a rail along the foot of the frame, each with its photo; a chip or a flag opens the place's postcard. There is no "fly there": the 3D map covers the home area only, and the places are spread across the whole world. |
-| Night | The crew | hopur | The eight portraits with a lantern behind the ones who are in, then the wanted board: one poster per category, as many across as fit, the top three on each. Each poster names the outlaw first (Innipúkinn, Slátrarinn, Draugurinn, Ódauðlegi, Vökustaurinn, Flakkarinn, Boxpúðinn, Ræningjabaninn, Plötusnúðurinn) and the charge under it; the leader in full, second and third as two lines under the rule. A charge nobody has been caught for is not posted. No tabs, no ledger; the whole book is on `/crew` and each player's page. |
-| Deep night | The shelf | hillan | One slim strip. Every installed pack is a crate with its 12 by 12 glyph; point at one and its label goes on the counter, on paper. One line carries the count and the game version. The address is not posted again: it is in the hero and in the bar. |
+| Night | Eftirlýst, the crew's room | hopur | A room over the world, opened from the second door, the status lantern or `/#hopur`. A plank across its top carries the title and the way out. Inside: the eight portraits in one row with a lantern behind the ones who are in, then the wanted board on one rail: one poster per charge, the top three on each. Each poster names the outlaw first (Innipúkinn, Slátrarinn, Draugurinn, Ódauðlegi, Vökustaurinn, Flakkarinn, Boxpúðinn, Ræningjabaninn, Plötusnúðurinn) and the charge under it; the leader in full, second and third as two lines under the rule. A charge nobody has been caught for is not posted. The stats are fetched when the room first opens, not with the page. The whole book is on `/crew` and each player's page. |
+| Deep night | The shelf | hillan | The other room, from the third door or `/#hillan`. Every installed pack is a crate with its 12 by 12 glyph; point at one and its label goes on the counter, on paper. One line carries the count and the game version. The address is not posted again: it is in the hero and in the bar. |
 | Campfire | Footer | campfire | One band of ground. The three-frame pixel campfire on the earth with its light pooled across it, the far mesas back as a silhouette, the rooms off the evening (the crew, the admin panel), the wind-and-fire toggle, and the way back up to the sunset. Tap the fire and the duel comes out: the reaction game, three draws, best time kept in the browser. |
 
 ### Navigation: three lanterns
 
-The bar carries the mark, three doors and the address. Each door is a lantern that lights once the evening has reached its section: Heimurinn, Hópurinn, Hillan. Over the sunset the bar is only its contents; once the page has scrolled it takes a surface. On phones the same three lanterns sit in a bar at the foot of the screen, in reach of a thumb, and the top bar keeps the mark and the address. One scroll-spy over three ids is the whole of it.
+The bar carries the mark, three doors and the address: Heimurinn, Eftirlýst, Hillan. The crew's door is named for its wanted board rather than for the crew, because a poster on a saloon wall is the more inviting sign and the portraits are inside either way. The first door is the world; the other two are rooms that open over it. A door's lantern is lit while the visitor is behind it: the world's once the page has reached the frame, a room's while the room is open. Over the sunset the bar is only its contents; once the page has scrolled it takes a surface. On phones the same three lanterns sit in a bar at the foot of the screen, in reach of a thumb, and the top bar keeps the mark and the address.
+
+The hash is the state. `#hopur` and `#hillan` open their room and bring the frame into view, from the bar, from the status lantern, from the crew pages as `/#hopur`, and from a pasted link; the back button, Escape, the plank's ✕, a tap on the darkened world or the first door close it. No element carries those ids, so the browser has nothing to jump to and the frame is scrolled into view by the page itself. One scroll-spy over one id and one hash listener is the whole of it.
+
+### The rooms
+
+A room is `position: absolute` inside the frame: it rises from the foot of the frame by one transform, stops short of the top (5.5rem on desktop, 4rem on phones) so the world stays in view, and scrolls inside itself with `overscroll-behavior: contain`, so the page never moves under it and no scroll lock is needed. Its plank is the same wood the bar is hung from. While a room is open a dark layer falls over the world (one opacity), the boot lantern and the places fade out, and the world's controls are `inert`. A room's contents are code-split and mounted on first opening; the chunks are fetched once the page is idle so the door opens at once. Under reduced motion a room appears without sliding.
 
 ## Identity pillars
 
@@ -102,7 +108,8 @@ One scroll value drives the evening. Effects are separate modules, each switchab
 - Cursor light: fine pointers only. One pre-rasterised disc of warm light follows the pointer, moved by transform. Off on touch.
 - Copy address: a telegraph ticker types the confirmation, the button takes a stamp; Clipboard API with a textarea fallback; announced via `aria-live`.
 - Ambient sound: wind and a distant fire from Web Audio noise and filters, off by default, toggle in the lantern rail, remembered in localStorage.
-- Reduced motion: no parallax, no particles, no scroll scrubbing, no sun. The page shows a fixed dusk-to-night composition with the stars out.
+- Rooms: one transform to open, one opacity to darken the world behind; nothing else moves.
+- Reduced motion: no parallax, no particles, no scroll scrubbing, no sun, rooms appear in place. The page shows a fixed dusk-to-night composition with the stars out.
 
 Gestures that need physics (map drag and zoom, lightbox throw, phone drawer) keep `framer-motion`, which is already installed. Everything that CSS can do is done in CSS.
 
@@ -169,7 +176,11 @@ each picture with its own box, border and `object-fit`. Player heads stay raw
 | Blocks everywhere | Square corners, one-pixel notches, bevelled solid buttons and a block-rasterised map keep every surface reading as Minecraft, not as a web template. |
 | Cursor light is one moving layer | The one desktop-only effect rewards a fine pointer without hiding anything from touch, and costs a composite rather than a repaint. |
 | Fewer layers and particles on phones | Holds 60 fps on a mid-range phone where the effect would otherwise be the first thing to stutter. |
+| The frame is the whole screen on a phone | Between the top bar and the door bar the world fills the screen, and a room opens over it as a sheet; the phone's home page is the world with three doors under a thumb. |
 | The world is the page | The map is what visitors come back for, so it gets the viewport, not a framed box on a subpage. |
+| The crew and the shelf are rooms over the world, not sections after it | Two screens and a campfire read as one place; nine posters and fourteen crates below the fold read as a brochure. |
+| The posters ride one rail on every width | A room should be one screen tall; the board is read by walking along it, and a wheel over it walks it too. |
+| A room's stats and stock load when the room opens | A visitor who only came for the world pays for the world. |
 | A poster before the viewer | No iframe, no WebGL and none of the viewer's assets until someone asks for them; a visitor who never touches the map never downloads it. |
 | Photos live in the world | Every picture is one tap from the place it shows, and the whole wall is behind one button, so the album stopped being a section. |
 | The drawn map is a toggle | The paper sheet lies over the same frame the world is in, so the two maps are one place on the page, not two. |

@@ -3,7 +3,6 @@
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { DATAPACKS } from '@/data/datapacks';
 import type { PublicPack } from '@/lib/datapacks-store';
-import { Strata } from './Bits';
 import PixelGlyph from './PixelGlyph';
 import { glyphFor } from './packGlyphs';
 
@@ -16,9 +15,10 @@ const CATEGORY: Record<string, string> = {
 };
 const categoryName = (c: string) => CATEGORY[c] ?? c.toLowerCase();
 
-/** Deep night: the shelf. Every installed pack is a crate with its glyph; point
-    at one and its label goes on the counter, on paper like every other notice.
-    Nothing to install: the resource pack downloads on connect. */
+/** The shelf, a room opened over the world. Every installed pack is a crate
+    with its glyph; point at one and its label goes on the counter, on paper
+    like every other notice. Nothing to install: the resource pack downloads
+    on connect. The stock list is fetched when the room is first opened. */
 function Shelf({ version }: { version: string | null }) {
   const [packs, setPacks] = useState<PublicPack[]>(SEED);
   const [pinned, setPinned] = useState<number | null>(null);
@@ -51,14 +51,9 @@ function Shelf({ version }: { version: string | null }) {
   const game = version ?? Array.from(new Set(packs.map(d => d.gameVersion))).sort().join(' og ');
 
   return (
-    <section id="hillan" className="b-sec b-sec--night b-sec--slim" aria-labelledby="hillan-title">
-      <Strata flip />
-      <div className="b-wrap">
-        <div className="b-head">
-          <div>
-            <h2 id="hillan-title" className="b-title b-title--small">Á hillunni</h2>
-            <p className="b-lede">{packs.length} gagnapakkar uppsettir á þjóninum. Þú þarft ekkert að setja upp; útlitspakkinn sækist þegar þú tengist.</p>
-          </div>
+    <div className="b-wrap b-shelf">
+        <div className="b-head b-head--tight">
+          <p className="b-lede b-shelf__lede">{packs.length} gagnapakkar uppsettir. Þú þarft ekkert að setja upp; útlitspakkinn sækist þegar þú tengist.</p>
           <p className="b-note">Minecraft {game} · Java-útgáfa · bentu á kassa til að lesa miðann</p>
         </div>
 
@@ -104,8 +99,7 @@ function Shelf({ version }: { version: string | null }) {
             </div>
           </div>
         </div>
-      </div>
-    </section>
+    </div>
   );
 }
 

@@ -74,18 +74,13 @@
 }
 .b-tab:hover { border-color: var(--lantern); }
 .b-tab.is-active { background: var(--lantern); color: var(--night); border-color: var(--lantern); box-shadow: var(--bevel); }
-/* The wanted board: one poster per category, the top three on each. The
+/* The wanted board: one poster per charge, the top three on each. The
    outlaw's nickname is the poster's title, the charge under it in small
-   type. The posters fill as many columns as the page has room for; on phones
-   they ride a rail and scroll sideways instead of stacking. */
-.b-wanted { margin-top: var(--sp-2); }
-.b-wanted__title { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-xl); line-height: var(--lh-tight); color: var(--paper); }
-.b-posters { display: grid; grid-template-columns: repeat(auto-fill, minmax(12.75rem, 1fr)); gap: var(--sp-3); align-items: start; }
-@media (max-width: 899px) {
-  .b-posters { display: flex; gap: var(--sp-3); overflow-x: auto; margin-inline: calc(var(--gutter) * -1); padding: 4px var(--gutter); scroll-snap-type: x proximity; scrollbar-width: none; }
-  .b-posters::-webkit-scrollbar { display: none; }
-  .b-posters > * { flex: 0 0 13rem; scroll-snap-align: start; }
-}
+   type. The posters ride one rail across the room on every width, so the
+   room stays one screen tall and the board is read by walking along it. */
+.b-wanted { margin-top: 0; }
+.b-posters .b-rail { gap: var(--sp-3); padding: 4px 3px; align-items: start; }
+.b-posters .b-poster { flex: 0 0 13rem; scroll-snap-align: start; }
 .b-poster { display: grid; align-content: start; justify-items: center; text-align: center; padding: var(--sp-5) var(--sp-3) var(--sp-3); }
 .b-poster > * { min-width: 0; max-width: 100%; }
 .b-poster__kicker { font-size: 0.6rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }

@@ -3,18 +3,29 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Lantern, Mark, Strata } from './Bits';
-import { SECTIONS, SERVER_IP, type NavLink } from './data';
+import { SERVER_IP, type NavLink } from './data';
 import { useCopy } from './hooks';
 
-interface Props { links: NavLink[]; activeId?: string | null; always?: boolean }
+export interface Door extends NavLink { id: string; lit?: boolean }
+
+interface Props {
+  links: Door[];
+  /** the door the visitor is behind right now */
+  activeId?: string | null;
+  /** on the home page: open a door in place instead of following the hash */
+  onDoor?: (id: string) => void;
+  /** solid from the start, and no bar at the foot: the other pages */
+  always?: boolean;
+}
 
 const SOLID_AFTER = 40; // px of scroll before the bar takes a surface
 
 /** The bar: the mark, the three doors as lanterns, and the address with its
     copy action. On the home page it lies over the sunset and takes a surface
     once the page has scrolled; elsewhere it is solid from the start. On phones
-    the doors move to a bar at the bottom, in reach of a thumb. */
-export default function AddressBar({ links, activeId, always = false }: Props) {
+    the doors move to a bar at the bottom, in reach of a thumb. A door's
+    lantern is lit while the visitor is behind it. */
+export default function AddressBar({ links, activeId, onDoor, always = false }: Props) {
   const [solid, setSolid] = useState(always);
   const [copied, copy]    = useCopy(SERVER_IP);
 
@@ -28,7 +39,20 @@ export default function AddressBar({ links, activeId, always = false }: Props) {
     return () => { window.removeEventListener('scroll', onScroll); cancelAnimationFrame(raf); };
   }, [always]);
 
-  const reached = links.findIndex(l => l.id === activeId);
+  const door = (l: Door, cls: string) => {
+    const here = l.id === activeId;
+    const className = `${cls}${here ? ' is-here' : ''}`;
+    const inner = <><Lantern lit={!!l.lit} />{l.label}</>;
+    if (onDoor) {
+      return (
+        <a key={l.id} href={l.href} className={className} aria-current={here ? 'location' : undefined}
+           onClick={e => { e.preventDefault(); onDoor(l.id); }}>
+          {inner}
+        </a>
+      );
+    }
+    return <Link key={l.id} href={l.href} className={className}>{inner}</Link>;
+  };
 
   return (
     <>
@@ -36,12 +60,7 @@ export default function AddressBar({ links, activeId, always = false }: Props) {
         <div className="b-wrap b-bar__inner">
           <Link href="/" className="b-bar__mark" aria-label="JOÐ, forsíða"><Mark /><span>JOÐ</span></Link>
           <nav className="b-doors" aria-label="Efnisyfirlit">
-            {links.map((l, i) => (
-              <Link key={l.href} href={l.href} className={`b-door${l.id && l.id === activeId ? ' is-here' : ''}`} aria-current={l.id && l.id === activeId ? 'location' : undefined}>
-                <Lantern lit={reached >= 0 && i <= reached} />
-                {l.label}
-              </Link>
-            ))}
+            {links.map(l => door(l, 'b-door'))}
           </nav>
           <button type="button" className="b-bar__addr" onClick={copy} aria-label={`Afrita vistfang þjónsins, ${SERVER_IP}`}>
             <span>{SERVER_IP}</span>
@@ -54,12 +73,7 @@ export default function AddressBar({ links, activeId, always = false }: Props) {
 
       {!always && (
         <nav className="b-doorbar" aria-label="Efnisyfirlit">
-          {SECTIONS.map((l, i) => (
-            <Link key={l.href} href={l.href} className={`b-doorbar__item${l.id === activeId ? ' is-here' : ''}`} aria-current={l.id === activeId ? 'location' : undefined}>
-              <Lantern lit={reached >= 0 && i <= reached} />
-              {l.label}
-            </Link>
-          ))}
+          {links.map(l => door(l, 'b-doorbar__item'))}
         </nav>
       )}
     </>

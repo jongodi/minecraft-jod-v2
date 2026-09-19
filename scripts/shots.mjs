@@ -11,7 +11,8 @@ const BASE = process.env.BASE ?? 'http://localhost:3000';
 const [outDir = 'shots', ...paths] = process.argv.slice(2);
 const pages = paths.length ? paths : ['/'];
 const SIZES = (process.env.WIDTHS ?? '1440,390').split(',').map(w => [Number(w), Number(w) < 800 ? 844 : 900]);
-const SECTION_IDS = ['top', 'heimur', 'hopur', 'hillan', 'campfire'];
+const SECTION_IDS = ['top', 'heimur', 'campfire'];
+const ROOMS = ['hopur', 'hillan'];   // rooms that open over the world, by hash
 
 mkdirSync(outDir, { recursive: true });
 async function launch() {
@@ -41,6 +42,12 @@ for (const [w, h] of SIZES) {
         await page.waitForTimeout(700);
         await page.screenshot({ path: join(outDir, `${base}-${id}.png`) });
       }
+      for (const id of ROOMS) {
+        await page.evaluate(id => { window.location.hash = id; }, id);
+        await page.waitForTimeout(1500);
+        await page.screenshot({ path: join(outDir, `${base}-${id}.png`) });
+      }
+      await page.evaluate(() => { history.replaceState(null, '', location.pathname); });
     }
     const over = await page.evaluate(() => {
       const vw = document.documentElement.clientWidth;

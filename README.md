@@ -6,7 +6,7 @@ Byggt með Next.js 15, TypeScript og CSS. Almennu síðurnar nota ekkert viðmó
 
 ## Vefurinn
 
-Vefurinn er eitt kvöld á þjóninum. Gesturinn kemur að sólsetri yfir Minecraft-eyðimörk (badlands) og skrunar inn í nóttina; þegar bærinn kveikir á luktunum. Skrun er tími sem líður. Hönnunin er skjalfest í `DESIGN.md`.
+Vefurinn er eitt kvöld á þjóninum. Gesturinn kemur að sólsetri yfir Minecraft-eyðimörk (badlands) og skrunar inn í nóttina; þegar bærinn kveikir á luktunum. Skrun er tími sem líður. Síðan er tveir skjáir og varðeldur: sólsetrið, heimurinn, og allt annað opnast yfir heiminum. Hönnunin er skjalfest í `DESIGN.md`.
 
 Fimm reglur halda útlitinu saman: terracotta-lög eyðimerkurinnar eru skilrúm og grunnur merkisins; gulbrúnt luktarljós er eingöngu á því sem hægt er að smella á; allt letur er teiknað á pixlarist, og pixlaleturgerðin sjálf er á öllum stuttum strengjum (valmynd, hnappar, myndatextar, merkimiðar, tölur og það sem þjónninn segir); pappír er fyrir það sem var fest upp (tölfræði, uppsettir pakkar, leiðin inn); og yfirborð eru hlý og dökk, aldrei kaldgrá.
 
@@ -16,11 +16,11 @@ Letur: Alfa Slab One fyrir fyrirsagnir, Pixelify Sans fyrir meginmál og Silkscr
 |---|---|
 | Sólsetur | Merkið, vistfangið sem er afritað með einum smelli, og lukt með stöðu þjónsins, útgáfu og hausum þeirra sem eru inni. Himinninn dökknar og stjörnurnar koma með skruni. |
 | Heimurinn | Þrívíddarkortið af heimasvæðinu fyllir skjáinn undir mesunum. Það opnast sem kyrrmynd; skoðarinn sjálfur (BlueMap) hleðst ekki fyrr en ýtt er á luktina, og á síma opnast hann á heilum skjá. Staðirnir liggja í röð neðst með myndunum sínum; veldu stað og póstkortið hans birtist. *Teiknað kort* leggur málaða kortið yfir sama ramma, *Myndir* opnar allan vegginn, *Heill skjár* opnar skoðarann einan. |
-| Hópurinn | Myndir af átta félögum, lukt logar á bak við þau sem eru inni. Þar undir er eftirlýsingaspjald fyrir hvern tölfræðiflokk með þremur efstu: viðurnefni þrjótsins efst (Innipúkinn, Slátrarinn, Draugurinn, Ódauðlegi, Vökustaurinn, Flakkarinn, Boxpúðinn, Ræningjabaninn, Plötusnúðurinn), sökin þar undir, sá fyrsti stór og annar og þriðji í tveimur línum undir strikinu. Öll tölfræðin er á síðu hvers og eins. |
-| Á hillunni | Hver uppsettur gagnapakki er lítill kassi með sinni pixlateikningu; sá sem þú bendir á fær miðann sinn lesinn upp á búðarborðinu fyrir neðan. |
+| Eftirlýst | Herbergi hópsins, sem opnast yfir heiminum (önnur dyrnar í valmyndinni, staðaluktin eða `/#hopur`): myndir af átta félögum í einni röð, lukt logar á bak við þau sem eru inni. Þar undir eftirlýsingaspjöldin á einni rennibraut, eitt fyrir hvern tölfræðiflokk með þremur efstu: viðurnefni þrjótsins efst (Innipúkinn, Slátrarinn, Draugurinn, Ódauðlegi, Vökustaurinn, Flakkarinn, Boxpúðinn, Ræningjabaninn, Plötusnúðurinn), sökin þar undir, sá fyrsti stór og annar og þriðji í tveimur línum undir strikinu. Öll tölfræðin er á síðu hvers og eins. |
+| Á hillunni | Hitt herbergið (þriðju dyrnar eða `/#hillan`). Hver uppsettur gagnapakki er lítill kassi með sinni pixlateikningu; sá sem þú bendir á fær miðann sinn lesinn upp á búðarborðinu fyrir neðan. |
 | Varðeldurinn | Ein landræma neðst: varðeldur á jörðinni með ljósinu sínu og glæðum, og fjöllin úr sólsetrinu aftur sem dökk útlína. Hópurinn, stjórnborðið, umhverfishljóðið og leiðin aftur upp í sólsetrið. Smelltu á eldinn: þar býr einvígið, viðbragðsleikur í þremur umferðum. |
 
-Valmyndin er þrjár dyr, hver sín lukt: Heimurinn, Hópurinn, Hillan. Á tölvu eru þær efst við hlið vistfangsins, á síma neðst í seilingu þumals.
+Valmyndin er þrjár dyr, hver sín lukt: Heimurinn, Eftirlýst, Hillan. Fyrstu dyrnar eru heimurinn sjálfur; hinar tvær eru herbergi sem rísa upp frá neðri brún kortarammans og skilja heiminn eftir í sýn fyrir ofan. Luktin logar meðan gesturinn er inni um þær dyr. Kjölfestan (`#hopur`, `#hillan`) segir hvaða herbergi er opið, svo tenglar virka hvaðan sem er og bakktakkinn lokar. Á tölvu eru dyrnar efst við hlið vistfangsins, á síma neðst í seilingu þumals, og þar fyllir heimurinn allan skjáinn milli stikanna.
 
 Áhrif (himinn, mesa-lög með dýpt, ryk og glæður, luktarljós sem fylgir bendlinum, vindur og eldur úr Web Audio) eru hvert um sig sjálfstæð eining í `src/effects/` og slökkva á sér undir `prefers-reduced-motion`.
 
