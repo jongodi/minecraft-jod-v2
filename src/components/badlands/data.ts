@@ -5,9 +5,15 @@ export const CREW = [
   'Gamla123', 'fafnir1994', 'IMlonely', 'eikibleiki',
 ] as const;
 
-/* Heads are asked for at four times their CSS size so the 8 by 8 face stays sharp on any screen. */
-export const headUrl = (name: string, size = 512) => `https://mc-heads.net/head/${name}/${size}`;
-export const headFallback = (name: string, size = 512) => `https://minotar.net/helm/${name}/${size}`;
+/* Heads are asked for at four times their CSS size so the 8 by 8 face stays
+   sharp on any screen. Minotar first: mc-heads keeps a separate cache per
+   size, and a changed skin sat as the old one there for days at the sizes the
+   page uses while the small sizes had already moved on. */
+export const headUrl = (name: string, size = 512) => `https://minotar.net/helm/${name}/${size}`;
+export const headFallback = (name: string, size = 512) => `https://mc-heads.net/head/${name}/${size}`;
+/* The whole skin, front on, for the profile page. `size` is the width; the picture is twice as tall. */
+export const bodyUrl = (name: string, size = 256) => `https://minotar.net/armor/body/${name}/${size}.png`;
+export const bodyFallback = (name: string, size = 256) => `https://mc-heads.net/body/${name}/${size}`;
 
 export interface NavLink { label: string; href: string; id?: string }
 

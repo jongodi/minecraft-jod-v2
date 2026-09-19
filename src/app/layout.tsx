@@ -73,8 +73,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <head>
         {/* Player portraits come from these two; opening the connections while
             the page is still parsing saves a DNS + TLS round trip each. */}
-        <link rel="preconnect" href="https://mc-heads.net" />
         <link rel="preconnect" href="https://minotar.net" />
+        <link rel="preconnect" href="https://mc-heads.net" />
       </head>
       {/* extensions like Grammarly write their own attributes onto <body> before React loads */}
       <body suppressHydrationWarning>{children}</body>
