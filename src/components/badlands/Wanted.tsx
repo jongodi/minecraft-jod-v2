@@ -7,10 +7,10 @@ import type { StatsState } from './hooks';
 
 const TOP = 3;
 
-/** The wanted board: one poster per stat, the top three on each. The leader
-    with head, name and value in full; second and third as two lines under
-    the rule. Values are pixel type: they come straight from the server's
-    stat files. */
+/** The wanted board: one poster per category, the top three on each. The
+    poster names the outlaw first, the charge under it; the leader with head,
+    name and value in full, second and third as two lines under the rule.
+    Values are pixel type: they come straight from the server's stat files. */
 export default function Wanted({ stats }: { stats: StatsState }) {
   const when = stats.cachedAt ? new Date(stats.cachedAt).toLocaleString('is-IS', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : null;
   const any = stats.players.length > 0;
@@ -38,16 +38,19 @@ export default function Wanted({ stats }: { stats: StatsState }) {
           {STAT_TABS.map(meta => {
             const rows = stats.players
               .map(p => ({ name: p.username, val: p[meta.id] ?? 0 }))
+              .filter(r => r.val > 0)
               .sort((a, b) => b.val - a.val)
               .slice(0, TOP);
             const [first, ...rest] = rows;
+            /* a charge nobody has been caught for yet stays off the board */
             if (!first) return null;
             return (
               <div key={meta.id} className="b-paper b-paper--torn b-poster">
                 <span className="b-paper__nail b-paper__nail--l" aria-hidden="true" />
                 <span className="b-paper__nail b-paper__nail--r" aria-hidden="true" />
                 <span className="b-poster__kicker">Eftirlýst</span>
-                <span className="b-poster__stat">{meta.label}</span>
+                <span className="b-poster__stat">{meta.nick}</span>
+                <span className="b-poster__charge">{meta.label}</span>
                 <Link href={`/crew/${first.name}`} className="b-poster__lead">
                   <span className="b-poster__img"><PlayerHead name={first.name} size={96} /></span>
                   <span className="b-poster__name">{first.name}</span>

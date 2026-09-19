@@ -75,11 +75,27 @@ export function handCase(s: string): string {
   return isShouting(s) ? s.toLocaleLowerCase('is-IS') : s;
 }
 
+const num = (v: number) => v.toLocaleString('is-IS');
+const km  = (cm: number) => `${(cm / 100000).toLocaleString('is-IS', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} km`;
+/* a stretch of game time, from ticks: days and hours, or hours and minutes under a day */
+const span = (ticks: number) => {
+  const h = Math.floor(ticks / 72000);
+  if (h >= 24) return `${Math.floor(h / 24)} d. ${h % 24} klst.`;
+  const m = Math.floor((ticks % 72000) / 1200);
+  return h > 0 ? `${h} klst. ${m} mín.` : `${m} mín.`;
+};
+
+/* The wanted board. Every category is a crime, and the poster names the
+   outlaw the way a real one would: by the nickname first, the charge under it. */
 export const STAT_TABS = [
-  { id: 'playTimeHours',  label: 'Spilatími',     unit: (v: number) => `${v.toLocaleString('is-IS')} klst.` },
-  { id: 'mobKills',       label: 'Verur felldar', unit: (v: number) => v.toLocaleString('is-IS') },
-  { id: 'deaths',         label: 'Dauðsföll',     unit: (v: number) => v.toLocaleString('is-IS') },
-  { id: 'itemsCrafted',   label: 'Smíðað',        unit: (v: number) => v.toLocaleString('is-IS') },
-  { id: 'distanceWalked', label: 'Gengið',        unit: (v: number) => `${(v / 100000).toLocaleString('is-IS', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} km` },
+  { id: 'playTimeHours',  nick: 'Innipúkinn',     label: 'Spilatími',                  unit: (v: number) => `${num(v)} klst.` },
+  { id: 'mobKills',       nick: 'Slátrarinn',     label: 'Verur felldar',              unit: num },
+  { id: 'deaths',         nick: 'Draugurinn',     label: 'Dauðsföll',                  unit: num },
+  { id: 'timeSinceDeath', nick: 'Ódauðlegi',      label: 'Tími frá síðasta dauða', unit: span },
+  { id: 'timeSinceRest',  nick: 'Vökustaurinn',   label: 'Tími frá því síðast var sofið', unit: span },
+  { id: 'travelCm',       nick: 'Flakkarinn',     label: 'Ferðalangur, á eigin fótum', unit: km },
+  { id: 'damageRatio',    nick: 'Boxpúðinn',      label: 'Skaði þeginn á móti veittum', unit: (v: number) => `${v.toLocaleString('is-IS', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}×` },
+  { id: 'raidWins',       nick: 'Ræningjabaninn', label: 'Árásir hraktar',             unit: num },
+  { id: 'recordsPlayed',  nick: 'Plötusnúðurinn', label: 'Plötur spilaðar',            unit: num },
 ] as const;
 export type StatKey = typeof STAT_TABS[number]['id'];
