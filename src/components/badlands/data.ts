@@ -77,12 +77,12 @@ export function handCase(s: string): string {
 
 const num = (v: number) => v.toLocaleString('is-IS');
 const km  = (cm: number) => `${(cm / 100000).toLocaleString('is-IS', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} km`;
-/* a stretch of game time, from ticks: days and hours, or hours and minutes under a day */
+/* a stretch of game time, from ticks: days and hours, whole hours under a day, minutes under an hour */
 const span = (ticks: number) => {
   const h = Math.floor(ticks / 72000);
   if (h >= 24) return `${Math.floor(h / 24)} d. ${h % 24} klst.`;
-  const m = Math.floor((ticks % 72000) / 1200);
-  return h > 0 ? `${h} klst. ${m} mín.` : `${m} mín.`;
+  if (h > 0) return `${h} klst.`;
+  return `${Math.floor(ticks / 1200)} mín.`;
 };
 
 /* The wanted board. Every category is a crime, and the poster names the

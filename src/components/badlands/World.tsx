@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { MapConfig } from '@/lib/map-types';
 import { DEFAULT_CONFIG } from '@/lib/map-types';
-import { Lantern } from './Bits';
+import { ArrowIcon, Lantern } from './Bits';
 import PlayerHead from './PlayerHead';
 import { CREW, MAP_POSTER, MAP_URL, handCase, titleCase, type Plate } from './data';
 import type { ServerState } from './hooks';
@@ -32,6 +32,7 @@ function World({ plates, server, syncedOn }: Props) {
   const [live, setLive]       = useState(false);
   const [ready, setReady]     = useState(false);
   const rail = useRef<HTMLDivElement>(null);
+  const [edges, setEdges] = useState({ start: true, end: false });
   const reduce = useReducedMotionPref();
   /* On phones the viewer opens full screen instead of inside the page, so
      BlueMap's drag and pinch never fight the page scroll. */
@@ -46,6 +47,45 @@ function World({ plates, server, syncedOn }: Props) {
       })
       .catch(() => {});
   }, []);
+
+  /* Which end of the rail we are at: the arrows and the dark falloff read it.
+     Sampled once per frame and only committed when it changed. */
+  const raf = useRef(0);
+  const measure = useCallback(() => {
+    raf.current = 0;
+    const el = rail.current;
+    if (!el) return;
+    const max = el.scrollWidth - el.clientWidth;
+    /* the rail pads by 3px and snap parks the first chip past it, so the ends are a few px wide */
+    const next = { start: el.scrollLeft <= 6, end: el.scrollLeft >= max - 6 };
+    setEdges(prev => (prev.start === next.start && prev.end === next.end ? prev : next));
+  }, []);
+  const onRailScroll = useCallback(() => { if (!raf.current) raf.current = requestAnimationFrame(measure); }, [measure]);
+  useEffect(() => {
+    measure();
+    window.addEventListener('resize', onRailScroll, { passive: true });
+    return () => { window.removeEventListener('resize', onRailScroll); cancelAnimationFrame(raf.current); raf.current = 0; };
+  }, [measure, onRailScroll, config.locations.length]);
+  /* A mouse wheel has no sideways: over the rail, its up and down walk the places. */
+  useEffect(() => {
+    const el = rail.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+      const max = el.scrollWidth - el.clientWidth;
+      if (max <= 0) return;
+      const at = el.scrollLeft;
+      if ((e.deltaY < 0 && at <= 0) || (e.deltaY > 0 && at >= max)) return;
+      e.preventDefault();
+      el.scrollLeft = at + e.deltaY;
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, []);
+  const nudge = (dir: 1 | -1) => {
+    const el = rail.current;
+    if (el) el.scrollBy({ left: dir * el.clientWidth * 0.8, behavior: reduce ? 'auto' : 'smooth' });
+  };
 
   const choose = useCallback((id: number) => {
     setSelect(cur => (cur === id ? null : id));
@@ -178,7 +218,8 @@ function World({ plates, server, syncedOn }: Props) {
       {/* The places. Inside the frame on desktop, under it on phones: one node, moved by CSS. */}
       <div className="b-places">
         <p className="b-places__head">Staðir · {config.locations.length} · veldu stað til að sjá myndina</p>
-        <div ref={rail} className="b-rail">
+        <div className="b-railwrap">
+        <div ref={rail} onScroll={onRailScroll} className={`b-rail${edges.start ? ' at-start' : ''}${edges.end ? ' at-end' : ''}`}>
           {config.locations.map(loc => {
             const thumb = loc.photoId ? plates.find(p => p.id === loc.photoId) ?? null : null;
             return (
@@ -197,6 +238,9 @@ function World({ plates, server, syncedOn }: Props) {
               </button>
             );
           })}
+        </div>
+        <button type="button" className="b-railwrap__arrow b-railwrap__arrow--l" onClick={() => nudge(-1)} disabled={edges.start} aria-label="Fyrri staðir"><ArrowIcon flip /></button>
+        <button type="button" className="b-railwrap__arrow b-railwrap__arrow--r" onClick={() => nudge(1)}  disabled={edges.end}   aria-label="Næstu staðir"><ArrowIcon /></button>
         </div>
       </div>
 

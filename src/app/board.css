@@ -80,26 +80,26 @@
    they ride a rail and scroll sideways instead of stacking. */
 .b-wanted { margin-top: var(--sp-2); }
 .b-wanted__title { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-xl); line-height: var(--lh-tight); color: var(--paper); }
-.b-posters { display: grid; grid-template-columns: repeat(auto-fill, minmax(18.5rem, 1fr)); gap: var(--sp-4); align-items: start; }
+.b-posters { display: grid; grid-template-columns: repeat(auto-fill, minmax(12.75rem, 1fr)); gap: var(--sp-3); align-items: start; }
 @media (max-width: 899px) {
   .b-posters { display: flex; gap: var(--sp-3); overflow-x: auto; margin-inline: calc(var(--gutter) * -1); padding: 4px var(--gutter); scroll-snap-type: x proximity; scrollbar-width: none; }
   .b-posters::-webkit-scrollbar { display: none; }
-  .b-posters > * { flex: 0 0 14rem; scroll-snap-align: start; }
+  .b-posters > * { flex: 0 0 13rem; scroll-snap-align: start; }
 }
-.b-poster { display: grid; align-content: start; justify-items: center; text-align: center; padding: var(--sp-6) var(--sp-3) var(--sp-4); }
+.b-poster { display: grid; align-content: start; justify-items: center; text-align: center; padding: var(--sp-5) var(--sp-3) var(--sp-3); }
 .b-poster > * { min-width: 0; max-width: 100%; }
-.b-poster__kicker { font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
-.b-poster__stat { margin-top: var(--px); font-family: var(--font-display); font-weight: 400; font-size: clamp(1.25rem, 1.8vw, 1.5rem); line-height: 1.1; color: var(--tc-red); }
-.b-poster__charge { margin-top: var(--sp-1); font-family: var(--font-data); font-size: 0.6rem; line-height: 1.5; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-soft); text-wrap: balance; }
-.b-poster__lead { display: grid; justify-items: center; width: 100%; margin-top: var(--sp-3); text-decoration: none; color: var(--ink); }
-.b-poster__img { width: min(100%, 4.5rem); padding: calc(var(--px) * 2); background: var(--wood); box-shadow: inset 0 0 0 var(--px) var(--wood-light); transition: box-shadow var(--dur-2) var(--ease-out); }
+.b-poster__kicker { font-size: 0.6rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
+.b-poster__stat { margin-top: var(--px); font-family: var(--font-display); font-weight: 400; font-size: 1.15rem; line-height: 1.1; color: var(--tc-red); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.b-poster__charge { margin-top: var(--px); font-family: var(--font-data); font-size: 0.6rem; line-height: 1.4; letter-spacing: 0.02em; text-transform: uppercase; color: var(--ink-soft); text-wrap: balance; }
+.b-poster__lead { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: var(--sp-3); width: 100%; margin-top: var(--sp-3); text-decoration: none; color: var(--ink); text-align: left; }
+.b-poster__img { grid-row: span 2; width: 3rem; padding: calc(var(--px) * 2); background: var(--wood); box-shadow: inset 0 0 0 var(--px) var(--wood-light); transition: box-shadow var(--dur-2) var(--ease-out); }
 .b-poster__img img { width: 100%; aspect-ratio: 1; object-fit: cover; image-rendering: pixelated; display: block; }
 .b-poster__lead:hover .b-poster__img, .b-poster__lead:focus-visible .b-poster__img { box-shadow: 0 0 0 var(--px) var(--lantern-deep); }
-.b-poster__name { width: 100%; margin-top: var(--sp-3); font-family: var(--font-data); font-size: var(--fs-xs); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.b-poster__val { margin-top: var(--sp-2); font-family: var(--font-data); font-size: var(--fs-data); font-weight: 700; line-height: 1.3; color: var(--tc-red); overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
-.b-poster__rule { width: 100%; height: var(--px); margin-top: var(--sp-4); background: var(--ink); opacity: 0.22; }
-.b-poster__rest { width: 100%; margin-top: var(--sp-2); list-style: none; display: grid; }
-.b-poster__row { display: grid; grid-template-columns: 0.9rem 1rem minmax(0, 1fr) auto; align-items: center; gap: var(--sp-1); min-height: 2rem; text-decoration: none; color: var(--ink); text-align: left; }
+.b-poster__name { width: 100%; font-family: var(--font-data); font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.b-poster__val { margin-top: var(--px); font-family: var(--font-data); font-size: 0.9rem; font-weight: 700; line-height: 1.3; color: var(--tc-red); overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.b-poster__rule { width: 100%; height: var(--px); margin-top: var(--sp-3); background: var(--ink); opacity: 0.22; }
+.b-poster__rest { width: 100%; margin-top: var(--sp-1); list-style: none; display: grid; }
+.b-poster__row { display: grid; grid-template-columns: 0.9rem 1rem minmax(0, 1fr) auto; align-items: center; gap: var(--sp-1); min-height: 1.6rem; text-decoration: none; color: var(--ink); text-align: left; }
 .b-poster__row:hover, .b-poster__row:focus-visible { color: var(--lantern-deep); }
 .b-poster__rank { font-family: var(--font-data); font-size: 0.6rem; color: var(--ink-faint); }
 .b-poster__head { width: 1rem; height: 1rem; box-shadow: 0 0 0 1px var(--ink-soft); }
@@ -295,7 +295,7 @@
 .b-rollcall { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-5) var(--sp-3); }
 @media (min-width: 640px) { .b-rollcall { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp-6) var(--sp-5); } }
 .b-poster--crew { padding: var(--sp-6) var(--sp-3) var(--sp-4); text-decoration: none; }
-.b-poster--crew .b-poster__img { margin-top: 0; width: min(100%, 7.5rem); }
+.b-poster--crew .b-poster__img { grid-row: auto; margin-top: 0; width: min(100%, 7.5rem); }
 /* the crew's own posters keep the display face for the name: it is the poster's title there */
 .b-poster--crew .b-poster__name { margin-top: var(--sp-3); font-family: var(--font-display); font-weight: 400; font-size: clamp(1.1rem, 2.2vw, 1.4rem); letter-spacing: 0; text-transform: none; }
 .b-poster__reward { font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); }

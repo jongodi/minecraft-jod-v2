@@ -249,10 +249,26 @@
   transition: background var(--dur-3) var(--ease-out), box-shadow var(--dur-3) var(--ease-out);
 }
 /* over the sunset it is only its contents; once the page moves it takes a surface */
-.b-bar.is-solid { background: rgba(21, 16, 13, 0.88); box-shadow: 0 var(--line) 0 rgba(209, 178, 161, 0.14); backdrop-filter: blur(6px); }
+/* once the page moves it becomes a plank across the top: dark wood with its
+   grain, a slice of strata along the bottom edge, the mark on a paper tag */
+.b-bar.is-solid {
+  background:
+    repeating-linear-gradient(90deg, rgba(21, 16, 13, 0.22) 0 var(--px), transparent var(--px) 11px),
+    linear-gradient(180deg, var(--wood-dark), var(--dusk-2));
+  box-shadow:
+    inset 0 var(--px) 0 rgba(255, 240, 210, 0.08),
+    0 calc(var(--px) * 1) 0 var(--tc-red),
+    0 calc(var(--px) * 2) 0 var(--tc-orange),
+    0 calc(var(--px) * 3) 0 var(--tc-yellow),
+    0 calc(var(--px) * 4) 0 rgba(21, 16, 13, 0.6);
+}
+.b-bar.is-solid .b-bar__mark { padding: var(--px) var(--sp-2) var(--px) var(--px); background: var(--paper); color: var(--ink); clip-path: var(--notch); }
+.b-bar.is-solid .b-bar__mark:hover { color: var(--tc-red); }
+.b-bar.is-solid .b-door { color: var(--tc-white); }
+.b-bar.is-solid .b-door:hover, .b-bar.is-solid .b-door.is-here { color: var(--lantern); }
 @media (prefers-reduced-motion: reduce) { .b-bar { transition: none; } }
 .b-bar__inner { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); min-height: var(--bar); }
-.b-bar__mark { display: inline-flex; align-items: center; gap: var(--sp-2); font-family: var(--font-display); font-size: var(--fs-lg); color: var(--paper); text-decoration: none; }
+.b-bar__mark { display: inline-flex; align-items: center; gap: var(--sp-2); font-family: var(--font-display); font-size: var(--fs-lg); color: var(--paper); text-decoration: none; transition: background var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease-out); }
 .b-bar__mark svg { width: 1.5rem; height: 1.5rem; shape-rendering: crispEdges; }
 .b-bar__mark:hover { color: var(--lantern); }
 .b-bar__addr { display: inline-flex; align-items: center; gap: var(--sp-3); min-height: var(--tap); padding-inline: var(--sp-2); font-family: var(--font-data); font-size: var(--fs-xs); color: var(--paper); border-radius: var(--radius); }
@@ -473,6 +489,8 @@
 }
 @media (max-width: 899px) { .b-places { padding: var(--sp-3) var(--gutter) var(--sp-4); background: var(--dusk); } }
 .b-places__head { font-family: var(--font-data); font-size: 0.6rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--paper); text-shadow: 0 1px 0 var(--night); }
+/* min-width: a grid item would otherwise grow to fit every chip instead of scrolling */
+.b-railwrap { position: relative; min-width: 0; }
 .b-rail {
   display: flex;
   gap: var(--sp-2);
@@ -481,11 +499,40 @@
   padding: 3px;                  /* room for the focus ring */
   scroll-snap-type: x proximity;
   scrollbar-width: none;
-  -webkit-mask-image: linear-gradient(90deg, #000 92%, transparent);
-          mask-image: linear-gradient(90deg, #000 92%, transparent);
+  /* both ends fall off into the dark while there is more that way */
+  --fade: clamp(2rem, 6vw, 4rem);
+  --fade-l: var(--fade);
+  --fade-r: var(--fade);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent 100%);
+          mask-image: linear-gradient(90deg, transparent 0, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent 100%);
 }
 .b-rail::-webkit-scrollbar { display: none; }
+.b-rail.at-start { --fade-l: 0px; }
+.b-rail.at-end   { --fade-r: 0px; }
 .b-rail:focus-within { -webkit-mask-image: none; mask-image: none; }
+/* Lanterns held up at the ends of the rail. Fine pointers only: a finger drags
+   the rail, a wheel walks it, and a keyboard tabs through the chips. */
+.b-railwrap__arrow {
+  position: absolute;
+  top: 50%;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--tap);
+  height: var(--tap);
+  margin-top: calc(var(--tap) / -2);
+  background: rgba(21, 16, 13, 0.85);
+  color: var(--lantern);
+  box-shadow: inset 0 0 0 var(--px) var(--lantern-glow);
+  clip-path: var(--notch);
+  transition: opacity var(--dur-2) var(--ease-out), background var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) { .b-railwrap__arrow { display: inline-flex; } }
+.b-railwrap__arrow--l { left: calc(var(--sp-2) * -1); }
+.b-railwrap__arrow--r { right: calc(var(--sp-2) * -1); }
+.b-railwrap__arrow svg { width: 1.25rem; height: 1.25rem; }
+.b-railwrap__arrow:hover, .b-railwrap__arrow:focus-visible { background: var(--lantern); color: var(--night); box-shadow: none; }
+.b-railwrap__arrow[disabled] { opacity: 0; pointer-events: none; }
 .b-chip {
   flex: 0 0 auto;
   scroll-snap-align: start;
