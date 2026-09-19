@@ -9,6 +9,8 @@ export interface MapLocation {
   type:     'surface' | 'underground' | 'island' | 'aerial';
   /** Gallery photo shown when the pin is selected on the public map. `null` = no photo. */
   photoId?: string | null;
+  /** The crew members who built it, by username. The postcard says so, and their walls list it. */
+  builders?: string[];
 }
 
 export interface MapZone {

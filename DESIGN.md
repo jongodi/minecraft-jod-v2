@@ -201,4 +201,24 @@ each picture with its own box, border and `object-fit`. Player heads stay raw
 
 `/admin` is a tool, so it uses the same tokens in a quieter register (`src/app/admin/admin.css`): night surfaces, amber only on actions, the display slab for panel titles, pixel type for live values. Its map editor draws the same block map as the public site through the shared `MapArt` component, so what the admin sees is what visitors see. The world itself is painted there: the terrain is a grid of blocks (`src/lib/terrain.ts`) saved with the map, and the coastline's beach is derived from it rather than painted, so a hand-drawn coast still looks right. The resource pack editor that used to live at `/rp-editor` was removed with the redesign, along with `three` and `jszip`; the generic token names (`--bg`, `--accent`, `--text`) stay defined in `globals.css` for the admin panel.
 
-The crew pages (`/crew`, `/crew/[username]`) share the nav, footer and stylesheet, so they get the new tokens, type and board treatment while keeping their structure.
+## The walls
+
+The crew pages were the one part of the site that still worked like an old website: a profile with three sections, a login button, a bare file input. They are now walls in the saloon (`src/components/wall/`, `src/app/wall.css`).
+
+Each member has one. At the top hangs their wanted poster: the skin in its frame, the name in the slab, the bounty, the bio (the owner presses the words to change them), the stats and badges, and what they built. The print they chose stands faded behind the paper, and the same print is the backdrop of the link card a shared wall carries. Under the poster, on the owner's own wall only, is the pin slot: a dashed frame that takes screenshots by drop, paste or picker, gives each a caption line, reads the date off Minecraft's own file names, and pins the lot with one press. Below that, everything they pinned, newest first, each on its own sheet: a note, a print, or a note with prints; the place it belongs to; a lantern anyone signed in can light; short replies.
+
+The one entry type carries all of it. A photo with a caption is a note with a picture; nothing has to be posted twice, and the feed, the room's strip and the world's postcards all read the same list. Walls written before the wall existed are read into this shape on the way in.
+
+| Decision | Purpose in one sentence |
+|---|---|
+| One stream, one entry type | A screenshot with a sentence is the natural unit for eight friends, and two sections with two forms could not express it. |
+| The pin slot is always there for the owner | Adding to the wall is the first thing on it, not a small button at the foot of the third section. |
+| Drop and paste anywhere | A screenshot is on the clipboard or on the desktop; the page should take it from either without a dialog. |
+| Prints go straight to Blob, shrunk in the browser | The same pipeline the admin uses; a 25 MB screenshot arrives as a 2560 px WebP and never hits the function body limit. |
+| A cover print, behind the poster and on the link card | A shared link shows the member's own picture, not the site's; the wall is theirs at first glance. |
+| Sign in once, from a link | An admin-minted one-time link (or its QR code) signs a phone in for a year; the token stays as the fallback, and the member's head in the bar leads home from every page. |
+| The room shows the strip | Content nobody sees is content nobody adds; the newest prints appear where visitors already are. |
+| Prints and builders on the places | A place carries the crew's own pictures of it and says who built it, so the walls and the world point at each other. |
+| Fógetinn | The campfire's duel posts a signed-in member's best draw to the board, the one charge where less is more. |
+
+The admin panel is out of scope for the evening's design but gains a tab for the crew: who has a token, what hangs on each wall, and the sign-in links.

@@ -275,6 +275,12 @@
 .b-bar__addr b { font-family: var(--font-text); font-weight: 600; font-size: var(--fs-xs); color: var(--lantern); letter-spacing: 0.02em; }
 .b-bar__addr:hover b { color: var(--paper); }
 @media (max-width: 399px) { .b-bar__mark span { display: none; } }
+.b-bar__end { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; }
+/* the signed-in member's head in the bar: framed in wood, a lantern's glow behind it */
+.b-bar__me { position: relative; display: grid; place-items: center; width: var(--tap); height: var(--tap); flex-shrink: 0; }
+.b-bar__me img { width: 1.5rem; height: 1.5rem; image-rendering: pixelated; box-shadow: 0 0 0 var(--px) var(--lantern); }
+.b-bar__me::before { content: ''; position: absolute; inset: 0; background: radial-gradient(closest-side, var(--lantern-glow), transparent); animation: b-flicker var(--dur-lantern) ease-in-out infinite; pointer-events: none; }
+.b-bar__me:hover img, .b-bar__me:focus-visible img { box-shadow: 0 0 0 var(--px) var(--paper); }
 
 /* three lanterns in the bar, each lit once the evening has reached its door */
 .b-doors { display: none; gap: var(--sp-6); }
@@ -561,6 +567,18 @@
 .b-chip__name { font-family: var(--font-data); font-size: 0.6rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .b-chip__sub { font-family: var(--font-data); font-size: 0.6rem; line-height: 1.5; color: var(--text-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .b-chip.is-on .b-chip__sub { color: rgba(21, 16, 13, 0.7); }
+/* how many things the crew pinned at this place */
+.b-chip__count { position: absolute; top: calc(var(--px) * -1); right: calc(var(--px) * -1); padding: 0 0.3rem; background: var(--lantern); color: var(--night); font-family: var(--font-data); font-size: var(--fs-chip); line-height: 1.6; }
+.b-chip { position: relative; }
+.b-chip.is-on .b-chip__count { background: var(--night); color: var(--lantern); }
+/* the crew's prints under the postcard, each a tap from its wall */
+.b-card__prints { display: flex; align-items: center; gap: var(--sp-1); margin-top: var(--sp-2); padding-inline: var(--sp-1); }
+.b-card__print { position: relative; width: 3.5rem; height: 2.4rem; overflow: hidden; box-shadow: 0 0 0 var(--px) var(--tc-brown); }
+.b-card__print img { width: 100%; height: 100%; object-fit: cover; }
+.b-card__print .b-card__printhead { position: absolute; right: 0; bottom: 0; width: 0.9rem; height: 0.9rem; image-rendering: pixelated; box-shadow: 0 0 0 1px var(--paper); }
+.b-card__print:hover, .b-card__print:focus-visible { box-shadow: 0 0 0 var(--px) var(--lantern-deep); }
+.b-card__more { font-family: var(--font-data); font-size: 0.6rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-faint); margin-left: var(--sp-1); }
+.b-card__builders { font-family: var(--font-data); font-size: 0.6rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-faint); }
 
 @media (max-width: 899px) {
   /* the whole screen between the two bars: the world is the phone's window */
@@ -683,6 +701,7 @@
 }
 .b-folk__name { width: 100%; font-size: var(--fs-sm); line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .b-folk__item:hover .b-folk__name, .b-folk__item:focus-visible .b-folk__name { color: var(--lantern); }
+.b-folk__count { width: 100%; font-family: var(--font-data); font-size: 0.6rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .b-folk__in { position: absolute; top: -0.5rem; right: -0.25rem; padding: 0.1rem 0.35rem; background: var(--online); color: var(--night); font-family: var(--font-data); font-size: var(--fs-xs); line-height: 1.2; }
 @media (max-width: 479px) { .b-folk__in { font-size: 0.6rem; } }
 .b-crew__foot { margin-top: var(--sp-5); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-3); }

@@ -2,7 +2,9 @@
 
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { motion, useAnimation, useReducedMotion } from 'framer-motion';
+import Link from 'next/link';
 import { BulletHole, Star } from './Bits';
+import { useCrewSession } from './hooks';
 
 /* One game is three draws. Each draw: a random hold, then the call.
    Tapping during the hold is a foul and that draw is lost. */
@@ -60,6 +62,8 @@ function QuickDraw({ onClose }: { onClose: () => void }) {
 
   const reduce = useReducedMotion();
   const kick = useAnimation();
+  const { me } = useCrewSession();
+  const [posted, setPosted] = useState<{ best: number; improved: boolean } | null>(null);
 
   useEffect(() => { try { const v = Number(localStorage.getItem(BEST_KEY)); if (v > 0) setBest(v); } catch {} }, []);
   useEffect(() => { if (best !== null) { try { localStorage.setItem(BEST_KEY, String(best)); } catch {} } }, [best]);
@@ -93,6 +97,18 @@ function QuickDraw({ onClose }: { onClose: () => void }) {
   const lastIsHit  = phase === 'result' && typeof last === 'number';
   const lastIsFoul = phase === 'result' && last === null;
   const arenaCls   = ['b-arena', `is-${phase}`, lastIsHit ? 'is-hit' : '', lastIsFoul ? 'is-foul' : ''].filter(Boolean).join(' ');
+
+  /* When the game ends, a signed-in member's best draw goes to the wanted
+     board as Fógetinn's charge; only a quicker time replaces the old one. */
+  useEffect(() => {
+    if (phase !== 'done' || gameBest === null || !me) return;
+    fetch('/api/duel', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ms: gameBest }) })
+      .then(r => (r.ok ? r.json() : null))
+      .then((d: { bestDrawMs: number; improved: boolean } | null) => { if (d) setPosted({ best: d.bestDrawMs, improved: d.improved }); })
+      .catch(() => {});
+  // once per finished game
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
 
   useEffect(() => {
     if (lastIsHit && !reduce) kick.start({ x: [0, -6, 5, -3, 0], y: [0, 3, -2, 1, 0], transition: { type: 'spring', bounce: 0.35, duration: 0.45 } });
@@ -175,6 +191,11 @@ function QuickDraw({ onClose }: { onClose: () => void }) {
               {phase === 'idle' ? 'Hefja einvígi' : phase === 'done' ? 'Spila aftur' : phase === 'draw' ? 'Skjóttu' : phase === 'result' ? 'Hleð aftur…' : 'Bíddu…'}
             </button>
             <p className="b-duel__rules">Sýslumaður undir 200 ms, aðstoðarsýslumaður undir 300 og kúreki undir 450. Annars ertu nýliði.</p>
+            <p className="b-duel__rules" role="status">
+              {me
+                ? (posted ? (posted.improved ? `Skráð á töfluna: ${posted.best} ms. Fógetinn er sá sem er fljótastur.` : `Metið þitt á töflunni er ${posted.best} ms; þetta var ekki betra.`) : `Besti tíminn þinn fer á eftirlýsingaspjaldið sem Fógetinn, ${me}.`)
+                : <>Fljótasta skotið er eftirlýst sem Fógetinn. <Link href="/crew" className="b-link">Skráðu þig inn á veggnum þínum</Link> til að komast á töfluna.</>}
+            </p>
           </div>
         </div>
     </div>

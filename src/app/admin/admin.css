@@ -208,3 +208,15 @@
 .a-login__box { width: min(24rem, 100%); }
 .a-login__mark { display: flex; align-items: center; gap: var(--sp-3); margin-bottom: var(--sp-5); }
 .a-login__mark svg { width: 2.5rem; height: 2.5rem; shape-rendering: crispEdges; }
+
+/* ─── the crew tab ─────────────────────────────────────────── */
+.a-table { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
+.a-table th { text-align: left; padding: var(--sp-2) var(--sp-3); font-family: var(--font-data); font-size: 0.6rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-faint); border-bottom: var(--line) solid var(--border-strong); }
+.a-table td { padding: var(--sp-2) var(--sp-3); border-bottom: var(--line) solid var(--border); vertical-align: middle; }
+.a-table td a { color: var(--lantern); text-decoration: none; }
+.a-table td a:hover { text-decoration: underline; }
+.a-table td:last-child { text-align: right; white-space: nowrap; }
+@media (max-width: 720px) { .a-table th:nth-child(4), .a-table td:nth-child(4) { display: none; } }
+.a-qr { width: min(18rem, 100%); margin-inline: auto; padding: var(--sp-2); background: var(--paper); }
+.a-qr svg { width: 100%; height: auto; display: block; shape-rendering: crispEdges; }
+.a-builders { gap: var(--sp-2) var(--sp-4); }

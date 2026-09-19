@@ -12,6 +12,7 @@ import {
   type MapPath,
 } from '@/lib/map-types';
 import { normalizeTerrain } from './terrain';
+import { canonicalUsername, isCrewUsername } from './crew-types';
 
 export type { MapConfig, MapLocation, MapZone, MapPath };
 export { DEFAULT_LOCATIONS, DEFAULT_ZONES, DEFAULT_PATHS };
@@ -158,9 +159,12 @@ export function sanitizeMapConfig(body: unknown): { error: string } | { config: 
     seenIds.add(l.id);
     const type = LOCATION_TYPES.has(l.type as MapLocation['type']) ? (l.type as MapLocation['type']) : 'surface';
     const photoId = typeof l.photoId === 'string' && l.photoId.trim() ? l.photoId.trim().slice(0, 100) : null;
+    const builders = Array.isArray(l.builders)
+      ? Array.from(new Set(l.builders.filter((b): b is string => typeof b === 'string' && isCrewUsername(b)).map(canonicalUsername)))
+      : [];
     locations.push({
       id: Math.floor(l.id), label: str(l.label), sublabel: str(l.sublabel),
-      x: Math.round(l.x), y: Math.round(l.y), type, photoId,
+      x: Math.round(l.x), y: Math.round(l.y), type, photoId, builders,
     });
   }
 

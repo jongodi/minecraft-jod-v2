@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Lantern, Mark, Strata } from './Bits';
+import PlayerHead from './PlayerHead';
 import { SERVER_IP, type NavLink } from './data';
-import { useCopy } from './hooks';
+import { useCopy, useCrewSession } from './hooks';
 
 export interface Door extends NavLink { id: string; lit?: boolean }
 
@@ -28,6 +29,7 @@ const SOLID_AFTER = 40; // px of scroll before the bar takes a surface
 export default function AddressBar({ links, activeId, onDoor, always = false }: Props) {
   const [solid, setSolid] = useState(always);
   const [copied, copy]    = useCopy(SERVER_IP);
+  const { me } = useCrewSession();
 
   useEffect(() => {
     if (always) return;
@@ -62,10 +64,18 @@ export default function AddressBar({ links, activeId, onDoor, always = false }: 
           <nav className="b-doors" aria-label="Efnisyfirlit">
             {links.map(l => door(l, 'b-door'))}
           </nav>
-          <button type="button" className="b-bar__addr" onClick={copy} aria-label={`Afrita vistfang þjónsins, ${SERVER_IP}`}>
-            <span>{SERVER_IP}</span>
-            <b aria-live="polite">{copied ? 'afritað' : 'afrita'}</b>
-          </button>
+          <div className="b-bar__end">
+            {/* a signed-in member's own head, lit: one tap to their wall from any page */}
+            {me && (
+              <Link href={`/crew/${me}`} className="b-bar__me" aria-label={`Veggurinn þinn, ${me}`} title="Veggurinn þinn">
+                <PlayerHead name={me} size={24} />
+              </Link>
+            )}
+            <button type="button" className="b-bar__addr" onClick={copy} aria-label={`Afrita vistfang þjónsins, ${SERVER_IP}`}>
+              <span>{SERVER_IP}</span>
+              <b aria-live="polite">{copied ? 'afritað' : 'afrita'}</b>
+            </button>
+          </div>
         </div>
         {/* the ground under the plank: the same slice of strata that divides the hours */}
         <Strata className="b-bar__strata" />

@@ -9,7 +9,8 @@
     "lint": "next lint",
     "shots": "node scripts/shots.mjs",
     "map:sync": "node scripts/sync-map.mjs",
-    "map:poster": "node scripts/map-poster.mjs"
+    "map:poster": "node scripts/map-poster.mjs",
+    "test": "vitest run"
   },
   "dependencies": {
     "@fontsource/alfa-slab-one": "^5.3.0",
@@ -21,11 +22,13 @@
     "framer-motion": "^11.3.19",
     "ioredis": "^5.10.1",
     "next": "15.5.18",
+    "qrcode": "^1.5.4",
     "react": "^18",
     "react-dom": "^18"
   },
   "devDependencies": {
     "@types/node": "^20",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "eslint": "^8",
@@ -33,7 +36,8 @@
     "playwright-core": "^1.56.1",
     "postcss": "^8.5.10",
     "tailwindcss": "^3.4.19",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.7"
   },
   "overrides": {
     "glob": "^10.5.0",

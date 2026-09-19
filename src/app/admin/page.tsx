@@ -10,6 +10,7 @@ import { Button } from '@/components/admin/ui';
 import ServerPanel from '@/components/admin/ServerPanel';
 import DatapacksPanel from '@/components/admin/DatapacksPanel';
 import GalleryPanel from '@/components/admin/GalleryPanel';
+import CrewPanel from '@/components/admin/CrewPanel';
 
 const MapPanel = dynamic(() => import('@/components/admin/MapPanel'), { ssr: false });
 
@@ -18,6 +19,7 @@ const TABS = [
   { id: 'datapacks', label: 'Gagnapakkar' },
   { id: 'gallery',   label: 'Myndasafn' },
   { id: 'map',       label: 'Landakort' },
+  { id: 'crew',      label: 'Hópurinn' },
 ] as const;
 type Tab = typeof TABS[number]['id'];
 
@@ -72,6 +74,7 @@ export default function AdminPage() {
         {tab === 'datapacks' && <DatapacksPanel />}
         {tab === 'gallery'   && <GalleryPanel />}
         {tab === 'map'       && <MapPanel />}
+        {tab === 'crew'      && <CrewPanel />}
       </main>
     </div>
   );

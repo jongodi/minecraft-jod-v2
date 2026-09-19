@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import PlayerHead from './PlayerHead';
 import Rail from './Rail';
-import { STAT_TABS } from './data';
+import { STAT_TABS, isLowerBetter } from './data';
 import type { StatsState } from './hooks';
 
 const TOP = 3;
@@ -18,10 +18,11 @@ export default function Wanted({ stats }: { stats: StatsState }) {
   const any = stats.players.length > 0;
 
   const posters = STAT_TABS.map(meta => {
+    const low = isLowerBetter(meta.id);
     const rows = stats.players
       .map(p => ({ name: p.username, val: p[meta.id] ?? 0 }))
       .filter(r => r.val > 0)
-      .sort((a, b) => b.val - a.val)
+      .sort((a, b) => (low ? a.val - b.val : b.val - a.val))
       .slice(0, TOP);
     return { meta, rows };
   }).filter(p => p.rows.length > 0);   /* a charge nobody has been caught for yet stays off the board */
@@ -34,7 +35,7 @@ export default function Wanted({ stats }: { stats: StatsState }) {
           <p className="b-note">
             {stats.source === 'live' ? `beint frá þjóninum${when ? `, sótt ${when}` : ''}` :
              stats.source === 'cached' ? `slökkt á þjóninum, síðast sótt ${when ?? 'við síðustu uppfærslu'}` :
-             'tölur eru ekki tiltækar í augnablikinu'}
+             'engar tölur úr leiknum í augnablikinu; varðeldurinn telur samt'}
           </p>
         </div>
       )}

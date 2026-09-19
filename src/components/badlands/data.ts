@@ -90,8 +90,11 @@ const span = (ticks: number) => {
   return `${Math.floor(ticks / 1200)} mín.`;
 };
 
+const ms = (v: number) => `${num(v)} ms`;
+
 /* The wanted board. Every category is a crime, and the poster names the
-   outlaw the way a real one would: by the nickname first, the charge under it. */
+   outlaw the way a real one would: by the nickname first, the charge under it.
+   `low` marks the one charge where less is more: the fastest draw at the campfire. */
 export const STAT_TABS = [
   { id: 'playTimeHours',  nick: 'Innipúkinn',     label: 'Spilatími',                  unit: (v: number) => `${num(v)} klst.` },
   { id: 'mobKills',       nick: 'Slátrarinn',     label: 'Verur felldar',              unit: num },
@@ -102,5 +105,7 @@ export const STAT_TABS = [
   { id: 'damageRatio',    nick: 'Boxpúðinn',      label: 'Skaði þeginn á móti veittum', unit: (v: number) => `${v.toLocaleString('is-IS', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}×` },
   { id: 'raidWins',       nick: 'Ræningjabaninn', label: 'Árásir hraktar',             unit: num },
   { id: 'recordsPlayed',  nick: 'Plötusnúðurinn', label: 'Plötur spilaðar',            unit: num },
+  { id: 'drawMs',         nick: 'Fógetinn',       label: 'Hraðasta skotið við varðeldinn', unit: ms, low: true },
 ] as const;
+export const isLowerBetter = (id: StatKey) => STAT_TABS.some(t => t.id === id && 'low' in t && t.low);
 export type StatKey = typeof STAT_TABS[number]['id'];
