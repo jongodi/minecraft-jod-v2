@@ -4,8 +4,8 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ─── generic names read by /admin and /rp-editor ─────────────
-   Those tools paint their own dark roots and only read these.  */
+/* ─── generic names read by /admin ─────────────────────────────
+   The panel paints its own dark root and only reads these.  */
 :root {
   --font-mono:     'JetBrains Mono', ui-monospace, monospace;
   --bg:            var(--night);

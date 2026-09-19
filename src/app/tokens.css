@@ -122,7 +122,8 @@
   --sec:    clamp(4rem, 2rem + 8vw, 8rem);
   --gutter: clamp(1rem, 0.5rem + 3vw, 3rem);
   --wrap:   1160px;
-  --rail:   4.5rem;     /* lantern rail width on desktop */
+  --bar:    3.5rem;     /* the bar at the top */
+  --doorbar: 3.75rem;   /* the door bar at the foot of a phone */
   --tap:    2.75rem;    /* minimum tap target */
 
   /* ── shape ── */

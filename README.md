@@ -14,30 +14,27 @@ Letur: Alfa Slab One fyrir fyrirsagnir, Pixelify Sans fyrir meginmál og Silkscr
 
 | Hluti | Innihald |
 |---|---|
-| Sólsetur | Merkið, vistfangið sem er afritað með einum smelli, og lukt með stöðu þjónsins. Himinninn dökknar og stjörnurnar koma með skruni. |
-| Búðirnar | Hvað þjónninn er, og myndir af átta félögum. Lukt logar á bak við þau sem eru inni. Staðan uppfærist á mínútu fresti. |
-| Landakort | Kort heimsins í kubbum yfir alla breidd síðunnar, með ám sem fylgja ristinni og fánum fyrir staði. Má draga, stækka og láta fljúga að fána. Staðirnir eru taldir upp fyrir neðan með myndunum sínum. Kortinu er breytt í stjórnborðinu. |
-| Myndaalbúm | Veggurinn kemur samanbrotinn: ein röð af trérömmum sem rennur til hliðar og dofnar út í myrkrið á báðum endum. Allar myndirnar eru þar, og plankinn neðst hengir upp allan vegginn þar sem þær liggja þétt saman, hver fimmta stærri. Röðin á vefnum er nákvæmlega röðin í stjórnborðinu. Smelltu á ramma til að stækka. |
-| Einvígi | Viðbragðsleikur með þremur umferðum í náttmyrkri. Besti tíminn vistast í vafranum. |
-| Eftirlýst | Tölfræði leikmanna á eftirlýsingaspjöldum með rifnum brúnum. Þrjú efstu fá spjald, hin eru í bókinni fyrir neðan. |
-| Kaupfélagið | Lokað er kaupfélagið lagerinn sjálfur: hver pakki er lítill kassi á hillu og sá sem þú bendir á fær miðann sinn lesinn upp á búðarborðinu fyrir neðan. Plankinn opnar hillurnar þar sem hver kassi ber sitt eigið heiti, lýsingu og útgáfumiða. Hver flokkur á sína pixlateikningu, svo enginn pakki er án myndar. |
-| Komdu inn | Leiðin inn í þremur skrefum, og vistfangið aftur. |
-| Varðeldurinn | Ein landræma neðst: varðeldur á jörðinni með ljósinu sínu og glæðum, og fjöllin úr sólsetrinu aftur sem dökk útlína. Hlutar kvöldsins eru ekki endurteknir þar, aðeins það sem stendur utan við þá — hópurinn, pakkaritillinn og stjórnborðið — og leiðin aftur upp í sólsetrið. |
+| Sólsetur | Merkið, vistfangið sem er afritað með einum smelli, og lukt með stöðu þjónsins, útgáfu og hausum þeirra sem eru inni. Himinninn dökknar og stjörnurnar koma með skruni. |
+| Heimurinn | Þrívíddarkortið af heimasvæðinu fyllir skjáinn undir mesunum. Það opnast sem kyrrmynd; skoðarinn sjálfur (BlueMap) hleðst ekki fyrr en ýtt er á luktina, og á síma opnast hann á heilum skjá. Staðirnir liggja í röð neðst með myndunum sínum; veldu stað og póstkortið hans birtist. *Teiknað kort* leggur málaða kortið yfir sama ramma, *Myndir* opnar allan vegginn, *Heill skjár* opnar skoðarann einan. |
+| Hópurinn | Myndir af átta félögum, lukt logar á bak við þau sem eru inni. Þar undir er eftirlýsingaspjald fyrir hvern tölfræðiflokk með þremur efstu: sá fyrsti stór, annar og þriðji í tveimur línum undir strikinu. Öll tölfræðin er á síðu hvers og eins. |
+| Á hillunni | Hver uppsettur gagnapakki er lítill kassi með sinni pixlateikningu; sá sem þú bendir á fær miðann sinn lesinn upp á búðarborðinu fyrir neðan. |
+| Varðeldurinn | Ein landræma neðst: varðeldur á jörðinni með ljósinu sínu og glæðum, og fjöllin úr sólsetrinu aftur sem dökk útlína. Hópurinn, stjórnborðið, umhverfishljóðið og leiðin aftur upp í sólsetrið. Smelltu á eldinn: þar býr einvígið, viðbragðsleikur í þremur umferðum. |
+
+Valmyndin er þrjár dyr, hver sín lukt: Heimurinn, Hópurinn, Hillan. Á tölvu eru þær efst við hlið vistfangsins, á síma neðst í seilingu þumals.
 
 Áhrif (himinn, mesa-lög með dýpt, ryk og glæður, luktarljós sem fylgir bendlinum, vindur og eldur úr Web Audio) eru hvert um sig sjálfstæð eining í `src/effects/` og slökkva á sér undir `prefers-reduced-motion`.
 
 Á `/crew` er félagalistinn. Á `/crew/<name>` eru kynning, tölfræði, afrek, færslur og myndir hvers leikmanns. Félagar skrá sig inn með sínum aðgangslykli.
 
-Kóðinn er í `src/components/badlands/`, útlitsreglur í `src/app/badlands.css` og `src/app/board.css`, grunngildi í `src/app/tokens.css` og `src/app/globals.css`.
+Kóðinn er í `src/components/badlands/`, útlitsreglur í `src/app/badlands.css` og `src/app/board.css`, grunngildi í `src/app/tokens.css` og `src/app/globals.css`. Endurhönnunin er skjalfest í `DESIGN.md`.
 
 ## Verkfæri
 
-- **Pakkaritill** (`/rp-editor`): Greinir og breytir útlitspökkum í vafranum. Greining í bakgrunnsþræði rekur yfirlíkön, kubbaástand, hlutaskilgreiningar og yfirskriftir, letur, agnir, búnað, áferðarsöfn og gagnapakka. Hún sýnir bilaðar tilvísanir og skrár sem eru sannanlega ónotaðar. Þar eru líka tengslakort, leit að árekstrum í `custom_model_data`, leit að tvíteknum áferðum, sjálfvirkar leiðréttingar, útflutningur skýrslna og myndritill með þrívíðri forskoðun.
 - **Stjórnborð** (`/admin`): Fjórir flipar. **Þjónn**: staða, leikmenn inni, ræsa, stöðva og endurræsa á Exaroton, uppfærist sjálfkrafa. **Gagnapakkar**: allt um pakkana á einum stað; hvaða pakkar birtast í kaupfélaginu á vefnum (sýna eða fela), röðin á hillunum, uppsett útgáfa, athugun á nýrri útgáfu á Modrinth eða GitHub, lestur skráarheita beint af þjóninum, og eigin pakkar (til dæmis JOÐ-pakkarnir) sem má bæta við, breyta, gefa mynd og eyða. **Myndasafn**: upphleðsla, titlar, röð, sýna eða fela, og tenging við stað á kortinu. **Landakort**: ritill sem sýnir kortið nákvæmlega eins og gestir sjá það. Landslagið sjálft er málað þar: pensill og fylling mála sjó, land, gras, skóg, kletta og sand í kubbaristina, strönd teiknast sjálfkrafa þar sem land mætir sjó, og Shift heldur strokunni beinni. Að auki: afturköllun, rist, örvatakkar, afritun staða og myndaval. Heiti staða, svæða og mynda eru vistuð nákvæmlega eins og þau eru skrifuð.
 
 ## Heimskortið
 
-Á `/heimskort` er heimasvæðið í þrívídd, teiknað af BlueMap á þjóninum. Exaroton leyfir ekki fleiri gáttir, svo vefþjónn BlueMap er óvirkur og vefurinn sækir kortið sjálfur í gegnum Exaroton-forritaskilin (`src/app/bluemap/[[...path]]/route.ts`). Hnappur í Landakortinu og hlekkur við varðeldinn vísa þangað.
+Heimasvæðið í þrívídd, teiknað af BlueMap á þjóninum, er á forsíðunni undir *Heimurinn*; `/heimskort` vísar á skoðarann sjálfan á heilum skjá. Exaroton leyfir ekki fleiri gáttir, svo vefþjónn BlueMap er óvirkur og vefurinn sækir kortið sjálfur í gegnum Exaroton-forritaskilin (`src/app/bluemap/[[...path]]/route.ts`).
 
 Kortið sjálft er teiknað upp úr afriti sem geymt er á vefnum, svo það hleðst hratt hvort sem þjónninn er í gangi eða ekki. Aðeins staða leikmanna kemur beint frá þjóninum, meðan hann er í gangi. Afritið er sótt svona:
 
@@ -48,13 +45,23 @@ npm run map:sync -- --full  # sækir allt upp á nýtt
 
 Skipunin vistar skoðarann í `public/bluemap`, kortagögnin í `public/bluemap-data` og skráalista í `src/lib/bluemap-snapshot.json`. Síðan sýnir dagsetningu afritsins. Afritið birtist á vefnum þegar breytingunum hefur verið ýtt á GitHub. Best er að keyra skipunina meðan þjónninn er í gangi.
 
+Kyrrmyndin sem heimurinn opnast sem er `public/map-poster.webp`. Hún er tekin af afritinu með `npm run dev` í gangi:
+
+```bash
+npm run map:poster
+```
+
+Skipunin notar Chrome eða Edge sem er þegar á tölvunni (eða vafrann í `CHROME=<slóð>`); `playwright-core` kemur ekki með eigin vafra.
+
+Upphafssjónarhornið er `MAP_START_VIEW` í `src/components/badlands/data.ts`; það er allt sem stendur á eftir `#` í vistfangi skoðarans þegar búið er að stilla myndina. Keyrðu `map:poster` aftur eftir hverja samstillingu sem breytir heimasvæðinu.
+
 Í `plugins/BlueMap/webapp.conf` á þjóninum þarf að vera `client-decompression: true`, `map-data-root: "/bluemap-data/maps"` og `live-data-root: "maps"`. Fyrsta stillingin lætur skoðarann afpakka þjöppuðu skrárnar sjálfur, hinar tvær láta hann sækja kortið í afritið en stöðu leikmanna til þjónsins. Breytingar á `webapp.conf` birtast á vefnum eftir næstu afritun.
 
 ## Tungumál
 
-Viðmótið, villuskilaboð, sjálfgefnir myndatextar og greiningarskýrslur eru á íslensku. Dagsetningar og tölur nota `is-IS`.
+Viðmótið, villuskilaboð og sjálfgefnir myndatextar eru á íslensku. Dagsetningar og tölur nota `is-IS`.
 
-Auðkenni, slóðir, Minecraft-lyklar, notendanöfn og eiginheiti utanaðkomandi pakka og laga haldast óbreytt. Ritillinn breytir ekki tungumáli efnis í pökkum sem notandi opnar. Í `src/lib/icelandic.ts` eru birtingarheiti fyrir innri auðkenni og samsvaranir fyrir eldri enska myndatexta og kortaheiti. Þekktur eldri texti er þýddur við lestur, án þess að skrifa yfir nýtt efni notenda í gagnagrunni.
+Auðkenni, slóðir, Minecraft-lyklar, notendanöfn og eiginheiti utanaðkomandi pakka og laga haldast óbreytt.  Í `src/lib/icelandic.ts` eru birtingarheiti fyrir innri auðkenni og samsvaranir fyrir eldri enska myndatexta og kortaheiti. Þekktur eldri texti er þýddur við lestur, án þess að skrifa yfir nýtt efni notenda í gagnagrunni.
 
 ## Umhverfisbreytur
 

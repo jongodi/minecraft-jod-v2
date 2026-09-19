@@ -2,7 +2,7 @@
 
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { motion, useAnimation, useReducedMotion } from 'framer-motion';
-import { BulletHole, Star, Strata } from './Bits';
+import { BulletHole, Star } from './Bits';
 
 /* One game is three draws. Each draw: a random hold, then the call.
    Tapping during the hold is a foul and that draw is lost. */
@@ -48,7 +48,7 @@ function Gunslinger({ x, flip, cls }: { x: number; flip?: boolean; cls: string }
   );
 }
 
-function QuickDraw() {
+function QuickDraw({ onClose }: { onClose: () => void }) {
   const [phase, setPhase] = useState<Phase>('idle');
   const [shots, setShots] = useState<Shot[]>([]);
   const [round, setRound] = useState(0);
@@ -109,15 +109,13 @@ function QuickDraw() {
                          { big: 'Þrjár fallnar umferðir', small: 'rólegur á gikknum! Smelltu til að reyna aftur' };
 
   return (
-    <section id="showdown" className="b-sec b-sec--dusk-2" aria-labelledby="showdown-title">
-      <Strata />
-      <div className="b-wrap">
+    <div className="b-duelpanel">
         <div className="b-head">
           <div>
-            <h2 id="showdown-title" className="b-title">Einvígi</h2>
+            <h2 id="showdown-title" className="b-title b-title--small">Einvígi</h2>
             <p className="b-lede">Hver er fljótastur á gikknum? Þrjár umferðir í leik; besti tíminn vistast í þessu tæki.</p>
           </div>
-          <p className="b-note">undir 200 ms og stjarnan er þín</p>
+          <button type="button" className="b-btn b-btn--small" onClick={onClose}>Loka</button>
         </div>
 
         <div className="b-duel">
@@ -179,11 +177,9 @@ function QuickDraw() {
             <p className="b-duel__rules">Sýslumaður undir 200 ms, aðstoðarsýslumaður undir 300 og kúreki undir 450. Annars ertu nýliði.</p>
           </div>
         </div>
-      </div>
-    </section>
+    </div>
   );
 }
 
-/* Memoised: the home page re-renders whenever the server ping, the stats or
-   the active section changes, and this section depends on none of them. */
+/* Behind the fire in the footer: three draws, best time kept in the browser. */
 export default memo(QuickDraw);

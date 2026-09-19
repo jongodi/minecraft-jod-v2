@@ -35,6 +35,12 @@ const nextConfig = {
     ],
   },
 
+  /* /heimskort used to frame the viewer on a page of its own; the world is on the
+     home page now, and the button there opens the viewer itself. */
+  async redirects() {
+    return [{ source: '/heimskort', destination: '/bluemap/index.html', permanent: false }];
+  },
+
   async headers() {
     const isDev = process.env.NODE_ENV !== 'production';
     const csp = [
@@ -49,7 +55,7 @@ const nextConfig = {
       "frame-ancestors 'none'",
     ].join('; ');
 
-    // The BlueMap viewer under /bluemap is framed by /heimskort, so it may be framed
+    // The BlueMap viewer under /bluemap is framed by the home page, so it may be framed
     // by the site itself. It loads block textures as data: URLs and may start workers,
     // and its translations (vue-i18n) compile each message with new Function(), so it
     // needs 'unsafe-eval' in production too. This applies to BlueMap's own files only;

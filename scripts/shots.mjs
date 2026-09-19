@@ -11,10 +11,17 @@ const BASE = process.env.BASE ?? 'http://localhost:3000';
 const [outDir = 'shots', ...paths] = process.argv.slice(2);
 const pages = paths.length ? paths : ['/'];
 const SIZES = (process.env.WIDTHS ?? '1440,390').split(',').map(w => [Number(w), Number(w) < 800 ? 844 : 900]);
-const SECTION_IDS = ['top', 'camp', 'territory', 'postcards', 'showdown', 'tallies', 'provisions', 'ride', 'campfire'];
+const SECTION_IDS = ['top', 'heimur', 'hopur', 'hillan', 'campfire'];
 
 mkdirSync(outDir, { recursive: true });
-const browser = await chromium.launch(process.env.CHROME ? { executablePath: process.env.CHROME } : {});
+async function launch() {
+  if (process.env.CHROME) return chromium.launch({ executablePath: process.env.CHROME });
+  for (const channel of ['chrome', 'msedge', 'chromium']) {
+    try { return await chromium.launch({ channel }); } catch { /* not installed, try the next */ }
+  }
+  return chromium.launch();
+}
+const browser = await launch();
 for (const [w, h] of SIZES) {
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 1, hasTouch: w < 800 });
   const page = await ctx.newPage();

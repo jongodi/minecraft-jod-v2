@@ -6,18 +6,13 @@ import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import type { GalleryPhoto } from '@/lib/gallery';
 import Sky from './Sky';
-import LanternRail from './LanternRail';
 import AddressBar from './AddressBar';
 import Hero from './Hero';
-import Town from './Town';
-import TerritoryMap from './TerritoryMap';
-import Postcards from './Postcards';
-import QuickDraw from './QuickDraw';
-import Tallies from './Tallies';
-import Provisions from './Provisions';
-import RideIn from './RideIn';
+import World from './World';
+import Crew from './Crew';
+import Shelf from './Shelf';
 import Footer from './Footer';
-import { HOME_LINKS, PLATES, SECTIONS, sentenceCase, titleCase, type Plate } from './data';
+import { PLATES, SECTIONS, sentenceCase, titleCase, type Plate } from './data';
 import { useScrollSpy, useServerStatus, useStats } from './hooks';
 
 /* Effects load after the page is interactive; none of them is needed for the first paint. */
@@ -26,7 +21,8 @@ const CursorLight = dynamic(() => import('@/effects/CursorLight'), { ssr: false 
 
 const SECTION_IDS = SECTIONS.map(s => s.id!);
 
-export default function BadlandsHome() {
+/** The evening: sunset, the world, the crew, the shelf, the campfire. */
+export default function BadlandsHome({ syncedOn }: { syncedOn: string | null }) {
   const server = useServerStatus();
   const stats  = useStats();
   const active = useScrollSpy(SECTION_IDS);
@@ -48,17 +44,12 @@ export default function BadlandsHome() {
       <Sky />
       <Particles heroId="top" fireId="campfire" />
       <CursorLight />
-      <LanternRail activeId={active} />
-      <AddressBar links={HOME_LINKS} activeId={active} />
+      <AddressBar links={SECTIONS} activeId={active} />
       <main>
         <Hero server={server} />
-        <Town server={server} />
-        <TerritoryMap plates={plates} />
-        <Postcards plates={plates} />
-        <QuickDraw />
-        <Tallies stats={stats} />
-        <Provisions />
-        <RideIn />
+        <World plates={plates} server={server} syncedOn={syncedOn} />
+        <Crew server={server} stats={stats} />
+        <Shelf version={server.version} />
       </main>
       <Footer />
     </div>

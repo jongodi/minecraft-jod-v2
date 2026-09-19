@@ -16,10 +16,10 @@ Only this content is used. Nothing below is invented.
 |---|---|---|
 | Server name | JOÐ | data.ts, layout.tsx |
 | Address | play.jodcraft.world | data.ts |
-| Edition | Java | TrailNav menu, removed RideIn section |
+| Edition | Java | status lantern, the shelf |
 | Game version(s) | 26.1 and 1.21.11 | datapacks.ts gameVersion; also returned live by the status API |
 | Since | summer 2024 | Hero copy |
-| Access | by invitation only | Hero copy, RideIn copy |
+| Access | by invitation only | Hero copy |
 | Intro | eight friends, one world, never restarted; custom JOÐ datapacks and resource pack; resource pack downloads on connect | Hero, Provisions |
 | Crew | stebbias, AmmaGaur, joenana, ingunnbirta, Gamla123, fafnir1994, IMlonely, eikibleiki | data.ts |
 | Live status | /api/server-status (Exaroton, falls back to api.mcsrvstat.us), polled every minute | hooks.ts |
@@ -28,26 +28,25 @@ Only this content is used. Nothing below is invented.
 | Gallery | 11 bundled screenshots, overridable from /admin | data.ts, /api/gallery |
 | Duel | three-round reaction game, best time kept in localStorage | QuickDraw.tsx |
 | Datapacks | 14 packs with name, description, category, version | datapacks.ts |
-| Join steps | recent Java edition; ask one of us for an invite; open Multiplayer, add server, paste the address | RideIn.tsx (removed in #45), TrailNav menu |
-| Links | /crew, /rp-editor, /admin, "no affiliation with Mojang or Microsoft" | Footer.tsx |
+| Links | /crew, /admin, "no affiliation with Mojang or Microsoft" | Footer.tsx |
 
 Not present anywhere: server rules, testimonials, uptime or player-count history. So there is no Ordinances section and the board carries only what exists.
 
 ## The evening, section by section
 
-The existing order is kept. Each section gets an hour.
+The page is shorter because it has fewer rooms, not less in them. Nine sections became four: the 3D world is the page, and everything else hangs off it or folds into one band.
 
-| Hour | Section | id | What changes |
+| Hour | Section | id | What it holds |
 |---|---|---|---|
-| Sunset | Arrival | top | Full-viewport hero. Layered pixel-art mesa silhouettes with parallax, a low sun, the server name in the display slab, one primary action (copy the address), and the status lantern: lit with the player count when online, dark and labelled when offline. |
-| Dusk | The town: who is in tonight | camp | The intro sentences move here from the hero, followed by the eight crew portraits. Lit lanterns behind the ones who are online; the others sit in dusk. |
-| Twilight | The land | territory | The map sheet takes the full width of the page, so the world is big enough to read. The coastline is rasterised once into 20 by 20 blocks, rivers walk the grid, places are pixel banners, and the sheet sits in a wooden pixel frame. The places are listed under it as a grid of cards, each with the photo it holds. |
-| Twilight | Pictures | postcards | The wall arrives folded: one rail of item frames you walk along sideways, its ends falling off into the dark, with the next picture peeking in so there is something to walk towards. Every picture is on that rail, so nothing is hidden; the plank at the foot hangs the whole wall instead. Hung, the frames butt against each other on the planks, each with its title on a plate in the bottom rail, every fifth double size and only while a whole block of five follows, so the wall tiles without holes. Nothing is reflowed either way, so the order on screen is exactly the order set in the admin panel. |
-| Night | Duel | showdown | The reaction game stays. The arena is the mesa at night; the flash is lantern light. |
-| Night | Tallies | tallies | Stats become wanted posters with pixel-torn edges and two nails: three for the top three, a ledger below. Heads are fetched at four times their drawn size so the 8 by 8 face stays sharp. Values in the label face, like every other short string on the page. |
-| Night | The general store | provisions | Closed, the store is its stock: every pack a small crate stacked on the back shelves under the hanging sign, and whichever one you point at has its label read out on the counter below, on paper, with its kind, version and description. The plank opens the shelves proper, where each crate carries its own text and a hanging version tag. Every pack keeps its own 12 by 12 pixel glyph on a paper label in both. |
-| Deep night | Ride in | ride | Restored from #45 with its original three steps as trail markers, ending at the address. |
-| Campfire | Footer | campfire | One band of ground, no taller than it needs to be. A three-frame pixel campfire stands on the earth with its light pooled across it and embers rising from the flame, and behind it the far mesas of the hero return as a dark silhouette, so the page closes on the landscape it opened over. The evening's own sections are not posted again: the rail, the address bar and the drawer already carry them. What is posted is what is not part of the evening — the crew, the pack editor, the admin panel — and the way back up to the sunset, which rewinds the sky as it climbs. |
+| Sunset | Arrival | top | Full-viewport hero. Layered pixel-art mesa silhouettes with parallax, a low sun, the server name in the display slab, one primary action (copy the address), and the status lantern: lit with the player count, the heads of who is in and the game version when online, dark and labelled when offline. |
+| Dusk | The world | heimur | BlueMap fills the viewport directly under the mesas, so the badlands sit on top of the real world. The frame opens as a still (`public/map-poster.webp`, taken by `map:poster` at the start view); the viewer, an iframe with its own three.js, boots only when the lantern in the middle is pressed, and on phones it opens full screen instead so its drag and pinch never fight the page scroll. A thin HUD lies over it: the title and the sync date, the heads of who is in, and three tools. *Teiknað kort* lays the painted paper map over the same frame (`MapSheet`, the same `MapArt` the admin edits); *Myndir* opens the whole wall as an overlay in the admin's order; *Heill skjár* hands over to the viewer alone. The eleven places ride a rail along the foot of the frame, each with its photo; a chip or a flag opens the place's postcard. There is no "fly there": the 3D map covers the home area only, and the places are spread across the whole world. |
+| Night | The crew | hopur | The eight portraits with a lantern behind the ones who are in, then the wanted board: one poster per stat, five across, the top three on each. The leader in full, second and third as two lines under the rule. No tabs, no ledger; the whole book is on `/crew` and each player's page. |
+| Deep night | The shelf | hillan | One slim strip. Every installed pack is a crate with its 12 by 12 glyph; point at one and its label goes on the counter, on paper. One line carries the count and the game version. The address is not posted again: it is in the hero and in the bar. |
+| Campfire | Footer | campfire | One band of ground. The three-frame pixel campfire on the earth with its light pooled across it, the far mesas back as a silhouette, the rooms off the evening (the crew, the admin panel), the wind-and-fire toggle, and the way back up to the sunset. Tap the fire and the duel comes out: the reaction game, three draws, best time kept in the browser. |
+
+### Navigation: three lanterns
+
+The bar carries the mark, three doors and the address. Each door is a lantern that lights once the evening has reached its section: Heimurinn, Hópurinn, Hillan. Over the sunset the bar is only its contents; once the page has scrolled it takes a surface. On phones the same three lanterns sit in a bar at the foot of the screen, in reach of a thumb, and the top bar keeps the mark and the address. One scroll-spy over three ids is the whole of it.
 
 ## Identity pillars
 
@@ -99,7 +98,7 @@ One scroll value drives the evening. Effects are separate modules, each switchab
 - Sky: CSS scroll-driven animation (`animation-timeline: scroll(root)`), with a requestAnimationFrame fallback that sets the same custom property where scroll timelines are missing. Night is a second gradient cross-faded over the sunset, not one gradient whose stops are interpolated, so a scroll frame composites a layer instead of re-rasterising the viewport.
 - Parallax: four mesa layers on desktop, two on phones, SVG with `shape-rendering: crispEdges`, moved in whole pixels.
 - Particles: one canvas, dust at sunset that becomes embers at the campfire, paused off-screen and when the tab is hidden, DPR capped at 2, fewer on phones.
-- Lantern navigation: a column of lanterns, one per section, in a side rail on desktop and a compact strip under the address bar on phones and tablets. Each lights when its section arrives. They are links, so amber is correct.
+- Lantern navigation: three lanterns, one per door, in the bar on desktop and in a bar at the foot of the screen on phones. Each lights when its section arrives. They are links, so amber is correct.
 - Cursor light: fine pointers only. One pre-rasterised disc of warm light follows the pointer, moved by transform. Off on touch.
 - Copy address: a telegraph ticker types the confirmation, the button takes a stamp; Clipboard API with a textarea fallback; announced via `aria-live`.
 - Ambient sound: wind and a distant fire from Web Audio noise and filters, off by default, toggle in the lantern rail, remembered in localStorage.
@@ -163,19 +162,22 @@ each picture with its own box, border and `object-fit`. Player heads stay raw
 | Intro copy moves to the town section | The hero holds one message and one action; the explanation belongs where the people are. |
 | Ride in restored | The brief asks for join steps ending at the address, and the steps already existed in the repo. |
 | No rules section | No rules exist in the content and nothing may be invented. |
-| Lanterns as navigation | Section navigation doubles as the visible clock of the evening. |
+| Lanterns as navigation | Three doors, each a lantern, double as the visible clock of the evening. |
 | One pixel glyph per pack | A drawn glyph tells a visitor what a pack does faster than its name, and keeps the store from reading as a table. Every category has its own drawing, so a pack the site has never seen still gets a real icon instead of a stand-in chest. |
 | No dense packing in the album | Dense grid packing moves tiles into earlier holes, so the wall stopped matching the order the admin set. Source order is now the only thing that decides where a picture hangs. |
 | The world is painted, not baked | The coastline used to be a constant nobody could change. Terrain is now data the admin paints block by block, so the map can follow the world as it grows. |
 | Blocks everywhere | Square corners, one-pixel notches, bevelled solid buttons and a block-rasterised map keep every surface reading as Minecraft, not as a web template. |
 | Cursor light is one moving layer | The one desktop-only effect rewards a fine pointer without hiding anything from touch, and costs a composite rather than a repaint. |
 | Fewer layers and particles on phones | Holds 60 fps on a mid-range phone where the effect would otherwise be the first thing to stutter. |
-| Long sections arrive folded | The album and the store were a screen and a half of scrolling each before anything else could be reached; folded they are a glance, and the visitor decides when to open them. |
-| The folded album is a rail, not a short grid | Cutting the wall to the first few pictures would hide the rest behind a button; a rail keeps every picture one sideways push away, so folding costs the visitor nothing. |
-| One plank folds both | The same wooden control in both places is learned once, and it says what it opens and how much is in there before it is pressed. |
+| The world is the page | The map is what visitors come back for, so it gets the viewport, not a framed box on a subpage. |
+| A poster before the viewer | No iframe, no WebGL and none of the viewer's assets until someone asks for them; a visitor who never touches the map never downloads it. |
+| Photos live in the world | Every picture is one tap from the place it shows, and the whole wall is behind one button, so the album stopped being a section. |
+| The drawn map is a toggle | The paper sheet lies over the same frame the world is in, so the two maps are one place on the page, not two. |
+| Five posters, top three each | Every category is on screen at once, so there is nothing to switch between, and the top three still read at a glance. |
 | The store's label goes on the counter | A crate you point at is read out in full on paper below, so the stock can stay small without the text being lost. |
-| Folding scrolls the section's top back | A section that shrinks under the visitor would leave them standing below it wondering what happened. |
-| The footer stops repeating the evening | The sections are already on the lantern rail, in the address bar and in the drawer, so posting them a fourth time made the last thing on the page its longest list. |
+| The join steps are gone | The address is already the hero's one action and sits in the bar on every page; the status lantern carries the version. |
+| The duel is behind the fire | It costs nothing hidden, and finding it is part of the fun. |
+| The footer stops repeating the evening | The sections are already in the bar and in the bar at the foot of a phone, so posting them again made the last thing on the page its longest list. |
 | The way back is named an hour, not a direction | Scrolling is time here, so the climb back is "aftur í sólsetrið" and the sky really does rewind on the way up. |
 | The mesas come back as a silhouette | The page opened over that ridge; closing on it bookends the evening, and it costs no height because it sits behind the band. |
 | Sticky address bar after the hero | The address is the site's single purpose, so it stays reachable once the hero scrolls away. |
@@ -185,6 +187,6 @@ each picture with its own box, border and `object-fit`. Player heads stay raw
 
 ## Out of scope
 
-`/admin` is a tool, so it uses the same tokens in a quieter register (`src/app/admin/admin.css`): night surfaces, amber only on actions, the display slab for panel titles, pixel type for live values. Its map editor draws the same block map as the public site through the shared `MapArt` component, so what the admin sees is what visitors see. The world itself is painted there: the terrain is a grid of blocks (`src/lib/terrain.ts`) saved with the map, and the coastline's beach is derived from it rather than painted, so a hand-drawn coast still looks right. `/rp-editor` keeps its own dark root and reads the generic token names (`--bg`, `--accent`, `--text`) that stay defined in `globals.css`.
+`/admin` is a tool, so it uses the same tokens in a quieter register (`src/app/admin/admin.css`): night surfaces, amber only on actions, the display slab for panel titles, pixel type for live values. Its map editor draws the same block map as the public site through the shared `MapArt` component, so what the admin sees is what visitors see. The world itself is painted there: the terrain is a grid of blocks (`src/lib/terrain.ts`) saved with the map, and the coastline's beach is derived from it rather than painted, so a hand-drawn coast still looks right. The resource pack editor that used to live at `/rp-editor` was removed with the redesign, along with `three` and `jszip`; the generic token names (`--bg`, `--accent`, `--text`) stay defined in `globals.css` for the admin panel.
 
 The crew pages (`/crew`, `/crew/[username]`) share the nav, footer and stylesheet, so they get the new tokens, type and board treatment while keeping their structure.
