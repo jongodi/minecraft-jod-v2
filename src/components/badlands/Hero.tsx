@@ -17,7 +17,7 @@ function Hero({ server }: { server: ServerState }) {
         </div>
         <div className="b-hero__side">
           <StatusLantern server={server} />
-          {server.version && <p className="b-hero__version">Minecraft {server.version}</p>}
+          <p className="b-hero__version">aðgangur með boði · útlitspakkinn sækist sjálfkrafa</p>
         </div>
       </div>
       <Mesa />

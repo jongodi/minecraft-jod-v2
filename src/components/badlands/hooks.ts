@@ -176,6 +176,19 @@ export function useNearViewport<T extends Element>(margin = '200px'): [React.Ref
   return [ref, near];
 }
 
+/** Whether a media query matches; false during SSR and on the first paint. */
+export function useMediaQuery(query: string): boolean {
+  const [match, setMatch] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const on = () => setMatch(mq.matches);
+    on();
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, [query]);
+  return match;
+}
+
 /** Whether the visitor asked for reduced motion; false during SSR. */
 export function useReducedMotionPref(): boolean {
   const [reduce, setReduce] = useState(false);
@@ -189,16 +202,3 @@ export function useReducedMotionPref(): boolean {
   return reduce;
 }
 
-/** Folding a long section away can leave the visitor standing below it. When a
-    section closes while its top has already scrolled past, bring that top back. */
-export function useKeepInView(open: boolean, ref: React.RefObject<HTMLElement>) {
-  const was = useRef(open);
-  const reduce = useReducedMotionPref();
-  useEffect(() => {
-    const el = ref.current;
-    if (was.current && !open && el && el.getBoundingClientRect().top < 0) {
-      el.scrollIntoView({ block: 'start', behavior: reduce ? 'auto' : 'smooth' });
-    }
-    was.current = open;
-  }, [open, ref, reduce]);
-}

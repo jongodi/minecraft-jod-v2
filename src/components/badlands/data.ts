@@ -11,32 +11,28 @@ export const headFallback = (name: string, size = 512) => `https://minotar.net/h
 
 export interface NavLink { label: string; href: string; id?: string }
 
-/* The evening, in order. Each id is a section on the home page and a lantern on the rail. */
+/* The three doors of the evening. Each id is a section on the home page and a
+   lantern in the bar (a tab on phones), lit once the evening has reached it. */
 export const SECTIONS: NavLink[] = [
-  { label: 'Sólsetur',   href: '#top',        id: 'top'        },
-  { label: 'Búðirnar',   href: '#camp',       id: 'camp'       },
-  { label: 'Landakort',  href: '#territory',  id: 'territory'  },
-  { label: 'Myndaalbúm', href: '#postcards',  id: 'postcards'  },
-  { label: 'Einvígi',    href: '#showdown',   id: 'showdown'   },
-  { label: 'Tölfræði',   href: '#tallies',    id: 'tallies'    },
-  { label: 'Pakkar',     href: '#provisions', id: 'provisions' },
-  { label: 'Komdu inn',  href: '#ride',       id: 'ride'       },
+  { label: 'Heimurinn', href: '#heimur', id: 'heimur' },
+  { label: 'Hópurinn',  href: '#hopur',  id: 'hopur'  },
+  { label: 'Hillan',    href: '#hillan', id: 'hillan' },
 ];
 
-export const HOME_LINKS: NavLink[] = [
-  ...SECTIONS.filter(s => s.id !== 'top'),
-  { label: 'Hópurinn', href: '/crew' },
-];
+/* The same doors from another page: they lead back to the home page's sections. */
+export const PAGE_LINKS: NavLink[] = SECTIONS.map(l => ({ label: l.label, href: `/${l.href}` }));
 
-export const PAGE_LINKS: NavLink[] = HOME_LINKS.map(l => (l.href.startsWith('#') ? { label: l.label, href: `/${l.href}` } : l));
-
-/* The view Heimskort opens on, in BlueMap's own link format:
+/* The view the 3D map opens on, in BlueMap's own link format:
    map:x:y:z:distance:rotation:angle:tilt:ortho:mode. To change it, open the map
    full screen, frame the view you want and copy everything after the # in the
    address bar. Passing it in the link beats webapp.conf's start-location, which
    has to survive the server, the sync and whatever the viewer remembered. */
 export const MAP_START_VIEW = 'world:-6890:57:-8919:65:2.03:1.08:0:0:perspective';
 export const MAP_URL = `/bluemap/index.html#${MAP_START_VIEW}`;
+
+/* The still the world opens as: one screenshot of the start view, taken by
+   `npm run map:poster`. The viewer itself only loads when someone asks for it. */
+export const MAP_POSTER = '/map-poster.webp';
 
 export interface Plate { id: string; src: string; title: string; sub: string }
 
@@ -81,10 +77,3 @@ export const STAT_TABS = [
   { id: 'distanceWalked', label: 'Gengið',        unit: (v: number) => `${(v / 100000).toLocaleString('is-IS', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} km` },
 ] as const;
 export type StatKey = typeof STAT_TABS[number]['id'];
-
-/* The three steps that were posted before, kept word for word. */
-export const RIDE_STEPS = [
-  { title: 'Java-útgáfan',   text: 'Nýleg Java-útgáfa af Minecraft.' },
-  { title: 'Boð',            text: 'Vantar þig aðgang? Heyrðu í einhverju okkar.' },
-  { title: 'Vistfangið',     text: 'Opnaðu fjölspilun, bættu við þjóni og límdu vistfangið inn.' },
-] as const;

@@ -8,23 +8,21 @@
     "start": "next start",
     "lint": "next lint",
     "shots": "node scripts/shots.mjs",
-    "map:sync": "node scripts/sync-map.mjs"
+    "map:sync": "node scripts/sync-map.mjs",
+    "map:poster": "node scripts/map-poster.mjs"
   },
   "dependencies": {
     "@fontsource/alfa-slab-one": "^5.3.0",
     "@fontsource/jetbrains-mono": "^5.3.0",
     "@fontsource/pixelify-sans": "^5.3.0",
     "@fontsource/silkscreen": "^5.3.0",
-    "@types/three": "^0.183.1",
     "@vercel/blob": "^2.3.3",
     "autoprefixer": "^10.4.27",
     "framer-motion": "^11.3.19",
     "ioredis": "^5.10.1",
-    "jszip": "^3.10.1",
     "next": "15.5.18",
     "react": "^18",
-    "react-dom": "^18",
-    "three": "^0.183.2"
+    "react-dom": "^18"
   },
   "devDependencies": {
     "@types/node": "^20",

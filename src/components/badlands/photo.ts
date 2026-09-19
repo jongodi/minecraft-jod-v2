@@ -11,16 +11,16 @@ import { getImageProps } from 'next/image';
 
 /** The slots a photograph is shown in, and the CSS width of each. */
 export const PHOTO_SIZES = {
-  /* four columns inside a 1160px wrap, two on phones */
+  /* the album: four columns inside a 1160px wrap, two on phones */
   frame:     '(min-width: 1280px) 260px, (min-width: 720px) 24vw, 46vw',
   /* every fifth frame spans two of those columns */
   frameHero: '(min-width: 1280px) 520px, (min-width: 720px) 48vw, 92vw',
-  /* one rail of frames: clamp(10rem, 40vw, 13rem) */
-  railFrame: '(min-width: 520px) 208px, 40vw',
-  /* the print pinned to the map: 22rem, then 15rem, then 18rem */
-  print:    '(min-width: 1000px) 288px, (min-width: 720px) 240px, min(100vw, 352px)',
-  /* the map index thumbnail: 3.25rem */
-  thumb:    '52px',
+  /* the still the world opens as: the whole viewport */
+  poster:   '100vw',
+  /* the postcard of a chosen place: 22rem on desktop, the frame's width on phones */
+  card:     '(min-width: 900px) 352px, calc(100vw - 2rem)',
+  /* a place's thumbnail on the rail: 3.5rem */
+  thumb:    '56px',
   /* a crew member's screenshots: three columns inside a 1160px wrap, two on phones */
   shot:     '(min-width: 1280px) 350px, (min-width: 640px) 31vw, 46vw',
   /* the lightbox card: min(90vw, 1100px) */

@@ -1,9 +1,10 @@
 /* ═══════════════════════════════════════════════════════════════
    JOÐ: Last Light in the Badlands
    One evening on the server. The sky is a fixed backdrop that
-   scrolls from sunset to night; sections are warm night surfaces
-   separated by slices of terracotta strata. Amber is only for what
-   you can act on, pixel type only for what the server says.
+   scrolls from sunset to night; the world fills the viewport under
+   the mesas; the crew and the shelf are one band each; the campfire
+   closes the page. Amber is only for what you can act on, pixel
+   type only for what the server says.
    ═══════════════════════════════════════════════════════════════ */
 
 /* ─── the evening: one number, driven by scroll ─────────────────
@@ -66,26 +67,22 @@
 
 /* ─── page frame ──────────────────────────────────────────────── */
 .b { position: relative; isolation: isolate; color: var(--text); }
+/* room for the door bar at the foot of a phone */
+@media (max-width: 899px) { .b { padding-bottom: calc(var(--doorbar) + env(safe-area-inset-bottom, 0px)); } }
 .b-wrap { position: relative; z-index: 1; width: 100%; max-width: var(--wrap); margin-inline: auto; padding-inline: var(--gutter); }
-@media (min-width: 1024px) { .b-wrap { padding-inline: calc(var(--gutter) + var(--rail)) var(--gutter); } }
-.b-sec { position: relative; padding-block: var(--sec); scroll-margin-top: 6rem; }
-@media (min-width: 1024px) { .b-sec { scroll-margin-top: 3.5rem; } }
+.b-sec { position: relative; padding-block: var(--sec); scroll-margin-top: 3.5rem; }
+.b-sec--slim { padding-block: clamp(2.5rem, 1.5rem + 3vw, 4rem); }
 .b-sec--dusk   { background: var(--dusk); }
 .b-sec--dusk-2 { background: var(--dusk-2); }
 .b-sec--night  { background: var(--night); }
-.b-sec--sky    { background: transparent; }
-.b-sec--wall {
-  background:
-    repeating-linear-gradient(180deg, transparent 0 46px, rgba(0, 0, 0, 0.28) 46px 48px, rgba(255, 220, 160, 0.05) 48px 49px, transparent 49px 50px),
-    repeating-linear-gradient(90deg, rgba(255, 220, 160, 0.025) 0 2px, transparent 2px 14px),
-    var(--dusk);
-}
 
 .b-title { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-2xl); line-height: var(--lh-tight); color: var(--paper); letter-spacing: -0.01em; }
+.b-title--small { font-size: var(--fs-xl); }
 .b-lede { font-size: var(--fs-lg); line-height: 1.5; color: var(--text-soft); max-width: var(--measure); }
 .b-note { font-size: var(--fs-sm); color: var(--text-faint); line-height: 1.5; }
 .b-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--sp-3) var(--sp-6); margin-bottom: var(--sp-6); }
 .b-head > * { min-width: 0; }
+.b-head--tight { margin-bottom: var(--sp-4); }
 .b-data { font-family: var(--font-data); font-size: var(--fs-data); line-height: 1.3; letter-spacing: 0; font-variant-numeric: tabular-nums; }
 .b-visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
@@ -122,6 +119,9 @@
 .b-btn--solid:active { box-shadow: var(--bevel-in); }
 .b-btn--solid:hover { background: var(--lantern-deep); border-color: var(--lantern-deep); color: var(--night); }
 .b-btn--small { min-height: 2.25rem; padding: var(--sp-1) var(--sp-3); font-size: var(--fs-xs); }
+/* a tool over the world: paper on a dark pane, lit when pressed */
+.b-btn--ghost { border-color: rgba(232, 220, 196, 0.35); color: var(--paper); background: rgba(21, 16, 13, 0.6); }
+.b-btn--ghost:hover, .b-btn--ghost:focus-visible, .b-btn--ghost.is-on { background: var(--lantern); border-color: var(--lantern); color: var(--night); }
 .b-input, .b-textarea {
   width: 100%;
   background: var(--paper);
@@ -235,72 +235,23 @@
 .b-status.is-off .b-status__word { color: var(--tc-white); }
 .b-status__row { font-size: var(--fs-xs); color: var(--text-faint); line-height: 1.5; }
 .b-status__row b { font-family: var(--font-data); font-weight: 400; font-size: var(--fs-data); color: var(--paper); }
+.b-status__meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-3); margin-top: var(--sp-1); color: var(--tc-white); }
+.b-status__heads { display: inline-flex; gap: var(--px); }
+.b-status__heads img { width: 1rem; height: 1rem; image-rendering: pixelated; box-shadow: 0 0 0 1px var(--night); }
 
-/* ─── lantern rail: navigation as the evening's clock ─────────── */
-.b-rail { display: none; }
-@media (min-width: 1024px) {
-  .b-rail {
-    position: fixed;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    z-index: var(--z-rail);
-    width: var(--rail);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: var(--sp-2);
-    padding-block: var(--sp-6);
-  }
-  .b-rail__post { position: absolute; top: 5rem; bottom: 5rem; width: var(--px); background: rgba(209, 178, 161, 0.18); }
-  .b-rail__item { position: relative; display: flex; align-items: center; justify-content: center; width: var(--tap); height: var(--tap); text-decoration: none; color: inherit; }
-  .b-rail__item .b-lantern { transition: transform var(--dur-2) var(--ease-out); }
-  .b-rail__item:hover .b-lantern, .b-rail__item:focus-visible .b-lantern { transform: translateY(-2px); }
-  .b-rail__item.is-here .b-lantern { transform: scale(1.15); }
-  .b-rail__label {
-    position: absolute;
-    left: calc(100% + var(--sp-2));
-    padding: var(--sp-1) var(--sp-3);
-    background: var(--dusk);
-    color: var(--paper);
-    border: var(--line) solid rgba(232, 220, 196, 0.18);
-    border-radius: var(--radius);
-    font-size: 0.75rem;
-    white-space: nowrap;
-    opacity: 0;
-    transform: translateX(-4px);
-    transition: opacity var(--dur-1) var(--ease-out), transform var(--dur-1) var(--ease-out);
-    pointer-events: none;
-  }
-  .b-rail__item:hover .b-rail__label, .b-rail__item:focus-visible .b-rail__label { opacity: 1; transform: none; }
-  .b-rail__sound { margin-top: var(--sp-4); }
-}
-.b-sound { display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2); width: var(--tap); height: var(--tap); border-radius: var(--radius); color: var(--lantern); }
-.b-sound svg { width: 1.25rem; height: 1.25rem; shape-rendering: crispEdges; }
-.b-sound:hover { background: rgba(242, 166, 59, 0.12); }
-.b-sound.is-on { background: var(--lantern); color: var(--night); }
-
-/* ─── the slim bar once the hero has scrolled past ────────────── */
-.b-strip { display: flex; justify-content: center; border-top: var(--line) solid rgba(209, 178, 161, 0.14); }
-.b-strip__item { display: flex; align-items: center; justify-content: center; width: var(--tap); height: 2.5rem; }
-.b-strip__item .b-lantern { width: 1rem; height: 1.5rem; }
-.b-strip__item.is-here .b-lantern { transform: scale(1.2); }
-@media (min-width: 1024px) { .b-strip { display: none; } }
+/* ─── the bar: the mark, three doors, the address ─────────────── */
 .b-bar {
   position: fixed;
   inset-inline: 0;
   top: 0;
   z-index: var(--z-bar);
-  background: var(--dusk);
-  border-bottom: var(--line) solid rgba(209, 178, 161, 0.14);
-  transform: translateY(-100%);
-  visibility: hidden;
-  transition: transform var(--dur-2) var(--ease-out), visibility 0s var(--dur-2);
+  padding-top: env(safe-area-inset-top, 0px);
+  transition: background var(--dur-3) var(--ease-out), box-shadow var(--dur-3) var(--ease-out);
 }
-.b-bar.is-shown { transform: none; visibility: visible; transition-delay: 0s; }
+/* over the sunset it is only its contents; once the page moves it takes a surface */
+.b-bar.is-solid { background: rgba(21, 16, 13, 0.88); box-shadow: 0 var(--line) 0 rgba(209, 178, 161, 0.14); backdrop-filter: blur(6px); }
 @media (prefers-reduced-motion: reduce) { .b-bar { transition: none; } }
-.b-bar__inner { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); min-height: 3.25rem; }
+.b-bar__inner { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); min-height: var(--bar); }
 .b-bar__mark { display: inline-flex; align-items: center; gap: var(--sp-2); font-family: var(--font-display); font-size: var(--fs-lg); color: var(--paper); text-decoration: none; }
 .b-bar__mark svg { width: 1.5rem; height: 1.5rem; shape-rendering: crispEdges; }
 .b-bar__mark:hover { color: var(--lantern); }
@@ -308,42 +259,60 @@
 .b-bar__addr span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .b-bar__addr b { font-family: var(--font-text); font-weight: 600; font-size: var(--fs-xs); color: var(--lantern); letter-spacing: 0.02em; }
 .b-bar__addr:hover b { color: var(--paper); }
-/* Seven section names in the pixel face, beside the mark and the address,
-   inside a 1160px wrap: they only fit small and close together. */
-.b-bar__links { display: none; gap: var(--sp-4); }
-.b-bar__link { font-size: 0.75rem; font-weight: 400; letter-spacing: 0; color: var(--text-soft); text-decoration: none; padding-block: var(--sp-2); border-bottom: var(--px) solid transparent; white-space: nowrap; }
-.b-bar__link:hover { color: var(--lantern); }
-.b-bar__link.is-active { color: var(--lantern); border-bottom-color: var(--lantern); }
-.b-burger { display: inline-flex; flex-direction: column; justify-content: center; align-items: center; gap: 5px; width: var(--tap); height: var(--tap); border: var(--px) solid var(--lantern); border-radius: var(--radius); }
-.b-burger span { width: 1.05rem; height: var(--px); background: var(--lantern); transition: transform var(--dur-2) var(--ease-out), opacity var(--dur-2) var(--ease-out); }
-.b-burger.is-open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
-.b-burger.is-open span:nth-child(2) { opacity: 0; }
-.b-burger.is-open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
-@media (min-width: 1024px) {
-  .b-burger { display: none; }
-  .b-bar__inner { padding-left: var(--rail); }
-}
-@media (min-width: 1200px) { .b-bar__links { display: flex; } }
 @media (max-width: 399px) { .b-bar__mark span { display: none; } }
 
-.b-drawer {
+/* three lanterns in the bar, each lit once the evening has reached its door */
+.b-doors { display: none; gap: var(--sp-6); }
+@media (min-width: 900px) { .b-doors { display: flex; } }
+.b-door {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: var(--tap);
+  padding-block: var(--sp-1);
+  color: var(--text-soft);
+  font-family: var(--font-data);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  border-bottom: var(--px) solid transparent;
+  white-space: nowrap;
+}
+.b-door .b-lantern { width: 1.1rem; height: 1.65rem; }
+.b-door:hover { color: var(--lantern); }
+.b-door.is-here { color: var(--lantern); border-bottom-color: var(--lantern); }
+
+/* the same three lanterns at the foot of a phone, in reach of a thumb */
+.b-doorbar {
   position: fixed;
-  inset: 0;
-  z-index: var(--z-drawer);
+  inset-inline: 0;
+  bottom: 0;
+  z-index: var(--z-bar);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  background: rgba(21, 16, 13, 0.94);
+  box-shadow: 0 calc(var(--line) * -1) 0 rgba(209, 178, 161, 0.14);
+  backdrop-filter: blur(6px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (min-width: 900px) { .b-doorbar { display: none; } }
+.b-doorbar__item {
   display: flex;
   flex-direction: column;
-  background: var(--dusk);
-  padding: 4.5rem var(--gutter) var(--sp-6);
-  touch-action: pan-y;
-  overflow-y: auto;
+  align-items: center;
+  gap: var(--sp-1);
+  min-height: var(--doorbar);
+  padding: var(--sp-2) var(--sp-1);
+  color: var(--text-faint);
+  font-family: var(--font-data);
+  font-size: 0.6rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
 }
-.b-scrim { position: fixed; inset: 0; z-index: calc(var(--z-drawer) - 1); background: rgba(12, 10, 20, 0.6); }
-.b-drawer__link { display: flex; align-items: center; gap: var(--sp-4); min-height: 3.25rem; border-bottom: var(--line) solid rgba(209, 178, 161, 0.14); font-family: var(--font-display); font-size: var(--fs-lg); color: var(--paper); text-decoration: none; }
-.b-drawer__link.is-active { color: var(--lantern); }
-.b-drawer__link .b-lantern { flex-shrink: 0; }
-.b-drawer__markicon { width: 1.5rem; height: 1.5rem; flex-shrink: 0; shape-rendering: crispEdges; }
-.b-drawer__foot { margin-top: auto; padding-top: var(--sp-6); display: grid; gap: var(--sp-4); }
-@media (min-width: 1024px) { .b-drawer, .b-scrim { display: none !important; } }
+.b-doorbar__item .b-lantern { width: 1.1rem; height: 1.65rem; }
+.b-doorbar__item.is-here { color: var(--lantern); }
 
 /* ─── arrival: sunset over the mesa ───────────────────────────── */
 .b-hero {
@@ -368,9 +337,9 @@
 }
 .b-hero__sub { margin-top: var(--sp-4); font-size: var(--fs-lg); color: var(--paper); max-width: 34ch; line-height: 1.4; }
 .b-hero__action { margin-top: var(--sp-6); }
-.b-hero__side { display: grid; gap: var(--sp-4); justify-items: start; }
+.b-hero__side { display: grid; gap: var(--sp-3); justify-items: start; }
 @media (min-width: 900px) { .b-hero__side { justify-items: end; padding-bottom: var(--sp-2); } }
-.b-hero__version { font-family: var(--font-data); font-size: var(--fs-xs); color: var(--tc-white); }
+.b-hero__version { font-family: var(--font-data); font-size: 0.6rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--tc-white); }
 
 .b-mesa { position: absolute; inset-inline: 0; bottom: 0; height: clamp(9rem, 32svh, 20rem); pointer-events: none; }
 /* No will-change here: the layer's colour is animated too, so it has to be
@@ -385,14 +354,221 @@
 @media (max-width: 767px) { .b-mesa__layer--mid { display: none; } }
 @media (prefers-reduced-motion: reduce) { .b-mesa__layer { transform: none; } }
 
-/* ─── the town: who is in tonight ─────────────────────────────── */
-.b-town { display: grid; gap: var(--sp-7); }
-@media (min-width: 900px) { .b-town { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: var(--sp-8); align-items: start; } }
-.b-town__intro { display: grid; gap: var(--sp-4); }
-.b-town__intro p { max-width: 46ch; color: var(--text-soft); }
-.b-town__intro .b-note { margin-top: var(--sp-2); }
-.b-folk { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp-5) var(--sp-3); list-style: none; }
+/* ─── the world: BlueMap fills the viewport under the mesas ───────
+   The frame opens as a still of the home area. The viewer is an iframe
+   that exists only once the lantern has been pressed, so a visitor who
+   never touches it never downloads it. */
+.b-world { position: relative; background: var(--dusk); scroll-margin-top: var(--bar); }
+.b-frame {
+  position: relative;
+  height: calc(100svh - var(--bar));
+  min-height: 34rem;
+  background: var(--night);
+  border-block: calc(var(--px) * 4) solid var(--wood);
+  box-shadow: inset 0 0 0 var(--px) var(--wood-light), inset 0 0 0 calc(var(--px) * 2) var(--wood-dark);
+  overflow: clip;
+}
+.b-frame__poster {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 45%;
+  filter: saturate(0.85) brightness(0.82);
+  transition: filter var(--dur-3) var(--ease-out), opacity var(--dur-3) var(--ease-out);
+}
+.b-frame__shade { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(21, 16, 13, 0.6) 0%, transparent 24%, transparent 60%, rgba(21, 16, 13, 0.72) 100%); }
+.b-frame__view { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; opacity: 0; transition: opacity var(--dur-3) var(--ease-out); }
+.b-frame.is-ready .b-frame__view { opacity: 1; }
+.b-frame.is-ready .b-frame__poster { opacity: 0; }
+.b-frame.is-ready .b-frame__shade { background: linear-gradient(180deg, rgba(21, 16, 13, 0.55) 0%, transparent 18%, transparent 100%); }
+.b-frame__sheet { position: absolute; inset: 0; z-index: 2; background: var(--map-water); }
+.b-frame.is-drawn .b-frame__poster, .b-frame.is-drawn .b-frame__shade, .b-frame.is-drawn .b-frame__view { visibility: hidden; }
+@media (prefers-reduced-motion: reduce) { .b-frame__poster, .b-frame__view { transition: none; } }
+
+/* the sheet: the painted map, drag to pan, pinch or buttons to zoom */
+.b-sheet { position: absolute; inset: 0; overflow: clip; cursor: grab; touch-action: none; }
+.b-sheet:active { cursor: grabbing; }
+@media (max-width: 1199px), (pointer: coarse) { .b-sheet { touch-action: pan-y; } }
+.b-sheet__view { position: absolute; inset: 0; display: grid; place-items: center; will-change: transform; }
+.b-sheet__view svg { width: 100%; height: 100%; display: block; }
+.b-sheet__zoom { position: absolute; right: var(--gutter); bottom: 7.5rem; z-index: 4; display: flex; gap: var(--sp-1); }
+.b-sheet__zoom button { width: var(--tap); height: var(--tap); border: var(--px) solid var(--lantern-deep); background: var(--paper); color: var(--ink); font-family: var(--font-display); font-size: var(--fs-lg); box-shadow: var(--bevel); }
+.b-sheet__zoom button:hover { background: var(--lantern); }
+.b-sheet__zoom button:active { box-shadow: var(--bevel-in); }
+.b-pin-map { cursor: pointer; }
+.b-pin-map__hit { fill: transparent; }
+.b-pin-map__body { transition: transform var(--dur-1) var(--ease-out); transform-box: fill-box; transform-origin: center bottom; }
+.b-pin-map:hover .b-pin-map__body, .b-pin-map:focus-visible .b-pin-map__body { transform: translateY(-2px) scale(1.15); }
+.b-pin-map:active .b-pin-map__body { transform: scale(1.05); }
+.b-trail { stroke-dasharray: 1400; stroke-dashoffset: 1400; animation: b-draw 2.4s var(--ease-out) forwards; }
+@keyframes b-draw { to { stroke-dashoffset: 0; } }
+@media (prefers-reduced-motion: reduce) { .b-trail { animation: none; stroke-dashoffset: 0; } }
+
+/* the HUD: what lies over the world */
+.b-hud { position: absolute; inset: 0; z-index: 3; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; padding: var(--sp-4) var(--gutter); pointer-events: none; }
+.b-hud > * { pointer-events: none; }
+.b-hud a, .b-hud button { pointer-events: auto; }
+.b-hud__top { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-3) var(--sp-4); flex-wrap: wrap; }
+.b-hud__title { display: grid; gap: var(--sp-1); }
+.b-hud__title .b-title { font-size: var(--fs-xl); text-shadow: 0 var(--px) 0 var(--night); }
+.b-hud__meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-3); font-family: var(--font-data); font-size: 0.6rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--tc-white); text-shadow: 0 1px 0 var(--night); }
+.b-hud__in { display: inline-flex; align-items: center; gap: var(--sp-2); }
+.b-hud__in img { width: 1rem; height: 1rem; image-rendering: pixelated; box-shadow: 0 0 0 1px var(--night); }
+.b-hud__dot { width: 0.5rem; height: 0.5rem; background: var(--online); box-shadow: 0 0 0 1px var(--night); }
+.b-hud__tools { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--sp-2); }
+.b-hud__mid { display: grid; place-items: center; }
+.b-frame.is-drawn .b-hud__title .b-title, .b-frame.is-drawn .b-hud__meta { color: var(--ink); text-shadow: none; }
+.b-frame.is-drawn .b-hud__in img { box-shadow: 0 0 0 1px var(--ink); }
+
+/* the lantern that boots the viewer */
+.b-boot {
+  pointer-events: auto;
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-5) var(--sp-6);
+  background: rgba(21, 16, 13, 0.74);
+  color: var(--lantern);
+  text-align: center;
+  text-decoration: none;
+  box-shadow: var(--bevel);
+  clip-path: var(--notch);
+  transition: background var(--dur-1) var(--ease-out);
+}
+.b-boot .b-lantern { width: 2rem; height: 3rem; }
+.b-boot__word { font-family: var(--font-data); font-size: var(--fs-data); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+.b-boot__sub { font-family: var(--font-data); font-size: 0.6rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--tc-white); }
+.b-boot:hover, .b-boot:focus-visible { background: rgba(21, 16, 13, 0.9); }
+.b-boot:hover .b-boot__word, .b-boot:focus-visible .b-boot__word { color: var(--paper); }
+.b-boot__wait { font-family: var(--font-data); font-size: var(--fs-xs); color: var(--paper); text-shadow: 0 1px 0 var(--night); }
+
+/* the postcard of the chosen place. Scoped to the frame: board.css gives every
+   sheet of paper position: relative, and this one has to sit over the world. */
+.b-frame > .b-card {
+  position: absolute;
+  left: var(--gutter);
+  bottom: 7.5rem;
+  z-index: 4;
+  width: min(22rem, calc(100% - 2 * var(--gutter)));
+  padding: var(--sp-2) var(--sp-2) var(--sp-3);
+  box-shadow: 0 var(--px) 0 var(--tc-brown), 0 8px 0 rgba(21, 16, 13, 0.35);
+}
+.b-card img { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; box-shadow: 0 0 0 var(--px) var(--tc-brown); }
+.b-card__empty { display: grid; place-items: center; aspect-ratio: 16 / 10; background: var(--paper-2); border: var(--line) dashed var(--ink-faint); }
+.b-card__empty span { font-size: var(--fs-sm); color: var(--ink-faint); }
+.b-card__cap { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-2); margin-top: var(--sp-3); padding-inline: var(--sp-1); }
+.b-card__cap > span { display: grid; gap: var(--px); min-width: 0; }
+.b-card__name { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-lg); line-height: 1.15; color: var(--ink); }
+.b-card__sub { font-size: var(--fs-sm); color: var(--ink-soft); line-height: 1.35; }
+.b-card__x { flex-shrink: 0; width: var(--tap); height: var(--tap); margin: calc(var(--sp-2) * -1) calc(var(--sp-2) * -1) 0 0; color: var(--ink-faint); }
+.b-card__x:hover { color: var(--ink); }
+
+/* the places: a rail of chips along the foot of the frame */
+.b-places { display: grid; gap: var(--sp-2); }
+@media (min-width: 900px) {
+  .b-places { position: absolute; inset-inline: 0; bottom: calc(var(--px) * 4); z-index: 3; padding: var(--sp-6) var(--gutter) var(--sp-4); pointer-events: none; }
+  .b-places > * { pointer-events: auto; }
+}
+@media (max-width: 899px) { .b-places { padding: var(--sp-3) var(--gutter) var(--sp-4); background: var(--dusk); } }
+.b-places__head { font-family: var(--font-data); font-size: 0.6rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--paper); text-shadow: 0 1px 0 var(--night); }
+.b-rail {
+  display: flex;
+  gap: var(--sp-2);
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 3px;                  /* room for the focus ring */
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(90deg, #000 92%, transparent);
+          mask-image: linear-gradient(90deg, #000 92%, transparent);
+}
+.b-rail::-webkit-scrollbar { display: none; }
+.b-rail:focus-within { -webkit-mask-image: none; mask-image: none; }
+.b-chip {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+  display: grid;
+  grid-template-columns: 3.5rem minmax(0, 1fr);
+  align-items: center;
+  gap: var(--sp-3);
+  min-width: 12rem;
+  padding: var(--sp-1) var(--sp-3) var(--sp-1) var(--sp-1);
+  text-align: left;
+  color: var(--paper);
+  background: rgba(42, 26, 20, 0.92);
+  box-shadow: var(--bevel);
+  clip-path: var(--notch);
+  transition: background var(--dur-1) var(--ease-out);
+}
+.b-chip:hover, .b-chip:focus-visible { background: var(--tc-brown); }
+.b-chip.is-on { background: var(--lantern); color: var(--night); }
+.b-chip__thumb { width: 3.5rem; height: 2.5rem; overflow: hidden; background: var(--dusk-2); box-shadow: 0 0 0 var(--px) var(--wood-dark); }
+.b-chip__thumb img { width: 100%; height: 100%; object-fit: cover; }
+.b-chip__thumb--empty { display: block; width: 100%; height: 100%; background: repeating-linear-gradient(45deg, var(--dusk) 0 4px, var(--dusk-2) 4px 8px); }
+.b-chip__text { display: grid; min-width: 0; }
+.b-chip__name { font-family: var(--font-data); font-size: 0.6rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.b-chip__sub { font-family: var(--font-data); font-size: 0.6rem; line-height: 1.5; color: var(--text-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.b-chip.is-on .b-chip__sub { color: rgba(21, 16, 13, 0.7); }
+
+@media (max-width: 899px) {
+  .b-frame { height: auto; aspect-ratio: 4 / 5; min-height: 0; }
+  .b-hud { padding: var(--sp-3) var(--gutter); }
+  .b-card { left: var(--gutter); bottom: var(--sp-4); }
+  .b-sheet__zoom { bottom: var(--sp-4); }
+}
+
+/* ─── the album: the whole wall, opened over the world ────────── */
+.b-album { position: fixed; inset: 0; z-index: var(--z-drawer); overflow-y: auto; background: rgba(21, 16, 13, 0.94); padding-block: calc(var(--sp-6) + env(safe-area-inset-top, 0px)) var(--sp-8); }
+.b-album__inner { display: grid; gap: var(--sp-4); }
+/* Tiles are square and butt together, so the wall never leaves holes.
+   Every fifth picture is hung double size. There is no dense packing:
+   what the admin panel orders is exactly what hangs here, left to right. */
+.b-wall { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3); }
+@media (min-width: 720px) { .b-wall { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp-4); } }
+.b-frame-pic {
+  position: relative;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: calc(var(--px) * 2);
+  aspect-ratio: 1;
+  min-width: 0;
+  padding: calc(var(--px) * 3);
+  background: var(--wood);
+  color: var(--ink);
+  text-align: left;
+  box-shadow: inset 0 0 0 calc(var(--px) * 1.5) var(--wood-light), 0 0 0 var(--px) var(--wood-dark);
+  transition: box-shadow var(--dur-2) var(--ease-out);
+}
+.b-frame-pic--hero { grid-column: span 2; grid-row: span 2; }
+.b-frame-pic img { width: 100%; height: 100%; min-height: 0; object-fit: cover; display: block; background: var(--dusk-2); filter: brightness(0.78) saturate(0.85); transition: filter var(--dur-3) var(--ease-out); }
+.b-frame-pic:hover, .b-frame-pic:focus-visible { box-shadow: inset 0 0 0 calc(var(--px) * 1.5) var(--wood-light), 0 0 0 calc(var(--px) * 2) var(--lantern); }
+.b-frame-pic:hover img, .b-frame-pic:focus-visible img { filter: none; }
+.b-frame-pic__plate { display: flex; align-items: baseline; gap: var(--sp-2); min-width: 0; padding: var(--px) var(--sp-2); background: var(--paper); clip-path: var(--notch); }
+.b-frame-pic__no { font-family: var(--font-data); font-size: var(--fs-chip); line-height: 2; color: var(--ink-faint); flex-shrink: 0; }
+.b-frame-pic__cap { font-family: var(--font-data); font-size: var(--fs-xs); line-height: 1.5; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.b-frame-pic__cap b { font-weight: 600; color: var(--ink); }
+@media (min-width: 720px) { .b-frame-pic--hero .b-frame-pic__cap { font-size: var(--fs-sm); } }
+
+/* ─── lightbox ────────────────────────────────────────────────── */
+.b-lb { position: fixed; inset: 0; z-index: var(--z-lightbox); background: rgba(12, 10, 20, 0.94); color: var(--paper); display: grid; grid-template-rows: 1fr auto; padding: 3.5rem var(--sp-4) var(--sp-5); }
+.b-lb__img { min-height: 0; display: grid; place-items: center; overflow: hidden; }
+.b-lb__card { max-width: min(90vw, 1100px); max-height: 100%; cursor: grab; touch-action: none; will-change: transform; }
+.b-lb__card:active { cursor: grabbing; }
+.b-lb__card img { max-width: 100%; max-height: calc(100svh - 9rem); object-fit: contain; border: 10px solid var(--wood); box-shadow: inset 0 0 0 3px var(--wood-light), 0 0 0 var(--px) var(--wood-dark); user-select: none; -webkit-user-drag: none; }
+.b-lb__bar { display: flex; justify-content: space-between; align-items: flex-end; gap: var(--sp-4); margin-top: var(--sp-4); }
+.b-lb__cap { font-size: var(--fs-lg); line-height: 1.3; }
+.b-lb__cap small { display: block; font-size: var(--fs-sm); color: var(--text-soft); }
+.b-lb__count { font-family: var(--font-data); font-size: var(--fs-xs); color: var(--text-soft); }
+.b-arrowbtn { width: var(--tap); height: var(--tap); border: var(--px) solid var(--lantern); color: var(--lantern); border-radius: var(--radius); display: inline-flex; align-items: center; justify-content: center; }
+.b-arrowbtn:hover { background: var(--lantern); color: var(--night); }
+.b-lb__close { position: absolute; top: var(--sp-3); right: var(--sp-4); }
+
+/* ─── the crew: portraits on the town wall ────────────────────── */
+.b-folk { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp-5) var(--sp-3); list-style: none; margin-bottom: var(--sp-7); }
 @media (min-width: 480px) { .b-folk { gap: var(--sp-6) var(--sp-4); } }
+@media (min-width: 720px) { .b-folk { grid-template-columns: repeat(8, minmax(0, 1fr)); } }
 .b-folk > li { min-width: 0; }
 .b-folk__item { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); justify-items: center; gap: var(--sp-2); min-width: 0; text-decoration: none; color: var(--text-soft); text-align: center; }
 .b-folk__frame { position: relative; width: 100%; max-width: 6.5rem; padding: var(--px); background: var(--tc-brown); }
@@ -410,229 +586,12 @@
 .b-folk__item:hover .b-folk__name, .b-folk__item:focus-visible .b-folk__name { color: var(--lantern); }
 .b-folk__in { position: absolute; top: -0.5rem; right: -0.25rem; padding: 0.1rem 0.35rem; background: var(--online); color: var(--night); font-family: var(--font-data); font-size: var(--fs-xs); line-height: 1.2; }
 @media (max-width: 479px) { .b-folk__in { font-size: 0.6rem; } }
+.b-crew__foot { margin-top: var(--sp-6); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-3); }
 
-/* ─── the land: a survey sheet on the board ───────────────────── */
-.b-map__wrap { position: relative; }
-.b-map__sheet { position: relative; overflow: clip; cursor: grab; touch-action: none; border: calc(var(--px) * 4) solid var(--wood); box-shadow: 0 0 0 calc(var(--px) * 2) var(--wood-light), 0 0 0 calc(var(--px) * 4) var(--wood-dark); background: var(--map-water); }
-.b-map__wrap { padding: calc(var(--px) * 4); }
-.b-map__zoom button { box-shadow: var(--bevel); }
-.b-map__zoom button:active { box-shadow: var(--bevel-in); }
-.b-map__sheet:active { cursor: grabbing; }
-@media (max-width: 1199px), (pointer: coarse) { .b-map__sheet { touch-action: pan-y; } }
-.b-map__paper { position: absolute; inset: 0; width: 100%; height: 100%; }
-.b-map__view { position: relative; will-change: transform; }
-.b-map__view svg { width: 100%; height: auto; display: block; }
-.b-map__reset { position: absolute; top: var(--sp-3); right: var(--sp-3); z-index: 4; }
-.b-map__zoom { position: absolute; left: var(--sp-3); bottom: var(--sp-3); z-index: 4; display: flex; gap: var(--sp-1); }
-.b-map__zoom button { width: var(--tap); height: var(--tap); border: var(--px) solid var(--lantern-deep); border-radius: var(--radius); background: var(--paper); color: var(--ink); font-family: var(--font-display); font-size: var(--fs-lg); }
-.b-map__zoom button:hover { background: var(--lantern); }
-
-/* ─── the world map: BlueMap on /heimskort, in the same frame ─────
-   Its own viewer draws the 3D scene inside; the frame only has to match
-   the land map's wood and hold a size the scene can fill. */
-.b-world { position: relative; border: calc(var(--px) * 4) solid var(--wood); box-shadow: 0 0 0 calc(var(--px) * 2) var(--wood-light), 0 0 0 calc(var(--px) * 4) var(--wood-dark); background: var(--night); }
-.b-world__view { display: block; width: 100%; height: clamp(24rem, 72vh, 56rem); border: 0; opacity: 0; transition: opacity var(--dur-2) var(--ease-out); }
-.b-world__view.is-ready { opacity: 1; }
-.b-world__wait { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; }
-@media (prefers-reduced-motion: reduce) { .b-world__view { transition: none; } }
-.b-print { position: relative; display: block; width: 100%; padding: var(--sp-2) var(--sp-2) var(--sp-3); background: var(--paper); color: var(--ink); border: var(--px) solid var(--tc-brown); }
-.b-print img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
-.b-print__empty { display: grid; place-items: center; aspect-ratio: 4 / 3; background: var(--paper-2); border: var(--line) dashed var(--ink-faint); }
-.b-print__empty span { font-size: var(--fs-sm); color: var(--ink-faint); }
-.b-print__cap { margin-top: var(--sp-2); padding-inline: var(--sp-1); font-size: var(--fs-sm); color: var(--ink-soft); line-height: 1.4; }
-.b-print__cap b { font-weight: 600; color: var(--ink); }
-.b-map__print { position: relative; margin: var(--sp-5) auto 0; width: min(100%, 22rem); z-index: 3; }
-.b-map__print .b-print__cap { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-@media (min-width: 720px) { .b-map__print { position: absolute; right: var(--sp-4); bottom: var(--sp-4); width: 15rem; margin: 0; box-shadow: 0 0 0 calc(var(--px) * 2) var(--wood-dark); } }
-@media (min-width: 1000px) { .b-map__print { width: 18rem; } }
-.b-pin-map { cursor: pointer; }
-.b-pin-map__hit { fill: transparent; }
-.b-pin-map__body { transition: transform var(--dur-1) var(--ease-out); transform-box: fill-box; transform-origin: center bottom; }
-.b-pin-map:hover .b-pin-map__body, .b-pin-map:focus-visible .b-pin-map__body { transform: translateY(-2px) scale(1.15); }
-.b-pin-map:active .b-pin-map__body { transform: scale(1.05); }
-.b-trail { stroke-dasharray: 1400; stroke-dashoffset: 1400; }
-.is-surveyed .b-trail { animation: b-draw 2.4s var(--ease-out) forwards; }
-@keyframes b-draw { to { stroke-dashoffset: 0; } }
-.b-index__head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--sp-2) var(--sp-4); margin: var(--sp-6) 0 var(--sp-3); }
-.b-index__title { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-lg); line-height: 1.1; color: var(--paper); }
-.b-index { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(12.5rem, 1fr)); gap: var(--sp-2); }
-.b-index li { min-width: 0; }
-.b-index button {
-  display: flex; align-items: center; gap: var(--sp-3);
-  width: 100%; min-width: 0; min-height: 3.5rem; padding: var(--sp-1) var(--sp-2);
-  text-align: left; color: var(--text-soft);
-  background: rgba(21, 16, 13, 0.4);
-  border: var(--line) solid rgba(209, 178, 161, 0.14);
-  transition: color var(--dur-1) var(--ease-out), border-color var(--dur-1) var(--ease-out), background var(--dur-1) var(--ease-out);
-}
-.b-index button:hover { color: var(--paper); border-color: var(--lantern); }
-.b-index button.is-active { color: var(--night); background: var(--lantern); border-color: var(--lantern); }
-.b-index__thumb { position: relative; width: 3.25rem; height: 2.5rem; flex-shrink: 0; overflow: hidden; background: var(--dusk-2); border: var(--px) solid var(--wood); }
-.b-index__thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.b-index__thumb--empty { display: block; width: 100%; height: 100%; background: repeating-linear-gradient(45deg, var(--dusk) 0 4px, var(--dusk-2) 4px 8px); }
-.b-index__no { position: absolute; left: 0; bottom: 0; padding: 0 3px; background: rgba(21, 16, 13, 0.85); color: var(--paper); font-family: var(--font-data); font-size: 0.55rem; line-height: 1.5; }
-.b-index button.is-active .b-index__no { background: var(--night); color: var(--lantern); }
-.b-index__text { display: grid; min-width: 0; }
-.b-index__label { font-weight: 600; font-size: var(--fs-sm); line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.b-index__type { font-size: var(--fs-xs); line-height: 1.3; color: var(--text-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.b-index button.is-active .b-index__type { color: rgba(21, 16, 13, 0.75); }
-
-/* ─── pictures: item frames on a plank wall ───────────────────── */
-/* Tiles are square and butt together, so the wall never leaves holes.
-   Every fifth picture is hung double size. There is no dense packing:
-   what the admin panel orders is exactly what hangs here, left to right. */
-.b-wall { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3); }
-@media (min-width: 720px) { .b-wall { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp-4); } }
-.b-frame {
-  position: relative;
-  display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
-  gap: calc(var(--px) * 2);
-  aspect-ratio: 1;
-  min-width: 0;
-  padding: calc(var(--px) * 3);
-  background: var(--wood);
-  color: var(--ink);
-  text-align: left;
-  box-shadow: inset 0 0 0 calc(var(--px) * 1.5) var(--wood-light), 0 0 0 var(--px) var(--wood-dark);
-  transition: box-shadow var(--dur-2) var(--ease-out);
-}
-.b-frame--hero { grid-column: span 2; grid-row: span 2; }
-.b-frame img { width: 100%; height: 100%; min-height: 0; object-fit: cover; display: block; background: var(--dusk-2); filter: brightness(0.78) saturate(0.85); transition: filter var(--dur-3) var(--ease-out); }
-.b-frame:hover, .b-frame:focus-visible { box-shadow: inset 0 0 0 calc(var(--px) * 1.5) var(--wood-light), 0 0 0 calc(var(--px) * 2) var(--lantern); }
-.b-frame:hover img, .b-frame:focus-visible img { filter: none; }
-.b-frame__plate { display: flex; align-items: baseline; gap: var(--sp-2); min-width: 0; padding: var(--px) var(--sp-2); background: var(--paper); clip-path: var(--notch); }
-.b-frame__no { font-family: var(--font-data); font-size: 0.6rem; line-height: 1.6; color: var(--ink-faint); flex-shrink: 0; }
-.b-frame__cap { font-size: var(--fs-xs); line-height: 1.5; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.b-frame__cap b { font-weight: 600; color: var(--ink); }
-@media (min-width: 720px) { .b-frame--hero .b-frame__cap { font-size: var(--fs-sm); } }
-
-/* ─── the wall, folded: one rail of frames ───────────────────── */
-/* Folded, the wall is a single rail you walk along by lantern light: every
-   picture is still hanging, it just stops taking the whole evening to scroll
-   past. Both ends fall off into the dark, and the plank at the foot hangs the
-   rest of the wall up in source order. */
-.b-wallrail { position: relative; }
-.b-wall--rail {
-  display: flex;
-  gap: var(--sp-3);
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding-block: 6px;                 /* room for the focus ring and the lit border */
-  scroll-snap-type: x mandatory;
-  scrollbar-width: none;
-  --fade: clamp(2rem, 6vw, 4.5rem);
-  --fade-l: var(--fade);
-  --fade-r: var(--fade);
-  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent 100%);
-          mask-image: linear-gradient(90deg, transparent 0, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent 100%);
-}
-.b-wall--rail::-webkit-scrollbar { display: none; }
-.b-wall--rail.at-start { --fade-l: 0px; }
-.b-wall--rail.at-end   { --fade-r: 0px; }
-/* nothing is dimmed while the keyboard is walking the frames: the focus ring
-   has to be as visible on the frame at the edge as on the one in the middle */
-.b-wall--rail:focus-within { -webkit-mask-image: none; mask-image: none; }
-.b-wall--rail > .b-frame { flex: 0 0 clamp(10rem, 40vw, 13rem); scroll-snap-align: start; }
-
-/* Lanterns held up at the ends of the rail. Fine pointers only; a finger drags
-   the wall and a keyboard walks the frames. */
-.b-wallrail__arrow {
-  position: absolute;
-  top: 50%;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  width: var(--tap);
-  height: var(--tap);
-  margin-top: calc(var(--tap) / -2 - 0.6rem);
-  background: rgba(21, 16, 13, 0.82);
-  color: var(--lantern);
-  box-shadow: inset 0 0 0 var(--px) var(--lantern-glow);
-  clip-path: var(--notch);
-  transition: opacity var(--dur-2) var(--ease-out), background var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
-}
-@media (hover: hover) and (pointer: fine) { .b-wallrail__arrow { display: inline-flex; } }
-.b-wallrail__arrow--l { left: calc(var(--sp-2) * -1); }
-.b-wallrail__arrow--r { right: calc(var(--sp-2) * -1); }
-.b-wallrail__arrow svg { width: 1.25rem; height: 1.25rem; }
-.b-wallrail__arrow:hover, .b-wallrail__arrow:focus-visible { background: var(--lantern); color: var(--night); box-shadow: none; }
-.b-wallrail__arrow[disabled] { opacity: 0; pointer-events: none; }
-
-/* Hanging the wall: the frames go up one after another, left to right. */
-@keyframes b-hang {
-  0%   { opacity: 0; transform: translateY(calc(var(--px) * -8)) rotate(-1.5deg); }
-  60%  { opacity: 1; transform: translateY(0) rotate(0.6deg); }
-  100% { opacity: 1; transform: none; }
-}
-.b-wall--hung > .b-frame { animation: b-hang var(--dur-3) var(--ease-out) backwards; animation-delay: calc(var(--i, 0) * 26ms); }
-
-/* ─── the plank that folds a long section away ───────────────── */
-/* Wood, two nails and lantern light: the one control that opens the album and
-   the store. Folded it says what it will show and how much of it there is. */
-.b-fold {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: var(--sp-2) var(--sp-3);
-  width: 100%;
-  min-height: var(--tap);
-  margin-top: var(--sp-5);
-  padding: var(--sp-2) var(--sp-6);
-  background: var(--wood);
-  color: var(--lantern);
-  font-size: var(--fs-sm);
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  text-align: center;
-  clip-path: var(--notch);
-  box-shadow: inset 0 0 0 calc(var(--px) * 1.5) var(--wood-light), 0 0 0 var(--px) var(--wood-dark);
-  transition: background var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
-}
-.b-fold::before {
-  /* the grain of the plank */
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: repeating-linear-gradient(90deg, rgba(21, 16, 13, 0.16) 0 var(--px), transparent var(--px) 9px);
-}
-.b-fold:hover, .b-fold:focus-visible { background: var(--wood-light); color: var(--paper); }
-.b-fold__nail {
-  position: absolute;
-  left: var(--sp-3);
-  top: 50%;
-  width: calc(var(--px) * 2);
-  height: calc(var(--px) * 2);
-  margin-top: calc(var(--px) * -1);
-  background: var(--wood-dark);
-  box-shadow: var(--px) var(--px) 0 rgba(255, 240, 210, 0.16);
-}
-.b-fold__nail--r { left: auto; right: var(--sp-3); }
-.b-fold__label { position: relative; }
-.b-fold__count { position: relative; padding: 0 var(--sp-2); background: var(--paper); color: var(--ink); font-size: var(--fs-xs); letter-spacing: 0; clip-path: var(--notch); }
-.b-fold__chev { position: relative; width: 1rem; height: 1rem; flex-shrink: 0; transition: transform var(--dur-2) var(--ease-out); }
-.b-fold.is-open .b-fold__chev { transform: rotate(180deg); }
-@media (max-width: 480px) { .b-fold { padding-inline: var(--sp-5); font-size: var(--fs-xs); } }
-
-/* ─── lightbox ────────────────────────────────────────────────── */
-.b-lb { position: fixed; inset: 0; z-index: var(--z-lightbox); background: rgba(12, 10, 20, 0.94); color: var(--paper); display: grid; grid-template-rows: 1fr auto; padding: 3.5rem var(--sp-4) var(--sp-5); }
-.b-lb__img { min-height: 0; display: grid; place-items: center; overflow: hidden; }
-.b-lb__card { max-width: min(90vw, 1100px); max-height: 100%; cursor: grab; touch-action: none; will-change: transform; }
-.b-lb__card:active { cursor: grabbing; }
-.b-lb__card img { max-width: 100%; max-height: calc(100svh - 9rem); object-fit: contain; border: 10px solid var(--wood); box-shadow: inset 0 0 0 3px var(--wood-light), 0 0 0 var(--px) var(--wood-dark); user-select: none; -webkit-user-drag: none; }
-.b-lb__bar { display: flex; justify-content: space-between; align-items: flex-end; gap: var(--sp-4); margin-top: var(--sp-4); }
-.b-lb__cap { font-size: var(--fs-lg); line-height: 1.3; }
-.b-lb__cap small { display: block; font-size: var(--fs-sm); color: var(--text-soft); }
-.b-lb__count { font-family: var(--font-data); font-size: var(--fs-xs); color: var(--text-soft); }
-.b-arrowbtn { width: var(--tap); height: var(--tap); border: var(--px) solid var(--lantern); color: var(--lantern); border-radius: var(--radius); display: inline-flex; align-items: center; justify-content: center; }
-.b-arrowbtn:hover { background: var(--lantern); color: var(--night); }
-.b-lb__close { position: absolute; top: var(--sp-3); right: var(--sp-4); }
-
-/* ─── duel: the arena at night ────────────────────────────────── */
+/* ─── duel: the arena at night, behind the fire ───────────────── */
+.b-duelbox { position: fixed; inset: 0; z-index: var(--z-modal); display: grid; place-items: center; padding: var(--sp-4); background: rgba(12, 10, 20, 0.8); overflow-y: auto; }
+.b-duelbox__in { width: 100%; max-width: 64rem; }
+.b-duelpanel { padding: var(--sp-5); background: var(--dusk-2); box-shadow: var(--bevel); clip-path: var(--notch); }
 .b-duel { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-5); }
 @media (min-width: 900px) { .b-duel { grid-template-columns: minmax(0, 8fr) minmax(15rem, 4fr); gap: var(--sp-7); align-items: start; } }
 .b-arena {
@@ -703,22 +662,15 @@
 .b-err,
 .b-copy__hint,
 .b-status__row,
-.b-rail__label,
-.b-bar__link,
 .b-bar__addr b,
-.b-drawer__link,
 .b-folk__name,
-.b-index__label,
-.b-index__type,
-.b-frame__cap,
-.b-print__cap,
-.b-map__zoom button,
+.b-card__sub,
+.b-card__empty span,
 .b-arena__small,
 .b-stub__k,
 .b-duel__k,
 .b-duel__rules,
 .b-lb__cap,
-.b-wallrail__arrow,
 .b-arrowbtn,
 .b-lb__close {
   font-family: var(--font-data);
@@ -729,11 +681,8 @@
 .b-note,
 .b-copy__hint,
 .b-status__row,
-.b-rail__label,
 .b-folk__name,
-.b-index__type,
-.b-frame__cap,
-.b-print__cap,
+.b-card__sub,
 .b-duel__rules,
 .b-arena__small {
   font-weight: 400;
@@ -741,21 +690,7 @@
 
 /* The pixel face is already wide; the tracking that opened up the serif's
    small caps would push these labels out of their boxes. */
-.b-fold,
 .b-btn {
   font-family: var(--font-data);
   letter-spacing: 0.02em;
 }
-
-/* Two-digit chips, sized straight onto the 8px grid so they stay crisp. */
-.b-index__no,
-.b-frame__no {
-  font-size: var(--fs-chip);
-  line-height: 2;
-}
-
-/* The place list is there to name places: at the serif's size the longest
-   names ("Blöðruparadís", "Seyðaturninn") lost their tails to the ellipsis
-   in the wider face, so the label steps down rather than the column out. */
-.b-index__label { font-size: var(--fs-xs); }
-.b-index__type  { font-size: 0.625rem; }
