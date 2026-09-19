@@ -74,21 +74,23 @@
 }
 .b-tab:hover { border-color: var(--lantern); }
 .b-tab.is-active { background: var(--lantern); color: var(--night); border-color: var(--lantern); box-shadow: var(--bevel); }
-/* The wanted board: one poster per stat, five across, the top three on each.
-   The leader in full, second and third as two lines under the rule. On phones
-   the posters ride a rail and scroll sideways instead of stacking. */
+/* The wanted board: one poster per category, the top three on each. The
+   outlaw's nickname is the poster's title, the charge under it in small
+   type. The posters fill as many columns as the page has room for; on phones
+   they ride a rail and scroll sideways instead of stacking. */
 .b-wanted { margin-top: var(--sp-2); }
 .b-wanted__title { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-xl); line-height: var(--lh-tight); color: var(--paper); }
-.b-posters { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--sp-3); align-items: start; }
+.b-posters { display: grid; grid-template-columns: repeat(auto-fill, minmax(18.5rem, 1fr)); gap: var(--sp-4); align-items: start; }
 @media (max-width: 899px) {
   .b-posters { display: flex; gap: var(--sp-3); overflow-x: auto; margin-inline: calc(var(--gutter) * -1); padding: 4px var(--gutter); scroll-snap-type: x proximity; scrollbar-width: none; }
   .b-posters::-webkit-scrollbar { display: none; }
-  .b-posters > * { flex: 0 0 11.5rem; scroll-snap-align: start; }
+  .b-posters > * { flex: 0 0 14rem; scroll-snap-align: start; }
 }
 .b-poster { display: grid; align-content: start; justify-items: center; text-align: center; padding: var(--sp-6) var(--sp-3) var(--sp-4); }
 .b-poster > * { min-width: 0; max-width: 100%; }
 .b-poster__kicker { font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
-.b-poster__stat { margin-top: var(--px); font-family: var(--font-display); font-weight: 400; font-size: clamp(1rem, 1.6vw, 1.2rem); line-height: 1.15; color: var(--ink); }
+.b-poster__stat { margin-top: var(--px); font-family: var(--font-display); font-weight: 400; font-size: clamp(1.25rem, 1.8vw, 1.5rem); line-height: 1.1; color: var(--tc-red); }
+.b-poster__charge { margin-top: var(--sp-1); font-family: var(--font-data); font-size: 0.6rem; line-height: 1.5; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-soft); text-wrap: balance; }
 .b-poster__lead { display: grid; justify-items: center; width: 100%; margin-top: var(--sp-3); text-decoration: none; color: var(--ink); }
 .b-poster__img { width: min(100%, 4.5rem); padding: calc(var(--px) * 2); background: var(--wood); box-shadow: inset 0 0 0 var(--px) var(--wood-light); transition: box-shadow var(--dur-2) var(--ease-out); }
 .b-poster__img img { width: 100%; aspect-ratio: 1; object-fit: cover; image-rendering: pixelated; display: block; }
@@ -320,7 +322,7 @@
 .b-profile__bio { flex: 1 1 18rem; max-width: 60ch; line-height: 1.5; color: var(--ink-soft); }
 .b-profile__bio.is-empty { color: var(--ink-faint); }
 .b-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 var(--sp-5); margin-top: var(--sp-5); }
-@media (min-width: 640px) { .b-stats { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+@media (min-width: 640px) { .b-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .b-stat { padding: var(--sp-2) 0; border-top: var(--line) solid var(--ink-faint); }
 .b-stat__k { font-size: var(--fs-xs); color: var(--ink-faint); }
 .b-stat__v { margin-top: var(--sp-1); font-family: var(--font-data); font-size: var(--fs-data); }

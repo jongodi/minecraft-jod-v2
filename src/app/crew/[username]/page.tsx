@@ -282,8 +282,8 @@ export default function CrewProfilePage({ params }: { params: Promise<{ username
                       <dl className="b-stats">
                         {STAT_TABS.map(t => (
                           <div key={t.id} className="b-stat">
-                            <dt className="b-stat__k">{t.label}</dt>
-                            <dd className="b-stat__v">{t.unit(playerStats[t.id])}</dd>
+                            <dt className="b-stat__k">{t.nick} · {t.label}</dt>
+                            <dd className="b-stat__v">{t.unit(playerStats[t.id] ?? 0)}</dd>
                           </div>
                         ))}
                       </dl>

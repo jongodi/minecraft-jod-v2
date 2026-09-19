@@ -16,7 +16,22 @@ export interface PlayerStat {
   playTimeHours: number;
   distanceWalked: number; // in cm (Minecraft stat unit)
   itemsCrafted:  number;
+  /** ticks since the player last slept in a bed */
+  timeSinceRest:  number;
+  /** ticks since the player last died */
+  timeSinceDeath: number;
+  /** cm moved under one's own power: walk, sprint, crouch, climb and swim, averaged over the five */
+  travelCm:       number;
+  /** damage dealt over damage taken; both are in tenths of a heart */
+  damageRatio:    number;
+  raidWins:       number;
+  recordsPlayed:  number;
 }
+
+const EMPTY: Omit<PlayerStat, 'username'> = {
+  deaths: 0, mobKills: 0, playerKills: 0, playTimeTicks: 0, playTimeHours: 0, distanceWalked: 0, itemsCrafted: 0,
+  timeSinceRest: 0, timeSinceDeath: 0, travelCm: 0, damageRatio: 0, raidWins: 0, recordsPlayed: 0,
+};
 
 export interface StatsResponse {
   players:  PlayerStat[];
@@ -66,10 +81,22 @@ function extractStats(statsJson: MinecraftStatsJson): Omit<PlayerStat, 'username
   const distanceWalked = custom['minecraft:walk_one_cm']   ?? 0;
   const itemsCrafted   = Object.values(crafted as Record<string, number>).reduce((s, v) => s + (v as number), 0);
 
+  /* moved under one's own power: no horse, boat, elytra or minecart */
+  const legs = ['minecraft:walk_one_cm', 'minecraft:sprint_one_cm', 'minecraft:crouch_one_cm', 'minecraft:climb_one_cm', 'minecraft:swim_one_cm'];
+  const travelCm = legs.reduce((s, k) => s + (custom[k] ?? 0), 0) / legs.length;
+  const dealt = custom['minecraft:damage_dealt'] ?? 0;
+  const taken = custom['minecraft:damage_taken'] ?? 0;
+
   return {
     deaths, mobKills, playerKills, playTimeTicks,
     playTimeHours: Math.floor(playTimeTicks / 20 / 3600),
     distanceWalked, itemsCrafted,
+    timeSinceRest:  custom['minecraft:time_since_rest']  ?? 0,
+    timeSinceDeath: custom['minecraft:time_since_death'] ?? 0,
+    travelCm,
+    damageRatio:    taken > 0 ? dealt / taken : dealt > 0 ? dealt : 0,
+    raidWins:       custom['minecraft:raid_win']    ?? 0,
+    recordsPlayed:  custom['minecraft:play_record'] ?? 0,
   };
 }
 
@@ -122,7 +149,7 @@ export async function GET() {
     const players: PlayerStat[] = await Promise.all(
       Object.entries(crewUuids).map(async ([uuid, username]) => {
         if (!uuidFiles.includes(`${uuid}.json`)) {
-          return { username, deaths: 0, mobKills: 0, playerKills: 0, playTimeTicks: 0, playTimeHours: 0, distanceWalked: 0, itemsCrafted: 0 };
+          return { username, ...EMPTY };
         }
         try {
           const res = await fetch(
@@ -132,7 +159,7 @@ export async function GET() {
           if (!res.ok) throw new Error('file fetch failed');
           return { username, ...extractStats(await res.json() as MinecraftStatsJson) };
         } catch {
-          return { username, deaths: 0, mobKills: 0, playerKills: 0, playTimeTicks: 0, playTimeHours: 0, distanceWalked: 0, itemsCrafted: 0 };
+          return { username, ...EMPTY };
         }
       })
     );
