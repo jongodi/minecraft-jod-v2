@@ -1,5 +1,10 @@
 import path from 'node:path';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+
+/* Where the map copy is: written by `npm run map:sync`. */
+const snapshot = JSON.parse(readFileSync(new URL('./src/lib/bluemap-snapshot.json', import.meta.url), 'utf8'));
+const BLOB_DIR = 'bluemap-data';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -11,10 +16,21 @@ const nextConfig = {
 
   /* blob-store.ts builds paths into public/ at runtime (local screenshots), so the
      file tracer copies what it can reach under public/ into every function that
-     imports it. The BlueMap copy is hundreds of MB of static files the functions
-     never read: the CDN serves it, and the /bluemap route only redirects to it. */
+     imports it. The BlueMap viewer is static files the functions never read, and
+     a local map copy under public/bluemap-data (development only, ignored by git)
+     is hundreds of MB. */
   outputFileTracingExcludes: {
     '*': ['**/public/bluemap/**', '**/public/bluemap-data/**'],
+  },
+
+  /* The map data lives in Vercel Blob, not in the deployment. A public store is
+     served through this rewrite; a private one through the /bluemap-data route.
+     After the files, so a local copy under public/bluemap-data still wins in
+     development. */
+  async rewrites() {
+    const blob = snapshot.blob;
+    if (!blob?.base || blob.access !== 'public') return [];
+    return { afterFiles: [{ source: `/${BLOB_DIR}/:path*`, destination: `${blob.base}/${BLOB_DIR}/:path*` }] };
   },
 
   images: {

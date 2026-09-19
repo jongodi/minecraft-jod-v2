@@ -1,5 +1,5 @@
 {
-  "syncedAt": "2026-09-18T23:35:23.987Z",
+  "syncedAt": "2026-09-19T03:32:23.704Z",
   "files": [
     "maps/world/live/markers.json",
     "maps/world/rstate/regions/x-1/z-1.regions.dat",
@@ -1149,5 +1149,9 @@
     "maps/world_the_nether/live/markers.json",
     "maps/world_the_nether/settings.json",
     "maps/world_the_nether/textures.json.gz"
-  ]
+  ],
+  "blob": {
+    "base": "https://111narwumw4k8diu.private.blob.vercel-storage.com",
+    "access": "private"
+  }
 }

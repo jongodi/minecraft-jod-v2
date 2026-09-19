@@ -36,14 +36,15 @@ Kóðinn er í `src/components/badlands/`, útlitsreglur í `src/app/badlands.cs
 
 Heimasvæðið í þrívídd, teiknað af BlueMap á þjóninum, er á forsíðunni undir *Heimurinn*; `/heimskort` vísar á skoðarann sjálfan á heilum skjá. Exaroton leyfir ekki fleiri gáttir, svo vefþjónn BlueMap er óvirkur og vefurinn sækir kortið sjálfur í gegnum Exaroton-forritaskilin (`src/app/bluemap/[[...path]]/route.ts`).
 
-Kortið sjálft er teiknað upp úr afriti sem geymt er á vefnum, svo það hleðst hratt hvort sem þjónninn er í gangi eða ekki. Aðeins staða leikmanna kemur beint frá þjóninum, meðan hann er í gangi. Afritið er sótt svona:
+Kortið sjálft er teiknað upp úr afriti, svo það hleðst hratt hvort sem þjónninn er í gangi eða ekki. Aðeins staða leikmanna kemur beint frá þjóninum, meðan hann er í gangi. Afritið er sótt svona:
 
 ```bash
-npm run map:sync            # sækir það sem hefur breyst
+npm run map:sync            # sækir það sem hefur breyst og sendir það í geymsluna
 npm run map:sync -- --full  # sækir allt upp á nýtt
+npm run map:sync -- --push  # sendir afritið á tölvunni í geymsluna án þess að tala við Exaroton
 ```
 
-Skipunin vistar skoðarann í `public/bluemap`, kortagögnin í `public/bluemap-data` og skráalista í `src/lib/bluemap-snapshot.json`. Síðan sýnir dagsetningu afritsins. Afritið birtist á vefnum þegar breytingunum hefur verið ýtt á GitHub. Best er að keyra skipunina meðan þjónninn er í gangi.
+Skoðarinn (nokkur MB) fer í `public/bluemap` og fylgir vefnum. Kortagögnin (hundruð MB) fara í `public/bluemap-data`, sem er afrit fyrir þróun og ekki í git, og þaðan í Vercel Blob undir `bluemap-data/`; vefurinn sækir þau þangað um `/bluemap-data`. Skráalisti og slóð geymslunnar eru skrifuð í `src/lib/bluemap-snapshot.json`, sem er í git. Skipunin þarf `BLOB_READ_WRITE_TOKEN` í `.env.local` (sami lykill og fyrir myndirnar, úr Storage á Vercel). Síðan sýnir dagsetningu afritsins. Nýtt afrit birtist á vefnum þegar breytingunum á `public/bluemap` og `src/lib/bluemap-snapshot.json` hefur verið ýtt á GitHub. Best er að keyra skipunina meðan þjónninn er í gangi.
 
 Kyrrmyndin sem heimurinn opnast sem er `public/map-poster.webp`. Hún er tekin af afritinu með `npm run dev` í gangi:
 
@@ -75,7 +76,7 @@ Afritaðu `.env.local.example` sem `.env.local` og fylltu inn gildin.
 | `GITHUB_TOKEN` | Hefðbundinn GitHub-aðgangslykill án aðgangssviða; hækkar fyrirspurnamörk við athugun gagnapakka, valfrjálst |
 | `CREW_TOKEN_<USERNAME>` | Aðgangslykill hvers félaga, t.d. `CREW_TOKEN_STEBBIAS=...` |
 | `REDIS_URL` | Redis-tenging fyrir prófíla, færslur, myndalýsigögn og vistuð tölfræðigögn |
-| `BLOB_READ_WRITE_TOKEN` | Vercel Blob-aðgangur fyrir myndir sem er hlaðið upp. Geymslan má vera opin eða lokuð; myndir úr lokaðri geymslu eru birtar um `/api/blob/…` |
+| `BLOB_READ_WRITE_TOKEN` | Vercel Blob-aðgangur fyrir myndir sem er hlaðið upp og fyrir kortagögnin. Geymslan má vera opin eða lokuð; myndir úr lokaðri geymslu eru birtar um `/api/blob/…` og kortagögn um `/bluemap-data/…` |
 | `BLOB_ACCESS` | `public` eða `private`; valfrjálst, sleppir sjálfvirkri athugun á aðgangsstigi Blob-geymslunnar |
 
 ## Þróun
