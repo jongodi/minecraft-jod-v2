@@ -14,7 +14,19 @@ const src = readFileSync('src/components/badlands/data.ts', 'utf8');
 const view = src.match(/MAP_START_VIEW = '([^']+)'/)?.[1];
 if (!view) { console.error('MAP_START_VIEW not found in data.ts'); process.exit(1); }
 
-const browser = await chromium.launch(process.env.CHROME ? { executablePath: process.env.CHROME } : {});
+/* playwright-core ships no browser of its own: use the Chrome or Edge already on
+   this machine, or the executable named in CHROME. */
+async function launch() {
+  if (process.env.CHROME) return chromium.launch({ executablePath: process.env.CHROME });
+  for (const channel of ['chrome', 'msedge', 'chromium']) {
+    try { return await chromium.launch({ channel }); } catch { /* not installed, try the next */ }
+  }
+  try { return await chromium.launch(); } catch {
+    console.error('Fann engan vafra. Settu upp Chrome eða Edge, eða bentu á vafra með CHROME=<slóð>.');
+    process.exit(1);
+  }
+}
+const browser = await launch();
 const page = await (await browser.newContext({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1 })).newPage();
 await page.goto(`${BASE}/bluemap/index.html#${view}`, { waitUntil: 'load' });
 /* the viewer's own controls are not part of the picture */
