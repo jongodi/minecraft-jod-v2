@@ -9,8 +9,10 @@
 .w-page { display: grid; gap: clamp(1.5rem, 4vw, 2.5rem); }
 .w-page > .b-back { justify-self: start; }
 .w-welcome { position: relative; max-width: 52rem; width: 100%; margin-inline: auto; padding: var(--sp-3) var(--sp-7) var(--sp-3) var(--sp-4); background: rgba(242, 166, 59, 0.12); border: var(--px) solid var(--lantern); color: var(--paper); font-size: var(--fs-sm); line-height: 1.5; }
-.w-welcome button { position: absolute; right: 0; top: 0; width: var(--tap); height: 100%; color: var(--lantern); font-family: var(--font-data); }
-.w-welcome button:hover { color: var(--paper); }
+.w-welcome > button:last-child:not(.w-welcome__act) { position: absolute; right: 0; top: 0; width: var(--tap); height: 100%; color: var(--lantern); font-family: var(--font-data); }
+.w-welcome > button:last-child:not(.w-welcome__act):hover { color: var(--paper); }
+.w-welcome__act { font: inherit; color: var(--lantern); text-decoration: underline; text-underline-offset: 0.2em; }
+.w-welcome__act:hover { color: var(--paper); }
 
 /* ─── the poster ────────────────────────────────────────────── */
 .w-poster { max-width: 52rem; width: 100%; margin-inline: auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-5); padding: clamp(1.75rem, 4vw, 2.75rem) clamp(1.25rem, 4vw, 2.5rem); }

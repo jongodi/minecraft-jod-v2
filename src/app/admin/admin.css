@@ -220,3 +220,5 @@
 .a-qr { width: min(18rem, 100%); margin-inline: auto; padding: var(--sp-2); background: var(--paper); }
 .a-qr svg { width: 100%; height: auto; display: block; shape-rendering: crispEdges; }
 .a-builders { gap: var(--sp-2) var(--sp-4); }
+.a-invites { list-style: none; display: grid; gap: var(--sp-1); }
+.a-invites li { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); }

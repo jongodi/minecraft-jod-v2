@@ -4,8 +4,9 @@ import { checkRateLimit } from '@/lib/rateLimit';
 
 export const dynamic = 'force-dynamic';
 
-/** The one-time sign-in link the admin hands a member: /api/crew/invite?lykill=…
-    Opening it signs this browser in for a year and sends it to the member's wall. */
+/** The sign-in link the admin hands a member: /api/crew/invite?lykill=…
+    Opening it spends one of its uses, signs this browser in for a year and
+    sends it to the member's wall. */
 export async function GET(req: NextRequest) {
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
   const { limited } = await checkRateLimit(ip, 'crew-invite');

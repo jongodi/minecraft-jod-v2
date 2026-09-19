@@ -208,6 +208,7 @@ export function useReducedMotionPref(): boolean {
    duel), fetched once and refreshed after a sign-in or sign-out. */
 type Me = string | null | undefined;   // undefined while the first answer is in flight
 let meValue: Me = undefined;
+let meHasPassword = false;
 let meInFlight: Promise<void> | null = null;
 const meListeners = new Set<() => void>();
 const notifyMe = () => meListeners.forEach(l => l());
@@ -215,10 +216,12 @@ const notifyMe = () => meListeners.forEach(l => l());
 async function fetchMe(): Promise<void> {
   try {
     const res = await fetch('/api/crew/me', { cache: 'no-store' });
-    const data = (res.ok ? await res.json() : null) as { username: string | null } | null;
+    const data = (res.ok ? await res.json() : null) as { username: string | null; hasPassword?: boolean } | null;
     meValue = data?.username ?? null;
+    meHasPassword = !!data?.hasPassword;
   } catch {
     meValue = null;
+    meHasPassword = false;
   }
   notifyMe();
 }
@@ -228,16 +231,19 @@ function refreshMe(): Promise<void> {
 }
 const subscribeMe = (l: () => void) => { meListeners.add(l); return () => { meListeners.delete(l); }; };
 
-/** The signed-in member's username, null when nobody is, undefined until known. */
-export function useCrewSession(): { me: Me; refresh: () => Promise<void>; signOut: () => Promise<void> } {
+/** The signed-in member's username, null when nobody is, undefined until
+    known; and whether they have chosen a password of their own yet. */
+export function useCrewSession(): { me: Me; hasPassword: boolean; refresh: () => Promise<void>; signOut: () => Promise<void> } {
   const me = useSyncExternalStore(subscribeMe, () => meValue, () => undefined);
+  const hasPassword = useSyncExternalStore(subscribeMe, () => meHasPassword, () => false);
   useEffect(() => { if (meValue === undefined) refreshMe(); }, []);
   const signOut = useCallback(async () => {
     await fetch('/api/crew/auth', { method: 'DELETE' }).catch(() => {});
     meValue = null;
+    meHasPassword = false;
     notifyMe();
   }, []);
-  return { me, refresh: refreshMe, signOut };
+  return { me, hasPassword, refresh: refreshMe, signOut };
 }
 
 /** `inert` on an element, set as a property. React 18 has no attribute for it
