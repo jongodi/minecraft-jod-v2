@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { getCrewToken, createCrewSession, deleteCrewSession, CREW_COOKIE, SESSION_TTL, isCrewUsername, canonicalUsername } from '@/lib/crew';
 import { checkRateLimit } from '@/lib/rateLimit';
+import { getPasswordHash, verifyPassword } from '@/lib/crew-access';
 import { timingSafeEqual } from 'crypto';
 
 export async function POST(req: NextRequest) {
@@ -16,13 +17,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Innskráningarupplýsingar vantar.' }, { status: 400 });
   }
 
-  const expected = isCrewUsername(username) ? getCrewToken(username) : undefined;
-  if (
-    !expected ||
-    token.length !== expected.length ||
-    !timingSafeEqual(Buffer.from(token), Buffer.from(expected))
-  ) {
-    return NextResponse.json({ error: 'Innskráningarupplýsingarnar eru ekki réttar.' }, { status: 401 });
+  /* the member's own password first, then the token from the environment as the fallback */
+  const known = isCrewUsername(username);
+  const byPassword = known && await verifyPassword(token, await getPasswordHash(username));
+  const expected = known ? getCrewToken(username) : undefined;
+  const byToken = !!expected && token.length === expected.length && timingSafeEqual(Buffer.from(token), Buffer.from(expected));
+  if (!byPassword && !byToken) {
+    return NextResponse.json({ error: 'Lykilorðið er ekki rétt.' }, { status: 401 });
   }
 
   const name = canonicalUsername(username);

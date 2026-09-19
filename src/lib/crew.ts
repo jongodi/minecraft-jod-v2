@@ -1,12 +1,13 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import { cookies } from 'next/headers';
-import { randomBytes, randomUUID } from 'crypto';
+import { randomUUID } from 'crypto';
 import { CREW_COOKIE } from '@/lib/auth';
 import { CREW_USERNAMES, canonicalUsername, normalizeProfile, type CrewProfile } from '@/lib/crew-types';
 
 export * from '@/lib/crew-types';
 export { CREW_COOKIE } from '@/lib/auth';
+export { createInvite, consumeInvite, closeInvite, listInvites, inviteUrl, INVITE_TTL, INVITE_USES, type Invite } from '@/lib/crew-access';
 
 // ─── Storage backend ──────────────────────────────────────────────────────────
 // Priority order:
@@ -101,7 +102,7 @@ export const SESSION_TTL = 60 * 60 * 24 * 365;
 
 /* On globalThis: in development every route is compiled on its own and the
    module is evaluated again, which would empty a plain map between routes. */
-const g = globalThis as typeof globalThis & { __jodSessions?: Map<string, { username: string; expires: number }>; __jodInvites?: Map<string, { username: string; expires: number }> };
+const g = globalThis as typeof globalThis & { __jodSessions?: Map<string, { username: string; expires: number }> };
 const memSessions = (g.__jodSessions ??= new Map());
 
 export async function createCrewSession(username: string): Promise<string> {
@@ -155,42 +156,4 @@ export async function getCrewSession(): Promise<CrewSession | null> {
 export async function requireOwner(username: string): Promise<CrewSession | null> {
   const session = await getCrewSession();
   return session && session.username.toLowerCase() === username.toLowerCase() ? session : null;
-}
-
-// ─── One-time sign-in links ───────────────────────────────────────────────────
-// The admin panel mints a key for a member; opening the link with it signs
-// that browser in for a year and the key is spent. Keys live a week.
-
-export const INVITE_TTL = 60 * 60 * 24 * 7;
-
-const memInvites = (g.__jodInvites ??= new Map());
-
-export async function createInvite(username: string): Promise<{ key: string; expiresAt: string }> {
-  const key = randomBytes(24).toString('base64url');
-  const name = canonicalUsername(username);
-  const expiresAt = new Date(Date.now() + INVITE_TTL * 1000).toISOString();
-  if (hasKV()) {
-    const { getRedis } = await import('./redis');
-    await getRedis().set(`crew-invite:${key}`, JSON.stringify({ username: name }), 'EX', INVITE_TTL);
-  } else {
-    memInvites.set(key, { username: name, expires: Date.now() + INVITE_TTL * 1000 });
-  }
-  return { key, expiresAt };
-}
-
-/** Spend a key. Returns the member it was for, or null if it is unknown or already used. */
-export async function consumeInvite(key: string): Promise<string | null> {
-  if (!/^[A-Za-z0-9_-]{20,64}$/.test(key)) return null;
-  if (hasKV()) {
-    const { getRedis } = await import('./redis');
-    const k = `crew-invite:${key}`;
-    const results = await getRedis().multi().get(k).del(k).exec();
-    const raw = results?.[0]?.[1] as string | null | undefined;
-    if (!raw) return null;
-    try { return canonicalUsername((JSON.parse(raw) as { username: string }).username); } catch { return null; }
-  }
-  const inv = memInvites.get(key);
-  memInvites.delete(key);
-  if (!inv || Date.now() > inv.expires) return null;
-  return inv.username;
 }

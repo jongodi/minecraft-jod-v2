@@ -1,9 +1,10 @@
 'use client';
 
-// The crew, from the admin's side: who has a token set, how much hangs on
-// each wall, and a one-time sign-in link for any member. The link (or its
-// QR code) is handed over in the group chat; opening it signs that phone or
-// computer in for a year, and the key is spent.
+// The crew, from the admin's side: who has a password of their own, how much
+// hangs on each wall, and the sign-in links. A link is handed over in the
+// group chat or scanned; it is good for a week and a handful of devices, and
+// can be closed early. A member who forgets their password gets it cleared
+// here and a fresh link.
 import { useCallback, useEffect, useState } from 'react';
 import type { AdminCrewRow, InviteResponse } from '@/app/api/admin/crew/route';
 import { Button, Modal, Notice, Panel, api, errText } from './ui';
@@ -31,47 +32,79 @@ export default function CrewPanel() {
     try {
       const res = await api<InviteResponse>('/api/admin/crew', { method: 'POST', body: JSON.stringify({ username }) });
       setInvite({ ...res, username });
+      load();
     } catch (e) { setNotice(errText(e)); }
     finally { setBusy(null); }
   }
 
-  async function copy() {
-    if (!invite) return;
-    try { await navigator.clipboard.writeText(invite.url); setCopied(true); }
+  async function close(url: string) {
+    setNotice('');
+    try { await api('/api/admin/crew', { method: 'DELETE', body: JSON.stringify({ url }) }); setNotice('✓ Tenglinum var lokað.'); load(); }
+    catch (e) { setNotice(errText(e)); }
+  }
+
+  async function clearPassword(username: string) {
+    if (!confirm(`Hreinsa lykilorð ${username}? Viðkomandi þarf þá nýjan innskráningartengil til að velja sér annað.`)) return;
+    setNotice('');
+    try { await api('/api/admin/crew', { method: 'DELETE', body: JSON.stringify({ username, password: null }) }); setNotice(`✓ Lykilorð ${username} var hreinsað.`); load(); }
+    catch (e) { setNotice(errText(e)); }
+  }
+
+  async function copy(url: string) {
+    try { await navigator.clipboard.writeText(url); setCopied(true); }
     catch { setCopied(false); }
   }
 
   return (
-    <Panel title="Hópurinn" sub="Innskráningartenglar fyrir veggina. Hver tengill gildir í viku, virkar einu sinni, og tækið sem opnar hann er skráð inn í eitt ár.">
+    <Panel title="Hópurinn" sub="Félagi kemst inn með eigin lykilorði, sem hann velur sér á veggnum, eða með innskráningartengli héðan. Tengill gildir í viku og fyrir nokkur tæki; tækið sem opnar hann er skráð inn í eitt ár.">
       <Notice text={notice} />
       {rows === null ? <p className="a-muted">Sæki hópinn…</p> : (
         <table className="a-table">
           <thead>
-            <tr><th>Félagi</th><th>Aðgangslykill</th><th>Á veggnum</th><th>Síðast</th><th></th></tr>
+            <tr><th>Félagi</th><th>Lykilorð</th><th>Á veggnum</th><th>Opnir tenglar</th><th></th></tr>
           </thead>
           <tbody>
             {rows.map(r => (
               <tr key={r.username}>
-                <td><a href={`/crew/${r.username}`} target="_blank" rel="noreferrer">{r.username}</a></td>
-                <td className={r.hasToken ? 'a-update--ok' : 'a-muted'}>{r.hasToken ? 'stilltur' : 'enginn'}</td>
+                <td>
+                  <a href={`/crew/${r.username}`} target="_blank" rel="noreferrer">{r.username}</a>
+                  <div className="a-muted">síðast {when(r.lastEntry)}</div>
+                </td>
+                <td>
+                  {r.hasPassword
+                    ? <><span className="a-update--ok">valið</span> <Button tone="ghost" small onClick={() => clearPassword(r.username)}>Hreinsa</Button></>
+                    : <span className="a-muted">ekkert enn{r.hasToken ? ', aðgangslykill í umhverfi' : ''}</span>}
+                </td>
                 <td className="a-muted">{r.entryCount} {r.entryCount === 1 ? 'færsla' : 'færslur'} · {r.photoCount} {r.photoCount === 1 ? 'mynd' : 'myndir'}</td>
-                <td className="a-muted">{when(r.lastEntry)}</td>
-                <td><Button small onClick={() => mint(r.username)} disabled={busy !== null}>{busy === r.username ? 'Bý til…' : 'Búa til innskráningartengil'}</Button></td>
+                <td>
+                  {r.invites.length === 0 ? <span className="a-muted">engir</span> : (
+                    <ul className="a-invites">
+                      {r.invites.map(inv => (
+                        <li key={inv.url}>
+                          <span className="a-muted">{inv.uses} af {inv.maxUses} notuð · til {when(inv.expiresAt)}</span>
+                          <Button tone="ghost" small onClick={() => copy(inv.url)}>Afrita</Button>
+                          <Button tone="ghost" small onClick={() => close(inv.url)}>Loka</Button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </td>
+                <td><Button small onClick={() => mint(r.username)} disabled={busy !== null}>{busy === r.username ? 'Bý til…' : 'Nýr tengill'}</Button></td>
               </tr>
             ))}
           </tbody>
         </table>
       )}
-      <p className="a-help">Aðgangslyklar í umhverfisbreytum (<code>CREW_TOKEN_…</code>) virka áfram sem varaleið undir „Þetta er ég“ á veggnum.</p>
+      <p className="a-help">Gleymt lykilorð: hreinsaðu það hér og sendu nýjan tengil; félaginn velur sér annað á veggnum. Aðgangslyklar í umhverfisbreytum (<code>CREW_TOKEN_…</code>) virka áfram undir „Þetta er ég“.</p>
 
       {invite && (
         <Modal title={`Innskráningartengill fyrir ${invite.username}`} onClose={() => setInvite(null)} width="34rem">
           <div className="a-stack">
-            <p className="a-help">Sendu {invite.username} tengilinn eða láttu skanna kóðann. Hann gildir til {when(invite.expiresAt)} og virkar einu sinni; sá sem opnar hann er skráður inn sem {invite.username}.</p>
+            <p className="a-help">Sendu {invite.username} tengilinn eða láttu skanna kóðann. Hann gildir til {when(invite.expiresAt)} og fyrir {invite.maxUses} tæki; hvert tæki sem opnar hann er skráð inn sem {invite.username} í eitt ár. Á veggnum getur {invite.username} svo valið sér lykilorð.</p>
             <div className="a-qr" dangerouslySetInnerHTML={{ __html: invite.svg }} aria-label="QR-kóði með tenglinum" />
             <input className="a-input a-input--data" readOnly value={invite.url} onFocus={e => e.target.select()} aria-label="Tengill" />
             <div className="a-inline">
-              <Button tone="primary" small onClick={copy}>{copied ? 'Afritað' : 'Afrita tengil'}</Button>
+              <Button tone="primary" small onClick={() => copy(invite.url)}>{copied ? 'Afritað' : 'Afrita tengil'}</Button>
               <Button tone="ghost" small onClick={() => setInvite(null)}>Loka</Button>
             </div>
           </div>

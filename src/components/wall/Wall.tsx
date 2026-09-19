@@ -21,6 +21,9 @@ import { photoProps, PHOTO_SIZES } from '@/components/badlands/photo';
 import Composer from './Composer';
 import Print from './Print';
 
+/* the same floor the server holds a password to */
+const LIMITS_PW = 6;
+
 /** A place on the map, as the wall needs it: to pin things at and to list what the member built. */
 export interface WallPlace { id: number; label: string; sublabel: string; builders: string[] }
 
@@ -76,11 +79,51 @@ function LoginModal({ username, onSuccess, onClose }: { username: string; onSucc
     <div className="b-modal" onClick={onClose} role="dialog" aria-modal="true" aria-label="Skrá inn">
       <form className="b-paper b-modal__box" onSubmit={submit} onClick={e => e.stopPropagation()}>
         <p className="b-modal__title">Skrá inn sem {username}</p>
-        <p className="b-modal__sub">stjórnandi þjónsins sendir þér innskráningartengil; þetta er leiðin ef þú ert með aðgangslykil í staðinn</p>
-        <input type="password" className={`b-input${error ? ' is-error' : ''}`} value={token} onChange={e => setToken(e.target.value)} placeholder="Aðgangslykill" autoFocus autoComplete="current-password" />
+        <p className="b-modal__sub">lykilorðið sem þú valdir þér á veggnum. Ekkert lykilorð enn? Biddu stjórnandann um innskráningartengil.</p>
+        <input type="password" className={`b-input${error ? ' is-error' : ''}`} value={token} onChange={e => setToken(e.target.value)} placeholder="Lykilorð" autoFocus autoComplete="current-password" />
         {error && <p className="b-err">{error}</p>}
         <div className="b-modal__actions">
           <button type="submit" className="b-btn b-btn--solid" disabled={loading || !token}>{loading ? 'Athuga…' : 'Skrá inn'}</button>
+          <button type="button" className="b-btn" onClick={onClose}>Hætta við</button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+// ─── A password of the member's own ───────────────────────────────────────────
+// Chosen on the wall once they are in; from then on "Þetta er ég" works on
+// any phone or computer without a link from the admin.
+
+function PasswordModal({ username, change, onDone, onClose }: { username: string; change: boolean; onDone: () => void; onClose: () => void }) {
+  const [pw,      setPw]      = useState('');
+  const [again,   setAgain]   = useState('');
+  const [error,   setError]   = useState('');
+  const [loading, setLoading] = useState(false);
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    if (pw !== again) { setError('Lykilorðin eru ekki eins.'); return; }
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch(`/api/crew/${username}/password`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pw }) });
+      if (res.ok) { onDone(); onClose(); }
+      else setError(await errorFrom(res));
+    } catch { setError('Nettenging brást. Reyndu aftur.'); }
+    finally   { setLoading(false); }
+  }
+
+  return (
+    <div className="b-modal" onClick={onClose} role="dialog" aria-modal="true" aria-label="Lykilorð">
+      <form className="b-paper b-modal__box" onSubmit={submit} onClick={e => e.stopPropagation()}>
+        <p className="b-modal__title">{change ? 'Nýtt lykilorð' : 'Veldu þér lykilorð'}</p>
+        <p className="b-modal__sub">með því skráir þú þig inn á hvaða síma eða tölvu sem er undir „Þetta er ég“, án tengils frá stjórnandanum. Minnst {LIMITS_PW} stafir.</p>
+        <input type="password" className={`b-input${error ? ' is-error' : ''}`} value={pw} onChange={e => setPw(e.target.value)} placeholder="Lykilorð" autoFocus autoComplete="new-password" />
+        <input type="password" className={`b-input${error ? ' is-error' : ''}`} value={again} onChange={e => setAgain(e.target.value)} placeholder="Aftur, til öryggis" autoComplete="new-password" style={{ marginTop: '0.5rem' }} />
+        {error && <p className="b-err">{error}</p>}
+        <div className="b-modal__actions">
+          <button type="submit" className="b-btn b-btn--solid" disabled={loading || pw.length < LIMITS_PW || !again}>{loading ? 'Vista…' : 'Vista'}</button>
           <button type="button" className="b-btn" onClick={onClose}>Hætta við</button>
         </div>
       </form>
@@ -99,10 +142,11 @@ interface Props {
 
 export default function Wall({ initial, places, justSignedIn = false }: Props) {
   const [profile, setProfile] = useState<CrewProfile>(initial);
-  const { me, refresh, signOut } = useCrewSession();
+  const { me, hasPassword, refresh, signOut } = useCrewSession();
   const isOwner = sameUser(me, profile.username);
 
   const [showLogin,   setShowLogin]   = useState(false);
+  const [showPw,      setShowPw]      = useState(false);
   const [editingBio,  setEditingBio]  = useState(false);
   const [bioText,     setBioText]     = useState(initial.bio);
   const [bioError,    setBioError]    = useState('');
@@ -168,7 +212,13 @@ export default function Wall({ initial, places, justSignedIn = false }: Props) {
         {welcome && isOwner && (
           <p className="w-welcome" role="status">
             Velkomin á vegginn þinn, {username}. Þetta tæki man eftir þér í eitt ár.
+            {!hasPassword && <> <button type="button" className="b-link w-welcome__act" onClick={() => setShowPw(true)}>Veldu þér lykilorð</button> til að komast líka inn á öðrum tækjum.</>}
             <button type="button" onClick={() => setWelcome(false)} aria-label="Loka">✕</button>
+          </p>
+        )}
+        {!welcome && isOwner && me && !hasPassword && (
+          <p className="w-welcome" role="status">
+            Þú ert ekki með lykilorð enn. <button type="button" className="b-link w-welcome__act" onClick={() => setShowPw(true)}>Veldu þér eitt</button> svo þú komist inn á símanum og öðrum tækjum án tengils.
           </p>
         )}
 
@@ -190,7 +240,10 @@ export default function Wall({ initial, places, justSignedIn = false }: Props) {
               </div>
               <div className="b-inline">
                 {isOwner ? (
-                  <button className="b-btn b-btn--small" onClick={signOut}>Skrá út</button>
+                  <>
+                    <button className="b-btn b-btn--small" onClick={() => setShowPw(true)}>{hasPassword ? 'Breyta lykilorði' : 'Velja lykilorð'}</button>
+                    <button className="b-btn b-btn--small" onClick={signOut}>Skrá út</button>
+                  </>
                 ) : me === null ? (
                   <button className="b-btn b-btn--small" onClick={() => setShowLogin(true)}>Þetta er ég</button>
                 ) : null}
@@ -262,6 +315,7 @@ export default function Wall({ initial, places, justSignedIn = false }: Props) {
       <Footer />
 
       {showLogin && <LoginModal username={username} onSuccess={() => { refresh(); setWelcome(true); }} onClose={() => setShowLogin(false)} />}
+      {showPw && isOwner && <PasswordModal username={username} change={hasPassword} onDone={() => { refresh(); setWelcome(false); }} onClose={() => setShowPw(false)} />}
       <AnimatePresence>
         {lightbox !== null && prints[lightbox] && (
           <Lightbox key="lb" photos={prints.map(p => ({ src: p.filename, title: p.caption || undefined, sub: p.takenAt ? `tekin ${formatDate(p.takenAt)}` : formatDate(p.uploadedAt) }))}
