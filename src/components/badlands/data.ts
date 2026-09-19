@@ -94,7 +94,7 @@ export const STAT_TABS = [
   { id: 'timeSinceDeath', nick: 'Ódauðlegi',      label: 'Lengst lifað án þess að deyja', unit: span },
   { id: 'timeSinceRest',  nick: 'Vökustaurinn',   label: 'Lengst vakað án þess að sofa', unit: span },
   { id: 'travelCm',       nick: 'Flakkarinn',     label: 'Ferðalangur, á eigin fótum', unit: km },
-  { id: 'damageRatio',    nick: 'Harðhausinn',    label: 'Skaði veittur á móti þegnum', unit: (v: number) => `${v.toLocaleString('is-IS', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}×` },
+  { id: 'damageRatio',    nick: 'Boxpúðinn',      label: 'Skaði þeginn á móti veittum', unit: (v: number) => `${v.toLocaleString('is-IS', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}×` },
   { id: 'raidWins',       nick: 'Ræningjabaninn', label: 'Árásir hraktar',             unit: num },
   { id: 'recordsPlayed',  nick: 'Plötusnúðurinn', label: 'Plötur spilaðar',            unit: num },
 ] as const;

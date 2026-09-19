@@ -22,7 +22,7 @@ export interface PlayerStat {
   timeSinceDeath: number;
   /** cm moved under one's own power: walk, sprint, crouch, climb and swim, averaged over the five */
   travelCm:       number;
-  /** damage dealt over damage taken; both are in tenths of a heart */
+  /** damage taken over damage dealt, both in tenths of a heart: the higher, the more of a punching bag */
   damageRatio:    number;
   raidWins:       number;
   recordsPlayed:  number;
@@ -94,7 +94,7 @@ function extractStats(statsJson: MinecraftStatsJson): Omit<PlayerStat, 'username
     timeSinceRest:  custom['minecraft:time_since_rest']  ?? 0,
     timeSinceDeath: custom['minecraft:time_since_death'] ?? 0,
     travelCm,
-    damageRatio:    taken > 0 ? dealt / taken : dealt > 0 ? dealt : 0,
+    damageRatio:    dealt > 0 ? taken / dealt : taken > 0 ? taken : 0,
     raidWins:       custom['minecraft:raid_win']    ?? 0,
     recordsPlayed:  custom['minecraft:play_record'] ?? 0,
   };
