@@ -43,9 +43,9 @@ export function Lantern({ lit, className, style }: { lit: boolean; className?: s
   );
 }
 
-/** A stepped band of terracotta between two hours of the evening. */
-export function Strata({ flip, className }: { flip?: boolean; className?: string }) {
-  const cls = ['b-strata', 'b-strata--top', flip ? 'b-strata--flip' : '', className ?? ''].filter(Boolean).join(' ');
+/** A stepped band of terracotta: the ground under the bar's plank. */
+export function Strata({ className }: { className?: string }) {
+  const cls = ['b-strata', 'b-strata--top', className ?? ''].filter(Boolean).join(' ');
   return (
     <svg className={cls} viewBox="0 0 240 16" preserveAspectRatio="none" aria-hidden="true">
       <rect x="0" y="0" width="240" height="16" fill="var(--tc-brown)" />

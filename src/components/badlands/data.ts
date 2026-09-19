@@ -17,16 +17,21 @@ export const bodyFallback = (name: string, size = 256) => `https://mc-heads.net/
 
 export interface NavLink { label: string; href: string; id?: string }
 
-/* The three doors of the evening. Each id is a section on the home page and a
-   lantern in the bar (a tab on phones), lit once the evening has reached it. */
-export const SECTIONS: NavLink[] = [
+/* The three doors of the evening, each a lantern in the bar (a tab on phones).
+   The first is the world itself; the other two are rooms that open over it.
+   A door's id is also the hash that opens it, so /#hopur works from anywhere. */
+export type DoorId = 'heimur' | 'hopur' | 'hillan';
+export const SECTIONS: (NavLink & { id: DoorId })[] = [
   { label: 'Heimurinn', href: '#heimur', id: 'heimur' },
   { label: 'Hópurinn',  href: '#hopur',  id: 'hopur'  },
   { label: 'Hillan',    href: '#hillan', id: 'hillan' },
 ];
+export const ROOMS = ['hopur', 'hillan'] as const;
+export type RoomId = typeof ROOMS[number];
+export const isRoom = (s: string | null | undefined): s is RoomId => s === 'hopur' || s === 'hillan';
 
 /* The same doors from another page: they lead back to the home page's sections. */
-export const PAGE_LINKS: NavLink[] = SECTIONS.map(l => ({ label: l.label, href: `/${l.href}` }));
+export const PAGE_LINKS = SECTIONS.map(l => ({ label: l.label, href: `/${l.href}`, id: l.id }));
 
 /* The view the 3D map opens on, in BlueMap's own link format:
    map:x:y:z:distance:rotation:angle:tilt:ortho:mode. To change it, open the map

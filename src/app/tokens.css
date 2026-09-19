@@ -119,7 +119,6 @@
   --sp-6: 2rem;
   --sp-7: 3rem;
   --sp-8: 4rem;
-  --sec:    clamp(4rem, 2rem + 8vw, 8rem);
   --gutter: clamp(1rem, 0.5rem + 3vw, 3rem);
   --wrap:   1160px;
   --bar:    3.5rem;     /* the bar at the top */

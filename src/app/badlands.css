@@ -2,9 +2,9 @@
    JOÐ: Last Light in the Badlands
    One evening on the server. The sky is a fixed backdrop that
    scrolls from sunset to night; the world fills the viewport under
-   the mesas; the crew and the shelf are one band each; the campfire
-   closes the page. Amber is only for what you can act on, pixel
-   type only for what the server says.
+   the mesas and is the page; the crew and the shelf are rooms that
+   open over it; the campfire closes the page. Amber is only for what
+   you can act on, pixel type only for what the server says.
    ═══════════════════════════════════════════════════════════════ */
 
 /* ─── the evening: one number, driven by scroll ─────────────────
@@ -70,12 +70,6 @@
 /* room for the door bar at the foot of a phone */
 @media (max-width: 899px) { .b { padding-bottom: calc(var(--doorbar) + env(safe-area-inset-bottom, 0px)); } }
 .b-wrap { position: relative; z-index: 1; width: 100%; max-width: var(--wrap); margin-inline: auto; padding-inline: var(--gutter); }
-.b-sec { position: relative; padding-block: var(--sec); scroll-margin-top: 3.5rem; }
-.b-sec--slim { padding-block: clamp(2.5rem, 1.5rem + 3vw, 4rem); }
-.b-sec--dusk   { background: var(--dusk); }
-.b-sec--dusk-2 { background: var(--dusk-2); }
-.b-sec--night  { background: var(--night); }
-
 .b-title { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-2xl); line-height: var(--lh-tight); color: var(--paper); letter-spacing: -0.01em; }
 .b-title--small { font-size: var(--fs-xl); }
 .b-lede { font-size: var(--fs-lg); line-height: 1.5; color: var(--text-soft); max-width: var(--measure); }
@@ -89,7 +83,6 @@
 /* ─── strata: slices of the badlands between the hours ────────── */
 .b-strata { display: block; width: 100%; height: clamp(18px, 3vw, 32px); shape-rendering: crispEdges; }
 .b-strata--top { position: absolute; left: 0; right: 0; top: 0; transform: translateY(-100%); }
-.b-strata--flip { transform: translateY(-100%) scaleY(-1); }
 
 /* ─── links and actions: lantern light ────────────────────────── */
 .b-link { color: var(--lantern); text-decoration: underline; text-decoration-thickness: var(--line); text-underline-offset: 0.2em; }
@@ -385,6 +378,7 @@
   position: relative;
   height: calc(100svh - var(--bar));
   min-height: 34rem;
+  isolation: isolate;
   background: var(--night);
   border-block: calc(var(--px) * 4) solid var(--wood);
   box-shadow: inset 0 0 0 var(--px) var(--wood-light), inset 0 0 0 calc(var(--px) * 2) var(--wood-dark);
@@ -400,6 +394,22 @@
   filter: saturate(0.85) brightness(0.82);
   transition: filter var(--dur-3) var(--ease-out), opacity var(--dur-3) var(--ease-out);
 }
+/* Looking into the world: as the frame passes through the viewport the still
+   inside it moves a little slower than the page, so the frame reads as a
+   window onto something behind the ridge rather than a picture on it. One
+   transform on one layer, driven by the frame's own progress through the
+   viewport; browsers without view timelines simply get the still. */
+@keyframes b-peer { from { transform: translateY(-5%) scale(1.1); } to { transform: translateY(5%) scale(1.1); } }
+@supports (animation-timeline: view()) {
+  .b-frame__poster { animation: b-peer linear both; animation-timeline: view(); animation-range: entry 0% exit 100%; }
+}
+@media (prefers-reduced-motion: reduce) { .b-frame__poster { animation: none !important; } }
+/* the dark that falls over the world while a room is open; a tap on it closes the room */
+.b-frame__dim { position: absolute; inset: 0; z-index: 5; background: rgba(21, 16, 13, 0.62); opacity: 0; pointer-events: none; transition: opacity var(--dur-3) var(--ease-out); }
+.b-frame.is-room .b-frame__dim { opacity: 1; pointer-events: auto; cursor: pointer; }
+/* the world's own controls step back while a room is open */
+.b-hud__mid, .b-places { transition: opacity var(--dur-2) var(--ease-out); }
+.b-frame.is-room .b-hud__mid, .b-frame.is-room .b-places { opacity: 0; }
 .b-frame__shade { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(21, 16, 13, 0.6) 0%, transparent 24%, transparent 60%, rgba(21, 16, 13, 0.72) 100%); }
 .b-frame__view { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; opacity: 0; transition: opacity var(--dur-3) var(--ease-out); }
 .b-frame.is-ready .b-frame__view { opacity: 1; }
@@ -488,12 +498,9 @@
 .b-card__x:hover { color: var(--ink); }
 
 /* the places: a rail of chips along the foot of the frame */
-.b-places { display: grid; gap: var(--sp-2); }
-@media (min-width: 900px) {
-  .b-places { position: absolute; inset-inline: 0; bottom: calc(var(--px) * 4); z-index: 3; padding: var(--sp-6) var(--gutter) var(--sp-4); pointer-events: none; }
-  .b-places > * { pointer-events: auto; }
-}
-@media (max-width: 899px) { .b-places { padding: var(--sp-3) var(--gutter) var(--sp-4); background: var(--dusk); } }
+.b-places { position: absolute; inset-inline: 0; bottom: 0; z-index: 3; display: grid; gap: var(--sp-2); padding: var(--sp-6) var(--gutter) var(--sp-4); pointer-events: none; }
+.b-places > * { pointer-events: auto; }
+@media (max-width: 899px) { .b-places { padding-bottom: var(--sp-3); } }
 .b-places__head { font-family: var(--font-data); font-size: 0.6rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--paper); text-shadow: 0 1px 0 var(--night); }
 /* min-width: a grid item would otherwise grow to fit every chip instead of scrolling */
 .b-railwrap { position: relative; min-width: 0; }
@@ -566,11 +573,54 @@
 .b-chip.is-on .b-chip__sub { color: rgba(21, 16, 13, 0.7); }
 
 @media (max-width: 899px) {
-  .b-frame { height: auto; aspect-ratio: 4 / 5; min-height: 0; }
+  /* the whole screen between the two bars: the world is the phone's window */
+  .b-frame { height: calc(100svh - var(--bar) - var(--doorbar) - env(safe-area-inset-bottom, 0px)); min-height: 30rem; }
   .b-hud { padding: var(--sp-3) var(--gutter); }
-  .b-card { left: var(--gutter); bottom: var(--sp-4); }
-  .b-sheet__zoom { bottom: var(--sp-4); }
+  /* the lantern in the middle already opens the viewer full screen on a phone */
+  .b-hud__tools a { display: none; }
 }
+
+/* ─── the rooms: the crew and the shelf, opened over the world ──
+   A room rises from the foot of the frame and stops short of its top, so
+   the world stays in view above it. A plank across its top carries the
+   title and the way out; the room scrolls inside itself. */
+.b-room {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 6;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  max-height: calc(100% - 5.5rem);
+  background: var(--dusk);
+  box-shadow: 0 calc(var(--px) * -2) 0 var(--wood-dark), 0 -14px 0 rgba(21, 16, 13, 0.25);
+  transform: translateY(100%);
+  visibility: hidden;
+  transition: transform var(--dur-3) var(--ease-out), visibility 0s linear var(--dur-3);
+}
+.b-room.is-open { transform: none; visibility: visible; transition: transform var(--dur-3) var(--ease-out), visibility 0s; }
+@media (prefers-reduced-motion: reduce) { .b-room { transition: none; } }
+@media (max-width: 899px) { .b-room { max-height: calc(100% - 4rem); } }
+/* the plank: the same wood the bar is hung from once the page has moved */
+.b-room__plank {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2) var(--sp-4);
+  min-height: 3.25rem;
+  padding: var(--sp-2) var(--gutter);
+  background:
+    repeating-linear-gradient(90deg, rgba(21, 16, 13, 0.18) 0 var(--px), transparent var(--px) 13px),
+    repeating-linear-gradient(90deg, transparent 0 37px, rgba(255, 240, 210, 0.04) 37px 39px),
+    linear-gradient(180deg, var(--wood-light) 0 var(--px), var(--wood) var(--px) calc(100% - var(--px) * 2), var(--wood-dark) calc(100% - var(--px) * 2));
+  box-shadow: inset 0 0 0 var(--px) rgba(21, 16, 13, 0.35);
+}
+.b-room__title { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-lg); line-height: 1; color: var(--paper); text-shadow: 0 var(--px) 0 var(--wood-dark); white-space: nowrap; }
+.b-room__note { flex: 1 1 auto; min-width: 0; font-family: var(--font-data); font-size: 0.6rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--tc-white); text-shadow: 0 1px 0 var(--wood-dark); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.b-room__close { flex-shrink: 0; margin-left: auto; width: var(--tap); height: var(--tap); display: inline-grid; place-items: center; color: var(--lantern); font-family: var(--font-data); font-size: var(--fs-data); background: rgba(21, 16, 13, 0.35); clip-path: var(--notch); }
+.b-room__close:hover, .b-room__close:focus-visible { background: var(--lantern); color: var(--night); }
+.b-room__body { overflow-y: auto; overscroll-behavior: contain; padding-block: var(--sp-5) var(--sp-6); scrollbar-width: thin; scrollbar-color: var(--wood-light) transparent; }
+@media (max-width: 899px) { .b-room__body { padding-block: var(--sp-4) var(--sp-5); } }
+@media (max-width: 479px) { .b-room__note { display: none; } }
 
 /* ─── the album: the whole wall, opened over the world ────────── */
 .b-album { position: fixed; inset: 0; z-index: var(--z-drawer); overflow-y: auto; background: rgba(21, 16, 13, 0.94); padding-block: calc(var(--sp-6) + env(safe-area-inset-top, 0px)) var(--sp-8); }
@@ -618,13 +668,19 @@
 .b-arrowbtn:hover { background: var(--lantern); color: var(--night); }
 .b-lb__close { position: absolute; top: var(--sp-3); right: var(--sp-4); }
 
-/* ─── the crew: portraits on the town wall ────────────────────── */
-.b-folk { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp-5) var(--sp-3); list-style: none; margin-bottom: var(--sp-7); }
-@media (min-width: 480px) { .b-folk { gap: var(--sp-6) var(--sp-4); } }
-@media (min-width: 720px) { .b-folk { grid-template-columns: repeat(8, minmax(0, 1fr)); } }
+/* ─── the crew: portraits in the room ─────────────────────────── */
+.b-crew__row { display: grid; gap: var(--sp-3); margin-bottom: var(--sp-5); }
+.b-crew__who { text-align: center; }
+@media (min-width: 900px) {
+  .b-crew__row { grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: var(--sp-6); }
+  .b-crew__who { text-align: right; max-width: 18rem; }
+}
+.b-folk { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp-4) var(--sp-3); list-style: none; }
+@media (min-width: 480px) { .b-folk { gap: var(--sp-4); } }
+@media (min-width: 720px) { .b-folk { grid-template-columns: repeat(8, minmax(0, 1fr)); max-width: 44rem; } }
 .b-folk > li { min-width: 0; }
 .b-folk__item { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); justify-items: center; gap: var(--sp-2); min-width: 0; text-decoration: none; color: var(--text-soft); text-align: center; }
-.b-folk__frame { position: relative; width: 100%; max-width: 6.5rem; padding: var(--px); background: var(--tc-brown); }
+.b-folk__frame { position: relative; width: 100%; max-width: 4.5rem; padding: var(--px); background: var(--tc-brown); }
 .b-folk__frame img { width: 100%; aspect-ratio: 1; object-fit: cover; image-rendering: pixelated; filter: brightness(0.55) saturate(0.7); transition: filter var(--dur-3) var(--ease-out); }
 .b-folk__item.is-in img, .b-folk__item:hover img, .b-folk__item:focus-visible img { filter: none; }
 .b-folk__item.is-in .b-folk__frame::before {
@@ -639,7 +695,8 @@
 .b-folk__item:hover .b-folk__name, .b-folk__item:focus-visible .b-folk__name { color: var(--lantern); }
 .b-folk__in { position: absolute; top: -0.5rem; right: -0.25rem; padding: 0.1rem 0.35rem; background: var(--online); color: var(--night); font-family: var(--font-data); font-size: var(--fs-xs); line-height: 1.2; }
 @media (max-width: 479px) { .b-folk__in { font-size: 0.6rem; } }
-.b-crew__foot { margin-top: var(--sp-6); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-3); }
+.b-crew__foot { margin-top: var(--sp-5); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-3); }
+.b-shelf__lede { font-size: var(--fs-md); }
 
 /* ─── duel: the arena at night, behind the fire ───────────────── */
 .b-duelbox { position: fixed; inset: 0; z-index: var(--z-modal); display: grid; place-items: center; padding: var(--sp-4); background: rgba(12, 10, 20, 0.8); overflow-y: auto; }
