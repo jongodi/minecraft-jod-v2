@@ -79,7 +79,6 @@
    type. The posters ride one rail across the room on every width, so the
    room stays one screen tall and the board is read by walking along it. */
 .b-wanted { margin-top: 0; }
-.b-wanted__title { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-xl); line-height: var(--lh-tight); color: var(--paper); }
 .b-posters .b-rail { gap: var(--sp-3); padding: 4px 3px; align-items: start; }
 .b-posters .b-poster { flex: 0 0 13rem; scroll-snap-align: start; }
 .b-poster { display: grid; align-content: start; justify-items: center; text-align: center; padding: var(--sp-5) var(--sp-3) var(--sp-3); }

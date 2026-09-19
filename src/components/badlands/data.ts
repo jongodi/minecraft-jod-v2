@@ -23,7 +23,7 @@ export interface NavLink { label: string; href: string; id?: string }
 export type DoorId = 'heimur' | 'hopur' | 'hillan';
 export const SECTIONS: (NavLink & { id: DoorId })[] = [
   { label: 'Heimurinn', href: '#heimur', id: 'heimur' },
-  { label: 'Hópurinn',  href: '#hopur',  id: 'hopur'  },
+  { label: 'Eftirlýst', href: '#hopur',  id: 'hopur'  },   /* the crew's room: the wanted board is what it is named for */
   { label: 'Hillan',    href: '#hillan', id: 'hillan' },
 ];
 export const ROOMS = ['hopur', 'hillan'] as const;

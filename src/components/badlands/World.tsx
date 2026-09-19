@@ -98,7 +98,7 @@ function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
     <section id="heimur" className="b-world" aria-labelledby="heimur-title">
       <div className={`b-frame${live ? ' is-live' : ''}${ready ? ' is-ready' : ''}${drawn ? ' is-drawn' : ''}${shut ? ' is-room' : ''}`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img {...photoProps(MAP_POSTER, PHOTO_SIZES.poster)} className="b-frame__poster" alt="Heimasvæðið á JOÐ séð úr lofti" width={1920} height={1080} loading="lazy" decoding="async" />
+        <img {...photoProps(MAP_POSTER, PHOTO_SIZES.poster)} className="b-frame__poster" alt="Heimasvæðið á JOÐ séð úr lofti" width={1920} height={1080} decoding="async" fetchPriority="low" />
         <div className="b-frame__shade" aria-hidden="true" />
 
         {live && (
@@ -245,7 +245,7 @@ function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
         </div>
 
         {/* The two rooms. Each rises from the foot of the frame over the world. */}
-        <Drawer id="hopur" open={room === 'hopur'} title="Hópurinn" note="átta vinir, einn heimur, frá sumrinu 2024" onClose={onCloseRoom}>
+        <Drawer id="hopur" open={room === 'hopur'} title="Eftirlýst" note="átta vinir, einn heimur · þrjú efstu í hverjum flokki, beint úr leiknum" onClose={onCloseRoom}>
           {visited.hopur && <Crew server={server} />}
         </Drawer>
         <Drawer id="hillan" open={room === 'hillan'} title="Á hillunni" note="gagnapakkarnir sem eru uppsettir á þjóninum" onClose={onCloseRoom}>

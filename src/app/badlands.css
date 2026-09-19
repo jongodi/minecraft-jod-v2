@@ -394,16 +394,6 @@
   filter: saturate(0.85) brightness(0.82);
   transition: filter var(--dur-3) var(--ease-out), opacity var(--dur-3) var(--ease-out);
 }
-/* Looking into the world: as the frame passes through the viewport the still
-   inside it moves a little slower than the page, so the frame reads as a
-   window onto something behind the ridge rather than a picture on it. One
-   transform on one layer, driven by the frame's own progress through the
-   viewport; browsers without view timelines simply get the still. */
-@keyframes b-peer { from { transform: translateY(-5%) scale(1.1); } to { transform: translateY(5%) scale(1.1); } }
-@supports (animation-timeline: view()) {
-  .b-frame__poster { animation: b-peer linear both; animation-timeline: view(); animation-range: entry 0% exit 100%; }
-}
-@media (prefers-reduced-motion: reduce) { .b-frame__poster { animation: none !important; } }
 /* the dark that falls over the world while a room is open; a tap on it closes the room */
 .b-frame__dim { position: absolute; inset: 0; z-index: 5; background: rgba(21, 16, 13, 0.62); opacity: 0; pointer-events: none; transition: opacity var(--dur-3) var(--ease-out); }
 .b-frame.is-room .b-frame__dim { opacity: 1; pointer-events: auto; cursor: pointer; }

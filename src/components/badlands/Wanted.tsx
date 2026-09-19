@@ -28,19 +28,16 @@ export default function Wanted({ stats }: { stats: StatsState }) {
 
   return (
     <div className="b-wanted">
-      <div className="b-head b-head--tight">
-        <div>
-          <h3 className="b-wanted__title">Eftirlýst</h3>
-          <p className="b-note">Þrjú efstu í hverjum flokki, beint úr leiknum.</p>
-        </div>
-        {stats.source && any && (
+      {/* the room's plank already says Eftirlýst; the board only says where its numbers came from */}
+      {stats.source && any && (
+        <div className="b-head b-head--tight">
           <p className="b-note">
             {stats.source === 'live' ? `beint frá þjóninum${when ? `, sótt ${when}` : ''}` :
              stats.source === 'cached' ? `slökkt á þjóninum, síðast sótt ${when ?? 'við síðustu uppfærslu'}` :
              'tölur eru ekki tiltækar í augnablikinu'}
           </p>
-        )}
-      </div>
+        </div>
+      )}
 
       {!any ? (
         <p className="b-empty">{stats.source === null ? 'sæki tölurnar' : 'engar tölur enn; þær birtast þegar þjónninn hefur verið í gangi'}</p>

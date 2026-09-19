@@ -18,7 +18,7 @@ export default function StatusLantern({ server }: { server: ServerState }) {
   const lower = list.map(n => n.toLowerCase());
   const inside = CREW.filter(n => lower.includes(n.toLowerCase()));
   return (
-    <a href="#hopur" className={`b-status${state}`} aria-label={`${word}. Sjá hver er inni.`}>
+    <a href="#hopur" className={`b-status${state}`} aria-label={`${word}. Sjá hver er inni og eftirlýsingaspjöldin.`}>
       <Lantern lit={!!online} />
       <span className="b-status__text">
         <span className="b-status__word" role="status" aria-live="polite">{word}</span>
