@@ -279,7 +279,7 @@ export default function Wall({ initial, places, justSignedIn = false }: Props) {
                 <dl className="b-stats">
                   {STAT_TABS.filter(t => (stats[t.id] ?? 0) > 0).map(t => (
                     <div key={t.id} className="b-stat">
-                      <dt className="b-stat__k">{t.nick} · {t.label}</dt>
+                      <dt className="b-stat__k"><b>{t.nick}</b><small>{t.label}</small></dt>
                       <dd className="b-stat__v">{t.unit(stats[t.id] ?? 0)}</dd>
                     </div>
                   ))}

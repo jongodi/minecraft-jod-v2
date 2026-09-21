@@ -25,8 +25,8 @@ export default function StatusLantern({ server }: { server: ServerState }) {
         <span className="b-status__row">
           {online === null ? 'bíð eftir svari' :
            online ? (players === 0 ? 'enginn inni enn, en það er opið' : <>inni núna: <b>{players}</b></>) :
-           'ekki hægt að tengjast í augnablikinu'}
-          {checkedAt && ago ? `, ${ago}` : ''}
+           'ekki hægt að tengjast'}
+          {checkedAt && ago ? `, ${online ? '' : 'athugað '}${ago}` : ''}
         </span>
         {(version || inside.length > 0) && (
           <span className="b-status__row b-status__meta">

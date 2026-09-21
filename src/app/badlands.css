@@ -699,7 +699,11 @@
   background: radial-gradient(closest-side, var(--lantern-glow), transparent);
   animation: b-flicker var(--dur-lantern) ease-in-out infinite;
 }
-.b-folk__name { width: 100%; font-size: var(--fs-sm); line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* A name under a portrait has one line and a column four heads wide on a phone.
+   The regular cut of the pixel face at 0.6rem with no tracking is the largest
+   setting at which the longest name (ingunnbirta) still fits that column; the
+   ellipsis stays as the fallback for a name added later. */
+.b-folk__name { width: 100%; font-size: 0.6rem; line-height: 1.5; letter-spacing: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .b-folk__item:hover .b-folk__name, .b-folk__item:focus-visible .b-folk__name { color: var(--lantern); }
 .b-folk__count { width: 100%; font-family: var(--font-data); font-size: 0.6rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .b-folk__in { position: absolute; top: -0.5rem; right: -0.25rem; padding: 0.1rem 0.35rem; background: var(--online); color: var(--night); font-family: var(--font-data); font-size: var(--fs-xs); line-height: 1.2; }

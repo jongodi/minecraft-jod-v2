@@ -80,7 +80,10 @@
    room stays one screen tall and the board is read by walking along it. */
 .b-wanted { margin-top: 0; }
 .b-posters .b-rail { gap: var(--sp-3); padding: 4px 3px; align-items: start; }
-.b-posters .b-poster { flex: 0 0 13rem; scroll-snap-align: start; }
+/* Wide enough for the longest value the board posts, a stretch of game time
+   like "1 d. 14 klst.", on one line beside the leader's head and again beside
+   a name in the two rows under the rule; two posters still fit a phone. */
+.b-posters .b-poster { flex: 0 0 15rem; scroll-snap-align: start; }
 .b-poster { display: grid; align-content: start; justify-items: center; text-align: center; padding: var(--sp-5) var(--sp-3) var(--sp-3); }
 .b-poster > * { min-width: 0; max-width: 100%; }
 .b-poster__kicker { font-size: 0.6rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
@@ -91,7 +94,7 @@
 .b-poster__img img { width: 100%; aspect-ratio: 1; object-fit: cover; image-rendering: pixelated; display: block; }
 .b-poster__lead:hover .b-poster__img, .b-poster__lead:focus-visible .b-poster__img { box-shadow: 0 0 0 var(--px) var(--lantern-deep); }
 .b-poster__name { width: 100%; font-family: var(--font-data); font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.b-poster__val { margin-top: var(--px); font-family: var(--font-data); font-size: 0.9rem; font-weight: 700; line-height: 1.3; color: var(--tc-red); overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.b-poster__val { margin-top: var(--px); font-family: var(--font-data); font-size: 0.9rem; font-weight: 700; line-height: 1.3; color: var(--tc-red); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .b-poster__rule { width: 100%; height: var(--px); margin-top: var(--sp-3); background: var(--ink); opacity: 0.22; }
 .b-poster__rest { width: 100%; margin-top: var(--sp-1); list-style: none; display: grid; }
 .b-poster__row { display: grid; grid-template-columns: 0.9rem 1rem minmax(0, 1fr) auto; align-items: center; gap: var(--sp-1); min-height: 1.6rem; text-decoration: none; color: var(--ink); text-align: left; }
@@ -247,6 +250,7 @@
 @media (min-width: 720px) { .b-foot__nav { justify-content: flex-start; } }
 .b-foot__link { display: inline-flex; align-items: center; min-height: var(--tap); padding-inline: var(--sp-1); color: var(--lantern); font-size: var(--fs-sm); font-weight: 600; text-decoration: none; border-bottom: var(--px) solid transparent; }
 .b-foot__link:hover, .b-foot__link:focus-visible { border-bottom-color: var(--lantern); color: var(--paper); }
+.b-foot__link[aria-current] { color: var(--paper); border-bottom-color: var(--lantern); }
 
 /* the way back up the evening */
 .b-foot__up { grid-area: up; gap: var(--sp-2); }
@@ -327,7 +331,10 @@
 .b-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 var(--sp-5); margin-top: var(--sp-5); }
 @media (min-width: 640px) { .b-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .b-stat { padding: var(--sp-2) 0; border-top: var(--line) solid var(--ink-faint); }
+/* the same order as the poster: the outlaw's name first, the charge under it */
 .b-stat__k { font-size: var(--fs-xs); color: var(--ink-faint); }
+.b-stat__k b { display: block; font-weight: 700; color: var(--ink-soft); }
+.b-stat__k small { display: block; font-size: 0.6rem; letter-spacing: 0.04em; text-transform: uppercase; }
 .b-stat__v { margin-top: var(--sp-1); font-family: var(--font-data); font-size: var(--fs-data); }
 .b-badges { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-4); margin-top: var(--sp-4); list-style: none; font-size: var(--fs-sm); color: var(--ink-soft); }
 .b-badge { display: inline-flex; align-items: center; gap: var(--sp-1); }
