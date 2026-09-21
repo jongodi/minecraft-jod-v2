@@ -2,6 +2,7 @@
 
 import { memo, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { Campfire, Chevron } from './Bits';
 import { Ridge } from './Mesa';
@@ -25,6 +26,7 @@ const LINKS = [
     the way up, because the sky is scroll. */
 function Footer() {
   const [duel, setDuel] = useState(false);
+  const path = usePathname();
 
   useEffect(() => {
     if (!duel) return;
@@ -45,7 +47,7 @@ function Footer() {
         </div>
 
         <nav className="b-foot__nav" aria-label="Fleiri síður">
-          {LINKS.map(l => <Link key={l.href} href={l.href} className="b-foot__link">{l.label}</Link>)}
+          {LINKS.map(l => <Link key={l.href} href={l.href} className="b-foot__link" aria-current={path === l.href ? 'page' : undefined}>{l.label}</Link>)}
           <AmbienceToggle className="b-foot__sound" />
         </nav>
 

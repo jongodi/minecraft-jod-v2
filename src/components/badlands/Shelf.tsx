@@ -54,7 +54,7 @@ function Shelf({ version }: { version: string | null }) {
     <div className="b-wrap b-shelf">
         <div className="b-head b-head--tight">
           <p className="b-lede b-shelf__lede">{packs.length} gagnapakkar uppsettir. Þú þarft ekkert að setja upp; útlitspakkinn sækist þegar þú tengist.</p>
-          <p className="b-note">Minecraft {game} · Java-útgáfa · bentu á kassa til að lesa miðann</p>
+          <p className="b-note">Minecraft {game} · Java-útgáfa</p>
         </div>
 
         <div className="b-stock">
