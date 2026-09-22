@@ -8,8 +8,9 @@
      drifts out into the void;
    - puts the plank with the way back to JOÐ across the top of the full screen
      map, and turns a place's lantern into its postcard;
-   - and, inside the home page's frame, answers the page: how far the map has
-     come (so the still can hand over once the first tiles are drawn), pausing
+   - opens the map at night, the hour the site is set in;
+   - and, inside the home page's frame, answers the page: when the first view
+     is on screen (so the still can hand over), when its menu is open, pausing
      while the frame is out of sight, night and day, and flying to a place.
 
    The page talks to it through window.jod (same origin); it talks back with
@@ -28,6 +29,7 @@
   /* how far past the rendered edge the camera may look before it is held */
   const MARGIN = 48;
   const NIGHT = 0.25;
+  const NIGHT_AMBIENT = 0.18;
 
   const tell = (type, detail) => {
     if (embedded) window.parent.postMessage({ source: 'jod-map', type, ...detail }, location.origin);
@@ -190,7 +192,13 @@
       animate(instant ? 0 : 1400, (k) => { sun.value = from + (to - from) * k; viewer.redraw(); });
       tell('night', { on: jod.night });
     };
-    if (params.has('kvold')) jod.setNight(true, true);
+    /* The map opens at night, the hour the site is set in: the town's own
+       lights are what's left. BlueMap's night is dark, so the ambient light is
+       lifted a little (never lowered) to keep the builds readable. ?dagur opens
+       it in daylight. */
+    const ambient = viewer.data.uniforms.ambientLight;
+    if (ambient && ambient.value < NIGHT_AMBIENT) ambient.value = NIGHT_AMBIENT;
+    jod.setNight(!params.has('dagur'), true);
 
     /* Fly to a place: the camera's target glides there and comes in close enough to see it. */
     jod.flyTo = (point, id) => {
@@ -237,36 +245,46 @@
     if (embedded) progress(app);
   }
 
-  /* How far the first view has come. The page keeps its still up until the
-     tiles around the start have arrived, then fades to the live map. */
+  /* The first view, told to the page: the moment the nearest low-detail layer
+     around the start is on screen (or 0.6 seconds after the map has loaded)
+     the page swaps its still for the live map, and the detailed tiles stream
+     in from there, the way the map always opened. Waiting for every detailed
+     tile made opening feel slow. */
   function progress(app) {
-    let quiet = 0;
     const started = Date.now();
-    const managers = () => {
-      const map = app.mapViewer.map;
-      return map ? [map.hiresTileManager, ...(map.lowresTileManager || [])].filter(Boolean) : [];
-    };
-    /* counted off the tile managers rather than their events, which may all
+    /* lowresTileManager[0] is the nearest of the low-detail layers */
+    const near = () => app.mapViewer.map?.lowresTileManager?.[0] ?? null;
+    /* counted off the tile manager rather than its events, which may all
        have fired before this script was listening */
-    const drawn = () => managers().reduce((n, m) => {
+    const drawn = () => {
       let k = 0;
-      m.tiles?.forEach((t) => { if (t.model && !t.unloaded) k++; });
-      return n + k;
-    }, 0);
+      near()?.tiles?.forEach((t) => { if (t.model && !t.unloaded) k++; });
+      return k;
+    };
     const tick = () => {
       const tiles = drawn();
-      const busy = managers().reduce((n, m) => n + (m.currentlyLoading || 0), 0);
-      quiet = tiles > 0 && busy === 0 ? quiet + 1 : 0;
+      const busy = near()?.currentlyLoading || 0;
       tell('progress', { tiles });
-      if (quiet >= 2 || Date.now() - started > 9000) {
+      if ((tiles > 0 && busy === 0) || Date.now() - started > 600) {
         /* one more frame so what arrived is on screen before the still goes */
         app.mapViewer.redraw();
         requestAnimationFrame(() => tell('ready', { tiles }));
         return;
       }
-      setTimeout(tick, 150);
+      setTimeout(tick, 100);
     };
     tick();
+  }
+
+  /* BlueMap's menu opens along the left edge; in the frame the page's own
+     title and the places lie over that edge, so the page is told to step
+     aside while the menu is open. */
+  if (embedded) {
+    let open = false;
+    new MutationObserver(() => {
+      const now = !!document.querySelector('#app .side-menu');
+      if (now !== open) { open = now; tell('menu', { open }); }
+    }).observe(document.getElementById('app') ?? document.body, { childList: true, subtree: true });
   }
 
   if (!embedded) plank();

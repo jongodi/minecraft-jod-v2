@@ -33,8 +33,10 @@ try { await fetch(`${BASE}/bluemap/settings.json`); } catch {
 const browser = await launch();
 const page = await (await browser.newContext({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1 })).newPage();
 await page.goto(`${BASE}/bluemap/index.html#${view}`, { waitUntil: 'load' });
-/* the viewer's own controls are not part of the picture */
-await page.addStyleTag({ content: '#zoom-buttons, .control-bar, .svg-button, .loading-screen { display: none !important; }' });
+/* The picture is the terrain alone, at night like the live map opens: none of
+   the viewer's controls, JOÐ's plank, the places' lanterns or the dusk at the
+   edges (the page draws its own shade over the still). */
+await page.addStyleTag({ content: '#zoom-buttons, .control-bar, .svg-button, .loading-screen, #jod-plank, .jod-place { display: none !important; } #map-container::after { display: none !important; }' });
 /* let the tiles arrive: the hires area around the start view, then the lowres ring */
 await page.waitForTimeout(12000);
 const png = await page.screenshot({ type: 'png' });

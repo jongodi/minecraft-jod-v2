@@ -33,7 +33,7 @@ interface JodViewer {
   flyTo: (point: WorldPoint, id?: number) => void;
   choose: (id: number | null) => void;
 }
-type ViewerMessage = { source?: string; type?: string; tiles?: number; id?: number; on?: boolean };
+type ViewerMessage = { source?: string; type?: string; tiles?: number; id?: number; on?: boolean; open?: boolean };
 
 /* The viewer's code and the map's first files, fetched ahead the moment a
    visitor reaches for the lantern (hover, focus or touch), so a press finds
@@ -83,6 +83,8 @@ function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
   const [viewer, setViewer]   = useState(false);
   const [tiles, setTiles]     = useState(0);
   const [night, setNight]     = useState(false);
+  /* BlueMap's own menu is open along the left edge of the frame */
+  const [menu, setMenu]       = useState(false);
   /* the frame as the whole screen: the browser's own full screen, or fixed over the page where there is none (iPhone) */
   const [full, setFull]       = useState<false | 'native' | 'overlay'>(false);
   const [inView, setInView]   = useState(true);
@@ -158,6 +160,7 @@ function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
       else if (m.type === 'progress') setTiles(m.tiles ?? 0);
       else if (m.type === 'ready') setReady(true);
       else if (m.type === 'night') setNight(!!m.on);
+      else if (m.type === 'menu') setMenu(!!m.open);
       else if (m.type === 'place' && typeof m.id === 'number') { setSelect(m.id); revealRailItem(m.id, places.current); }
     };
     window.addEventListener('message', onMessage);
@@ -190,11 +193,16 @@ function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
   const hidden = !inView || shut || album || drawn || still;
   useEffect(() => { if (viewer) jod()?.pause(hidden); }, [viewer, hidden, jod]);
 
-  /* An old viewer without JOÐ's script never says it is drawn: show it anyway. */
+  /* The viewer says when its first view is drawn, which is usually well under
+     a second. Should it not have said so in four (a slow texture download, or
+     a viewer without JOÐ's script), it is shown anyway and fills in live. The
+     loading line only appears if the wait is long enough to notice. */
+  const [slow, setSlow] = useState(false);
   useEffect(() => {
     if (!live || ready) return;
-    const t = setTimeout(() => setReady(true), 15000);
-    return () => clearTimeout(t);
+    const show = setTimeout(() => setReady(true), 4000);
+    const note = setTimeout(() => setSlow(true), 700);
+    return () => { clearTimeout(show); clearTimeout(note); };
   }, [live, ready]);
 
   /* ─── the whole screen ─── */
@@ -248,7 +256,7 @@ function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
 
   return (
     <section id="heimur" className="b-world" aria-labelledby="heimur-title">
-      <div ref={frameRef} className={`b-frame${live ? ' is-live' : ''}${ready ? ' is-ready' : ''}${drawn ? ' is-drawn' : ''}${shut ? ' is-room' : ''}${full === 'overlay' ? ' is-full' : ''}${live && still ? ' is-still' : ''}`}>
+      <div ref={frameRef} className={`b-frame${live ? ' is-live' : ''}${ready ? ' is-ready' : ''}${drawn ? ' is-drawn' : ''}${shut ? ' is-room' : ''}${full === 'overlay' ? ' is-full' : ''}${live && still ? ' is-still' : ''}${menu && ready ? ' is-menu' : ''}`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img {...photoProps(MAP_POSTER, PHOTO_SIZES.poster)} className="b-frame__poster" alt="Heimasvæðið á JOÐ séð úr lofti" width={1920} height={1080} decoding="async" fetchPriority="low" />
         <div className="b-frame__shade" aria-hidden="true" />
@@ -327,7 +335,7 @@ function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
                 </button>
               )
             )}
-            {live && !ready && !still && (
+            {live && !ready && !still && slow && (
               <p className="b-boot__wait" role="status">
                 sæki kortið{tiles > 0 ? ` · ${tiles} ${tiles === 1 ? 'reitur' : 'reitir'}` : '…'}
               </p>

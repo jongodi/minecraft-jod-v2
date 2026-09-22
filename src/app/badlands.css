@@ -425,6 +425,10 @@
 .b-frame.is-full .b-hud { padding-top: max(var(--sp-4), env(safe-area-inset-top, 0px)); }
 .b-frame.is-full .b-places { padding-bottom: max(var(--sp-3), env(safe-area-inset-bottom, 0px)); }
 html.is-map-full { overflow: hidden; }
+/* The viewer's own menu opens along the frame's left edge: the title, the
+   places and the postcard step aside until it closes. */
+.b-frame .b-hud, .b-frame .b-places, .b-frame > .b-card { transition: opacity var(--dur-2) var(--ease-out), visibility 0s linear 0s; }
+.b-frame.is-menu .b-hud, .b-frame.is-menu .b-places, .b-frame.is-menu > .b-card { opacity: 0; visibility: hidden; transition: opacity var(--dur-2) var(--ease-out), visibility 0s linear var(--dur-2); }
 /* a phone's map back in the page: a picture until the lantern opens it again */
 .b-frame.is-still .b-frame__view { pointer-events: none; }
 
