@@ -11,6 +11,7 @@
     "map:sync": "node scripts/sync-map.mjs",
     "map:brand": "node scripts/bluemap-brand.mjs",
     "map:poster": "node scripts/map-poster.mjs",
+    "server:size": "node scripts/server-size.mjs",
     "test": "vitest run"
   },
   "dependencies": {
