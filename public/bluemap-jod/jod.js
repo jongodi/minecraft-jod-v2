@@ -217,7 +217,8 @@
       const rx = (b.maxX - b.minX) / 2 + MARGIN;
       const rz = (b.maxZ - b.minZ) / 2 + MARGIN;
       app.events.addEventListener('bluemapCameraMoved', () => {
-        if (app.appState?.controls?.state === 'free') return;
+        /* the edges are the home map's; another map (a whole-world lowres one, say) roams free */
+        if (app.appState?.controls?.state === 'free' || viewer.map?.data?.id !== facts.map) return;
         const p = cm.position;
         const dx = p.x - cx;
         const dz = p.z - cz;
