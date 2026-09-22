@@ -9,6 +9,7 @@
     "lint": "next lint",
     "shots": "node scripts/shots.mjs",
     "map:sync": "node scripts/sync-map.mjs",
+    "map:brand": "node scripts/bluemap-brand.mjs",
     "map:poster": "node scripts/map-poster.mjs",
     "test": "vitest run"
   },

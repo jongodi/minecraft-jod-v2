@@ -4,9 +4,10 @@ import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
-import type { MapConfig } from '@/lib/map-types';
+import type { MapConfig, WorldPoint } from '@/lib/map-types';
 import type { PlacePrints } from '@/app/api/crew/places/route';
 import { DEFAULT_CONFIG } from '@/lib/map-types';
+import viewerFiles from '@/lib/bluemap-viewer.json';
 import { Lantern } from './Bits';
 import Drawer from './Drawer';
 import PlayerHead from './PlayerHead';
@@ -24,6 +25,34 @@ const Album    = dynamic(() => import('./Album'),    { ssr: false });
 const Crew     = dynamic(() => import('./Crew'),     { ssr: false });
 const Shelf    = dynamic(() => import('./Shelf'),    { ssr: false });
 
+/** What public/bluemap-jod/jod.js offers the page, once the viewer's map has loaded. */
+interface JodViewer {
+  ready: boolean;
+  pause: (on: boolean) => void;
+  setNight: (on: boolean, instant?: boolean) => void;
+  flyTo: (point: WorldPoint, id?: number) => void;
+  choose: (id: number | null) => void;
+}
+type ViewerMessage = { source?: string; type?: string; tiles?: number; id?: number; on?: boolean };
+
+/* The viewer's code and the map's first files, fetched ahead the moment a
+   visitor reaches for the lantern (hover, focus or touch), so a press finds
+   most of it already here. Written by map:brand. */
+let warmed = false;
+function warmViewer() {
+  if (warmed) return;
+  warmed = true;
+  for (const href of viewerFiles.warm) {
+    const link = document.createElement('link');
+    link.rel = 'prefetch';
+    link.href = href;
+    document.head.appendChild(link);
+  }
+}
+
+/* a plain click: anything with a modifier keeps the link's own meaning (a new tab) */
+const plainClick = (e: React.MouseEvent) => e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey;
+
 interface Props {
   plates: Plate[];
   server: ServerState;
@@ -35,10 +64,14 @@ interface Props {
 
 /** Dusk: the world is the page. BlueMap fills the viewport under the mesas,
     opening as a still of the home area; the viewer itself boots only when the
-    lantern is pressed. The places hang along the foot with their photos, the
-    painted map lays over the same frame, the album opens on top, and the two
-    rooms of the evening (the crew, the shelf) rise from the foot of the frame
-    when their door is opened, leaving the world in view above them. */
+    lantern is pressed, and the still stays up until the first tiles are drawn.
+    The places hang along the foot with their photos; a place with world
+    coordinates stands in the 3D map as a lantern, its chip flies the camera
+    there and its lantern opens its postcard. The painted map lays over the same
+    frame, the album opens on top, and the two rooms of the evening (the crew,
+    the shelf) rise from the foot of the frame when their door is opened,
+    leaving the world in view above them. *Heill skjár* makes the frame itself
+    the whole screen, so nothing reloads; on a phone the lantern does. */
 function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
   const [config, setConfig]   = useState<MapConfig>(DEFAULT_CONFIG);
   const [selected, setSelect] = useState<number | null>(null);
@@ -46,6 +79,15 @@ function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
   const [album, setAlbum]     = useState(false);
   const [live, setLive]       = useState(false);
   const [ready, setReady]     = useState(false);
+  /* the viewer's map has loaded and window.jod answers */
+  const [viewer, setViewer]   = useState(false);
+  const [tiles, setTiles]     = useState(0);
+  const [night, setNight]     = useState(false);
+  /* the frame as the whole screen: the browser's own full screen, or fixed over the page where there is none (iPhone) */
+  const [full, setFull]       = useState<false | 'native' | 'overlay'>(false);
+  const [inView, setInView]   = useState(true);
+  const frameRef = useRef<HTMLDivElement>(null);
+  const viewRef  = useRef<HTMLIFrameElement>(null);
   /* A room stays mounted once it has been opened, so its fetches happen once. */
   const [visited, setVisited] = useState<Record<RoomId, boolean>>({ hopur: false, hillan: false });
   /* what the crew pinned at each place, from their walls */
@@ -97,6 +139,100 @@ function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
     revealRailItem(id, places.current);
   }, [places]);
 
+  const jod = useCallback((): JodViewer | null => {
+    try {
+      const w = viewRef.current?.contentWindow as (Window & { jod?: JodViewer }) | null | undefined;
+      return w?.jod?.ready ? w.jod : null;
+    } catch { return null; }
+  }, []);
+
+  /* What the viewer says: that it is there, how far the first view has come,
+     that it is drawn, night and day, and a place's lantern pressed in 3D. */
+  useEffect(() => {
+    if (!live) return;
+    const onMessage = (e: MessageEvent) => {
+      if (e.origin !== window.location.origin || e.source !== viewRef.current?.contentWindow) return;
+      const m = e.data as ViewerMessage | null;
+      if (m?.source !== 'jod-map') return;
+      if (m.type === 'hello') setViewer(true);
+      else if (m.type === 'progress') setTiles(m.tiles ?? 0);
+      else if (m.type === 'ready') setReady(true);
+      else if (m.type === 'night') setNight(!!m.on);
+      else if (m.type === 'place' && typeof m.id === 'number') { setSelect(m.id); revealRailItem(m.id, places.current); }
+    };
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  // places is a ref
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [live]);
+
+  /* The chosen place, in 3D: the camera flies to it if it stands in the world. */
+  useEffect(() => {
+    if (!viewer) return;
+    const loc = config.locations.find(l => l.id === selected);
+    if (loc?.world) jod()?.flyTo(loc.world, loc.id);
+    else jod()?.choose(null);
+  }, [viewer, selected, config.locations, jod]);
+
+  /* The viewer draws nothing while nobody can see it: scrolled away, under a
+     room, the album or the painted map. */
+  useEffect(() => {
+    const el = frameRef.current;
+    if (!el || !('IntersectionObserver' in window)) return;
+    /* by ratio: a frame whose edge only touches the viewport counts as intersecting */
+    const io = new IntersectionObserver(([entry]) => setInView(entry.intersectionRatio >= 0.02), { threshold: [0, 0.02] });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  /* On a phone the map is only live as the whole screen: back in the page it
+     is a still again, so a thumb scrolls the page, and the lantern reopens it. */
+  const still = phone && !full;
+  const hidden = !inView || shut || album || drawn || still;
+  useEffect(() => { if (viewer) jod()?.pause(hidden); }, [viewer, hidden, jod]);
+
+  /* An old viewer without JOÐ's script never says it is drawn: show it anyway. */
+  useEffect(() => {
+    if (!live || ready) return;
+    const t = setTimeout(() => setReady(true), 15000);
+    return () => clearTimeout(t);
+  }, [live, ready]);
+
+  /* ─── the whole screen ─── */
+  const openFull = useCallback(() => {
+    setLive(true);
+    const el = frameRef.current;
+    if (el?.requestFullscreen && document.fullscreenEnabled) {
+      el.requestFullscreen({ navigationUI: 'hide' }).then(() => setFull('native')).catch(() => {
+        setFull('overlay');
+        window.history.pushState({ ...window.history.state, jodFull: true }, '');
+      });
+    } else {
+      setFull('overlay');
+      window.history.pushState({ ...window.history.state, jodFull: true }, '');
+    }
+  }, []);
+  const closeFull = useCallback(() => {
+    if (document.fullscreenElement) { document.exitFullscreen().catch(() => {}); return; }
+    if ((window.history.state as { jodFull?: boolean } | null)?.jodFull) window.history.back();
+    else setFull(false);
+  }, []);
+  useEffect(() => {
+    if (!full) return;
+    const onFs = () => { if (!document.fullscreenElement && full === 'native') setFull(false); };
+    const onPop = () => { if (full === 'overlay' && !(window.history.state as { jodFull?: boolean } | null)?.jodFull) setFull(false); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && full === 'overlay') closeFull(); };
+    document.addEventListener('fullscreenchange', onFs);
+    window.addEventListener('popstate', onPop);
+    window.addEventListener('keydown', onKey);
+    document.documentElement.classList.toggle('is-map-full', full === 'overlay');
+    return () => {
+      document.removeEventListener('fullscreenchange', onFs);
+      window.removeEventListener('popstate', onPop);
+      window.removeEventListener('keydown', onKey);
+      document.documentElement.classList.remove('is-map-full');
+    };
+  }, [full, closeFull]);
+
   useEffect(() => {
     if (selected === null) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setSelect(null); };
@@ -112,32 +248,20 @@ function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
 
   return (
     <section id="heimur" className="b-world" aria-labelledby="heimur-title">
-      <div className={`b-frame${live ? ' is-live' : ''}${ready ? ' is-ready' : ''}${drawn ? ' is-drawn' : ''}${shut ? ' is-room' : ''}`}>
+      <div ref={frameRef} className={`b-frame${live ? ' is-live' : ''}${ready ? ' is-ready' : ''}${drawn ? ' is-drawn' : ''}${shut ? ' is-room' : ''}${full === 'overlay' ? ' is-full' : ''}${live && still ? ' is-still' : ''}`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img {...photoProps(MAP_POSTER, PHOTO_SIZES.poster)} className="b-frame__poster" alt="Heimasvæðið á JOÐ séð úr lofti" width={1920} height={1080} decoding="async" fetchPriority="low" />
         <div className="b-frame__shade" aria-hidden="true" />
 
+        {/* The viewer lays itself out for the frame (jod-embed in public/bluemap-jod/jod.css)
+            and says when its first view is drawn; the still fades out then. */}
         {live && (
           <iframe
+            ref={viewRef}
             src={MAP_URL}
             title="Þrívíddarkort af heimasvæðinu"
             className="b-frame__view"
-            onLoad={e => {
-              /* The viewer is served from this site, so its document can be reached:
-                 its control bar and zoom buttons are moved clear of the HUD. */
-              try {
-                const doc = e.currentTarget.contentDocument;
-                if (doc && !doc.getElementById('jod-hud')) {
-                  const style = doc.createElement('style');
-                  style.id = 'jod-hud';
-                  style.textContent = '.control-bar { top: 4.5rem !important; } #zoom-buttons { bottom: 8rem !important; }';
-                  doc.head.appendChild(style);
-                }
-              } catch { /* not ours to touch after all */ }
-              setReady(true);
-            }}
             allow="fullscreen"
-            allowFullScreen
           />
         )}
 
@@ -166,31 +290,48 @@ function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
               </p>
             </div>
             <div ref={tools} className="b-hud__tools">
+              {viewer && !drawn && !still && (
+                <button type="button" className={`b-btn b-btn--small b-btn--ghost${night ? ' is-on' : ''}`} aria-pressed={night}
+                  title="Sólin sest og ljósin í bænum loga" onClick={() => jod()?.setNight(!night)}>Nótt</button>
+              )}
               <button type="button" className={`b-btn b-btn--small b-btn--ghost${drawn ? ' is-on' : ''}`} aria-pressed={drawn} onClick={() => setDrawn(v => !v)}>Teiknað kort</button>
-              <button type="button" className="b-btn b-btn--small b-btn--ghost" onClick={() => setAlbum(true)}>Myndir · {plates.length}</button>
-              {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- BlueMap's own app, not a Next page */}
-              <a href={MAP_URL} className="b-btn b-btn--small b-btn--ghost">Heill skjár</a>
+              {/* the album hangs over the page, outside the frame the browser's full screen shows */}
+              <button type="button" className="b-btn b-btn--small b-btn--ghost" onClick={() => { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); setAlbum(true); }}>Myndir · {plates.length}</button>
+              {full ? (
+                <button type="button" className="b-btn b-btn--small b-btn--ghost is-on" aria-label="Loka heilum skjá" onClick={closeFull}>✕ Loka</button>
+              ) : (
+                // eslint-disable-next-line @next/next/no-html-link-for-pages -- BlueMap's own app, not a Next page
+                <a href={MAP_URL} className="b-btn b-btn--small b-btn--ghost" onPointerEnter={warmViewer} onFocus={warmViewer}
+                  onClick={e => { if (plainClick(e)) { e.preventDefault(); setDrawn(false); openFull(); } }}>Heill skjár</a>
+              )}
             </div>
           </div>
 
           <div ref={mid} className="b-hud__mid">
-            {!live && !drawn && (
+            {(!live || still) && !drawn && (
               phone ? (
+                /* On a phone the frame becomes the whole screen, so the map's drag and
+                   pinch never fight the page scroll. The link is the way in without script. */
                 // eslint-disable-next-line @next/next/no-html-link-for-pages
-                <a href={MAP_URL} className="b-boot">
+                <a href={MAP_URL} className="b-boot" onTouchStart={warmViewer} onFocus={warmViewer}
+                  onClick={e => { if (plainClick(e)) { e.preventDefault(); openFull(); } }}>
                   <Lantern lit />
                   <span className="b-boot__word">Ferðast um heiminn</span>
                   <span className="b-boot__sub">opnar þrívíddarkortið á heilum skjá</span>
                 </a>
               ) : (
-                <button type="button" className="b-boot" onClick={() => setLive(true)}>
+                <button type="button" className="b-boot" onPointerEnter={warmViewer} onFocus={warmViewer} onClick={() => setLive(true)}>
                   <Lantern lit />
                   <span className="b-boot__word">Ferðast um heiminn</span>
                   <span className="b-boot__sub">hleður þrívíddarkortið · dragðu, snúðu, stækkaðu</span>
                 </button>
               )
             )}
-            {live && !ready && <p className="b-boot__wait" role="status">sæki kortið…</p>}
+            {live && !ready && !still && (
+              <p className="b-boot__wait" role="status">
+                sæki kortið{tiles > 0 ? ` · ${tiles} ${tiles === 1 ? 'reitur' : 'reitir'}` : '…'}
+              </p>
+            )}
           </div>
         </div>
 
@@ -221,6 +362,13 @@ function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
                 </span>
                 <button type="button" className="b-card__x" onClick={() => setSelect(null)} aria-label="Loka">✕</button>
               </figcaption>
+              {/* a place that stands in the world can be visited there */}
+              {place.world && (!viewer || still) && !drawn && (
+                <button type="button" className="b-btn b-btn--small b-btn--solid b-card__fly" onPointerEnter={warmViewer} onFocus={warmViewer}
+                  onClick={() => (phone ? openFull() : setLive(true))}>
+                  <Lantern lit /> Sjá staðinn í þrívídd
+                </button>
+              )}
               {/* what the crew pinned here, each print a tap from its wall */}
               {here && here.prints.length > 0 && (
                 <div className="b-card__prints" aria-label="Myndir félaga af þessum stað">

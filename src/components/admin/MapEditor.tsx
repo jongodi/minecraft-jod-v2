@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { MapConfig, MapLocation, MapPath, MapZone } from '@/lib/map-types';
+import { parseWorldPoint, type MapConfig, type MapLocation, type MapPath, type MapZone, type WorldPoint } from '@/lib/map-types';
 import { CREW_USERNAMES } from '@/lib/crew-types';
 import { mapLabel } from '@/lib/icelandic';
 import {
@@ -527,6 +527,7 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
                 <Field label="X"><input className="a-input a-input--num a-input--data" type="number" min={0} max={MAP_W} value={selPin.x} onChange={e => updatePin(selPin.id, { x: clampX(Number(e.target.value)) })} /></Field>
                 <Field label="Y"><input className="a-input a-input--num a-input--data" type="number" min={0} max={MAP_H} value={selPin.y} onChange={e => updatePin(selPin.id, { y: clampY(Number(e.target.value)) })} /></Field>
               </div>
+              <WorldField key={selPin.id} value={selPin.world ?? null} onChange={world => updatePin(selPin.id, { world })} />
               <div className="a-field">
                 <span className="a-label">Mynd sem birtist</span>
                 {selPhoto ? (
@@ -629,5 +630,32 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
           onPick={id => { linkPhoto(selPin.id, id); setPicker(false); }} onUpload={f => uploadForPin(selPin, f)} onClose={() => setPicker(false)} />
       )}
     </div>
+  );
+}
+
+/* ─── where a place stands in the game ──────────────────────────────────────── */
+
+const formatWorldPoint = (w: WorldPoint | null) => (w ? `${w.x} ${w.y} ${w.z}` : '');
+
+/** Committed on blur or Enter, so half-typed numbers never reach the document. */
+function WorldField({ value, onChange }: { value: WorldPoint | null; onChange: (w: WorldPoint | null) => void }) {
+  const [text, setText] = useState(formatWorldPoint(value));
+  const parsed = parseWorldPoint(text);
+  const bad = text.trim() !== '' && parsed === null;
+  const commit = () => {
+    const next = text.trim() === '' ? null : parsed;
+    if (bad) return;
+    if (formatWorldPoint(next) !== formatWorldPoint(value)) onChange(next);
+    setText(formatWorldPoint(next));
+  };
+  return (
+    <Field label="Í heiminum (X Y Z)" help={bad
+      ? 'Þrjár tölur, eins og F3 sýnir þær: X, Y og Z.'
+      : 'Hnitin úr F3. Staður með hnit fær lukt í þrívíddarkortinu, og flísin hans á forsíðunni flýgur þangað. Autt = ekki í þrívíddarkortinu.'}>
+      <input className="a-input a-input--data" value={text} placeholder="t.d. -6890 64 -8919" inputMode="text" spellCheck={false}
+        aria-invalid={bad || undefined}
+        onChange={e => setText(e.target.value)} onBlur={commit}
+        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); commit(); } }} />
+    </Field>
   );
 }

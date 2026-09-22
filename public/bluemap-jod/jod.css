@@ -1,0 +1,492 @@
+/* ═══════════════════════════════════════════════════════════════
+   JOÐ's skin for the BlueMap viewer (public/bluemap). Linked from the
+   index.html that scripts/bluemap-brand.mjs writes, after BlueMap's own
+   stylesheet, so every rule here wins over the one it answers.
+
+   The same five rules as the site (DESIGN.md): warm dark surfaces, never
+   cold grey; lantern amber only on what can be pressed; everything drawn on
+   a pixel grid in the site's three faces; paper for what is posted up (the
+   coordinates, the names, the notes); wood for what holds the tools.
+
+   Values mirror src/app/tokens.css; the viewer is its own document and
+   can't read the site's. Fonts: @fontsource, SIL Open Font License.
+   ═══════════════════════════════════════════════════════════════ */
+
+@font-face { font-family: 'Silkscreen'; font-weight: 400; font-display: swap; src: url(/bluemap-jod/fonts/silkscreen-latin-400-normal.woff2) format('woff2'); }
+@font-face { font-family: 'Silkscreen'; font-weight: 700; font-display: swap; src: url(/bluemap-jod/fonts/silkscreen-latin-700-normal.woff2) format('woff2'); }
+@font-face { font-family: 'Pixelify Sans'; font-weight: 400; font-display: swap; src: url(/bluemap-jod/fonts/pixelify-sans-latin-400-normal.woff2) format('woff2'); }
+@font-face { font-family: 'Pixelify Sans'; font-weight: 600; font-display: swap; src: url(/bluemap-jod/fonts/pixelify-sans-latin-600-normal.woff2) format('woff2'); }
+@font-face { font-family: 'Alfa Slab One'; font-weight: 400; font-display: swap; src: url(/bluemap-jod/fonts/alfa-slab-one-latin-400-normal.woff2) format('woff2'); }
+
+:root {
+  --jod-night: #15100D;
+  --jod-dusk: #2A1A14;
+  --jod-dusk-2: #21150F;
+  --jod-red: #8F3D2E;
+  --jod-orange: #A15325;
+  --jod-yellow: #BA8523;
+  --jod-white: #D1B2A1;
+  --jod-lantern: #F2A63B;
+  --jod-lantern-deep: #C9801F;
+  --jod-glow: rgba(242, 166, 59, 0.35);
+  --jod-paper: #E8DCC4;
+  --jod-paper-2: #DCCDB0;
+  --jod-ink: #1E1611;
+  --jod-ink-soft: #5A4634;
+  --jod-wood: #4D3323;
+  --jod-wood-light: #6B4A2E;
+  --jod-wood-dark: #35221A;
+
+  --jod-font-display: 'Alfa Slab One', Georgia, serif;
+  --jod-font-text: 'Pixelify Sans', 'Trebuchet MS', sans-serif;
+  --jod-font-data: 'Silkscreen', 'Courier New', monospace;
+
+  --jod-px: 2px;
+  --jod-bevel: inset var(--jod-px) var(--jod-px) 0 rgba(255, 240, 210, 0.3), inset calc(var(--jod-px) * -1) calc(var(--jod-px) * -1) 0 rgba(21, 16, 13, 0.4);
+  --jod-bevel-in: inset var(--jod-px) var(--jod-px) 0 rgba(21, 16, 13, 0.4), inset calc(var(--jod-px) * -1) calc(var(--jod-px) * -1) 0 rgba(255, 240, 210, 0.2);
+  --jod-notch: polygon(var(--jod-px) 0, calc(100% - var(--jod-px)) 0, 100% var(--jod-px), 100% calc(100% - var(--jod-px)), calc(100% - var(--jod-px)) 100%, var(--jod-px) 100%, 0 calc(100% - var(--jod-px)), 0 var(--jod-px));
+  /* the plank: wood with its grain, a lit top edge and a dark foot, as the site's bar */
+  --jod-plank:
+    repeating-linear-gradient(90deg, rgba(21, 16, 13, 0.18) 0 var(--jod-px), transparent var(--jod-px) 13px),
+    repeating-linear-gradient(90deg, transparent 0 37px, rgba(255, 240, 210, 0.04) 37px 39px),
+    linear-gradient(180deg, var(--jod-wood-light) 0 var(--jod-px), var(--jod-wood) var(--jod-px) calc(100% - var(--jod-px) * 2), var(--jod-wood-dark) calc(100% - var(--jod-px) * 2));
+  /* the terracotta strata, as a thin band under a plank */
+  --jod-strata: linear-gradient(180deg, var(--jod-red) 0 25%, var(--jod-orange) 25% 50%, var(--jod-yellow) 50% 75%, var(--jod-white) 75%);
+}
+
+/* ─── the themes BlueMap offers, in JOÐ's colours ──────────────
+   BlueMap sets its variables on :root (twice, by colour scheme) and on a
+   theme class; each is answered here with the same selector, so this file,
+   loaded later, wins. Default and dark are the night; light is paper. */
+:root,
+:root .theme-dark {
+  font-family: var(--jod-font-data);
+  font-size: 16px;
+  font-weight: 400;
+  --theme-bg: var(--jod-dusk-2);
+  --theme-bg-hover: var(--jod-dusk);
+  --theme-bg-light: var(--jod-wood-light);
+  --theme-fg: var(--jod-paper);
+  --theme-fg-light: var(--jod-white);
+  --theme-switch-button-on: var(--jod-lantern);
+  --theme-stars-day: var(--jod-paper);
+  --theme-moon-day: var(--jod-lantern);
+  --theme-stars-night: var(--jod-wood-light);
+  --theme-moon-night: var(--jod-night);
+  --jod-face: var(--jod-plank);
+  --jod-face-fg: var(--jod-paper);
+  --jod-edge: var(--jod-wood-dark);
+}
+@media (prefers-color-scheme: light) {
+  :root,
+  :root .theme-dark {
+    font-family: var(--jod-font-data);
+    font-weight: 400;
+    --theme-bg: var(--jod-dusk-2);
+    --theme-bg-hover: var(--jod-dusk);
+    --theme-bg-light: var(--jod-wood-light);
+    --theme-fg: var(--jod-paper);
+    --theme-fg-light: var(--jod-white);
+    --theme-switch-button-on: var(--jod-lantern);
+    --theme-stars-day: var(--jod-paper);
+    --theme-moon-day: var(--jod-lantern);
+    --theme-stars-night: var(--jod-wood-light);
+    --theme-moon-night: var(--jod-night);
+  }
+}
+:root .theme-light {
+  font-family: var(--jod-font-data);
+  font-weight: 400;
+  --theme-bg: var(--jod-paper);
+  --theme-bg-hover: var(--jod-paper-2);
+  --theme-bg-light: #B9A585;
+  --theme-fg: var(--jod-ink);
+  --theme-fg-light: var(--jod-ink-soft);
+  --theme-switch-button-on: var(--jod-lantern-deep);
+  --theme-stars-day: var(--jod-ink-soft);
+  --theme-moon-day: var(--jod-ink);
+  --theme-stars-night: var(--jod-paper);
+  --theme-moon-night: var(--jod-lantern);
+  --jod-face: linear-gradient(180deg, #F3EAD6 0 var(--jod-px), var(--jod-paper) var(--jod-px) calc(100% - var(--jod-px)), var(--jod-paper-2) calc(100% - var(--jod-px)));
+  --jod-face-fg: var(--jod-ink);
+  --jod-edge: #B9A585;
+}
+:root .theme-contrast {
+  font-family: var(--jod-font-data);
+  font-weight: 400;
+  --theme-bg: #0B0806;
+  --theme-bg-hover: var(--jod-dusk);
+  --theme-bg-light: var(--jod-white);
+  --theme-fg: #FFF8EA;
+  --theme-fg-light: var(--jod-paper);
+  --theme-switch-button-on: var(--jod-lantern);
+  --theme-stars-day: #FFF8EA;
+  --theme-moon-day: var(--jod-lantern);
+  --theme-stars-night: var(--jod-white);
+  --theme-moon-night: #0B0806;
+  --jod-face: #0B0806;
+  --jod-face-fg: #FFF8EA;
+  --jod-edge: var(--jod-white);
+}
+
+/* ─── the document ─────────────────────────────────────────────── */
+html, body { background: var(--jod-night); }
+body { color: var(--jod-paper); }
+::selection { background: var(--jod-lantern); color: var(--jod-night); }
+a { color: var(--jod-lantern); text-underline-offset: 0.2em; }
+a:hover { color: var(--jod-paper); }
+kbd {
+  display: inline-block;
+  min-width: 1.2em;
+  margin: 0 0.1em;
+  padding: 0.1em 0.3em;
+  border-radius: 0;
+  background: var(--jod-paper);
+  color: var(--jod-ink);
+  font-family: var(--jod-font-data);
+  font-size: 0.75em;
+  line-height: 1.4;
+  text-align: center;
+  box-shadow: 0 var(--jod-px) 0 var(--jod-wood-dark);
+}
+h1, h2 { font-family: var(--jod-font-display); font-weight: 400; letter-spacing: 0.01em; }
+h1::after, h2::after { height: 3px; background: var(--jod-strata); }
+::-webkit-scrollbar-thumb { border-radius: 0; background: var(--jod-wood-light); }
+* { scrollbar-color: var(--jod-wood-light) transparent; }
+:focus-visible { outline: var(--jod-px) solid var(--jod-lantern); outline-offset: var(--jod-px); }
+.jod-noscript { margin: 3rem auto; max-width: 30rem; padding: 1rem; font-family: var(--jod-font-text); color: var(--jod-paper); text-align: center; }
+
+/* A dusk at the edges of the view: the world ends in the evening, not in a hard line. */
+#map-container::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse 75% 70% at 50% 55%, transparent 60%, rgba(21, 16, 13, 0.42) 100%);
+}
+
+/* ─── the tools: wood, bevelled, lit when pressed ──────────────── */
+.control-bar { filter: drop-shadow(0 var(--jod-px) 0 rgba(21, 16, 13, 0.55)); }
+.control-bar > :not(:first-child) { border-left: var(--jod-px) solid var(--jod-edge); }
+.svg-button,
+#zoom-buttons .svg-button {
+  background: var(--jod-face);
+  color: var(--jod-face-fg);
+  box-shadow: var(--jod-bevel);
+  transition: background-color 120ms ease-out;
+}
+.svg-button svg { fill: var(--jod-face-fg); }
+/* hover only where there is one: on a touch screen it would stay lit after the tap */
+@media (hover: hover) {
+  .svg-button:hover { background: var(--jod-lantern); }
+  .svg-button:hover svg,
+  .svg-button:hover svg .north,
+  .svg-button:hover svg .south { fill: var(--jod-night); }
+  .svg-button.active:hover { background: var(--jod-lantern); }
+  .svg-button.active:hover svg { fill: var(--jod-night); }
+  .side-menu .simple-button:hover,
+  .side-menu .switch-button:hover,
+  .side-menu .map-button:hover { background: var(--jod-lantern); color: var(--jod-night); }
+  .side-menu .simple-button:hover > .submenu-icon > svg { fill: var(--jod-night); }
+}
+.svg-button:active { background: var(--jod-lantern-deep); box-shadow: var(--jod-bevel-in); }
+.svg-button:active svg { fill: var(--jod-night); }
+/* the view you are in: its lantern is lit */
+.svg-button.active { background: var(--jod-face); box-shadow: var(--jod-bevel-in), inset 0 -3px 0 var(--jod-lantern); }
+.svg-button.active svg { fill: var(--jod-lantern); }
+.compass svg .north { fill: var(--jod-lantern); }
+.compass svg .south { fill: var(--jod-face-fg); }
+#zoom-buttons { filter: drop-shadow(0 var(--jod-px) 0 rgba(21, 16, 13, 0.55)); gap: var(--jod-px); }
+
+/* the coordinates: a paper tag nailed to the plank */
+.number-input { background: var(--jod-paper); color: var(--jod-ink); font-family: var(--jod-font-data); }
+.number-input .label { color: var(--jod-red); }
+.number-input input { color: var(--jod-ink); }
+.position-input > :not(:first-child) { border-left: var(--jod-px) dashed #B9A585; }
+
+/* ─── the menu: a room of its own, with a plank over it ────────── */
+.side-menu {
+  background: var(--theme-bg);
+  filter: none;
+  box-shadow: 0 0 0 var(--jod-px) var(--jod-wood-dark), 6px 0 0 rgba(21, 16, 13, 0.35);
+}
+.side-menu > .menu-button { z-index: 1; }
+.side-menu > .title {
+  position: relative;
+  background: var(--jod-plank);
+  color: var(--jod-paper);
+  border-bottom: 0;
+  font-family: var(--jod-font-display);
+  font-size: 1.1em;
+  letter-spacing: 0.02em;
+  text-shadow: 0 var(--jod-px) 0 var(--jod-wood-dark);
+}
+.side-menu > .title::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: 6px;
+  background: var(--jod-strata);
+}
+.side-menu > .content { padding-top: calc(0.5em + 6px); }
+.side-menu > .content hr { border-bottom: var(--jod-px) solid var(--theme-bg-light); opacity: 0.6; }
+.side-menu .simple-button,
+.side-menu .switch-button,
+.side-menu .slider { letter-spacing: 0.02em; }
+.side-menu .simple-button.active,
+.side-menu .map-button.selected { background: var(--theme-bg-hover); box-shadow: inset 3px 0 0 var(--jod-lantern); }
+.side-menu .simple-button:active { background: var(--jod-lantern-deep); color: var(--jod-night); }
+.side-menu .slider:hover { background: var(--theme-bg-hover); }
+@media (hover: none) {
+  .svg-button:hover { background: var(--jod-face); }
+  .side-menu .simple-button:hover,
+  .side-menu .switch-button:hover,
+  .side-menu .map-button:hover,
+  .side-menu .slider:hover { background: transparent; }
+}
+.side-menu .group { border: var(--jod-px) solid var(--theme-bg-light); }
+.side-menu .group > .title {
+  font-size: 0.75em;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--theme-fg-light);
+}
+/* sliders and switches are square, like everything else here */
+.side-menu .slider > label > input { border-radius: 0; height: 0.75em; background: var(--theme-bg-light); box-shadow: var(--jod-bevel-in); }
+.side-menu .slider > label > input::-webkit-slider-thumb { border-radius: 0; border: var(--jod-px) solid var(--jod-night); background: var(--jod-lantern); cursor: pointer; }
+.side-menu .slider > label > input::-moz-range-thumb { border-radius: 0; border: var(--jod-px) solid var(--jod-night); background: var(--jod-lantern); cursor: pointer; }
+.side-menu .switch { border-radius: 0; box-shadow: var(--jod-bevel-in); }
+.side-menu .switch::after { border-radius: 0; background: var(--jod-paper); }
+.side-menu .switch.on::after { background: var(--jod-night); }
+.side-menu .marker-item .marker-button:hover,
+.side-menu .marker-set > .info:hover { background: var(--theme-bg-hover); }
+.side-menu .marker-item .marker-button > .icon img { image-rendering: pixelated; }
+.side-menu .text-input { border-radius: 0; background: var(--jod-paper); color: var(--jod-ink); font-family: var(--jod-font-data); }
+.choice-box .choices .choice { border-radius: 0; font-family: var(--jod-font-data); }
+.choice-box .choices .choice:hover { background: var(--jod-lantern); color: var(--jod-night); }
+.choice-box .choices .choice.selected { background: var(--theme-bg-hover); box-shadow: inset 0 -3px 0 var(--jod-lantern); }
+
+/* what you read in the menu is prose, so it is set in the text face */
+.info-content { font-family: var(--jod-font-text); font-size: 0.95em; line-height: 1.5; }
+.info-content h2 { font-size: 1.05em; margin-top: 1.25em; }
+.info-content table tr th,
+.info-content table tr td { border: var(--jod-px) solid var(--theme-bg-hover); padding: 0.35em 0.5em; }
+.info-content table tr th { font-family: var(--jod-font-data); font-size: 0.8em; color: var(--theme-fg-light); white-space: nowrap; }
+.jod-info__lead { margin: 0.75em 0.5em 1em; color: var(--theme-fg); }
+.info-content .info-footer { margin-top: 1.5em; font-family: var(--jod-font-data); font-size: 0.75em; line-height: 1.8; color: var(--theme-fg-light); }
+
+/* ─── on the map: players, notes, and the places ───────────────── */
+#app .map-state-message { font-family: var(--jod-font-data); color: var(--jod-paper); text-shadow: 0 var(--jod-px) 0 var(--jod-night); letter-spacing: 0.04em; }
+#bm-app-err { background: var(--jod-night); color: var(--jod-paper); font-family: var(--jod-font-text); }
+#bm-app-err > div img { display: none; }
+
+#map-container .bm-marker-player { filter: drop-shadow(0 var(--jod-px) 0 rgba(21, 16, 13, 0.6)); }
+#map-container .bm-marker-player img { box-shadow: 0 0 0 var(--jod-px) var(--jod-night); }
+#map-container .bm-marker-player .bm-player-name {
+  padding: 0.3em 0.5em;
+  background: var(--jod-paper);
+  color: var(--jod-ink);
+  font-family: var(--jod-font-data);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  box-shadow: 0 var(--jod-px) 0 var(--jod-wood-dark);
+}
+
+/* BlueMap's own notes on the map (points, labels, popups): paper, posted up */
+#map-container .bm-marker-html .bm-marker-poi-label,
+#map-container .bm-marker-labelpopup,
+#map-container .bm-marker-popup {
+  background: var(--jod-paper);
+  color: var(--jod-ink);
+  font-family: var(--jod-font-text);
+  filter: drop-shadow(0 var(--jod-px) 0 var(--jod-wood-dark));
+}
+#map-container .bm-marker-html .bm-marker-poi-label::after,
+#map-container .bm-marker-labelpopup::after,
+#map-container .bm-marker-popup::after { border-top-color: var(--jod-paper); }
+#map-container .bm-marker-popup .group > .label,
+#map-container .bm-marker-popup .group > .content > .entry > .label,
+#map-container .bm-marker-popup .files { color: var(--jod-ink-soft); font-family: var(--jod-font-data); }
+
+/* A place: a lit lantern standing on its spot, its name on a tag under it.
+   The markup comes from src/lib/bluemap-markers.ts. */
+#map-container .jod-place { pointer-events: none; }
+.jod-pin {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  pointer-events: auto;
+  transform: translate(-50%, -30px);
+  -webkit-tap-highlight-color: transparent;
+}
+.jod-pin__lamp {
+  position: relative;
+  width: 20px;
+  height: 30px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 18' shape-rendering='crispEdges'%3E%3Cg fill='%2315100D'%3E%3Crect x='4' y='0' width='4' height='1'/%3E%3Crect x='3' y='1' width='1' height='2'/%3E%3Crect x='8' y='1' width='1' height='2'/%3E%3Crect x='2' y='3' width='8' height='2'/%3E%3Crect x='2' y='5' width='1' height='8'/%3E%3Crect x='9' y='5' width='1' height='8'/%3E%3Crect x='1' y='13' width='10' height='2'/%3E%3Crect x='3' y='15' width='6' height='1'/%3E%3C/g%3E%3Crect x='3' y='5' width='6' height='8' fill='%23F2A63B'/%3E%3Crect x='5' y='8' width='2' height='3' fill='%23E8DCC4'/%3E%3C/svg%3E") center / contain no-repeat;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 0 1px rgba(232, 220, 196, 0.6));
+  transition: transform 120ms ease-out;
+}
+.jod-pin__lamp::before {
+  content: '';
+  position: absolute;
+  inset: -70% -110%;
+  z-index: -1;
+  background: radial-gradient(closest-side, var(--jod-glow), transparent);
+  animation: jod-flicker 3400ms ease-in-out infinite;
+}
+.jod-pin__label {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 3px 6px 4px;
+  background: var(--jod-paper);
+  color: var(--jod-ink);
+  white-space: nowrap;
+  box-shadow: 0 var(--jod-px) 0 var(--jod-wood-dark);
+  clip-path: var(--jod-notch);
+}
+.jod-pin__label b { font-family: var(--jod-font-data); font-weight: 700; font-size: 0.75rem; letter-spacing: 0.04em; }
+.jod-pin__label small { display: none; font-family: var(--jod-font-text); font-size: 0.75rem; color: var(--jod-ink-soft); }
+.jod-pin:hover .jod-pin__lamp,
+.jod-pin:focus-visible .jod-pin__lamp,
+.jod-pin.is-chosen .jod-pin__lamp { transform: translateY(-2px) scale(1.15); }
+.jod-pin:hover .jod-pin__label,
+.jod-pin:focus-visible .jod-pin__label,
+.jod-pin.is-chosen .jod-pin__label { background: var(--jod-lantern); }
+.jod-pin:hover .jod-pin__label small,
+.jod-pin:focus-visible .jod-pin__label small,
+.jod-pin.is-chosen .jod-pin__label small { display: block; color: var(--jod-ink); }
+@keyframes jod-flicker { 0%, 100% { opacity: 0.7; } 50% { opacity: 1; } }
+
+/* ─── full screen: the plank across the top, and the way back ──── */
+#jod-plank {
+  position: fixed;
+  z-index: 9000;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0 0.75rem;
+  padding-top: env(safe-area-inset-top, 0px);
+  background: var(--jod-plank);
+  box-shadow: inset 0 0 0 var(--jod-px) rgba(21, 16, 13, 0.35);
+  color: var(--jod-paper);
+}
+#jod-plank::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: 6px;
+  background: var(--jod-strata);
+  filter: drop-shadow(0 3px 0 rgba(21, 16, 13, 0.4));
+}
+.jod-plank__back {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 2.25rem;
+  padding: 0 0.75rem;
+  background: rgba(21, 16, 13, 0.35);
+  color: var(--jod-lantern);
+  font-family: var(--jod-font-data);
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  clip-path: var(--jod-notch);
+}
+.jod-plank__back:hover,
+.jod-plank__back:focus-visible { background: var(--jod-lantern); color: var(--jod-night); }
+.jod-plank__title { font-family: var(--jod-font-display); font-size: 1.25rem; line-height: 1; color: var(--jod-paper); text-shadow: 0 var(--jod-px) 0 var(--jod-wood-dark); white-space: nowrap; }
+.jod-plank__note { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--jod-font-data); font-size: 0.6rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--jod-white); text-shadow: 0 1px 0 var(--jod-wood-dark); }
+
+/* the tools ride on the right of the plank */
+html:not(.jod-embed) .control-bar {
+  top: calc(0.5rem + env(safe-area-inset-top, 0px));
+  left: auto;
+  right: 0.5rem;
+  width: auto;
+  margin: 0;
+}
+html:not(.jod-embed) .control-bar .space.greedy { display: none; }
+html:not(.jod-embed) .control-bar .pos-input { width: 14em; }
+@media (max-width: 1099px) {
+  html:not(.jod-embed) .control-bar .pos-input { display: none; }
+  html:not(.jod-embed) .control-bar .compass { margin-left: auto; }
+  .jod-plank__back svg { width: 20px; height: 20px; }
+}
+@media (max-width: 799px) {
+  .jod-plank__note { display: none; }
+}
+/* A phone: BlueMap's bar runs the full width; the plank shrinks to the way back
+   at its left end, the same height as the bar. */
+@media (max-width: 575.98px) {
+  #jod-plank { right: auto; width: 3rem; height: 3rem; padding: 0; justify-content: center; }
+  #jod-plank::after { display: none; }
+  .jod-plank__title, .jod-plank__note { display: none; }
+  .jod-plank__back { width: 3rem; height: 3rem; padding: 0; justify-content: center; clip-path: none; background: transparent; }
+  .jod-plank__back span { display: none; }
+  html:not(.jod-embed) .control-bar { top: env(safe-area-inset-top, 0px); left: 3rem; right: 0; width: calc(100% - 3rem); background: var(--jod-plank); }
+  html:not(.jod-embed) .control-bar .pos-input { display: none; }
+  html:not(.jod-embed) .control-bar .compass { margin-left: auto; }
+  .jod-plank__back svg { width: 20px; height: 20px; }
+}
+
+/* ─── inside the home page's frame ───────────────────────────────
+   The site's HUD carries the title and the tools along the top and the
+   places along the foot; BlueMap's own tools gather under the HUD on the
+   right, and the zoom buttons clear the places. */
+html.jod-embed .control-bar {
+  top: 4.75rem;
+  left: auto;
+  right: clamp(0.75rem, 3vw, 3rem);
+  width: auto;
+  margin: 0;
+  background: none;
+}
+html.jod-embed .control-bar .space.greedy,
+html.jod-embed .control-bar .pos-input { display: none; }
+html.jod-embed #zoom-buttons { right: clamp(0.25rem, 3vw - 0.5rem, 2.5rem); bottom: 8rem; }
+html.jod-embed #map-container::after { background: radial-gradient(ellipse 80% 75% at 50% 50%, transparent 65%, rgba(21, 16, 13, 0.35) 100%); }
+/* A phone: the HUD's tools wrap across the top, so BlueMap's gather at the
+   foot on the right, over the places, where a thumb is anyway. Pinch zooms. */
+@media (max-width: 899px) {
+  html.jod-embed #app { font-size: 1.25rem; }
+  html.jod-embed .side-menu { font-size: 1rem; }
+  html.jod-embed .control-bar { top: auto; bottom: 8.25rem; right: 0.5rem; width: auto; background: none; }
+  html.jod-embed .control-bar .thin-hide { display: initial; }
+  html.jod-embed .control-bar .space.thin-hide { display: none; }
+  html.jod-embed .control-bar .controls-switch.thin-hide { display: flex; }
+  html.jod-embed .control-bar .svg-button[title]:not(.menu-button):not(.compass):not(.controls-switch .svg-button) { display: none; }
+  html.jod-embed #zoom-buttons { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jod-pin__lamp::before { animation: none; }
+  .jod-pin__lamp, .svg-button { transition: none; }
+}
+
+/* full screen, a chosen place says how to reach its postcard */
+.jod-pin.is-chosen .jod-pin__label .jod-pin__more { display: block; font-family: var(--jod-font-data); font-size: 0.6rem; letter-spacing: 0.04em; color: var(--jod-ink); }
+/* in the frame, night and day is the HUD's lantern */
+html.jod-embed .day-night-switch { display: none; }

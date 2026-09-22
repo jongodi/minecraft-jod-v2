@@ -140,6 +140,17 @@ export function locationForPhoto(config: MapConfig, photoId: string): MapLocatio
 const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
 const str   = (v: unknown, max = MAX_LABEL): string => (typeof v === 'string' ? v : '').trim().slice(0, max);
 
+/* Minecraft's world border and build height, so a typo can't send the camera off the world */
+const WORLD_XZ = 30_000_000;
+const WORLD_Y: [number, number] = [-64, 320];
+
+function worldPoint(v: unknown): MapLocation['world'] {
+  const w = v as Partial<NonNullable<MapLocation['world']>> | null | undefined;
+  if (!w || !isNum(w.x) || !isNum(w.y) || !isNum(w.z)) return null;
+  if (Math.abs(w.x) > WORLD_XZ || Math.abs(w.z) > WORLD_XZ) return null;
+  return { x: Math.round(w.x), y: Math.min(WORLD_Y[1], Math.max(WORLD_Y[0], Math.round(w.y))), z: Math.round(w.z) };
+}
+
 /** Check and clean a map config sent by the admin editor. Returns an error message or the clean config. */
 export function sanitizeMapConfig(body: unknown): { error: string } | { config: MapConfig } {
   const b = body as Partial<MapConfig> | null;
@@ -164,7 +175,7 @@ export function sanitizeMapConfig(body: unknown): { error: string } | { config: 
       : [];
     locations.push({
       id: Math.floor(l.id), label: str(l.label), sublabel: str(l.sublabel),
-      x: Math.round(l.x), y: Math.round(l.y), type, photoId, builders,
+      x: Math.round(l.x), y: Math.round(l.y), type, photoId, builders, world: worldPoint(l.world),
     });
   }
 

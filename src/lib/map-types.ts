@@ -11,6 +11,20 @@ export interface MapLocation {
   photoId?: string | null;
   /** The crew members who built it, by username. The postcard says so, and their walls list it. */
   builders?: string[];
+  /** Where it stands in the game, as F3 shows it. A place with these gets a lantern in the 3D map,
+      and its chip on the rail flies the camera there. `null` = not placed in the world. */
+  world?: WorldPoint | null;
+}
+
+export interface WorldPoint { x: number; y: number; z: number }
+
+/** Reads the first three numbers the way F3 or a copied /tp writes them
+    ("-6890 64 -8919", "-6890.500 / 64.00000 / -8919.300", "-6890, 64, -8919").
+    A comma separates numbers here, it is never a decimal point. */
+export function parseWorldPoint(text: string): WorldPoint | null {
+  const nums = text.match(/-?\d+(?:\.\d+)?/g)?.map(Number);
+  if (!nums || nums.length < 3) return null;
+  return { x: Math.round(nums[0]), y: Math.round(nums[1]), z: Math.round(nums[2]) };
 }
 
 export interface MapZone {
