@@ -55,7 +55,7 @@ npm run map:sync -- --push  # sendir afritið á tölvunni í geymsluna án þes
 npm run map:brand           # merkir skoðarann JOÐ aftur, án þess að sækja neitt
 ```
 
-Skoðarinn (um 1,5 MB) fer í `public/bluemap` og fylgir vefnum. Kortagögnin (hundruð MB) fara í `public/bluemap-data`, sem er afrit fyrir þróun og ekki í git, og þaðan í Vercel Blob undir `bluemap-data/`; vefurinn sækir þau þangað um `/bluemap-data`. Skráalisti og slóð geymslunnar eru skrifuð í `src/lib/bluemap-snapshot.json`, sem er í git. Skipunin þarf `BLOB_READ_WRITE_TOKEN` í `.env.local` (sami lykill og fyrir myndirnar, úr Storage á Vercel). Síðan sýnir dagsetningu afritsins. Nýtt afrit birtist á vefnum þegar breytingunum á `public/bluemap` og `src/lib/bluemap-snapshot.json` hefur verið ýtt á GitHub. Best er að keyra skipunina meðan þjónninn er í gangi.
+Skoðarinn (um 1,5 MB) fer í `public/bluemap` og fylgir vefnum. Kortagögnin (hundruð MB) fara í `public/bluemap-data`, sem er afrit fyrir þróun og ekki í git, og þaðan í Vercel Blob undir `bluemap-data/`; vefurinn sækir þau þangað um `/bluemap-data`. Skráalisti og slóð geymslunnar eru skrifuð í `src/lib/bluemap-snapshot.json`, sem er í git. Skipunin þarf `BLOB_READ_WRITE_TOKEN` í `.env.local` (sami lykill og fyrir myndirnar, úr Storage á Vercel). Síðan sýnir dagsetningu afritsins. Nýtt afrit birtist á vefnum þegar breytingunum á `public/bluemap`, `src/lib/bluemap-snapshot.json` og `src/lib/bluemap-viewer.json` hefur verið ýtt á GitHub. Best er að keyra skipunina meðan þjónninn er í gangi.
 
 Kyrrmyndin sem heimurinn opnast sem er `public/map-poster.webp`. Hún er tekin af afritinu með `npm run dev` í gangi:
 

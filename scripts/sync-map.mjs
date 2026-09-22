@@ -163,7 +163,7 @@ function writeManifest(files, blob) {
   const syncedAt = new Date().toISOString();
   writeFileSync(MANIFEST, JSON.stringify({ syncedAt, version: versionOf(syncedAt), files, blob }, null, 2) + '\n');
   brand(ROOT);
-  console.log(`\nTil að birta það: git add public/bluemap src/lib/bluemap-snapshot.json, commit og push.`);
+  console.log(`\nTil að birta það: git add public/bluemap src/lib/bluemap-snapshot.json src/lib/bluemap-viewer.json, commit og push.`);
 }
 
 /* Sends `todo` to the store, drops whatever the store holds that is no longer in
