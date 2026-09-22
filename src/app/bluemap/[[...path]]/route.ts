@@ -1,8 +1,8 @@
 import { get } from '@vercel/blob';
-import { getExarotonServerId } from '@/lib/exaroton';
 import { readMap } from '@/lib/map';
 import { PLACES_SET, placesMarkerSet } from '@/lib/bluemap-markers';
 import { hasSnapshot, inSnapshot, snapshot } from '@/lib/bluemap-snapshot';
+import { discard, fetchFile, isMissing, isOnline, resolveServerId } from '@/lib/bluemap-server';
 
 /* The BlueMap viewer and its map data, read straight off the Minecraft server.
    BlueMap renders into bluemap/web on the exaroton server, and this route serves
@@ -28,11 +28,6 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 /* the texture atlas can take half a minute to come off exaroton the first time */
 export const maxDuration = 60;
-
-/* BlueMap's web folder on the server: `webroot` in its webapp.conf. map:sync
-   finds it on its own and says when it isn't the default. */
-const WEBROOT = (process.env.BLUEMAP_WEBROOT || 'bluemap/web').trim().replace(/^\.?\/+/, '').replace(/\/+$/, '');
-const SERVERS_API = 'https://api.exaroton.com/v1/servers';
 
 /* Plain file and folder names only. Nothing starting with a dot gets through,
    so a request can never climb out of the webroot. */
@@ -105,34 +100,6 @@ function cacheControl(path: string, found: boolean): string {
   return 'public, max-age=0, s-maxage=300, stale-while-revalidate=3600';
 }
 
-let serverId: Promise<string> | null = null;
-let serverState: { online: boolean; checked: number } | null = null;
-
-function resolveServerId(token: string): Promise<string> {
-  serverId ??= getExarotonServerId(token).catch((err: unknown) => {
-    serverId = null;
-    throw err;
-  });
-  return serverId;
-}
-
-/* exaroton status 1 is online; checked at most every 30 seconds per instance */
-async function isOnline(id: string, token: string): Promise<boolean> {
-  if (serverState && Date.now() - serverState.checked < 30_000) return serverState.online;
-  let online = false;
-  try {
-    const res = await fetch(`${SERVERS_API}/${id}/`, {
-      headers: { Authorization: `Bearer ${token}` },
-      cache: 'no-store',
-    });
-    if (res.ok) online = ((await res.json()) as { data?: { status?: number } }).data?.status === 1;
-  } catch {
-    /* can't tell: treat it as stopped and use the copy */
-  }
-  serverState = { online, checked: Date.now() };
-  return online;
-}
-
 function toSnapshot(path: string, cache: string): Response {
   const location = `${SNAPSHOT_ROOT}/${path.split('/').map(encodeURIComponent).join('/')}`;
   return new Response(null, { status: 307, headers: { Location: location, 'Cache-Control': cache } });
@@ -181,24 +148,6 @@ async function markers(path: string, live: { id: string; token: string } | null)
   const sets: Record<string, unknown> = { ...base };
   if (config) sets[PLACES_SET] = placesMarkerSet(config.locations);
   return json(JSON.stringify(sets), live ? LIVE_OTHER : STOPPED);
-}
-
-function fetchFile(id: string, token: string, path: string): Promise<Response> {
-  const encoded = `${WEBROOT}/${path}`.split('/').map(encodeURIComponent).join('/');
-  return fetch(`${SERVERS_API}/${id}/files/data/${encoded}`, {
-    headers: { Authorization: `Bearer ${token}` },
-    cache: 'no-store',
-  });
-}
-
-/* exaroton answers a missing file with a 4xx; which one isn't documented,
-   so anything that isn't about the key or the rate limit counts as missing */
-function isMissing(status: number): boolean {
-  return status >= 400 && status < 500 && status !== 401 && status !== 403 && status !== 429;
-}
-
-async function discard(res: Response): Promise<void> {
-  await res.body?.cancel().catch(() => undefined);
 }
 
 function empty(status: number, cache: string): Response {
