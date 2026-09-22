@@ -1,19 +1,21 @@
-import { get, BlobNotFoundError } from '@vercel/blob';
-import { hasSnapshot, inSnapshot, isCurrentVersion, parseDataPath, snapshot } from '@/lib/bluemap-snapshot';
+import { BlobNotFoundError } from '@vercel/blob';
+import { hasSnapshot, inSnapshot, isCurrentVersion, isPacked, parseDataPath, snapshot } from '@/lib/bluemap-snapshot';
+import { contentTypeOf, readCopy } from '@/lib/bluemap-copy';
 import { discard, fetchFile, isMissing, resolveServerId } from '@/lib/bluemap-server';
 
-/* The map data, out of Vercel Blob. A public store never reaches this route:
-   next.config rewrites /bluemap-data straight to it. A private store can only
-   be read with the token, so this route streams it. In development a local
-   copy under public/bluemap-data is served as static files before this route
-   is ever asked.
+/* The map data, out of Vercel Blob. map:sync stores it as a few large packs,
+   and this route reads each file back out of its pack (src/lib/bluemap-copy.ts).
+   A copy from before packs, in a public store, never reaches this route:
+   next.config rewrites /bluemap-data straight to the store. In development a
+   local copy under public/bluemap-data is served as static files before this
+   route is ever asked.
 
    The viewer asks for the map under a version that changes with every sync
    (/bluemap-data/<version>/maps/…, set in public/bluemap/settings.json by
    map:brand), so an answer to a current address never goes stale: the browser
    and the CDN keep it for a year, and a returning visitor reads the whole map
-   from disk. The store holds one copy under unversioned paths; the version is
-   only in the address.
+   from disk. The version is only in the address: the manifest this
+   deployment carries says which packs hold its copy.
 
    Should the store refuse to be read (paused for going over the plan's usage,
    or a token that no longer fits it), the same files come straight off the
@@ -39,10 +41,6 @@ const MISSING_BRIEF = 'public, max-age=60, s-maxage=120';
    copy takes over again once the store answers */
 const FROM_SERVER = 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800';
 
-/* the types map:sync stores the files under */
-const TYPES: Record<string, string> = { gz: 'application/gzip', json: 'application/json', png: 'image/png' };
-const contentType = (path: string): string => TYPES[path.slice(path.lastIndexOf('.') + 1).toLowerCase()] ?? 'application/octet-stream';
-
 type Context = { params: Promise<{ path: string[] }> };
 
 function answer(status: number, cache: string, body: BodyInit | null = null, headers: Record<string, string> = {}): Response {
@@ -63,26 +61,20 @@ export async function GET(req: Request, { params }: Context): Promise<Response> 
 
   const blob = snapshot.blob;
   if (!blob?.base) return answer(404, MISSING_BRIEF);
-  if (blob.access === 'public') {
+  if (blob.access === 'public' && !isPacked) {
     return Response.redirect(`${blob.base}/${BLOB_DIR}/${path.split('/').map(encodeURIComponent).join('/')}`, 307);
   }
-  if (!process.env.BLOB_READ_WRITE_TOKEN) return fromServer(path);
+  if (blob.access === 'private' && !process.env.BLOB_READ_WRITE_TOKEN) return fromServer(path);
 
   const cache = current ? FOREVER : FOUND_BRIEF;
   try {
-    /* straight from storage: a tile the last sync overwrote must not come back
-       old from the store's own cache and then be kept for a year */
-    const res = await get(`${BLOB_DIR}/${path}`, {
-      access: 'private',
-      useCache: false,
-      ifNoneMatch: current ? undefined : req.headers.get('if-none-match') ?? undefined,
-    });
-    if (!res) return answer(404, current ? FOREVER : MISSING_BRIEF);
-    const etag = res.blob.etag ? { ETag: res.blob.etag } : undefined;
-    if (res.statusCode !== 200 || !res.stream) return answer(304, cache, null, etag);
-    return answer(200, cache, res.stream, {
-      'Content-Type': res.blob.contentType ?? 'application/octet-stream',
-      'Content-Length': String(res.blob.size ?? ''),
+    const file = await readCopy(path, current ? undefined : req.headers.get('if-none-match') ?? undefined);
+    if (!file) return answer(404, current ? FOREVER : MISSING_BRIEF);
+    const etag = file.etag ? { ETag: file.etag } : undefined;
+    if (file.status === 304) return answer(304, cache, null, etag);
+    return answer(200, cache, file.body, {
+      'Content-Type': file.contentType,
+      ...(file.size !== null ? { 'Content-Length': String(file.size) } : {}),
       ...etag,
     });
   } catch (err) {
@@ -109,7 +101,7 @@ async function fromServer(path: string): Promise<Response> {
         : answer(502, 'no-store');
     }
     /* BlueMap's .gz files go out packed, as the store holds them: the viewer unpacks them itself */
-    return answer(200, FROM_SERVER, file.body, { 'Content-Type': contentType(path) });
+    return answer(200, FROM_SERVER, file.body, { 'Content-Type': contentTypeOf(path) });
   } catch (err) {
     console.warn(`[bluemap-data] exaroton: ${err instanceof Error ? err.message : err}`);
     return answer(502, 'no-store');

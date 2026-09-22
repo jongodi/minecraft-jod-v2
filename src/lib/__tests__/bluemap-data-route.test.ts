@@ -33,11 +33,12 @@ describe('/bluemap-data', () => {
     vi.mocked(get).mockResolvedValue({
       statusCode: 200,
       stream: new Response('{}').body!,
-      blob: { contentType: 'application/json', size: 2, etag: '"e"' },
+      headers: new Headers({ 'content-type': 'application/json', 'content-length': '2', etag: '"e"' }),
     } as unknown as Awaited<ReturnType<typeof get>>);
     const res = await ask(settings);
     expect(res.status).toBe(200);
     expect(res.headers.get('Cache-Control')).toContain('immutable');
+    expect(res.headers.get('Content-Type')).toBe('application/json');
     expect(fetchMock).not.toHaveBeenCalled();
   });
 

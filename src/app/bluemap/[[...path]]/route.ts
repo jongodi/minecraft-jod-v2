@@ -1,7 +1,7 @@
-import { get } from '@vercel/blob';
 import { readMap } from '@/lib/map';
 import { PLACES_SET, placesMarkerSet } from '@/lib/bluemap-markers';
-import { hasSnapshot, inSnapshot, snapshot } from '@/lib/bluemap-snapshot';
+import { hasSnapshot, inSnapshot } from '@/lib/bluemap-snapshot';
+import { readCopy } from '@/lib/bluemap-copy';
 import { discard, fetchFile, isMissing, isOnline, resolveServerId } from '@/lib/bluemap-server';
 
 /* The BlueMap viewer and its map data, read straight off the Minecraft server.
@@ -127,14 +127,9 @@ async function baseMarkers(path: string, live: { id: string; token: string } | n
     if (live) {
       const res = await fetchFile(live.id, live.token, path);
       text = res.ok ? await res.text() : (await discard(res), null);
-    } else if (inSnapshot(path) && snapshot.blob?.base) {
-      if (snapshot.blob.access === 'public') {
-        const res = await fetch(`${snapshot.blob.base}/bluemap-data/${path}`);
-        text = res.ok ? await res.text() : null;
-      } else if (process.env.BLOB_READ_WRITE_TOKEN) {
-        const res = await get(`bluemap-data/${path}`, { access: 'private' });
-        text = res?.stream ? await new Response(res.stream).text() : null;
-      }
+    } else if (inSnapshot(path)) {
+      const file = await readCopy(path);
+      text = file?.body ? await new Response(file.body).text() : null;
     }
     const data = text ? JSON.parse(text) : null;
     return data && typeof data === 'object' && !Array.isArray(data) ? data : {};

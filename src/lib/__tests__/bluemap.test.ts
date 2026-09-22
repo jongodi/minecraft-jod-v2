@@ -4,6 +4,7 @@ import { sanitizeMapConfig } from '@/lib/map';
 import { placesMarkerSet } from '@/lib/bluemap-markers';
 import { parseDataPath } from '@/lib/bluemap-snapshot';
 import { boundsOf, indexHtml, versionOf, viewerAssets } from '../../../scripts/bluemap-brand.mjs';
+import { blobsOf, manifestText, packBody, planPacks } from '../../../scripts/bluemap-pack.mjs';
 
 describe('parseWorldPoint', () => {
   it('reads what F3 and a copied /tp write', () => {
@@ -116,5 +117,55 @@ describe('the brand step', () => {
     expect(html.indexOf('index-B.css')).toBeLessThan(html.indexOf('/bluemap-jod/jod.css'));
     /* the page reads its round trip with viewerAssets again after a second brand */
     expect(viewerAssets(html)).toEqual(assets);
+  });
+});
+
+describe('packing the copy', () => {
+  const files = ['maps/world/a.json', 'maps/world/b.prbm.gz', 'maps/world/c.prbm.gz', 'maps/world/d.png'];
+  const bytes: Record<string, Buffer> = {
+    'maps/world/a.json': Buffer.from('{"x":1}'),
+    'maps/world/b.prbm.gz': Buffer.from([0x1f, 0x8b, 8, 0, 1, 2, 3, 4, 5, 6]),
+    'maps/world/c.prbm.gz': Buffer.alloc(0),
+    'maps/world/d.png': Buffer.from([0x89, 0x50, 0x4e, 0x47, 9, 9, 9]),
+  };
+  const sizeOf = (rel: string) => bytes[rel].length;
+
+  it('lays the files end to end, starting a new pack when the next would not fit', () => {
+    const plan = planPacks(files, sizeOf, 'vx', 17);
+    expect(plan.names).toEqual(['bluemap-data/packs/vx-0.pack', 'bluemap-data/packs/vx-1.pack']);
+    expect(plan.at).toEqual([[0, 0, 7], [0, 7, 10], [0, 17, 0], [1, 0, 7]]);
+    /* a file larger than a pack gets one of its own */
+    expect(planPacks(files, sizeOf, 'vx', 4).names).toHaveLength(3);
+  });
+
+  it('gives every file back byte for byte', () => {
+    for (const limit of [4, 17, 1 << 20]) {
+      const plan = planPacks(files, sizeOf, 'vx', limit);
+      const packs = plan.names.map((_: string, p: number) => packBody(files, plan, p, (rel: string) => bytes[rel]));
+      files.forEach((rel, i) => {
+        const [p, offset, length] = plan.at[i];
+        expect(packs[p].subarray(offset, offset + length).equals(bytes[rel])).toBe(true);
+      });
+    }
+  });
+
+  it('refuses a file that changed size after it was planned', () => {
+    const plan = planPacks(files, sizeOf, 'vx');
+    expect(() => packBody(files, plan, 0, (rel: string) => (rel.endsWith('d.png') ? Buffer.alloc(1) : bytes[rel]))).toThrow(/breyttist/);
+  });
+
+  it('knows which blobs a copy reads, packed or not', () => {
+    expect(blobsOf({ files, blob: { base: 'b', access: 'private' }, packs: { names: ['bluemap-data/packs/vx-0.pack'], at: [] } }))
+      .toEqual(['bluemap-data/packs/vx-0.pack']);
+    expect(blobsOf({ files, blob: { base: 'b', access: 'private' } })).toEqual(files.map((f) => `bluemap-data/${f}`));
+    expect(blobsOf({ files, blob: undefined })).toEqual([]);
+    expect(blobsOf(null)).toEqual([]);
+  });
+
+  it('writes each file\'s place on a line of its own and reads back the same', () => {
+    const manifest = { syncedAt: 'now', version: 'vx', files, packs: planPacks(files, sizeOf, 'vx') };
+    const text = manifestText(manifest);
+    expect(text).toContain('\n      [0, 7, 10],\n');
+    expect(JSON.parse(text)).toEqual(manifest);
   });
 });
