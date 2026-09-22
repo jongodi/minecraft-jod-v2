@@ -190,11 +190,16 @@ function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
   const hidden = !inView || shut || album || drawn || still;
   useEffect(() => { if (viewer) jod()?.pause(hidden); }, [viewer, hidden, jod]);
 
-  /* An old viewer without JOÐ's script never says it is drawn: show it anyway. */
+  /* The viewer says when its first view is drawn, which is usually well under
+     a second. Should it not have said so in four (a slow texture download, or
+     a viewer without JOÐ's script), it is shown anyway and fills in live. The
+     loading line only appears if the wait is long enough to notice. */
+  const [slow, setSlow] = useState(false);
   useEffect(() => {
     if (!live || ready) return;
-    const t = setTimeout(() => setReady(true), 15000);
-    return () => clearTimeout(t);
+    const show = setTimeout(() => setReady(true), 4000);
+    const note = setTimeout(() => setSlow(true), 700);
+    return () => { clearTimeout(show); clearTimeout(note); };
   }, [live, ready]);
 
   /* ─── the whole screen ─── */
@@ -327,7 +332,7 @@ function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
                 </button>
               )
             )}
-            {live && !ready && !still && (
+            {live && !ready && !still && slow && (
               <p className="b-boot__wait" role="status">
                 sæki kortið{tiles > 0 ? ` · ${tiles} ${tiles === 1 ? 'reitur' : 'reitir'}` : '…'}
               </p>
