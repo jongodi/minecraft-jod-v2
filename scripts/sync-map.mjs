@@ -20,8 +20,9 @@
 // /api/map-head) and source maps stay on the server. The last step brands the
 // viewer as JOÐ's map (scripts/bluemap-brand.mjs; npm run map:brand on its own).
 //
-// Reads EXAROTON_API_KEY (and EXAROTON_SERVER_ID, if set) and
-// BLOB_READ_WRITE_TOKEN from .env.local. Run it while the server is online:
+// Reads EXAROTON_API_KEY (and EXAROTON_SERVER_ID and BLUEMAP_WEBROOT, if set)
+// and BLOB_READ_WRITE_TOKEN from .env.local. BlueMap's web folder is found from
+// its own webapp.conf unless BLUEMAP_WEBROOT names it. Run it while the server is online:
 // exaroton hands out files very slowly once a server has stopped. exaroton also
 // limits how fast the API may be called, so requests are spaced out and slow
 // down further whenever it asks.
@@ -32,7 +33,7 @@ import { del, list, put } from '@vercel/blob';
 import { brand, OWN_FILES, versionOf } from './bluemap-brand.mjs';
 
 const ROOT     = process.cwd();
-const REMOTE   = 'bluemap/web';
+let REMOTE     = 'bluemap/web';   // BlueMap's web folder on the server; read from its webapp.conf in main()
 const SHELL    = join(ROOT, 'public', 'bluemap');
 const DATA     = join(ROOT, 'public', 'bluemap-data');
 const MANIFEST = join(ROOT, 'src', 'lib', 'bluemap-snapshot.json');
@@ -76,6 +77,19 @@ async function main() {
     console.warn('Mun fljótlegra er að afrita kortið meðan þjónninn er í gangi.\n');
   }
 
+  REMOTE = await findWebroot(id);
+  try {
+    await call(`${id}/files/info/${encode(REMOTE)}`);
+  } catch (err) {
+    if (err?.status !== 404) throw err;
+    fail(`Mappan ${REMOTE} er ekki á þjóninum. Opnaðu skráasafnið á exaroton.com og finndu möppuna sem BlueMap skrifar vefinn í `
+      + `(hún geymir index.html og maps; slóðin er \`webroot\` í plugins/BlueMap/webapp.conf). `
+      + `Settu hana svo í .env.local, til dæmis BLUEMAP_WEBROOT=bluemap/web. Sé engin slík mappa: ræstu þjóninn svo BlueMap skrifi vefinn, `
+      + `og athugaðu að \`enabled: true\` sé í webapp.conf.`);
+  }
+  if (REMOTE !== 'bluemap/web') {
+    console.log(`Vefur BlueMap er í ${REMOTE}. Settu BLUEMAP_WEBROOT=${REMOTE} líka í Vercel (Settings → Environment Variables), svo staða leikmanna finnist.\n`);
+  }
   console.log(`Les möppur í ${REMOTE} á þjóninum…`);
   const listed = await listedMaps(id);
   const found = (await walk(id)).filter(({ rel }) => {
@@ -258,6 +272,25 @@ function skip(rel) {
     || /^maps\/[^/]+\/assets\/playerheads\//.test(rel);   // served by /api/map-head
 }
 
+/* Where BlueMap writes its web app: BLUEMAP_WEBROOT in .env.local if it is set,
+   otherwise `webroot` in BlueMap's own webapp.conf (plugins/BlueMap on Paper and
+   Spigot, config/bluemap on Fabric and Forge), and bluemap/web if neither says. */
+async function findWebroot(id) {
+  const clean = (p) => p.trim().replace(/^\.?\/+/, '').replace(/\/+$/, '');
+  if (process.env.BLUEMAP_WEBROOT) return clean(process.env.BLUEMAP_WEBROOT);
+  for (const conf of ['plugins/BlueMap/webapp.conf', 'config/bluemap/webapp.conf']) {
+    let text;
+    try {
+      text = (await call(`${id}/files/data/${encode(conf)}`, true)).toString('utf8');
+    } catch {
+      continue;
+    }
+    const m = text.match(/^\s*webroot\s*[:=]\s*"?([^"\n#]+?)"?\s*$/m);
+    if (m) return clean(m[1]);
+  }
+  return 'bluemap/web';
+}
+
 /* The maps the viewer lists (settings.json on the server). A map folder that
    isn't listed, like one left from a map that was switched off, stays behind.
    If the list can't be read, every map is copied. */
@@ -332,7 +365,9 @@ async function call(path, raw = false) {
     await res.body?.cancel().catch(() => undefined);
     const retryable = res.status === 429 || res.status >= 500;
     if (!retryable || attempt >= 10) {
-      throw new Error(`exaroton svaraði ${res.status} fyrir ${decodeURIComponent(path)}`);
+      const err = new Error(`exaroton svaraði ${res.status} fyrir ${decodeURIComponent(path)}`);
+      err.status = res.status;
+      throw err;
     }
     if (res.status === 429) {
       pushedBack++;

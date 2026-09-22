@@ -113,6 +113,7 @@ Afritaðu `.env.local.example` sem `.env.local` og fylltu inn gildin.
 |---|---|
 | `EXAROTON_API_KEY` | Exaroton-aðgangslykill fyrir stöðu þjónsins, stjórnun og tölfræði leikmanna |
 | `EXAROTON_SERVER_ID` | Auðkenni þjónsins á exaroton.com; valfrjálst, sparar auka uppflettingu |
+| `BLUEMAP_WEBROOT` | Mappa vefs BlueMap á þjóninum ef hún er ekki `bluemap/web` (`webroot` í `webapp.conf`); valfrjálst, `map:sync` finnur hana sjálft og segir til ef þarf að setja hana í Vercel |
 | `ADMIN_TOKEN` | Lykilorð að stjórnborðinu á `/admin`, að minnsta kosti 8 stafir |
 | `GITHUB_TOKEN` | Hefðbundinn GitHub-aðgangslykill án aðgangssviða; hækkar fyrirspurnamörk við athugun gagnapakka, valfrjálst |
 | `CREW_TOKEN_<USERNAME>` | Aðgangslykill hvers félaga, t.d. `CREW_TOKEN_STEBBIAS=...`; varaleið, innskráningartenglar úr stjórnborðinu þurfa engan |
