@@ -1,10 +1,15 @@
 import path from 'node:path';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 /* Where the map copy is: written by `npm run map:sync`. */
 const snapshot = JSON.parse(readFileSync(new URL('./src/lib/bluemap-snapshot.json', import.meta.url), 'utf8'));
 const BLOB_DIR = 'bluemap-data';
+/* The viewer reads the map from /bluemap-data/<version>/maps (map:brand writes
+   the version into public/bluemap/settings.json). The store and the local copy
+   keep one copy under unversioned paths, so the version is dropped on the way. */
+const VERSIONED = `/${BLOB_DIR}/:v(v[0-9a-z]{1,16})/maps/:path*`;
+const LOCAL_COPY = existsSync(new URL('./public/bluemap-data/maps', import.meta.url));
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -24,13 +29,24 @@ const nextConfig = {
   },
 
   /* The map data lives in Vercel Blob, not in the deployment. A public store is
-     served through this rewrite; a private one through the /bluemap-data route.
-     After the files, so a local copy under public/bluemap-data still wins in
-     development. */
+     served through these rewrites; a private one through the /bluemap-data
+     route, which drops the version itself. A local copy under
+     public/bluemap-data (development) is served as static files first. Player
+     heads are never in the copy: they go to /api/map-head. */
   async rewrites() {
+    const heads = [
+      { source: `/${BLOB_DIR}/:v(v[0-9a-z]{1,16})/maps/:map/assets/playerheads/:file`, destination: '/api/map-head/:file' },
+      { source: `/${BLOB_DIR}/maps/:map/assets/playerheads/:file`, destination: '/api/map-head/:file' },
+    ];
+    const local = LOCAL_COPY ? [{ source: VERSIONED, destination: `/${BLOB_DIR}/maps/:path*` }] : [];
     const blob = snapshot.blob;
-    if (!blob?.base || blob.access !== 'public') return [];
-    return { afterFiles: [{ source: `/${BLOB_DIR}/:path*`, destination: `${blob.base}/${BLOB_DIR}/:path*` }] };
+    const store = blob?.base && blob.access === 'public'
+      ? [
+          { source: VERSIONED, destination: `${blob.base}/${BLOB_DIR}/maps/:path*` },
+          { source: `/${BLOB_DIR}/:path*`, destination: `${blob.base}/${BLOB_DIR}/:path*` },
+        ]
+      : [];
+    return { beforeFiles: [...heads, ...local], afterFiles: store, fallback: [] };
   },
 
   images: {
@@ -87,7 +103,19 @@ const nextConfig = {
       "frame-ancestors 'self'",
     ].join('; ');
 
+    /* A versioned map address never changes, so a public store's answers may be
+       kept by the CDN for good; a private store's route says so itself. */
+    const store = snapshot.blob?.base && snapshot.blob.access === 'public'
+      ? [{ source: VERSIONED, headers: [{ key: 'CDN-Cache-Control', value: 'public, max-age=31536000, immutable' }] }]
+      : [];
+
     return [
+      ...store,
+      {
+        // the viewer's own files carry a content hash in their names
+        source: '/bluemap/assets/:path*',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+      },
       {
         source: '/(.*)',
         headers: [

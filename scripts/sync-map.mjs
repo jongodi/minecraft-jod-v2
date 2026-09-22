@@ -15,6 +15,11 @@
 // positions are left out on purpose: while the server runs they come straight
 // from it.
 //
+// Only what the viewer reads is copied: BlueMap's render bookkeeping
+// (maps/*/rstate), maps the viewer doesn't list, player heads (they come from
+// /api/map-head) and source maps stay on the server. The last step brands the
+// viewer as JOÐ's map (scripts/bluemap-brand.mjs; npm run map:brand on its own).
+//
 // Reads EXAROTON_API_KEY (and EXAROTON_SERVER_ID, if set) and
 // BLOB_READ_WRITE_TOKEN from .env.local. Run it while the server is online:
 // exaroton hands out files very slowly once a server has stopped. exaroton also
@@ -24,6 +29,7 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, sep } from 'node:path';
 import { del, list, put } from '@vercel/blob';
+import { brand, OWN_FILES, versionOf } from './bluemap-brand.mjs';
 
 const ROOT     = process.cwd();
 const REMOTE   = 'bluemap/web';
@@ -71,7 +77,11 @@ async function main() {
   }
 
   console.log(`Les möppur í ${REMOTE} á þjóninum…`);
-  const found = await walk(id);
+  const listed = await listedMaps(id);
+  const found = (await walk(id)).filter(({ rel }) => {
+    const map = rel.match(/^maps\/([^/]+)\//)?.[1];
+    return !map || !listed || listed.has(map);
+  });
   if (!found.some((f) => f.rel === 'index.html') || !found.some((f) => f.rel.startsWith('maps/'))) {
     fail(`Fann hvorki index.html né kortagögn í ${REMOTE}. Er BlueMap uppsett og búið að teikna kortið?`);
   }
@@ -106,7 +116,7 @@ async function main() {
   process.stdout.write('\n');
 
   /* only now that every file is in place: drop whatever the server no longer has */
-  const keep = new Set(found.map((f) => target(f.rel)));
+  const keep = new Set([...found.map((f) => target(f.rel)), ...OWN_FILES.map((rel) => join(SHELL, ...rel.split('/')))]);
   const removed = prune(SHELL, keep) + prune(DATA, keep);
 
   console.log(`\nKortið afritað. Sóttar skrár: ${fetched}, óbreyttar: ${unchanged}, fjarlægðar: ${removed}.`);
@@ -128,7 +138,7 @@ async function main() {
 /* --push: the local copy as it stands goes to the store, exaroton is not asked. */
 async function push() {
   if (!existsSync(DATA)) fail(`Engin afrit í ${relative(ROOT, DATA)}. Keyrðu map:sync án --push til að sækja kortið fyrst.`);
-  const files = walkLocal(DATA).sort();
+  const files = walkLocal(DATA).filter((rel) => !skip(rel)).sort();
   if (!files.length) fail(`Engar skrár í ${relative(ROOT, DATA)}.`);
   const blob = await upload(files, files, readManifest().blob);
   writeManifest(files, blob);
@@ -150,7 +160,9 @@ function readManifest() {
 }
 
 function writeManifest(files, blob) {
-  writeFileSync(MANIFEST, JSON.stringify({ syncedAt: new Date().toISOString(), files, blob }, null, 2) + '\n');
+  const syncedAt = new Date().toISOString();
+  writeFileSync(MANIFEST, JSON.stringify({ syncedAt, version: versionOf(syncedAt), files, blob }, null, 2) + '\n');
+  brand(ROOT);
   console.log(`\nTil að birta það: git add public/bluemap src/lib/bluemap-snapshot.json, commit og push.`);
 }
 
@@ -240,7 +252,23 @@ function skip(rel) {
   const name = rel.slice(rel.lastIndexOf('/') + 1);
   return name.startsWith('.')
     || name.endsWith('.php')                               // BlueMap's sql.php holds database settings
-    || /^maps\/[^/]+\/live\/players\.json$/.test(rel);     // live, served from the server while it runs
+    || name.endsWith('.map')                               // source maps: only a debugger reads them
+    || /^maps\/[^/]+\/live\/players\.json$/.test(rel)      // live, served from the server while it runs
+    || /^maps\/[^/]+\/rstate\//.test(rel)                  // BlueMap's record of what it rendered; the viewer never reads it
+    || /^maps\/[^/]+\/assets\/playerheads\//.test(rel);   // served by /api/map-head
+}
+
+/* The maps the viewer lists (settings.json on the server). A map folder that
+   isn't listed, like one left from a map that was switched off, stays behind.
+   If the list can't be read, every map is copied. */
+async function listedMaps(id) {
+  try {
+    const body = await call(`${id}/files/data/${encode(`${REMOTE}/settings.json`)}`, true);
+    const maps = JSON.parse(body.toString('utf8')).maps;
+    return Array.isArray(maps) && maps.length ? new Set(maps) : null;
+  } catch {
+    return null;
+  }
 }
 
 /* the viewer lives at /bluemap, the map data at /bluemap-data/maps */

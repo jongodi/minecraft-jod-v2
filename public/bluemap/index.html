@@ -1,30 +1,42 @@
 <!DOCTYPE html>
-<html lang="en">
+<!-- Written by scripts/bluemap-brand.mjs (npm run map:brand). map:sync overwrites BlueMap's own copy of this file and brands it again. -->
+<html lang="is">
     <head>
         <meta charset="utf-8">
-        <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1">
-        <meta name="description"
-              content="BlueMap is a tool that generates 3D maps of your Minecraft worlds and displays them in your browser">
+        <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+        <title>Heimurinn · JOÐ</title>
+        <meta name="description" content="Heimasvæðið á JOÐ í þrívídd: dragðu, snúðu og stækkaðu. play.jodcraft.world">
         <meta name="version" content="5.27">
-        <meta name="keywords" content="bluemap, map, minecraft, minecraft map">
-        <meta name="theme-color" content="#006EDE">
-        <meta name="og:site_name" content="BlueMap">
-        <meta name="og:title" content="BlueMap">
-        <meta name="og:description"
-              content="BlueMap is a tool that generates 3D maps of your Minecraft worlds and displays them in your browser">
-        <meta name="og:type" content="website">
-        <meta name="og:image" content="https://avatars.githubusercontent.com/u/42522657?s=200&v=4">
+        <meta name="theme-color" content="#15100D">
         <meta name="robots" content="index,nofollow">
-        <link rel="icon" href="./assets/favicon-DEN7TZ5X.png">
-        <link rel="manifest" href="./assets/manifest-vz4Wm4Dd.webmanifest">
-        <title>BlueMap</title>
-      <script type="module" crossorigin src="./assets/index-DJzYl7wx.js"></script>
-      <link rel="stylesheet" crossorigin href="./assets/index-C6zAnFcX.css">
+        <meta property="og:site_name" content="JOÐ">
+        <meta property="og:title" content="Heimurinn · JOÐ">
+        <meta property="og:description" content="Heimasvæðið á JOÐ í þrívídd: dragðu, snúðu og stækkaðu. play.jodcraft.world">
+        <meta property="og:type" content="website">
+        <meta property="og:locale" content="is_IS">
+        <meta property="og:image" content="https://play.jodcraft.world/map-poster.webp">
+        <meta property="og:image:width" content="1920">
+        <meta property="og:image:height" content="1080">
+        <meta name="twitter:card" content="summary_large_image">
+        <link rel="icon" href="/icon.svg" type="image/svg+xml">
+        <link rel="icon" href="/icon-32.png" sizes="32x32" type="image/png">
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+        <link rel="manifest" href="/manifest.webmanifest">
+        <link rel="preload" href="/bluemap-data/vtlldtz/maps/world/settings.json" as="fetch" crossorigin>
+        <link rel="preload" href="/bluemap-data/vtlldtz/maps/world/textures.json.gz" as="fetch" crossorigin>
+        <link rel="preload" href="/bluemap-jod/fonts/silkscreen-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+        <script>
+            window.JOD_MAP = {"map":"world","version":"vtlldtz","syncedAt":"2026-09-19T03:32:23.704Z","bounds":{"minX":-7454,"maxX":-6398,"minZ":-9438,"maxZ":-8382,"shape":"box"},"start":"world:-6890:57:-8919:65:2.03:1.08:0:0:perspective"};
+            if (window.top !== window) document.documentElement.classList.add('jod-embed');
+        </script>
+        <script type="module" crossorigin src="./assets/index-DJzYl7wx.js"></script>
+        <link rel="stylesheet" crossorigin href="./assets/index-C6zAnFcX.css">
+        <link rel="stylesheet" href="/bluemap-jod/jod.css">
+        <script defer src="/bluemap-jod/jod.js"></script>
     </head>
     <body>
         <noscript>
-            <strong>Sorry but BlueMap doesn't work without JavaScript enabled.
-                Please <a href="https://www.enable-javascript.com/">enable</a> it to continue.</strong>
+            <p class="jod-noscript">Þrívíddarkortið þarf JavaScript. <a href="/">Aftur á JOÐ</a></p>
         </noscript>
         <div id="map-container"></div>
         <div id="app"></div>

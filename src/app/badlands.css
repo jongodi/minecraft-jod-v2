@@ -413,7 +413,20 @@
 .b-frame.is-ready .b-frame__shade { background: linear-gradient(180deg, rgba(21, 16, 13, 0.55) 0%, transparent 18%, transparent 100%); }
 .b-frame__sheet { position: absolute; inset: 0; z-index: 2; background: var(--map-water); }
 .b-frame.is-drawn .b-frame__poster, .b-frame.is-drawn .b-frame__shade, .b-frame.is-drawn .b-frame__view { visibility: hidden; }
+/* While the viewer loads, the still takes on the live map's light, so the
+   hand-over, once the first tiles are drawn, is a single fade. */
+.b-frame.is-live .b-frame__poster { filter: none; }
 @media (prefers-reduced-motion: reduce) { .b-frame__poster, .b-frame__view { transition: none; } }
+/* The whole screen is the frame itself, HUD, places and all, so nothing reloads:
+   the browser's own full screen, or fixed over the page where there is none
+   (an iPhone). The album still opens over it; the bars stay under it. */
+.b-frame:fullscreen { height: 100%; min-height: 0; border-block-width: 0; }
+.b-frame.is-full { position: fixed; inset: 0; z-index: var(--z-drawer); height: 100vh; height: 100dvh; min-height: 0; border-block-width: 0; overscroll-behavior: contain; }
+.b-frame.is-full .b-hud { padding-top: max(var(--sp-4), env(safe-area-inset-top, 0px)); }
+.b-frame.is-full .b-places { padding-bottom: max(var(--sp-3), env(safe-area-inset-bottom, 0px)); }
+html.is-map-full { overflow: hidden; }
+/* a phone's map back in the page: a picture until the lantern opens it again */
+.b-frame.is-still .b-frame__view { pointer-events: none; }
 
 /* the sheet: the painted map, drag to pan, pinch or buttons to zoom */
 .b-sheet { position: absolute; inset: 0; overflow: clip; cursor: grab; touch-action: none; }
@@ -492,6 +505,8 @@
 .b-card__sub { font-size: var(--fs-sm); color: var(--ink-soft); line-height: 1.35; }
 .b-card__x { flex-shrink: 0; width: var(--tap); height: var(--tap); margin: calc(var(--sp-2) * -1) calc(var(--sp-2) * -1) 0 0; color: var(--ink-faint); }
 .b-card__x:hover { color: var(--ink); }
+.b-card__fly { width: 100%; margin-top: var(--sp-3); }
+.b-card__fly .b-lantern { width: 0.75rem; height: 1.125rem; }
 
 /* the places: a rail of chips along the foot of the frame */
 .b-places { position: absolute; inset-inline: 0; bottom: 0; z-index: 3; display: grid; gap: var(--sp-2); padding: var(--sp-6) var(--gutter) var(--sp-4); pointer-events: none; }

@@ -15,7 +15,7 @@ Letur: Alfa Slab One fyrir fyrirsagnir, Pixelify Sans fyrir meginmál og Silkscr
 | Hluti | Innihald |
 |---|---|
 | Sólsetur | Merkið, vistfangið sem er afritað með einum smelli, og lukt með stöðu þjónsins, útgáfu og hausum þeirra sem eru inni. Himinninn dökknar og stjörnurnar koma með skruni. |
-| Heimurinn | Þrívíddarkortið af heimasvæðinu fyllir skjáinn undir mesunum. Það opnast sem kyrrmynd; skoðarinn sjálfur (BlueMap) hleðst ekki fyrr en ýtt er á luktina, og á síma opnast hann á heilum skjá. Staðirnir liggja í röð neðst með myndunum sínum; veldu stað og póstkortið hans birtist. *Teiknað kort* leggur málaða kortið yfir sama ramma, *Myndir* opnar allan vegginn, *Heill skjár* opnar skoðarann einan. |
+| Heimurinn | Þrívíddarkortið af heimasvæðinu fyllir skjáinn undir mesunum. Það opnast sem kyrrmynd; skoðarinn sjálfur (BlueMap, í fötum JOÐ) hleðst ekki fyrr en ýtt er á luktina, og kyrrmyndin víkur ekki fyrr en fyrstu reitirnir eru teiknaðir. Á síma verður ramminn að heilum skjá og bakhnappurinn skilar gestinum aftur á síðuna. Staðirnir liggja í röð neðst með myndunum sínum; veldu stað og póstkortið hans birtist, og hafi staðurinn hnit í heiminum flýgur myndavélin þangað og luktin hans logar í þrívíddinni. *Nótt* lætur sólina setjast svo ljósin í bænum lýsa, *Teiknað kort* leggur málaða kortið yfir sama ramma, *Myndir* opnar allan vegginn og *Heill skjár* gerir rammann sjálfan að heilum skjá. |
 | Eftirlýst | Herbergi hópsins, sem opnast yfir heiminum (önnur dyrnar í valmyndinni, staðaluktin eða `/#hopur`): myndir af átta félögum í einni röð, lukt logar á bak við þau sem eru inni. Þar undir eftirlýsingaspjöldin á einni rennibraut, eitt fyrir hvern tölfræðiflokk með þremur efstu: viðurnefni þrjótsins efst (Innipúkinn, Slátrarinn, Draugurinn, Ódauðlegi, Vökustaurinn, Flakkarinn, Boxpúðinn, Ræningjabaninn, Plötusnúðurinn), sökin þar undir, sá fyrsti stór og annar og þriðji í tveimur línum undir strikinu. Öll tölfræðin er á síðu hvers og eins. |
 | Á hillunni | Hitt herbergið (þriðju dyrnar eða `/#hillan`). Hver uppsettur gagnapakki er lítill kassi með sinni pixlateikningu; sá sem þú bendir á fær miðann sinn lesinn upp á búðarborðinu fyrir neðan. |
 | Varðeldurinn | Ein landræma neðst: varðeldur á jörðinni með ljósinu sínu og glæðum, og fjöllin úr sólsetrinu aftur sem dökk útlína. Hópurinn, stjórnborðið, umhverfishljóðið og leiðin aftur upp í sólsetrið. Smelltu á eldinn: þar býr einvígið, viðbragðsleikur í þremur umferðum. |
@@ -40,7 +40,7 @@ Hver félagi á vegg á `/crew/<name>`. Á honum hangir hvað sem er: miði, myn
 
 ## Verkfæri
 
-- **Stjórnborð** (`/admin`): Fjórir flipar. **Þjónn**: staða, leikmenn inni, ræsa, stöðva og endurræsa á Exaroton, uppfærist sjálfkrafa. **Gagnapakkar**: allt um pakkana á einum stað; hvaða pakkar birtast í kaupfélaginu á vefnum (sýna eða fela), röðin á hillunum, uppsett útgáfa, athugun á nýrri útgáfu á Modrinth eða GitHub, lestur skráarheita beint af þjóninum, og eigin pakkar (til dæmis JOÐ-pakkarnir) sem má bæta við, breyta, gefa mynd og eyða. **Myndasafn**: upphleðsla, titlar, röð, sýna eða fela, og tenging við stað á kortinu. **Hópurinn**: félagarnir, hvort þeir hafi valið sér lykilorð (og hnappur til að hreinsa það), hvað hangir á hverjum vegg, opnir innskráningartenglar með notkun og lokun, og nýr tengill með QR-kóða fyrir hvern og einn. **Landakort**: ritill sem sýnir kortið nákvæmlega eins og gestir sjá það. Landslagið sjálft er málað þar: pensill og fylling mála sjó, land, gras, skóg, kletta og sand í kubbaristina, strönd teiknast sjálfkrafa þar sem land mætir sjó, og Shift heldur strokunni beinni. Að auki: afturköllun, rist, örvatakkar, afritun staða og myndaval. Heiti staða, svæða og mynda eru vistuð nákvæmlega eins og þau eru skrifuð.
+- **Stjórnborð** (`/admin`): Fjórir flipar. **Þjónn**: staða, leikmenn inni, ræsa, stöðva og endurræsa á Exaroton, uppfærist sjálfkrafa. **Gagnapakkar**: allt um pakkana á einum stað; hvaða pakkar birtast í kaupfélaginu á vefnum (sýna eða fela), röðin á hillunum, uppsett útgáfa, athugun á nýrri útgáfu á Modrinth eða GitHub, lestur skráarheita beint af þjóninum, og eigin pakkar (til dæmis JOÐ-pakkarnir) sem má bæta við, breyta, gefa mynd og eyða. **Myndasafn**: upphleðsla, titlar, röð, sýna eða fela, og tenging við stað á kortinu. **Hópurinn**: félagarnir, hvort þeir hafi valið sér lykilorð (og hnappur til að hreinsa það), hvað hangir á hverjum vegg, opnir innskráningartenglar með notkun og lokun, og nýr tengill með QR-kóða fyrir hvern og einn. **Landakort**: ritill sem sýnir kortið nákvæmlega eins og gestir sjá það. Landslagið sjálft er málað þar: pensill og fylling mála sjó, land, gras, skóg, kletta og sand í kubbaristina, strönd teiknast sjálfkrafa þar sem land mætir sjó, og Shift heldur strokunni beinni. Hver staður getur fengið hnit í heiminum (eins og F3 sýnir þau) og stendur þá sem lukt í þrívíddarkortinu. Að auki: afturköllun, rist, örvatakkar, afritun staða og myndaval. Heiti staða, svæða og mynda eru vistuð nákvæmlega eins og þau eru skrifuð.
 
 ## Heimskortið
 
@@ -52,9 +52,10 @@ Kortið sjálft er teiknað upp úr afriti, svo það hleðst hratt hvort sem þ
 npm run map:sync            # sækir það sem hefur breyst og sendir það í geymsluna
 npm run map:sync -- --full  # sækir allt upp á nýtt
 npm run map:sync -- --push  # sendir afritið á tölvunni í geymsluna án þess að tala við Exaroton
+npm run map:brand           # merkir skoðarann JOÐ aftur, án þess að sækja neitt
 ```
 
-Skoðarinn (nokkur MB) fer í `public/bluemap` og fylgir vefnum. Kortagögnin (hundruð MB) fara í `public/bluemap-data`, sem er afrit fyrir þróun og ekki í git, og þaðan í Vercel Blob undir `bluemap-data/`; vefurinn sækir þau þangað um `/bluemap-data`. Skráalisti og slóð geymslunnar eru skrifuð í `src/lib/bluemap-snapshot.json`, sem er í git. Skipunin þarf `BLOB_READ_WRITE_TOKEN` í `.env.local` (sami lykill og fyrir myndirnar, úr Storage á Vercel). Síðan sýnir dagsetningu afritsins. Nýtt afrit birtist á vefnum þegar breytingunum á `public/bluemap` og `src/lib/bluemap-snapshot.json` hefur verið ýtt á GitHub. Best er að keyra skipunina meðan þjónninn er í gangi.
+Skoðarinn (um 1,5 MB) fer í `public/bluemap` og fylgir vefnum. Kortagögnin (hundruð MB) fara í `public/bluemap-data`, sem er afrit fyrir þróun og ekki í git, og þaðan í Vercel Blob undir `bluemap-data/`; vefurinn sækir þau þangað um `/bluemap-data`. Skráalisti og slóð geymslunnar eru skrifuð í `src/lib/bluemap-snapshot.json`, sem er í git. Skipunin þarf `BLOB_READ_WRITE_TOKEN` í `.env.local` (sami lykill og fyrir myndirnar, úr Storage á Vercel). Síðan sýnir dagsetningu afritsins. Nýtt afrit birtist á vefnum þegar breytingunum á `public/bluemap` og `src/lib/bluemap-snapshot.json` hefur verið ýtt á GitHub. Best er að keyra skipunina meðan þjónninn er í gangi.
 
 Kyrrmyndin sem heimurinn opnast sem er `public/map-poster.webp`. Hún er tekin af afritinu með `npm run dev` í gangi:
 
@@ -67,6 +68,36 @@ Skipunin notar Chrome eða Edge sem er þegar á tölvunni (eða vafrann í `CHR
 Upphafssjónarhornið er `MAP_START_VIEW` í `src/components/badlands/data.ts`; það er allt sem stendur á eftir `#` í vistfangi skoðarans þegar búið er að stilla myndina. Keyrðu `map:poster` aftur eftir hverja samstillingu sem breytir heimasvæðinu.
 
 Í `plugins/BlueMap/webapp.conf` á þjóninum þarf að vera `client-decompression: true`, `map-data-root: "/bluemap-data/maps"` og `live-data-root: "maps"`. Fyrsta stillingin lætur skoðarann afpakka þjöppuðu skrárnar sjálfur, hinar tvær láta hann sækja kortið í afritið en stöðu leikmanna til þjónsins. Breytingar á `webapp.conf` birtast á vefnum eftir næstu afritun.
+
+### Skoðarinn í fötum JOÐ
+
+Afritunin skrifar skrár BlueMap yfir `public/bluemap` í hvert sinn, svo síðasta skref hennar merkir skoðarann JOÐ aftur (`scripts/bluemap-brand.mjs`). Það má líka keyra eitt og sér, til dæmis eftir breytingu á `MAP_START_VIEW`:
+
+```bash
+npm run map:brand
+```
+
+Það skrifar íslenska forsíðu skoðarans (heiti, tákn, tenglaspjald og app-lýsing JOÐ), stillir `settings.json` (útgáfa kortsins, upphafssjónarhornið og sjónlengd sem hæfir teiknaða svæðinu) og gerir íslensku að sjálfgefnu máli. Það sem er okkar liggur þar sem afritunin snertir það ekki:
+
+| Skrá | Hvað |
+|---|---|
+| `public/bluemap-jod/jod.css` | Útlitið: litir, pixlaletrið, viður, pappír og luktir staðanna |
+| `public/bluemap-jod/jod.js` | Plankinn með leiðinni heim, myndavélin haldin yfir teiknaða heiminum, skerpa miðuð við tvo skjápunkta, og samtalið við forsíðuna (framvinda, hlé, nótt, flug á stað) |
+| `public/bluemap/lang/is.conf` | Allur texti skoðarans á íslensku |
+
+Afritunin tekur aðeins það sem skoðarinn les. Skrár BlueMap um hvað hefur verið teiknað (`maps/*/rstate`), kort sem skoðarinn sýnir ekki, hausar leikmanna og kóðakort verða eftir á þjóninum. Hausar leikmanna í kortinu koma um `/api/map-head`.
+
+Hvert afrit fær útgáfu (`version` í `src/lib/bluemap-snapshot.json`) og skoðarinn les kortið af `/bluemap-data/<útgáfa>/maps`. Slóð sem nefnir núverandi útgáfu breytist aldrei, svo vafrinn og CDN geyma hvern reit í ár: gestur sem kemur aftur les kortið af eigin diski, og nýtt afrit fær nýjar slóðir um leið og það er komið á vefinn. Staða leikmanna er deild milli gesta í tvær sekúndur og merkin í tíu, svo mörg opin kort kosta eitt kall til Exaroton.
+
+Staður sem fær hnit í kortaritlinum (*Í heiminum (X Y Z)*, eins og F3 sýnir þau) stendur sem lukt í þrívíddarkortinu. Luktunum er bætt við merki BlueMap í `src/app/bluemap/[[...path]]/route.ts`, svo þær birtast líka í merkjalista skoðarans og standa hvort sem þjónninn er í gangi eða ekki.
+
+**Valfrjálst á þjóninum**, í `plugins/BlueMap/maps/world.conf` (síðan `/bluemap reload` og nýtt afrit):
+
+- `render-mask` með hring (`type: "circle"`) í stað kassa: um fimmtungi færri reitir, og heimurinn verður eyja í stað skorins fernings.
+- `void-color` og `sky-color`: liturinn undir sjóndeildarhringnum og himinninn. Sé `void-color` látinn vera svartur mýkir `jod.js` hann í himininn.
+- `ambient-light` um 0,1–0,2: nóttin verður ekki kolsvört.
+- `remove-caves-below-y`: hærra gildi sleppir fleiri lokuðum hellum og minnkar reitina.
+- Kort sem vefurinn sýnir ekki (nether, end) má taka úr sambandi svo þjónninn teikni þau ekki.
 
 ## Tungumál
 

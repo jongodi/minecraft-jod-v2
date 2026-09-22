@@ -1,5 +1,8 @@
+import { get } from '@vercel/blob';
 import { getExarotonServerId } from '@/lib/exaroton';
-import snapshotFile from '@/lib/bluemap-snapshot.json';
+import { readMap } from '@/lib/map';
+import { PLACES_SET, placesMarkerSet } from '@/lib/bluemap-markers';
+import { hasSnapshot, inSnapshot, snapshot } from '@/lib/bluemap-snapshot';
 
 /* The BlueMap viewer and its map data, read straight off the Minecraft server.
    BlueMap renders into bluemap/web on the exaroton server, and this route serves
@@ -13,7 +16,13 @@ import snapshotFile from '@/lib/bluemap-snapshot.json';
    BlueMap's webapp.conf, the viewer loads the map from the store and only live
    data (players, markers) comes through here. Anything else that still arrives
    is served live while the server runs and from the copy once it stops, since
-   exaroton hands out files far too slowly then to draw a map. */
+   exaroton hands out files far too slowly then to draw a map.
+
+   Live data is shared: the viewer asks for players.json every second and
+   markers.json every ten, so the CDN keeps each answer for a moment and every
+   open map in a region costs one call to exaroton, not one each. The places
+   that have world coordinates are added to markers.json here, so they stand
+   in the 3D map whether the server runs or not. */
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -29,11 +38,13 @@ const SEGMENT = /^[A-Za-z0-9_-][A-Za-z0-9_.-]*$/;
 const MAX_DEPTH = 16;
 
 const SNAPSHOT_ROOT = '/bluemap-data';
-const snapshot = snapshotFile as { syncedAt: string | null; files: string[]; blob?: { base: string; access: string } };
-const inSnapshot = new Set(snapshot.files);
 
 const LIVE     = /^maps\/[^/]+\/live\//;
 const PLAYERS  = /^maps\/[^/]+\/live\/players\.json$/;
+const MARKERS  = /^maps\/[^/]+\/live\/markers\.json$/;
+/* BlueMap's live event stream; exaroton's file API can't carry one, and the
+   viewer falls back to polling the moment it is refused */
+const EVENTS   = /^maps\/[^/]+\/live\/sse$/;
 const TILES    = /^maps\/[^/]+\/tiles\//;
 const TEXTURES = /^maps\/[^/]+\/textures\.json(\.gz)?$/;
 /* BlueMap stores these gzipped, so ask exaroton for the .gz straight away
@@ -69,8 +80,14 @@ function contentType(path: string): string {
    assets never do, and tiles sit in between: re-rendered now and then, so a
    slightly old copy is fine while a fresh one is fetched in the background.
    Missing tiles are cached briefly so the render can fill them in. */
+const LIVE_PLAYERS = 'public, max-age=0, s-maxage=2, stale-while-revalidate=2';
+const LIVE_OTHER   = 'public, max-age=0, s-maxage=10, stale-while-revalidate=30';
+/* the server is stopped: nothing moves until it starts, and starting takes longer than this */
+const STOPPED      = 'public, max-age=0, s-maxage=30, stale-while-revalidate=60';
+
 function cacheControl(path: string, found: boolean): string {
-  if (LIVE.test(path)) return 'no-store';
+  if (PLAYERS.test(path)) return LIVE_PLAYERS;
+  if (LIVE.test(path)) return LIVE_OTHER;
   if (TEXTURES.test(path) && found) {
     /* only changes when BlueMap or its resource packs change */
     return 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800';
@@ -119,18 +136,49 @@ function toSnapshot(path: string, cache: string): Response {
   return new Response(null, { status: 307, headers: { Location: location, 'Cache-Control': cache } });
 }
 
-function json(body: string): Response {
+function json(body: string, cache = 'no-store'): Response {
   return new Response(body, {
-    headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' },
+    headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': cache },
   });
 }
 
 /* The server is stopped: nobody is online, and the map is whatever was synced last. */
 function fromSnapshot(path: string): Response {
-  if (PLAYERS.test(path)) return json('{"players":[]}');
-  if (inSnapshot.has(path)) return toSnapshot(path, 'public, max-age=60, s-maxage=60');
-  if (LIVE.test(path)) return json('{}');
+  if (PLAYERS.test(path)) return json('{"players":[]}', STOPPED);
+  if (inSnapshot(path)) return toSnapshot(path, 'public, max-age=60, s-maxage=60');
+  if (LIVE.test(path)) return json('{}', STOPPED);
   return empty(TILES.test(path) ? 204 : 404, 'public, max-age=60, s-maxage=60');
+}
+
+/* The marker sets BlueMap wrote, from the server while it runs and from the
+   copy while it is stopped; an empty set of sets if neither answers. */
+async function baseMarkers(path: string, live: { id: string; token: string } | null): Promise<Record<string, unknown>> {
+  try {
+    let text: string | null = null;
+    if (live) {
+      const res = await fetchFile(live.id, live.token, path);
+      text = res.ok ? await res.text() : (await discard(res), null);
+    } else if (inSnapshot(path) && snapshot.blob?.base) {
+      if (snapshot.blob.access === 'public') {
+        const res = await fetch(`${snapshot.blob.base}/bluemap-data/${path}`);
+        text = res.ok ? await res.text() : null;
+      } else if (process.env.BLOB_READ_WRITE_TOKEN) {
+        const res = await get(`bluemap-data/${path}`, { access: 'private' });
+        text = res?.stream ? await new Response(res.stream).text() : null;
+      }
+    }
+    const data = text ? JSON.parse(text) : null;
+    return data && typeof data === 'object' && !Array.isArray(data) ? data : {};
+  } catch {
+    return {};
+  }
+}
+
+async function markers(path: string, live: { id: string; token: string } | null): Promise<Response> {
+  const [base, config] = await Promise.all([baseMarkers(path, live), readMap().catch(() => null)]);
+  const sets: Record<string, unknown> = { ...base };
+  if (config) sets[PLACES_SET] = placesMarkerSet(config.locations);
+  return json(JSON.stringify(sets), live ? LIVE_OTHER : STOPPED);
 }
 
 function fetchFile(id: string, token: string, path: string): Promise<Response> {
@@ -183,22 +231,32 @@ async function serve(req: Request, segments: string[]): Promise<Response> {
     return empty(400, 'no-store');
   }
 
+  const path = segments.join('/');
+  if (EVENTS.test(path)) return empty(404, 'public, max-age=3600, s-maxage=86400');
+
   const token = process.env.EXAROTON_API_KEY;
-  if (!token) return notice(503, 'Kortið er ekki tengt við þjóninn (EXAROTON_API_KEY vantar).');
+  if (!token) {
+    /* the places stand in the map even when it isn't connected to the server */
+    if (MARKERS.test(path)) return markers(path, null);
+    return notice(503, 'Kortið er ekki tengt við þjóninn (EXAROTON_API_KEY vantar).');
+  }
 
   let id: string;
   try {
     id = await resolveServerId(token);
   } catch {
+    if (MARKERS.test(path)) return markers(path, null);
     return notice(502, 'Náði ekki sambandi við Exaroton.');
   }
 
-  const path = segments.join('/');
+  if (MARKERS.test(path)) {
+    return markers(path, (await isOnline(id, token)) ? { id, token } : null);
+  }
 
-  if (path.startsWith('maps/') && snapshot.files.length > 0) {
+  if (path.startsWith('maps/') && hasSnapshot) {
     /* the texture atlas rarely changes and takes long to come off exaroton,
        so the synced copy wins even while the server is running */
-    if (TEXTURES.test(path) && inSnapshot.has(path)) {
+    if (TEXTURES.test(path) && inSnapshot(path)) {
       return toSnapshot(path, 'public, max-age=3600, s-maxage=3600');
     }
     if (!(await isOnline(id, token))) return fromSnapshot(path);
