@@ -29,7 +29,9 @@ export const dynamic = 'force-dynamic';
 /* the texture atlas can take half a minute to come off exaroton the first time */
 export const maxDuration = 60;
 
-const WEBROOT = 'bluemap/web';
+/* BlueMap's web folder on the server: `webroot` in its webapp.conf. map:sync
+   finds it on its own and says when it isn't the default. */
+const WEBROOT = (process.env.BLUEMAP_WEBROOT || 'bluemap/web').trim().replace(/^\.?\/+/, '').replace(/\/+$/, '');
 const SERVERS_API = 'https://api.exaroton.com/v1/servers';
 
 /* Plain file and folder names only. Nothing starting with a dot gets through,
