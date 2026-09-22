@@ -76,12 +76,14 @@ async function measure(id, dir) {
   return node;
 }
 
-/* The largest folders, and inside the largest few, what makes them large. */
+/* The largest folders, and inside each one that holds a good share of its
+   parent, what makes it large, down to the dimension and region level. */
 function report(node, depth) {
   for (const kid of node.kids.slice(0, SHOW)) {
     if (kid.size < 1024 * 1024) break;
-    console.log(`${'  '.repeat(depth)}${human(kid.size).padStart(9)}  ${kid.name}`);
-    if (depth < 2 && kid.size > node.size * 0.1) report(kid, depth + 1);
+    const files = kid.kids.length === 0 && kid.files > 1 ? `  (${kid.files.toLocaleString('is-IS')} skrár)` : '';
+    console.log(`${'  '.repeat(depth)}${human(kid.size).padStart(9)}  ${kid.name}${files}`);
+    if (depth < 6 && kid.size > node.size * 0.1) report(kid, depth + 1);
   }
 }
 
