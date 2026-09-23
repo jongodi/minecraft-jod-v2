@@ -10,11 +10,30 @@ export interface Snapshot {
   version?: string;
   files: string[];
   blob?: { base: string; access: 'public' | 'private' };
+  /** The files as they are stored: laid end to end in a few large blobs. at[i]
+      is [pack, offset, length] of files[i] in names[pack]. A copy made before
+      packs has none, and each file is a blob of its own. */
+  packs?: { names: string[]; at: [number, number, number][] };
 }
 
-export const snapshot = snapshotFile as Snapshot;
+export const snapshot = snapshotFile as unknown as Snapshot;
 
 const files = new Set(snapshot.files);
+
+const packs = snapshot.packs?.at.length === snapshot.files.length ? snapshot.packs : null;
+const place = packs ? new Map(snapshot.files.map((rel, i) => [rel, i])) : null;
+
+/** Whether the copy is stored in packs. */
+export const isPacked = packs !== null;
+
+/** Where a file of the copy sits in its pack, when the copy is packed. */
+export function packedAt(path: string): { name: string; offset: number; length: number } | null {
+  const i = place?.get(path);
+  if (!packs || i === undefined) return null;
+  const [pack, offset, length] = packs.at[i];
+  const name = packs.names[pack];
+  return name ? { name, offset, length } : null;
+}
 
 /** Whether the copy holds this file (a path under maps/). An empty copy holds nothing it can vouch for. */
 export const inSnapshot = (path: string): boolean => files.has(path);

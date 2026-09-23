@@ -28,11 +28,11 @@ const nextConfig = {
     '*': ['**/public/bluemap/**', '**/public/bluemap-data/**'],
   },
 
-  /* The map data lives in Vercel Blob, not in the deployment. A public store is
-     served through these rewrites; a private one through the /bluemap-data
-     route, which drops the version itself. A local copy under
-     public/bluemap-data (development) is served as static files first. Player
-     heads are never in the copy: they go to /api/map-head. */
+  /* The map data lives in Vercel Blob, not in the deployment, in a few large
+     packs the /bluemap-data route reads each file out of. A copy from before
+     packs, in a public store, is served through these rewrites instead. A
+     local copy under public/bluemap-data (development) is served as static
+     files first. Player heads are never in the copy: they go to /api/map-head. */
   async rewrites() {
     const heads = [
       { source: `/${BLOB_DIR}/:v(v[0-9a-z]{1,16})/maps/:map/assets/playerheads/:file`, destination: '/api/map-head/:file' },
@@ -40,7 +40,7 @@ const nextConfig = {
     ];
     const local = LOCAL_COPY ? [{ source: VERSIONED, destination: `/${BLOB_DIR}/maps/:path*` }] : [];
     const blob = snapshot.blob;
-    const store = blob?.base && blob.access === 'public'
+    const store = blob?.base && blob.access === 'public' && !snapshot.packs
       ? [
           { source: VERSIONED, destination: `${blob.base}/${BLOB_DIR}/maps/:path*` },
           { source: `/${BLOB_DIR}/:path*`, destination: `${blob.base}/${BLOB_DIR}/:path*` },

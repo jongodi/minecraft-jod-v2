@@ -23,6 +23,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { manifestText } from './bluemap-pack.mjs';
 
 /* Files under public/bluemap that are ours, not BlueMap's: map:sync keeps them
    when it prunes what the server no longer has. */
@@ -169,9 +170,9 @@ export function brand(root = process.cwd()) {
   const manifest = readJson(manifestFile, { syncedAt: null, files: [] });
   const version = manifest.version ?? versionOf(manifest.syncedAt);
   if (version && manifest.version !== version) {
-    /* keep the key order map:sync writes */
-    const { syncedAt, files, blob } = manifest;
-    writeFileSync(manifestFile, JSON.stringify({ syncedAt, version, files, blob }, null, 2) + '\n');
+    /* keep the key order map:sync writes, and everything else it wrote */
+    const { syncedAt, version: _stale, ...rest } = manifest;
+    writeFileSync(manifestFile, manifestText({ syncedAt, version, ...rest }));
   }
 
   const dataTs = readFileSync(join(root, 'src', 'components', 'badlands', 'data.ts'), 'utf8');

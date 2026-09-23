@@ -8,12 +8,14 @@
 // The viewer (a few MB) goes to public/bluemap and travels with the site. The
 // map data (hundreds of MB) goes to public/bluemap-data as a local copy for
 // development, ignored by git, and from there to Vercel Blob under
-// bluemap-data/, which is what the site serves it from: every deployment used
-// to carry the whole copy as static files. src/lib/bluemap-snapshot.json lists
-// the map files and names the store, so the /bluemap route knows what the copy
-// holds and next.config knows where to send /bluemap-data. Live player
-// positions are left out on purpose: while the server runs they come straight
-// from it.
+// bluemap-data/packs, which is what the site serves it from: every deployment
+// used to carry the whole copy as static files. It goes up as a few large
+// packs, not file by file, since every upload counts against the store's
+// monthly allowance (scripts/bluemap-pack.mjs), and only when the map changed.
+// src/lib/bluemap-snapshot.json lists the map files, where each one sits in
+// the packs, and names the store, so the /bluemap-data route can read a file
+// back out. Live player positions are left out on purpose: while the server
+// runs they come straight from it.
 //
 // Only what the viewer reads is copied: BlueMap's render bookkeeping
 // (maps/*/rstate), maps the viewer doesn't list, player heads (they come from
@@ -27,10 +29,12 @@
 // limits how fast the API may be called, so requests are spaced out and slow
 // down further whenever it asks.
 
+import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, sep } from 'node:path';
-import { del, list, put } from '@vercel/blob';
+import { BlobAccessError, BlobStoreNotFoundError, BlobStoreSuspendedError, del, get, list, put } from '@vercel/blob';
 import { brand, OWN_FILES, versionOf } from './bluemap-brand.mjs';
+import { BLOB_DIR, blobsOf, manifestText, packBody, planPacks } from './bluemap-pack.mjs';
 
 const ROOT     = process.cwd();
 let REMOTE     = 'bluemap/web';   // BlueMap's web folder on the server; read from its webapp.conf in main()
@@ -43,9 +47,7 @@ const MIN_GAP  = 60;      // ms between request starts, at the fastest
 const MAX_GAP  = 3000;    // ms between request starts, when exaroton keeps pushing back
 const FULL     = process.argv.includes('--full');
 const PUSH     = process.argv.includes('--push');
-const BLOB_DIR = 'bluemap-data';   // the folder in the store; the site maps /bluemap-data onto it
-const BLOB_MAX_AGE = 3600;         // how long the store's CDN may keep a tile after it is overwritten
-const UPLOADS  = 8;
+const PACK_MAX_AGE = 31536000;     // a pack is never overwritten, so the store's CDN may keep it for good
 
 /* Requests start at least `gap` ms apart across all lanes. Each success nudges
    the pace up a little; each 429 halves it and pauses every lane at once, for as
@@ -64,7 +66,7 @@ if (!blobToken) fail('BLOB_READ_WRITE_TOKEN vantar í .env.local: kortagögnin f
 try {
   await main();
 } catch (err) {
-  fail(err instanceof Error ? err.message : String(err));
+  fail(explain(err));
 }
 
 async function main() {
@@ -118,11 +120,15 @@ async function main() {
       unchanged++;
     } else {
       const body = await call(`${id}/files/data/${encode(`${REMOTE}/${rel}`)}`, true);
-      mkdirSync(dirname(file), { recursive: true });
-      writeFileSync(`${file}.part`, body);
-      renameSync(`${file}.part`, file);
+      /* the small files are fetched every time; only a real change counts */
+      const same = existsSync(file) && statSync(file).size === body.length && readFileSync(file).equals(body);
+      if (!same) {
+        mkdirSync(dirname(file), { recursive: true });
+        writeFileSync(`${file}.part`, body);
+        renameSync(`${file}.part`, file);
+        changed.add(rel);
+      }
       fetched++;
-      changed.add(rel);
     }
     done++;
     if (done % 25 === 0 || done === total) process.stdout.write(`\r  ${done} / ${total}`);
@@ -133,20 +139,27 @@ async function main() {
   const keep = new Set([...found.map((f) => target(f.rel)), ...OWN_FILES.map((rel) => join(SHELL, ...rel.split('/')))]);
   const removed = prune(SHELL, keep) + prune(DATA, keep);
 
-  console.log(`\nKortið afritað. Sóttar skrár: ${fetched}, óbreyttar: ${unchanged}, fjarlægðar: ${removed}.`);
+  console.log(`\nKortið afritað. Sóttar skrár: ${fetched} (${changed.size} breyttar), óbreyttar: ${unchanged}, fjarlægðar: ${removed}.`);
   if (pushedBack) {
     const times = pushedBack === 1 ? 'einu sinni' : `${pushedBack} sinnum`;
     console.log(`Exaroton bað ${times} um hlé og afritunin hægði á sér á meðan.`);
   }
 
   const files = found.map((f) => f.rel).filter((rel) => rel.startsWith('maps/')).sort();
-  /* What the store already holds is what the last manifest says it uploaded;
-     anything fetched this run, or not in that list, goes up. --full sends all. */
+  /* The packs the last manifest names still hold the map if no map file was
+     fetched this run and none came or went; then nothing goes up. --full sends
+     it all again. */
   const previous = readManifest();
-  const had = new Set(previous.blob ? previous.files : []);
-  const todo = FULL ? files : files.filter((rel) => changed.has(rel) || !had.has(rel));
-  const blob = await upload(files, todo, previous.blob);
-  writeManifest(files, blob);
+  const syncedAt = new Date().toISOString();
+  const same = !FULL && previous.packs && previous.blob
+    && ![...changed].some((rel) => rel.startsWith('maps/'))
+    && previous.files.length === files.length && previous.files.every((rel, i) => rel === files[i]);
+  if (same) {
+    console.log('\nKortagögnin eru óbreytt frá síðasta afriti; ekkert sent í geymsluna.');
+    writeManifest(syncedAt, files, previous);
+  } else {
+    writeManifest(syncedAt, files, await upload(files, syncedAt, previous));
+  }
 }
 
 /* --push: the local copy as it stands goes to the store, exaroton is not asked. */
@@ -154,8 +167,8 @@ async function push() {
   if (!existsSync(DATA)) fail(`Engin afrit í ${relative(ROOT, DATA)}. Keyrðu map:sync án --push til að sækja kortið fyrst.`);
   const files = walkLocal(DATA).filter((rel) => !skip(rel)).sort();
   if (!files.length) fail(`Engar skrár í ${relative(ROOT, DATA)}.`);
-  const blob = await upload(files, files, readManifest().blob);
-  writeManifest(files, blob);
+  const syncedAt = new Date().toISOString();
+  writeManifest(syncedAt, files, await upload(files, syncedAt, readManifest()));
 }
 
 /* Every map file under DATA, as maps/… paths. */
@@ -173,69 +186,109 @@ function readManifest() {
   try { return JSON.parse(readFileSync(MANIFEST, 'utf8')); } catch { return { syncedAt: null, files: [] }; }
 }
 
-function writeManifest(files, blob) {
-  const syncedAt = new Date().toISOString();
-  writeFileSync(MANIFEST, JSON.stringify({ syncedAt, version: versionOf(syncedAt), files, blob }, null, 2) + '\n');
+function writeManifest(syncedAt, files, { blob, packs }) {
+  writeFileSync(MANIFEST, manifestText({ syncedAt, version: versionOf(syncedAt), files, blob, packs }));
   brand(ROOT);
   console.log(`\nTil að birta það: git add public/bluemap src/lib/bluemap-snapshot.json src/lib/bluemap-viewer.json, commit og push.`);
 }
 
-/* Sends `todo` to the store, drops whatever the store holds that is no longer in
-   `files`, and answers with where the store is and whether it is public. The
-   store is either public or private, decided when it was made; a public one
-   is served through a rewrite, a private one through the /bluemap-data route. */
-async function upload(files, todo, known) {
-  let access = process.env.BLOB_ACCESS === 'private' || known?.access === 'private' ? 'private' : 'public';
-  let base = known?.base ?? null;
-  const total = todo.length;
-  const bytes = todo.reduce((sum, rel) => sum + statSync(target(rel)).size, 0);
-  console.log(`\nSendi ${total} skrár (${mb(bytes)} MB) í Vercel Blob…`);
+/* Packs the map files, sends the packs to the store under this sync's
+   version, drops what no copy in use still reads, and answers with where the
+   store is, whether it is public, and the packs. The store is either public or
+   private, decided when it was made; a private one is read with the token
+   through the /bluemap-data route. */
+async function upload(files, syncedAt, previous) {
+  let access = process.env.BLOB_ACCESS === 'private' || previous.blob?.access === 'private' ? 'private' : 'public';
+  let base = null;
+  const plan = planPacks(files, (rel) => statSync(target(rel)).size, versionOf(syncedAt));
+  const bytes = plan.at.reduce((sum, [, , size]) => sum + size, 0);
+  const count = plan.names.length;
+  console.log(`\nSendi kortið í Vercel Blob: ${files.length} skrár í ${count} ${count === 1 ? 'pakka' : 'pökkum'} (${mb(bytes)} MB)…`);
 
-  let done = 0;
-  const send = async (rel) => {
-    const body = readFileSync(target(rel));
-    const options = { access, addRandomSuffix: false, allowOverwrite: true, cacheControlMaxAge: BLOB_MAX_AGE, contentType: mime(rel), token: blobToken };
+  for (let p = 0; p < count; p++) {
+    const body = packBody(files, plan, p, (rel) => readFileSync(target(rel)));
+    const options = { access, addRandomSuffix: false, allowOverwrite: true, cacheControlMaxAge: PACK_MAX_AGE, contentType: 'application/octet-stream', token: blobToken };
     let result;
     try {
-      result = await put(`${BLOB_DIR}/${rel}`, body, options);
+      result = await put(plan.names[p], body, options);
     } catch (err) {
       if (access === 'public' && /private/i.test(err?.message ?? '')) {
         access = 'private';
-        result = await put(`${BLOB_DIR}/${rel}`, body, { ...options, access });
+        result = await put(plan.names[p], body, { ...options, access });
       } else {
         throw err;
       }
     }
-    base ??= result.url.slice(0, result.url.indexOf(`/${BLOB_DIR}/`));
-    done++;
-    if (done % 25 === 0 || done === total) process.stdout.write(`\r  ${done} / ${total}`);
-  };
-  /* the first upload settles the store's access level before the rest fan out */
-  if (todo.length) { await send(todo[0]); await poolN(todo.slice(1), send, UPLOADS); }
-  if (total) process.stdout.write('\n');
+    /* the store the packs went to, should the token now name another */
+    if (p === 0) {
+      base = result.url.slice(0, result.url.indexOf(`/${BLOB_DIR}/`));
+      await checkRange(result.url, access, body);
+    }
+    console.log(`  ${p + 1} / ${count}  ${mb(body.length)} MB`);
+  }
+  if (!base) fail('Fann ekki slóð geymslunnar.');
 
-  /* what the store has that the server no longer does */
-  const keep = new Set(files.map((rel) => `${BLOB_DIR}/${rel}`));
+  /* Keep what this copy reads, what the copy it replaces reads, and what the
+     copy on GitHub reads (the one the site runs until this one is pushed and
+     deployed); anything else in bluemap-data/ is from older copies. */
+  const keep = new Set([...plan.names, ...blobsOf(previous), ...committedManifests().flatMap(blobsOf)]);
   const stale = [];
   let cursor;
   do {
     const page = await list({ prefix: `${BLOB_DIR}/`, cursor, limit: 1000, token: blobToken });
-    for (const b of page.blobs) {
-      if (!base) base = b.url.slice(0, b.url.indexOf(`/${BLOB_DIR}/`));
-      if (!keep.has(b.pathname)) stale.push(b.url);
-    }
+    for (const b of page.blobs) if (!keep.has(b.pathname)) stale.push(b.url);
     cursor = page.hasMore ? page.cursor : undefined;
   } while (cursor);
   for (let i = 0; i < stale.length; i += 100) await del(stale.slice(i, i + 100), { token: blobToken });
 
-  console.log(`Í geymslunni: ${files.length} skrár${stale.length ? `, ${stale.length} gamlar fjarlægðar` : ''}. Geymslan er ${access === 'public' ? 'opin' : 'lokuð'}.`);
-  if (!base) fail('Fann ekki slóð geymslunnar.');
-  return { base, access };
+  console.log(`Í geymslunni: ${count} ${count === 1 ? 'pakki' : 'pakkar'}${stale.length ? `, ${stale.length} eldri skrár fjarlægðar` : ''}. Geymslan er ${access === 'public' ? 'opin' : 'lokuð'}.`);
+  return { blob: { base, access }, packs: plan };
 }
 
-function mime(rel) {
-  const ext = rel.slice(rel.lastIndexOf('.') + 1).toLowerCase();
-  return { gz: 'application/gzip', json: 'application/json', png: 'image/png', dat: 'application/octet-stream', prbm: 'application/octet-stream' }[ext] ?? 'application/octet-stream';
+/* The site reads each file out of its pack with a range request. Ask for the
+   first bytes of the first pack the way the site will, before any manifest
+   points at the packs. */
+async function checkRange(url, access, body) {
+  const want = body.subarray(0, Math.min(16, body.length));
+  if (!want.length) return;
+  const headers = { range: `bytes=0-${want.length - 1}` };
+  const res = access === 'public'
+    ? await fetch(url, { headers })
+    : await get(url, { access, headers, token: blobToken });
+  const got = res && Buffer.from(await new Response(access === 'public' ? res.body : res.stream).arrayBuffer());
+  const ranged = /^bytes 0-/.test(res?.headers.get('content-range') ?? '');
+  if (!got || !ranged || !got.equals(want)) {
+    fail('Geymslan afhenti ekki hluta úr pakka eins og vefurinn þarf (range request). Kortið á vefnum er óbreytt; láttu vita af þessu.');
+  }
+}
+
+/* The manifest in the last commit and on origin/main, if git can say. */
+function committedManifests() {
+  const out = [];
+  for (const ref of ['HEAD', 'origin/main']) {
+    try {
+      const text = execFileSync('git', ['show', `${ref}:src/lib/bluemap-snapshot.json`], {
+        cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 64 * 1024 * 1024,
+      });
+      out.push(JSON.parse(text));
+    } catch { /* no git, or no such commit */ }
+  }
+  return out;
+}
+
+/* What went wrong, said so it can be acted on. */
+function explain(err) {
+  if (err instanceof BlobStoreSuspendedError) {
+    return 'Vercel hefur sett Blob-geymsluna í bið (store suspended), oftast af því að farið var yfir mánaðarkvóta Hobby. '
+      + 'Sjá Usage á vercel.com. Kortið á vefnum er óbreytt og les af þjóninum á meðan.';
+  }
+  if (err instanceof BlobAccessError) {
+    return 'Blob-geymslan hafnaði lyklinum. Athugaðu að BLOB_READ_WRITE_TOKEN í .env.local sé sá sami og í Vercel (Storage → geymslan → .env.local).';
+  }
+  if (err instanceof BlobStoreNotFoundError) {
+    return 'Blob-geymslan sem BLOB_READ_WRITE_TOKEN vísar á er ekki til. Sæktu lykilinn aftur úr Storage á vercel.com.';
+  }
+  return err instanceof Error ? err.message : String(err);
 }
 
 /* Everything under bluemap/web, one folder level at a time, a few folders at once. */
