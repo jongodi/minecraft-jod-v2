@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { snapshot } from '@/lib/bluemap-snapshot';
 
 /* one mock across module reloads: each test loads the route afresh, so the
    store's refusal in one test isn't remembered in the next */
@@ -7,10 +6,22 @@ const { get } = vi.hoisted(() => ({ get: vi.fn() }));
 vi.mock('@vercel/blob', async (original) => ({ ...(await original<typeof import('@vercel/blob')>()), get }));
 type Got = Awaited<ReturnType<typeof import('@vercel/blob').get>>;
 
-const settings = snapshot.files.find((f) => f.endsWith('/settings.json'))!;
+/* a copy made before packs, each file a blob of its own (packed copies:
+   bluemap-packs-route.test.ts); the real manifest changes with every sync */
+const VERSION = 'vfile';
+vi.mock('@/lib/bluemap-snapshot.json', () => ({
+  default: {
+    syncedAt: '2026-09-22T20:20:33.252Z',
+    version: 'vfile',
+    files: ['maps/world/settings.json', 'maps/world/tiles/0/x0/z0.prbm.gz'],
+    blob: { base: 'https://store.private.blob.vercel-storage.com', access: 'private' },
+  },
+}));
+
+const settings = 'maps/world/settings.json';
 const ask = async (path: string) => (await import('../../app/bluemap-data/[...path]/route')).GET(
-  new Request(`https://jod.test/bluemap-data/${snapshot.version}/${path}`),
-  { params: Promise.resolve({ path: [snapshot.version!, ...path.split('/')] }) },
+  new Request(`https://jod.test/bluemap-data/${VERSION}/${path}`),
+  { params: Promise.resolve({ path: [VERSION, ...path.split('/')] }) },
 );
 
 describe('/bluemap-data', () => {
@@ -44,6 +55,8 @@ describe('/bluemap-data', () => {
     expect(res.headers.get('Cache-Control')).toContain('immutable');
     expect(res.headers.get('Content-Type')).toBe('application/json');
     expect(fetchMock).not.toHaveBeenCalled();
+    /* the file's own blob, read past the store's cache */
+    expect(get).toHaveBeenCalledWith('bluemap-data/maps/world/settings.json', expect.objectContaining({ access: 'private', useCache: false }));
   });
 
   it('reads the file off the server when the store refuses', async () => {
