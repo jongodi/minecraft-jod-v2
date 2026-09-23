@@ -90,6 +90,7 @@ function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
   const [inView, setInView]   = useState(true);
   const frameRef = useRef<HTMLDivElement>(null);
   const viewRef  = useRef<HTMLIFrameElement>(null);
+  const hudTop   = useRef<HTMLDivElement>(null);
   /* A room stays mounted once it has been opened, so its fetches happen once. */
   const [visited, setVisited] = useState<Record<RoomId, boolean>>({ hopur: false, hillan: false });
   /* what the crew pinned at each place, from their walls */
@@ -187,6 +188,23 @@ function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
     io.observe(el);
     return () => io.disconnect();
   }, []);
+  /* How far down the frame the title and the tools reach, so the postcard
+     stops short of them (--hud-bottom in badlands.css). On a phone they are
+     a third of the frame, and the card would otherwise cover the buttons. */
+  useEffect(() => {
+    const frame = frameRef.current;
+    const top = hudTop.current;
+    if (!frame || !top || !('ResizeObserver' in window)) return;
+    const measure = () => {
+      const reach = top.getBoundingClientRect().bottom - frame.getBoundingClientRect().top;
+      frame.style.setProperty('--hud-bottom', `${Math.max(0, Math.round(reach))}px`);
+    };
+    const ro = new ResizeObserver(measure);
+    ro.observe(frame);
+    ro.observe(top);
+    return () => ro.disconnect();
+  }, []);
+
   /* On a phone the map is only live as the whole screen: back in the page it
      is a still again, so a thumb scrolls the page, and the lantern reopens it. */
   const still = phone && !full;
@@ -283,7 +301,7 @@ function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
         <div className="b-frame__dim" aria-hidden="true" onClick={onCloseRoom} />
 
         <div className="b-hud">
-          <div className="b-hud__top">
+          <div ref={hudTop} className="b-hud__top">
             <div className="b-hud__title">
               <h2 id="heimur-title" className="b-title">Heimurinn</h2>
               <p className="b-hud__meta">

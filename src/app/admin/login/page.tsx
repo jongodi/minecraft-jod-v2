@@ -44,7 +44,7 @@ function LoginForm() {
         </div>
         <div className="a-stack">
           <Field label="Aðgangslykill">
-            <input ref={inputRef} className="a-input" type="password" value={token} onChange={e => setToken(e.target.value)} autoComplete="current-password" placeholder="Lykillinn sem er stilltur sem ADMIN_TOKEN" />
+            <input ref={inputRef} className="a-input" type="password" value={token} onChange={e => setToken(e.target.value)} autoComplete="current-password" />
           </Field>
           <Notice text={error} />
           <Button type="submit" tone="primary" disabled={loading || !token}>{loading ? 'Staðfesti' : 'Skrá inn'}</Button>
