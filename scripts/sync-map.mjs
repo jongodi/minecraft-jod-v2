@@ -4,6 +4,8 @@
 //   npm run map:sync            fetch what changed since the last copy, upload it
 //   npm run map:sync -- --full  fetch everything again, upload everything
 //   npm run map:sync -- --push  upload the local copy as it is, without exaroton
+//   npm run map:sync -- --only-online  do nothing while the server is stopped
+//                                (the scheduled sync, .github/workflows/map-sync.yml)
 //
 // The viewer (a few MB) goes to public/bluemap and travels with the site. The
 // map data (hundreds of MB) goes to public/bluemap-data as a local copy for
@@ -47,7 +49,11 @@ const MIN_GAP  = 60;      // ms between request starts, at the fastest
 const MAX_GAP  = 3000;    // ms between request starts, when exaroton keeps pushing back
 const FULL     = process.argv.includes('--full');
 const PUSH     = process.argv.includes('--push');
+const ONLY_ONLINE = process.argv.includes('--only-online');
 const PACK_MAX_AGE = 31536000;     // a pack is never overwritten, so the store's CDN may keep it for good
+/* Cleanup leaves packs this young alone: they may be another sync's, uploaded
+   but not yet pushed (the scheduled one and one from a PC, at the same time). */
+const PACK_GRACE = 2 * 60 * 60 * 1000;
 
 /* Requests start at least `gap` ms apart across all lanes. Each success nudges
    the pace up a little; each 429 halves it and pauses every lane at once, for as
@@ -74,6 +80,10 @@ async function main() {
 
   const id = await serverId();
   const server = await call(`${id}/`);
+  if (server?.status !== 1 && ONLY_ONLINE) {
+    console.log('Þjónninn er ekki í gangi; ekkert sótt. Exaroton afhendir skrár of hægt á meðan.');
+    return;
+  }
   if (server?.status !== 1) {
     console.warn('Þjónninn er ekki í gangi. Exaroton afhendir skrár hægt á meðan, svo þetta getur tekið langan tíma.');
     console.warn('Mun fljótlegra er að afrita kortið meðan þjónninn er í gangi.\n');
@@ -155,8 +165,10 @@ async function main() {
     && ![...changed].some((rel) => rel.startsWith('maps/'))
     && previous.files.length === files.length && previous.files.every((rel, i) => rel === files[i]);
   if (same) {
-    console.log('\nKortagögnin eru óbreytt frá síðasta afriti; ekkert sent í geymsluna.');
-    writeManifest(syncedAt, files, previous);
+    /* the copy keeps its date and version, so the site keeps its caches and
+       there is nothing to commit */
+    console.log('\nKortagögnin eru óbreytt frá síðasta afriti; ekkert sent í geymsluna og ekkert að birta.');
+    writeManifest(previous.syncedAt, files, previous, false);
   } else {
     writeManifest(syncedAt, files, await upload(files, syncedAt, previous));
   }
@@ -186,10 +198,10 @@ function readManifest() {
   try { return JSON.parse(readFileSync(MANIFEST, 'utf8')); } catch { return { syncedAt: null, files: [] }; }
 }
 
-function writeManifest(syncedAt, files, { blob, packs }) {
+function writeManifest(syncedAt, files, { blob, packs }, changed = true) {
   writeFileSync(MANIFEST, manifestText({ syncedAt, version: versionOf(syncedAt), files, blob, packs }));
   brand(ROOT);
-  console.log(`\nTil að birta það: git add public/bluemap src/lib/bluemap-snapshot.json src/lib/bluemap-viewer.json, commit og push.`);
+  if (changed) console.log(`\nTil að birta það: git add public/bluemap src/lib/bluemap-snapshot.json src/lib/bluemap-viewer.json, commit og push.`);
 }
 
 /* Packs the map files, sends the packs to the store under this sync's
@@ -230,13 +242,17 @@ async function upload(files, syncedAt, previous) {
 
   /* Keep what this copy reads, what the copy it replaces reads, and what the
      copy on GitHub reads (the one the site runs until this one is pushed and
-     deployed); anything else in bluemap-data/ is from older copies. */
+     deployed), and anything uploaded in the last two hours; anything else in
+     bluemap-data/ is from older copies. */
   const keep = new Set([...plan.names, ...blobsOf(previous), ...committedManifests().flatMap(blobsOf)]);
   const stale = [];
   let cursor;
   do {
     const page = await list({ prefix: `${BLOB_DIR}/`, cursor, limit: 1000, token: blobToken });
-    for (const b of page.blobs) if (!keep.has(b.pathname)) stale.push(b.url);
+    for (const b of page.blobs) {
+      const young = Date.now() - new Date(b.uploadedAt).getTime() < PACK_GRACE;
+      if (!keep.has(b.pathname) && !young) stale.push(b.url);
+    }
     cursor = page.hasMore ? page.cursor : undefined;
   } while (cursor);
   for (let i = 0; i < stale.length; i += 100) await del(stale.slice(i, i + 100), { token: blobToken });
