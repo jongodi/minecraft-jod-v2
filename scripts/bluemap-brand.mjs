@@ -29,7 +29,7 @@ import { manifestText } from './bluemap-pack.mjs';
    when it prunes what the server no longer has. */
 export const OWN_FILES = ['lang/is.conf'];
 
-const SITE = (process.env.NEXT_PUBLIC_SITE_URL || 'https://play.jodcraft.world').replace(/\/+$/, '');
+const SITE = (process.env.NEXT_PUBLIC_SITE_URL || 'https://jodcraft.world').replace(/\/+$/, '');
 
 /* The viewer's view distances, in blocks. The hires layer loads a square of
    floor(d / 32) tiles each way (150 → 9×9 tiles); jod.js narrows it on phones.

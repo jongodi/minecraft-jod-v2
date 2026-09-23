@@ -40,7 +40,7 @@ const TITLE = 'JOÐ, Minecraft-heimurinn okkar';
 const DESCRIPTION = `Minecraft-heimur átta vina frá sumrinu 2024. Staða þjónsins, hver er inni, landakort, myndir úr leiknum og tölfræði leikmanna. ${SERVER_IP}`;
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://play.jodcraft.world'),
+  metadataBase: new URL('https://jodcraft.world'),
   title: TITLE,
   description: DESCRIPTION,
   keywords: ['Minecraft', 'lífsbarátta', 'einkaþjónn', 'JOÐ', 'gagnapakkar'],
