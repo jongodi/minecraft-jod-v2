@@ -17,8 +17,10 @@ const QuickDraw = dynamic(() => import('./QuickDraw'), { ssr: false });
    phone), so the footer does not post them a second time. What is left is
    what is off the page: the crew's rooms and the admin panel. */
 const LINKS = [
-  { href: '/crew',  label: 'Hópurinn' },
-  { href: '/admin', label: 'Stjórnborð' },
+  { href: '/crew',  label: 'Hópurinn',   prefetch: true },
+  /* not prefetched: every visitor who scrolled to the fire used to download
+     the admin panel's code and stylesheet, which then sat unused */
+  { href: '/admin', label: 'Stjórnborð', prefetch: false },
 ];
 
 /** The campfire: the last light. One band of ground at the foot of the page,
@@ -49,7 +51,7 @@ function Footer() {
         </div>
 
         <nav className="b-foot__nav" aria-label="Fleiri síður">
-          {LINKS.map(l => <Link key={l.href} href={l.href} className="b-foot__link" aria-current={path === l.href ? 'page' : undefined}>{l.label}</Link>)}
+          {LINKS.map(l => <Link key={l.href} href={l.href} prefetch={l.prefetch ? undefined : false} className="b-foot__link" aria-current={path === l.href ? 'page' : undefined}>{l.label}</Link>)}
           <AmbienceToggle className="b-foot__sound" />
         </nav>
 
