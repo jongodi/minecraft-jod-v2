@@ -26,3 +26,12 @@ export async function rGet<T>(key: string): Promise<T | null> {
 export async function rSet(key: string, value: unknown): Promise<void> {
   await getRedis().set(key, JSON.stringify(value));
 }
+
+/** For a read that is about to be changed and written back: "no key" is null,
+    but a storage error or a value that does not parse throws, so the caller
+    never mistakes a failed read for an empty record and writes that over it. */
+export async function rGetStrict<T>(key: string): Promise<T | null> {
+  const raw = await getRedis().get(key);
+  if (raw === null) return null;
+  return JSON.parse(raw) as T;
+}

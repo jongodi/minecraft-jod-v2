@@ -6,8 +6,13 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   if (!(await requireAdmin())) return unauthorizedResponse();
-  const cfg = await readMap();
-  return NextResponse.json(cfg, { headers: { 'Cache-Control': 'no-store' } });
+  /* strict: the editor saves what it loads, so it must never be handed the
+     defaults in place of a map the store failed to return */
+  try {
+    return NextResponse.json(await readMap({ strict: true }), { headers: { 'Cache-Control': 'no-store' } });
+  } catch (e) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : 'Ekki tókst að lesa kortið.' }, { status: 503 });
+  }
 }
 
 export async function PUT(req: NextRequest) {

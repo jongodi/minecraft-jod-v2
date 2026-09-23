@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { badJson, jsonObject } from '@/lib/http';
 import { readProfile, updateProfile, requireOwner, isCrewUsername, allPhotos, cleanText, LIMITS } from '@/lib/crew';
 
 export const dynamic = 'force-dynamic';
@@ -18,7 +19,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (!(await requireOwner(username))) return NextResponse.json({ error: 'Þú þarft að skrá þig inn með réttum aðgangi.' }, { status: 401 });
 
   let body: { bio?: unknown; coverPhotoId?: unknown };
-  try { body = await req.json(); } catch { return NextResponse.json({ error: 'Ógilt JSON.' }, { status: 400 }); }
+  { const parsed = await jsonObject(req); if (!parsed) return badJson(); body = parsed; }
 
   if (body.bio !== undefined && typeof body.bio !== 'string') return NextResponse.json({ error: 'Kynningin verður að vera texti.' }, { status: 400 });
   if (body.coverPhotoId !== undefined && body.coverPhotoId !== null && typeof body.coverPhotoId !== 'string') return NextResponse.json({ error: 'Ógild mynd.' }, { status: 400 });

@@ -1,6 +1,7 @@
 // The crew, from the admin's side: who has a token, how much hangs on each
 // wall, and a one-time sign-in link (with its QR code) for any member.
 import { NextRequest, NextResponse } from 'next/server';
+import { badJson, jsonObject } from '@/lib/http';
 import QRCode from 'qrcode';
 import { requireAdmin, unauthorizedResponse } from '@/lib/auth';
 import { readAllProfiles, allPhotos, createInvite, closeInvite, listInvites, inviteUrl, getCrewToken, isCrewUsername, canonicalUsername, type Invite } from '@/lib/crew';
@@ -40,7 +41,7 @@ export interface InviteResponse { url: string; expiresAt: string; maxUses: numbe
 export async function POST(req: NextRequest) {
   if (!(await requireAdmin())) return unauthorizedResponse();
   let body: { username?: unknown; maxUses?: unknown };
-  try { body = await req.json(); } catch { return NextResponse.json({ error: 'Ógilt JSON.' }, { status: 400 }); }
+  { const parsed = await jsonObject(req); if (!parsed) return badJson(); body = parsed; }
   if (typeof body.username !== 'string' || !isCrewUsername(body.username)) return NextResponse.json({ error: 'Þessi félagi er ekki á listanum.' }, { status: 400 });
 
   const username = canonicalUsername(body.username);
@@ -55,7 +56,7 @@ export async function POST(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   if (!(await requireAdmin())) return unauthorizedResponse();
   let body: { url?: unknown; username?: unknown; password?: unknown };
-  try { body = await req.json(); } catch { return NextResponse.json({ error: 'Ógilt JSON.' }, { status: 400 }); }
+  { const parsed = await jsonObject(req); if (!parsed) return badJson(); body = parsed; }
 
   if (typeof body.url === 'string') {
     let key = '';

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { badJson, jsonObject } from '@/lib/http';
 import { getCrewSession, updateProfile } from '@/lib/crew';
 
 export const dynamic = 'force-dynamic';
@@ -14,7 +15,7 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: 'Skráðu þig inn á veggnum þínum til að komast á töfluna.' }, { status: 401 });
 
   let body: { ms?: unknown };
-  try { body = await req.json(); } catch { return NextResponse.json({ error: 'Ógilt JSON.' }, { status: 400 }); }
+  { const parsed = await jsonObject(req); if (!parsed) return badJson(); body = parsed; }
   const ms = typeof body.ms === 'number' && Number.isFinite(body.ms) ? Math.round(body.ms) : NaN;
   if (!(ms >= MIN_MS && ms <= MAX_MS)) return NextResponse.json({ error: 'Þessi tími er ekki trúverðugur.' }, { status: 400 });
 

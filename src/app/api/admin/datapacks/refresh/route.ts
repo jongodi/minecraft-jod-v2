@@ -1,5 +1,6 @@
 import { errorMessage } from '@/lib/icelandic';
 import { NextResponse } from 'next/server';
+import { extractVersion } from '@/lib/datapack-version';
 import { requireAdmin, unauthorizedResponse } from '@/lib/auth';
 import { getExarotonServerId } from '@/lib/exaroton';
 import { getPacksView, saveSettings } from '@/lib/datapacks-store';
@@ -11,41 +12,6 @@ export interface RefreshResult {
   matched:   Array<{ id: number; name: string; version: string | null; filename: string }>;
   unmatched: string[];
   updated:   number;
-}
-
-/**
- * Extract the first version-like string from `tail` (the part of the filename
- * after the known serverFile prefix has been removed).
- *
- * Strategy:
- *  1. Dot-separated semver: "v3.0.5", "3.0.5", "V.3.5.1"   → "3.0.5" / "3.5.1"
- *  2. Hyphen/underscore only (no dots): "v3-0-1", "1_3"     → normalise to "3.0.1" / "1.3"
- *
- * Searching only in the tail (after the known prefix) avoids false matches on
- * MC version strings that often appear in brackets at the start of the filename,
- * e.g. "[1.20.x] More Vanilla Paintings v1.0" — searching after "More Vanilla
- * Paintings" gives " v1.0" which correctly yields "1.0".
- */
-function extractVersionFromTail(tail: string): string | null {
-  // 1. Dot-separated (stops at non-dot separators, so "3.0.5-1.21" → "3.0.5")
-  const dotMatch = tail.match(/[vV]?\.?(\d+\.\d+(?:\.\d+)*)/);
-  if (dotMatch) return dotMatch[1];
-
-  // 2. Hyphen/underscore only — convert to dots
-  const altMatch = tail.match(/[vV]?\.?(\d+[_-]\d+(?:[_-]\d+)*)/);
-  if (altMatch) return altMatch[1].replace(/[_-]/g, '.');
-
-  return null;
-}
-
-function extractVersion(filename: string, serverFile: string | undefined): string | null {
-  const base = filename.replace(/\.zip$/i, '');
-  if (serverFile) {
-    const idx = base.toLowerCase().indexOf(serverFile.toLowerCase());
-    if (idx >= 0) return extractVersionFromTail(base.slice(idx + serverFile.length));
-  }
-  // Fallback: search the whole filename
-  return extractVersionFromTail(base);
 }
 
 function normalizeForMatch(name: string): string {

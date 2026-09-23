@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { consumeInvite, createCrewSession, CREW_COOKIE, SESSION_TTL } from '@/lib/crew';
-import { checkRateLimit } from '@/lib/rateLimit';
+import { checkRateLimit, clearRateLimit } from '@/lib/rateLimit';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,6 +20,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  await clearRateLimit(ip, 'crew-invite');
   const sessionId = await createCrewSession(username);
   const res = NextResponse.redirect(new URL(`/crew/${username}?innskrad=1`, req.url));
   res.cookies.set(CREW_COOKIE, sessionId, {

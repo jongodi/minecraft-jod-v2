@@ -10,7 +10,9 @@ export async function GET(
   { params }: { params: Promise<{ path: string[] }> }
 ) {
   const { path } = await params;
-  const pathname = path.map(decodeURIComponent).join('/');
+  /* The segments arrive decoded once already; decoding them again turned a
+     literal % in a name into a 500 and let %252e%252e through as '..'. */
+  const pathname = path.join('/');
   if (!hasBlob() || pathname.includes('..') || !SERVABLE_PREFIXES.some(p => pathname.startsWith(p))) {
     return new NextResponse('Not found', { status: 404 });
   }

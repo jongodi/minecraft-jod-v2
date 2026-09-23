@@ -43,3 +43,15 @@ export async function checkRateLimit(ip: string, action: string): Promise<RateLi
     return { limited: false, remaining: MAX_ATTEMPTS };
   }
 }
+
+/** Forget an address's attempts after one succeeds, so the limit counts
+    failures: several members signing in from one home router are not turned
+    away because each of them got in. */
+export async function clearRateLimit(ip: string, action: string): Promise<void> {
+  const key = `ratelimit:${action}:${ip}`;
+  if (!process.env.REDIS_URL) { memHits.delete(key); return; }
+  try {
+    const { getRedis } = await import('./redis');
+    await getRedis().del(key);
+  } catch { /* non-fatal */ }
+}

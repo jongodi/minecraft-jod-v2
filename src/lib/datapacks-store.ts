@@ -27,8 +27,17 @@ export interface PackView extends DatapackMeta {
 
 const hasRedis = () => !!process.env.REDIS_URL;
 
-async function readKey<T>(key: string): Promise<T | null> {
+/* `strict` for a read that is about to be changed and written back: there a
+   storage error must throw, or the write would replace every custom pack or
+   setting with the empty list the failed read looked like. A plain read for
+   the page falls back to the seed list instead. */
+async function readKey<T>(key: string, strict = false): Promise<T | null> {
   if (!hasRedis()) return null;
+  if (strict) {
+    const { rGetStrict } = await import('@/lib/redis');
+    try { return await rGetStrict<T>(key); }
+    catch (e) { console.error('Redis read error:', e); throw new Error('Ekki tókst að lesa úr geymslunni; ekkert var vistað.'); }
+  }
   try {
     const { rGet } = await import('@/lib/redis');
     return await rGet<T>(key);
@@ -42,12 +51,12 @@ async function writeKey(key: string, value: unknown): Promise<void> {
 
 // ─── custom packs ─────────────────────────────────────────────────────────────
 
-export async function getCustomPacks(): Promise<DatapackMeta[]> {
-  return (await readKey<DatapackMeta[]>(CUSTOM_KEY)) ?? [];
+export async function getCustomPacks(strict = false): Promise<DatapackMeta[]> {
+  return (await readKey<DatapackMeta[]>(CUSTOM_KEY, strict)) ?? [];
 }
 
 export async function addCustomPack(data: Omit<DatapackMeta, 'id'>): Promise<DatapackMeta> {
-  const existing = await getCustomPacks();
+  const existing = await getCustomPacks(true);
   const nextId = existing.reduce((max, p) => Math.max(max, p.id), CUSTOM_ID_START - 1) + 1;
   const pack: DatapackMeta = { id: nextId, ...data };
   await writeKey(CUSTOM_KEY, [...existing, pack]);
@@ -55,7 +64,7 @@ export async function addCustomPack(data: Omit<DatapackMeta, 'id'>): Promise<Dat
 }
 
 export async function updateCustomPack(id: number, data: Partial<Omit<DatapackMeta, 'id'>>): Promise<DatapackMeta | null> {
-  const existing = await getCustomPacks();
+  const existing = await getCustomPacks(true);
   const idx = existing.findIndex(p => p.id === id);
   if (idx === -1) return null;
   existing[idx] = { ...existing[idx], ...data, id };
@@ -64,23 +73,27 @@ export async function updateCustomPack(id: number, data: Partial<Omit<DatapackMe
 }
 
 export async function deleteCustomPack(id: number): Promise<void> {
-  const existing = await getCustomPacks();
+  const existing = await getCustomPacks(true);
   await writeKey(CUSTOM_KEY, existing.filter(p => p.id !== id));
-  const settings = await getSettings();
+  /* A new pack takes the next free id, which can be this one again; the old
+     version map must not hand it this pack's installed version. */
+  const settings = await getSettings(true);
+  const legacy = (await readKey<Record<number, string>>(LEGACY_VERSIONS_KEY, true)) ?? {};
   if (settings[id]) { delete settings[id]; await writeKey(SETTINGS_KEY, settings); }
+  if (legacy[id] !== undefined) { delete legacy[id]; await writeKey(LEGACY_VERSIONS_KEY, legacy); }
 }
 
 /** Seed packs plus custom packs, without settings applied. */
-export async function getAllPacks(): Promise<DatapackMeta[]> {
-  return [...DATAPACKS, ...(await getCustomPacks())];
+export async function getAllPacks(strict = false): Promise<DatapackMeta[]> {
+  return [...DATAPACKS, ...(await getCustomPacks(strict))];
 }
 
 // ─── settings ─────────────────────────────────────────────────────────────────
 
 /** Per-pack settings. Versions saved by the old admin (a flat id → version map) are folded in. */
-export async function getSettings(): Promise<Record<number, PackSettings>> {
-  const settings = (await readKey<Record<number, PackSettings>>(SETTINGS_KEY)) ?? {};
-  const legacy = (await readKey<Record<number, string>>(LEGACY_VERSIONS_KEY)) ?? {};
+export async function getSettings(strict = false): Promise<Record<number, PackSettings>> {
+  const settings = (await readKey<Record<number, PackSettings>>(SETTINGS_KEY, strict)) ?? {};
+  const legacy = (await readKey<Record<number, string>>(LEGACY_VERSIONS_KEY, strict)) ?? {};
   for (const [id, version] of Object.entries(legacy)) {
     const n = Number(id);
     if (!settings[n]?.version && version) settings[n] = { ...settings[n], version };
@@ -90,8 +103,8 @@ export async function getSettings(): Promise<Record<number, PackSettings>> {
 
 /** Merge a patch into the stored settings. `null` for a field clears it. */
 export async function saveSettings(patch: Record<number, Partial<Record<keyof PackSettings, unknown>>>): Promise<Record<number, PackSettings>> {
-  const settings = await getSettings();
-  const known = new Set((await getAllPacks()).map(p => p.id));
+  const settings = await getSettings(true);
+  const known = new Set((await getAllPacks(true)).map(p => p.id));
   for (const [idStr, fields] of Object.entries(patch)) {
     const id = Number(idStr);
     if (!known.has(id) || !fields || typeof fields !== 'object') continue;

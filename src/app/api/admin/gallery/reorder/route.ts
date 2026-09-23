@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { badJson, jsonObject } from '@/lib/http';
 import { readGallery, writeGallery } from '@/lib/gallery';
 import { requireAdmin, unauthorizedResponse } from '@/lib/auth';
 
@@ -8,8 +9,10 @@ export const dynamic = 'force-dynamic';
 export async function POST(req: NextRequest) {
   if (!(await requireAdmin())) return unauthorizedResponse();
 
-  const { ids } = await req.json() as { ids?: string[] };
-  if (!Array.isArray(ids)) {
+  const body = await jsonObject(req);
+  if (!body) return badJson();
+  const ids = body.ids;
+  if (!Array.isArray(ids) || !ids.every((x): x is string => typeof x === 'string')) {
     return NextResponse.json({ error: 'Auðkennin þurfa að vera í lista.' }, { status: 400 });
   }
 

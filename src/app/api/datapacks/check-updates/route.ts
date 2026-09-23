@@ -2,6 +2,7 @@ import { errorMessage } from '@/lib/icelandic';
 import { NextResponse } from 'next/server';
 import { type DatapackMeta } from '@/data/datapacks';
 import { getPacksView } from '@/lib/datapacks-store';
+import { requireAdmin, unauthorizedResponse } from '@/lib/auth';
 
 export interface DatapackUpdateResult {
   id:              number;
@@ -163,7 +164,10 @@ async function checkGitHub(pack: DatapackMeta): Promise<DatapackUpdateResult> {
 
 // ─── Route handler ────────────────────────────────────────────────────────────
 
+/* The admin panel's tool: it lists hidden packs too and every call fans out
+   to Modrinth and GitHub, whose unauthenticated quota is sixty an hour. */
 export async function GET() {
+  if (!(await requireAdmin())) return unauthorizedResponse();
   const packs = await getPacksView();
 
   const results = await Promise.all(

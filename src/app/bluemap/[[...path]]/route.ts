@@ -182,8 +182,11 @@ async function serve(req: Request, segments: string[]): Promise<Response> {
 
   const token = process.env.EXAROTON_API_KEY;
   if (!token) {
-    /* the places stand in the map even when it isn't connected to the server */
+    /* the places stand in the map even when it isn't connected to the server,
+       and the viewer's once-a-second ask for players gets an empty list it can
+       cache rather than an error every second */
     if (MARKERS.test(path)) return markers(path, null);
+    if (path.startsWith('maps/')) return fromSnapshot(path);
     return notice(503, 'Kortið er ekki tengt við þjóninn (EXAROTON_API_KEY vantar).');
   }
 
@@ -192,6 +195,7 @@ async function serve(req: Request, segments: string[]): Promise<Response> {
     id = await resolveServerId(token);
   } catch {
     if (MARKERS.test(path)) return markers(path, null);
+    if (path.startsWith('maps/')) return fromSnapshot(path);
     return notice(502, 'Náði ekki sambandi við Exaroton.');
   }
 

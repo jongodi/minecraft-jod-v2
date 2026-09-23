@@ -28,15 +28,26 @@ const PATH_KINDS     = new Set<MapPath['kind']>(['river', 'road', 'border']);
 
 const MAX_LABEL = 100;
 
-/** Read the full map config (Redis override → filesystem → hardcoded defaults). */
-async function readStoredMap(): Promise<MapConfig> {
+/** Read the full map config (Redis override → filesystem → hardcoded defaults).
+    `strict` for a read that will be written back (and for the editor, which
+    saves what it loads): a Redis error then throws instead of answering with
+    the defaults, which would otherwise be saved over the admin's map. */
+async function readStoredMap(strict = false): Promise<MapConfig> {
   // 1. Try Redis
   if (process.env.REDIS_URL) {
-    try {
-      const { rGet } = await import('@/lib/redis');
-      const cfg = await rGet<MapConfig>(KV_KEY);
+    if (strict) {
+      const { rGetStrict } = await import('@/lib/redis');
+      let cfg: MapConfig | null;
+      try { cfg = await rGetStrict<MapConfig>(KV_KEY); }
+      catch (e) { console.error('Redis readMap error:', e); throw new Error('Ekki tókst að lesa kortið úr geymslunni; ekkert var vistað.'); }
       if (cfg) return cfg;
-    } catch { /* fall through */ }
+    } else {
+      try {
+        const { rGet } = await import('@/lib/redis');
+        const cfg = await rGet<MapConfig>(KV_KEY);
+        if (cfg) return cfg;
+      } catch { /* fall through */ }
+    }
   }
 
   // 2. Try filesystem (dev / no Redis)
@@ -80,8 +91,8 @@ function resolvePhotoId(location: MapLocation, photoIds: Set<string>): string | 
 }
 
 /** Read the map for display: localized labels and resolved photo links. */
-export async function readMap(): Promise<MapConfig> {
-  const config = await readStoredMap();
+export async function readMap({ strict = false }: { strict?: boolean } = {}): Promise<MapConfig> {
+  const config = await readStoredMap(strict);
   let photoIds = new Set<string>();
   try {
     photoIds = new Set((await readGallery()).map(p => p.id));
@@ -109,7 +120,7 @@ export async function readMap(): Promise<MapConfig> {
  * photo, or null.
  */
 export async function linkPhotoToLocation(photoId: string, locationId: number | null): Promise<number | null> {
-  const config = await readMap();
+  const config = await readMap({ strict: true });
   let target: number | null = null;
   const locations = config.locations.map(l => {
     if (locationId !== null && l.id === locationId) { target = l.id; return { ...l, photoId }; }
@@ -122,7 +133,7 @@ export async function linkPhotoToLocation(photoId: string, locationId: number | 
 
 /** Remove every reference to a photo, e.g. after it was deleted. */
 export async function unlinkPhoto(photoId: string): Promise<void> {
-  const config = await readMap();
+  const config = await readMap({ strict: true });
   if (!config.locations.some(l => l.photoId === photoId)) return;
   await writeMap({
     ...config,
