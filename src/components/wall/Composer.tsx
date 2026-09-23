@@ -4,11 +4,11 @@
 // Drop screenshots on it, paste them, pick several, or just write. Each
 // picture starts uploading the moment it lands, gets a caption line, and
 // the whole lot is pinned with one press.
-import { useCallback, useEffect, useRef, useState, type DragEvent, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import type { CrewEntry } from '@/lib/crew-types';
 import { LIMITS } from '@/lib/crew-types';
 import { fetchStorageInfo, uploadPrint, errorFrom, type StorageInfo, type UploadedPrint } from '@/lib/crew-upload';
-import { formatDate } from '@/lib/format';
+import { formatDate, plural } from '@/lib/format';
 import { CloseIcon } from '@/components/badlands/Bits';
 import type { WallPlace } from './Wall';
 
@@ -42,7 +42,16 @@ export default function Composer({ username, places, onPinned }: Props) {
   const slot  = useRef<HTMLFormElement>(null);
 
   useEffect(() => { fetchStorageInfo(username).then(setStorage); }, [username]);
-  useEffect(() => () => { drafts.forEach(d => URL.revokeObjectURL(d.preview)); }, [drafts]);
+  /* Previews are let go when the slot goes away. (A cleanup keyed on the
+     drafts ran on every progress tick and revoked the previews still showing.) */
+  const live = useRef<Draft[]>([]);
+  live.current = drafts;
+  useEffect(() => () => { live.current.forEach(d => URL.revokeObjectURL(d.preview)); }, []);
+  /* drafts taken out while still uploading: their copy is removed from the store once it lands */
+  const dropped = useRef(new Set<string>());
+  const discard = useCallback((done: UploadedPrint) => {
+    fetch(`/api/crew/${username}/upload`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: done.id, url: done.url }) }).catch(() => {});
+  }, [username]);
 
   const patch = useCallback((key: string, p: Partial<Draft>) => setDrafts(ds => ds.map(d => (d.key === key ? { ...d, ...p } : d))), []);
 
@@ -51,27 +60,28 @@ export default function Composer({ username, places, onPinned }: Props) {
     if (images.length === 0) return;
     const room = LIMITS.photosPer - drafts.length;
     if (room <= 0) { setError(`Mest ${LIMITS.photosPer} myndir í einu.`); return; }
-    setError('');
+    const left = images.length - room;
+    setError(left > 0 ? `Mest ${LIMITS.photosPer} myndir í einu; ${left} ${plural(left, 'komst', 'komust')} ekki með.` : '');
     const fresh: Draft[] = images.slice(0, room).map(f => ({ key: newKey(), name: f.name, preview: URL.createObjectURL(f), caption: '', progress: 0, done: null, error: null }));
     setDrafts(ds => [...ds, ...fresh]);
     fresh.forEach((d, i) => {
       const file = images[i];
       const info = storage ?? { mode: 'none' as const, access: null, maxBytes: 0, error: 'Geymslan svarar ekki enn.' };
       uploadPrint(username, file, info, pct => patch(d.key, { progress: pct }))
-        .then(done => patch(d.key, { done, progress: 100 }))
+        .then(done => { if (dropped.current.has(d.key)) discard(done); else patch(d.key, { done, progress: 100 }); })
         .catch(e => patch(d.key, { error: e instanceof Error ? e.message : 'Upphleðsla mistókst.' }));
     });
-  }, [drafts.length, patch, storage, username]);
+  }, [drafts.length, patch, storage, username, discard]);
 
   /* Taken out of the slot: the preview goes, and so does the copy already in the store. */
-  const remove = (key: string) => setDrafts(ds => {
-    const d = ds.find(x => x.key === key);
-    if (d) {
-      URL.revokeObjectURL(d.preview);
-      if (d.done) fetch(`/api/crew/${username}/upload`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: d.done.id, url: d.done.url }) }).catch(() => {});
-    }
-    return ds.filter(x => x.key !== key);
-  });
+  const remove = (key: string) => {
+    const d = drafts.find(x => x.key === key);
+    if (!d) return;
+    URL.revokeObjectURL(d.preview);
+    if (d.done) discard(d.done);
+    else if (!d.error) dropped.current.add(key);
+    setDrafts(ds => ds.filter(x => x.key !== key));
+  };
 
   /* Dropped or pasted anywhere on the page, the picture lands in the slot. */
   useEffect(() => {
@@ -86,6 +96,8 @@ export default function Composer({ username, places, onPinned }: Props) {
     const onEnter = (e: globalThis.DragEvent) => { if (e.dataTransfer?.types.includes('Files')) { depth++; setOver(true); } };
     const onLeave = () => { if (--depth <= 0) { depth = 0; setOver(false); } };
     const onOver  = (e: globalThis.DragEvent) => { if (e.dataTransfer?.types.includes('Files')) e.preventDefault(); };
+    /* One listener for the whole page, the pin slot included: a second one on
+       the slot saw the same drop and uploaded every picture twice. */
     const onDrop  = (e: globalThis.DragEvent) => {
       depth = 0; setOver(false);
       if (!e.dataTransfer?.files.length) return;
@@ -137,7 +149,6 @@ export default function Composer({ username, places, onPinned }: Props) {
     }
   }
 
-  function onDropHere(e: DragEvent) { e.preventDefault(); setOver(false); add(Array.from(e.dataTransfer.files)); }
 
   const storageNote =
     !storage ? 'athuga geymsluna' :
@@ -146,7 +157,7 @@ export default function Composer({ username, places, onPinned }: Props) {
     'dragðu skjámyndir hingað, límdu þær, eða veldu';
 
   return (
-    <form ref={slot} className={`w-pin${over ? ' is-over' : ''}${drafts.length ? ' has-prints' : ''}`} onSubmit={pin} onDragOver={e => e.preventDefault()} onDrop={onDropHere} aria-label="Festa eitthvað upp">
+    <form ref={slot} className={`w-pin${over ? ' is-over' : ''}${drafts.length ? ' has-prints' : ''}`} onSubmit={pin} aria-label="Festa eitthvað upp">
       <span className="b-paper__nail" aria-hidden="true" />
       <textarea
         className="w-pin__text"

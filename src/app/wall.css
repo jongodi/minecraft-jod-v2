@@ -155,7 +155,9 @@
 @media (hover: hover) { .w-reply__who:hover { color: var(--lantern-deep); } }
 .w-reply__text { font-size: var(--fs-sm); line-height: 1.5; color: var(--ink-soft); white-space: pre-wrap; overflow-wrap: anywhere; }
 .w-reply__when { display: flex; gap: var(--sp-3); font-family: var(--font-data); font-size: 0.6rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-faint); }
-.w-reply__when button { font: inherit; color: var(--lantern-deep); }
+.w-reply__when button { position: relative; font: inherit; color: var(--lantern-deep); }
+/* a word-sized control on a phone: its reach is a thumb's, not the word's */
+.w-reply__when button::before { content: ''; position: absolute; inset: -0.6rem -0.4rem; }
 @media (hover: hover) { .w-reply__when button:hover { color: var(--ink); } }
 .w-reply__input { min-height: 2.25rem; padding: var(--sp-1) var(--sp-2); background: transparent; border: 0; border-bottom: var(--line) solid rgba(30, 22, 17, 0.2); color: var(--ink); font-family: var(--font-text); font-size: var(--fs-sm); outline: none; }
 .w-reply__input::placeholder { color: var(--ink-faint); }
@@ -195,3 +197,4 @@
 .w-strip__title { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-lg); color: var(--paper); }
 .w-strip .b-rail { gap: var(--sp-3); padding: 4px 3px; align-items: stretch; }
 .w-strip { margin-bottom: var(--sp-6); }
+.w-page__err { max-width: 52rem; margin-inline: auto; }

@@ -279,6 +279,18 @@ export function useDialogFocus<T extends HTMLElement>(ref: React.RefObject<T>): 
   }, []);
 }
 
+/** A backdrop that closes on a click that both began and ended on it. A drag
+    that starts inside the box (selecting text in a field, throwing a photo)
+    and is let go over the backdrop is not a click outside, though the browser
+    sends the backdrop a click for it. Spread the result onto the backdrop. */
+export function useBackdropClose(onClose: () => void): { onPointerDown: (e: React.PointerEvent) => void; onClick: (e: React.MouseEvent) => void } {
+  const began = useRef(false);
+  return {
+    onPointerDown: e => { began.current = e.target === e.currentTarget; },
+    onClick: e => { if (began.current && e.target === e.currentTarget) onClose(); began.current = false; },
+  };
+}
+
 /** `inert` on an element, set as a property. React 18 has no attribute for it
     and warns about the empty string the attribute form needs. */
 export function useInert<T extends HTMLElement>(inert: boolean): React.RefObject<T> {

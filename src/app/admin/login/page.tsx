@@ -6,8 +6,16 @@ import { useSearchParams } from 'next/navigation';
 import { Mark } from '@/components/badlands/Bits';
 import { Button, Field, Notice } from '@/components/admin/ui';
 
+/* Only a path on this site. The middleware sets `next` to the page that sent
+   the admin here, but anyone can write a link with their own: a
+   javascript: value would run with the admin's fresh session, and an
+   https:// or //host value would leave the site with it. */
+function safeNext(v: string | null): string {
+  return v && v.startsWith('/') && !v.startsWith('//') && !v.startsWith('/\\') ? v : '/admin';
+}
+
 function LoginForm() {
-  const next = useSearchParams().get('next') ?? '/admin';
+  const next = safeNext(useSearchParams().get('next'));
   const inputRef = useRef<HTMLInputElement>(null);
   const [token, setToken] = useState('');
   const [error, setError] = useState('');

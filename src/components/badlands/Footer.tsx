@@ -8,7 +8,7 @@ import { Campfire, Chevron } from './Bits';
 import { Ridge } from './Mesa';
 import { SERVER_IP } from './data';
 import AmbienceToggle from '@/effects/AmbienceToggle';
-import { useScrollLock } from './hooks';
+import { useBackdropClose, useScrollLock } from './hooks';
 
 /* The duel lives behind the fire; nobody pays for it until they tap. */
 const QuickDraw = dynamic(() => import('./QuickDraw'), { ssr: false });
@@ -29,6 +29,7 @@ function Footer() {
   const [duel, setDuel] = useState(false);
   const path = usePathname();
   useScrollLock(duel);
+  const backdrop = useBackdropClose(() => setDuel(false));
 
   useEffect(() => {
     if (!duel) return;
@@ -65,8 +66,8 @@ function Footer() {
       <div className="b-ground" aria-hidden="true" />
 
       {duel && (
-        <div className="b-duelbox" role="dialog" aria-modal="true" aria-label="Einvígi" onClick={() => setDuel(false)}>
-          <div className="b-duelbox__in" onClick={e => e.stopPropagation()}>
+        <div className="b-duelbox" role="dialog" aria-modal="true" aria-label="Einvígi" {...backdrop}>
+          <div className="b-duelbox__in">
             <QuickDraw onClose={() => setDuel(false)} />
           </div>
         </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { plural } from '@/lib/format';
 import { parseWorldPoint, type MapConfig, type MapLocation, type MapPath, type MapZone, type WorldPoint } from '@/lib/map-types';
 import { CREW_USERNAMES } from '@/lib/crew-types';
 import { mapLabel } from '@/lib/icelandic';
@@ -11,7 +12,9 @@ import {
 } from '@/lib/terrain';
 import { MapDefs, MapMarks, Terrain, MAP_H, MAP_W } from '@/components/badlands/MapArt';
 import type { AdminPhoto } from './GalleryPanel';
+import { fetchGalleryStorage, uploadGalleryPhoto } from './GalleryUploader';
 import PhotoPicker from './PhotoPicker';
+import { setUnsaved } from './unsaved';
 import { Button, Field, Kbd, Notice, Toggle, api, errText } from './ui';
 
 /* ─── model ─────────────────────────────────────────────────────────────────── */
@@ -42,30 +45,52 @@ const serialize = (d: Doc) => JSON.stringify([d.locations, d.zones, d.paths, d.t
 const clampX = (v: number) => Math.max(0, Math.min(MAP_W, Math.round(v)));
 const clampY = (v: number) => Math.max(0, Math.min(MAP_H, Math.round(v)));
 
-/** A document with undo and redo. Every committed change is one step. */
+/** A document with undo and redo. Every committed change is one step.
+
+    The document is kept in a ref beside the state and the history is worked
+    out against it directly, not inside a state updater: an updater runs later,
+    so the undo and redo buttons used to read the stacks before the step they
+    were meant to reflect had been pushed or popped. */
 function useHistory(initial: Doc) {
   const [doc, setDoc] = useState<Doc>(initial);
+  const current = useRef<Doc>(initial);
   const past = useRef<Doc[]>([]);
   const future = useRef<Doc[]>([]);
+  /* the step a drag or a stroke opened: its starting point, and the redo
+     stack as it was, handed back if the gesture turns out to change nothing */
+  const step = useRef<{ from: Doc; future: Doc[]; open: boolean } | null>(null);
   const [depth, setDepth] = useState({ past: 0, future: 0 });
   const sync = () => setDepth({ past: past.current.length, future: future.current.length });
+  const set = (d: Doc) => { current.current = d; setDoc(d); };
   const push = (d: Doc) => { past.current = [...past.current.slice(-HISTORY + 1), d]; future.current = []; };
   const commit = useCallback((next: Doc | ((d: Doc) => Doc)) => {
-    setDoc(d => {
-      const n = typeof next === 'function' ? next(d) : next;
-      if (serialize(n) === serialize(d)) return d;
-      push(d);
-      return n;
-    });
+    const d = current.current;
+    const n = typeof next === 'function' ? next(d) : next;
+    if (serialize(n) === serialize(d)) return;
+    push(d);
+    set(n);
     sync();
   }, []);
-  /* live updates during a drag or a brush stroke do not add steps; `mark` opens one */
-  const replace = useCallback((next: (d: Doc) => Doc) => setDoc(next), []);
-  const mark = useCallback(() => { setDoc(d => { push(d); return d; }); sync(); }, []);
-  const undo = useCallback(() => { setDoc(d => { const p = past.current.pop(); if (!p) return d; future.current.push(d); return p; }); sync(); }, []);
-  const redo = useCallback(() => { setDoc(d => { const f = future.current.pop(); if (!f) return d; past.current.push(d); return f; }); sync(); }, []);
-  const reset = useCallback((d: Doc) => { past.current = []; future.current = []; setDoc(d); sync(); }, []);
-  return { doc, commit, replace, mark, undo, redo, reset, canUndo: depth.past > 0, canRedo: depth.future > 0 };
+  /* `mark` opens a step for a drag or a brush stroke; the live updates during
+     it (`replace`) make that one step, and only once something really moves */
+  const mark = useCallback(() => { step.current = { from: current.current, future: future.current, open: false }; }, []);
+  const replace = useCallback((next: (d: Doc) => Doc) => {
+    const n = next(current.current);
+    if (n === current.current) return;
+    const s = step.current;
+    if (s && !s.open) { push(s.from); s.open = true; sync(); }
+    set(n);
+  }, []);
+  /* the gesture is over: a step that ended where it began is forgotten */
+  const settle = useCallback(() => {
+    const s = step.current;
+    step.current = null;
+    if (s?.open && serialize(s.from) === serialize(current.current)) { past.current.pop(); future.current = s.future; sync(); }
+  }, []);
+  const undo = useCallback(() => { const p = past.current.pop(); if (!p) return; future.current.push(current.current); set(p); sync(); }, []);
+  const redo = useCallback(() => { const f = future.current.pop(); if (!f) return; past.current.push(current.current); set(f); sync(); }, []);
+  const reset = useCallback((d: Doc) => { past.current = []; future.current = []; step.current = null; set(d); sync(); }, []);
+  return { doc, current, commit, replace, mark, settle, undo, redo, reset, canUndo: depth.past > 0, canRedo: depth.future > 0 };
 }
 
 const toDoc = (cfg: MapConfig): Doc => ({
@@ -100,6 +125,8 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
   const painting = useRef(false);
   const strokeStart = useRef<[number, number] | null>(null);
   const moved = useRef(false);
+  /* a pin, zone or point was pressed: the click that follows is not a click on the empty map */
+  const pressed = useRef(false);
 
   const dirty = serialize(doc) !== saved;
   const painty = tool === 'brush' || tool === 'fill';
@@ -111,6 +138,7 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
   }, []);
   useEffect(() => { loadPhotos(); }, [loadPhotos]);
 
+  useEffect(() => { setUnsaved('map', dirty); return () => setUnsaved('map', false); }, [dirty]);
   useEffect(() => {
     if (!dirty) return;
     const warn = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ''; };
@@ -160,9 +188,10 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
   }
   /** A photo belongs to one place at a time: linking it here takes it off any other. */
   function linkPhoto(pinId: number, photoId: string | null): Doc {
-    const next = { ...doc, locations: doc.locations.map(l => l.id === pinId ? { ...l, photoId } : photoId !== null && l.photoId === photoId ? { ...l, photoId: null } : l) };
-    commit(next);
-    return next;
+    /* from the document as it is now, not as it was when an upload began:
+       a pin dragged while the photo was on its way must stay where it was put */
+    commit(d => ({ ...d, locations: d.locations.map(l => l.id === pinId ? { ...l, photoId } : photoId !== null && l.photoId === photoId ? { ...l, photoId: null } : l) }));
+    return h.current.current;
   }
 
   /* ─── painting the ground ─── */
@@ -182,7 +211,7 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
   const startDrag = (e: React.PointerEvent, d: Exclude<Drag, null>) => {
     e.stopPropagation();
     (e.currentTarget as Element).setPointerCapture(e.pointerId);
-    drag.current = d; moved.current = false;
+    drag.current = d; moved.current = false; pressed.current = true;
     mark();
   };
   const pinDown = (e: React.PointerEvent, loc: MapLocation) => {
@@ -230,15 +259,17 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
       replace(doc => ({ ...doc, zones: doc.zones.map(z => z.id === d.id ? { ...z, [d.axis]: Math.max(10, snapTo(d.start + delta)) } : z) }));
     } else if (d.kind === 'point') replace(doc => ({ ...doc, paths: doc.paths.map(p => p.id === d.id ? { ...p, points: p.points.map((pt, i) => i === d.idx ? [clampX(snapTo(mx - d.ox)), clampY(snapTo(my - d.oy))] as [number, number] : pt) } : p) }));
   };
-  const onUp = () => { drag.current = null; painting.current = false; strokeStart.current = null; };
+  const onUp = () => { drag.current = null; painting.current = false; strokeStart.current = null; h.settle(); };
 
   const onClick = (e: React.MouseEvent<SVGSVGElement>) => {
+    const wasPressed = pressed.current;
+    pressed.current = false;
     if (tool === 'fill' && !placing && !drawing) {
       const [c, r] = toCell(e.clientX, e.clientY);
       if (c >= 0 && c < TERRAIN_COLS && r >= 0 && r < TERRAIN_ROWS) commit(d => ({ ...d, terrain: floodFill(d.terrain, c, r, material) }));
       return;
     }
-    if (moved.current) { moved.current = false; return; }
+    if (moved.current || wasPressed) { moved.current = false; return; }
     const [rx, ry] = toSvg(e.clientX, e.clientY);
     const mx = clampX(snapTo(rx)), my = clampY(snapTo(ry));
     if (drawing) {
@@ -272,13 +303,20 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
   /* ─── keyboard ─── */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      /* the photo picker is a dialog over the editor: its keys are its own,
+         and an arrow or Delete there must not move or remove the pin behind it */
+      if (picker || (e.target as HTMLElement | null)?.closest('.a-modal')) return;
+      /* the editor stays mounted behind the other tabs so its edits survive;
+         there, Delete or an arrow belongs to that tab, not to a pin out of sight */
+      if (!svgRef.current || svgRef.current.closest('[hidden]')) return;
       const typing = (e.target as HTMLElement | null)?.closest('input, textarea, select');
+      const mod = e.ctrlKey || e.metaKey;
+      /* saving works from a name field too, instead of opening the browser's Save dialog */
+      if (mod && e.key.toLowerCase() === 's') { e.preventDefault(); save(); return; }
       if (e.key === 'Escape') { setPlacing(null); setDrawing(null); setDrawPoints([]); if (!typing) setSelected(null); return; }
       if (typing) return;
-      const mod = e.ctrlKey || e.metaKey;
       if (mod && e.key.toLowerCase() === 'z') { e.preventDefault(); if (e.shiftKey) h.redo(); else h.undo(); return; }
       if (mod && e.key.toLowerCase() === 'y') { e.preventDefault(); h.redo(); return; }
-      if (mod && e.key.toLowerCase() === 's') { e.preventDefault(); save(); return; }
       if (mod) return;
       const key = e.key.toLowerCase();
       if (key === 'v') { setTool('select'); return; }
@@ -332,16 +370,18 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
     commit(d => ({ ...d, terrain: normalizeTerrain(DEFAULT_TERRAIN) }));
   }
   async function uploadForPin(pin: MapLocation, file: File) {
-    setUploading(true); setMsg('');
+    setUploading(true); setMsg(''); setPhotosError('');
     try {
-      const fd = new FormData();
-      fd.append('file', file); fd.append('title', pin.label); fd.append('sublabel', pin.sublabel);
-      const photo = await api<AdminPhoto>('/api/admin/gallery/upload', { method: 'POST', body: fd });
+      const photo = await uploadGalleryPhoto(file, await fetchGalleryStorage(), { title: pin.label, sublabel: pin.sublabel });
       setPhotos(ps => [...ps, photo]);
       const next = linkPhoto(pin.id, photo.id);
       setPicker(false);
       setMsg((await persist(next)) ? '✓ Myndin er komin í safnið, tengd staðnum og kortið vistað.' : '✗ Myndin er í safninu en kortið vistaðist ekki. Vistaðu aftur.');
-    } catch (e) { setMsg(errText(e)); }
+    } catch (e) {
+      /* said where it can be seen: in the picker when it is open, beside the pin otherwise */
+      setMsg(errText(e));
+      setPhotosError(errText(e));
+    }
     finally { setUploading(false); }
   }
 
@@ -524,8 +564,8 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
                 <span className="a-help">Póstkortið segir hver byggði staðinn og veggur hvers og eins telur upp það sem viðkomandi byggði.</span>
               </div>
               <div className="a-inline">
-                <Field label="X"><input className="a-input a-input--num a-input--data" type="number" min={0} max={MAP_W} value={selPin.x} onChange={e => updatePin(selPin.id, { x: clampX(Number(e.target.value)) })} /></Field>
-                <Field label="Y"><input className="a-input a-input--num a-input--data" type="number" min={0} max={MAP_H} value={selPin.y} onChange={e => updatePin(selPin.id, { y: clampY(Number(e.target.value)) })} /></Field>
+                <Field label="X"><NumField value={selPin.x} min={0} max={MAP_W} onCommit={x => updatePin(selPin.id, { x })} /></Field>
+                <Field label="Y"><NumField value={selPin.y} min={0} max={MAP_H} onCommit={y => updatePin(selPin.id, { y })} /></Field>
               </div>
               <WorldField key={selPin.id} value={selPin.world ?? null} onChange={world => updatePin(selPin.id, { world })} />
               <div className="a-field">
@@ -544,7 +584,7 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
                       <Button small onClick={() => setPicker(true)}>Velja úr myndasafni</Button>
                       <label className="a-btn a-btn--small a-btn--ghost" style={{ cursor: uploading ? 'wait' : 'pointer' }}>
                         {uploading ? 'Hleð upp' : 'Hlaða upp nýrri'}
-                        <input type="file" accept="image/*" disabled={uploading} style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; e.target.value = ''; if (f) uploadForPin(selPin, f); }} />
+                        <input type="file" accept="image/*" disabled={uploading} className="a-sr" onChange={e => { const f = e.target.files?.[0]; e.target.value = ''; if (f) uploadForPin(selPin, f); }} />
                       </label>
                     </div>
                   </>
@@ -557,12 +597,12 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
               <p className="a-side__title"><span>{mapLabel(selZone.kind)}</span></p>
               <Field label="Heiti"><input className="a-input" value={selZone.label} onChange={e => updateZone(selZone.id, { label: e.target.value })} maxLength={100} /></Field>
               <div className="a-inline">
-                <Field label="Miðja X"><input className="a-input a-input--num a-input--data" type="number" value={selZone.cx} onChange={e => updateZone(selZone.id, { cx: clampX(Number(e.target.value)) })} /></Field>
-                <Field label="Miðja Y"><input className="a-input a-input--num a-input--data" type="number" value={selZone.cy} onChange={e => updateZone(selZone.id, { cy: clampY(Number(e.target.value)) })} /></Field>
+                <Field label="Miðja X"><NumField value={selZone.cx} min={0} max={MAP_W} onCommit={cx => updateZone(selZone.id, { cx })} /></Field>
+                <Field label="Miðja Y"><NumField value={selZone.cy} min={0} max={MAP_H} onCommit={cy => updateZone(selZone.id, { cy })} /></Field>
               </div>
               <div className="a-inline">
-                <Field label="Hálf breidd"><input className="a-input a-input--num a-input--data" type="number" min={10} value={selZone.rx} onChange={e => updateZone(selZone.id, { rx: Math.max(10, Math.round(Number(e.target.value))) })} /></Field>
-                <Field label="Hálf hæð"><input className="a-input a-input--num a-input--data" type="number" min={10} value={selZone.ry} onChange={e => updateZone(selZone.id, { ry: Math.max(10, Math.round(Number(e.target.value))) })} /></Field>
+                <Field label="Hálf breidd"><NumField value={selZone.rx} min={10} max={MAP_W} onCommit={rx => updateZone(selZone.id, { rx })} /></Field>
+                <Field label="Hálf hæð"><NumField value={selZone.ry} min={10} max={MAP_H} onCommit={ry => updateZone(selZone.id, { ry })} /></Field>
               </div>
               <p className="a-help">Dragðu til að færa, dragðu gulu handföngin til að breyta stærð, örvatakkar færa um einn pixil (með Shift um tíu).</p>
               <Button tone="danger" small onClick={deleteSelected}>Eyða</Button>
@@ -576,7 +616,7 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
                   {(['river', 'road', 'border'] as const).map(k => <option key={k} value={k}>{mapLabel(k)}</option>)}
                 </select>
               </Field>
-              <p className="a-help">{selPath.points.length} punktar. Dragðu punkt til að færa hann, tvísmelltu á punkt til að fjarlægja hann.</p>
+              <p className="a-help">{selPath.points.length} {plural(selPath.points.length, 'punktur', 'punktar')}. Dragðu punkt til að færa hann, tvísmelltu á punkt til að fjarlægja hann.</p>
               <div className="a-inline">
                 <Button small tone="ghost" onClick={() => { const last = selPath.points[selPath.points.length - 1]; updatePath(selPath.id, { points: [...selPath.points, [clampX(last[0] + 40), clampY(last[1] + 20)]] }); }}>Bæta við punkti</Button>
                 <Button tone="danger" small onClick={deleteSelected}>Eyða</Button>
@@ -638,6 +678,32 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
 const formatWorldPoint = (w: WorldPoint | null) => (w ? `${w.x} ${w.y} ${w.z}` : '');
 
 /** Committed on blur or Enter, so half-typed numbers never reach the document. */
+/** A whole number that is clamped once it has been typed, not on each key:
+    "25" passes through "2" on its way, which a field clamping to 10 on every
+    keystroke turned into 105, and a cleared field sent the pin to 0. A value
+    in range is applied as it is typed; anything else waits for Enter or for
+    the field to lose focus, and an empty field goes back to what it was. */
+function NumField({ value, min, max, onCommit }: { value: number; min: number; max: number; onCommit: (v: number) => void }) {
+  const [text, setText] = useState(String(value));
+  const focused = useRef(false);
+  useEffect(() => { if (!focused.current) setText(String(value)); }, [value]);
+  const inRange = (n: number) => Number.isInteger(n) && n >= min && n <= max;
+  const settle = () => {
+    const n = Math.round(Number(text));
+    if (text.trim() === '' || !Number.isFinite(n)) { setText(String(value)); return; }
+    const c = Math.max(min, Math.min(max, n));
+    setText(String(c));
+    if (c !== value) onCommit(c);
+  };
+  return (
+    <input className="a-input a-input--num a-input--data" type="number" inputMode="numeric" min={min} max={max} value={text}
+      onFocus={() => { focused.current = true; }}
+      onChange={e => { const t = e.target.value; setText(t); const n = Number(t); if (t.trim() !== '' && inRange(n) && n !== value) onCommit(n); }}
+      onBlur={() => { focused.current = false; settle(); }}
+      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); settle(); } }} />
+  );
+}
+
 function WorldField({ value, onChange }: { value: WorldPoint | null; onChange: (w: WorldPoint | null) => void }) {
   const [text, setText] = useState(formatWorldPoint(value));
   const parsed = parseWorldPoint(text);

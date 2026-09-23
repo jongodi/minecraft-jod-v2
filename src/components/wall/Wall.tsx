@@ -16,7 +16,7 @@ import PlayerHead from '@/components/badlands/PlayerHead';
 import Lightbox from '@/components/badlands/Lightbox';
 import { ArrowIcon, CloseIcon, Star } from '@/components/badlands/Bits';
 import { PAGE_LINKS, STAT_TABS } from '@/components/badlands/data';
-import { useCrewSession } from '@/components/badlands/hooks';
+import { useBackdropClose, useCrewSession, useScrollLock } from '@/components/badlands/hooks';
 import { photoProps, PHOTO_SIZES } from '@/components/badlands/photo';
 import Composer from './Composer';
 import Print from './Print';
@@ -59,6 +59,7 @@ function LoginModal({ username, onSuccess, onClose }: { username: string; onSucc
   const [token,   setToken]   = useState('');
   const [error,   setError]   = useState('');
   const [loading, setLoading] = useState(false);
+  const backdrop = useWallDialog(onClose);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -76,8 +77,8 @@ function LoginModal({ username, onSuccess, onClose }: { username: string; onSucc
   }
 
   return (
-    <div className="b-modal" onClick={onClose} role="dialog" aria-modal="true" aria-label="Skrá inn">
-      <form className="b-paper b-modal__box" onSubmit={submit} onClick={e => e.stopPropagation()}>
+    <div className="b-modal" {...backdrop} role="dialog" aria-modal="true" aria-label="Skrá inn">
+      <form className="b-paper b-modal__box" onSubmit={submit}>
         <p className="b-modal__title">Skrá inn sem {username}</p>
         <p className="b-modal__sub">lykilorðið sem þú valdir þér á veggnum. Ekkert lykilorð enn? Biddu stjórnandann um innskráningartengil.</p>
         <input type="password" className={`b-input${error ? ' is-error' : ''}`} value={token} onChange={e => setToken(e.target.value)} placeholder="Lykilorð" autoFocus autoComplete="current-password" />
@@ -91,6 +92,19 @@ function LoginModal({ username, onSuccess, onClose }: { username: string; onSucc
   );
 }
 
+/* The wall's two dialogs share one frame: Escape closes it, the page stays
+   still behind it, and only a click that starts on the dark closes it, so a
+   password dragged-to-select past the paper's edge is not thrown away. */
+function useWallDialog(onClose: () => void) {
+  useScrollLock();
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+  return useBackdropClose(onClose);
+}
+
 // ─── A password of the member's own ───────────────────────────────────────────
 // Chosen on the wall once they are in; from then on "Þetta er ég" works on
 // any phone or computer without a link from the admin.
@@ -100,6 +114,7 @@ function PasswordModal({ username, change, onDone, onClose }: { username: string
   const [again,   setAgain]   = useState('');
   const [error,   setError]   = useState('');
   const [loading, setLoading] = useState(false);
+  const backdrop = useWallDialog(onClose);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -115,8 +130,8 @@ function PasswordModal({ username, change, onDone, onClose }: { username: string
   }
 
   return (
-    <div className="b-modal" onClick={onClose} role="dialog" aria-modal="true" aria-label="Lykilorð">
-      <form className="b-paper b-modal__box" onSubmit={submit} onClick={e => e.stopPropagation()}>
+    <div className="b-modal" {...backdrop} role="dialog" aria-modal="true" aria-label="Lykilorð">
+      <form className="b-paper b-modal__box" onSubmit={submit}>
         <p className="b-modal__title">{change ? 'Nýtt lykilorð' : 'Veldu þér lykilorð'}</p>
         <p className="b-modal__sub">með því skráir þú þig inn á hvaða síma eða tölvu sem er undir „Þetta er ég“, án tengils frá stjórnandanum. Minnst {LIMITS_PW} stafir.</p>
         <input type="password" className={`b-input${error ? ' is-error' : ''}`} value={pw} onChange={e => setPw(e.target.value)} placeholder="Lykilorð" autoFocus autoComplete="new-password" />
@@ -150,6 +165,9 @@ export default function Wall({ initial, places, justSignedIn = false }: Props) {
   const [editingBio,  setEditingBio]  = useState(false);
   const [bioText,     setBioText]     = useState(initial.bio);
   const [bioError,    setBioError]    = useState('');
+  const [bioSaving,   setBioSaving]   = useState(false);
+  /* a change made from an entry (the cover print) that did not go through */
+  const [wallError,   setWallError]   = useState('');
   const [stats,       setStats]       = useState<PlayerStat | null>(null);
   const [statsMeta,   setStatsMeta]   = useState<{ source: string; cachedAt: string | null } | null>(null);
   const [lightbox,    setLightbox]    = useState<number | null>(null);
@@ -188,15 +206,20 @@ export default function Wall({ initial, places, justSignedIn = false }: Props) {
   }, [username]);
 
   async function saveBio() {
-    setBioError('');
+    if (bioSaving) return;
+    setBioError(''); setBioSaving(true);
     try { await patchProfile({ bio: bioText }); setEditingBio(false); }
     catch (e) { setBioError(e instanceof Error ? e.message : 'Ekki tókst að vista kynninguna.'); }
+    finally { setBioSaving(false); }
   }
 
   const onPinned  = useCallback((entry: CrewEntry) => setProfile(p => ({ ...p, entries: [entry, ...p.entries] })), []);
-  const onChange  = useCallback((entry: CrewEntry) => setProfile(p => ({ ...p, entries: p.entries.map(e => (e.id === entry.id ? entry : e)) })), []);
+  const onChange  = useCallback((id: string, update: (entry: CrewEntry) => CrewEntry) => setProfile(p => ({ ...p, entries: p.entries.map(e => (e.id === id ? update(e) : e)) })), []);
   const onRemove  = useCallback((id: string) => setProfile(p => ({ ...p, entries: p.entries.filter(e => e.id !== id) })), []);
-  const onCover   = useCallback((photoId: string | null) => { patchProfile({ coverPhotoId: photoId }).catch(() => {}); }, [patchProfile]);
+  const onCover   = useCallback((photoId: string | null) => {
+    setWallError('');
+    patchProfile({ coverPhotoId: photoId }).catch(e => setWallError(e instanceof Error ? e.message : 'Ekki tókst að skipta um forsíðumynd.'));
+  }, [patchProfile]);
   const onOpen    = useCallback((photoId: string, rect: DOMRect) => { const i = prints.findIndex(p => p.id === photoId); if (i >= 0) { setOrigin(rect); setLightbox(i); } }, [prints]);
 
   const closeLightbox = useCallback(() => setLightbox(null), []);
@@ -254,7 +277,7 @@ export default function Wall({ initial, places, justSignedIn = false }: Props) {
               <div className="w-poster__biorow">
                 <textarea className={`b-textarea${bioError ? ' is-error' : ''}`} value={bioText} onChange={e => setBioText(e.target.value)} maxLength={LIMITS.bio} rows={3} placeholder="Ein eða tvær línur um þig" autoFocus />
                 <div className="b-inline">
-                  <button className="b-btn b-btn--solid b-btn--small" onClick={saveBio}>Vista</button>
+                  <button className="b-btn b-btn--solid b-btn--small" onClick={saveBio} disabled={bioSaving}>{bioSaving ? 'Vista…' : 'Vista'}</button>
                   <button className="b-btn b-btn--small" onClick={() => { setEditingBio(false); setBioError(''); setBioText(profile.bio); }}>Hætta við</button>
                 </div>
                 {bioError && <p className="b-err">{bioError}</p>}
@@ -297,6 +320,7 @@ export default function Wall({ initial, places, justSignedIn = false }: Props) {
           </div>
         </section>
 
+        {wallError && <p className="b-err w-page__err" role="alert">{wallError}</p>}
         {isOwner && <Composer username={username} places={places} onPinned={onPinned} />}
 
         <section className="w-wall" aria-label="Veggurinn">

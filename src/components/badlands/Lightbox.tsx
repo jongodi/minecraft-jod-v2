@@ -25,6 +25,14 @@ export default function Lightbox({ photos, index, onClose, onPrev, onNext, origi
   const [closing, setClosing] = useState(false);
   const photo = photos[index];
   const closeRef = useRef<HTMLButtonElement>(null);
+  /* Only a click that began on the dark closes: a throw of the photo that
+     falls short and is let go over the dark is the browser's click too. */
+  const beganOutside = useRef(false);
+  const onDown = (e: React.PointerEvent) => { beganOutside.current = !(e.target as Element).closest('.b-lb__card, .b-lb__bar, button'); };
+  const onBackdrop = (e: React.MouseEvent) => {
+    if (beganOutside.current && !(e.target as Element).closest('.b-lb__card, .b-lb__bar, button')) requestClose();
+    beganOutside.current = false;
+  };
   useDialogFocus(closeRef);
   useScrollLock();
 
@@ -62,7 +70,7 @@ export default function Lightbox({ photos, index, onClose, onPrev, onNext, origi
   };
 
   return (
-    <motion.div className="b-lb" role="dialog" aria-modal="true" aria-label={photo.title ?? 'Mynd'} onClick={requestClose}
+    <motion.div className="b-lb" role="dialog" aria-modal="true" aria-label={photo.title ?? 'Mynd'} onPointerDown={onDown} onClick={onBackdrop}
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
       <button ref={closeRef} type="button" className="b-arrowbtn b-lb__close" onClick={requestClose} aria-label="Loka"><CloseIcon /></button>
       <div className="b-lb__img">
