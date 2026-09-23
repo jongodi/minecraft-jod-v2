@@ -52,11 +52,12 @@
 .b-paper__rule--thin { border-top-width: var(--line); border-color: var(--ink-faint); }
 .b-paper p { line-height: var(--lh-text); }
 .b-paper .b-link { color: var(--lantern-deep); }
-.b-paper .b-link:hover { color: var(--ink); }
+@media (hover: hover) { .b-paper .b-link:hover { color: var(--ink); } }
 .b-paper .b-btn { color: var(--lantern-deep); border-color: var(--lantern-deep); }
-.b-paper .b-btn:hover, .b-paper .b-btn:focus-visible { background: var(--lantern-deep); color: var(--paper); }
+.b-paper .b-btn:focus-visible { background: var(--lantern-deep); color: var(--paper); }
+@media (hover: hover) { .b-paper .b-btn:hover { background: var(--lantern-deep); color: var(--paper); } }
 .b-paper .b-btn--solid { background: var(--lantern-deep); color: var(--paper); }
-.b-paper .b-btn--solid:hover { background: var(--ink); border-color: var(--ink); }
+@media (hover: hover) { .b-paper .b-btn--solid:hover { background: var(--ink); border-color: var(--ink); } }
 .b-paper .b-data { color: var(--ink); }
 .b-paper .b-note { color: var(--ink-faint); }
 
@@ -72,7 +73,7 @@
   font-weight: 600;
   transition: background var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out), border-color var(--dur-1) var(--ease-out);
 }
-.b-tab:hover { border-color: var(--lantern); }
+@media (hover: hover) { .b-tab:hover { border-color: var(--lantern); } }
 .b-tab.is-active { background: var(--lantern); color: var(--night); border-color: var(--lantern); box-shadow: var(--bevel); }
 /* The wanted board: one poster per charge, the top three on each. The
    outlaw's nickname is the poster's title, the charge under it in small
@@ -92,13 +93,15 @@
 .b-poster__lead { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: var(--sp-3); width: 100%; margin-top: var(--sp-3); text-decoration: none; color: var(--ink); text-align: left; }
 .b-poster__img { grid-row: span 2; width: 3rem; padding: calc(var(--px) * 2); background: var(--wood); box-shadow: inset 0 0 0 var(--px) var(--wood-light); transition: box-shadow var(--dur-2) var(--ease-out); }
 .b-poster__img img { width: 100%; aspect-ratio: 1; object-fit: cover; image-rendering: pixelated; display: block; }
-.b-poster__lead:hover .b-poster__img, .b-poster__lead:focus-visible .b-poster__img { box-shadow: 0 0 0 var(--px) var(--lantern-deep); }
+.b-poster__lead:focus-visible .b-poster__img { box-shadow: 0 0 0 var(--px) var(--lantern-deep); }
+@media (hover: hover) { .b-poster__lead:hover .b-poster__img { box-shadow: 0 0 0 var(--px) var(--lantern-deep); } }
 .b-poster__name { width: 100%; font-family: var(--font-data); font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .b-poster__val { margin-top: var(--px); font-family: var(--font-data); font-size: 0.9rem; font-weight: 700; line-height: 1.3; color: var(--tc-red); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .b-poster__rule { width: 100%; height: var(--px); margin-top: var(--sp-3); background: var(--ink); opacity: 0.22; }
 .b-poster__rest { width: 100%; margin-top: var(--sp-1); list-style: none; display: grid; }
 .b-poster__row { display: grid; grid-template-columns: 0.9rem 1rem minmax(0, 1fr) auto; align-items: center; gap: var(--sp-1); min-height: 1.6rem; text-decoration: none; color: var(--ink); text-align: left; }
-.b-poster__row:hover, .b-poster__row:focus-visible { color: var(--lantern-deep); }
+.b-poster__row:focus-visible { color: var(--lantern-deep); }
+@media (hover: hover) { .b-poster__row:hover { color: var(--lantern-deep); } }
 .b-poster__rank { font-family: var(--font-data); font-size: 0.6rem; color: var(--ink-faint); }
 .b-poster__head { width: 1rem; height: 1rem; box-shadow: 0 0 0 1px var(--ink-soft); }
 .b-poster__head img { width: 100%; height: 100%; image-rendering: pixelated; object-fit: cover; }
@@ -152,10 +155,14 @@
 .b-stock__crate::after  { transform: rotate(-45deg); }
 .b-stock__label { position: relative; z-index: 1; display: grid; place-items: center; width: 62%; height: 62%; padding: var(--px); background: var(--paper); clip-path: var(--notch); }
 .b-stock__label svg { width: 100%; height: 100%; display: block; }
-.b-stock__crate:hover, .b-stock__crate.is-shown {
+/* the crate being read lifts off the plank and takes a rim of lantern light;
+   the pressed one (pinned by a tap) keeps it. Touch drives .is-shown itself. */
+.b-stock__crate.is-shown {
   transform: translateY(calc(var(--px) * -1));
   box-shadow: inset 0 0 0 calc(var(--px) * 2) var(--wood), inset 0 0 0 calc(var(--px) * 3) var(--wood-light), var(--bevel), 0 0 0 var(--px) var(--lantern);
 }
+.b-stock__crate[aria-pressed='true'] { box-shadow: inset 0 0 0 calc(var(--px) * 2) var(--wood), inset 0 0 0 calc(var(--px) * 3) var(--wood-light), var(--bevel-in), 0 0 0 var(--px) var(--lantern); }
+@media (prefers-reduced-motion: reduce) { .b-stock__crate { transition: none; } }
 
 /* the counter: one label at a time, on paper like every other notice */
 /* The counter is one sheet that never moves. What moves is the slip on it: a
@@ -223,7 +230,8 @@
   pointer-events: none;
 }
 .b-foot__fire { display: block; padding: 0; border: 0; background: none; cursor: pointer; }
-.b-foot__fire:hover .b-fire, .b-foot__fire:focus-visible .b-fire { transform: translateY(calc(var(--px) * -1)); }
+.b-foot__fire:focus-visible .b-fire { transform: translateY(calc(var(--px) * -1)); }
+@media (hover: hover) { .b-foot__fire:hover .b-fire { transform: translateY(calc(var(--px) * -1)); } }
 .b-fire { position: relative; display: block; width: 5.5rem; height: 5.5rem; margin-bottom: calc(var(--px) * -2); transition: transform var(--dur-2) var(--ease-out); }
 .b-fire svg { width: 100%; height: 100%; display: block; shape-rendering: crispEdges; overflow: visible; }
 .b-fire__frame { opacity: 0; animation: b-frames 900ms steps(1, end) infinite; }
@@ -245,18 +253,20 @@
 .b-foot__nav { grid-area: nav; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--sp-1) var(--sp-5); }
 .b-foot__sound { display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2); width: var(--tap); height: var(--tap); color: var(--lantern); }
 .b-foot__sound svg { width: 1.25rem; height: 1.25rem; shape-rendering: crispEdges; }
-.b-foot__sound:hover { background: rgba(242, 166, 59, 0.12); }
+@media (hover: hover) { .b-foot__sound:hover { background: rgba(242, 166, 59, 0.12); } }
 .b-foot__sound.is-on { background: var(--lantern); color: var(--night); }
 @media (min-width: 720px) { .b-foot__nav { justify-content: flex-start; } }
 .b-foot__link { display: inline-flex; align-items: center; min-height: var(--tap); padding-inline: var(--sp-1); color: var(--lantern); font-size: var(--fs-sm); font-weight: 600; text-decoration: none; border-bottom: var(--px) solid transparent; }
-.b-foot__link:hover, .b-foot__link:focus-visible { border-bottom-color: var(--lantern); color: var(--paper); }
+.b-foot__link:focus-visible { border-bottom-color: var(--lantern); color: var(--paper); }
+@media (hover: hover) { .b-foot__link:hover { border-bottom-color: var(--lantern); color: var(--paper); } }
 .b-foot__link[aria-current] { color: var(--paper); border-bottom-color: var(--lantern); }
 
 /* the way back up the evening */
 .b-foot__up { grid-area: up; gap: var(--sp-2); }
 @media (min-width: 720px) { .b-foot__up { align-self: center; justify-self: end; } }
 .b-foot__upchev { width: 0.875rem; height: 0.875rem; flex-shrink: 0; transform: rotate(180deg); transition: transform var(--dur-2) var(--ease-out); }
-.b-foot__up:hover .b-foot__upchev, .b-foot__up:focus-visible .b-foot__upchev { transform: rotate(180deg) translateY(calc(var(--px) * 1.5)); }
+.b-foot__up:focus-visible .b-foot__upchev { transform: rotate(180deg) translateY(calc(var(--px) * 1.5)); }
+@media (hover: hover) { .b-foot__up:hover .b-foot__upchev { transform: rotate(180deg) translateY(calc(var(--px) * 1.5)); } }
 
 .b-foot__credit { grid-area: credit; }
 .b-foot__credit p { font-size: var(--fs-sm); color: var(--text-soft); line-height: 1.5; }
@@ -296,7 +306,7 @@
 /* ─── crew pages ──────────────────────────────────────────────── */
 .b-page { padding-block: clamp(5rem, 9vw, 7rem) clamp(3rem, 8vw, 6rem); }
 .b-back { display: inline-flex; align-items: center; gap: var(--sp-2); min-height: var(--tap); font-size: var(--fs-sm); color: var(--lantern); text-decoration: none; }
-.b-back:hover { color: var(--paper); }
+@media (hover: hover) { .b-back:hover { color: var(--paper); } }
 .b-back svg { width: 1rem; height: 1rem; shape-rendering: crispEdges; }
 .b-page__head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--sp-4) var(--sp-6); margin: var(--sp-4) 0 var(--sp-6); }
 .b-rollcall { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-5) var(--sp-3); }
@@ -312,7 +322,7 @@
 .b-feed__strip { display: grid; grid-template-columns: 2.2rem minmax(0, 1fr); gap: var(--sp-3); padding: var(--sp-3) var(--sp-4); }
 .b-feed__meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--sp-3); font-size: var(--fs-xs); color: var(--ink-faint); }
 .b-feed__who { font-weight: 600; font-size: var(--fs-sm); color: var(--ink); text-decoration: none; }
-.b-feed__who:hover { color: var(--lantern-deep); }
+@media (hover: hover) { .b-feed__who:hover { color: var(--lantern-deep); } }
 .b-feed__text { margin-top: var(--sp-1); white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.5; }
 
 .b-profile { max-width: 52rem; margin: var(--sp-6) auto 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-5); padding: clamp(1.75rem, 4vw, 2.75rem) clamp(1.25rem, 4vw, 2.5rem); }
@@ -330,10 +340,10 @@
 .b-profile__bio.is-empty { color: var(--ink-faint); }
 .b-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 var(--sp-5); margin-top: var(--sp-5); }
 @media (min-width: 640px) { .b-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-.b-stat { padding: var(--sp-2) 0; border-top: var(--line) solid var(--ink-faint); }
+.b-stat { min-width: 0; padding: var(--sp-2) 0; border-top: var(--line) solid var(--ink-faint); }
 /* the same order as the poster: the outlaw's name first, the charge under it */
 .b-stat__k { font-size: var(--fs-xs); color: var(--ink-faint); }
-.b-stat__k b { display: block; font-weight: 700; color: var(--ink-soft); }
+.b-stat__k b { display: block; font-weight: 700; color: var(--ink-soft); overflow-wrap: break-word; }
 .b-stat__k small { display: block; font-size: 0.6rem; letter-spacing: 0.04em; text-transform: uppercase; }
 .b-stat__v { margin-top: var(--sp-1); font-family: var(--font-data); font-size: var(--fs-data); }
 .b-badges { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-4); margin-top: var(--sp-4); list-style: none; font-size: var(--fs-sm); color: var(--ink-soft); }
@@ -351,7 +361,7 @@
 .b-post__meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--sp-3); margin-top: var(--sp-2); font-size: var(--fs-xs); color: var(--ink-faint); }
 .b-post__actions { display: flex; gap: var(--sp-3); margin-left: auto; }
 .b-post__actions button { font-size: var(--fs-xs); color: var(--lantern-deep); min-height: 2rem; }
-.b-post__actions button:hover { color: var(--ink); }
+@media (hover: hover) { .b-post__actions button:hover { color: var(--ink); } }
 .b-shots { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-4) var(--sp-3); }
 @media (min-width: 640px) { .b-shots { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 

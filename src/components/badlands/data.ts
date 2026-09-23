@@ -94,17 +94,19 @@ const ms = (v: number) => `${num(v)} ms`;
 
 /* The wanted board. Every category is a crime, and the poster names the
    outlaw the way a real one would: by the nickname first, the charge under it.
-   `low` marks the one charge where less is more: the fastest draw at the campfire. */
+   `low` marks the one charge where less is more: the fastest draw at the campfire.
+   The longest nicknames carry a soft hyphen at the join of their compound, so
+   a phone's two-column stat list breaks them there instead of overflowing. */
 export const STAT_TABS = [
   { id: 'playTimeHours',  nick: 'Innipúkinn',     label: 'Spilatími',                  unit: (v: number) => `${num(v)} klst.` },
   { id: 'mobKills',       nick: 'Slátrarinn',     label: 'Verur felldar',              unit: num },
   { id: 'deaths',         nick: 'Draugurinn',     label: 'Dauðsföll',                  unit: num },
   { id: 'timeSinceDeath', nick: 'Ódauðlegi',      label: 'Tími frá síðasta dauða', unit: span },
-  { id: 'timeSinceRest',  nick: 'Vökustaurinn',   label: 'Tími frá því síðast var sofið', unit: span },
+  { id: 'timeSinceRest',  nick: 'Vöku\u00ADstaurinn',   label: 'Tími frá því síðast var sofið', unit: span },
   { id: 'travelCm',       nick: 'Flakkarinn',     label: 'Ferðalangur, á eigin fótum', unit: km },
   { id: 'damageRatio',    nick: 'Boxpúðinn',      label: 'Skaði þeginn á móti veittum', unit: (v: number) => `${v.toLocaleString('is-IS', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}×` },
-  { id: 'raidWins',       nick: 'Ræningjabaninn', label: 'Árásir hraktar',             unit: num },
-  { id: 'recordsPlayed',  nick: 'Plötusnúðurinn', label: 'Plötur spilaðar',            unit: num },
+  { id: 'raidWins',       nick: 'Ræningja\u00ADbaninn', label: 'Árásir hraktar',             unit: num },
+  { id: 'recordsPlayed',  nick: 'Plötu\u00ADsnúðurinn', label: 'Plötur spilaðar',            unit: num },
   { id: 'drawMs',         nick: 'Fógetinn',       label: 'Hraðasta skotið við varðeldinn', unit: ms, low: true },
 ] as const;
 export const isLowerBetter = (id: StatKey) => STAT_TABS.some(t => t.id === id && 'low' in t && t.low);

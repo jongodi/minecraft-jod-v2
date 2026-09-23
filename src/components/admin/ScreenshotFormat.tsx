@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { plural } from '@/lib/format';
 import type { SwapItem } from '@/lib/gallery-swap';
 import { Button, Notice, api, errText } from './ui';
 
@@ -51,7 +52,7 @@ export default function ScreenshotFormat({ onChanged }: { onChanged: () => void 
       const res = await api<{ moved: SwapItem[]; skipped: SwapItem[] }>('/api/admin/gallery/swap', {
         method: 'POST', body: JSON.stringify({ to }),
       });
-      setMsg(`✓ ${res.moved.length} myndir færðar ${dir}${res.skipped.length ? `, ${res.skipped.length} sleppt` : ''}. Opnaðu forsíðuna og athugaðu að þær birtist allar.`);
+      setMsg(`✓ ${res.moved.length} ${plural(res.moved.length, 'mynd færð', 'myndir færðar')} ${dir}${res.skipped.length ? `, ${res.skipped.length} sleppt` : ''}. Opnaðu forsíðuna og athugaðu að þær birtist allar.`);
       await load();
       onChanged();
     } catch (e) { setMsg(errText(e)); }
@@ -71,16 +72,16 @@ export default function ScreenshotFormat({ onChanged }: { onChanged: () => void 
       <Notice
         tone={pending ? 'warn' : 'ok'}
         text={pending
-          ? `${toWebp.length} myndir sækja enn PNG-frumritin. WebP-útgáfurnar eru nákvæmlega sömu myndir og margfalt léttari; þegar safnið sækir þær má eyða frumritunum úr public/screenshots.`
+          ? `${toWebp.length} ${plural(toWebp.length, 'mynd sækir', 'myndir sækja')} enn PNG-frumritin. WebP-útgáfurnar eru nákvæmlega sömu myndir og margfalt léttari; þegar safnið sækir þær má eyða frumritunum úr public/screenshots.`
           : `Safnið sækir WebP-útgáfurnar. Eftir að þú hefur séð allar myndirnar birtast á vefnum má eyða PNG-frumritunum úr public/screenshots.`}
       />
       <div className="a-inline">
         <Button tone="ghost" small onClick={() => setOpen(o => !o)}>
-          {open ? 'Fela listann' : `Sjá hvaða ${items.length} myndir`}
+          {open ? 'Fela listann' : `Sjá hvaða ${items.length} ${plural(items.length, 'mynd', 'myndir')}`}
         </Button>
         {pending
           ? <Button tone="primary" small disabled={busy || ready === 0} onClick={() => run('webp')}>
-              {busy ? 'Færi…' : `Skipta ${ready} myndum yfir í WebP`}
+              {busy ? 'Færi…' : `Skipta ${ready} ${plural(ready, 'mynd', 'myndum')} yfir í WebP`}
             </Button>
           : <Button tone="ghost" small disabled={busy || ready === 0} onClick={() => run('png')}>
               {busy ? 'Færi…' : 'Til baka í PNG'}

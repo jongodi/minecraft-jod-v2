@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { badJson, jsonObject } from '@/lib/http';
 import { randomUUID } from 'crypto';
 import { updateProfile, getCrewSession, isCrewUsername, cleanText, LIMITS, type CrewReply } from '@/lib/crew';
 
@@ -14,7 +15,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   if (!session) return NextResponse.json({ error: 'Skráðu þig inn á veggnum þínum til að svara.' }, { status: 401 });
 
   let body: { text?: unknown };
-  try { body = await req.json(); } catch { return NextResponse.json({ error: 'Ógilt JSON.' }, { status: 400 }); }
+  { const parsed = await jsonObject(req); if (!parsed) return badJson(); body = parsed; }
   const text = cleanText(body.text, LIMITS.reply);
   if (!text) return NextResponse.json({ error: 'Texta vantar.' }, { status: 400 });
 

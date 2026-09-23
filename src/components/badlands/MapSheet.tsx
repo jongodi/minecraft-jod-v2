@@ -5,6 +5,7 @@ import { motion, useMotionValue, animate } from 'framer-motion';
 import type { MotionValue } from 'framer-motion';
 import type { MapConfig, MapLocation } from '@/lib/map-types';
 import MapArt, { MapDefs, MAP_H, MAP_W } from './MapArt';
+import { ZoomIcon } from './Bits';
 import { useReducedMotionPref } from './hooks';
 import { clamp, rubberband, SPRING } from './motion';
 
@@ -43,12 +44,13 @@ export default function MapSheet({ config, selectedId, onSelect }: Props) {
   };
   const settle = () => {
     const { minX, minY } = limits();
-    spring(x, clamp(x.get(), minX, 0));
-    spring(y, clamp(y.get(), minY, 0));
+    go(x, clamp(x.get(), minX, 0));
+    go(y, clamp(y.get(), minY, 0));
   };
 
+  /* A drag is the hand moving the paper, not the page animating, so it works
+     under reduced motion too; only the spring back into bounds is dropped. */
   const onPointerDown = (e: React.PointerEvent) => {
-    if (reduce) return;
     drag.current = { id: e.pointerId, sx: e.clientX, sy: e.clientY, ox: x.get(), oy: y.get(), moved: false };
     x.stop(); y.stop();
   };
@@ -96,7 +98,7 @@ export default function MapSheet({ config, selectedId, onSelect }: Props) {
     const el = sheet.current;
     if (!el) return;
     const onWheel = (e: WheelEvent) => {
-      if (reduce || !(e.ctrlKey || e.metaKey)) return;
+      if (!(e.ctrlKey || e.metaKey)) return;
       const s0 = z.get();
       const s1 = clamp(s0 * (e.deltaY < 0 ? 1.12 : 1 / 1.12), MIN_Z, MAX_Z);
       if (s1 === s0) return;
@@ -139,9 +141,9 @@ export default function MapSheet({ config, selectedId, onSelect }: Props) {
         </svg>
       </motion.div>
       <div className="b-sheet__zoom">
-        <button type="button" aria-label="Stækka kortið" onClick={() => zoomBy(1.4)}>+</button>
-        <button type="button" aria-label="Minnka kortið" onClick={() => zoomBy(1 / 1.4)}>−</button>
-        <button type="button" aria-label="Allt kortið" onClick={resetView}>□</button>
+        <button type="button" aria-label="Stækka kortið" title="Stækka" onClick={() => zoomBy(1.4)}><ZoomIcon kind="in" /></button>
+        <button type="button" aria-label="Minnka kortið" title="Minnka" onClick={() => zoomBy(1 / 1.4)}><ZoomIcon kind="out" /></button>
+        <button type="button" aria-label="Allt kortið" title="Allt kortið" onClick={resetView}><ZoomIcon kind="fit" /></button>
       </div>
     </div>
   );

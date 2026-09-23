@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
+import { useBackdropClose, useDialogFocus, useScrollLock } from '@/components/badlands/hooks';
 
 /* The small vocabulary every admin panel is built from. */
 
@@ -54,15 +55,18 @@ export function Notice({ text, tone }: { text: string; tone?: 'ok' | 'err' | 'wa
 }
 
 export function Modal({ title, onClose, width, children, foot }: { title: string; onClose: () => void; width?: string; children: ReactNode; foot?: ReactNode }) {
+  const box = useRef<HTMLDivElement>(null);
+  const backdrop = useBackdropClose(onClose);
+  useScrollLock();
+  useDialogFocus(box);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', onKey);
-    document.body.style.overflow = 'hidden';
-    return () => { window.removeEventListener('keydown', onKey); document.body.style.overflow = ''; };
+    return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
   return (
-    <div className="a-modal" onClick={onClose} role="dialog" aria-modal="true" aria-label={title}>
-      <div className="a-modal__box" style={width ? ({ '--w': width } as React.CSSProperties) : undefined} onClick={e => e.stopPropagation()}>
+    <div className="a-modal" {...backdrop} role="dialog" aria-modal="true" aria-label={title}>
+      <div ref={box} tabIndex={-1} className="a-modal__box" style={width ? ({ '--w': width } as React.CSSProperties) : undefined}>
         <div className="a-modal__head">
           <h3 className="a-modal__title">{title}</h3>
           <Button tone="ghost" small icon onClick={onClose} aria-label="Loka">✕</Button>

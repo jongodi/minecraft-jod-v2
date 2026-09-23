@@ -1,7 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion, type PanInfo } from 'framer-motion';
+import { ArrowIcon, CloseIcon } from './Bits';
+import { useDialogFocus, useScrollLock } from './hooks';
 import { SPRING, SPRING_THROW, project } from './motion';
 import { photoProps, PHOTO_SIZES } from './photo';
 
@@ -22,12 +24,26 @@ export default function Lightbox({ photos, index, onClose, onPrev, onNext, origi
   const [dir, setDir] = useState(0);
   const [closing, setClosing] = useState(false);
   const photo = photos[index];
+  const closeRef = useRef<HTMLButtonElement>(null);
+  /* Only a click that began on the dark closes: a throw of the photo that
+     falls short and is let go over the dark is the browser's click too. */
+  const beganOutside = useRef(false);
+  const onDown = (e: React.PointerEvent) => { beganOutside.current = !(e.target as Element).closest('.b-lb__card, .b-lb__bar, button'); };
+  const onBackdrop = (e: React.MouseEvent) => {
+    if (beganOutside.current && !(e.target as Element).closest('.b-lb__card, .b-lb__bar, button')) requestClose();
+    beganOutside.current = false;
+  };
+  useDialogFocus(closeRef);
+  useScrollLock();
 
+  /* The photo flies back to the print it came from only if that is the one
+     still showing; after walking to another it simply lets go. */
+  const first = useRef(index);
   const requestClose = useCallback(() => {
-    if (reduce || !origin) { onClose(); return; }
+    if (reduce || !origin || index !== first.current) { onClose(); return; }
     setDir(0);
     setClosing(true);
-  }, [reduce, origin, onClose]);
+  }, [reduce, origin, onClose, index]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -37,8 +53,7 @@ export default function Lightbox({ photos, index, onClose, onPrev, onNext, origi
       if (e.key === 'ArrowRight') { setDir(1);  onNext(); }
     };
     window.addEventListener('keydown', onKey);
-    document.body.style.overflow = 'hidden';
-    return () => { window.removeEventListener('keydown', onKey); document.body.style.overflow = ''; };
+    return () => window.removeEventListener('keydown', onKey);
   }, [requestClose, onPrev, onNext, closing]);
 
   if (!photo) return null;
@@ -55,9 +70,9 @@ export default function Lightbox({ photos, index, onClose, onPrev, onNext, origi
   };
 
   return (
-    <motion.div className="b-lb" role="dialog" aria-modal="true" aria-label={photo.title ?? 'Mynd'} onClick={requestClose}
+    <motion.div className="b-lb" role="dialog" aria-modal="true" aria-label={photo.title ?? 'Mynd'} onPointerDown={onDown} onClick={onBackdrop}
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-      <button className="b-lb__close" onClick={requestClose} aria-label="Loka">✕</button>
+      <button ref={closeRef} type="button" className="b-arrowbtn b-lb__close" onClick={requestClose} aria-label="Loka"><CloseIcon /></button>
       <div className="b-lb__img">
         <AnimatePresence custom={dir} mode="popLayout">
           <motion.div
@@ -87,8 +102,8 @@ export default function Lightbox({ photos, index, onClose, onPrev, onNext, origi
         {photos.length > 1 && (
           <div className="b-inline">
             <span className="b-lb__count">{index + 1} / {photos.length}</span>
-            <button className="b-arrowbtn" onClick={() => { if (closing) return; setDir(-1); onPrev(); }} aria-label="Fyrri mynd">←</button>
-            <button className="b-arrowbtn" onClick={() => { if (closing) return; setDir(1); onNext(); }} aria-label="Næsta mynd">→</button>
+            <button type="button" className="b-arrowbtn" onClick={() => { if (closing) return; setDir(-1); onPrev(); }} aria-label="Fyrri mynd"><ArrowIcon flip /></button>
+            <button type="button" className="b-arrowbtn" onClick={() => { if (closing) return; setDir(1); onNext(); }} aria-label="Næsta mynd"><ArrowIcon /></button>
           </div>
         )}
       </div>

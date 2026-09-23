@@ -40,7 +40,9 @@ export async function POST(req: NextRequest) {
     const blocked = plan.length > 0;
     return NextResponse.json({
       error: blocked
-        ? `Engin mynd var færð: ${plan.length} bíða en ${to}-skráin fannst ekki við hliðina á þeim.`
+        ? (plan.length % 10 === 1 && plan.length % 100 !== 11
+          ? `Engin mynd var færð: ${plan.length} bíður en ${to}-skráin fannst ekki við hliðina á henni.`
+          : `Engin mynd var færð: ${plan.length} bíða en ${to}-skráin fannst ekki við hliðina á þeim.`)
         : 'Engin mynd bíður þessarar breytingar.',
     }, { status: 409 });
   }

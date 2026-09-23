@@ -29,8 +29,12 @@ export async function GET() {
   return respond(body);
 }
 
+/* A failed lookup is shared for a few seconds only: long enough to spare the
+   upstream a stampede, short enough that one hiccup does not tell every
+   visitor for a minute and a half that the server is off. */
 function respond(body: StatusResponse) {
-  return NextResponse.json(body, { headers: { 'Cache-Control': `s-maxage=${CACHE_MS / 1000}, stale-while-revalidate=60` } });
+  const cache = body.source === 'error' ? 's-maxage=5' : `s-maxage=${CACHE_MS / 1000}, stale-while-revalidate=60`;
+  return NextResponse.json(body, { headers: { 'Cache-Control': cache } });
 }
 
 async function lookup(): Promise<StatusResponse> {

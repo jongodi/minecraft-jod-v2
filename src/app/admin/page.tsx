@@ -11,6 +11,7 @@ import ServerPanel from '@/components/admin/ServerPanel';
 import DatapacksPanel from '@/components/admin/DatapacksPanel';
 import GalleryPanel from '@/components/admin/GalleryPanel';
 import CrewPanel from '@/components/admin/CrewPanel';
+import { confirmLeave, hasUnsaved } from '@/components/admin/unsaved';
 
 const MapPanel = dynamic(() => import('@/components/admin/MapPanel'), { ssr: false });
 
@@ -41,21 +42,35 @@ function useHashTab(): [Tab, (t: Tab) => void] {
 export default function AdminPage() {
   const router = useRouter();
   const [tab, setTab] = useHashTab();
+  /* The map editor holds work in progress (painted ground, moved pins) until
+     it is saved, so once opened it stays mounted behind the other tabs rather
+     than being thrown away by a click on one of them. With nothing unsaved it
+     is loaded afresh on the way back, since the gallery tab links photos to
+     places and writes the map too. */
+  const [mapOpened, setMapOpened] = useState(false);
+  const [mapKey, setMapKey] = useState(0);
+  useEffect(() => {
+    if (tab !== 'map') return;
+    setMapOpened(true);
+    if (!hasUnsaved('map')) setMapKey(k => k + 1);
+  }, [tab]);
 
   async function logout() {
-    await fetch('/api/admin/auth', { method: 'DELETE' });
+    if (!confirmLeave()) return;
+    await fetch('/api/admin/auth', { method: 'DELETE' }).catch(() => {});
     router.push('/admin/login');
     router.refresh();
   }
+  const guardLeave = (e: React.MouseEvent) => { if (!confirmLeave()) e.preventDefault(); };
 
   return (
     <div className="a">
       <header className="a-bar">
         <div className="a-wrap a-bar__inner">
-          <Link href="/" className="a-bar__mark"><Mark />JOÐ</Link>
+          <Link href="/" className="a-bar__mark" onClick={guardLeave}><Mark />JOÐ</Link>
           <span className="a-bar__title">Stjórnborð</span>
           <div className="a-bar__actions">
-            <Link href="/" className="a-btn a-btn--ghost a-btn--small">Forsíðan</Link>
+            <Link href="/" className="a-btn a-btn--ghost a-btn--small" onClick={guardLeave}>Forsíðan</Link>
             <Button tone="ghost" small onClick={logout}>Skrá út</Button>
           </div>
         </div>
@@ -73,7 +88,7 @@ export default function AdminPage() {
         {tab === 'server'    && <ServerPanel />}
         {tab === 'datapacks' && <DatapacksPanel />}
         {tab === 'gallery'   && <GalleryPanel />}
-        {tab === 'map'       && <MapPanel />}
+        {mapOpened && <div hidden={tab !== 'map'}><MapPanel key={mapKey} /></div>}
         {tab === 'crew'      && <CrewPanel />}
       </main>
     </div>

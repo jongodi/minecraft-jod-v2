@@ -7,6 +7,7 @@
 //
 // After a client upload the browser registers the photo with POST /api/admin/gallery.
 import { NextRequest, NextResponse } from 'next/server';
+import { badJson, jsonObject } from '@/lib/http';
 import { handleUpload, type HandleUploadBody } from '@vercel/blob/client';
 import { addGalleryPhoto } from '@/lib/gallery';
 import { linkPhotoToLocation } from '@/lib/map';
@@ -38,7 +39,9 @@ export async function POST(req: NextRequest) {
 }
 
 async function clientUploadHandshake(req: NextRequest) {
-  const body = (await req.json()) as HandleUploadBody;
+  const parsed = await jsonObject(req);
+  if (!parsed || typeof parsed.type !== 'string') return badJson();
+  const body = parsed as unknown as HandleUploadBody;
 
   // Token requests come from the admin's browser. The completion callback comes from
   // Vercel (no cookie); handleUpload verifies its signature itself.

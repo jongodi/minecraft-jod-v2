@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, type ReactNode } from 'react';
+import { CloseIcon } from './Bits';
 import { useInert } from './hooks';
 
 interface Props {
@@ -45,7 +46,7 @@ export default function Drawer({ id, open, title, note, onClose, children }: Pro
         <h2 id={`${id}-title`} className="b-room__title">{title}</h2>
         {note && <p className="b-room__note">{note}</p>}
         <button ref={close} type="button" className="b-room__close" onClick={onClose} aria-label={`Loka: ${title}`}>
-          <span aria-hidden="true">✕</span>
+          <CloseIcon />
         </button>
       </div>
       <div ref={body} className="b-room__body">

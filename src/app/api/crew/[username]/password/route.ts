@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { badJson, jsonObject } from '@/lib/http';
 import { requireOwner, isCrewUsername } from '@/lib/crew';
 import { hashPassword, passwordProblem, setPasswordHash } from '@/lib/crew-access';
 
@@ -15,7 +16,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
   if (!(await requireOwner(username))) return NextResponse.json({ error: 'Þú þarft að skrá þig inn með réttum aðgangi.' }, { status: 401 });
 
   let body: { password?: unknown };
-  try { body = await req.json(); } catch { return NextResponse.json({ error: 'Ógilt JSON.' }, { status: 400 }); }
+  { const parsed = await jsonObject(req); if (!parsed) return badJson(); body = parsed; }
   const problem = passwordProblem(body.password);
   if (problem) return NextResponse.json({ error: problem }, { status: 400 });
 

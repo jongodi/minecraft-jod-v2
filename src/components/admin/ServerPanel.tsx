@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button, Notice, Panel, api, errText } from './ui';
 
 interface ServerInfo {
@@ -30,8 +30,13 @@ export default function ServerPanel() {
   const [acting, setActing] = useState<string | null>(null);
   const [msg, setMsg] = useState('');
   const [checkedAt, setCheckedAt] = useState<Date | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  /* the follow-up checks after start or stop, cleared if the tab is left */
+  const followUps = useRef<ReturnType<typeof setTimeout>[]>([]);
+  useEffect(() => () => followUps.current.forEach(clearTimeout), []);
 
   const load = useCallback(async () => {
+    setRefreshing(true);
     try {
       setInfo(await api<ServerInfo>('/api/admin/server/info'));
       setError('');
@@ -40,6 +45,7 @@ export default function ServerPanel() {
       setError(errText(e, 'Ekki tókst að sækja upplýsingar um þjóninn. Athugaðu EXAROTON_API_KEY.'));
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, []);
 
@@ -55,8 +61,7 @@ export default function ServerPanel() {
     try {
       await api(`/api/admin/server/${action.id}`, { method: 'POST' });
       setMsg(`✓ Beiðni send: ${action.label.toLowerCase()}. Staðan uppfærist á næstu sekúndum.`);
-      setTimeout(load, 3000);
-      setTimeout(load, 10000);
+      followUps.current.push(setTimeout(load, 3000), setTimeout(load, 10000));
     } catch (e) {
       setMsg(errText(e));
     } finally {
@@ -71,7 +76,7 @@ export default function ServerPanel() {
     <Panel
       title="Þjónninn"
       sub={checkedAt ? `Exaroton. Síðast athugað ${checkedAt.toLocaleTimeString('is-IS', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}, uppfærist á hálfrar mínútu fresti.` : 'Exaroton'}
-      tools={<Button tone="ghost" small onClick={load} disabled={loading}>Endurhlaða</Button>}
+      tools={<Button tone="ghost" small onClick={load} disabled={loading || refreshing}>{refreshing && !loading ? 'Athuga…' : 'Endurhlaða'}</Button>}
     >
       {loading ? <p className="a-muted">Sæki upplýsingar um þjóninn</p> : error ? <Notice text={error} /> : info && st && (
         <div className="a-stack">

@@ -3,13 +3,14 @@
 // Photo uploader for the admin gallery: pick or drop several photos, each is shrunk in the
 // browser, sent straight to Vercel Blob (or to the server in local dev) and then registered.
 import { useCallback, useEffect, useRef, useState, type DragEvent } from 'react';
+import { plural } from '@/lib/format';
 import { upload } from '@vercel/blob/client';
 import type { GalleryPhoto } from '@/lib/gallery';
 import { prepareImage, formatBytes, MAX_EDGE } from '@/lib/client-image';
 
 export type AdminPhoto = GalleryPhoto & { locationId: number | null };
 
-interface StorageInfo { mode: 'blob' | 'local' | 'none'; access: 'public' | 'private' | null; maxBytes: number; error: string | null }
+export interface StorageInfo { mode: 'blob' | 'local' | 'none'; access: 'public' | 'private' | null; maxBytes: number; error: string | null }
 
 type Stage = 'queued' | 'preparing' | 'uploading' | 'saving' | 'done' | 'error';
 interface Job { key: string; name: string; size: number; stage: Stage; progress: number; note?: string }
@@ -43,6 +44,63 @@ async function errorFrom(res: Response): Promise<string> {
   return `Villa ${res.status}${res.statusText ? ` (${res.statusText})` : ''}`;
 }
 
+const STORAGE_UNKNOWN: StorageInfo = { mode: 'none', access: null, maxBytes: 0, error: 'Náði ekki í stillingar geymslunnar.' };
+
+/** Where photos go right now: Blob (public or private), the local folder, or nowhere. */
+export async function fetchGalleryStorage(): Promise<StorageInfo> {
+  try {
+    const r = await fetch('/api/admin/gallery/upload', { cache: 'no-store' });
+    return (r.ok ? (await r.json()) as StorageInfo : null) ?? STORAGE_UNKNOWN;
+  } catch {
+    return STORAGE_UNKNOWN;
+  }
+}
+
+/** One photo into the album: shrunk in the browser, sent straight to Blob (or
+    to the server in local dev, where there is no body limit), then registered.
+    The uploader below and the map editor's "Hlaða upp nýrri" both go this way,
+    so neither posts a raw 20 MB screenshot at a function capped at 4.5 MB. */
+export async function uploadGalleryPhoto(
+  file: File,
+  info: StorageInfo,
+  fields: { title: string; sublabel: string },
+  report: (p: { stage: 'uploading' | 'saving'; progress?: number; note?: string }) => void = () => {},
+): Promise<AdminPhoto> {
+  if (info.mode === 'none') throw new Error(info.error ?? 'Myndageymsla er ekki stillt.');
+  const prepared = await prepareImage(file);
+  if (prepared.blob.size > info.maxBytes) throw new Error(`Of stór eftir minnkun (${formatBytes(prepared.blob.size)}, hámark ${formatBytes(info.maxBytes)}).`);
+  const note = prepared.resized ? `${formatBytes(file.size)} → ${formatBytes(prepared.blob.size)} · ${prepared.width}×${prepared.height}` : formatBytes(file.size);
+  report({ stage: 'uploading', note });
+
+  if (info.mode === 'blob') {
+    const id = newId();
+    const blob = await upload(`gallery/${id}.${prepared.ext}`, prepared.blob, {
+      access:          info.access ?? 'public',
+      handleUploadUrl: '/api/admin/gallery/upload',
+      contentType:     prepared.contentType,
+      multipart:       prepared.blob.size > 8 * 1024 * 1024,
+      onUploadProgress: ({ percentage }) => report({ stage: 'uploading', progress: percentage }),
+    });
+    report({ stage: 'saving', progress: 100 });
+    const res = await fetch('/api/admin/gallery', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ url: blob.url, pathname: blob.pathname, ...fields }),
+    });
+    if (!res.ok) throw new Error(await errorFrom(res));
+    return await res.json() as AdminPhoto;
+  }
+
+  const fd = new FormData();
+  fd.append('file', new File([prepared.blob], `${titleFromName(file.name) || 'mynd'}.${prepared.ext}`, { type: prepared.contentType }));
+  fd.append('title', fields.title);
+  fd.append('sublabel', fields.sublabel);
+  const res = await fetch('/api/admin/gallery/upload', { method: 'POST', body: fd });
+  if (!res.ok) throw new Error(await errorFrom(res));
+  report({ stage: 'saving', progress: 100 });
+  return await res.json() as AdminPhoto;
+}
+
 export default function GalleryUploader({ onUploaded }: { onUploaded: (photo: AdminPhoto, first: boolean) => void }) {
   const [storage, setStorage] = useState<StorageInfo | null>(null);
   const [jobs,    setJobs]    = useState<Job[]>([]);
@@ -50,56 +108,15 @@ export default function GalleryUploader({ onUploaded }: { onUploaded: (photo: Ad
   const inputRef = useRef<HTMLInputElement>(null);
   const busyRef  = useRef(false);
 
-  useEffect(() => {
-    fetch('/api/admin/gallery/upload', { cache: 'no-store' })
-      .then(r => (r.ok ? r.json() : null))
-      .then((s: StorageInfo | null) => setStorage(s ?? { mode: 'none', access: null, maxBytes: 0, error: 'Náði ekki í stillingar geymslunnar.' }))
-      .catch(() => setStorage({ mode: 'none', access: null, maxBytes: 0, error: 'Náði ekki í stillingar geymslunnar.' }));
-  }, []);
+  useEffect(() => { fetchGalleryStorage().then(setStorage); }, []);
 
   const patch = useCallback((key: string, p: Partial<Job>) => {
     setJobs(js => js.map(j => (j.key === key ? { ...j, ...p } : j)));
   }, []);
 
   const uploadOne = useCallback(async (file: File, key: string, first: boolean) => {
-    const info = storage!;
     patch(key, { stage: 'preparing', progress: 0 });
-    const prepared = await prepareImage(file);
-    if (prepared.blob.size > info.maxBytes) throw new Error(`Of stór eftir minnkun (${formatBytes(prepared.blob.size)}, hámark ${formatBytes(info.maxBytes)}).`);
-    const note = prepared.resized ? `${formatBytes(file.size)} → ${formatBytes(prepared.blob.size)} · ${prepared.width}×${prepared.height}` : formatBytes(file.size);
-    patch(key, { stage: 'uploading', note });
-
-    const title = titleFromName(file.name);
-    let photo: AdminPhoto;
-
-    if (info.mode === 'blob') {
-      const id = newId();
-      const blob = await upload(`gallery/${id}.${prepared.ext}`, prepared.blob, {
-        access:          info.access ?? 'public',
-        handleUploadUrl: '/api/admin/gallery/upload',
-        contentType:     prepared.contentType,
-        multipart:       prepared.blob.size > 8 * 1024 * 1024,
-        onUploadProgress: ({ percentage }) => patch(key, { progress: percentage }),
-      });
-      patch(key, { stage: 'saving', progress: 100 });
-      const res = await fetch('/api/admin/gallery', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ url: blob.url, pathname: blob.pathname, title, sublabel: '' }),
-      });
-      if (!res.ok) throw new Error(await errorFrom(res));
-      photo = await res.json() as AdminPhoto;
-    } else {
-      const fd = new FormData();
-      fd.append('file', new File([prepared.blob], `${titleFromName(file.name) || 'mynd'}.${prepared.ext}`, { type: prepared.contentType }));
-      fd.append('title', title);
-      fd.append('sublabel', '');
-      const res = await fetch('/api/admin/gallery/upload', { method: 'POST', body: fd });
-      if (!res.ok) throw new Error(await errorFrom(res));
-      patch(key, { stage: 'saving', progress: 100 });
-      photo = await res.json() as AdminPhoto;
-    }
-
+    const photo = await uploadGalleryPhoto(file, storage!, { title: titleFromName(file.name), sublabel: '' }, p => patch(key, p));
     patch(key, { stage: 'done', progress: 100 });
     onUploaded(photo, first);
   }, [storage, patch, onUploaded]);
@@ -145,7 +162,7 @@ export default function GalleryUploader({ onUploaded }: { onUploaded: (photo: Ad
         onDragLeave={() => setDragging(false)}
         onDrop={onDrop}
       >
-        <input ref={inputRef} type="file" accept="image/*" multiple disabled={disabled} onChange={e => run(Array.from(e.target.files ?? []))} style={{ display: 'none' }} id="gallery-upload" />
+        <input ref={inputRef} type="file" accept="image/*" multiple disabled={disabled} onChange={e => run(Array.from(e.target.files ?? []))} className="a-sr" id="gallery-upload" />
         <label htmlFor="gallery-upload" className={`a-btn a-btn--primary${disabled ? '' : ''}`} aria-disabled={disabled}>{busy ? 'Hleð upp' : 'Hlaða upp myndum'}</label>
         <span className="a-help">
           {!storage ? 'Athuga geymslu'
@@ -169,7 +186,7 @@ export default function GalleryUploader({ onUploaded }: { onUploaded: (photo: Ad
             </li>
           ))}
           {!busy && jobs.length > 1 && (
-            <li className={failCount ? 'a-update--err' : 'a-update--ok'}>{doneCount} af {jobs.length} myndum hlaðið upp{failCount ? `, ${failCount} mistókst` : ''}.</li>
+            <li className={failCount ? 'a-update--err' : 'a-update--ok'}>{doneCount} af {jobs.length} {plural(jobs.length, 'mynd', 'myndum')} hlaðið upp{failCount ? `, ${failCount} ${plural(failCount, 'mistókst', 'mistókust')}` : ''}.</li>
           )}
         </ul>
       )}

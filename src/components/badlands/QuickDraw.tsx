@@ -4,7 +4,7 @@ import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { motion, useAnimation, useReducedMotion } from 'framer-motion';
 import Link from 'next/link';
 import { BulletHole, Star } from './Bits';
-import { useCrewSession } from './hooks';
+import { useCrewSession, useDialogFocus } from './hooks';
 
 /* One game is three draws. Each draw: a random hold, then the call.
    Tapping during the hold is a foul and that draw is lost. */
@@ -64,6 +64,8 @@ function QuickDraw({ onClose }: { onClose: () => void }) {
   const kick = useAnimation();
   const { me } = useCrewSession();
   const [posted, setPosted] = useState<{ best: number; improved: boolean } | null>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  useDialogFocus(closeRef);
 
   useEffect(() => { try { const v = Number(localStorage.getItem(BEST_KEY)); if (v > 0) setBest(v); } catch {} }, []);
   useEffect(() => { if (best !== null) { try { localStorage.setItem(BEST_KEY, String(best)); } catch {} } }, [best]);
@@ -73,7 +75,8 @@ function QuickDraw({ onClose }: { onClose: () => void }) {
     setRound(r); setPhase('hold'); setHole(null); fired.current = false;
     timer.current = setTimeout(() => { setPhase('draw'); t0.current = performance.now(); }, 1600 + Math.random() * 2400);
   }, []);
-  const begin = useCallback(() => { setShots([]); startRound(0); }, [startRound]);
+  /* a new game clears the last one's word from the board */
+  const begin = useCallback(() => { setShots([]); setPosted(null); startRound(0); }, [startRound]);
   const endRound = useCallback((shot: Shot, r: number) => {
     setShots(s => [...s, shot]);
     if (shot !== null) setBest(b => (b === null || shot < b ? shot : b));
@@ -131,7 +134,7 @@ function QuickDraw({ onClose }: { onClose: () => void }) {
             <h2 id="showdown-title" className="b-title b-title--small">Einvígi</h2>
             <p className="b-lede">Hver er fljótastur á gikknum? Þrjár umferðir í leik; besti tíminn vistast í þessu tæki.</p>
           </div>
-          <button type="button" className="b-btn b-btn--small" onClick={onClose}>Loka</button>
+          <button ref={closeRef} type="button" className="b-btn b-btn--small" onClick={onClose}>Loka</button>
         </div>
 
         <div className="b-duel">

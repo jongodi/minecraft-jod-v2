@@ -1,9 +1,10 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import Lightbox from './Lightbox';
-import { useReducedMotionPref } from './hooks';
+import { useDialogFocus, useReducedMotionPref, useScrollLock } from './hooks';
+import { plural } from '@/lib/format';
 import type { Plate } from './data';
 import { photoProps, PHOTO_SIZES } from './photo';
 
@@ -18,16 +19,18 @@ export default function Album({ plates, onClose }: { plates: Plate[]; onClose: (
   const [open, setOpen] = useState<number | null>(null);
   const [origin, setOrigin] = useState<DOMRect | null>(null);
   const reduce = useReducedMotionPref();
+  const closeRef = useRef<HTMLButtonElement>(null);
+  useDialogFocus(closeRef);
 
   const prev  = useCallback(() => setOpen(i => (i === null ? null : (i - 1 + plates.length) % plates.length)), [plates.length]);
   const next  = useCallback(() => setOpen(i => (i === null ? null : (i + 1) % plates.length)), [plates.length]);
   const close = useCallback(() => setOpen(null), []);
 
+  useScrollLock();
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && open === null) onClose(); };
     window.addEventListener('keydown', onKey);
-    document.body.style.overflow = 'hidden';
-    return () => { window.removeEventListener('keydown', onKey); document.body.style.overflow = ''; };
+    return () => window.removeEventListener('keydown', onKey);
   }, [onClose, open]);
 
   return (
@@ -37,9 +40,9 @@ export default function Album({ plates, onClose }: { plates: Plate[]; onClose: (
         <div className="b-head">
           <div>
             <h2 className="b-title">Myndir úr heiminum</h2>
-            <p className="b-note">{plates.length} myndir, í þeirri röð sem byggingarnar risu. Smelltu á ramma til að stækka.</p>
+            <p className="b-note">{plates.length} {plural(plates.length, 'mynd', 'myndir')}, í þeirri röð sem byggingarnar risu. Smelltu á ramma til að stækka.</p>
           </div>
-          <button type="button" className="b-btn b-btn--small" onClick={onClose}>Loka</button>
+          <button ref={closeRef} type="button" className="b-btn b-btn--small" onClick={onClose}>Loka</button>
         </div>
         <div className="b-wall">
           {plates.map((p, i) => {
@@ -61,6 +64,7 @@ export default function Album({ plates, onClose }: { plates: Plate[]; onClose: (
                   width={480}
                   height={480}
                 />
+                <span className="b-frame-pic__dim" aria-hidden="true" />
                 <span className="b-frame-pic__plate">
                   <span className="b-frame-pic__no">{String(i + 1).padStart(2, '0')}</span>
                   <span className="b-frame-pic__cap"><b>{p.title}</b>{p.sub && <>, {p.sub}</>}</span>

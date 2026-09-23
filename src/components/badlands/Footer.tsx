@@ -8,6 +8,7 @@ import { Campfire, Chevron } from './Bits';
 import { Ridge } from './Mesa';
 import { SERVER_IP } from './data';
 import AmbienceToggle from '@/effects/AmbienceToggle';
+import { useBackdropClose, useScrollLock } from './hooks';
 
 /* The duel lives behind the fire; nobody pays for it until they tap. */
 const QuickDraw = dynamic(() => import('./QuickDraw'), { ssr: false });
@@ -16,8 +17,10 @@ const QuickDraw = dynamic(() => import('./QuickDraw'), { ssr: false });
    phone), so the footer does not post them a second time. What is left is
    what is off the page: the crew's rooms and the admin panel. */
 const LINKS = [
-  { href: '/crew',  label: 'Hópurinn' },
-  { href: '/admin', label: 'Stjórnborð' },
+  { href: '/crew',  label: 'Hópurinn',   prefetch: true },
+  /* not prefetched: every visitor who scrolled to the fire used to download
+     the admin panel's code and stylesheet, which then sat unused */
+  { href: '/admin', label: 'Stjórnborð', prefetch: false },
 ];
 
 /** The campfire: the last light. One band of ground at the foot of the page,
@@ -27,13 +30,14 @@ const LINKS = [
 function Footer() {
   const [duel, setDuel] = useState(false);
   const path = usePathname();
+  useScrollLock(duel);
+  const backdrop = useBackdropClose(() => setDuel(false));
 
   useEffect(() => {
     if (!duel) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setDuel(false); };
     window.addEventListener('keydown', onKey);
-    document.body.style.overflow = 'hidden';
-    return () => { window.removeEventListener('keydown', onKey); document.body.style.overflow = ''; };
+    return () => window.removeEventListener('keydown', onKey);
   }, [duel]);
 
   return (
@@ -47,7 +51,7 @@ function Footer() {
         </div>
 
         <nav className="b-foot__nav" aria-label="Fleiri síður">
-          {LINKS.map(l => <Link key={l.href} href={l.href} className="b-foot__link" aria-current={path === l.href ? 'page' : undefined}>{l.label}</Link>)}
+          {LINKS.map(l => <Link key={l.href} href={l.href} prefetch={l.prefetch ? undefined : false} className="b-foot__link" aria-current={path === l.href ? 'page' : undefined}>{l.label}</Link>)}
           <AmbienceToggle className="b-foot__sound" />
         </nav>
 
@@ -64,8 +68,8 @@ function Footer() {
       <div className="b-ground" aria-hidden="true" />
 
       {duel && (
-        <div className="b-duelbox" role="dialog" aria-modal="true" aria-label="Einvígi" onClick={() => setDuel(false)}>
-          <div className="b-duelbox__in" onClick={e => e.stopPropagation()}>
+        <div className="b-duelbox" role="dialog" aria-modal="true" aria-label="Einvígi" {...backdrop}>
+          <div className="b-duelbox__in">
             <QuickDraw onClose={() => setDuel(false)} />
           </div>
         </div>

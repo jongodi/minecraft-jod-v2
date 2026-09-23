@@ -66,22 +66,107 @@ export async function writeProfile(profile: CrewProfile): Promise<void> {
       return;
     } catch (e) {
       console.error('Redis writeProfile error:', e);
-      throw new Error('Ekki tókst að vista vegginn vegna villu í geymslu.');
+      throw new Error(STORE_WRITE_ERROR);
     }
   }
 
+  await writeProfileFile(clean);
+}
+
+/* A write goes to a temporary file that is then renamed over the wall, so a
+   read that lands mid-write sees the old wall or the new one, never half. */
+async function writeProfileFile(clean: CrewProfile): Promise<void> {
   const dir  = profilesDir();
   const file = path.join(dir, `${clean.username.toLowerCase()}.json`);
   await fs.mkdir(dir, { recursive: true });
-  await fs.writeFile(file, JSON.stringify(clean, null, 2) + '\n', 'utf-8');
+  const tmp = `${file}.${randomUUID()}.tmp`;
+  await fs.writeFile(tmp, JSON.stringify(clean, null, 2) + '\n', 'utf-8');
+  await fs.rename(tmp, file);
 }
 
-/** Read, change, write: the one way a wall is changed, so every route keeps the same shape. */
+const STORE_READ_ERROR = 'Ekki tókst að lesa vegginn úr geymslunni; reyndu aftur.';
+const STORE_WRITE_ERROR = 'Ekki tókst að vista vegginn vegna villu í geymslu.';
+
+/* Set the wall only if it is still what was read: the stored text is compared
+   inside Redis, so two members changing one wall at once cannot both win. */
+const COMPARE_AND_SET = `
+local cur = redis.call('GET', KEYS[1])
+if (cur == false and ARGV[1] == '') or cur == ARGV[1] then
+  redis.call('SET', KEYS[1], ARGV[2])
+  return 1
+end
+return 0`;
+const CAS_TRIES = 5;
+
+/* File mode (development) has one process, so a promise chain per wall is lock enough. */
+const fileLocks = new Map<string, Promise<unknown>>();
+function withFileLock<T>(name: string, run: () => Promise<T>): Promise<T> {
+  const prev = fileLocks.get(name) ?? Promise.resolve();
+  const next = prev.catch(() => {}).then(run);
+  fileLocks.set(name, next);
+  return next.finally(() => { if (fileLocks.get(name) === next) fileLocks.delete(name); });
+}
+
+/** Read, change, write: the one way a wall is changed, so every route keeps the same shape.
+
+    The read here is strict. `readProfile` shows an empty wall when storage
+    fails, which is right for a page but would be ruinous here: the change
+    would be made to that empty wall and written over the real one. So a
+    failed or unreadable read throws instead. A change that alters nothing
+    (a lantern on an entry that is gone) writes nothing, and with Redis the
+    write only lands if nobody wrote the wall since it was read; otherwise
+    the change is made again on the newer wall. `change` may run more than
+    once, so it must only touch the profile it is given and its own locals. */
 export async function updateProfile(username: string, change: (p: CrewProfile) => void | Promise<void>): Promise<CrewProfile> {
-  const profile = await readProfile(username);
-  await change(profile);
-  await writeProfile(profile);
-  return normalizeProfile(profile, profile.username);
+  const name = canonicalUsername(username);
+
+  if (hasKV()) {
+    const { getRedis } = await import('./redis');
+    const redis = getRedis();
+    const key = profileKey(name);
+    for (let attempt = 0; attempt < CAS_TRIES; attempt++) {
+      let raw: string | null;
+      let stored: unknown;
+      try {
+        raw = await redis.get(key);
+        stored = raw === null ? null : JSON.parse(raw);
+      } catch (e) {
+        console.error('Redis updateProfile read error:', e);
+        throw new Error(STORE_READ_ERROR);
+      }
+      const profile = normalizeProfile(stored, name);
+      const before = JSON.stringify(profile);
+      await change(profile);
+      const clean = normalizeProfile(profile, name);
+      const after = JSON.stringify(clean);
+      if (after === before) return clean;
+      let ok: unknown;
+      try {
+        ok = await redis.eval(COMPARE_AND_SET, 1, key, raw ?? '', after);
+      } catch (e) {
+        console.error('Redis updateProfile write error:', e);
+        throw new Error(STORE_WRITE_ERROR);
+      }
+      if (ok === 1) return clean;
+    }
+    throw new Error('Veggurinn breyttist á meðan; reyndu aftur.');
+  }
+
+  return withFileLock(name.toLowerCase(), async () => {
+    const file = path.join(profilesDir(), `${name.toLowerCase()}.json`);
+    let stored: unknown = null;
+    try {
+      stored = JSON.parse(await fs.readFile(file, 'utf-8'));
+    } catch (e) {
+      if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw new Error(STORE_READ_ERROR);
+    }
+    const profile = normalizeProfile(stored, name);
+    const before = JSON.stringify(profile);
+    await change(profile);
+    const clean = normalizeProfile(profile, name);
+    if (JSON.stringify(clean) !== before) await writeProfileFile(clean);
+    return clean;
+  });
 }
 
 // ─── Crew auth ────────────────────────────────────────────────────────────────

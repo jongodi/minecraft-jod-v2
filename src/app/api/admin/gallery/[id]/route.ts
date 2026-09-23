@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { badJson, jsonObject } from '@/lib/http';
 import { readGallery, writeGallery } from '@/lib/gallery';
 import { linkPhotoToLocation, unlinkPhoto } from '@/lib/map';
 import { requireAdmin, unauthorizedResponse } from '@/lib/auth';
@@ -13,7 +14,8 @@ export async function PATCH(
 ) {
   if (!(await requireAdmin())) return unauthorizedResponse();
   const { id } = await params;
-  const body = await req.json() as Record<string, unknown>;
+  const body = await jsonObject(req);
+  if (!body) return badJson();
 
   const gallery = await readGallery();
   const idx = gallery.findIndex(p => p.id === id);

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { badJson, jsonObject } from '@/lib/http';
 import { updateProfile, readProfile, requireOwner, isCrewUsername, cleanText, LIMITS, type CrewEntry } from '@/lib/crew';
 import { photosNotIn, removePhotos } from '@/lib/crew-photos';
 
@@ -14,7 +15,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (!(await requireOwner(username))) return unauthorized();
 
   let body: { text?: unknown; placeId?: unknown; photos?: unknown };
-  try { body = await req.json(); } catch { return NextResponse.json({ error: 'Ógilt JSON.' }, { status: 400 }); }
+  { const parsed = await jsonObject(req); if (!parsed) return badJson(); body = parsed; }
 
   let updated: CrewEntry | null = null;
   let dropped: CrewEntry['photos'] = [];
@@ -32,7 +33,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
             const ph = entry.photos.find(x => x.id === d.id);
             return ph ? { ...ph, caption: typeof d.caption === 'string' ? cleanText(d.caption, LIMITS.caption) : ph.caption } : null;
           })
-          .filter((x): x is NonNullable<typeof x> => x !== null);
+          .filter((x): x is NonNullable<typeof x> => x !== null)
+          .filter((x, i, all) => all.findIndex(y => y.id === x.id) === i);
         dropped = photosNotIn(entry, keep);
         entry.photos = keep;
         if (p.coverPhotoId && dropped.some(d => d.id === p.coverPhotoId)) p.coverPhotoId = null;

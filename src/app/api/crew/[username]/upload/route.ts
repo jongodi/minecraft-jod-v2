@@ -8,6 +8,7 @@
 //
 // Either way the browser then pins the print with POST …/entries.
 import { NextRequest, NextResponse } from 'next/server';
+import { badJson, jsonObject } from '@/lib/http';
 import { handleUpload, type HandleUploadBody } from '@vercel/blob/client';
 import { requireOwner, isCrewUsername, readProfile, allPhotos, CREW_PATH, crewBlobPath } from '@/lib/crew';
 import { detectBlobAccess, storageMode, storeImage, deleteStoredImage, MAX_UPLOAD_BYTES } from '@/lib/blob-store';
@@ -44,7 +45,9 @@ export async function POST(req: NextRequest, { params }: Params) {
 }
 
 async function clientUploadHandshake(req: NextRequest, username: string) {
-  const body = (await req.json()) as HandleUploadBody;
+  const parsed = await jsonObject(req);
+  if (!parsed || typeof parsed.type !== 'string') return badJson();
+  const body = parsed as unknown as HandleUploadBody;
 
   // Token requests come from the member's browser. The completion callback
   // comes from Vercel (no cookie); handleUpload verifies its signature itself.
@@ -104,7 +107,7 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   const { username } = await params;
   if (!isCrewUsername(username) || !(await requireOwner(username))) return unauthorized();
   let body: { id?: unknown; url?: unknown };
-  try { body = await req.json(); } catch { return NextResponse.json({ error: 'Ógilt JSON.' }, { status: 400 }); }
+  { const parsed = await jsonObject(req); if (!parsed) return badJson(); body = parsed; }
   /* the same check a pin runs: only this member's own folder */
   const photo = photoFromDraft(username, body);
   if (!photo) return NextResponse.json({ error: 'Þessi mynd er ekki úr þinni möppu.' }, { status: 400 });

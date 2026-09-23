@@ -32,7 +32,7 @@ export default function PhotoPicker({ photos, locations, currentId, pin, error, 
           <input className="a-input" style={{ flex: 1, minWidth: '10rem' }} value={query} onChange={e => setQuery(e.target.value)} placeholder="Leita eftir titli" autoFocus />
           <label className="a-btn a-btn--small" style={{ cursor: uploading ? 'wait' : 'pointer' }}>
             {uploading ? 'Hleð upp' : 'Hlaða upp nýrri'}
-            <input type="file" accept="image/*" disabled={uploading} style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; e.target.value = ''; if (f) onUpload(f); }} />
+            <input type="file" accept="image/*" disabled={uploading} className="a-sr" onChange={e => { const f = e.target.files?.[0]; e.target.value = ''; if (f) onUpload(f); }} />
           </label>
         </div>
         {error && <p className="a-update--err">{error}</p>}

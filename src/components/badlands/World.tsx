@@ -8,7 +8,8 @@ import type { MapConfig, WorldPoint } from '@/lib/map-types';
 import type { PlacePrints } from '@/app/api/crew/places/route';
 import { DEFAULT_CONFIG } from '@/lib/map-types';
 import viewerFiles from '@/lib/bluemap-viewer.json';
-import { Lantern } from './Bits';
+import { CloseIcon, Lantern, Sun } from './Bits';
+import { plural } from '@/lib/format';
 import Drawer from './Drawer';
 import PlayerHead from './PlayerHead';
 import Rail, { revealRailItem } from './Rail';
@@ -324,7 +325,7 @@ function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
               {/* the album hangs over the page, outside the frame the browser's full screen shows */}
               <button type="button" className="b-btn b-btn--small b-btn--ghost" onClick={() => { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); setAlbum(true); }}>Myndir · {plates.length}</button>
               {full ? (
-                <button type="button" className="b-btn b-btn--small b-btn--ghost is-on" aria-label="Loka heilum skjá" onClick={closeFull}>✕ Loka</button>
+                <button type="button" className="b-btn b-btn--small b-btn--ghost is-on" aria-label="Loka heilum skjá" onClick={closeFull}><CloseIcon className="b-btn__icon" /> Loka</button>
               ) : (
                 // eslint-disable-next-line @next/next/no-html-link-for-pages -- BlueMap's own app, not a Next page
                 <a href={MAP_URL} className="b-btn b-btn--small b-btn--ghost" onPointerEnter={warmViewer} onFocus={warmViewer}
@@ -355,7 +356,7 @@ function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
             )}
             {live && !ready && !still && slow && (
               <p className="b-boot__wait" role="status">
-                sæki kortið{tiles > 0 ? ` · ${tiles} ${tiles === 1 ? 'reitur' : 'reitir'}` : '…'}
+                sæki kortið{tiles > 0 ? ` · ${tiles} ${plural(tiles, 'reitur', 'reitir')}` : '…'}
               </p>
             )}
           </div>
@@ -376,7 +377,14 @@ function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
                 // eslint-disable-next-line @next/next/no-img-element
                 <img {...photoProps(plate.src, PHOTO_SIZES.card)} alt={plate.title} loading="lazy" decoding="async" width={560} height={350} />
               ) : (
-                <div className="b-card__empty" aria-hidden="true"><span>engin mynd enn</span></div>
+                /* a postcard not yet painted: the evening's sun over the ridge, in faint ink */
+                <div className="b-card__empty" aria-hidden="true">
+                  <svg className="b-card__emptyridge" viewBox="0 0 64 40" preserveAspectRatio="xMidYMax slice" shapeRendering="crispEdges">
+                    <path d="M0 40V30H8V26H18V30H26V22H36V28H44V24H52V30H64V40Z" fill="currentColor" />
+                  </svg>
+                  <span className="b-card__emptysun"><Sun /></span>
+                  <span className="b-card__emptytext">engin mynd enn</span>
+                </div>
               )}
               <figcaption className="b-card__cap">
                 <span>
@@ -386,7 +394,7 @@ function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
                     <span className="b-card__builders">byggt af {place.builders.map((b, i) => <span key={b}>{i > 0 && ', '}<Link href={`/crew/${b}`}>{b}</Link></span>)}</span>
                   )}
                 </span>
-                <button type="button" className="b-card__x" onClick={() => setSelect(null)} aria-label="Loka">✕</button>
+                <button type="button" className="b-card__x" onClick={() => setSelect(null)} aria-label="Loka póstkortinu"><CloseIcon /></button>
               </figcaption>
               {/* a place that stands in the world can be visited there */}
               {place.world && (!viewer || still) && !drawn && (
@@ -405,7 +413,7 @@ function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
                       <PlayerHead name={p.username} size={16} className="b-card__printhead" />
                     </Link>
                   ))}
-                  <span className="b-card__more">{here.count} {here.count === 1 ? 'færsla' : 'færslur'} af veggjum</span>
+                  <span className="b-card__more">{here.count} {plural(here.count, 'færsla', 'færslur')} af veggjum</span>
                 </div>
               )}
             </motion.figure>
@@ -422,7 +430,7 @@ function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
               return (
                 <button key={loc.id} type="button" data-rail-item={loc.id}
                   className={`b-chip${loc.id === selected ? ' is-on' : ''}`} aria-pressed={loc.id === selected} onClick={() => choose(loc.id)}>
-                  {count > 0 && <span className="b-chip__count" aria-label={`${count} færslur frá hópnum`}>{count}</span>}
+                  {count > 0 && <span className="b-chip__count" aria-label={`${count} ${plural(count, 'færsla', 'færslur')} frá hópnum`}>{count}</span>}
                   <span className="b-chip__thumb">
                     {thumb
                       // eslint-disable-next-line @next/next/no-img-element

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { plural } from '@/lib/format';
 import type { GalleryPhoto } from '@/lib/gallery';
 import type { MapConfig, MapLocation } from '@/lib/map-types';
 import GalleryUploader from './GalleryUploader';
@@ -78,6 +79,14 @@ export default function GalleryPanel() {
     catch (e) { setMsg(errText(e)); load(); }
   }
   /** Put a photo at a given 1-based position, sliding the rest along. */
+  /* A cleared or half-typed position is not "first": Number('') is 0, which
+     moveTo clamps to 1 and saves. Only a whole number moves the photo. */
+  function placeAt(photo: AdminPhoto, input: HTMLInputElement) {
+    const raw = input.value.trim();
+    const v = Number(raw);
+    if (!raw || !Number.isInteger(v)) { input.value = String(photo.order); return; }
+    if (v !== photo.order) moveTo(photo, v);
+  }
   function moveTo(photo: AdminPhoto, pos: number) {
     const target = Math.max(1, Math.min(sorted.length, Math.round(pos))) - 1;
     const from = sorted.findIndex(p => p.id === photo.id);
@@ -110,7 +119,7 @@ export default function GalleryPanel() {
   return (
     <Panel
       title="Myndasafn"
-      sub={`${counts.shown} af ${photos.length} sýnilegar á vefnum, ${counts.linked} tengdar stað á kortinu. Röðin hér er röðin í albúminu á vefnum: dragðu mynd, notaðu örvarnar eða skrifaðu sæti í reitinn efst á myndinni og ýttu á Enter.`}
+      sub={`${counts.shown} af ${photos.length} ${plural(counts.shown, 'sýnileg', 'sýnilegar')} á vefnum, ${counts.linked} ${plural(counts.linked, 'tengd', 'tengdar')} stað á kortinu. Röðin hér er röðin í albúminu á vefnum: dragðu mynd, notaðu örvarnar eða skrifaðu sæti í reitinn efst á myndinni og ýttu á Enter.`}
       tools={(['all', 'shown', 'hidden', 'unlinked'] as Filter[]).map(f => (
         <Button key={f} tone="ghost" small on={filter === f} onClick={() => setFilter(f)}>{{ all: 'Allar', shown: 'Sýndar', hidden: 'Faldar', unlinked: 'Án staðar' }[f]}</Button>
       ))}
@@ -132,7 +141,7 @@ export default function GalleryPanel() {
                   onDragStart={() => setDragId(photo.id)}
                   onDragOver={e => { e.preventDefault(); setOverId(photo.id); }}
                   onDragLeave={() => setOverId(null)}
-                  onDrop={() => drop(photo.id)}
+                  onDrop={e => { e.preventDefault(); drop(photo.id); }}
                   onDragEnd={() => { setDragId(null); setOverId(null); }}
                 >
                   <div className="a-card__img">
@@ -148,8 +157,8 @@ export default function GalleryPanel() {
                         defaultValue={photo.order}
                         key={`pos-${photo.id}-${photo.order}`}
                         onClick={e => e.stopPropagation()}
-                        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); moveTo(photo, Number((e.target as HTMLInputElement).value)); } }}
-                        onBlur={e => { const v = Number(e.target.value); if (v !== photo.order) moveTo(photo, v); }}
+                        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); placeAt(photo, e.currentTarget); } }}
+                        onBlur={e => placeAt(photo, e.currentTarget)}
                       />
                     </label>
                     {!photo.active && <span className="a-card__badge a-card__badge--r">falin</span>}

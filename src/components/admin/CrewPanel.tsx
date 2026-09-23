@@ -6,6 +6,7 @@
 // can be closed early. A member who forgets their password gets it cleared
 // here and a fresh link.
 import { useCallback, useEffect, useState } from 'react';
+import { plural } from '@/lib/format';
 import type { AdminCrewRow, InviteResponse } from '@/app/api/admin/crew/route';
 import { Button, Modal, Notice, Panel, api, errText } from './ui';
 
@@ -75,7 +76,7 @@ export default function CrewPanel() {
                     ? <><span className="a-update--ok">valið</span> <Button tone="ghost" small onClick={() => clearPassword(r.username)}>Hreinsa</Button></>
                     : <span className="a-muted">ekkert enn{r.hasToken ? ', aðgangslykill í umhverfi' : ''}</span>}
                 </td>
-                <td className="a-muted">{r.entryCount} {r.entryCount === 1 ? 'færsla' : 'færslur'} · {r.photoCount} {r.photoCount === 1 ? 'mynd' : 'myndir'}</td>
+                <td className="a-muted">{r.entryCount} {plural(r.entryCount, 'færsla', 'færslur')} · {r.photoCount} {plural(r.photoCount, 'mynd', 'myndir')}</td>
                 <td>
                   {r.invites.length === 0 ? <span className="a-muted">engir</span> : (
                     <ul className="a-invites">

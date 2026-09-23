@@ -23,7 +23,8 @@ interface Props {
   me:           string | null | undefined;
   isOwner:      boolean;
   coverPhotoId: string | null;
-  onChange:     (entry: CrewEntry) => void;
+  /** change this entry as it is now in the wall's state, not as it was when the request began */
+  onChange:     (id: string, update: (entry: CrewEntry) => CrewEntry) => void;
   onRemove:     (id: string) => void;
   onCover:      (photoId: string | null) => void;
   onOpen:       (photoId: string, origin: DOMRect) => void;
@@ -53,26 +54,35 @@ export default function Print({ username, entry, places, me, isOwner, coverPhoto
     try {
       const res = await api('', { method: 'PATCH', body: JSON.stringify({ text: edit.text, placeId: edit.placeId, photos: edit.photos.map(p => ({ id: p.id, caption: p.caption })) }) });
       if (!res.ok) throw new Error(await errorFrom(res));
-      onChange(await res.json() as CrewEntry);
+      const saved = await res.json() as CrewEntry;
+      onChange(entry.id, () => saved);
       setEdit(null);
     } catch (e) { setError(e instanceof Error ? e.message : 'Ekki tókst að vista.'); }
     finally { setSaving(false); }
   }
 
+  const OFFLINE = 'Nettenging brást. Reyndu aftur.';
+
   async function remove() {
     if (!confirm('Taka þetta niður af veggnum? Myndirnar hverfa líka.')) return;
-    const res = await api('', { method: 'DELETE' });
-    if (res.ok) onRemove(entry.id);
-    else setError(await errorFrom(res));
+    setError('');
+    try {
+      const res = await api('', { method: 'DELETE' });
+      if (res.ok) onRemove(entry.id);
+      else setError(await errorFrom(res));
+    } catch { setError(OFFLINE); }
   }
 
   async function toggleLantern() {
     if (!me || busyLantern) return;
-    setBusyLantern(true);
+    setBusyLantern(true); setError('');
     try {
       const res = await api('/lantern', { method: 'POST' });
-      if (res.ok) { const { lanterns } = await res.json() as { lanterns: string[] }; onChange({ ...entry, lanterns }); }
-    } finally { setBusyLantern(false); }
+      if (!res.ok) throw new Error(await errorFrom(res));
+      const { lanterns } = await res.json() as { lanterns: string[] };
+      onChange(entry.id, e => ({ ...e, lanterns }));
+    } catch (err) { setError(err instanceof Error ? err.message : OFFLINE); }
+    finally { setBusyLantern(false); }
   }
 
   async function sendReply(e: FormEvent) {
@@ -83,15 +93,20 @@ export default function Print({ username, entry, places, me, isOwner, coverPhoto
       const res = await api('/replies', { method: 'POST', body: JSON.stringify({ text: reply }) });
       if (!res.ok) throw new Error(await errorFrom(res));
       const r = await res.json() as CrewEntry['replies'][number];
-      onChange({ ...entry, replies: [...entry.replies, r] });
+      onChange(entry.id, e => ({ ...e, replies: [...e.replies, r] }));
       setReply('');
     } catch (err) { setError(err instanceof Error ? err.message : 'Svarið komst ekki upp.'); }
     finally { setReplying(false); }
   }
 
   async function dropReply(rid: string) {
-    const res = await api(`/replies/${rid}`, { method: 'DELETE' });
-    if (res.ok) onChange({ ...entry, replies: entry.replies.filter(r => r.id !== rid) });
+    if (!confirm('Eyða svarinu?')) return;
+    setError('');
+    try {
+      const res = await api(`/replies/${rid}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error(await errorFrom(res));
+      onChange(entry.id, e => ({ ...e, replies: e.replies.filter(r => r.id !== rid) }));
+    } catch (err) { setError(err instanceof Error ? err.message : OFFLINE); }
   }
 
   const open = (photo: CrewPhoto) => (e: MouseEvent<HTMLButtonElement>) => onOpen(photo.id, e.currentTarget.getBoundingClientRect());

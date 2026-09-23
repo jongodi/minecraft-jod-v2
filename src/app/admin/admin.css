@@ -33,6 +33,9 @@
 .a-inline { display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: center; }
 .a-muted { color: var(--text-faint); font-size: var(--fs-xs); }
 .a-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+/* A file picker is a real input kept out of sight, so Tab reaches it; the
+   button it sits in (or the label beside it) shows the focus instead. */
+.a-btn:has(> input.a-sr:focus-visible), input.a-sr:focus-visible + .a-btn { outline: var(--px, 2px) solid var(--lantern); outline-offset: 3px; }
 .a-data { font-family: var(--font-data); font-size: 0.75rem; color: var(--paper); }
 .a-kbd { display: inline-block; padding: 0 0.35em; border: var(--line) solid var(--text-faint); border-radius: var(--radius); font-family: var(--font-data); font-size: 0.65rem; color: var(--text-soft); }
 
@@ -216,7 +219,9 @@
 .a-table td a { color: var(--lantern); text-decoration: none; }
 .a-table td a:hover { text-decoration: underline; }
 .a-table td:last-child { text-align: right; white-space: nowrap; }
-@media (max-width: 720px) { .a-table th:nth-child(4), .a-table td:nth-child(4) { display: none; } }
+/* On a phone the table scrolls sideways instead of hiding its open sign-in
+   links, which were then out of reach for copying or closing. */
+@media (max-width: 720px) { .a-table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; } }
 .a-qr { width: min(18rem, 100%); margin-inline: auto; padding: var(--sp-2); background: var(--paper); }
 .a-qr svg { width: 100%; height: auto; display: block; shape-rendering: crispEdges; }
 .a-builders { gap: var(--sp-2) var(--sp-4); }

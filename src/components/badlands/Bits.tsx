@@ -144,6 +144,28 @@ export function ArrowIcon({ flip }: { flip?: boolean }) {
   );
 }
 
+/** A pixel cross, the way out of anything that opens over the page. The
+    system's own ✕ is not in any of the three faces, so it would be drawn
+    smooth in a fallback font; this one is on the grid. */
+export function CloseIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" aria-hidden="true" fill="currentColor" shapeRendering="crispEdges">
+      <path d="M3 3h2v2H3zm2 2h2v2H5zm6-2h2v2h-2zm-2 2h2v2H9zM7 7h2v2H7zM5 9h2v2H5zm4 0h2v2H9zm-6 2h2v2H3zm8 0h2v2h-2z" />
+    </svg>
+  );
+}
+
+/** Zoom in, zoom out and the whole map, for the painted sheet. */
+export function ZoomIcon({ kind }: { kind: 'in' | 'out' | 'fit' }) {
+  return (
+    <svg viewBox="0 0 16 16" aria-hidden="true" fill="currentColor" shapeRendering="crispEdges">
+      {kind === 'in'  && <path d="M7 3h2v4h4v2H9v4H7V9H3V7h4z" />}
+      {kind === 'out' && <path d="M3 7h10v2H3z" />}
+      {kind === 'fit' && <path d="M2 2h5v2H4v3H2zm7 0h5v5h-2V4H9zM2 9h2v3h3v2H2zm10 0h2v5H9v-2h3z" />}
+    </svg>
+  );
+}
+
 /** Sound: a small speaker, with waves when on. */
 export function SoundIcon({ on }: { on: boolean }) {
   return (

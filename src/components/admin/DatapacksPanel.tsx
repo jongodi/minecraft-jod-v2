@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { plural } from '@/lib/format';
 import type { DatapackUpdateResult } from '@/app/api/datapacks/check-updates/route';
 import type { RefreshResult } from '@/app/api/admin/datapacks/refresh/route';
 import type { PackView } from '@/lib/datapacks-store';
@@ -33,9 +34,19 @@ export default function DatapacksPanel() {
   const [msg, setMsg] = useState('');
   const [editing, setEditing] = useState<{ pack: PackView | null; filename?: string } | null>(null);
 
+  /* Every action (a toggle, a move, a save) answers with the fresh list. A
+     version the admin has typed and not yet saved is kept through that, so
+     reordering a pack no longer quietly wipes three typed versions. */
+  const stored = useRef<Record<number, string>>({});
   const apply = useCallback((list: PackView[]) => {
+    const before = stored.current;
+    stored.current = Object.fromEntries(list.map(p => [p.id, p.currentVersion ?? '']));
     setPacks(list);
-    setVersions(Object.fromEntries(list.map(p => [p.id, p.currentVersion ?? ''])));
+    setVersions(v => Object.fromEntries(list.map(p => {
+      const typed = v[p.id];
+      const edited = typed !== undefined && p.id in before && typed !== before[p.id];
+      return [p.id, edited ? typed : (p.currentVersion ?? '')];
+    })));
   }, []);
 
   const load = useCallback(async () => {
@@ -64,7 +75,7 @@ export default function DatapacksPanel() {
       const settings = Object.fromEntries(changed.map(p => [p.id, { version: versions[p.id] }]));
       const r = await api<{ packs: PackView[] }>('/api/admin/datapacks', { method: 'PUT', body: JSON.stringify({ settings }) });
       apply(r.packs);
-      setMsg(`✓ ${changed.length} ${changed.length === 1 ? 'útgáfa vistuð' : 'útgáfur vistaðar'}.`);
+      setMsg(`✓ ${changed.length} ${plural(changed.length, 'útgáfa vistuð', 'útgáfur vistaðar')}.`);
       check();
     } catch (e) { setMsg(errText(e)); }
     finally { setSaving(false); }
@@ -120,7 +131,7 @@ export default function DatapacksPanel() {
     <>
       <Panel
         title="Gagnapakkar"
-        sub={<>Það sem er sýnt í kaupfélaginu á vefnum, hvaða útgáfa er uppsett og hvort nýrri sé til. {visible} af {packs.length} sýnilegir{available ? `, ${available} með uppfærslu` : ''}.</>}
+        sub={<>Það sem er sýnt í kaupfélaginu á vefnum, hvaða útgáfa er uppsett og hvort nýrri sé til. {visible} af {packs.length} {plural(visible, 'sýnilegur', 'sýnilegir')}{available ? `, ${available} með uppfærslu` : ''}.</>}
         tools={<>
           <Button tone="ghost" small onClick={check} disabled={checking}>{checking ? 'Athuga' : 'Athuga uppfærslur'}</Button>
           <Button tone="ghost" small onClick={syncServer} disabled={syncing}>{syncing ? 'Samstilli' : 'Lesa af þjóninum'}</Button>
@@ -245,8 +256,8 @@ function PackModal({ pack, filename, onClose, onSaved }: { pack: PackView | null
               <Field label="Uppruni" help="Hvar er leitað að nýrri útgáfu.">
                 <select className="a-select" value={form.source} onChange={e => set('source', e.target.value as Source)}>{SOURCES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}</select>
               </Field>
-              {form.source === 'modrinth' && <Field label="Auðkenni á Modrinth" help="Síðasti hluti slóðarinnar á modrinth.com/datapack/…"><input className="a-input a-input--data" value={form.modrinthSlug} onChange={e => set('modrinthSlug', e.target.value)} placeholder="my-datapack" /></Field>}
-              {form.source === 'github' && <Field label="GitHub-safn" help="eigandi/safn"><input className="a-input a-input--data" value={form.githubRepo} onChange={e => set('githubRepo', e.target.value)} placeholder="owner/repo" /></Field>}
+              {form.source === 'modrinth' && <Field label="Auðkenni á Modrinth" help="Síðasti hluti slóðarinnar á modrinth.com/datapack/…"><input className="a-input a-input--data" value={form.modrinthSlug} onChange={e => set('modrinthSlug', e.target.value)} placeholder="minn-pakki" /></Field>}
+              {form.source === 'github' && <Field label="GitHub-safn" help="eigandi/safn"><input className="a-input a-input--data" value={form.githubRepo} onChange={e => set('githubRepo', e.target.value)} placeholder="eigandi/safn" /></Field>}
             </div>
             <div className="a-form-row">
               <Field label="Útgáfa leiks"><input className="a-input a-input--data" value={form.gameVersion} onChange={e => set('gameVersion', e.target.value)} placeholder="26.1" /></Field>

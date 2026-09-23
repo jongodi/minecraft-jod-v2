@@ -60,6 +60,27 @@ export function displayUrlFor(blob: { url: string; pathname: string }, access: B
   return access === 'private' ? blobProxyUrl(blob.pathname) : blob.url;
 }
 
+/* This project's own store, read off the token the way @vercel/blob builds
+   its URLs: https://<storeId>.<access>.blob.vercel-storage.com/<pathname>. */
+function ownStoreId(): string | null {
+  const id = process.env.BLOB_READ_WRITE_TOKEN?.split('_')[3];
+  return id ? id.toLowerCase() : null;
+}
+
+/** A URL in this project's Blob store. Any Vercel Blob host is not enough:
+    anyone can make a store of their own, and a print pinned from it would skip
+    the size and type limits the upload handshake sets. */
+export function isOwnBlobUrl(url: string): boolean {
+  const id = ownStoreId();
+  if (!id) return false;
+  try {
+    const host = new URL(url).hostname;
+    return host === `${id}.public.blob.vercel-storage.com` || host === `${id}.private.blob.vercel-storage.com`;
+  } catch {
+    return false;
+  }
+}
+
 export function isBlobHost(url: string): boolean {
   try {
     const host = new URL(url).hostname;
@@ -113,9 +134,11 @@ export async function deleteStoredImage(url: string): Promise<void> {
       if (!hasBlob()) return;
       const { del } = await import('@vercel/blob');
       await del(url);
-    } else if (url.startsWith('/screenshots/')) {
+    } else if (url.startsWith('/screenshots/') && path.basename(url).startsWith('upload-')) {
       /* Built from the screenshots folder and a bare file name, so the build's file
-         tracer only pulls public/screenshots into functions, not all of public/. */
+         tracer only pulls public/screenshots into functions, not all of public/.
+         Only what storeImage() wrote (upload-*): the bundled screenshots are the
+         site's own fallback album and are never deleted from here. */
       const absPath = path.join(process.cwd(), 'public', 'screenshots', path.basename(url));
       await fs.unlink(absPath);
     }
