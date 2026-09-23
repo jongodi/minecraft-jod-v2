@@ -134,7 +134,7 @@ html, body { background: var(--jod-night); }
 body { color: var(--jod-paper); }
 ::selection { background: var(--jod-lantern); color: var(--jod-night); }
 a { color: var(--jod-lantern); text-underline-offset: 0.2em; }
-a:hover { color: var(--jod-paper); }
+@media (hover: hover) { a:hover { color: var(--jod-paper); } }
 kbd {
   display: inline-block;
   min-width: 1.2em;
@@ -238,13 +238,16 @@ h1::after, h2::after { height: 3px; background: var(--jod-strata); }
 .side-menu .simple-button.active,
 .side-menu .map-button.selected { background: var(--theme-bg-hover); box-shadow: inset 3px 0 0 var(--jod-lantern); }
 .side-menu .simple-button:active { background: var(--jod-lantern-deep); color: var(--jod-night); }
-.side-menu .slider:hover { background: var(--theme-bg-hover); }
+@media (hover: hover) { .side-menu .slider:hover { background: var(--theme-bg-hover); } }
+/* BlueMap's own sheet lights these on hover too; on a touch screen that would stay after the tap */
 @media (hover: none) {
   .svg-button:hover { background: var(--jod-face); }
   .side-menu .simple-button:hover,
   .side-menu .switch-button:hover,
   .side-menu .map-button:hover,
-  .side-menu .slider:hover { background: transparent; }
+  .side-menu .slider:hover,
+  .side-menu .marker-item .marker-button:hover,
+  .side-menu .marker-set > .info:hover { background: transparent; }
 }
 .side-menu .group { border: var(--jod-px) solid var(--theme-bg-light); }
 .side-menu .group > .title {
@@ -260,12 +263,11 @@ h1::after, h2::after { height: 3px; background: var(--jod-strata); }
 .side-menu .switch { border-radius: 0; box-shadow: var(--jod-bevel-in); }
 .side-menu .switch::after { border-radius: 0; background: var(--jod-paper); }
 .side-menu .switch.on::after { background: var(--jod-night); }
-.side-menu .marker-item .marker-button:hover,
-.side-menu .marker-set > .info:hover { background: var(--theme-bg-hover); }
+@media (hover: hover) { .side-menu .marker-item .marker-button:hover, .side-menu .marker-set > .info:hover { background: var(--theme-bg-hover); } }
 .side-menu .marker-item .marker-button > .icon img { image-rendering: pixelated; }
 .side-menu .text-input { border-radius: 0; background: var(--jod-paper); color: var(--jod-ink); font-family: var(--jod-font-data); }
 .choice-box .choices .choice { border-radius: 0; font-family: var(--jod-font-data); }
-.choice-box .choices .choice:hover { background: var(--jod-lantern); color: var(--jod-night); }
+@media (hover: hover) { .choice-box .choices .choice:hover { background: var(--jod-lantern); color: var(--jod-night); } }
 .choice-box .choices .choice.selected { background: var(--theme-bg-hover); box-shadow: inset 0 -3px 0 var(--jod-lantern); }
 
 /* what you read in the menu is prose, so it is set in the text face */
@@ -361,15 +363,15 @@ h1::after, h2::after { height: 3px; background: var(--jod-strata); }
 }
 .jod-pin__label b { font-family: var(--jod-font-data); font-weight: 700; font-size: 0.75rem; letter-spacing: 0.04em; }
 .jod-pin__label small { display: none; font-family: var(--jod-font-text); font-size: 0.75rem; color: var(--jod-ink-soft); }
-.jod-pin:hover .jod-pin__lamp,
 .jod-pin:focus-visible .jod-pin__lamp,
 .jod-pin.is-chosen .jod-pin__lamp { transform: translateY(-2px) scale(1.15); }
-.jod-pin:hover .jod-pin__label,
+@media (hover: hover) { .jod-pin:hover .jod-pin__lamp { transform: translateY(-2px) scale(1.15); } }
 .jod-pin:focus-visible .jod-pin__label,
 .jod-pin.is-chosen .jod-pin__label { background: var(--jod-lantern); }
-.jod-pin:hover .jod-pin__label small,
+@media (hover: hover) { .jod-pin:hover .jod-pin__label { background: var(--jod-lantern); } }
 .jod-pin:focus-visible .jod-pin__label small,
 .jod-pin.is-chosen .jod-pin__label small { display: block; color: var(--jod-ink); }
+@media (hover: hover) { .jod-pin:hover .jod-pin__label small { display: block; color: var(--jod-ink); } }
 @keyframes jod-flicker { 0%, 100% { opacity: 0.7; } 50% { opacity: 1; } }
 
 /* ─── full screen: the plank across the top, and the way back ──── */
@@ -415,8 +417,8 @@ h1::after, h2::after { height: 3px; background: var(--jod-strata); }
   text-decoration: none;
   clip-path: var(--jod-notch);
 }
-.jod-plank__back:hover,
 .jod-plank__back:focus-visible { background: var(--jod-lantern); color: var(--jod-night); }
+@media (hover: hover) { .jod-plank__back:hover { background: var(--jod-lantern); color: var(--jod-night); } }
 .jod-plank__title { font-family: var(--jod-font-display); font-size: 1.25rem; line-height: 1; color: var(--jod-paper); text-shadow: 0 var(--jod-px) 0 var(--jod-wood-dark); white-space: nowrap; }
 .jod-plank__note { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--jod-font-data); font-size: 0.6rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--jod-white); text-shadow: 0 1px 0 var(--jod-wood-dark); }
 
