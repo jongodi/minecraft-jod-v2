@@ -176,7 +176,7 @@ export default function Composer({ username, places, onPinned }: Props) {
               <div className="w-draft__pic">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={d.preview} alt="" />
-                {!d.done && !d.error && <span className="w-draft__bar" style={{ '--p': `${d.progress}%` } as React.CSSProperties} aria-hidden="true" />}
+                {!d.done && !d.error && <span className="w-draft__bar" style={{ '--p': Math.min(1, Math.max(0, d.progress / 100)) } as React.CSSProperties} aria-hidden="true" />}
                 <button type="button" className="w-draft__x" onClick={() => remove(d.key)} aria-label={`Taka ${d.name} úr`}><CloseIcon /></button>
               </div>
               <input className="w-draft__cap" value={d.caption} onChange={e => patch(d.key, { caption: e.target.value })} maxLength={LIMITS.caption} placeholder="myndatexti" aria-label={`Myndatexti fyrir ${d.name}`} />

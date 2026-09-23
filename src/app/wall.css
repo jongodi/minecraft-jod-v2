@@ -87,7 +87,7 @@
 .w-draft.is-done .w-draft__pic img { opacity: 1; }
 .w-draft.is-error .w-draft__pic img { opacity: 0.3; filter: grayscale(1); }
 .w-draft__bar { position: absolute; left: 0; right: 0; bottom: 0; height: calc(var(--px) * 2); background: rgba(30, 22, 17, 0.25); }
-.w-draft__bar::after { content: ''; position: absolute; inset: 0; width: var(--p, 0%); background: var(--lantern-deep); transition: width var(--dur-2) var(--ease-out); }
+.w-draft__bar::after { content: ''; position: absolute; inset: 0; background: var(--lantern-deep); transform: scaleX(var(--p, 0)); transform-origin: left center; transition: transform var(--dur-2) var(--ease-out); }
 .w-draft__x { position: absolute; top: var(--px); right: var(--px); width: 1.75rem; height: 1.75rem; display: grid; place-items: center; background: rgba(21, 16, 13, 0.75); color: var(--paper); font-family: var(--font-data); font-size: var(--fs-xs); }
 .w-draft__x svg { width: 0.75rem; height: 0.75rem; }
 /* the cross is small on purpose, over a thumbnail; its reach is a thumb's */

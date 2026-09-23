@@ -64,6 +64,7 @@ export default function Album({ plates, onClose }: { plates: Plate[]; onClose: (
                   width={480}
                   height={480}
                 />
+                <span className="b-frame-pic__dim" aria-hidden="true" />
                 <span className="b-frame-pic__plate">
                   <span className="b-frame-pic__no">{String(i + 1).padStart(2, '0')}</span>
                   <span className="b-frame-pic__cap"><b>{p.title}</b>{p.sub && <>, {p.sub}</>}</span>

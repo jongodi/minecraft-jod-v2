@@ -8,7 +8,7 @@ import type { MapConfig, WorldPoint } from '@/lib/map-types';
 import type { PlacePrints } from '@/app/api/crew/places/route';
 import { DEFAULT_CONFIG } from '@/lib/map-types';
 import viewerFiles from '@/lib/bluemap-viewer.json';
-import { CloseIcon, Lantern } from './Bits';
+import { CloseIcon, Lantern, Sun } from './Bits';
 import { plural } from '@/lib/format';
 import Drawer from './Drawer';
 import PlayerHead from './PlayerHead';
@@ -377,7 +377,14 @@ function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
                 // eslint-disable-next-line @next/next/no-img-element
                 <img {...photoProps(plate.src, PHOTO_SIZES.card)} alt={plate.title} loading="lazy" decoding="async" width={560} height={350} />
               ) : (
-                <div className="b-card__empty" aria-hidden="true"><span>engin mynd enn</span></div>
+                /* a postcard not yet painted: the evening's sun over the ridge, in faint ink */
+                <div className="b-card__empty" aria-hidden="true">
+                  <svg className="b-card__emptyridge" viewBox="0 0 64 40" preserveAspectRatio="xMidYMax slice" shapeRendering="crispEdges">
+                    <path d="M0 40V30H8V26H18V30H26V22H36V28H44V24H52V30H64V40Z" fill="currentColor" />
+                  </svg>
+                  <span className="b-card__emptysun"><Sun /></span>
+                  <span className="b-card__emptytext">engin mynd enn</span>
+                </div>
               )}
               <figcaption className="b-card__cap">
                 <span>

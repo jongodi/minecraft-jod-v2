@@ -43,8 +43,11 @@ export function useServerStatus(): ServerState {
       }
     };
     load();
-    const id = setInterval(load, STATUS_POLL_MS);
-    return () => { alive = false; clearInterval(id); };
+    /* a tab in the background does not ask; it asks once when it is looked at again */
+    const id = setInterval(() => { if (!document.hidden) load(); }, STATUS_POLL_MS);
+    const onShow = () => { if (!document.hidden) load(); };
+    document.addEventListener('visibilitychange', onShow);
+    return () => { alive = false; clearInterval(id); document.removeEventListener('visibilitychange', onShow); };
   }, []);
 
   return state;

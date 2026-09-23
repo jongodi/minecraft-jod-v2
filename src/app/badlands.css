@@ -362,6 +362,10 @@
   padding-block: 6rem clamp(11rem, 30svh, 18rem);
   overflow: clip;
 }
+/* On a phone the door bar is fixed over the foot of the screen: the sunset
+   ends where it begins, so the mesas stand on the bar instead of one plateau
+   peeking out over it like a stray grey rule. */
+@media (max-width: 899px) { .b-hero { min-height: calc(100svh - var(--doorbar) - env(safe-area-inset-bottom, 0px)); } }
 .b-hero__grid { display: grid; gap: var(--sp-6); align-items: end; }
 @media (min-width: 900px) { .b-hero__grid { grid-template-columns: minmax(0, 1fr) auto; gap: var(--sp-8); } }
 .b-hero__mark {
@@ -415,8 +419,8 @@
   height: 100%;
   object-fit: cover;
   object-position: 50% 45%;
-  filter: saturate(0.85) brightness(0.82);
-  transition: filter var(--dur-3) var(--ease-out), opacity var(--dur-3) var(--ease-out);
+  filter: saturate(0.85);
+  transition: opacity var(--dur-3) var(--ease-out);
 }
 /* the dark that falls over the world while a room is open; a tap on it closes the room */
 .b-frame__dim { position: absolute; inset: 0; z-index: 5; background: rgba(21, 16, 13, 0.62); opacity: 0; pointer-events: none; transition: opacity var(--dur-3) var(--ease-out); }
@@ -425,16 +429,21 @@
 .b-hud__mid, .b-places { transition: opacity var(--dur-2) var(--ease-out); }
 .b-frame.is-room .b-hud__mid, .b-frame.is-room .b-places { opacity: 0; }
 .b-frame__shade { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(21, 16, 13, 0.6) 0%, transparent 24%, transparent 60%, rgba(21, 16, 13, 0.72) 100%); }
+/* The still is dimmed by a layer of night over it rather than by a filter on
+   the picture, so taking on the live map's light when the viewer is asked for
+   is one opacity on the compositor, not a full-screen repaint per frame. */
+.b-frame__shade::before { content: ''; position: absolute; inset: 0; background: rgba(21, 16, 13, 0.18); transition: opacity var(--dur-3) var(--ease-out); }
+.b-frame.is-live .b-frame__shade::before { opacity: 0; }
 .b-frame__view { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; opacity: 0; transition: opacity var(--dur-3) var(--ease-out); }
 .b-frame.is-ready .b-frame__view { opacity: 1; }
 .b-frame.is-ready .b-frame__poster { opacity: 0; }
 .b-frame.is-ready .b-frame__shade { background: linear-gradient(180deg, rgba(21, 16, 13, 0.55) 0%, transparent 18%, transparent 100%); }
 .b-frame__sheet { position: absolute; inset: 0; z-index: 2; background: var(--map-water); }
 .b-frame.is-drawn .b-frame__poster, .b-frame.is-drawn .b-frame__shade, .b-frame.is-drawn .b-frame__view { visibility: hidden; }
-/* While the viewer loads, the still takes on the live map's light, so the
-   hand-over, once the first tiles are drawn, is a single fade. */
-.b-frame.is-live .b-frame__poster { filter: none; }
-@media (prefers-reduced-motion: reduce) { .b-frame__poster, .b-frame__view { transition: none; } }
+/* While the viewer loads, the still takes on the live map's light (the layer
+   over it lifts, above), so the hand-over, once the first tiles are drawn, is
+   a single fade. */
+@media (prefers-reduced-motion: reduce) { .b-frame__poster, .b-frame__view, .b-frame__shade::before { transition: none; } }
 /* The whole screen is the frame itself, HUD, places and all, so nothing reloads:
    the browser's own full screen, or fixed over the page where there is none
    (an iPhone). The album still opens over it; the bars stay under it. */
@@ -540,8 +549,11 @@ html.is-map-full { overflow: hidden; }
 .b-frame > .b-card > img,
 .b-frame > .b-card > .b-card__empty { flex-shrink: 1; min-height: 2.5rem; }
 .b-card img { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; box-shadow: 0 0 0 var(--px) var(--tc-brown); }
-.b-card__empty { display: grid; place-items: center; aspect-ratio: 16 / 10; background: var(--paper-2); border: var(--line) dashed var(--ink-faint); }
-.b-card__empty span { font-size: var(--fs-sm); color: var(--ink-faint); }
+.b-card__empty { position: relative; display: grid; place-items: center; aspect-ratio: 16 / 10; overflow: hidden; background: var(--paper-2); color: var(--ink-faint); box-shadow: inset 0 0 0 var(--px) rgba(30, 22, 17, 0.18); }
+.b-card__emptyridge { position: absolute; inset: auto 0 0; width: 100%; height: 55%; opacity: 0.22; }
+.b-card__emptysun { position: absolute; top: 14%; right: 16%; width: 1.5rem; height: 1.5rem; opacity: 0.3; }
+.b-card__emptysun svg { width: 100%; height: 100%; display: block; shape-rendering: crispEdges; }
+.b-card__emptytext { position: relative; font-size: var(--fs-sm); color: var(--ink-soft); }
 .b-card__cap { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-2); margin-top: var(--sp-3); padding-inline: var(--sp-1); }
 .b-card__cap > span { display: grid; gap: var(--px); min-width: 0; }
 .b-card__name { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-lg); line-height: 1.15; color: var(--ink); }
@@ -717,11 +729,15 @@ html.is-map-full { overflow: hidden; }
   transition: box-shadow var(--dur-2) var(--ease-out);
 }
 .b-frame-pic--hero { grid-column: span 2; grid-row: span 2; }
-.b-frame-pic img { width: 100%; height: 100%; min-height: 0; object-fit: cover; display: block; background: var(--dusk-2); filter: brightness(0.78) saturate(0.85); transition: filter var(--dur-3) var(--ease-out); }
+.b-frame-pic img { grid-row: 1; grid-column: 1; width: 100%; height: 100%; min-height: 0; object-fit: cover; display: block; background: var(--dusk-2); }
+/* hung in the dark until pointed at: a layer of night over the print that
+   lifts, rather than a filter on it that would repaint the whole print */
+.b-frame-pic__dim { grid-row: 1; grid-column: 1; background: rgba(21, 16, 13, 0.24); pointer-events: none; transition: opacity var(--dur-3) var(--ease-out); }
+.b-frame-pic__plate { grid-row: 2; grid-column: 1; }
 .b-frame-pic:focus-visible { box-shadow: inset 0 0 0 calc(var(--px) * 1.5) var(--wood-light), 0 0 0 calc(var(--px) * 2) var(--lantern); }
 @media (hover: hover) { .b-frame-pic:hover { box-shadow: inset 0 0 0 calc(var(--px) * 1.5) var(--wood-light), 0 0 0 calc(var(--px) * 2) var(--lantern); } }
-.b-frame-pic:focus-visible img { filter: none; }
-@media (hover: hover) { .b-frame-pic:hover img { filter: none; } }
+.b-frame-pic:focus-visible .b-frame-pic__dim { opacity: 0; }
+@media (hover: hover) { .b-frame-pic:hover .b-frame-pic__dim { opacity: 0; } }
 .b-frame-pic__plate { display: flex; align-items: baseline; gap: var(--sp-2); min-width: 0; padding: var(--px) var(--sp-2); background: var(--paper); clip-path: var(--notch); }
 .b-frame-pic__no { font-family: var(--font-data); font-size: var(--fs-chip); line-height: 2; color: var(--ink-faint); flex-shrink: 0; }
 .b-frame-pic__cap { font-family: var(--font-data); font-size: var(--fs-xs); line-height: 1.5; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -757,10 +773,13 @@ html.is-map-full { overflow: hidden; }
 .b-folk > li { min-width: 0; }
 .b-folk__item { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); justify-items: center; gap: var(--sp-2); min-width: 0; text-decoration: none; color: var(--text-soft); text-align: center; }
 .b-folk__frame { position: relative; width: 100%; max-width: 4.5rem; padding: var(--px); background: var(--tc-brown); }
-.b-folk__frame img { width: 100%; aspect-ratio: 1; object-fit: cover; image-rendering: pixelated; filter: brightness(0.55) saturate(0.7); transition: filter var(--dur-3) var(--ease-out); }
-.b-folk__item.is-in img,
-.b-folk__item:focus-visible img { filter: none; }
-@media (hover: hover) { .b-folk__item:hover img { filter: none; } }
+.b-folk__frame img { width: 100%; aspect-ratio: 1; object-fit: cover; image-rendering: pixelated; }
+/* whoever is out sits in the dark: a layer over the head, lifted (one
+   opacity) for whoever is in and for the one pointed at */
+.b-folk__frame::after { content: ''; position: absolute; inset: var(--px); background: rgba(21, 16, 13, 0.46); pointer-events: none; transition: opacity var(--dur-3) var(--ease-out); }
+.b-folk__item.is-in .b-folk__frame::after,
+.b-folk__item:focus-visible .b-folk__frame::after { opacity: 0; }
+@media (hover: hover) { .b-folk__item:hover .b-folk__frame::after { opacity: 0; } }
 .b-folk__item.is-in .b-folk__frame::before {
   content: '';
   position: absolute;
@@ -777,7 +796,7 @@ html.is-map-full { overflow: hidden; }
 .b-folk__item:focus-visible .b-folk__name { color: var(--lantern); }
 @media (hover: hover) { .b-folk__item:hover .b-folk__name { color: var(--lantern); } }
 .b-folk__count { width: 100%; font-family: var(--font-data); font-size: 0.6rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.b-folk__in { position: absolute; top: -0.5rem; right: -0.25rem; padding: 0.1rem 0.35rem; background: var(--online); color: var(--night); font-family: var(--font-data); font-size: var(--fs-xs); line-height: 1.2; }
+.b-folk__in { position: absolute; z-index: 1; top: -0.5rem; right: -0.25rem; padding: 0.1rem 0.35rem; background: var(--online); color: var(--night); font-family: var(--font-data); font-size: var(--fs-xs); line-height: 1.2; }
 @media (max-width: 479px) { .b-folk__in { font-size: 0.6rem; } }
 .b-crew__foot { margin-top: var(--sp-5); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-3); }
 .b-shelf__lede { font-size: var(--fs-md); }
@@ -868,7 +887,7 @@ html.is-map-full { overflow: hidden; }
 .b-bar__addr b,
 .b-folk__name,
 .b-card__sub,
-.b-card__empty span,
+.b-card__emptytext,
 .b-arena__small,
 .b-stub__k,
 .b-duel__k,
