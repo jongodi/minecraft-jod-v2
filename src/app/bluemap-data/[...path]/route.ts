@@ -36,10 +36,16 @@ const FOREVER = 'public, max-age=31536000, s-maxage=31536000, immutable';
 /* an unversioned address, or one from a page older than this deployment */
 const FOUND_BRIEF = 'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400';
 const MISSING_BRIEF = 'public, max-age=60, s-maxage=120';
-/* read off the server while the store is refusing: the server may have drawn
-   the tile again since the copy, so it is kept for a day, not a year, and the
-   copy takes over again once the store answers */
-const FROM_SERVER = 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800';
+/* Read off the server while the store is refusing. The CDN keeps it for a
+   month, and keeps handing it out should the server fail to answer when it is
+   due, so a tile fetched once stays quick while the server is stopped
+   (npm run map:warm fetches them all ahead). Not for a year: the server may
+   have redrawn the tile since the copy, and the next sync's version takes
+   over anyway. */
+const FROM_SERVER = 'public, max-age=86400, s-maxage=2592000, stale-while-revalidate=2592000, stale-if-error=2592000';
+/* once the store has refused, it isn't asked again for every tile */
+const REFUSED_FOR = 5 * 60_000;
+let refusedUntil = 0;
 
 type Context = { params: Promise<{ path: string[] }> };
 
@@ -65,6 +71,7 @@ export async function GET(req: Request, { params }: Context): Promise<Response> 
     return Response.redirect(`${blob.base}/${BLOB_DIR}/${path.split('/').map(encodeURIComponent).join('/')}`, 307);
   }
   if (blob.access === 'private' && !process.env.BLOB_READ_WRITE_TOKEN) return fromServer(path);
+  if (Date.now() < refusedUntil) return fromServer(path);
 
   const cache = current ? FOREVER : FOUND_BRIEF;
   try {
@@ -79,7 +86,8 @@ export async function GET(req: Request, { params }: Context): Promise<Response> 
     });
   } catch (err) {
     if (err instanceof BlobNotFoundError) return answer(404, current ? FOREVER : MISSING_BRIEF);
-    console.warn(`[bluemap-data] ${err instanceof Error ? err.message : err}; reading /${path} off the server`);
+    refusedUntil = Date.now() + REFUSED_FOR;
+    console.warn(`[bluemap-data] ${err instanceof Error ? err.message : err}; reading the map off the server for the next ${REFUSED_FOR / 60_000} minutes`);
     return fromServer(path);
   }
 }
