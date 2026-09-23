@@ -52,6 +52,8 @@ export function isMissing(status: number): boolean {
   return status >= 400 && status < 500 && status !== 401 && status !== 403 && status !== 429;
 }
 
-export async function discard(res: Response): Promise<void> {
-  await res.body?.cancel().catch(() => undefined);
+/* Lets go of a body that won't be read. The cancel isn't waited on: inside a
+   Next route it can wait forever on a fetch's body, and the request with it. */
+export async function discard(res: { body: ReadableStream<Uint8Array> | null }): Promise<void> {
+  res.body?.cancel().catch(() => undefined);
 }

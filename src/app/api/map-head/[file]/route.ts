@@ -34,7 +34,8 @@ export async function GET(_req: Request, { params }: Context): Promise<Response>
           },
         });
       }
-      await res.body?.cancel().catch(() => undefined);
+      /* not waited on: inside a Next route a cancel can wait forever */
+      void res.body?.cancel().catch(() => undefined);
     } catch { /* try the next one */ }
   }
   /* the viewer draws Steve when a head doesn't load */

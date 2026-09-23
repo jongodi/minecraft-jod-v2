@@ -1,5 +1,6 @@
 import { get } from '@vercel/blob';
 import { packedAt, snapshot } from '@/lib/bluemap-snapshot';
+import { discard } from '@/lib/bluemap-server';
 
 /* Reads a file of the map copy out of Vercel Blob. map:sync stores the copy
    as a few large packs (scripts/bluemap-pack.mjs) and the manifest says where
@@ -39,7 +40,7 @@ export async function readCopy(path: string, ifNoneMatch?: string): Promise<Copy
     if (!res) return null;
     /* a store that ignored the range would send the whole pack */
     if (res.headers.get('content-range')?.match(/^bytes (\d+)-(\d+)\//)?.slice(1).join('-') !== `${offset}-${last}`) {
-      await res.body?.cancel().catch(() => undefined);
+      await discard(res);
       throw new Error(`the store did not answer the byte range for ${path}`);
     }
     return { status: 200, body: res.body, contentType: contentTypeOf(path), size: length, etag: null };
@@ -65,11 +66,11 @@ async function fetchBlob(pathname: string, headers: Record<string, string>, fres
   if (blob.access === 'public') {
     const res = await fetch(`${blob.base}/${pathname.split('/').map(encodeURIComponent).join('/')}`, { headers, cache: 'no-store' });
     if (res.status === 404) {
-      await res.body?.cancel().catch(() => undefined);
+      await discard(res);
       return null;
     }
     if (res.status !== 304 && !res.ok) {
-      await res.body?.cancel().catch(() => undefined);
+      await discard(res);
       throw new Error(`Vercel Blob: Failed to fetch blob: ${res.status} ${res.statusText}`);
     }
     return { status: res.status === 304 ? 304 : 200, body: res.body, headers: res.headers };
