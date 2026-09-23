@@ -8,6 +8,9 @@
 //   npm run map:warm
 //   npm run map:warm -- --site=https://minecraft-jod.vercel.app
 //
+// The site is jodcraft.world (play.jodcraft.world is the Minecraft server's
+// address, not the website's).
+//
 // Vercel keeps the files at the edge location nearest to where this runs, the
 // same one visitors from nearby reach. Only reads; nothing is changed.
 
@@ -16,7 +19,7 @@ import { join } from 'node:path';
 
 const ROOT = process.cwd();
 const SITE = (process.argv.find((a) => a.startsWith('--site='))?.slice('--site='.length)
-  || process.env.NEXT_PUBLIC_SITE_URL || 'https://play.jodcraft.world').replace(/\/+$/, '');
+  || process.env.NEXT_PUBLIC_SITE_URL || 'https://jodcraft.world').replace(/\/+$/, '');
 const PARALLEL = 4;
 const TRIES = 6;
 
