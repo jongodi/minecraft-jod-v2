@@ -1,0 +1,95 @@
+name: Map sync
+
+# Copies the BlueMap map off the Minecraft server into Vercel Blob every six
+# hours, and whenever it is started by hand (Actions → Map sync → Run
+# workflow). A run does nothing while the server is stopped or when BlueMap
+# hasn't redrawn anything since the last copy. Otherwise it uploads the new
+# copy as a few packs and commits it to main, which Vercel deploys.
+#
+# Needs two repository secrets (Settings → Secrets and variables → Actions):
+# EXAROTON_API_KEY and BLOB_READ_WRITE_TOKEN, the same as in .env.local.
+
+on:
+  schedule:
+    # 00:17, 06:17, 12:17 and 18:17 UTC, which is Icelandic time all year
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# one sync at a time; a run that comes due while one is going waits for it
+concurrency:
+  group: map-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    if: github.repository == 'jongodi/minecraft-jod-v2'
+    runs-on: ubuntu-latest
+    # the first run, or one after the saved copy has expired, fetches the whole map
+    timeout-minutes: 90
+
+    steps:
+      - name: Check the secrets
+        env:
+          EXAROTON_API_KEY: ${{ secrets.EXAROTON_API_KEY }}
+          BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
+        run: |
+          missing=""
+          [ -n "$EXAROTON_API_KEY" ] || missing="$missing EXAROTON_API_KEY"
+          [ -n "$BLOB_READ_WRITE_TOKEN" ] || missing="$missing BLOB_READ_WRITE_TOKEN"
+          if [ -n "$missing" ]; then
+            echo "::error::Repository secrets missing:$missing. Add them under Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # the map as the last run left it, so only what BlueMap redrew is fetched
+      - name: Restore the map copy
+        uses: actions/cache/restore@v4
+        with:
+          path: public/bluemap-data
+          key: map-copy-${{ github.run_id }}
+          restore-keys: map-copy-
+
+      - name: Sync the map
+        run: npm run map:sync -- --only-online
+        env:
+          EXAROTON_API_KEY: ${{ secrets.EXAROTON_API_KEY }}
+          BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
+
+      - name: Publish the new copy
+        id: publish
+        run: |
+          git add public/bluemap src/lib/bluemap-snapshot.json src/lib/bluemap-viewer.json
+          if git diff --cached --quiet; then
+            echo "Nothing new to publish."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "New map copy (automatic)"
+          # someone may have pushed while this ran
+          git pull --rebase origin main
+          git push origin HEAD:main
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Keep the map copy for the next run
+        if: steps.publish.outputs.changed == 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: public/bluemap-data
+          key: map-copy-${{ github.run_id }}
