@@ -8,6 +8,7 @@ import { Campfire, Chevron } from './Bits';
 import { Ridge } from './Mesa';
 import { SERVER_IP } from './data';
 import AmbienceToggle from '@/effects/AmbienceToggle';
+import { useScrollLock } from './hooks';
 
 /* The duel lives behind the fire; nobody pays for it until they tap. */
 const QuickDraw = dynamic(() => import('./QuickDraw'), { ssr: false });
@@ -27,13 +28,13 @@ const LINKS = [
 function Footer() {
   const [duel, setDuel] = useState(false);
   const path = usePathname();
+  useScrollLock(duel);
 
   useEffect(() => {
     if (!duel) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setDuel(false); };
     window.addEventListener('keydown', onKey);
-    document.body.style.overflow = 'hidden';
-    return () => { window.removeEventListener('keydown', onKey); document.body.style.overflow = ''; };
+    return () => window.removeEventListener('keydown', onKey);
   }, [duel]);
 
   return (

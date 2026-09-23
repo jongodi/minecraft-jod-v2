@@ -15,7 +15,6 @@ const TOP = 3;
     server's stat files. */
 export default function Wanted({ stats }: { stats: StatsState }) {
   const when = stats.cachedAt ? new Date(stats.cachedAt).toLocaleString('is-IS', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : null;
-  const any = stats.players.length > 0;
 
   const posters = STAT_TABS.map(meta => {
     const low = isLowerBetter(meta.id);
@@ -30,7 +29,7 @@ export default function Wanted({ stats }: { stats: StatsState }) {
   return (
     <div className="b-wanted">
       {/* the room's plank already says Eftirlýst; the board only says where its numbers came from */}
-      {stats.source && any && (
+      {stats.source && posters.length > 0 && (
         <div className="b-head b-head--tight">
           <p className="b-note">
             {stats.source === 'live' ? `beint frá þjóninum${when ? `, sótt ${when}` : ''}` :
@@ -40,8 +39,12 @@ export default function Wanted({ stats }: { stats: StatsState }) {
         </div>
       )}
 
-      {!any ? (
-        <p className="b-empty">{stats.source === null ? 'sæki tölurnar' : 'engar tölur enn; þær birtast þegar þjónninn hefur verið í gangi'}</p>
+      {posters.length === 0 ? (
+        <p className="b-empty" role="status">
+          {stats.failed ? 'náði ekki í tölurnar núna; reyndu aftur eftir smástund' :
+           stats.source === null ? 'sæki tölurnar…' :
+           'engar tölur enn; þær birtast þegar þjónninn hefur verið í gangi'}
+        </p>
       ) : (
         <Rail className="b-posters" label="Eftirlýsingar" prevLabel="Fyrri spjöld" nextLabel="Næstu spjöld" count={posters.length}>
           {posters.map(({ meta, rows: [first, ...rest] }) => (

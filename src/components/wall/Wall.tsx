@@ -14,7 +14,7 @@ import AddressBar from '@/components/badlands/AddressBar';
 import Footer from '@/components/badlands/Footer';
 import PlayerHead from '@/components/badlands/PlayerHead';
 import Lightbox from '@/components/badlands/Lightbox';
-import { ArrowIcon, Star } from '@/components/badlands/Bits';
+import { ArrowIcon, CloseIcon, Star } from '@/components/badlands/Bits';
 import { PAGE_LINKS, STAT_TABS } from '@/components/badlands/data';
 import { useCrewSession } from '@/components/badlands/hooks';
 import { photoProps, PHOTO_SIZES } from '@/components/badlands/photo';
@@ -213,7 +213,7 @@ export default function Wall({ initial, places, justSignedIn = false }: Props) {
           <p className="w-welcome" role="status">
             Velkomin á vegginn þinn, {username}. Þetta tæki man eftir þér í eitt ár.
             {!hasPassword && <> <button type="button" className="b-link w-welcome__act" onClick={() => setShowPw(true)}>Veldu þér lykilorð</button> til að komast líka inn á öðrum tækjum.</>}
-            <button type="button" onClick={() => setWelcome(false)} aria-label="Loka">✕</button>
+            <button type="button" onClick={() => setWelcome(false)} aria-label="Loka"><CloseIcon /></button>
           </p>
         )}
         {!welcome && isOwner && me && !hasPassword && (

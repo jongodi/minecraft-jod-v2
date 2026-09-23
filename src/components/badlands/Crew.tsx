@@ -8,7 +8,7 @@ import Wanted from './Wanted';
 import Rail from './Rail';
 import { CREW } from './data';
 import { useStats, type ServerState } from './hooks';
-import { formatAge } from '@/lib/format';
+import { formatAge, plural } from '@/lib/format';
 import type { CrewSummary } from '@/app/api/crew/route';
 import type { FeedEntry } from '@/app/api/crew/feed/route';
 import { photoProps, PHOTO_SIZES } from './photo';
@@ -54,7 +54,7 @@ function Crew({ server }: { server: ServerState }) {
                     {on && <span className="b-folk__in">inni</span>}
                   </span>
                   <span className="b-folk__name">{name}</span>
-                  {row && row.photoCount > 0 && <span className="b-folk__count">{row.photoCount} {row.photoCount === 1 ? 'mynd' : 'myndir'}</span>}
+                  {row && row.photoCount > 0 && <span className="b-folk__count">{row.photoCount} {plural(row.photoCount, 'mynd', 'myndir')}</span>}
                 </Link>
               </li>
             );

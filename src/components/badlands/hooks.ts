@@ -50,19 +50,39 @@ export function useServerStatus(): ServerState {
   return state;
 }
 
-export interface StatsState { players: PlayerStat[]; source: StatsResponse['source'] | null; cachedAt: string | null }
+/** `source` is null while the first answer is in flight; `failed` says the
+    answer never came, so the board can say so instead of waiting forever. */
+export interface StatsState { players: PlayerStat[]; source: StatsResponse['source'] | null; cachedAt: string | null; failed: boolean }
 
 export function useStats(): StatsState {
-  const [state, setState] = useState<StatsState>({ players: [], source: null, cachedAt: null });
+  const [state, setState] = useState<StatsState>({ players: [], source: null, cachedAt: null, failed: false });
   useEffect(() => {
+    let alive = true;
     fetch('/api/stats')
       .then(r => (r.ok ? r.json() : null))
       .then((data: StatsResponse | null) => {
-        if (data?.players) setState({ players: data.players, source: data.source, cachedAt: data.cachedAt });
+        if (!alive) return;
+        if (data && Array.isArray(data.players)) setState({ players: data.players, source: data.source, cachedAt: data.cachedAt, failed: false });
+        else setState(s => ({ ...s, failed: true }));
       })
-      .catch(() => {});
+      .catch(() => { if (alive) setState(s => ({ ...s, failed: true })); });
+    return () => { alive = false; };
   }, []);
   return state;
+}
+
+/* ─── holding the page still ───────────────────────────────────────
+   The album, the lightbox over it and the duel each stop the page from
+   scrolling behind them, and they can be open at once. Counted, so the
+   lightbox closing does not hand the page its scroll back while the album
+   it opened from is still up. */
+let scrollLocks = 0;
+export function useScrollLock(active = true): void {
+  useEffect(() => {
+    if (!active) return;
+    if (scrollLocks++ === 0) document.body.style.overflow = 'hidden';
+    return () => { if (--scrollLocks === 0) document.body.style.overflow = ''; };
+  }, [active]);
 }
 
 /** Copy a string with the Clipboard API, or a hidden textarea where that is missing.
@@ -244,6 +264,19 @@ export function useCrewSession(): { me: Me; hasPassword: boolean; refresh: () =>
     notifyMe();
   }, []);
   return { me, hasPassword, refresh: refreshMe, signOut };
+}
+
+/** A dialog takes the keyboard with it: focus moves to `ref` when it opens
+    and goes back to whatever opened it when it closes, so a keyboard user
+    is never left tabbing through the page hidden behind it. */
+export function useDialogFocus<T extends HTMLElement>(ref: React.RefObject<T>): void {
+  useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null;
+    ref.current?.focus({ preventScroll: true });
+    return () => { if (opener?.isConnected) opener.focus({ preventScroll: true }); };
+  // once, on open and close
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 }
 
 /** `inert` on an element, set as a property. React 18 has no attribute for it

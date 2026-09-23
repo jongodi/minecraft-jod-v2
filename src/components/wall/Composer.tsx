@@ -9,6 +9,7 @@ import type { CrewEntry } from '@/lib/crew-types';
 import { LIMITS } from '@/lib/crew-types';
 import { fetchStorageInfo, uploadPrint, errorFrom, type StorageInfo, type UploadedPrint } from '@/lib/crew-upload';
 import { formatDate } from '@/lib/format';
+import { CloseIcon } from '@/components/badlands/Bits';
 import type { WallPlace } from './Wall';
 
 interface Draft {
@@ -165,7 +166,7 @@ export default function Composer({ username, places, onPinned }: Props) {
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={d.preview} alt="" />
                 {!d.done && !d.error && <span className="w-draft__bar" style={{ '--p': `${d.progress}%` } as React.CSSProperties} aria-hidden="true" />}
-                <button type="button" className="w-draft__x" onClick={() => remove(d.key)} aria-label={`Taka ${d.name} úr`}>✕</button>
+                <button type="button" className="w-draft__x" onClick={() => remove(d.key)} aria-label={`Taka ${d.name} úr`}><CloseIcon /></button>
               </div>
               <input className="w-draft__cap" value={d.caption} onChange={e => patch(d.key, { caption: e.target.value })} maxLength={LIMITS.caption} placeholder="myndatexti" aria-label={`Myndatexti fyrir ${d.name}`} />
               <span className="w-draft__meta">

@@ -5,7 +5,7 @@ import '@/app/board.css';
 import '@/app/wall.css';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { formatAge } from '@/lib/format';
+import { formatAge, plural } from '@/lib/format';
 import type { CrewSummary } from '@/app/api/crew/route';
 import type { FeedEntry } from '@/app/api/crew/feed/route';
 import AddressBar from '@/components/badlands/AddressBar';
@@ -18,15 +18,22 @@ import { photoProps, PHOTO_SIZES } from '@/components/badlands/photo';
 /** The roll call: one poster per member, and beside it the notice board
     with what was pinned last across every wall. */
 export default function CrewPage() {
-  const [crew, setCrew] = useState<CrewSummary[] | null>(null);
-  const [feed, setFeed] = useState<FeedEntry[]>([]);
+  /* null while loading; 'error' if the list never came */
+  const [crew, setCrew] = useState<CrewSummary[] | null | 'error'>(null);
+  const [feed, setFeed] = useState<FeedEntry[] | null | 'error'>(null);
   const [tab,  setTab]  = useState<'members' | 'board'>('members');
   const [staleLink, setStaleLink] = useState(false);
 
   useEffect(() => {
     setStaleLink(new URLSearchParams(window.location.search).get('lykill') === 'utrunninn');
-    fetch('/api/crew', { cache: 'no-store' }).then(r => r.json()).then(setCrew).catch(() => setCrew([]));
-    fetch('/api/crew/feed?limit=40', { cache: 'no-store' }).then(r => r.json()).then(setFeed).catch(() => {});
+    /* an error answer is JSON too ({ error }), so only an array is a list */
+    const list = <T,>(url: string, set: (v: T[] | 'error') => void) =>
+      fetch(url, { cache: 'no-store' })
+        .then(r => (r.ok ? r.json() : null))
+        .then((rows: unknown) => set(Array.isArray(rows) ? (rows as T[]) : 'error'))
+        .catch(() => set('error'));
+    list<CrewSummary>('/api/crew', setCrew);
+    list<FeedEntry>('/api/crew/feed?limit=40', setFeed);
   }, []);
 
   return (
@@ -42,17 +49,19 @@ export default function CrewPage() {
             <h1 className="b-title">Hópurinn</h1>
             <p className="b-lede">Öll sem hafa aðgang. Hvert og eitt á sinn vegg: kynningu, tölur úr leiknum, miða og myndir.</p>
           </div>
-          <div className="b-tabs" style={{ marginBottom: 0 }} role="tablist">
+          <div className="b-tabs" style={{ marginBottom: 0 }} role="tablist" aria-label="Hópurinn">
             {(['members', 'board'] as const).map(t => (
-              <button key={t} type="button" role="tab" aria-selected={tab === t} className={`b-tab${tab === t ? ' is-active' : ''}`} onClick={() => setTab(t)}>
-                {t === 'members' ? 'Félagar' : `Á töflunni${feed.length ? ` (${feed.length})` : ''}`}
+              <button key={t} id={`tab-${t}`} type="button" role="tab" aria-selected={tab === t} aria-controls={`panel-${t}`} className={`b-tab${tab === t ? ' is-active' : ''}`} onClick={() => setTab(t)}>
+                {t === 'members' ? 'Félagar' : `Á töflunni${Array.isArray(feed) && feed.length ? ` (${feed.length})` : ''}`}
               </button>
             ))}
           </div>
         </div>
 
         {tab === 'members' && (
-          crew === null ? <p className="b-empty">sæki félagalistann…</p> :
+          <div id="panel-members" role="tabpanel" aria-labelledby="tab-members">
+          {crew === null ? <p className="b-empty" role="status">sæki félagalistann…</p> :
+           crew === 'error' ? <p className="b-empty" role="alert">Náði ekki í félagalistann. Reyndu aftur eftir smástund.</p> :
           <div className="b-rollcall">
             {crew.map(m => (
               <div key={m.username}>
@@ -66,16 +75,22 @@ export default function CrewPage() {
                   <div className="b-poster__img"><PlayerHead name={m.username} size={128} /></div>
                   <div className="b-poster__name">{m.username}</div>
                   <div className="b-poster__note">{m.bio || (m.lastEntry ? `festi eitthvað upp ${formatAge(m.lastEntry)}` : 'ekkert heyrst enn')}</div>
-                  <div className="b-poster__meta">{m.entryCount} {m.entryCount === 1 ? 'færsla' : 'færslur'} · {m.photoCount} {m.photoCount === 1 ? 'mynd' : 'myndir'}</div>
+                  <div className="b-poster__meta"><span className="b-nowrap">{m.entryCount} {plural(m.entryCount, 'færsla', 'færslur')}</span> · <span className="b-nowrap">{m.photoCount} {plural(m.photoCount, 'mynd', 'myndir')}</span></div>
                 </Link>
               </div>
             ))}
+          </div>}
           </div>
         )}
 
         {tab === 'board' && (
-          feed.length === 0 ? (
-            <p className="b-empty">ekkert á töflunni enn. Félagar festa miða og myndir upp á eigin vegg</p>
+          <div id="panel-board" role="tabpanel" aria-labelledby="tab-board">
+          {feed === null ? (
+            <p className="b-empty" role="status">sæki töfluna…</p>
+          ) : feed === 'error' ? (
+            <p className="b-empty" role="alert">Náði ekki í töfluna. Reyndu aftur eftir smástund.</p>
+          ) : feed.length === 0 ? (
+            <p className="b-empty">Ekkert á töflunni enn. Félagar festa miða og myndir upp á eigin vegg.</p>
           ) : (
             <ul className="w-board">
               {feed.map(e => (
@@ -93,7 +108,8 @@ export default function CrewPage() {
                 </li>
               ))}
             </ul>
-          )
+          )}
+          </div>
         )}
       </main>
       <Footer />

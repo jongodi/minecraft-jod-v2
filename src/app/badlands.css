@@ -140,6 +140,9 @@
 .b-err { color: var(--tc-red); font-size: var(--fs-sm); margin-top: var(--sp-2); }
 .b-paper .b-err { color: var(--tc-red); }
 .b-inline { display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: center; }
+.b-nowrap { white-space: nowrap; }
+/* a pixel icon inside a label button: one text line tall, on the grid */
+.b-btn__icon { width: 0.75rem; height: 0.75rem; flex-shrink: 0; }
 
 /* ─── the copy action: pixel address, a stamp, a ticker ───────── */
 .b-copy { position: relative; display: inline-grid; gap: var(--sp-2); justify-items: start; }
@@ -190,6 +193,10 @@
   100% { transform: rotate(-8deg) scale(1); opacity: 1; }
 }
 .b-copy__hint { font-size: var(--fs-sm); color: var(--text-faint); min-height: 1.5em; }
+/* Over the sunset the faint label colour sits on the brightest orange of the
+   sky and all but disappears; there it is paper, set off by a one-pixel
+   shadow the way the HUD's labels are set off from the map. */
+.b-hero .b-copy__hint { color: var(--paper); text-shadow: 0 var(--px) 0 rgba(21, 16, 13, 0.55); }
 .b-copy__hint.is-ticker { font-family: var(--font-data); font-size: var(--fs-xs); color: var(--paper); }
 .b-copy__hint.is-ticker::after { content: '_'; color: var(--lantern); animation: b-blink 1s steps(2, start) infinite; }
 @keyframes b-blink { to { visibility: hidden; } }
@@ -371,7 +378,7 @@
 .b-hero__action { margin-top: var(--sp-6); }
 .b-hero__side { display: grid; gap: var(--sp-3); justify-items: start; }
 @media (min-width: 900px) { .b-hero__side { justify-items: end; padding-bottom: var(--sp-2); } }
-.b-hero__version { font-family: var(--font-data); font-size: 0.6rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--tc-white); }
+.b-hero__version { font-family: var(--font-data); font-size: 0.6rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--paper); text-shadow: 0 var(--px) 0 rgba(21, 16, 13, 0.55); }
 
 .b-mesa { position: absolute; inset-inline: 0; bottom: 0; height: clamp(9rem, 32svh, 20rem); pointer-events: none; }
 /* No will-change here: the layer's colour is animated too, so it has to be
@@ -450,7 +457,8 @@ html.is-map-full { overflow: hidden; }
 .b-sheet__view { position: absolute; inset: 0; display: grid; place-items: center; will-change: transform; }
 .b-sheet__view svg { width: 100%; height: 100%; display: block; }
 .b-sheet__zoom { position: absolute; right: var(--gutter); bottom: 7.5rem; z-index: 4; display: flex; gap: var(--sp-1); }
-.b-sheet__zoom button { width: var(--tap); height: var(--tap); border: var(--px) solid var(--lantern-deep); background: var(--paper); color: var(--ink); font-family: var(--font-display); font-size: var(--fs-lg); box-shadow: var(--bevel); }
+.b-sheet__zoom button { display: grid; place-items: center; width: var(--tap); height: var(--tap); border: var(--px) solid var(--lantern-deep); background: var(--paper); color: var(--ink); box-shadow: var(--bevel); }
+.b-sheet__zoom svg { width: 1.125rem; height: 1.125rem; }
 @media (hover: hover) { .b-sheet__zoom button:hover { background: var(--lantern); } }
 .b-sheet__zoom button:active { box-shadow: var(--bevel-in); }
 .b-pin-map { cursor: pointer; }
@@ -538,7 +546,8 @@ html.is-map-full { overflow: hidden; }
 .b-card__cap > span { display: grid; gap: var(--px); min-width: 0; }
 .b-card__name { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-lg); line-height: 1.15; color: var(--ink); }
 .b-card__sub { font-size: var(--fs-sm); color: var(--ink-soft); line-height: 1.35; }
-.b-card__x { flex-shrink: 0; width: var(--tap); height: var(--tap); margin: calc(var(--sp-2) * -1) calc(var(--sp-2) * -1) 0 0; color: var(--ink-faint); }
+.b-card__x { flex-shrink: 0; display: grid; place-items: center; width: var(--tap); height: var(--tap); margin: calc(var(--sp-2) * -1) calc(var(--sp-2) * -1) 0 0; color: var(--ink-faint); }
+.b-card__x svg { width: 1rem; height: 1rem; }
 @media (hover: hover) { .b-card__x:hover { color: var(--ink); } }
 .b-card__fly { width: 100%; margin-top: var(--sp-3); }
 .b-card__fly .b-lantern { width: 0.75rem; height: 1.125rem; }
@@ -678,6 +687,7 @@ html.is-map-full { overflow: hidden; }
 .b-room__title { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-lg); line-height: 1; color: var(--paper); text-shadow: 0 var(--px) 0 var(--wood-dark); white-space: nowrap; }
 .b-room__note { flex: 1 1 auto; min-width: 0; font-family: var(--font-data); font-size: 0.6rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--tc-white); text-shadow: 0 1px 0 var(--wood-dark); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .b-room__close { flex-shrink: 0; margin-left: auto; width: var(--tap); height: var(--tap); display: inline-grid; place-items: center; color: var(--lantern); font-family: var(--font-data); font-size: var(--fs-data); background: rgba(21, 16, 13, 0.35); clip-path: var(--notch); }
+.b-room__close svg { width: 1rem; height: 1rem; }
 .b-room__close:focus-visible { background: var(--lantern); color: var(--night); }
 @media (hover: hover) { .b-room__close:hover { background: var(--lantern); color: var(--night); } }
 .b-room__body { overflow-y: auto; overscroll-behavior: contain; padding-block: var(--sp-5) var(--sp-6); scrollbar-width: thin; scrollbar-color: var(--wood-light) transparent; }
@@ -729,12 +739,14 @@ html.is-map-full { overflow: hidden; }
 .b-lb__cap small { display: block; font-size: var(--fs-sm); color: var(--text-soft); }
 .b-lb__count { font-family: var(--font-data); font-size: var(--fs-xs); color: var(--text-soft); }
 .b-arrowbtn { width: var(--tap); height: var(--tap); border: var(--px) solid var(--lantern); color: var(--lantern); border-radius: var(--radius); display: inline-flex; align-items: center; justify-content: center; }
+.b-arrowbtn svg { width: 1.125rem; height: 1.125rem; }
+.b-arrowbtn:focus-visible { background: var(--lantern); color: var(--night); }
 @media (hover: hover) { .b-arrowbtn:hover { background: var(--lantern); color: var(--night); } }
-.b-lb__close { position: absolute; top: var(--sp-3); right: var(--sp-4); }
+.b-lb__close { position: absolute; top: max(var(--sp-3), env(safe-area-inset-top, 0px)); right: var(--sp-4); z-index: 1; background: rgba(12, 10, 20, 0.6); }
 
 /* ─── the crew: portraits in the room ─────────────────────────── */
 .b-crew__row { display: grid; gap: var(--sp-3); margin-bottom: var(--sp-5); }
-.b-crew__who { text-align: center; }
+.b-crew__who { text-align: center; text-wrap: balance; }
 @media (min-width: 900px) {
   .b-crew__row { grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: var(--sp-6); }
   .b-crew__who { text-align: right; max-width: 18rem; }
@@ -809,6 +821,15 @@ html.is-map-full { overflow: hidden; }
 .b-arena__small { margin-top: var(--sp-2); font-size: var(--fs-md); color: var(--paper); text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7); max-width: 30ch; }
 .b-arena__corner { position: absolute; top: var(--sp-2); left: var(--sp-3); font-family: var(--font-data); font-size: var(--fs-xs); color: var(--paper); text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6); }
 .b-arena__corner--r { left: auto; right: var(--sp-3); }
+/* A phone's arena is 4:3 and a thumb wide: the call starts below the corner
+   labels and its small line drops a size, so the round count, the call and
+   the instructions no longer sit on top of one another. */
+@media (max-width: 639px) {
+  .b-arena__call { padding: 2.25rem var(--sp-3) 18%; }
+  .b-arena__big { font-size: clamp(2rem, 9vw, 3rem); }
+  .b-arena__small { font-size: var(--fs-xs); line-height: 1.5; }
+  .b-duelpanel { padding: var(--sp-4); }
+}
 .b-fig { transition: transform 0.18s var(--ease-out); transform-box: fill-box; transform-origin: bottom center; }
 .b-arm { transition: transform var(--dur-1) var(--ease-out); transform-box: fill-box; transform-origin: top left; }
 .is-draw .b-fig--foe .b-arm, .is-result .b-fig--foe .b-arm { transform: rotate(-80deg); }
