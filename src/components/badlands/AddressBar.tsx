@@ -7,11 +7,11 @@ import PlayerHead from './PlayerHead';
 import { SERVER_IP, type NavLink } from './data';
 import { useCopy, useCrewSession } from './hooks';
 
-export interface Door extends NavLink { id: string; lit?: boolean }
+export interface Door extends NavLink { id: string }
 
 interface Props {
   links: Door[];
-  /** the door the visitor is behind right now */
+  /** the door the visitor is behind right now: the only one whose lantern is lit */
   activeId?: string | null;
   /** on the home page: open a door in place instead of following the hash */
   onDoor?: (id: string) => void;
@@ -25,7 +25,7 @@ const SOLID_AFTER = 40; // px of scroll before the bar takes a surface
     copy action. On the home page it lies over the sunset and takes a surface
     once the page has scrolled; elsewhere it is solid from the start. On phones
     the doors move to a bar at the bottom, in reach of a thumb. A door's
-    lantern is lit while the visitor is behind it. */
+    lantern is lit while the visitor is behind it, and only ever one is. */
 export default function AddressBar({ links, activeId, onDoor, always = false }: Props) {
   const [solid, setSolid] = useState(always);
   const [copied, copy]    = useCopy(SERVER_IP);
@@ -44,7 +44,7 @@ export default function AddressBar({ links, activeId, onDoor, always = false }: 
   const door = (l: Door, cls: string) => {
     const here = l.id === activeId;
     const className = `${cls}${here ? ' is-here' : ''}`;
-    const inner = <><Lantern lit={!!l.lit} />{l.label}</>;
+    const inner = <><Lantern lit={here} />{l.label}</>;
     if (onDoor) {
       return (
         <a key={l.id} href={l.href} className={className} aria-current={here ? 'location' : undefined}
