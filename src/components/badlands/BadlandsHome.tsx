@@ -10,12 +10,16 @@ import AddressBar from './AddressBar';
 import Hero from './Hero';
 import World from './World';
 import Footer from './Footer';
-import { PLATES, SECTIONS, isRoom, sentenceCase, titleCase, type Plate, type RoomId } from './data';
+import { PLATES, SECTIONS, isRoom, sentenceCase, titleCase, type DoorId, type Plate, type RoomId } from './data';
 import { useReducedMotionPref, useScrollSpy, useServerStatus } from './hooks';
 
 /* Effects load after the page is interactive; none of them is needed for the first paint. */
 const Particles   = dynamic(() => import('@/effects/Particles'),   { ssr: false });
 const CursorLight = dynamic(() => import('@/effects/CursorLight'), { ssr: false });
+
+/* How long a pressed door stays lit on its own if the page never reaches the
+   frame (the visitor scrolled back up before the smooth scroll arrived). */
+const PRESSED_HOLD_MS = 1500;
 
 /** The evening: the sunset, the world, and the campfire. The crew and the
     shelf are rooms that open over the world; the hash says which is open, so
@@ -25,6 +29,7 @@ export default function BadlandsHome({ syncedOn }: { syncedOn: string | null }) 
   const reduce = useReducedMotionPref();
   const reached = useScrollSpy(['heimur']) === 'heimur';
   const [room, setRoom] = useState<RoomId | null>(null);
+  const [pressed, setPressed] = useState<DoorId | null>(null);
   const [plates, setPlates] = useState<Plate[]>(PLATES);
 
   /* The admin panel manages the gallery; fall back to the bundled list. */
@@ -49,8 +54,10 @@ export default function BadlandsHome({ syncedOn }: { syncedOn: string | null }) 
   useEffect(() => {
     const read = () => {
       const h = decodeURIComponent(window.location.hash.slice(1));
+      const door = isRoom(h) || h === 'heimur' ? h : null;
       setRoom(isRoom(h) ? h : null);
-      if (isRoom(h) || h === 'heimur') showWorld();
+      setPressed(door);
+      if (door) showWorld();
     };
     read();
     window.addEventListener('hashchange', read);
@@ -63,6 +70,7 @@ export default function BadlandsHome({ syncedOn }: { syncedOn: string | null }) 
     const hash = next ? `#${next}` : '#heimur';
     if (window.location.hash !== hash) history.pushState(null, '', hash);
     setRoom(next);
+    setPressed(next ?? 'heimur');
     showWorld();
   }, [showWorld]);
   const closeRoom = useCallback(() => {
@@ -77,17 +85,24 @@ export default function BadlandsHome({ syncedOn }: { syncedOn: string | null }) 
     return () => window.removeEventListener('keydown', onKey);
   }, [room, closeRoom]);
 
-  /* The lantern of the world is lit once the evening has reached it; a room's
-     lantern is lit while the room is open. */
-  const doors = SECTIONS.map(l => ({ ...l, lit: l.id === 'heimur' ? reached || room !== null : room === l.id }));
-  const active = room ?? (reached ? 'heimur' : null);
+  /* One lantern is lit at a time, the door the visitor is behind: an open
+     room's, otherwise the world's. Up at the sunset none is, even with a room
+     left open below. A pressed door lights at once and holds while the page
+     is still on its way down to the frame. */
+  useEffect(() => {
+    if (!pressed) return;
+    if (reached) { setPressed(null); return; }
+    const t = setTimeout(() => setPressed(null), PRESSED_HOLD_MS);
+    return () => clearTimeout(t);
+  }, [pressed, reached]);
+  const active: DoorId | null = pressed ?? (reached ? room ?? 'heimur' : null);
 
   return (
     <div className="b">
       <Sky />
       <Particles heroId="top" fireId="campfire" />
       <CursorLight />
-      <AddressBar links={doors} activeId={active} onDoor={openDoor} />
+      <AddressBar links={SECTIONS} activeId={active} onDoor={openDoor} />
       <main>
         <Hero server={server} />
         <World plates={plates} server={server} syncedOn={syncedOn} room={room} onCloseRoom={closeRoom} />
