@@ -2,18 +2,18 @@ import { ImageResponse } from 'next/og';
 import { sharedNight } from '@/lib/night-share';
 import { C, CARD, STRATA, cardFonts } from '@/lib/og-card';
 
-export const alt = 'Næsta spilakvöld á JOÐ';
-export const size = CARD;
-export const contentType = 'image/png';
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 /* The play night's link card: the fire, as big as the crowd coming, on the
-   night, with when it is and how many are coming. */
+   night, with when it is and how many are coming. A route of its own rather
+   than an opengraph-image file, whose address never changes: chat apps keep a
+   preview by its image's address, so /kvold asks for /kvold/card?v=<the
+   night as it stands> and a new fire, or a new answer, is a new picture. */
 const FLAME: [number, number, number, number, string][] = [
   [7, 2, 2, 2, '#F4D394'], [6, 4, 4, 2, '#F4D394'], [5, 6, 6, 2, '#D8712F'], [4, 8, 8, 3, '#D8712F'], [6, 6, 2, 4, '#F4D394'],
 ];
 
-export default async function Image() {
+export async function GET() {
   const [night, fonts] = await Promise.all([sharedNight(), cardFonts()]);
   const px = 14 + Math.min(8, night.count) * 2;   /* one fire pixel, in card pixels */
   return new ImageResponse(
@@ -39,6 +39,9 @@ export default async function Image() {
         </div>
       </div>
     ),
-    { ...size, fonts },
+    {
+      ...CARD, fonts,
+      headers: { 'Cache-Control': 'public, max-age=60, s-maxage=60, stale-while-revalidate=300' },
+    },
   );
 }

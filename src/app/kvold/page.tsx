@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import BadlandsHome from '@/components/badlands/BadlandsHome';
 import { syncedOn } from '@/lib/bluemap-snapshot';
-import { sharedNight } from '@/lib/night-share';
+import { cardVersion, sharedNight } from '@/lib/night-share';
 
 /* The play night's shareable link: the home page itself (shared as
    /kvold#hopur, so the crew's room opens on the fire), with the night's own
@@ -17,8 +17,11 @@ export async function generateMetadata(): Promise<Metadata> {
     title,
     description,
     alternates: { canonical: '/kvold' },
-    openGraph: { title, description, url: '/kvold', type: 'website', locale: 'is_IS', siteName: 'JOÐ' },
-    twitter: { card: 'summary_large_image', title, description },
+    openGraph: {
+      title, description, url: '/kvold', type: 'website', locale: 'is_IS', siteName: 'JOÐ',
+      images: [{ url: `/kvold/card?v=${cardVersion(night)}`, width: 1200, height: 630, alt: 'Næsta spilakvöld á JOÐ' }],
+    },
+    twitter: { card: 'summary_large_image', title, description, images: [`/kvold/card?v=${cardVersion(night)}`] },
   };
 }
 
