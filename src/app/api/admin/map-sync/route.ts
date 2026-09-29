@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin, unauthorizedResponse } from '@/lib/auth';
 import { getExarotonServerId } from '@/lib/exaroton';
 import { errorMessage } from '@/lib/icelandic';
@@ -26,6 +26,8 @@ export interface MapSyncRun {
   createdAt: string;
   updatedAt: string;
   url: string;
+  /** Started to copy even though the server was stopped. */
+  offline: boolean;
 }
 
 export interface MapSyncState {
@@ -65,13 +67,15 @@ export async function GET() {
     const res = await github('/runs?per_page=5');
     if (!res.ok) return NextResponse.json({ error: await githubError(res) }, { status: 502 });
     const { workflow_runs } = await res.json() as {
-      workflow_runs: { id: number; status: string; conclusion: string | null; created_at: string; updated_at: string; html_url: string }[];
+      workflow_runs: { id: number; status: string; conclusion: string | null; created_at: string; updated_at: string; html_url: string; display_title: string }[];
     };
     const state: MapSyncState = {
       syncedAt: snapshot.syncedAt,
       runs: workflow_runs.map(r => ({
         id: r.id, status: r.status, conclusion: r.conclusion,
         createdAt: r.created_at, updatedAt: r.updated_at, url: r.html_url,
+        /* the workflow's run-name */
+        offline: r.display_title.includes('server off'),
       })),
     };
     return NextResponse.json(state, { headers: { 'Cache-Control': 'no-store' } });
@@ -80,15 +84,19 @@ export async function GET() {
   }
 }
 
-export async function POST() {
+export async function POST(req: NextRequest) {
   if (!(await requireAdmin())) return unauthorizedResponse();
   if (!process.env.MAP_SYNC_GITHUB_TOKEN) return NextResponse.json({ error: NO_TOKEN }, { status: 503 });
 
-  /* The workflow copies nothing while the server is stopped (exaroton hands
-     out files far too slowly then), so say so here instead of starting a run
-     that quietly does nothing. */
+  /* { offline: true } copies even off a stopped server: slowly, since
+     exaroton hands out a stopped server's files far more slowly. */
+  const body = await req.json().catch(() => null) as { offline?: unknown } | null;
+  const offline = body?.offline === true;
+
+  /* Otherwise the workflow copies nothing while the server is stopped, so
+     say so here instead of starting a run that quietly does nothing. */
   const token = process.env.EXAROTON_API_KEY;
-  if (token) {
+  if (token && !offline) {
     try {
       const id = await getExarotonServerId(token);
       const res = await fetch(`https://api.exaroton.com/v1/servers/${id}/`, {
@@ -98,7 +106,7 @@ export async function POST() {
       if (res.ok) {
         const { data } = await res.json() as { data: { status: number } };
         if (data.status !== 1) {
-          return NextResponse.json({ error: 'Þjónninn er ekki í gangi. Ræstu hann fyrst: kortið er aðeins afritað meðan hann keyrir.' }, { status: 409 });
+          return NextResponse.json({ error: 'Þjónninn er ekki í gangi. Ræstu hann fyrst, eða hakaðu við „Líka þótt þjónninn sé slökktur“.' }, { status: 409 });
         }
       }
     } catch {
@@ -107,7 +115,7 @@ export async function POST() {
   }
 
   try {
-    const res = await github('/dispatches', { method: 'POST', body: JSON.stringify({ ref: 'main' }) });
+    const res = await github('/dispatches', { method: 'POST', body: JSON.stringify({ ref: 'main', ...(offline ? { inputs: { offline: 'true' } } : {}) }) });
     if (!res.ok) return NextResponse.json({ error: await githubError(res) }, { status: 502 });
     return NextResponse.json({ ok: true });
   } catch (err) {
