@@ -122,9 +122,15 @@ function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
       .then((cfg: Partial<MapConfig> | null) => {
         if (!cfg?.locations?.length) return;
         setConfig({ locations: cfg.locations, zones: cfg.zones ?? [], paths: cfg.paths ?? [], terrain: cfg.terrain });
-        /* a link from a wall names its place: /?stadur=<id>#heimur */
-        const wanted = Number(new URLSearchParams(window.location.search).get('stadur'));
-        if (wanted && cfg.locations.some(l => l.id === wanted)) { setSelect(wanted); setTimeout(() => revealRailItem(wanted, places.current), 300); }
+        /* a link names its place: a wall's /?stadur=<id>#heimur, or a shared /stadur/<id> */
+        const fromPath = window.location.pathname.match(/^\/stadur\/(\d+)\/?$/)?.[1];
+        const wanted = Number(fromPath ?? new URLSearchParams(window.location.search).get('stadur'));
+        if (wanted && cfg.locations.some(l => l.id === wanted)) {
+          setSelect(wanted);
+          setTimeout(() => revealRailItem(wanted, places.current), 300);
+          /* a shared link whose chat dropped the #heimur: the postcard is down in the world */
+          if (fromPath && !window.location.hash) document.getElementById('heimur')?.scrollIntoView({ block: 'start' });
+        }
       })
       .catch(() => {});
     fetch('/api/crew/places', { cache: 'no-store' })
@@ -147,6 +153,26 @@ function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
     const id = setTimeout(warm, 2500);
     return () => clearTimeout(id);
   }, []);
+
+  /* Deila: a place's own link, whose preview in a chat is its postcard
+     (src/app/stadur/[id]). On a phone the phone's own share sheet opens,
+     straight to Messenger or Discord; elsewhere the link is copied. */
+  const [shared, setShared] = useState<number | null>(null);
+  const share = useCallback(async (id: number, title: string) => {
+    const url = `${window.location.origin}/stadur/${id}#heimur`;
+    const nav = navigator as Navigator & { share?: (d: ShareData) => Promise<void> };
+    if (nav.share && matchMedia('(pointer: coarse)').matches) {
+      try { await nav.share({ title: `${title} · JOÐ`, url }); return; }
+      catch (e) { if ((e as DOMException)?.name === 'AbortError') return; }
+    }
+    try { await navigator.clipboard.writeText(url); setShared(id); }
+    catch { window.prompt('Afritaðu hlekkinn:', url); }
+  }, []);
+  useEffect(() => {
+    if (shared === null) return;
+    const t = setTimeout(() => setShared(null), 2500);
+    return () => clearTimeout(t);
+  }, [shared]);
 
   const choose = useCallback((id: number) => {
     setSelect(cur => (cur === id ? null : id));
@@ -436,7 +462,11 @@ function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
                     <span className="b-card__builders">byggt af {place.builders.map((b, i) => <span key={b}>{i > 0 && ', '}<Link href={`/crew/${b}`}>{b}</Link></span>)}</span>
                   )}
                 </span>
-                <button type="button" className="b-card__x" onClick={() => setSelect(null)} aria-label="Loka póstkortinu"><CloseIcon /></button>
+                <span className="b-card__tools">
+                  <button type="button" className="b-btn b-btn--small b-btn--ghost b-card__share" onClick={() => share(place.id, titleCase(place.label))}
+                    aria-live="polite">{shared === place.id ? 'Afritað' : 'Deila'}</button>
+                  <button type="button" className="b-card__x" onClick={() => setSelect(null)} aria-label="Loka póstkortinu"><CloseIcon /></button>
+                </span>
               </figcaption>
               {/* a place that stands in the world can be visited there */}
               {place.world && (!viewer || still) && !drawn && (

@@ -568,6 +568,11 @@ html.is-map-full { overflow: hidden; }
 .b-card__x { flex-shrink: 0; display: grid; place-items: center; width: var(--tap); height: var(--tap); margin: calc(var(--sp-2) * -1) calc(var(--sp-2) * -1) 0 0; color: var(--ink-faint); }
 .b-card__x svg { width: 1rem; height: 1rem; }
 @media (hover: hover) { .b-card__x:hover { color: var(--ink); } }
+/* Deila and the ✕ side by side; Deila is ink on the postcard's paper, lit like any button under the pointer */
+.b-card__cap > .b-card__tools { display: flex; align-items: flex-start; gap: var(--sp-1); flex-shrink: 0; }
+.b-card__share.b-btn--ghost { border-color: var(--ink-faint); color: var(--ink); background: transparent; }
+.b-card__share.b-btn--ghost:focus-visible { background: var(--lantern); border-color: var(--lantern); color: var(--night); }
+@media (hover: hover) { .b-card__share.b-btn--ghost:hover { background: var(--lantern); border-color: var(--lantern); color: var(--night); } }
 .b-card__fly { width: 100%; margin-top: var(--sp-3); }
 .b-card__fly .b-lantern { width: 0.75rem; height: 1.125rem; }
 

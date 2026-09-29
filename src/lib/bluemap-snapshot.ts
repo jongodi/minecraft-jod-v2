@@ -55,3 +55,8 @@ export function parseDataPath(segments: string[]): { version: string | null; pat
 /** True when the request names this deployment's copy, so the answer can be kept forever. */
 export const isCurrentVersion = (version: string | null): boolean =>
   version !== null && snapshot.version !== undefined && version === snapshot.version;
+
+/** When the copy of the map kept on the site was taken, as the home page says it. */
+export const syncedOn: string | null = snapshot.syncedAt
+  ? new Date(snapshot.syncedAt).toLocaleDateString('is-IS', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Atlantic/Reykjavik' })
+  : null;

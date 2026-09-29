@@ -45,6 +45,10 @@ async function printBytes(filename: string): Promise<{ bytes: Uint8Array; type: 
     if (!result || result.statusCode !== 200) return null;
     return { bytes: new Uint8Array(await new Response(result.stream).arrayBuffer()), type: result.blob.contentType || 'image/png' };
   }
+  /* the map's still, the site's own link card's backdrop */
+  if (filename === '/map-poster.webp') {
+    return { bytes: new Uint8Array(await fs.readFile(path.join(process.cwd(), 'public', 'map-poster.webp'))), type: 'image/webp' };
+  }
   if (filename.startsWith('/screenshots/')) {
     const file = path.join(process.cwd(), 'public', 'screenshots', path.basename(filename));
     const ext = file.split('.').pop()?.toLowerCase() ?? 'png';
