@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import type { MapSyncRun, MapSyncState } from '@/app/api/admin/map-sync/route';
+import { MAP_POSTER } from '@/components/badlands/data';
 import { Button, Notice, Panel, Toggle, api, errText } from './ui';
 
 /* Starts the map copy (the "Map sync" GitHub Action) and follows its runs.
@@ -79,6 +80,9 @@ export default function MapSyncPanel() {
               <span className="a-fact__v">{state.syncedAt ? when(state.syncedAt) : 'ekkert enn'}</span>
             </div>
           </div>
+          {/* the still the home page opens on; each copy that changes the map takes a new one */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="a-poster" src={MAP_POSTER} alt="Kyrrmyndin af kortinu sem forsíðan opnar á" width={1920} height={1080} loading="lazy" />
           <div className="a-inline">
             <Button tone="primary" onClick={start} disabled={starting || running}>
               {starting ? 'Sendi' : running ? 'Afritun í gangi' : 'Afrita kortið núna'}

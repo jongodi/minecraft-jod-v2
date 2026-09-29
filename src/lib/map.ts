@@ -60,17 +60,29 @@ async function readStoredMap(strict = false): Promise<MapConfig> {
   return DEFAULT_CONFIG;
 }
 
-/** Persist the full map config (Redis → filesystem fallback). */
-export async function writeMap(cfg: MapConfig): Promise<void> {
+/** Persist the full map config (Redis → filesystem fallback). With Redis each
+    save is also kept in the map's history (src/lib/map-history.ts); `note`
+    heads its line there, as a restore does. */
+export async function writeMap(cfg: MapConfig, note?: string): Promise<void> {
   if (process.env.REDIS_URL) {
+    const { rGet, rSet } = await import('@/lib/redis');
+    /* what it was, for the history's line; a failed read only costs the line its detail */
+    let prev: MapConfig | null = null;
+    try { prev = await rGet<MapConfig>(KV_KEY); } catch { /* none */ }
     try {
-      const { rSet } = await import('@/lib/redis');
       await rSet(KV_KEY, cfg);
-      return;
     } catch (e) {
       console.error('Redis writeMap error:', e);
       throw new Error('Ekki tókst að vista kortið vegna villu í geymslu');
     }
+    /* the save stands even if its history can't be kept */
+    try {
+      const { recordVersion } = await import('@/lib/map-history');
+      await recordVersion(prev, cfg, note);
+    } catch (e) {
+      console.error('Map history error:', e);
+    }
+    return;
   }
 
   // Filesystem fallback
