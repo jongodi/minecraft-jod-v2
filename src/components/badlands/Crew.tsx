@@ -5,6 +5,7 @@ import { memo, useEffect, useState } from 'react';
 import Link from 'next/link';
 import PlayerHead from './PlayerHead';
 import Wanted from './Wanted';
+import { NightBoard } from './PlayNight';
 import Rail from './Rail';
 import { CREW } from './data';
 import { useStats, type ServerState } from './hooks';
@@ -16,7 +17,7 @@ import { photoProps, PHOTO_SIZES } from './photo';
 const STRIP = 12;
 
 /** The crew's room, opened over the world. Portraits of the eight with a
-    lantern behind the ones who are in, the notice strip with what was pinned
+    lantern behind the ones who are in, the next play night's fire, the notice strip with what was pinned
     last on their walls, then the wanted board on one rail. Everything here is
     fetched when the room is first opened, not with the page. */
 function Crew({ server }: { server: ServerState }) {
@@ -66,6 +67,9 @@ function Crew({ server }: { server: ServerState }) {
            'slökkt á þjóninum, allir í pásu'}
         </p>
       </div>
+
+      {/* the next play night: the most pressing thing in the room */}
+      <NightBoard server={server} />
 
       {/* the notice strip: the newest things on every wall, each a tap from where it hangs */}
       {strip && strip.length > 0 && (

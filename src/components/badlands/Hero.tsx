@@ -4,6 +4,7 @@ import { memo } from 'react';
 import Mesa from './Mesa';
 import CopyAddress from './CopyAddress';
 import StatusLantern from './StatusLantern';
+import { NightLine } from './PlayNight';
 import type { ServerState } from './hooks';
 
 function Hero({ server }: { server: ServerState }) {
@@ -17,6 +18,7 @@ function Hero({ server }: { server: ServerState }) {
         </div>
         <div className="b-hero__side">
           <StatusLantern server={server} />
+          <NightLine />
           <p className="b-hero__version">aðgangur með boði · útlitspakkinn sækist sjálfkrafa</p>
         </div>
       </div>

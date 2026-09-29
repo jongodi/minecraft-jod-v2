@@ -94,12 +94,19 @@ const FLAMES: ReadonlyArray<ReadonlyArray<[number, number, number, number, strin
   [[6, 3, 2, 2, 'var(--sun)'], [5, 5, 5, 1, 'var(--sun)'], [5, 6, 6, 2, 'var(--ember)'], [3, 8, 10, 3, 'var(--ember)'], [6, 6, 3, 4, 'var(--sun)']],
 ];
 
-/** The campfire in the footer: a three-frame pixel flame on two logs. */
-export function Campfire() {
+/** The campfire in the footer: a three-frame pixel flame on two logs. A play
+    night's fire is the same one; burnt down, only embers glow on the logs. */
+export function Campfire({ embers = false, className }: { embers?: boolean; className?: string } = {}) {
   return (
-    <span className="b-fire" aria-hidden="true">
+    <span className={`b-fire${className ? ` ${className}` : ''}`} aria-hidden="true">
       <svg viewBox="0 0 16 16">
-        {FLAMES.map((frame, i) => (
+        {embers ? (
+          <g>
+            <rect x="5" y="10" width="2" height="1" fill="var(--ember)" />
+            <rect x="8" y="9" width="1" height="2" fill="var(--ember)" />
+            <rect x="10" y="10" width="1" height="1" fill="var(--sun)" />
+          </g>
+        ) : FLAMES.map((frame, i) => (
           <g key={i} className="b-fire__frame" style={{ animationDelay: `${-i * 300}ms` }}>
             {frame.map(([x, y, w, h, fill]) => <rect key={`${x}-${y}`} x={x} y={y} width={w} height={h} fill={fill} />)}
           </g>
