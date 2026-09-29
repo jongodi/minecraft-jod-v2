@@ -6,7 +6,8 @@ name: Map sync
 # hasn't redrawn anything since the last copy, and nothing while the server is
 # stopped unless it is told to copy anyway: exaroton hands out files very
 # slowly then, so such a run can take a long time. Otherwise it uploads the new
-# copy as a few packs and commits it to main, which Vercel deploys.
+# copy as a few packs, takes a new still of the map (npm run map:poster), and
+# commits both to main, which Vercel deploys.
 #
 # Needs two repository secrets (Settings → Secrets and variables → Actions):
 # EXAROTON_API_KEY and BLOB_READ_WRITE_TOKEN, the same as in .env.local.
@@ -84,10 +85,35 @@ jobs:
           EXAROTON_API_KEY: ${{ secrets.EXAROTON_API_KEY }}
           BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
 
+      - name: See whether the map changed
+        id: changed
+        run: |
+          if [ -n "$(git status --porcelain -- public/bluemap src/lib/bluemap-snapshot.json src/lib/bluemap-viewer.json)" ]; then
+            echo "map=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "map=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # A new copy gets a new still: the home page opens on it until the 3D
+      # map is started. Taken off the local copy through a dev server, in the
+      # runner's Chrome drawing WebGL in software. Should it fail, the copy is
+      # published anyway, with the still it had.
+      - name: Take the map's still
+        if: steps.changed.outputs.map == 'true'
+        continue-on-error: true
+        timeout-minutes: 15
+        run: |
+          npx next dev -p 3000 > next-dev.log 2>&1 &
+          for i in $(seq 1 90); do curl -sf -o /dev/null http://localhost:3000/bluemap/settings.json && break; sleep 2; done
+          npm run map:poster
+        env:
+          CI: 'true'
+          POSTER_SCALE: '2'
+
       - name: Publish the new copy
         id: publish
         run: |
-          git add public/bluemap src/lib/bluemap-snapshot.json src/lib/bluemap-viewer.json
+          git add public/bluemap src/lib/bluemap-snapshot.json src/lib/bluemap-viewer.json public/map-poster.webp src/lib/map-poster.json
           if git diff --cached --quiet; then
             echo "Nothing new to publish."
             echo "changed=false" >> "$GITHUB_OUTPUT"

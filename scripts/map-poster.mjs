@@ -1,6 +1,7 @@
 // The still the world opens as: one screenshot of the 3D map at its start view,
 // taken against the running dev server and written to public/map-poster.webp.
-// Usage: npm run map:poster   (with `npm run dev` running)
+// Usage: npm run map:poster   (with `npm run dev` running; the map sync on
+//        GitHub runs it after every copy that changed the map)
 // Env: BASE (default http://localhost:3000), CHROME (executable path),
 //      POSTER_HIRES (detailed radius in blocks; default: out to the edges of
 //      the rendered world), POSTER_SCALE (render scale before shrinking to
@@ -13,7 +14,8 @@
 // shot waits until every detailed tile has arrived. It is rendered at
 // POSTER_SCALE times the size and shrunk, which smooths the edges of blocks.
 import { chromium } from 'playwright-core';
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
@@ -30,12 +32,15 @@ if (!view) { console.error('MAP_START_VIEW not found in data.ts'); process.exit(
 
 /* playwright-core ships no browser of its own: use the Chrome or Edge already on
    this machine, or the executable named in CHROME. */
+/* A machine without a graphics card (the map sync on GitHub) draws WebGL in
+   software, which Chrome only allows when asked. */
+const args = process.env.CI ? ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] : [];
 async function launch() {
-  if (process.env.CHROME) return chromium.launch({ executablePath: process.env.CHROME });
+  if (process.env.CHROME) return chromium.launch({ executablePath: process.env.CHROME, args });
   for (const channel of ['chrome', 'msedge', 'chromium']) {
-    try { return await chromium.launch({ channel }); } catch { /* not installed, try the next */ }
+    try { return await chromium.launch({ channel, args }); } catch { /* not installed, try the next */ }
   }
-  try { return await chromium.launch(); } catch {
+  try { return await chromium.launch({ args }); } catch {
     console.error('Fann engan vafra. Settu upp Chrome eða Edge, eða bentu á vafra með CHROME=<slóð>.');
     process.exit(1);
   }
@@ -100,5 +105,10 @@ await page.waitForTimeout(1000);
 const png = await page.screenshot({ type: 'png' });
 await browser.close();
 
-await sharp(png).resize(WIDTH, HEIGHT, { kernel: 'lanczos3' }).webp({ quality: 74 }).toFile('public/map-poster.webp');
-console.log(`public/map-poster.webp skrifað, ${WIDTH}×${HEIGHT}`);
+const webp = await sharp(png).resize(WIDTH, HEIGHT, { kernel: 'lanczos3' }).webp({ quality: 74 }).toBuffer();
+writeFileSync('public/map-poster.webp', webp);
+/* the home page asks for /map-poster.webp?v=<this>: the image optimiser keeps
+   an address's images for a year, so a new still needs a new address */
+const version = createHash('sha256').update(webp).digest('hex').slice(0, 10);
+writeFileSync('src/lib/map-poster.json', JSON.stringify({ version }, null, 2) + '\n');
+console.log(`public/map-poster.webp skrifað, ${WIDTH}×${HEIGHT} (útgáfa ${version})`);

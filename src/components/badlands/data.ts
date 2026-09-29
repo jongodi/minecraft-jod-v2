@@ -1,3 +1,4 @@
+import posterFile from '@/lib/map-poster.json';
 export const SERVER_IP = 'play.jodcraft.world';
 
 export const CREW = [
@@ -43,7 +44,9 @@ export const MAP_URL = `/bluemap/index.html#${MAP_START_VIEW}`;
 
 /* The still the world opens as: one screenshot of the start view, taken by
    `npm run map:poster`. The viewer itself only loads when someone asks for it. */
-export const MAP_POSTER = '/map-poster.webp';
+/* The map's still, by the version map:poster wrote: the image optimiser keeps
+   an address's images for a year, so a new still needs a new address. */
+export const MAP_POSTER = `/map-poster.webp?v=${posterFile.version}`;
 
 export interface Plate { id: string; src: string; title: string; sub: string }
 
