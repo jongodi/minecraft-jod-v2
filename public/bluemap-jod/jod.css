@@ -238,7 +238,12 @@ h1::after, h2::after { height: 3px; background: var(--jod-strata); }
 .side-menu .simple-button.active,
 .side-menu .map-button.selected { background: var(--theme-bg-hover); box-shadow: inset 3px 0 0 var(--jod-lantern); }
 .side-menu .simple-button:active { background: var(--jod-lantern-deep); color: var(--jod-night); }
-@media (hover: hover) { .side-menu .slider:hover { background: var(--theme-bg-hover); } }
+@media (hover: hover) {
+  .side-menu .slider:hover { background: var(--theme-bg-hover); }
+  /* the chosen one lights like the rest under the pointer, instead of dark ink on the dark row */
+  .side-menu .simple-button.active:hover,
+  .side-menu .map-button.selected:hover { background: var(--jod-lantern); }
+}
 /* BlueMap's own sheet lights these on hover too; on a touch screen that would stay after the tap */
 @media (hover: none) {
   .svg-button:hover { background: var(--jod-face); }
@@ -269,6 +274,10 @@ h1::after, h2::after { height: 3px; background: var(--jod-strata); }
 .choice-box .choices .choice { border-radius: 0; font-family: var(--jod-font-data); }
 @media (hover: hover) { .choice-box .choices .choice:hover { background: var(--jod-lantern); color: var(--jod-night); } }
 .choice-box .choices .choice.selected { background: var(--theme-bg-hover); box-shadow: inset 0 -3px 0 var(--jod-lantern); }
+
+/* jod.js keeps the menu to what a visitor uses, and adds Gæði in place of the sliders */
+.jod-hidden { display: none !important; }
+.jod-quality__help { margin: 0.5em 0.5em 0.25em; font-family: var(--jod-font-text); font-size: 0.85em; line-height: 1.45; color: var(--theme-fg-light); }
 
 /* what you read in the menu is prose, so it is set in the text face */
 .info-content { font-family: var(--jod-font-text); font-size: 0.95em; line-height: 1.5; }
