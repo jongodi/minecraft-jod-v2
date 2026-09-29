@@ -28,6 +28,23 @@ const nextConfig = {
     '*': ['**/public/bluemap/**', '**/public/bluemap-data/**'],
   },
 
+  /* The link cards read their fonts and pictures by paths built at run time,
+     which the tracer cannot follow, so without these they were missing from
+     the functions and every card answered 500. Only the latin woff files the
+     renderer reads (it takes woff, not woff2), the map's still, and the
+     screenshots the bundled gallery points at. */
+  outputFileTracingIncludes: {
+    '/crew/[username]/opengraph-image': [
+      './node_modules/@fontsource/{alfa-slab-one,silkscreen,pixelify-sans}/files/*-latin-400-normal.woff',
+      './public/screenshots/*.webp',
+    ],
+    '/stadur/[id]/opengraph-image': [
+      './node_modules/@fontsource/{alfa-slab-one,silkscreen,pixelify-sans}/files/*-latin-400-normal.woff',
+      './public/screenshots/*.webp',
+      './public/map-poster.webp',
+    ],
+  },
+
   /* The map data lives in Vercel Blob, not in the deployment, in a few large
      packs the /bluemap-data route reads each file out of. A copy from before
      packs, in a public store, is served through these rewrites instead. A
