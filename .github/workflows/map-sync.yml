@@ -1,7 +1,7 @@
 name: Map sync
 
-# Copies the BlueMap map off the Minecraft server into Vercel Blob every six
-# hours, and whenever it is started by hand (Actions → Map sync → Run
+# Copies the BlueMap map off the Minecraft server into Vercel Blob once a
+# week, and whenever it is started by hand (Actions → Map sync → Run
 # workflow). A run does nothing while the server is stopped or when BlueMap
 # hasn't redrawn anything since the last copy. Otherwise it uploads the new
 # copy as a few packs and commits it to main, which Vercel deploys.
@@ -11,8 +11,9 @@ name: Map sync
 
 on:
   schedule:
-    # 00:17, 06:17, 12:17 and 18:17 UTC, which is Icelandic time all year
-    - cron: '17 */6 * * *'
+    # Sundays at 20:17 UTC, which is Icelandic time all year: an evening, when
+    # the server is most likely running (a run while it is stopped does nothing)
+    - cron: '17 20 * * 0'
   workflow_dispatch:
 
 permissions:
