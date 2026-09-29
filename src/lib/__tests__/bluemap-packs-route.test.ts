@@ -70,8 +70,47 @@ describe('/bluemap-data, packed copy', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('never passes on a whole pack: a store that ignores the range is read around', async () => {
+  it('asks past the store cache when the cache ignores the range', async () => {
+    vi.mocked(get).mockImplementation(async (_name, opts) =>
+      ranged((opts?.headers as Record<string, string>).range, opts?.useCache === false));
+
+    const tile = await ask('maps/world/tiles/0/x0/z0.prbm.gz');
+    expect(tile.status).toBe(200);
+    expect(Buffer.from(await tile.arrayBuffer()).equals(PACK.subarray(10, 15))).toBe(true);
+    expect(get).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(get).mock.lastCall?.[1]).toMatchObject({ useCache: false });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('never passes on a whole pack: a store that ignores the range is cut to the file', async () => {
     vi.mocked(get).mockImplementation(async (_name, opts) => ranged((opts?.headers as Record<string, string>).range, false));
+
+    const tile = await ask('maps/world/tiles/0/x0/z0.prbm.gz');
+    expect(tile.status).toBe(200);
+    expect(tile.headers.get('Content-Length')).toBe('5');
+    expect(Buffer.from(await tile.arrayBuffer()).equals(PACK.subarray(10, 15))).toBe(true);
+
+    const settings = await ask('maps/world/settings.json');
+    expect(await settings.text()).toBe('{"map":12}');
+    /* the store answered, so the map is not sent off to the server */
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('cuts the file out of a pack that arrives in many small pieces', async () => {
+    vi.mocked(get).mockImplementation(async () => ({
+      statusCode: 200,
+      stream: new ReadableStream<Uint8Array>({
+        start(c) { for (const b of PACK) c.enqueue(Uint8Array.of(b)); c.close(); },
+      }),
+      headers: new Headers(),
+    }) as unknown as Awaited<ReturnType<typeof get>>);
+
+    const tile = await ask('maps/world/tiles/0/x0/z0.prbm.gz');
+    expect(Buffer.from(await tile.arrayBuffer()).equals(PACK.subarray(10, 15))).toBe(true);
+  });
+
+  it('reads the map off the server when the store will not answer at all', async () => {
+    vi.mocked(get).mockRejectedValue(new Error('store suspended'));
     fetchMock.mockResolvedValue(new Response('{"map":12}'));
 
     const res = await ask('maps/world/settings.json');

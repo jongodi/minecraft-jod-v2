@@ -227,3 +227,6 @@
 .a-builders { gap: var(--sp-2) var(--sp-4); }
 .a-invites { list-style: none; display: grid; gap: var(--sp-1); }
 .a-invites li { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); }
+
+/* the map copy's runs: state, when, link */
+.a-row--sync { grid-template-columns: 6.5rem minmax(0, 1fr) auto; }
