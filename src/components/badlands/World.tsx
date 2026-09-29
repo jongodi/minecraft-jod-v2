@@ -33,8 +33,15 @@ interface JodViewer {
   setNight: (on: boolean, instant?: boolean) => void;
   flyTo: (point: WorldPoint, id?: number) => void;
   choose: (id: number | null) => void;
+  /** 'outside': beyond the rendered world; 'missing': not on the map right now */
+  follow: (name: string) => 'ok' | 'outside' | 'missing';
+  unfollow: () => void;
 }
-type ViewerMessage = { source?: string; type?: string; tiles?: number; id?: number; on?: boolean; open?: boolean };
+type ViewerMessage = {
+  source?: string; type?: string; tiles?: number; id?: number; on?: boolean; open?: boolean;
+  /** follow: who the camera keeps with now, and who it let go of for walking out of the world */
+  name?: string | null; outside?: string;
+};
 
 /* The viewer's code and the map's first files, fetched ahead the moment a
    visitor reaches for the lantern (hover, focus or touch), so a press finds
@@ -86,6 +93,9 @@ function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
   const [night, setNight]     = useState(false);
   /* BlueMap's own menu is open along the left edge of the frame */
   const [menu, setMenu]       = useState(false);
+  /* the player the camera keeps with, and a word when one can't be followed */
+  const [following, setFollowing] = useState<string | null>(null);
+  const [followNote, setFollowNote] = useState<string | null>(null);
   /* the frame as the whole screen: the browser's own full screen, or fixed over the page where there is none (iPhone) */
   const [full, setFull]       = useState<false | 'native' | 'overlay'>(false);
   const [inView, setInView]   = useState(true);
@@ -150,6 +160,21 @@ function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
     } catch { return null; }
   }, []);
 
+  /* A head in the HUD, pressed while the 3D map runs: the camera keeps with
+     that player, and a second press (or a drag of the map) lets go. */
+  const follow = useCallback((name: string) => {
+    const v = jod();
+    if (!v) return;
+    if (following?.toLowerCase() === name.toLowerCase()) { v.unfollow(); return; }
+    const r = v.follow(name);
+    setFollowNote(r === 'outside' ? `${name} er utan kortsins` : r === 'missing' ? `${name} sést ekki á kortinu` : null);
+  }, [jod, following]);
+  useEffect(() => {
+    if (!followNote) return;
+    const t = setTimeout(() => setFollowNote(null), 4000);
+    return () => clearTimeout(t);
+  }, [followNote]);
+
   /* What the viewer says: that it is there, how far the first view has come,
      that it is drawn, night and day, and a place's lantern pressed in 3D. */
   useEffect(() => {
@@ -164,6 +189,10 @@ function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
       else if (m.type === 'night') setNight(!!m.on);
       else if (m.type === 'menu') setMenu(!!m.open);
       else if (m.type === 'place' && typeof m.id === 'number') { setSelect(m.id); revealRailItem(m.id, places.current); }
+      else if (m.type === 'follow') {
+        setFollowing(m.name ?? null);
+        if (m.outside) setFollowNote(`${m.outside} fór út fyrir kortið`);
+      }
     };
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
@@ -271,6 +300,9 @@ function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
   const plate = place?.photoId ? plates.find(p => p.id === place.photoId) ?? null : null;
   const lower = server.list.map(n => n.toLowerCase());
   const inside = CREW.filter(n => lower.includes(n.toLowerCase()));
+  /* heads can be followed while the live 3D map is on screen */
+  const canFollow = viewer && !drawn && !still;
+  useEffect(() => { if (!canFollow && following) jod()?.unfollow(); }, [canFollow, following, jod]);
   const here = place ? pinned[String(place.id)] ?? null : null;
 
   return (
@@ -311,8 +343,18 @@ function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
                   <span className="b-hud__in" aria-label={`inni núna: ${inside.join(', ')}`}>
                     <span className="b-hud__dot" aria-hidden="true" />
                     inni núna
-                    {inside.map(n => <PlayerHead key={n} name={n} size={16} />)}
+                    {inside.map(n => canFollow ? (
+                      <button key={n} type="button" className={`b-hud__head${following?.toLowerCase() === n.toLowerCase() ? ' is-on' : ''}`}
+                        aria-pressed={following?.toLowerCase() === n.toLowerCase()}
+                        title={following?.toLowerCase() === n.toLowerCase() ? `Hætta að elta ${n}` : `Elta ${n}`}
+                        onClick={() => follow(n)}>
+                        <PlayerHead name={n} size={16} />
+                      </button>
+                    ) : <PlayerHead key={n} name={n} size={16} />)}
                   </span>
+                )}
+                {canFollow && (following || followNote) && (
+                  <span className="b-hud__follow" role="status">{followNote ?? `Eltir ${following}`}</span>
                 )}
               </p>
             </div>

@@ -492,6 +492,12 @@ html.is-map-full { overflow: hidden; }
 .b-hud__in { display: inline-flex; align-items: center; gap: var(--sp-2); }
 .b-hud__in img { width: 1rem; height: 1rem; image-rendering: pixelated; box-shadow: 0 0 0 1px var(--night); }
 .b-hud__dot { width: 0.5rem; height: 0.5rem; background: var(--online); box-shadow: 0 0 0 1px var(--night); }
+/* while the 3D map runs, a head follows its player: lantern light, as anything that can be pressed */
+.b-hud__head { display: inline-grid; place-items: center; padding: 0.3rem; margin: -0.3rem; border: 0; background: none; cursor: pointer; line-height: 0; }
+.b-hud__head.is-on img, .b-hud__head:focus-visible img { box-shadow: 0 0 0 1px var(--night), 0 0 0 calc(1px + var(--px)) var(--lantern); }
+@media (hover: hover) { .b-hud__head:hover img { box-shadow: 0 0 0 1px var(--night), 0 0 0 calc(1px + var(--px)) var(--lantern); } }
+.b-hud__head:focus-visible { outline: none; }
+.b-hud__follow { color: var(--lantern); }
 .b-hud__tools { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--sp-2); }
 .b-hud__mid { display: grid; place-items: center; }
 .b-frame.is-drawn .b-hud__title .b-title, .b-frame.is-drawn .b-hud__meta { color: var(--ink); text-shadow: none; }
