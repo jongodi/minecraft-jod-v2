@@ -14,6 +14,13 @@ const when = (iso: string) => {
 
 export interface SharedNight { title: string; lines: string[]; note: string; count: number; lit: boolean }
 
+/** Changes whenever the card would: the night's address in chat apps' preview caches. */
+export const cardVersion = (n: SharedNight) => {
+  let h = 0;
+  for (const ch of JSON.stringify(n)) h = (Math.imul(31, h) + ch.charCodeAt(0)) | 0;
+  return (h >>> 0).toString(36);
+};
+
 export async function sharedNight(): Promise<SharedNight> {
   const none: SharedNight = { title: 'Næsta spilakvöld', lines: ['Ekkert bál logar núna'], note: '', count: 0, lit: false };
   if (!process.env.REDIS_URL) return none;
