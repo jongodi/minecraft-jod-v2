@@ -35,15 +35,9 @@ export async function readCopy(path: string, ifNoneMatch?: string): Promise<Copy
   if (packed) {
     const { name, offset, length } = packed;
     if (length === 0) return { status: 200, body: null, contentType: contentTypeOf(path), size: 0, etag: null };
-    const last = offset + length - 1;
-    const res = await fetchBlob(name, { range: `bytes=${offset}-${last}` }, false);
-    if (!res) return null;
-    /* a store that ignored the range would send the whole pack */
-    if (res.headers.get('content-range')?.match(/^bytes (\d+)-(\d+)\//)?.slice(1).join('-') !== `${offset}-${last}`) {
-      await discard(res);
-      throw new Error(`the store did not answer the byte range for ${path}`);
-    }
-    return { status: 200, body: res.body, contentType: contentTypeOf(path), size: length, etag: null };
+    const body = await readRange(name, offset, length);
+    if (body === undefined) return null;
+    return { status: 200, body, contentType: contentTypeOf(path), size: length, etag: null };
   }
 
   /* straight from storage: a file the last sync overwrote must not come back
@@ -58,6 +52,75 @@ export async function readCopy(path: string, ifNoneMatch?: string): Promise<Copy
     size: res.status === 200 && Number.isFinite(size) && size > 0 ? size : null,
     etag: res.headers.get('etag'),
   };
+}
+
+/* The bytes [offset, offset + length) of a pack. The store's cache does not
+   always honour a range: a pack it has not cached yet can come back whole,
+   with no Content-Range. Then the store itself is asked, past its cache, and
+   should that also send more than was asked for, the file is cut out of what
+   arrived. The map never gets someone else's bytes, and a store that answers
+   at all is never given up on. Undefined when the store doesn't hold the pack. */
+async function readRange(name: string, offset: number, length: number): Promise<ReadableStream<Uint8Array> | undefined> {
+  const last = offset + length - 1;
+  const range = { range: `bytes=${offset}-${last}` };
+  let res: Fetched | null = null;
+  for (const fresh of [false, true]) {
+    if (res) await discard(res);
+    res = await fetchBlob(name, range, fresh);
+    if (!res) return undefined;
+    const sent = sentRange(res.headers.get('content-range'));
+    if (res.body && sent?.[0] === offset && sent[1] === last) return res.body;
+  }
+  /* the store sent something other than the range: the whole pack (200, no
+     Content-Range) or a range that starts earlier */
+  const r = res!;
+  const sent = sentRange(r.headers.get('content-range'));
+  const start = sent ? sent[0] : r.status === 200 ? 0 : null;
+  if (start === null || start > offset || (sent && sent[1] < last) || !r.body) {
+    await discard(r);
+    throw new Error(`the store did not answer the byte range ${offset}-${last} of ${name}`);
+  }
+  return slice(r.body, offset - start, length);
+}
+
+/** [first, last] byte of a Content-Range, or null without one. */
+function sentRange(contentRange: string | null): [number, number] | null {
+  const m = contentRange?.match(/^bytes (\d+)-(\d+)\//);
+  return m ? [Number(m[1]), Number(m[2])] : null;
+}
+
+/** `length` bytes of `body`, after skipping `skip`; the rest is let go of unread. */
+function slice(body: ReadableStream<Uint8Array>, skip: number, length: number): ReadableStream<Uint8Array> {
+  const reader = body.getReader();
+  let toSkip = skip;
+  let left = length;
+  return new ReadableStream<Uint8Array>({
+    async pull(controller) {
+      while (left > 0) {
+        const { done, value } = await reader.read();
+        if (done) {
+          controller.error(new Error('the pack ended before the file did'));
+          return;
+        }
+        let chunk = value;
+        if (toSkip > 0) {
+          if (chunk.length <= toSkip) { toSkip -= chunk.length; continue; }
+          chunk = chunk.subarray(toSkip);
+          toSkip = 0;
+        }
+        if (chunk.length > left) chunk = chunk.subarray(0, left);
+        left -= chunk.length;
+        controller.enqueue(chunk);
+        if (left === 0) break;
+        return;
+      }
+      controller.close();
+      void reader.cancel().catch(() => {});
+    },
+    cancel(reason) {
+      void reader.cancel(reason).catch(() => {});
+    },
+  });
 }
 
 async function fetchBlob(pathname: string, headers: Record<string, string>, fresh: boolean): Promise<Fetched | null> {
