@@ -38,6 +38,9 @@ const nextConfig = {
       './node_modules/@fontsource/{alfa-slab-one,silkscreen,pixelify-sans}/files/*-latin-400-normal.woff',
       './public/screenshots/*.webp',
     ],
+    '/kvold/opengraph-image': [
+      './node_modules/@fontsource/{alfa-slab-one,silkscreen,pixelify-sans}/files/*-latin-400-normal.woff',
+    ],
     '/stadur/[id]/opengraph-image': [
       './node_modules/@fontsource/{alfa-slab-one,silkscreen,pixelify-sans}/files/*-latin-400-normal.woff',
       './public/screenshots/*.webp',

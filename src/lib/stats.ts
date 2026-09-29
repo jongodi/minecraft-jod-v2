@@ -25,11 +25,13 @@ export interface PlayerStat {
   recordsPlayed:  number;
   /** the fastest draw at the campfire, in milliseconds; 0 until one is posted. Lower is better. */
   drawMs:         number;
+  /** play nights said yes to and not come to */
+  noShows:        number;
 }
 
 export const EMPTY: Omit<PlayerStat, 'username'> = {
   deaths: 0, mobKills: 0, playerKills: 0, playTimeTicks: 0, playTimeHours: 0, distanceWalked: 0, itemsCrafted: 0,
-  timeSinceRest: 0, timeSinceDeath: 0, travelCm: 0, damageRatio: 0, raidWins: 0, recordsPlayed: 0, drawMs: 0,
+  timeSinceRest: 0, timeSinceDeath: 0, travelCm: 0, damageRatio: 0, raidWins: 0, recordsPlayed: 0, drawMs: 0, noShows: 0,
 };
 
 export interface StatsResponse {
@@ -99,6 +101,7 @@ export function extractStats(statsJson: MinecraftStatsJson): Omit<PlayerStat, 'u
     raidWins:       custom['minecraft:raid_win']    ?? 0,
     recordsPlayed:  custom['minecraft:play_record'] ?? 0,
     drawMs:         0,
+    noShows:        0,
   };
 }
 
@@ -140,15 +143,23 @@ export async function crewUuids(): Promise<Record<string, string>> {
   return map;
 }
 
-/** The one charge that comes from the site, not the game: the best draw at
-    the campfire, posted from each member's wall. */
+/** The charges that come from the site, not the game: the best draw at the
+    campfire, posted from each member's wall, and the play nights someone
+    said they would come to and didn't (src/lib/play-night.ts). */
 export async function withDraws(players: PlayerStat[]): Promise<PlayerStat[]> {
+  let out = players;
   try {
     const best = new Map((await readAllProfiles()).map(p => [p.username.toLowerCase(), p.bestDrawMs ?? 0]));
-    return players.map(p => ({ ...p, drawMs: best.get(p.username.toLowerCase()) ?? 0 }));
-  } catch {
-    return players;
+    out = out.map(p => ({ ...p, drawMs: best.get(p.username.toLowerCase()) ?? 0 }));
+  } catch { /* the draws stay as they were */ }
+  if (hasKV()) {
+    try {
+      const { readNoShows } = await import('@/lib/play-night');
+      const tally = new Map(Object.entries(await readNoShows()).map(([u, n]) => [u.toLowerCase(), n]));
+      out = out.map(p => ({ ...p, noShows: tally.get(p.username.toLowerCase()) ?? 0 }));
+    } catch { /* no tally, no charge */ }
   }
+  return out;
 }
 
 

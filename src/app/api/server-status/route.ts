@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { CREW_USERNAMES } from '@/lib/crew-types';
 import { getExarotonServerId, getServerHost, type ExarotonServer } from '@/lib/exaroton';
 
 export interface StatusResponse {
@@ -26,7 +27,21 @@ export async function GET() {
   if (cached && Date.now() - cached.at < CACHE_MS) return respond(cached.body);
   const body = await lookup();
   if (body.source !== 'error') cached = { at: Date.now(), body };
+  await notePlayNight(body);
   return respond(body);
+}
+
+/* During a play night's evening, the crew online are noted as having come
+   (src/lib/play-night.ts). Never holds up or fails the answer. */
+async function notePlayNight(body: StatusResponse): Promise<void> {
+  if (!process.env.REDIS_URL || !body.online) return;
+  const crew = new Map<string, string>(CREW_USERNAMES.map(n => [n.toLowerCase(), n]));
+  const names = (body.players?.list ?? []).map(p => crew.get(p.name.toLowerCase())).filter((n): n is string => !!n);
+  if (names.length === 0) return;
+  try {
+    const { noteSeen } = await import('@/lib/play-night');
+    await noteSeen(names);
+  } catch { /* the status answers regardless */ }
 }
 
 /* A failed lookup is shared for a few seconds only: long enough to spare the
