@@ -119,6 +119,7 @@ Afritaðu `.env.local.example` sem `.env.local` og fylltu inn gildin.
 | `EXAROTON_SERVER_ID` | Auðkenni þjónsins á exaroton.com; valfrjálst, sparar auka uppflettingu |
 | `BLUEMAP_WEBROOT` | Mappa vefs BlueMap á þjóninum ef hún er ekki `bluemap/web` (`webroot` í `webapp.conf`); valfrjálst, `map:sync` finnur hana sjálft og segir til ef þarf að setja hana í Vercel |
 | `ADMIN_TOKEN` | Lykilorð að stjórnborðinu á `/admin`, að minnsta kosti 8 stafir |
+| `CRON_SECRET` | Langur handahófskenndur lykilstrengur; Vercel sendir hann með daglega verkinu (`/api/cron/daily`, sjá `vercel.json`), sem geymir tölfræði hópsins einu sinni á dag, og verkið hafnar öllum beiðnum án hans |
 | `MAP_SYNC_GITHUB_TOKEN` | Fínstilltur GitHub-aðgangslykill að þessu repói með „Actions: Read and write“; hnappurinn sem afritar þrívíddarkortið úr stjórnborðinu ræsir Map sync-verkið með honum |
 | `GITHUB_TOKEN` | Hefðbundinn GitHub-aðgangslykill án aðgangssviða; hækkar fyrirspurnamörk við athugun gagnapakka, valfrjálst |
 | `CREW_TOKEN_<USERNAME>` | Aðgangslykill hvers félaga, t.d. `CREW_TOKEN_STEBBIAS=...`; varaleið, innskráningartenglar úr stjórnborðinu þurfa engan |
