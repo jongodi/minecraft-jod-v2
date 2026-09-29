@@ -32,11 +32,11 @@ export const OWN_FILES = ['lang/is.conf'];
 const SITE = (process.env.NEXT_PUBLIC_SITE_URL || 'https://jodcraft.world').replace(/\/+$/, '');
 
 /* The viewer's view distances, in blocks. The hires layer loads a square of
-   floor(d / 32) tiles each way (150 → 9×9 tiles); jod.js narrows it on phones.
+   floor(d / 32) tiles each way (160 → 11×11 tiles); jod.js holds phones to 110.
    The lowres layers load floor(d / 500) of their tiles each way, at each of the
    three levels, so 1050 asked for 75 tiles around a world a thousand blocks
    wide, most of which don't exist; 600 asks for 27. */
-const VIEW = { hiresSliderDefault: 150, lowresSliderDefault: 600 };
+const VIEW = { hiresSliderDefault: 160, lowresSliderDefault: 600 };
 
 /** The version the map is read under: changes with every sync, short enough for a path. */
 export function versionOf(syncedAt) {
