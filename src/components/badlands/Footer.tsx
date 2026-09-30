@@ -9,6 +9,7 @@ import { Ridge } from './Mesa';
 import { SERVER_IP } from './data';
 import AmbienceToggle from '@/effects/AmbienceToggle';
 import { useBackdropClose, useScrollLock } from './hooks';
+import { YuleLad, seasonClass, useSeason } from './Season';
 
 /* The duel lives behind the fire; nobody pays for it until they tap. */
 const QuickDraw = dynamic(() => import('./QuickDraw'), { ssr: false });
@@ -29,6 +30,7 @@ const LINKS = [
     the way up, because the sky is scroll. */
 function Footer() {
   const [duel, setDuel] = useState(false);
+  const season = useSeason();
   const path = usePathname();
   useScrollLock(duel);
   const backdrop = useBackdropClose(() => setDuel(false));
@@ -41,13 +43,14 @@ function Footer() {
   }, [duel]);
 
   return (
-    <footer id="campfire" className="b-foot">
-      <Ridge />
+    <footer id="campfire" className={`b-foot${seasonClass(season)}`}>
+      <Ridge snow={season.snow} />
       <div className="b-wrap b-foot__inner">
         <div className="b-foot__camp">
           <button type="button" className="b-foot__fire" onClick={() => setDuel(true)} aria-haspopup="dialog" aria-label="Einvígi: prófaðu viðbragðstímann" title="Einvígi">
             <Campfire />
           </button>
+          <YuleLad season={season} spot="fire" />
         </div>
 
         <nav className="b-foot__nav" aria-label="Fleiri síður">

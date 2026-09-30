@@ -980,3 +980,41 @@ html.is-map-full { overflow: hidden; }
 .b-night > .b-btn { justify-self: start; }
 .b-night .b-err { color: var(--tc-red); }
 @media (max-width: 599px) { .b-night--none { grid-template-columns: auto minmax(0, 1fr); } .b-night--none > .b-btn { grid-column: 1 / -1; justify-self: start; } }
+
+/* ═══════════════════════════════════════════════════════════════
+   The time of year (src/lib/season.ts; ?arstid= shows one on any day).
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Hrekkjavaka: the sunset goes down darker, towards purple, and jack-o'-lanterns burn on the mesas */
+.b.is-halloween {
+  --sky-sunset-top:     #1E0F24;
+  --sky-sunset-mid:     #4A1C2E;
+  --sky-sunset-low:     #A3421C;
+  --sky-sunset-horizon: #D27A24;
+  --sky-night-top:      #07060C;
+}
+.b-mesa__lit { fill: var(--sun); }
+
+/* Snow on the mesas and the ridge, dimming with the evening as the rock does */
+.b-mesa__snow { fill: color-mix(in oklab, #EEEAE2, var(--night) calc(var(--evening) * 40%)); }
+.b-ridge .b-mesa__snow { fill: color-mix(in oklab, #EEEAE2, var(--night) 45%); }
+.b-foot.is-snow .b-ground::before { height: calc(var(--px) * 2); background: #D9D4CA; opacity: 0.9; }
+
+/* The day's Yule Lad, somewhere on the page */
+.b-lad { position: relative; display: inline-block; z-index: 3; line-height: 0; }
+.b-lad--mesa { position: absolute; right: 16%; bottom: clamp(3rem, 11svh, 7rem); }
+.b-lad--hero { justify-self: end; }
+.b-lad--fire { align-self: flex-end; margin-left: var(--sp-2); }
+.b-lad__who { display: block; width: 1.5rem; height: 2.1rem; padding: 0; border: 0; background: none; cursor: pointer; transition: transform var(--dur-1) var(--ease-out); }
+.b-lad__who svg { width: 100%; height: 100%; display: block; }
+@media (hover: hover) { .b-lad__who:hover { transform: translateY(calc(var(--px) * -2)); } }
+.b-lad__who:focus-visible { outline: var(--px) solid var(--lantern); outline-offset: var(--px); }
+.b-lad__note {
+  position: absolute; bottom: calc(100% + var(--sp-2)); right: 0;
+  display: grid; gap: var(--sp-1); width: min(17rem, 80vw); padding: var(--sp-3) var(--sp-4);
+  font-size: var(--fs-sm); line-height: 1.45; text-align: left;
+}
+.b-lad--fire .b-lad__note { right: auto; left: 0; }
+.b-lad__note b { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-lg, 1.25rem); color: var(--tc-red); }
+.b-lad__note small { font-family: var(--font-data); font-size: 0.65rem; letter-spacing: 0.04em; color: var(--ink-faint); }
+@media (prefers-reduced-motion: reduce) { .b-lad__who { transition: none; } }

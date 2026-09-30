@@ -12,6 +12,7 @@ import World from './World';
 import Footer from './Footer';
 import { PLATES, SECTIONS, isRoom, sentenceCase, titleCase, type DoorId, type Plate, type RoomId } from './data';
 import { useReducedMotionPref, useScrollSpy, useServerStatus } from './hooks';
+import { seasonClass, useSeason } from './Season';
 
 /* Effects load after the page is interactive; none of them is needed for the first paint. */
 const Particles   = dynamic(() => import('@/effects/Particles'),   { ssr: false });
@@ -26,6 +27,7 @@ const PRESSED_HOLD_MS = 1500;
     /#hopur and /#hillan work from anywhere and the back button closes a room. */
 export default function BadlandsHome({ syncedOn }: { syncedOn: string | null }) {
   const server = useServerStatus();
+  const season = useSeason();
   const reduce = useReducedMotionPref();
   const reached = useScrollSpy(['heimur']) === 'heimur';
   const [room, setRoom] = useState<RoomId | null>(null);
@@ -98,13 +100,13 @@ export default function BadlandsHome({ syncedOn }: { syncedOn: string | null }) 
   const active: DoorId | null = pressed ?? (reached ? room ?? 'heimur' : null);
 
   return (
-    <div className="b">
+    <div className={`b${seasonClass(season)}`}>
       <Sky />
-      <Particles heroId="top" fireId="campfire" />
+      <Particles heroId="top" fireId="campfire" snow={season.snow} fireworks={season.fireworks} />
       <CursorLight />
       <AddressBar links={SECTIONS} activeId={active} onDoor={openDoor} />
       <main>
-        <Hero server={server} />
+        <Hero server={server} season={season} />
         <World plates={plates} server={server} syncedOn={syncedOn} room={room} onCloseRoom={closeRoom} />
       </main>
       <Footer />
