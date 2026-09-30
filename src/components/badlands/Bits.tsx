@@ -162,6 +162,36 @@ export function CloseIcon({ className }: { className?: string }) {
   );
 }
 
+/** The world's tools, drawn so a phone can carry them as keys without words:
+    the moon for night, the folded paper map with its trail to an X, and a
+    framed picture. */
+export function MoonIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" aria-hidden="true" fill="currentColor" shapeRendering="crispEdges">
+      <path d="M4 0h8v2H4zM2 2h6v2H2zM0 4h6v6H0zm0 6h8v2H0zm14 0h2v2h-2zM2 12h12v2H2zm2 2h8v2H4z" />
+    </svg>
+  );
+}
+
+export function FoldedMapIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" aria-hidden="true" fill="currentColor" shapeRendering="crispEdges">
+      <path fillRule="evenodd" d="M0 3h5v11H0zm1 7v2h2v-2z" />
+      <path fillRule="evenodd" d="M5 1h6v11H5zm1 6v2h2V7z" opacity="0.55" />
+      <path fillRule="evenodd" d="M11 3h5v11h-5zm1 2h1v1h-1zm2 0h1v1h-1zm-1 1h1v1h-1zm-1 1h1v1h-1zm2 0h1v1h-1z" />
+    </svg>
+  );
+}
+
+export function PictureIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" aria-hidden="true" fill="currentColor" shapeRendering="crispEdges">
+      <path fillRule="evenodd" d="M1 2h14v12H1zm2 2v8h10V4z" />
+      <path d="M10 5h2v2h-2zM6 7h2v1H6zM5 8h4v1H5zM4 9h6v1H4zm7 0h1v1h-1zm-7 1h8v2H4z" />
+    </svg>
+  );
+}
+
 /** Zoom in, zoom out and the whole map, for the painted sheet. */
 export function ZoomIcon({ kind }: { kind: 'in' | 'out' | 'fit' }) {
   return (
