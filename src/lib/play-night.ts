@@ -11,12 +11,17 @@
    who said yes and didn't are counted on the wanted board as Svikarinn; one
    whose stats could not be read is given the benefit of the doubt.
 
-   One play night at a time. The night itself is one Redis key, its answers a
-   hash and who was seen a set, so two people answering at once can't write
-   over each other. Nothing runs on a timer: the phase is worked out from the
-   clock whenever the night is read, and choosing the night is saved then. */
+   Up to five nights can be planned at once, as far as a year ahead, as long
+   as no two fall on the same evening (who was seen, and who didn't come,
+   would be counted twice). The nights are one Redis hash, a night to a field,
+   each night's answers a hash of its own and who was seen a set, so two
+   people answering or lighting at once can't write over each other. Nothing
+   runs on a timer: the phase is worked out from the clock whenever the
+   nights are read, and choosing a night is saved then. */
 
 export const MAX_OPTIONS = 3;
+/** nights planned at once: lit and not yet over */
+export const MAX_PLANNED = 5;
 export const MAX_NOTE = 80;
 /** the leading time is fixed this long before the earliest one */
 export const CHOOSE_BEFORE_MS = 3 * 3600_000;
@@ -96,11 +101,30 @@ export function isShown(night: Night, now: number): boolean {
   return !chosen || now < t(chosen.at) + EVENING_MS + EMBERS_MS;
 }
 
-/** A new fire can be lit once the last is out or burnt down to embers. */
-export const blocksNewFire = (night: Night | null, now: number) =>
-  !!night && !night.cancelled && (!night.chosen || phaseOf(night, now) !== 'over');
+/** Lit and not yet over: one of the nights on the calendar. */
+export const isPlanned = (night: Night, now: number) => !night.cancelled && phaseOf(night, now) !== 'over';
 
-/** Checks a proposal's times: 1 to 3, from a quarter of an hour ahead to two weeks, at least half an hour apart. */
+/** When a night is, for putting nights in order: its chosen time, or its earliest. */
+export const whenOf = (night: Night) => t(optionOf(night, night.chosen)?.at ?? night.options.reduce((a, b) => (t(a.at) <= t(b.at) ? a : b)).at);
+
+/** The times a planned night still holds: the chosen one, or every one offered. */
+const heldTimes = (night: Night) => (night.chosen ? [optionOf(night, night.chosen)!] : night.options).map(o => t(o.at));
+
+/** A planned night falling on the same evening as one of these times, if any. */
+export function clashOf(nights: Night[], at: string[], now: number): Night | null {
+  const ms = at.map(t);
+  return nights.find(n => isPlanned(n, now) && heldTimes(n).some(h => ms.some(m => Math.abs(m - h) < EVENING_MS))) ?? null;
+}
+
+/** The nights as the page shows them: those planned, soonest first, then the
+    last one over while its embers glow. */
+export function shownNights(nights: Night[], now: number): Night[] {
+  const planned = nights.filter(n => isPlanned(n, now)).sort((a, b) => whenOf(a) - whenOf(b));
+  const embers = nights.filter(n => !n.cancelled && !isPlanned(n, now) && isShown(n, now)).sort((a, b) => whenOf(b) - whenOf(a))[0];
+  return embers ? [...planned, embers] : planned;
+}
+
+/** Checks a proposal's times: 1 to 3, from a quarter of an hour ahead to a year, at least half an hour apart. */
 export function checkTimes(times: unknown, now: number): { error: string } | { at: string[] } {
   if (!Array.isArray(times) || times.length < 1 || times.length > MAX_OPTIONS) return { error: `Einn til ${MAX_OPTIONS} tímar.` };
   const ms: number[] = [];
@@ -144,7 +168,9 @@ export function outcomeOf(
 
 // ─── storage ─────────────────────────────────────────────────────────────────
 
-const NIGHT_KEY = 'playnight:current';
+const NIGHTS_KEY = 'playnight:nights';
+/* where the one night was kept before there could be several; moved over on first read */
+const LEGACY_KEY = 'playnight:current';
 const votesKey = (id: string) => `playnight:votes:${id}`;
 const seenKey = (id: string) => `playnight:seen:${id}`;
 export const NO_SHOWS_KEY = 'playnight:noshows';
@@ -153,19 +179,27 @@ const KEEP_S = 45 * 24 * 3600;
 /** seconds to keep a night's answers: until its latest evening is over, then the month */
 const keepFor = (night: Night, now: number) =>
   KEEP_S + Math.max(0, Math.ceil((Math.max(...night.options.map(o => t(o.at))) + EVENING_MS - now) / 1000));
+const DAY = 24 * 3600_000;
 
 async function redis() {
   const { getRedis } = await import('@/lib/redis');
   return getRedis();
 }
 
-export async function readNight(): Promise<Night | null> {
-  const raw = await (await redis()).get(NIGHT_KEY);
-  return raw ? JSON.parse(raw) as Night : null;
+export async function readNights(): Promise<Night[]> {
+  const r = await redis();
+  const legacy = await r.get(LEGACY_KEY);
+  if (legacy) {
+    try { await r.hset(NIGHTS_KEY, (JSON.parse(legacy) as Night).id, legacy); } catch { /* unreadable: dropped */ }
+    await r.del(LEGACY_KEY);
+  }
+  const nights: Night[] = [];
+  for (const v of Object.values(await r.hgetall(NIGHTS_KEY))) { try { nights.push(JSON.parse(v) as Night); } catch { /* skip */ } }
+  return nights;
 }
 
 export async function writeNight(night: Night): Promise<void> {
-  await (await redis()).set(NIGHT_KEY, JSON.stringify(night));
+  await (await redis()).hset(NIGHTS_KEY, night.id, JSON.stringify(night));
 }
 
 export async function readVotes(id: string): Promise<Votes> {
@@ -188,11 +222,13 @@ export async function readSeen(id: string): Promise<string[]> {
 /** Notes crew members online during a chosen night's evening; called by the status check. */
 export async function noteSeen(names: string[], now = Date.now()): Promise<void> {
   if (names.length === 0) return;
-  const night = await readNight();
-  if (!night || night.cancelled || phaseOf(night, now) !== 'live') return;
+  const live = (await readNights()).filter(n => !n.cancelled && phaseOf(n, now) === 'live');
+  if (live.length === 0) return;
   const r = await redis();
-  await r.sadd(seenKey(night.id), ...names);
-  await r.expire(seenKey(night.id), KEEP_S);
+  for (const night of live) {
+    await r.sadd(seenKey(night.id), ...names);
+    await r.expire(seenKey(night.id), KEEP_S);
+  }
 }
 
 export async function readNoShows(): Promise<Record<string, number>> {
@@ -200,31 +236,40 @@ export async function readNoShows(): Promise<Record<string, number>> {
   return Object.fromEntries(Object.entries(raw).map(([u, n]) => [u, Number(n) || 0]));
 }
 
-/** The night as it stands now: an unchosen one past its time is chosen (or put out) and saved. */
-export async function currentNight(now = Date.now()): Promise<{ night: Night; votes: Votes; seen: string[] } | null> {
-  let night = await readNight();
-  if (!night) return null;
-  const votes = await readVotes(night.id);
-  const auto = autoChoice(night, votes, now);
-  if (auto === 'out') { night = { ...night, cancelled: true }; await writeNight(night); }
-  else if (auto) { night = { ...night, chosen: auto.id, chosenBy: 'auto' }; await writeNight(night); }
-  if (!isShown(night, now)) return null;
-  const seen = phaseOf(night, now) === 'live' || phaseOf(night, now) === 'over' ? await readSeen(night.id) : [];
-  return { night, votes, seen };
+export interface NightState { night: Night; votes: Votes; seen: string[] }
+
+/** Every night as it stands now, in the order the page shows them. An
+    unchosen night past its time is chosen (or put out) and saved; a night
+    put out, or settled and burnt down, is cleared away. */
+export async function currentNights(now = Date.now()): Promise<{ all: Night[]; shown: NightState[] }> {
+  const r = await redis();
+  const all: Night[] = [];
+  for (let night of await readNights()) {
+    const auto = autoChoice(night, await readVotes(night.id), now);
+    if (auto === 'out') { night = { ...night, cancelled: true }; await writeNight(night); }
+    else if (auto) { night = { ...night, chosen: auto.id, chosenBy: 'auto' }; await writeNight(night); }
+    /* an unsettled one is kept for the daily job, unless it never came round in a month */
+    const gone = !isShown(night, now) && (night.cancelled || !!night.outcome || now > whenOf(night) + EVENING_MS + 30 * DAY);
+    if (gone) { await r.hdel(NIGHTS_KEY, night.id); continue; }
+    all.push(night);
+  }
+  const shown: NightState[] = [];
+  for (const night of shownNights(all, now)) {
+    const phase = phaseOf(night, now);
+    const seen = phase === 'live' || phase === 'over' ? await readSeen(night.id) : [];
+    shown.push({ night, votes: await readVotes(night.id), seen });
+  }
+  return { all, shown };
 }
 
-/** The day after: once a daily copy taken after the evening exists, who came
-    and who didn't is settled and the no-shows are counted. Called by the
-    daily job; returns what it settled, or null if there was nothing to do yet. */
-export async function settleNight(now = Date.now()): Promise<{ came: string[]; noShows: string[] } | null> {
-  const night = await readNight();
-  if (!night || night.cancelled || night.outcome || phaseOf(night, now) !== 'over') return null;
+/** The day after: once a daily copy taken after a night's evening exists, who
+    came and who didn't is settled and the no-shows are counted. */
+async function settleOne(night: Night, now: number): Promise<{ id: string; came: string[]; noShows: string[] } | null> {
   const chosen = optionOf(night, night.chosen)!;
   const start = t(chosen.at);
   const end = start + EVENING_MS;
 
   const { readDay, dayOf } = await import('@/lib/daily-stats');
-  const DAY = 24 * 3600_000;
   /* the last copy taken before the evening began, and the first after it ended */
   const before = [dayOf(new Date(start)), dayOf(new Date(start - DAY))];
   const after = [dayOf(new Date(end)), dayOf(new Date(end + DAY))];
@@ -240,5 +285,17 @@ export async function settleNight(now = Date.now()): Promise<{ came: string[]; n
   await writeNight({ ...night, outcome });
   const r = await redis();
   for (const u of outcome.noShows) await r.hincrby(NO_SHOWS_KEY, u, 1);
-  return outcome;
+  return { id: night.id, ...outcome };
+}
+
+/** Settles every night whose evening is over and not yet settled. Called by
+    the daily job; returns what it settled (empty if there was nothing to do yet). */
+export async function settleNights(now = Date.now()): Promise<{ id: string; came: string[]; noShows: string[] }[]> {
+  const done = [];
+  for (const night of await readNights()) {
+    if (night.cancelled || night.outcome || !night.chosen || phaseOf(night, now) !== 'over') continue;
+    const out = await settleOne(night, now);
+    if (out) done.push(out);
+  }
+  return done;
 }

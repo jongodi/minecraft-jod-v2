@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useSyncExternalStore } from 'react';
 import type { PlayNightResponse } from '@/app/api/playnight/route';
 
-/* The play night as the page holds it: one answer shared by the hero's line
+/* The play nights as the page holds them: one answer shared by the hero's line
    and the crew's room, asked for when the page opens and every minute while
    it is in view, and replaced by whatever an action answers. */
 
@@ -17,9 +17,9 @@ async function load(): Promise<void> {
   try {
     const res = await fetch('/api/playnight', { cache: 'no-store' });
     if (res.ok) value = await res.json() as PlayNightResponse;
-    else if (value === undefined) value = { night: null, me: null };
+    else if (value === undefined) value = { nights: [], me: null, max: 5 };
   } catch {
-    if (value === undefined) value = { night: null, me: null };
+    if (value === undefined) value = { nights: [], me: null, max: 5 };
   }
   notify();
 }

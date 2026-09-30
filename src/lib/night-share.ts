@@ -1,6 +1,8 @@
-// The play night as its shared link says it (/kvold): one line for the title,
-// one for the description, and what the link card draws. Server only.
-import { currentNight, optionOf, phaseOf, yesFor } from '@/lib/play-night';
+// A play night as its shared link says it (/kvold for the next one, /kvold/<id>
+// for any one): one line for the title, one for the description, and what the
+// link card draws. Server only.
+import { currentNights, optionOf, phaseOf, yesFor } from '@/lib/play-night';
+import type { Metadata } from 'next';
 import { plural } from '@/lib/format';
 
 const DAYS = ['sunnudag', 'mánudag', 'þriðjudag', 'miðvikudag', 'fimmtudag', 'föstudag', 'laugardag'];
@@ -21,12 +23,16 @@ export const cardVersion = (n: SharedNight) => {
   return (h >>> 0).toString(36);
 };
 
-export async function sharedNight(): Promise<SharedNight> {
+/** The night with this id, or with none the next one; null for an id that isn't shown (any more). */
+export async function sharedNight(): Promise<SharedNight>;
+export async function sharedNight(id: string | undefined): Promise<SharedNight | null>;
+export async function sharedNight(id?: string): Promise<SharedNight | null> {
   const none: SharedNight = { title: 'Næsta spilakvöld', lines: ['Ekkert bál logar núna'], note: '', count: 0, lit: false };
-  if (!process.env.REDIS_URL) return none;
-  let cur;
-  try { cur = await currentNight(); } catch { return none; }
-  if (!cur) return none;
+  if (!process.env.REDIS_URL) return id ? null : none;
+  let shown;
+  try { ({ shown } = await currentNights()); } catch { return id ? null : none; }
+  const cur = id ? shown.find(s => s.night.id === id) : shown[0];
+  if (!cur) return id ? null : none;
   const { night, votes } = cur;
   const phase = phaseOf(night, Date.now());
   const chosen = optionOf(night, night.chosen);
@@ -46,5 +52,23 @@ export async function sharedNight(): Promise<SharedNight> {
   return {
     title: phase === 'live' ? 'Kvöldið er hafið' : 'Næsta spilakvöld', note: night.note, lit: true, count: yes,
     lines: [when(chosen.at), `${yes} ${plural(yes, 'mætir', 'mæta')}`],
+  };
+}
+
+/** The link preview for a night's page: /kvold (the next night) or /kvold/<id>. */
+export function nightMetadata(night: SharedNight, id?: string): Metadata {
+  const title = `${night.title} · JOÐ`;
+  const description = [night.note && `„${night.note}“`, ...night.lines].filter(Boolean).join(' · ');
+  const url = id ? `/kvold/${id}` : '/kvold';
+  const card = `/kvold/card?${id ? `n=${encodeURIComponent(id)}&` : ''}v=${cardVersion(night)}`;
+  return {
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      title, description, url, type: 'website', locale: 'is_IS', siteName: 'JOÐ',
+      images: [{ url: card, width: 1200, height: 630, alt: 'Spilakvöld á JOÐ' }],
+    },
+    twitter: { card: 'summary_large_image', title, description, images: [card] },
   };
 }
