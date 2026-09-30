@@ -26,8 +26,8 @@ export const START_BEFORE_MS = 30 * 60_000;
 export const EVENING_MS = 6 * 3600_000;
 /** embers are shown this long after the evening, unless a new fire is lit */
 export const EMBERS_MS = 7 * 24 * 3600_000;
-/** how far ahead a time may be */
-export const AHEAD_MS = 14 * 24 * 3600_000;
+/** how far ahead a time may be: a year, so a night can be planned for any date */
+export const AHEAD_MS = 366 * 24 * 3600_000;
 
 export interface NightOption { id: string; at: string }
 
@@ -108,7 +108,7 @@ export function checkTimes(times: unknown, now: number): { error: string } | { a
     const m = typeof v === 'string' ? Date.parse(v) : NaN;
     if (!Number.isFinite(m)) return { error: 'Ógildur tími.' };
     if (m < now + 15 * 60_000) return { error: 'Tími verður að vera að minnsta kosti korter fram í tímann.' };
-    if (m > now + AHEAD_MS) return { error: 'Tími má vera í mesta lagi tvær vikur fram í tímann.' };
+    if (m > now + AHEAD_MS) return { error: 'Tími má vera í mesta lagi ár fram í tímann.' };
     ms.push(m);
   }
   ms.sort((a, b) => a - b);
@@ -150,6 +150,9 @@ const seenKey = (id: string) => `playnight:seen:${id}`;
 export const NO_SHOWS_KEY = 'playnight:noshows';
 /* answers and sightings outlive the night by a month, for the day-after count */
 const KEEP_S = 45 * 24 * 3600;
+/** seconds to keep a night's answers: until its latest evening is over, then the month */
+const keepFor = (night: Night, now: number) =>
+  KEEP_S + Math.max(0, Math.ceil((Math.max(...night.options.map(o => t(o.at))) + EVENING_MS - now) / 1000));
 
 async function redis() {
   const { getRedis } = await import('@/lib/redis');
@@ -172,10 +175,10 @@ export async function readVotes(id: string): Promise<Votes> {
   return votes;
 }
 
-export async function writeVote(id: string, username: string, optionIds: string[]): Promise<void> {
+export async function writeVote(night: Night, username: string, optionIds: string[], now = Date.now()): Promise<void> {
   const r = await redis();
-  await r.hset(votesKey(id), username, JSON.stringify(optionIds));
-  await r.expire(votesKey(id), KEEP_S);
+  await r.hset(votesKey(night.id), username, JSON.stringify(optionIds));
+  await r.expire(votesKey(night.id), keepFor(night, now));
 }
 
 export async function readSeen(id: string): Promise<string[]> {

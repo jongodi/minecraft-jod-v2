@@ -58,6 +58,8 @@ const MONTHS = ['jan.', 'feb.', 'mar.', 'apr.', 'maí', 'jún.', 'júl.', 'ágú
 const cap = (s: string) => s.charAt(0).toLocaleUpperCase('is-IS') + s.slice(1);
 const clock = (d: Date) => `${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`;
 const dayNumber = (d: Date) => Math.floor(d.getTime() / 86_400_000);
+/** the year, for a day far enough off that its month could be read as this year's */
+const yearOf = (d: Date, days: number, now: Date) => (d.getUTCFullYear() !== now.getUTCFullYear() && days > 90 ? ` ${d.getUTCFullYear()}` : '');
 
 /** "í kvöld kl. 20:00", "á morgun kl. 20:00", "föstudag 3. okt. kl. 20:00" */
 export function whenAt(iso: string, now = new Date()): string {
@@ -66,7 +68,7 @@ export function whenAt(iso: string, now = new Date()): string {
   const time = `kl. ${clock(d)}`;
   if (days === 0) return `${d.getUTCHours() >= 17 ? 'í kvöld' : 'í dag'} ${time}`;
   if (days === 1) return `á morgun ${time}`;
-  return `${DAYS[d.getUTCDay()]} ${d.getUTCDate()}. ${MONTHS[d.getUTCMonth()]} ${time}`;
+  return `${DAYS[d.getUTCDay()]} ${d.getUTCDate()}. ${MONTHS[d.getUTCMonth()]}${yearOf(d, days, now)} ${time}`;
 }
 export const WhenAt = (iso: string, now?: Date) => cap(whenAt(iso, now));
 
@@ -76,15 +78,35 @@ export function dayOf(iso: string): string {
   return `${cap(DAYS_NOM[d.getUTCDay()])} ${d.getUTCDate()}. ${MONTHS[d.getUTCMonth()]}`;
 }
 
-/** The days a new fire can be lit for: today and the next thirteen. */
-export function dayChoices(now = new Date()): { value: string; label: string }[] {
-  return Array.from({ length: 14 }, (_, i) => {
-    const d = new Date(now.getTime() + i * 86_400_000);
-    const value = d.toISOString().slice(0, 10);
-    const label = i === 0 ? 'Í dag' : i === 1 ? 'Á morgun' : `${cap(DAYS[d.getUTCDay()])} ${d.getUTCDate()}. ${MONTHS[d.getUTCMonth()]}`;
-    return { value, label };
-  });
+/* ─── the calendar a fire is lit from ────────────────────────────────── */
+
+export const MONTHS_FULL = ['janúar', 'febrúar', 'mars', 'apríl', 'maí', 'júní', 'júlí', 'ágúst', 'september', 'október', 'nóvember', 'desember'];
+/** Iceland's week starts on a Monday */
+export const WEEKDAYS_SHORT = ['M', 'Þ', 'M', 'F', 'F', 'L', 'S'];
+/** a day as the form holds it, "2026-12-18", and as a number of days since 1970 */
+export const dayValue = (n: number) => new Date(n * 86_400_000).toISOString().slice(0, 10);
+export const dayNum = (value: string) => dayNumber(new Date(`${value}T00:00:00Z`));
+
+/** "Í dag", "Á morgun", "Föstudag 18. des.", "Laugardag 2. okt. 2027" */
+export function dayLabel(value: string, now = new Date()): string {
+  const d = new Date(`${value}T12:00:00Z`);
+  const days = dayNumber(d) - dayNumber(now);
+  if (days === 0) return 'Í dag';
+  if (days === 1) return 'Á morgun';
+  return `${cap(DAYS[d.getUTCDay()])} ${d.getUTCDate()}. ${MONTHS[d.getUTCMonth()]}${yearOf(d, days, now)}`;
 }
+
+/** "föstudagur 18. desember 2026", for a screen reader */
+export function dayLong(value: string): string {
+  const d = new Date(`${value}T12:00:00Z`);
+  return `${DAYS_NOM[d.getUTCDay()]} ${d.getUTCDate()}. ${MONTHS_FULL[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+}
+
+/** The last day a fire can be lit for: a year from today (the server allows a day more). */
+export const LAST_DAY_AHEAD = 365;
+/** a time must be at least a quarter of an hour off */
+export const SOON_MS = 15 * 60_000;
+export const isLate = (day: string, time: string, now = Date.now()) => Date.parse(`${day}T${time}:00Z`) < now + SOON_MS;
 
 /** Every half hour from ten in the morning to half past eleven at night. */
 export const TIME_CHOICES = Array.from({ length: 28 }, (_, i) => {

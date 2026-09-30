@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
       };
       await writeNight(night);
       /* whoever lights the fire can make every time they offered */
-      await writeVote(night.id, me, night.options.map(o => o.id));
+      await writeVote(night, me, night.options.map(o => o.id), now);
       return json(await view(me));
     }
 
@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
       if (!yes) return json({ error: 'Svar vantar.' }, 400);
       /* once chosen, only the chosen time is answered */
       const allowed = new Set(night.chosen ? [night.chosen] : night.options.map(o => o.id));
-      await writeVote(night.id, me, [...new Set(yes)].filter(id => allowed.has(id)));
+      await writeVote(night, me, [...new Set(yes)].filter(id => allowed.has(id)), now);
       return json(await view(me));
     }
 

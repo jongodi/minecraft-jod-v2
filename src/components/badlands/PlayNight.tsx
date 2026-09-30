@@ -1,13 +1,14 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useId, useState } from 'react';
 import Link from 'next/link';
 import type { PublicNight } from '@/app/api/playnight/route';
-import { Campfire } from './Bits';
+import { CalendarIcon, Campfire, ChevronIcon } from './Bits';
+import Calendar from './Calendar';
 import PlayerHead from './PlayerHead';
 import type { ServerState } from './hooks';
 import { useMounted } from './hooks';
-import { TIME_CHOICES, WhenAt, dayChoices, dayOf, usePlayNight, whenAt } from './night';
+import { LAST_DAY_AHEAD, TIME_CHOICES, WhenAt, dayLabel, dayLong, dayNum, dayOf, dayValue, isLate, usePlayNight, whenAt } from './night';
 import { plural } from '@/lib/format';
 
 /* Næsta spilakvöld (src/lib/play-night.ts). The hero carries one line about
@@ -208,10 +209,26 @@ export function NightBoard({ server }: { server: ServerState }) {
 /* ─── lighting a fire ─────────────────────────────────────────────────── */
 
 function LightFire({ busy, err, onLight, onCancel }: { busy: boolean; err: string; onLight: (times: string[], note: string) => void; onCancel: () => void }) {
-  const days = useMemo(() => dayChoices(), []);
-  const [rows, setRows] = useState([{ day: days[0].value, time: '20:00' }]);
+  /* the clock as the form opened; the server checks the times again when the fire is lit */
+  const [now] = useState(() => Date.now());
+  const today = Math.floor(now / 86_400_000);
+  const late = (day: string, time: string) => isLate(day, time, now);
+  const first = TIME_CHOICES.some(t => !late(dayValue(today), t)) ? today : today + 1;
+  const last = today + LAST_DAY_AHEAD;
+  /** the time kept when the day changes, or the first that is still ahead */
+  const fit = (day: string, time: string) => (late(day, time) ? TIME_CHOICES.find(t => !late(day, t)) ?? time : time);
+  const [rows, setRows] = useState(() => [{ day: dayValue(late(dayValue(today), '20:00') ? today + 1 : today), time: '20:00' }]);
   const [note, setNote] = useState('');
-  const set = (i: number, key: 'day' | 'time', v: string) => setRows(rs => rs.map((r, k) => (k === i ? { ...r, [key]: v } : r)));
+  const [open, setOpen] = useState<number | null>(null);
+  const id = useId();
+  const trigger = (i: number) => `${id}-dagur-${i}`;
+  const set = (i: number, key: 'day' | 'time', v: string) => setRows(rs => rs.map((r, k) => (k !== i ? r : key === 'day' ? { day: v, time: fit(v, r.time) } : { ...r, time: v })));
+  const pick = (i: number, v: string) => {
+    set(i, 'day', v);
+    setOpen(null);
+    document.getElementById(trigger(i))?.focus();
+  };
+  const close = useCallback(() => setOpen(null), []);
 
   return (
     <form className="b-night b-night--light" aria-label="Kveikja bál" onSubmit={e => { e.preventDefault(); onLight(rows.map(r => `${r.day}T${r.time}:00Z`), note); }}>
@@ -221,17 +238,28 @@ function LightFire({ busy, err, onLight, onCancel }: { busy: boolean; err: strin
       </header>
       {rows.map((r, i) => (
         <div key={i} className="b-inline b-night__row">
-          <select className="b-input b-night__select" aria-label={`Dagur ${i + 1}`} value={r.day} onChange={e => set(i, 'day', e.target.value)}>
-            {days.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
-          </select>
+          <button
+            type="button"
+            id={trigger(i)}
+            className={`b-input b-night__day${open === i ? ' is-open' : ''}`}
+            aria-haspopup="dialog"
+            aria-expanded={open === i}
+            aria-label={`Dagur ${i + 1}: ${dayLong(r.day)}`}
+            onClick={() => setOpen(o => (o === i ? null : i))}
+          >
+            <CalendarIcon className="b-night__dayicon" />
+            <span className="b-night__daytext">{dayLabel(r.day, new Date(now))}</span>
+            <ChevronIcon dir="down" className="b-night__daycaret" />
+          </button>
           <select className="b-input b-night__select" aria-label={`Klukkan ${i + 1}`} value={r.time} onChange={e => set(i, 'time', e.target.value)}>
-            {TIME_CHOICES.map(t => <option key={t} value={t}>kl. {t}</option>)}
+            {TIME_CHOICES.map(t => <option key={t} value={t} disabled={late(r.day, t)}>kl. {t}</option>)}
           </select>
-          {rows.length > 1 && <button type="button" className="b-btn b-btn--small b-btn--ghost" aria-label={`Fjarlægja tíma ${i + 1}`} onClick={() => setRows(rs => rs.filter((_, k) => k !== i))}>✕</button>}
+          {rows.length > 1 && <button type="button" className="b-btn b-btn--small b-btn--ghost b-night__drop" aria-label={`Fjarlægja tíma ${i + 1}`} onClick={() => { setOpen(null); setRows(rs => rs.filter((_, k) => k !== i)); }}>✕</button>}
+          {open === i && <Calendar value={r.day} today={today} min={first} max={last} triggerId={trigger(i)} onPick={v => pick(i, v)} onClose={close} />}
         </div>
       ))}
       {rows.length < 3 && (
-        <button type="button" className="b-btn b-btn--small b-btn--ghost" onClick={() => setRows(rs => [...rs, { day: days[Math.min(rs.length, days.length - 1)].value, time: rs[rs.length - 1].time }])}>+ Annar tími</button>
+        <button type="button" className="b-btn b-btn--small b-btn--ghost" onClick={() => { setOpen(null); setRows(rs => { const r = rs[rs.length - 1]; const day = dayValue(Math.min(last, dayNum(r.day) + 1)); return [...rs, { day, time: fit(day, r.time) }]; }); }}>+ Annar tími</button>
       )}
       <input className="b-input" placeholder="Hvað á að gera? (má sleppa)" maxLength={80} value={note} onChange={e => setNote(e.target.value)} aria-label="Hvað á að gera" />
       {err && <p className="b-err" role="alert">{err}</p>}

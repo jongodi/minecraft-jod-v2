@@ -65,7 +65,8 @@ describe('the rules', () => {
     const now = 0;
     expect(lib.checkTimes([], now)).toHaveProperty('error');
     expect(lib.checkTimes([iso(10 * 60_000)], now)).toHaveProperty('error');
-    expect(lib.checkTimes([iso(15 * 24 * H)], now)).toHaveProperty('error');
+    expect(lib.checkTimes([iso(15 * 24 * H)], now)).toEqual({ at: [iso(15 * 24 * H)] });
+    expect(lib.checkTimes([iso(367 * 24 * H)], now)).toHaveProperty('error');
     expect(lib.checkTimes([iso(2 * H), iso(2.25 * H)], now)).toHaveProperty('error');
     expect(lib.checkTimes([iso(5 * H), iso(2 * H)], now)).toEqual({ at: [iso(2 * H), iso(5 * H)] });
   });
