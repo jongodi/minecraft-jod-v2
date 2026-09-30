@@ -23,6 +23,45 @@ function outline(plateaus: Plateau[]): string {
   return d;
 }
 
+/** Each plateau's top edge: [x, y, width], for the snow that lies on it. */
+function tops(plateaus: Plateau[]): [number, number, number][] {
+  let x = 0;
+  return plateaus.map(([w, h]) => { const t: [number, number, number] = [x, H - h, w]; x += w; return t; });
+}
+
+/* Snow on every plateau: two rows of white, a pixel of it spilling over each edge. */
+function Snow({ plateaus }: { plateaus: Plateau[] }) {
+  return (
+    <g className="b-mesa__snow">
+      {tops(plateaus).map(([x, y, w]) => <rect key={x} x={x} y={y} width={w} height="2" />)}
+    </g>
+  );
+}
+
+/* Jack-o'-lanterns on the widest plateaus of the nearest ridge, lit from inside. */
+const LANTERN_ON = [2, 7, 12];
+function Pumpkins() {
+  return (
+    <g className="b-mesa__pumpkins">
+      {tops(NEAR).filter((_, i) => LANTERN_ON.includes(i)).map(([x, y, w]) => {
+        const px = Math.round(x + w / 2 - 4);
+        const py = y - 7;
+        return (
+          <g key={x}>
+            <rect x={px + 3} y={py - 2} width="2" height="2" fill="var(--online)" />
+            <rect x={px + 1} y={py} width="6" height="7" fill="var(--tc-orange)" />
+            <rect x={px} y={py + 1} width="8" height="5" fill="var(--tc-orange)" />
+            <rect x={px + 2} y={py + 2} width="1" height="1" className="b-mesa__lit" />
+            <rect x={px + 5} y={py + 2} width="1" height="1" className="b-mesa__lit" />
+            <rect x={px + 2} y={py + 4} width="4" height="1" className="b-mesa__lit" />
+            <rect x={px + 3} y={py + 5} width="2" height="1" className="b-mesa__lit" />
+          </g>
+        );
+      })}
+    </g>
+  );
+}
+
 const FAR_D = outline(FAR);
 const MID_D = outline(MID);
 const NEAR_D = outline(NEAR);
@@ -45,26 +84,30 @@ function Layer({ d, mod, children }: { d: string; mod: string; children?: React.
     opened over these mesas, and the campfire burns in front of them once they
     are out of the light. Squashed to the band's height on purpose, so a whole
     horizon fits in three centimetres of page. */
-export function Ridge() {
+export function Ridge({ snow = false }: { snow?: boolean }) {
   return (
     <div className="b-ridge" aria-hidden="true">
       <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
         <path d={FAR_D} fill="currentColor" />
+        {snow && <Snow plateaus={FAR} />}
       </svg>
     </div>
   );
 }
 
-export default function Mesa() {
+/** The mesas; in winter with snow on them, at Hrekkjavaka with jack-o'-lanterns (src/lib/season.ts). */
+export default function Mesa({ snow = false, halloween = false }: { snow?: boolean; halloween?: boolean }) {
   return (
     <div className="b-mesa" aria-hidden="true">
-      <Layer d={FAR_D} mod="far" />
-      <Layer d={MID_D} mod="mid" />
+      <Layer d={FAR_D} mod="far">{snow && <Snow plateaus={FAR} />}</Layer>
+      <Layer d={MID_D} mod="mid">{snow && <Snow plateaus={MID} />}</Layer>
       <Layer d={NEAR_D} mod="near">
         <defs><clipPath id="b-mesa-near"><path d={NEAR_D} /></clipPath></defs>
         <g className="b-mesa__band" clipPath="url(#b-mesa-near)">
           {BANDS.map(([y, h, fill]) => <rect key={y} x="0" y={y} width={W} height={h} fill={fill} />)}
         </g>
+        {snow && <Snow plateaus={NEAR} />}
+        {halloween && <Pumpkins />}
       </Layer>
       <Layer d={`M0 ${H - 4} H${W} V${H} H0 Z`} mod="ground" />
     </div>
