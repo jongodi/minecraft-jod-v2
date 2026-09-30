@@ -8,7 +8,7 @@ import type { MapConfig, WorldPoint } from '@/lib/map-types';
 import type { PlacePrints } from '@/app/api/crew/places/route';
 import { DEFAULT_CONFIG } from '@/lib/map-types';
 import viewerFiles from '@/lib/bluemap-viewer.json';
-import { CloseIcon, Lantern, Sun } from './Bits';
+import { CloseIcon, FoldedMapIcon, Lantern, MoonIcon, PictureIcon, Sun } from './Bits';
 import { plural } from '@/lib/format';
 import Drawer from './Drawer';
 import PlayerHead from './PlayerHead';
@@ -384,16 +384,29 @@ function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
                 )}
               </p>
             </div>
+            {/* On a phone the tools are keys on one short row, each a drawn icon with
+                its word kept for screen readers, so they never wrap down into the
+                world among the places' name tags (badlands.css, the HUD on a phone). */}
             <div ref={tools} className="b-hud__tools">
               {viewer && !drawn && !still && (
-                <button type="button" className={`b-btn b-btn--small b-btn--ghost${night ? ' is-on' : ''}`} aria-pressed={night}
-                  title="Sólin sest og ljósin í bænum loga" onClick={() => jod()?.setNight(!night)}>Nótt</button>
+                <button type="button" className={`b-btn b-btn--small b-btn--ghost b-hud__tool${night ? ' is-on' : ''}`} aria-pressed={night}
+                  title="Sólin sest og ljósin í bænum loga" onClick={() => jod()?.setNight(!night)}>
+                  <MoonIcon className="b-btn__icon" /><span className="b-hud__word">Nótt</span>
+                </button>
               )}
-              <button type="button" className={`b-btn b-btn--small b-btn--ghost${drawn ? ' is-on' : ''}`} aria-pressed={drawn} onClick={() => setDrawn(v => !v)}>Teiknað kort</button>
+              <button type="button" className={`b-btn b-btn--small b-btn--ghost b-hud__tool${drawn ? ' is-on' : ''}`} aria-pressed={drawn}
+                title="Teiknað kort" onClick={() => setDrawn(v => !v)}>
+                <FoldedMapIcon className="b-btn__icon" /><span className="b-hud__word">Teiknað kort</span>
+              </button>
               {/* the album hangs over the page, outside the frame the browser's full screen shows */}
-              <button type="button" className="b-btn b-btn--small b-btn--ghost" onClick={() => { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); setAlbum(true); }}>Myndir · {plates.length}</button>
+              <button type="button" className="b-btn b-btn--small b-btn--ghost b-hud__tool" title={`Myndir · ${plates.length}`}
+                onClick={() => { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); setAlbum(true); }}>
+                <PictureIcon className="b-btn__icon" /><span className="b-hud__word">Myndir<span className="b-hud__sep"> · </span></span><span className="b-hud__count">{plates.length}</span>
+              </button>
               {full ? (
-                <button type="button" className="b-btn b-btn--small b-btn--ghost is-on" aria-label="Loka heilum skjá" onClick={closeFull}><CloseIcon className="b-btn__icon" /> Loka</button>
+                <button type="button" className="b-btn b-btn--small b-btn--ghost b-hud__tool b-hud__close is-on" aria-label="Loka heilum skjá" title="Loka heilum skjá" onClick={closeFull}>
+                  <CloseIcon className="b-btn__icon" /><span className="b-hud__word" aria-hidden="true">Loka</span>
+                </button>
               ) : (
                 // eslint-disable-next-line @next/next/no-html-link-for-pages -- BlueMap's own app, not a Next page
                 <a href={MAP_URL} className="b-btn b-btn--small b-btn--ghost" onPointerEnter={warmViewer} onFocus={warmViewer}
