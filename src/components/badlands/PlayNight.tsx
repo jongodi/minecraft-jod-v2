@@ -1,18 +1,20 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import Link from 'next/link';
 import type { PublicNight } from '@/app/api/playnight/route';
-import { Campfire } from './Bits';
+import { CalendarIcon, Campfire, ChevronIcon } from './Bits';
+import Calendar from './Calendar';
 import PlayerHead from './PlayerHead';
 import type { ServerState } from './hooks';
 import { useMounted } from './hooks';
-import { TIME_CHOICES, WhenAt, dayChoices, dayOf, usePlayNight, whenAt } from './night';
+import { LAST_DAY_AHEAD, TIME_CHOICES, WhenAt, dayLabel, dayLong, dayNum, dayOf, dayValue, isLate, usePlayNight, whenAt } from './night';
 import { plural } from '@/lib/format';
 
-/* Næsta spilakvöld (src/lib/play-night.ts). The hero carries one line about
-   it under the server's lantern; the crew's room holds the fire itself:
-   lighting one, answering, choosing the night, starting the server. */
+/* Spilakvöld (src/lib/play-night.ts). The hero carries one line about the
+   next one under the server's lantern; the crew's room holds the fires
+   themselves, up to five planned at once, soonest first: lighting one,
+   answering, choosing the night, starting the server. */
 
 const chosenOf = (n: PublicNight) => n.options.find(o => o.id === n.chosen) ?? null;
 const lower = (s: string) => s.toLowerCase();
@@ -34,12 +36,13 @@ function Heads({ names, lit }: { names: string[]; lit?: (n: string) => boolean }
 
 /* ─── the hero's line ─────────────────────────────────────────────────── */
 
-/** One line under the server's lantern while a fire burns; a tap opens the crew's room, where it is. */
+/** One line under the server's lantern about the next fire; a tap opens the crew's room, where they all are. */
 export function NightLine() {
   const { state } = usePlayNight();
   const mounted = useMounted();
-  const night = state?.night;
+  const night = state?.nights[0];
   if (!mounted || !night) return null;
+  const planned = state.nights.filter(n => n.phase !== 'over').length;
   const chosen = chosenOf(night);
   const yes = chosen?.yes ?? [];
   let text: string;
@@ -57,7 +60,7 @@ export function NightLine() {
     <a href="#hopur" className={`b-nightline${night.phase === 'over' ? ' is-embers' : ''}`}>
       <Fire count={night.phase === 'open' ? Math.max(...night.options.map(o => o.yes.length)) : yes.length} embers={night.phase === 'over'} />
       <span className="b-nightline__text">
-        <span className="b-nightline__kicker">Næsta spilakvöld</span>
+        <span className="b-nightline__kicker">{night.phase === 'over' ? 'Síðasta spilakvöld' : 'Næsta spilakvöld'}{planned > 1 && ` · ${planned} á dagskrá`}</span>
         <span>{text}</span>
         {night.phase !== 'open' && <Heads names={night.phase === 'over' ? night.came : yes} />}
       </span>
@@ -65,39 +68,61 @@ export function NightLine() {
   );
 }
 
-/* ─── the fire in the crew's room ─────────────────────────────────────── */
+/* ─── the fires in the crew's room ────────────────────────────────────── */
 
 export function NightBoard({ server }: { server: ServerState }) {
   const { state, act } = usePlayNight();
   const mounted = useMounted();
   const [lighting, setLighting] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState('');
-  const [copied, setCopied] = useState(false);
+  /* an error goes by the fire it came from, or the new one ('new') */
+  const [err, setErr] = useState<{ at: string; text: string } | null>(null);
+  const [copied, setCopied] = useState<string | null>(null);
+  /* /kvold/<id> is one night's link: that fire is lit up and brought into view */
+  const [picked, setPicked] = useState<string | null>(null);
+  const shown = useRef(false);
+  useEffect(() => { setPicked(/^\/kvold\/([^/]+)/.exec(window.location.pathname)?.[1] ?? null); }, []);
+  useEffect(() => {
+    if (!picked || shown.current || !state) return;
+    const el = document.querySelector(`[data-night="${CSS.escape(picked)}"]`);
+    if (!el) return;
+    shown.current = true;
+    el.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  }, [picked, state]);
 
   if (!mounted || state === undefined) return null;
-  const { night, me } = state;
+  const { nights, me, max } = state;
+  const planned = nights.filter(n => n.phase !== 'over').length;
 
-  const run = async (body: Record<string, unknown>) => {
-    setBusy(true); setErr('');
+  const run = async (at: string, body: Record<string, unknown>) => {
+    setBusy(true); setErr(null);
     const e = await act(body);
     setBusy(false);
-    if (e) setErr(e);
+    if (e) setErr({ at, text: e });
     return !e;
   };
 
-  const share = async () => {
-    const url = `${window.location.origin}/kvold#hopur`;
+  const share = async (id: string) => {
+    const url = `${window.location.origin}/kvold/${id}#hopur`;
     const nav = navigator as Navigator & { share?: (d: ShareData) => Promise<void> };
     if (nav.share && matchMedia('(pointer: coarse)').matches) {
-      try { await nav.share({ title: 'Næsta spilakvöld · JOÐ', url }); return; } catch (e) { if ((e as DOMException)?.name === 'AbortError') return; }
+      try { await nav.share({ title: 'Spilakvöld · JOÐ', url }); return; } catch (e) { if ((e as DOMException)?.name === 'AbortError') return; }
     }
-    try { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 2500); }
+    try { await navigator.clipboard.writeText(url); setCopied(id); setTimeout(() => setCopied(c => (c === id ? null : c)), 2500); }
     catch { window.prompt('Afritaðu hlekkinn:', url); }
   };
 
-  if (!night) {
-    if (lighting && me) return <LightFire busy={busy} err={err} onCancel={() => { setLighting(false); setErr(''); }} onLight={async (times, note) => { if (await run({ action: 'propose', times, note })) setLighting(false); }} />;
+  const lightFire = (
+    <LightFire
+      busy={busy}
+      err={err?.at === 'new' ? err.text : ''}
+      onCancel={() => { setLighting(false); setErr(null); }}
+      onLight={async (times, note) => { if (await run('new', { action: 'propose', times, note })) setLighting(false); }}
+    />
+  );
+
+  if (nights.length === 0) {
+    if (lighting && me) return lightFire;
     return (
       <section className="b-night b-night--none" aria-label="Næsta spilakvöld">
         <Fire count={0} embers />
@@ -111,23 +136,57 @@ export function NightBoard({ server }: { server: ServerState }) {
     );
   }
 
+  return (
+    <div className="b-nights">
+      {nights.map((n, i) => (
+        <NightFire
+          key={n.id}
+          night={n}
+          kicker={n.phase === 'over' ? 'Síðasta spilakvöld' : i === 0 ? 'Næsta spilakvöld' : 'Á dagskrá'}
+          me={me}
+          server={server}
+          busy={busy}
+          err={err?.at === n.id ? err.text : ''}
+          copied={copied === n.id}
+          picked={picked === n.id}
+          onRun={body => run(n.id, { ...body, night: n.id })}
+          onShare={() => share(n.id)}
+        />
+      ))}
+      {me && (lighting ? lightFire : planned < max ? (
+        <button type="button" className="b-btn b-btn--small b-nights__more" onClick={() => { setErr(null); setLighting(true); }}>
+          {planned === 0 ? 'Kveikja nýtt bál' : '+ Kveikja annað bál'}
+        </button>
+      ) : (
+        <p className="b-note b-nights__full">{max} kvöld eru á dagskrá, eins mörg og komast í einu. Nýtt bál má kveikja þegar eitt er liðið.</p>
+      ))}
+    </div>
+  );
+}
+
+/** One fire: the times it offers and who can make each, or the night chosen and who is coming. */
+function NightFire({ night, kicker, me, server, busy, err, copied, picked, onRun, onShare }: {
+  night: PublicNight; kicker: string; me: string | null; server: ServerState;
+  busy: boolean; err: string; copied: boolean; picked: boolean;
+  onRun: (body: Record<string, unknown>) => void; onShare: () => void;
+}) {
   const mine = me ? night.options.filter(o => o.yes.some(y => lower(y) === lower(me))).map(o => o.id) : [];
   const mineIsBy = !!me && lower(night.by) === lower(me);
   const chosen = chosenOf(night);
   const online = !!server.online;
   const inGame = (n: string) => online && server.list.some(p => lower(p) === lower(n));
   const came = (n: string) => inGame(n) || night.came.some(c => lower(c) === lower(n));
-  const toggle = (id: string) => run({ action: 'vote', yes: mine.includes(id) ? mine.filter(x => x !== id) : [...mine, id] });
+  const toggle = (id: string) => onRun({ action: 'vote', yes: mine.includes(id) ? mine.filter(x => x !== id) : [...mine, id] });
+  const title = night.phase === 'open' ? 'Kvöld í kortunum' :
+    night.phase === 'live' ? 'Kvöldið er hafið' :
+    night.phase === 'over' ? dayOf(chosen!.at) :
+    WhenAt(chosen!.at);
 
   return (
-    <section className={`b-night b-night--${night.phase}`} aria-label="Næsta spilakvöld">
+    <section className={`b-night b-night--${night.phase}${picked ? ' is-picked' : ''}`} data-night={night.id} aria-label={`${kicker}: ${title}`}>
       <header className="b-night__top">
-        <h3 className="b-night__title">
-          {night.phase === 'open' ? 'Kvöld í kortunum' :
-           night.phase === 'live' ? 'Kvöldið er hafið' :
-           night.phase === 'over' ? dayOf(chosen!.at) :
-           WhenAt(chosen!.at)}
-        </h3>
+        <span className="b-night__kicker">{kicker}</span>
+        <h3 className="b-night__title">{title}</h3>
         <p className="b-note">
           {night.note && <><q>{night.note}</q> · </>}{night.by} kveikti bálið
           {night.phase === 'open' && `. Kvöldið velst sjálft ${whenAt(night.decidesAt)}, sá tími sem flest geta.`}
@@ -147,7 +206,7 @@ export function NightBoard({ server }: { server: ServerState }) {
                 {me && (
                   <span className="b-inline">
                     <button type="button" className={`b-btn b-btn--small${on ? ' b-btn--solid' : ''}`} aria-pressed={on} disabled={busy} onClick={() => toggle(o.id)}>{on ? 'Ég get ✓' : 'Ég get'}</button>
-                    {mineIsBy && <button type="button" className="b-btn b-btn--small b-btn--ghost" disabled={busy} onClick={() => run({ action: 'choose', option: o.id })}>Velja</button>}
+                    {mineIsBy && <button type="button" className="b-btn b-btn--small b-btn--ghost" disabled={busy} onClick={() => onRun({ action: 'choose', option: o.id })}>Velja</button>}
                   </span>
                 )}
               </li>
@@ -175,32 +234,24 @@ export function NightBoard({ server }: { server: ServerState }) {
         <div className="b-inline b-night__mine">
           {night.phase !== 'open' && night.phase !== 'live' && (
             <>
-              <button type="button" className={`b-btn b-btn--small${mine.length ? ' b-btn--solid' : ''}`} aria-pressed={mine.length > 0} disabled={busy} onClick={() => run({ action: 'vote', yes: [chosen!.id] })}>Mæti</button>
-              <button type="button" className={`b-btn b-btn--small${!mine.length ? ' is-on' : ''}`} aria-pressed={mine.length === 0} disabled={busy} onClick={() => run({ action: 'vote', yes: [] })}>Kemst ekki</button>
+              <button type="button" className={`b-btn b-btn--small${mine.length ? ' b-btn--solid' : ''}`} aria-pressed={mine.length > 0} disabled={busy} onClick={() => onRun({ action: 'vote', yes: [chosen!.id] })}>Mæti</button>
+              <button type="button" className={`b-btn b-btn--small${!mine.length ? ' is-on' : ''}`} aria-pressed={mine.length === 0} disabled={busy} onClick={() => onRun({ action: 'vote', yes: [] })}>Kemst ekki</button>
             </>
           )}
           {night.phase === 'open' && mine.length > 0 && (
-            <button type="button" className="b-btn b-btn--small b-btn--ghost" disabled={busy} onClick={() => run({ action: 'vote', yes: [] })}>Kemst ekki</button>
+            <button type="button" className="b-btn b-btn--small b-btn--ghost" disabled={busy} onClick={() => onRun({ action: 'vote', yes: [] })}>Kemst ekki</button>
           )}
           {(night.phase === 'soon' || night.phase === 'live') && mine.length > 0 && server.online === false && (
-            <button type="button" className="b-btn b-btn--solid" disabled={busy} onClick={() => run({ action: 'start' })}>Kveikja á þjóninum</button>
+            <button type="button" className="b-btn b-btn--solid" disabled={busy} onClick={() => onRun({ action: 'start' })}>Kveikja á þjóninum</button>
           )}
-          <button type="button" className="b-btn b-btn--small b-btn--ghost" onClick={share}>{copied ? 'Afritað' : 'Deila'}</button>
+          <button type="button" className="b-btn b-btn--small b-btn--ghost" onClick={onShare}>{copied ? 'Afritað' : 'Deila'}</button>
           {mineIsBy && night.phase !== 'live' && (
-            <button type="button" className="b-btn b-btn--small b-btn--ghost" disabled={busy} onClick={() => { if (confirm('Slökkva bálið? Kvöldið fellur niður.')) run({ action: 'cancel' }); }}>Slökkva bálið</button>
+            <button type="button" className="b-btn b-btn--small b-btn--ghost" disabled={busy} onClick={() => { if (confirm('Slökkva bálið? Kvöldið fellur niður.')) onRun({ action: 'cancel' }); }}>Slökkva bálið</button>
           )}
         </div>
       )}
       {!me && night.phase !== 'over' && night.phase !== 'live' && <p className="b-note"><Link href="/crew" className="b-link">Skráðu þig inn</Link> til að svara.</p>}
-      {me && night.phase === 'over' && (
-        <div className="b-inline b-night__mine">
-          <button type="button" className="b-btn b-btn--small" onClick={() => { setErr(''); setLighting(true); }}>Kveikja nýtt bál</button>
-        </div>
-      )}
-      {lighting && me && night.phase === 'over' && (
-        <LightFire busy={busy} err={err} onCancel={() => { setLighting(false); setErr(''); }} onLight={async (times, note) => { if (await run({ action: 'propose', times, note })) setLighting(false); }} />
-      )}
-      {err && !lighting && <p className="b-err" role="alert">{err}</p>}
+      {err && <p className="b-err" role="alert">{err}</p>}
     </section>
   );
 }
@@ -208,10 +259,26 @@ export function NightBoard({ server }: { server: ServerState }) {
 /* ─── lighting a fire ─────────────────────────────────────────────────── */
 
 function LightFire({ busy, err, onLight, onCancel }: { busy: boolean; err: string; onLight: (times: string[], note: string) => void; onCancel: () => void }) {
-  const days = useMemo(() => dayChoices(), []);
-  const [rows, setRows] = useState([{ day: days[0].value, time: '20:00' }]);
+  /* the clock as the form opened; the server checks the times again when the fire is lit */
+  const [now] = useState(() => Date.now());
+  const today = Math.floor(now / 86_400_000);
+  const late = (day: string, time: string) => isLate(day, time, now);
+  const first = TIME_CHOICES.some(t => !late(dayValue(today), t)) ? today : today + 1;
+  const last = today + LAST_DAY_AHEAD;
+  /** the time kept when the day changes, or the first that is still ahead */
+  const fit = (day: string, time: string) => (late(day, time) ? TIME_CHOICES.find(t => !late(day, t)) ?? time : time);
+  const [rows, setRows] = useState(() => [{ day: dayValue(late(dayValue(today), '20:00') ? today + 1 : today), time: '20:00' }]);
   const [note, setNote] = useState('');
-  const set = (i: number, key: 'day' | 'time', v: string) => setRows(rs => rs.map((r, k) => (k === i ? { ...r, [key]: v } : r)));
+  const [open, setOpen] = useState<number | null>(null);
+  const id = useId();
+  const trigger = (i: number) => `${id}-dagur-${i}`;
+  const set = (i: number, key: 'day' | 'time', v: string) => setRows(rs => rs.map((r, k) => (k !== i ? r : key === 'day' ? { day: v, time: fit(v, r.time) } : { ...r, time: v })));
+  const pick = (i: number, v: string) => {
+    set(i, 'day', v);
+    setOpen(null);
+    document.getElementById(trigger(i))?.focus();
+  };
+  const close = useCallback(() => setOpen(null), []);
 
   return (
     <form className="b-night b-night--light" aria-label="Kveikja bál" onSubmit={e => { e.preventDefault(); onLight(rows.map(r => `${r.day}T${r.time}:00Z`), note); }}>
@@ -221,17 +288,28 @@ function LightFire({ busy, err, onLight, onCancel }: { busy: boolean; err: strin
       </header>
       {rows.map((r, i) => (
         <div key={i} className="b-inline b-night__row">
-          <select className="b-input b-night__select" aria-label={`Dagur ${i + 1}`} value={r.day} onChange={e => set(i, 'day', e.target.value)}>
-            {days.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
-          </select>
+          <button
+            type="button"
+            id={trigger(i)}
+            className={`b-input b-night__day${open === i ? ' is-open' : ''}`}
+            aria-haspopup="dialog"
+            aria-expanded={open === i}
+            aria-label={`Dagur ${i + 1}: ${dayLong(r.day)}`}
+            onClick={() => setOpen(o => (o === i ? null : i))}
+          >
+            <CalendarIcon className="b-night__dayicon" />
+            <span className="b-night__daytext">{dayLabel(r.day, new Date(now))}</span>
+            <ChevronIcon dir="down" className="b-night__daycaret" />
+          </button>
           <select className="b-input b-night__select" aria-label={`Klukkan ${i + 1}`} value={r.time} onChange={e => set(i, 'time', e.target.value)}>
-            {TIME_CHOICES.map(t => <option key={t} value={t}>kl. {t}</option>)}
+            {TIME_CHOICES.map(t => <option key={t} value={t} disabled={late(r.day, t)}>kl. {t}</option>)}
           </select>
-          {rows.length > 1 && <button type="button" className="b-btn b-btn--small b-btn--ghost" aria-label={`Fjarlægja tíma ${i + 1}`} onClick={() => setRows(rs => rs.filter((_, k) => k !== i))}>✕</button>}
+          {rows.length > 1 && <button type="button" className="b-btn b-btn--small b-btn--ghost b-night__drop" aria-label={`Fjarlægja tíma ${i + 1}`} onClick={() => { setOpen(null); setRows(rs => rs.filter((_, k) => k !== i)); }}>✕</button>}
+          {open === i && <Calendar value={r.day} today={today} min={first} max={last} triggerId={trigger(i)} onPick={v => pick(i, v)} onClose={close} />}
         </div>
       ))}
       {rows.length < 3 && (
-        <button type="button" className="b-btn b-btn--small b-btn--ghost" onClick={() => setRows(rs => [...rs, { day: days[Math.min(rs.length, days.length - 1)].value, time: rs[rs.length - 1].time }])}>+ Annar tími</button>
+        <button type="button" className="b-btn b-btn--small b-btn--ghost" onClick={() => { setOpen(null); setRows(rs => { const r = rs[rs.length - 1]; const day = dayValue(Math.min(last, dayNum(r.day) + 1)); return [...rs, { day, time: fit(day, r.time) }]; }); }}>+ Annar tími</button>
       )}
       <input className="b-input" placeholder="Hvað á að gera? (má sleppa)" maxLength={80} value={note} onChange={e => setNote(e.target.value)} aria-label="Hvað á að gera" />
       {err && <p className="b-err" role="alert">{err}</p>}

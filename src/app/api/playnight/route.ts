@@ -4,14 +4,15 @@ import { getCrewSession } from '@/lib/crew';
 import { exarotonStatus, startExaroton } from '@/lib/exaroton';
 import { errorMessage } from '@/lib/icelandic';
 import {
-  MAX_NOTE, START_BEFORE_MS, blocksNewFire, checkTimes, currentNight, decidesAt, optionOf, phaseOf, readNight,
-  readVotes, writeNight, writeVote, yesFor, type Night, type Phase,
+  MAX_NOTE, MAX_PLANNED, START_BEFORE_MS, checkTimes, clashOf, currentNights, decidesAt, isPlanned, optionOf, phaseOf,
+  writeNight, writeVote, yesFor, type Night, type NightState, type Phase,
 } from '@/lib/play-night';
 
-/* Næsta spilakvöld (src/lib/play-night.ts). GET is the night as the page
-   shows it, for anyone; POST acts on it, for a signed-in crew member:
-   { action: 'propose', times, note } | { action: 'vote', yes } |
-   { action: 'choose', option } | { action: 'cancel' } | { action: 'start' }. */
+/* Spilakvöld (src/lib/play-night.ts). GET is the nights as the page shows
+   them, for anyone; POST acts on one, for a signed-in crew member:
+   { action: 'propose', times, note } | { action: 'vote', night, yes } |
+   { action: 'choose', night, option } | { action: 'cancel', night } |
+   { action: 'start', night }. */
 
 export const dynamic = 'force-dynamic';
 
@@ -30,31 +31,34 @@ export interface PublicNight {
   came: string[];
 }
 
-export interface PlayNightResponse { night: PublicNight | null; me: string | null }
+export interface PlayNightResponse {
+  /** those planned, soonest first, then the last one over while its embers glow */
+  nights: PublicNight[];
+  me: string | null;
+  /** how many can be planned at once */
+  max: number;
+}
 
 const json = (body: unknown, status = 200) => NextResponse.json(body, { status, headers: { 'Cache-Control': 'no-store' } });
 const NO_REDIS = 'Spilakvöld eru aðeins geymd þegar Redis er tengt (REDIS_URL).';
 
+const publicOf = ({ night, votes, seen }: NightState, now: number): PublicNight => ({
+  id: night.id, by: night.by, note: night.note, phase: phaseOf(night, now),
+  options: night.options.map(o => ({ ...o, yes: yesFor(votes, o.id) })),
+  chosen: night.chosen, chosenBy: night.chosenBy,
+  decidesAt: new Date(decidesAt(night)).toISOString(),
+  startedBy: night.startedBy,
+  came: night.outcome?.came ?? seen,
+});
+
 async function view(me: string | null): Promise<PlayNightResponse> {
   const now = Date.now();
-  const cur = await currentNight(now);
-  if (!cur) return { night: null, me };
-  const { night, votes, seen } = cur;
-  return {
-    me,
-    night: {
-      id: night.id, by: night.by, note: night.note, phase: phaseOf(night, now),
-      options: night.options.map(o => ({ ...o, yes: yesFor(votes, o.id) })),
-      chosen: night.chosen, chosenBy: night.chosenBy,
-      decidesAt: new Date(decidesAt(night)).toISOString(),
-      startedBy: night.startedBy,
-      came: night.outcome?.came ?? seen,
-    },
-  };
+  const { shown } = await currentNights(now);
+  return { nights: shown.map(s => publicOf(s, now)), me, max: MAX_PLANNED };
 }
 
 export async function GET() {
-  if (!process.env.REDIS_URL) return json({ night: null, me: null } satisfies PlayNightResponse);
+  if (!process.env.REDIS_URL) return json({ nights: [], me: null, max: MAX_PLANNED } satisfies PlayNightResponse);
   const me = (await getCrewSession())?.username ?? null;
   try { return json(await view(me)); }
   catch (e) { return json({ error: errorMessage(e) }, 500); }
@@ -69,25 +73,30 @@ export async function POST(req: NextRequest) {
   const now = Date.now();
 
   try {
+    const { all, shown } = await currentNights(now);
+
     if (action === 'propose') {
-      if (blocksNewFire(await readNight(), now)) return json({ error: 'Það logar þegar bál. Eitt kvöld í einu.' }, 409);
+      if (all.filter(n => isPlanned(n, now)).length >= MAX_PLANNED) {
+        return json({ error: `Það eru þegar ${MAX_PLANNED} kvöld á dagskrá. Bíddu þar til eitt er liðið eða slökktu á einu.` }, 409);
+      }
       const times = checkTimes(body?.times, now);
       if ('error' in times) return json({ error: times.error }, 400);
+      if (clashOf(all, times.at, now)) return json({ error: 'Annað bál logar þegar sama kvöld. Veldu annan tíma.' }, 409);
       const note = typeof body?.note === 'string' ? body.note.replace(/\s+/g, ' ').trim().slice(0, MAX_NOTE) : '';
       const night: Night = {
-        id: randomUUID(), by: me, createdAt: new Date(now).toISOString(), note,
+        id: randomUUID().slice(0, 8), by: me, createdAt: new Date(now).toISOString(), note,
         options: times.at.map((at, i) => ({ id: String.fromCharCode(97 + i), at })),
         chosen: times.at.length === 1 ? 'a' : null, chosenBy: times.at.length === 1 ? me : null,
         cancelled: false, startedBy: null, outcome: null,
       };
       await writeNight(night);
       /* whoever lights the fire can make every time they offered */
-      await writeVote(night.id, me, night.options.map(o => o.id));
+      await writeVote(night, me, night.options.map(o => o.id), now);
       return json(await view(me));
     }
 
-    const cur = await currentNight(now);
-    if (!cur) return json({ error: 'Ekkert bál logar.' }, 404);
+    const cur = shown.find(s => s.night.id === body?.night);
+    if (!cur) return json({ error: 'Kvöldið fannst ekki; það gæti hafa verið fellt niður.' }, 404);
     const { night, votes } = cur;
     const phase = phaseOf(night, now);
 
@@ -97,7 +106,7 @@ export async function POST(req: NextRequest) {
       if (!yes) return json({ error: 'Svar vantar.' }, 400);
       /* once chosen, only the chosen time is answered */
       const allowed = new Set(night.chosen ? [night.chosen] : night.options.map(o => o.id));
-      await writeVote(night.id, me, [...new Set(yes)].filter(id => allowed.has(id)));
+      await writeVote(night, me, [...new Set(yes)].filter(id => allowed.has(id)), now);
       return json(await view(me));
     }
 

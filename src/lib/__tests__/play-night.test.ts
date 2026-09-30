@@ -9,6 +9,8 @@ const hash = (k: string) => { if (!hashes.has(k)) hashes.set(k, new Map()); retu
 vi.mock('@/lib/redis', () => ({
   getRedis: () => ({
     get: async (k: string) => kv.get(k) ?? null,
+    del: async (k: string) => (kv.delete(k) ? 1 : 0),
+    hdel: async (k: string, f: string) => (hash(k).delete(f) ? 1 : 0),
     set: async (k: string, v: string) => { kv.set(k, v); return 'OK'; },
     hgetall: async (k: string) => Object.fromEntries(hash(k)),
     hset: async (k: string, f: string, v: string) => { hash(k).set(f, v); return 1; },
@@ -61,11 +63,31 @@ describe('the rules', () => {
     expect(lib.isShown(n, 106 * H + 8 * 24 * H)).toBe(false);
   });
 
+  it('puts planned nights soonest first, then the last one over', () => {
+    const later = night({ id: 'later', chosen: 'a', options: [{ id: 'a', at: iso(300 * H) }] });
+    const open = night({ id: 'open' });
+    const over1 = night({ id: 'over1', chosen: 'a', options: [{ id: 'a', at: iso(10 * H) }] });
+    const over2 = night({ id: 'over2', chosen: 'a', options: [{ id: 'a', at: iso(40 * H) }] });
+    const out = night({ id: 'out', cancelled: true });
+    expect(lib.shownNights([later, over1, open, out, over2], 50 * H).map(n => n.id)).toEqual(['open', 'later', 'over2']);
+  });
+
+  it('keeps two nights off the same evening', () => {
+    const chosen = night({ id: 'c', chosen: 'a' });            /* 100 h; its other time is free again */
+    expect(lib.clashOf([chosen], [iso(103 * H)], 0)?.id).toBe('c');
+    expect(lib.clashOf([chosen], [iso(124 * H)], 0)).toBeNull();
+    expect(lib.clashOf([chosen], [iso(106 * H)], 0)).toBeNull();
+    /* an open night holds every time it offers */
+    expect(lib.clashOf([night({ id: 'o' })], [iso(125 * H)], 0)?.id).toBe('o');
+    expect(lib.clashOf([night({ id: 'x', cancelled: true })], [iso(100 * H)], 0)).toBeNull();
+  });
+
   it('checks the times offered', () => {
     const now = 0;
     expect(lib.checkTimes([], now)).toHaveProperty('error');
     expect(lib.checkTimes([iso(10 * 60_000)], now)).toHaveProperty('error');
-    expect(lib.checkTimes([iso(15 * 24 * H)], now)).toHaveProperty('error');
+    expect(lib.checkTimes([iso(15 * 24 * H)], now)).toEqual({ at: [iso(15 * 24 * H)] });
+    expect(lib.checkTimes([iso(367 * 24 * H)], now)).toHaveProperty('error');
     expect(lib.checkTimes([iso(2 * H), iso(2.25 * H)], now)).toHaveProperty('error');
     expect(lib.checkTimes([iso(5 * H), iso(2 * H)], now)).toEqual({ at: [iso(2 * H), iso(5 * H)] });
   });
@@ -99,36 +121,71 @@ describe('/api/playnight', () => {
     const res = await post({ action: 'propose', times: ['2026-10-02T20:00:00Z', '2026-10-03T20:00:00Z'], note: '  Klárum   brúna ' });
     expect(res.status).toBe(200);
     let v = await view();
-    expect(v.night).toMatchObject({ phase: 'open', note: 'Klárum brúna', by: 'stebbias' });
+    expect(v.nights).toHaveLength(1);
+    const id = v.nights[0].id;
+    expect(v.nights[0]).toMatchObject({ phase: 'open', note: 'Klárum brúna', by: 'stebbias' });
     /* the proposer can make every time they offered */
-    expect(v.night!.options.map(o => o.yes)).toEqual([['stebbias'], ['stebbias']]);
-
-    expect((await post({ action: 'propose', times: ['2026-10-04T20:00:00Z'] })).status).toBe(409);
+    expect(v.nights[0].options.map(o => o.yes)).toEqual([['stebbias'], ['stebbias']]);
 
     session = 'AmmaGaur';
-    await post({ action: 'vote', yes: ['b', 'zzz'] });
-    expect((await post({ action: 'choose', option: 'b' })).status).toBe(403);
+    await post({ action: 'vote', night: id, yes: ['b', 'zzz'] });
+    expect((await post({ action: 'choose', night: id, option: 'b' })).status).toBe(403);
     session = 'stebbias';
-    await post({ action: 'choose', option: 'b' });
+    expect((await post({ action: 'choose', night: 'nope', option: 'b' })).status).toBe(404);
+    await post({ action: 'choose', night: id, option: 'b' });
     v = await view();
-    expect(v.night).toMatchObject({ chosen: 'b', chosenBy: 'stebbias', phase: 'chosen' });
-    expect(v.night!.options[1].yes).toEqual(['AmmaGaur', 'stebbias']);
+    expect(v.nights[0]).toMatchObject({ chosen: 'b', chosenBy: 'stebbias', phase: 'chosen' });
+    expect(v.nights[0].options[1].yes).toEqual(['AmmaGaur', 'stebbias']);
+  });
+
+  it('holds up to five nights at once, soonest first, never two on one evening', async () => {
+    for (const d of ['2026-12-18', '2026-10-09', '2026-11-13', '2026-10-16']) {
+      expect((await post({ action: 'propose', times: [`${d}T20:00:00Z`] })).status).toBe(200);
+    }
+    /* the same evening as another is turned away */
+    expect((await post({ action: 'propose', times: ['2026-10-09T22:00:00Z'] })).status).toBe(409);
+    expect((await post({ action: 'propose', times: ['2027-03-05T20:00:00Z'] })).status).toBe(200);
+    let v = await view();
+    expect(v.max).toBe(5);
+    expect(v.nights.map(n => n.options[0].at.slice(0, 10))).toEqual(['2026-10-09', '2026-10-16', '2026-11-13', '2026-12-18', '2027-03-05']);
+    /* a sixth waits until one is out */
+    expect((await post({ action: 'propose', times: ['2027-04-02T20:00:00Z'] })).status).toBe(409);
+
+    /* an answer and a cancel go to the night they name, and no other */
+    session = 'joenana';
+    await post({ action: 'vote', night: v.nights[2].id, yes: ['a'] });
+    session = 'stebbias';
+    await post({ action: 'cancel', night: v.nights[0].id });
+    v = await view();
+    expect(v.nights).toHaveLength(4);
+    expect(v.nights[1].options[0].yes).toEqual(['joenana', 'stebbias']);
+    expect(v.nights[0].options[0].yes).toEqual(['stebbias']);
+    expect((await post({ action: 'propose', times: ['2027-04-02T20:00:00Z'] })).status).toBe(200);
+  });
+
+  it('moves the one night kept before there could be several', async () => {
+    kv.set('playnight:current', JSON.stringify(night({ id: 'gamla', options: [{ id: 'a', at: '2026-10-03T20:00:00Z' }] })));
+    const v = await view();
+    expect(v.nights.map(n => n.id)).toEqual(['gamla']);
+    expect(kv.has('playnight:current')).toBe(false);
+    expect((await view()).nights.map(n => n.id)).toEqual(['gamla']);
   });
 
   it('lets only those coming start the server, and only from half an hour before', async () => {
     await post({ action: 'propose', times: ['2026-10-01T20:00:00Z'] });
-    expect((await post({ action: 'start' })).status).toBe(409);
+    const id = (await view()).nights[0].id;
+    expect((await post({ action: 'start', night: id })).status).toBe(409);
 
     vi.setSystemTime(new Date('2026-10-01T19:40:00Z'));
     session = 'joenana';
-    expect((await post({ action: 'start' })).status).toBe(403);
+    expect((await post({ action: 'start', night: id })).status).toBe(403);
     session = 'stebbias';
-    expect((await post({ action: 'start' })).status).toBe(200);
+    expect((await post({ action: 'start', night: id })).status).toBe(200);
     expect(exaroton.started).toBe(1);
-    expect((await view()).night!.startedBy).toBe('stebbias');
+    expect((await view()).nights[0].startedBy).toBe('stebbias');
 
     exaroton.status = 1;
-    expect((await post({ action: 'start' })).status).toBe(409);
+    expect((await post({ action: 'start', night: id })).status).toBe(409);
   });
 
   it('turns away anyone signed out', async () => {
@@ -136,10 +193,12 @@ describe('/api/playnight', () => {
     expect((await post({ action: 'propose', times: ['2026-10-02T20:00:00Z'] })).status).toBe(401);
   });
 
-  it('counts a no-show the day after, once', async () => {
+  it('counts a no-show the day after, once, for each night', async () => {
     await post({ action: 'propose', times: ['2026-10-01T20:00:00Z'] });
+    await post({ action: 'propose', times: ['2026-10-05T20:00:00Z'] });
+    const [first, second] = (await view()).nights;
     session = 'AmmaGaur';
-    await post({ action: 'vote', yes: ['a'] });
+    await post({ action: 'vote', night: first.id, yes: ['a'] });
 
     /* during the evening, the status check sees AmmaGaur */
     vi.setSystemTime(new Date('2026-10-01T21:00:00Z'));
@@ -151,9 +210,17 @@ describe('/api/playnight', () => {
     day('2026-10-02', '2026-10-02T12:05:00Z', 100);
 
     vi.setSystemTime(new Date('2026-10-02T12:10:00Z'));
-    expect(await lib.settleNight()).toEqual({ came: ['AmmaGaur'], noShows: ['stebbias'] });
-    expect(await lib.settleNight()).toBeNull();
+    expect(await lib.settleNights()).toEqual([{ id: first.id, came: ['AmmaGaur'], noShows: ['stebbias'] }]);
+    expect(await lib.settleNights()).toEqual([]);
     expect(await lib.readNoShows()).toEqual({ stebbias: 1 });
-    expect((await view()).night).toMatchObject({ phase: 'over', came: ['AmmaGaur'] });
+    /* the next night comes first, the embers of the last after it */
+    const v = await view();
+    expect(v.nights.map(n => n.phase)).toEqual(['chosen', 'over']);
+    expect(v.nights[1]).toMatchObject({ id: first.id, came: ['AmmaGaur'] });
+
+    /* a week on, the first is cleared away; the second's embers glow in its place */
+    vi.setSystemTime(new Date('2026-10-09T12:00:00Z'));
+    expect((await view()).nights.map(n => n.id)).toEqual([second.id]);
+    expect(hash('playnight:nights').has(first.id)).toBe(false);
   });
 });

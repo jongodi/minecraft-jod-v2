@@ -110,6 +110,9 @@
   white-space: nowrap;
   transition: background var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
 }
+/* a label longer than a narrow phone is wide wraps inside its button rather than running off the edge */
+.b-btn { max-width: 100%; }
+@media (max-width: 399px) { .b-btn { white-space: normal; text-align: center; } }
 .b-btn:focus-visible { background: var(--lantern); color: var(--night); }
 @media (hover: hover) { .b-btn:hover { background: var(--lantern); color: var(--night); } }
 .b-btn:active { transform: translateY(1px); }
@@ -288,10 +291,13 @@
 .b-bar__mark svg { width: 1.5rem; height: 1.5rem; shape-rendering: crispEdges; }
 @media (hover: hover) { .b-bar__mark:hover { color: var(--lantern); } }
 .b-bar__addr { display: inline-flex; align-items: center; gap: var(--sp-3); min-height: var(--tap); padding-inline: var(--sp-2); font-family: var(--font-data); font-size: var(--fs-xs); color: var(--paper); border-radius: var(--radius); transition: background var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease-out); }
-.b-bar__addr span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.b-bar__addr { min-width: 0; }
+.b-bar__addr span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .b-bar__addr b { font-family: var(--font-text); font-weight: 600; font-size: var(--fs-xs); color: var(--lantern); letter-spacing: 0.02em; }
 @media (hover: hover) { .b-bar__addr:hover b { color: var(--paper); } }
 @media (max-width: 399px) { .b-bar__mark span { display: none; } }
+/* the narrowest phones: the tag is the address alone, and a tap still copies it */
+@media (max-width: 359px) { .b-bar__addr b { display: none; } }
 .b-bar__end { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; }
 /* the signed-in member's head in the bar: framed in wood, a lantern's glow behind it */
 .b-bar__me { position: relative; display: grid; place-items: center; width: var(--tap); height: var(--tap); flex-shrink: 0; }
@@ -1030,7 +1036,14 @@ html.is-map-full { overflow: hidden; }
   border: var(--line) solid rgba(232, 220, 196, 0.18); background: rgba(21, 16, 13, 0.55);
 }
 .b-night--none { grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; }
-.b-night--live, .b-night--soon { border-color: var(--lantern); }
+.b-night--live, .b-night--soon, .b-night.is-picked { border-color: var(--lantern); }
+.b-night.is-picked { box-shadow: 0 0 0 var(--px) var(--lantern-glow); }
+/* several fires, soonest first: one stack, the way to light another at its foot */
+.b-nights { display: grid; gap: var(--sp-4); margin-block: var(--sp-6); }
+.b-nights > .b-night { margin-block: 0; scroll-margin-top: var(--sp-4); }
+.b-nights__more { justify-self: start; }
+.b-night__kicker { font-family: var(--font-data); font-size: var(--fs-xs); letter-spacing: 0.06em; text-transform: uppercase; color: var(--lantern); }
+.b-night--over .b-night__kicker { color: var(--tc-white); }
 .b-night__top { display: grid; gap: var(--sp-1); }
 .b-night__title { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-xl); line-height: 1.1; color: var(--paper); }
 .b-night q { quotes: '„' '“'; color: var(--paper); }
@@ -1048,9 +1061,65 @@ html.is-map-full { overflow: hidden; }
 /* during the evening, those who said yes and aren't in yet stand in the dark */
 .b-night--live .b-night__head:not(.is-in) img { filter: grayscale(1) brightness(0.6); }
 .b-night__head.is-in img { box-shadow: 0 0 0 1px var(--night), 0 0 0 calc(1px + var(--px)) var(--online); }
-.b-night__row .b-night__select { width: auto; min-width: 9rem; }
+.b-night__row .b-night__select { flex: 1 1 8rem; width: auto; max-width: 11rem; }
+/* the day is a button that opens a month on paper under its row */
+.b-night__day {
+  display: inline-flex; align-items: center; gap: var(--sp-2);
+  flex: 1 1 13rem; width: auto; max-width: 18rem; min-width: 0; min-height: var(--tap);
+  padding-block: var(--sp-2); text-align: left; cursor: pointer;
+}
+.b-night__day.is-open { border-color: var(--lantern-deep); box-shadow: 0 0 0 var(--px) var(--lantern-glow); }
+.b-night__dayicon { width: 1rem; height: 1rem; flex-shrink: 0; color: var(--tc-red); }
+.b-night__daytext { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.b-night__daycaret { width: 1rem; height: 1rem; flex-shrink: 0; color: var(--ink-soft); transition: transform var(--dur-1) var(--ease-out); }
+.b-night__day.is-open .b-night__daycaret { transform: rotate(180deg); }
+.b-night__drop { min-width: var(--tap); min-height: var(--tap); }
+
+.b-cal {
+  /* its own line under the row: the margin takes what the month leaves */
+  flex: 0 0 22rem; margin-right: calc(100% - 22rem);
+  display: grid; gap: var(--sp-2); padding: var(--sp-3);
+  background: var(--paper); color: var(--ink);
+  border: var(--line) solid var(--ink-faint); box-shadow: var(--bevel), 0 var(--px) 0 var(--px) rgba(21, 16, 13, 0.5);
+  font-family: var(--font-data);
+}
+.b-cal__head { display: grid; grid-template-columns: var(--tap) minmax(0, 1fr) var(--tap); align-items: center; gap: var(--sp-2); padding-bottom: var(--sp-2); border-bottom: var(--px) solid var(--tc-red); }
+.b-cal__month { text-align: center; font-size: var(--fs-data); line-height: 1.2; color: var(--ink); }
+.b-cal__turn {
+  display: grid; place-items: center; width: var(--tap); height: var(--tap); padding: 0;
+  border: var(--line) solid var(--ink-faint); background: var(--paper-2); color: var(--ink); cursor: pointer;
+  box-shadow: var(--bevel);
+}
+.b-cal__turn svg { width: 1rem; height: 1rem; }
+.b-cal__turn:active:not([disabled]) { box-shadow: var(--bevel-in); }
+.b-cal__turn:focus-visible { outline: none; background: var(--lantern); border-color: var(--lantern-deep); }
+@media (hover: hover) { .b-cal__turn:hover:not([disabled]) { background: var(--lantern); border-color: var(--lantern-deep); } }
+.b-cal__turn[disabled] { opacity: 0.3; cursor: default; box-shadow: none; }
+.b-cal__grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: var(--px); }
+.b-cal__wd { padding-block: var(--sp-1); text-align: center; font-size: var(--fs-xs); color: var(--ink-soft); }
+.b-cal__wd:nth-child(n + 6):nth-child(-n + 7) { color: var(--tc-red); }
+.b-cal__day, .b-cal__blank { aspect-ratio: 1; min-height: 2.25rem; }
+.b-cal__day {
+  display: grid; place-items: center; padding: 0;
+  border: 0; background: transparent; color: var(--ink); cursor: pointer;
+  font-family: var(--font-data); font-size: var(--fs-sm); line-height: 1;
+  transition: background var(--dur-1) var(--ease-out);
+}
+.b-cal__day.is-today { box-shadow: inset 0 0 0 var(--px) var(--tc-red); }
+.b-cal__day.is-on { background: var(--lantern); color: var(--night); box-shadow: var(--bevel); }
+.b-cal__day:focus-visible { outline: var(--px) solid var(--night); outline-offset: calc(var(--px) * -1); }
+@media (hover: hover) { .b-cal__day:hover:not([disabled]):not(.is-on) { background: var(--paper-2); box-shadow: inset 0 0 0 var(--px) var(--lantern-deep); } }
+.b-cal__day[disabled] { color: var(--ink-faint); opacity: 0.4; cursor: default; }
 .b-night > .b-btn { justify-self: start; }
 .b-night .b-err { color: var(--tc-red); }
+/* the form's one column may be narrower than the month at its widest, so nothing in it pushes the room wider */
+.b-night--light { grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 599px) {
+  .b-night--light { padding-inline: var(--sp-4); }
+  .b-cal { flex-basis: 100%; margin-right: 0; padding: var(--sp-2); }
+  .b-cal__month { font-size: var(--fs-sm); }
+  .b-night__row .b-night__select { max-width: none; }
+}
 @media (max-width: 599px) { .b-night--none { grid-template-columns: auto minmax(0, 1fr); } .b-night--none > .b-btn { grid-column: 1 / -1; justify-self: start; } }
 
 /* ═══════════════════════════════════════════════════════════════

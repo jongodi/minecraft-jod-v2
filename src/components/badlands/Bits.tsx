@@ -192,6 +192,27 @@ export function PictureIcon({ className }: { className?: string }) {
   );
 }
 
+/** A wall calendar: two rings, the month's band and a few days, for the day a fire is lit for. */
+export function CalendarIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" aria-hidden="true" fill="currentColor" shapeRendering="crispEdges">
+      <path d="M4 0h2v2H4zm6 0h2v2h-2z" />
+      <path fillRule="evenodd" d="M1 2h14v13H1zm1 4v8h12V6z" />
+      <path d="M4 8h2v2H4zm3 0h2v2H7zm3 0h2v2h-2zm-6 3h2v2H4zm3 0h2v2H7z" />
+    </svg>
+  );
+}
+
+/** A pixel chevron, pointing the way a month is turned. */
+export function ChevronIcon({ dir, className }: { dir: 'left' | 'right' | 'down'; className?: string }) {
+  const d = { left: 'M9 3h2v2H9zM7 5h2v2H7zM5 7h2v2H5zm2 2h2v2H7zm2 2h2v2H9z', right: 'M5 3h2v2H5zm2 2h2v2H7zm2 2h2v2H9zM7 9h2v2H7zm-2 2h2v2H5z', down: 'M3 5h2v2H3zm2 2h2v2H5zm2 2h2v2H7zm2-2h2v2H9zm2-2h2v2h-2z' }[dir];
+  return (
+    <svg className={className} viewBox="0 0 16 16" aria-hidden="true" fill="currentColor" shapeRendering="crispEdges">
+      <path d={d} />
+    </svg>
+  );
+}
+
 /** Zoom in, zoom out and the whole map, for the painted sheet. */
 export function ZoomIcon({ kind }: { kind: 'in' | 'out' | 'fit' }) {
   return (

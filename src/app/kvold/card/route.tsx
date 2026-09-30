@@ -1,3 +1,4 @@
+import type { NextRequest } from 'next/server';
 import { ImageResponse } from 'next/og';
 import { sharedNight } from '@/lib/night-share';
 import { C, CARD, STRATA, cardFonts } from '@/lib/og-card';
@@ -8,13 +9,16 @@ export const dynamic = 'force-dynamic';
    night, with when it is and how many are coming. A route of its own rather
    than an opengraph-image file, whose address never changes: chat apps keep a
    preview by its image's address, so /kvold asks for /kvold/card?v=<the
-   night as it stands> and a new fire, or a new answer, is a new picture. */
+   night as it stands> (and /kvold/<id> adds &n=<id>) and a new fire, or a new
+   answer, is a new picture. */
 const FLAME: [number, number, number, number, string][] = [
   [7, 2, 2, 2, '#F4D394'], [6, 4, 4, 2, '#F4D394'], [5, 6, 6, 2, '#D8712F'], [4, 8, 8, 3, '#D8712F'], [6, 6, 2, 4, '#F4D394'],
 ];
 
-export async function GET() {
-  const [night, fonts] = await Promise.all([sharedNight(), cardFonts()]);
+export async function GET(req: NextRequest) {
+  /* ?n=<id> is that night's card (/kvold/<id>); without it, or once it is gone, the next night's */
+  const id = req.nextUrl.searchParams.get('n') ?? undefined;
+  const [night, fonts] = await Promise.all([sharedNight(id).then(n => n ?? sharedNight()), cardFonts()]);
   const px = 14 + Math.min(8, night.count) * 2;   /* one fire pixel, in card pixels */
   return new ImageResponse(
     (

@@ -9,7 +9,7 @@ import { readGameStats, setCachedStats } from '@/lib/stats';
    exaroton hands out a stopped server's files too, only more slowly, and
    these are a handful of small ones.
 
-   It also settles the play night of the evening before (src/lib/play-night.ts).
+   It also settles the play nights of the evenings before (src/lib/play-night.ts).
 
    Vercel sends CRON_SECRET as a bearer token; anything else is turned away. */
 
@@ -58,13 +58,13 @@ export async function GET(req: NextRequest) {
   if (stats.failed.length) console.warn(`[cron/daily] ${day}: could not read ${stats.failed.join(', ')}`);
 
   /* the day after a play night: who came, and who said yes and didn't */
-  let playNight = null;
+  let playNights = null;
   try {
-    const { settleNight } = await import('@/lib/play-night');
-    playNight = await settleNight();
+    const { settleNights } = await import('@/lib/play-night');
+    playNights = await settleNights();
   } catch (err) {
-    console.error('[cron/daily] could not settle the play night:', err instanceof Error ? err.message : err);
+    console.error('[cron/daily] could not settle the play nights:', err instanceof Error ? err.message : err);
   }
 
-  return NextResponse.json({ day, read, failed: stats.failed, playNight }, { headers: { 'Cache-Control': 'no-store' } });
+  return NextResponse.json({ day, read, failed: stats.failed, playNights }, { headers: { 'Cache-Control': 'no-store' } });
 }
