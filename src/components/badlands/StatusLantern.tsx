@@ -4,6 +4,7 @@ import { Lantern } from './Bits';
 import PlayerHead from './PlayerHead';
 import { CREW } from './data';
 import { useAgo, type ServerState } from './hooks';
+import { sinceAt } from './night';
 import type { ServerLife } from '@/lib/server-state';
 
 /* What the lantern says in each state the server can be in: the word in
@@ -26,7 +27,7 @@ const SAID: Record<ServerLife, { word: string; row: string; burn: 'lit' | 'kindl
     hash is what opens the room, so it works before the page's script has run
     and from any other page as /#hopur. */
 export default function StatusLantern({ server }: { server: ServerState }) {
-  const { online, life, players, list, version, checkedAt } = server;
+  const { online, life, players, list, version, lastOnline, checkedAt } = server;
   const ago = useAgo(checkedAt);
   const said = life ? SAID[life] : null;
   const word = said?.word ?? 'Athuga stöðuna';
@@ -34,6 +35,9 @@ export default function StatusLantern({ server }: { server: ServerState }) {
   const state = burn === 'lit' ? ' is-on' : burn === 'kindling' ? ' is-kindling' : burn === 'dark' ? ' is-off' : '';
   const lower = list.map(n => n.toLowerCase());
   const inside = CREW.filter(n => lower.includes(n.toLowerCase()));
+  /* a dark lantern says when it last burned, and shows who was in then */
+  const last = life === 'off' && lastOnline ? lastOnline : null;
+  const heads = online ? inside : (last?.names ?? []);
   return (
     <a href="#hopur" className={`b-status${state}`} aria-label={`${word}. Sjá hver er inni og eftirlýsingaspjöldin.`}>
       <Lantern lit={burn === 'lit'} className={burn === 'kindling' ? 'is-kindling' : undefined} />
@@ -42,12 +46,17 @@ export default function StatusLantern({ server }: { server: ServerState }) {
         <span className="b-status__row">
           {!said ? 'bíð eftir svari' :
            online ? (players === 0 ? 'enginn inni enn, en það er opið' : <>inni núna: <b>{players}</b></>) :
+           last ? `síðast kveikt ${sinceAt(last.at)}` :
            said.row}
           {checkedAt && ago && burn !== 'kindling' ? `, ${online ? '' : 'athugað '}${ago}` : ''}
         </span>
-        {(version || inside.length > 0) && (
+        {(version || heads.length > 0) && (
           <span className="b-status__row b-status__meta">
-            {inside.length > 0 && <span className="b-status__heads" aria-hidden="true">{inside.map(n => <PlayerHead key={n} name={n} size={16} />)}</span>}
+            {heads.length > 0 && (
+              <span className={`b-status__heads${online ? '' : ' b-status__heads--then'}`} title={online ? undefined : `síðast inni: ${heads.join(', ')}`} aria-hidden="true">
+                {heads.map(n => <PlayerHead key={n} name={n} size={16} />)}
+              </span>
+            )}
             {version && <span>Minecraft {version} · Java</span>}
           </span>
         )}

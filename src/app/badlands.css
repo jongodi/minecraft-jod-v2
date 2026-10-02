@@ -303,6 +303,8 @@
 .b-status__meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-3); margin-top: var(--sp-1); color: var(--tc-white); }
 .b-status__heads { display: inline-flex; gap: var(--px); }
 .b-status__heads img { width: 1rem; height: 1rem; image-rendering: pixelated; box-shadow: 0 0 0 1px var(--night); }
+/* who was in when the lantern last burned: in the dark, like the portraits of those who are out */
+.b-status__heads--then img { filter: grayscale(0.6) brightness(0.7); }
 
 /* ─── the bar: the mark, three doors, the address ─────────────── */
 .b-bar {

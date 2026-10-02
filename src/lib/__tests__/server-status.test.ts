@@ -87,3 +87,62 @@ describe('the status lookup', () => {
     expect(keepFor(body)).toBe(5_000);
   });
 });
+
+describe('when the server last burned', () => {
+  const kv = new Map<string, string>();
+  const fetchMock = vi.fn();
+  const exaroton = (status: number, players?: string[]) => ({
+    ok: true,
+    json: async () => ({ data: { id: 'srv', address: 'jod.exaroton.me', status, players: players ? { count: players.length, max: 8, list: players } : undefined } }),
+  });
+
+  beforeEach(() => {
+    vi.doMock('@/lib/redis', () => ({
+      rGet: async (k: string) => { const v = kv.get(k); return v ? JSON.parse(v) : null; },
+      rSet: async (k: string, v: unknown) => { kv.set(k, JSON.stringify(v)); },
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+    vi.stubEnv('EXAROTON_API_KEY', 'key');
+    vi.stubEnv('REDIS_URL', 'redis://test');
+    vi.useFakeTimers();
+    fetchMock.mockReset();
+    kv.clear();
+    forgetStatus();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+    vi.doUnmock('@/lib/redis');
+  });
+
+  it('is noted while it burns, with the crew who were in, and said once it is dark', async () => {
+    vi.setSystemTime(new Date('2026-10-02T21:40:00Z'));
+    fetchMock.mockResolvedValueOnce(exaroton(1, ['stebbias', 'someone-else', 'joenana']));
+    const lit = await getStatus();
+    expect(lit.lastOnline).toBeUndefined();
+    expect(JSON.parse(kv.get('status:last-online')!)).toEqual({ at: '2026-10-02T21:40:00.000Z', names: ['stebbias', 'joenana'] });
+
+    /* half a minute on, the server has gone out: the answer before says when */
+    vi.setSystemTime(new Date('2026-10-02T21:40:31Z'));
+    fetchMock.mockResolvedValueOnce(exaroton(0));
+    const dark = await getStatus();
+    expect(dark.life).toBe('off');
+    expect(dark.lastOnline).toEqual({ at: '2026-10-02T21:40:00.000Z', names: ['stebbias', 'joenana'] });
+  });
+
+  it('is read from the store by an instance that never saw it burn', async () => {
+    kv.set('status:last-online', JSON.stringify({ at: '2026-09-30T20:15:00.000Z', names: ['AmmaGaur'] }));
+    fetchMock.mockResolvedValueOnce(exaroton(0));
+    expect((await getStatus()).lastOnline).toEqual({ at: '2026-09-30T20:15:00.000Z', names: ['AmmaGaur'] });
+  });
+
+  it('does not say when for a server that is only on its way up', async () => {
+    kv.set('status:last-online', JSON.stringify({ at: '2026-09-30T20:15:00.000Z', names: [] }));
+    fetchMock.mockResolvedValueOnce(exaroton(2));
+    const body = await getStatus();
+    expect(body.life).toBe('starting');
+    /* it is carried along; the lantern decides it is only said for a dark one */
+    expect(body.lastOnline).toEqual({ at: '2026-09-30T20:15:00.000Z', names: [] });
+  });
+});

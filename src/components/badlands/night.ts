@@ -72,6 +72,16 @@ export function whenAt(iso: string, now = new Date()): string {
 }
 export const WhenAt = (iso: string, now?: Date) => cap(whenAt(iso, now));
 
+/** A moment gone by: "í dag kl. 21:40", "í gær kl. 21:40", "föstudag 26. sep. kl. 21:40" */
+export function sinceAt(iso: string, now = new Date()): string {
+  const d = new Date(iso);
+  const days = dayNumber(now) - dayNumber(d);
+  const time = `kl. ${clock(d)}`;
+  if (days <= 0) return `í dag ${time}`;
+  if (days === 1) return `í gær ${time}`;
+  return `${DAYS[d.getUTCDay()]} ${d.getUTCDate()}. ${MONTHS[d.getUTCMonth()]}${yearOf(d, days, now)} ${time}`;
+}
+
 /** "Föstudagur 3. okt." */
 export function dayOf(iso: string): string {
   const d = new Date(iso);

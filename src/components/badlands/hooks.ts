@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import type { PlayerStat, StatsResponse } from '@/app/api/stats/route';
-import type { StatusResponse } from '@/lib/server-status';
+import type { LastOnline, StatusResponse } from '@/lib/server-status';
 import { STARTING_MS, isChanging, type ServerLife } from '@/lib/server-state';
 
 const STATUS_POLL_MS = 60_000;
@@ -18,6 +18,8 @@ export interface ServerState {
   max:       number;
   list:      string[];
   version:   string | null;
+  /** when the server last burned and who was in, while it is dark and the store remembers */
+  lastOnline: LastOnline | null;
   checkedAt: number | null;
 }
 
@@ -26,7 +28,7 @@ export interface ServerState {
    world's HUD, the crew's room, the fires), refreshed every minute while
    the page is looked at, every quarter of one while the server is on its
    way up or down, and at once after the site itself asked for a start. */
-const NO_STATUS: ServerState = { online: null, life: null, players: 0, max: 20, list: [], version: null, checkedAt: null };
+const NO_STATUS: ServerState = { online: null, life: null, players: 0, max: 20, list: [], version: null, lastOnline: null, checkedAt: null };
 let statusValue: ServerState = NO_STATUS;
 let statusInFlight: Promise<void> | null = null;
 /* a start asked for from the site: the server counts as on its way up until the status says, a few minutes at most */
@@ -51,6 +53,7 @@ async function loadStatus(): Promise<void> {
       max:       data.players?.max ?? 20,
       list:      (data.players?.list ?? []).map(p => p.name),
       version:   data.version ?? null,
+      lastOnline: data.lastOnline ?? null,
       checkedAt: Date.now(),
     } : unreachable();
   } catch {
