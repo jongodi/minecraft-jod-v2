@@ -4,7 +4,7 @@
 // when it is their own, and everything they have pinned, newest first.
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import Link from 'next/link';
-import { AnimatePresence } from 'framer-motion';
+import dynamic from 'next/dynamic';
 import type { CrewProfile, CrewEntry } from '@/lib/crew-types';
 import { LIMITS, allPhotos, coverPhoto, sameUser } from '@/lib/crew-types';
 import type { PlayerStat, StatsResponse } from '@/app/api/stats/route';
@@ -13,13 +13,16 @@ import { errorFrom } from '@/lib/crew-upload';
 import AddressBar from '@/components/badlands/AddressBar';
 import Footer from '@/components/badlands/Footer';
 import PlayerHead from '@/components/badlands/PlayerHead';
-import Lightbox from '@/components/badlands/Lightbox';
 import { ArrowIcon, CloseIcon, Star } from '@/components/badlands/Bits';
 import { PAGE_LINKS, STAT_TABS } from '@/components/badlands/data';
 import { useBackdropClose, useCrewSession, useScrollLock } from '@/components/badlands/hooks';
 import { photoProps, PHOTO_SIZES } from '@/components/badlands/photo';
 import Composer from './Composer';
 import Print from './Print';
+
+/* The lightbox and the motion library it throws with are a chunk of their
+   own, fetched once the page is idle; the wall itself needs neither. */
+const WallLightbox = dynamic(() => import('./WallLightbox'), { ssr: false });
 
 /* the same floor the server holds a password to */
 const LIMITS_PW = 6;
@@ -193,6 +196,15 @@ export default function Wall({ initial, places, justSignedIn = false }: Props) {
   }, [me, username]);
 
   const prints = useMemo(() => allPhotos(profile), [profile]);
+  /* a wall with prints fetches the lightbox's code once the page is idle, so the first print opens at once */
+  useEffect(() => {
+    if (prints.length === 0) return;
+    const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void };
+    const warm = () => { import('./WallLightbox'); };
+    if (w.requestIdleCallback) { const id = w.requestIdleCallback(warm, { timeout: 4000 }); return () => w.cancelIdleCallback?.(id); }
+    const id = setTimeout(warm, 2500);
+    return () => clearTimeout(id);
+  }, [prints.length]);
   const cover  = coverPhoto(profile);
   const built  = places.filter(p => p.builders.some(b => sameUser(b, username)));
   const badges = stats ? earnedBadges(stats) : [];
@@ -340,12 +352,10 @@ export default function Wall({ initial, places, justSignedIn = false }: Props) {
 
       {showLogin && <LoginModal username={username} onSuccess={() => { refresh(); setWelcome(true); }} onClose={() => setShowLogin(false)} />}
       {showPw && isOwner && <PasswordModal username={username} change={hasPassword} onDone={() => { refresh(); setWelcome(false); }} onClose={() => setShowPw(false)} />}
-      <AnimatePresence>
-        {lightbox !== null && prints[lightbox] && (
-          <Lightbox key="lb" photos={prints.map(p => ({ src: p.filename, title: p.caption || undefined, sub: p.takenAt ? `tekin ${formatDate(p.takenAt)}` : formatDate(p.uploadedAt) }))}
-            index={lightbox} origin={origin} onClose={closeLightbox} onPrev={prevPhoto} onNext={nextPhoto} />
-        )}
-      </AnimatePresence>
+      {prints.length > 0 && (
+        <WallLightbox photos={prints.map(p => ({ src: p.filename, title: p.caption || undefined, sub: p.takenAt ? `tekin ${formatDate(p.takenAt)}` : formatDate(p.uploadedAt) }))}
+          index={lightbox} origin={origin} onClose={closeLightbox} onPrev={prevPhoto} onNext={nextPhoto} />
+      )}
     </div>
   );
 }
