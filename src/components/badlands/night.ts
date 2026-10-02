@@ -82,6 +82,18 @@ export function sinceAt(iso: string, now = new Date()): string {
   return `${DAYS[d.getUTCDay()]} ${d.getUTCDate()}. ${MONTHS[d.getUTCMonth()]}${yearOf(d, days, now)} ${time}`;
 }
 
+/** How long until a moment under a day off: "eftir 40 mín.", "eftir 2 klst. 14 mín.", "eftir 5 klst."; nothing further off or gone by. */
+export function untilAt(iso: string, now = Date.now()): string {
+  const left = new Date(iso).getTime() - now;
+  if (left <= 0 || left >= 24 * 3600_000) return '';
+  const mins = Math.round(left / 60_000);
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  if (h === 0) return `eftir ${Math.max(1, m)} mín.`;
+  if (h >= 5 || m === 0) return `eftir ${h} klst.`;
+  return `eftir ${h} klst. ${m} mín.`;
+}
+
 /** "Föstudagur 3. okt." */
 export function dayOf(iso: string): string {
   const d = new Date(iso);

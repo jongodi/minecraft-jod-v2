@@ -9,7 +9,7 @@ import PlayerHead from './PlayerHead';
 import type { ServerState } from './hooks';
 import { expectStarting, useMounted } from './hooks';
 import { isChanging } from '@/lib/server-state';
-import { LAST_DAY_AHEAD, TIME_CHOICES, WhenAt, dayLabel, dayLong, dayNum, dayOf, dayValue, isLate, usePlayNight, whenAt } from './night';
+import { LAST_DAY_AHEAD, TIME_CHOICES, WhenAt, dayLabel, dayLong, dayNum, dayOf, dayValue, isLate, untilAt, usePlayNight, whenAt } from './night';
 import { plural } from '@/lib/format';
 
 /* Spilakvöld (src/lib/play-night.ts). The hero carries one line about the
@@ -55,7 +55,9 @@ export function NightLine() {
   } else if (night.phase === 'over') {
     text = `${dayOf(chosen!.at)} · ${night.came.length} ${plural(night.came.length, 'mætti', 'mættu')}`;
   } else {
-    text = `${WhenAt(chosen!.at)} · ${yes.length} ${plural(yes.length, 'mætir', 'mæta')}`;
+    /* on the day, the line counts down to the fire (the store's refresh every minute keeps it current) */
+    const until = untilAt(chosen!.at);
+    text = `${WhenAt(chosen!.at)}${until ? `, ${until}` : ''} · ${yes.length} ${plural(yes.length, 'mætir', 'mæta')}`;
   }
   return (
     <a href="#hopur" className={`b-nightline${night.phase === 'over' ? ' is-embers' : ''}`}>

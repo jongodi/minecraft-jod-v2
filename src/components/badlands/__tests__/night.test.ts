@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { sinceAt, whenAt } from '../night';
+import { sinceAt, untilAt, whenAt } from '../night';
 
 describe('a moment gone by, in Icelandic', () => {
   const now = new Date('2026-10-02T22:30:00Z');
@@ -15,5 +15,19 @@ describe('a moment gone by, in Icelandic', () => {
   it('reads the clock in Iceland, which keeps UTC', () => {
     expect(whenAt('2026-10-02T20:00:00Z', now)).toBe('í kvöld kl. 20:00');
     expect(whenAt('2026-10-03T14:00:00Z', now)).toBe('á morgun kl. 14:00');
+  });
+});
+
+describe('the count down to a fire', () => {
+  const now = Date.parse('2026-10-02T17:46:00Z');
+  it('is minutes under an hour, hours and minutes under five, whole hours after', () => {
+    expect(untilAt('2026-10-02T18:26:00Z', now)).toBe('eftir 40 mín.');
+    expect(untilAt('2026-10-02T20:00:00Z', now)).toBe('eftir 2 klst. 14 mín.');
+    expect(untilAt('2026-10-02T19:46:00Z', now)).toBe('eftir 2 klst.');
+    expect(untilAt('2026-10-02T23:30:00Z', now)).toBe('eftir 5 klst.');
+  });
+  it('says nothing a day or more off, or once the fire is lit', () => {
+    expect(untilAt('2026-10-03T18:00:00Z', now)).toBe('');
+    expect(untilAt('2026-10-02T17:40:00Z', now)).toBe('');
   });
 });
