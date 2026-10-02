@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { getCrewSession } from '@/lib/crew';
 import { exarotonStatus, startExaroton } from '@/lib/exaroton';
+import { forgetStatus } from '@/lib/server-status';
 import { errorMessage } from '@/lib/icelandic';
 import {
   MAX_NOTE, MAX_PLANNED, START_BEFORE_MS, checkTimes, clashOf, currentNights, decidesAt, isPlanned, optionOf, phaseOf,
@@ -135,6 +136,8 @@ export async function POST(req: NextRequest) {
       const status = await exarotonStatus(token);
       if (status !== 0 && status !== 7) return json({ error: status === 1 ? 'Þjónninn er þegar í gangi.' : 'Þjónninn er að ræsa eða stöðvast; bíddu smá.' }, 409);
       await startExaroton(token);
+      /* the status is asked for afresh, so the lantern sees the server on its way up */
+      forgetStatus();
       if (!night.startedBy) await writeNight({ ...night, startedBy: me });
       return json(await view(me));
     }

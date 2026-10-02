@@ -2,13 +2,18 @@
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import type { PlayerStat, StatsResponse } from '@/app/api/stats/route';
-import type { StatusResponse } from '@/app/api/server-status/route';
+import type { StatusResponse } from '@/lib/server-status';
+import { STARTING_MS, isChanging, type ServerLife } from '@/lib/server-state';
 
 const STATUS_POLL_MS = 60_000;
+/* while the server is on its way up or down, the page asks more often */
+const CHANGING_POLL_MS = 15_000;
 const COPIED_MS = 2400;
 
 export interface ServerState {
   online:    boolean | null;   // null while the first ping is in flight
+  /** on, off, or on its way between; null while the first ping is in flight */
+  life:      ServerLife | null;
   players:   number;
   max:       number;
   list:      string[];
@@ -16,40 +21,86 @@ export interface ServerState {
   checkedAt: number | null;
 }
 
-const OFFLINE = (s: ServerState): ServerState => ({ ...s, online: false, checkedAt: Date.now() });
+/* ─── the server's status ──────────────────────────────────────────
+   One answer shared by everything that asks (the hero's lantern, the
+   world's HUD, the crew's room, the fires), refreshed every minute while
+   the page is looked at, every quarter of one while the server is on its
+   way up or down, and at once after the site itself asked for a start. */
+const NO_STATUS: ServerState = { online: null, life: null, players: 0, max: 20, list: [], version: null, checkedAt: null };
+let statusValue: ServerState = NO_STATUS;
+let statusInFlight: Promise<void> | null = null;
+/* a start asked for from the site: the server counts as on its way up until the status says, a few minutes at most */
+let startingUntil = 0;
+let pollTimer: ReturnType<typeof setTimeout> | undefined;
+let polling = 0;   // how many are listening
+const statusListeners = new Set<() => void>();
+const notifyStatus = () => statusListeners.forEach(l => l());
+const subscribeStatus = (l: () => void) => { statusListeners.add(l); return () => { statusListeners.delete(l); }; };
 
-/** Live server ping, refreshed every minute. */
-export function useServerStatus(): ServerState {
-  const [state, setState] = useState<ServerState>({ online: null, players: 0, max: 20, list: [], version: null, checkedAt: null });
+const unreachable = (): ServerState => ({ ...statusValue, online: false, life: 'unknown', checkedAt: Date.now() });
 
-  useEffect(() => {
-    let alive = true;
-    const load = async () => {
-      try {
-        const res  = await fetch('/api/server-status');
-        const data = (res.ok ? await res.json() : null) as StatusResponse | null;
-        if (!alive) return;
-        if (!data) { setState(OFFLINE); return; }
-        setState({
-          online:    data.online ?? false,
-          players:   data.players?.online ?? 0,
-          max:       data.players?.max ?? 20,
-          list:      (data.players?.list ?? []).map(p => p.name),
-          version:   data.version ?? null,
-          checkedAt: Date.now(),
-        });
-      } catch {
-        if (alive) setState(OFFLINE);
-      }
-    };
-    load();
+async function loadStatus(): Promise<void> {
+  let next: ServerState;
+  try {
+    const res  = await fetch('/api/server-status');
+    const data = (res.ok ? await res.json() : null) as StatusResponse | null;
+    next = data ? {
+      online:    data.online ?? false,
+      life:      data.life ?? (data.online ? 'on' : 'off'),
+      players:   data.players?.online ?? 0,
+      max:       data.players?.max ?? 20,
+      list:      (data.players?.list ?? []).map(p => p.name),
+      version:   data.version ?? null,
+      checkedAt: Date.now(),
+    } : unreachable();
+  } catch {
+    next = unreachable();
+  }
+  /* the site asked for a start a moment ago: an answer from before it does not put the lantern out again */
+  if (startingUntil && Date.now() < startingUntil && (next.life === 'off' || next.life === 'unknown')) next = { ...next, life: 'starting' };
+  else if (next.life !== 'starting') startingUntil = 0;
+  statusValue = next;
+  notifyStatus();
+}
+
+function schedulePoll(): void {
+  clearTimeout(pollTimer);
+  if (!polling) return;
+  pollTimer = setTimeout(() => {
     /* a tab in the background does not ask; it asks once when it is looked at again */
-    const id = setInterval(() => { if (!document.hidden) load(); }, STATUS_POLL_MS);
-    const onShow = () => { if (!document.hidden) load(); };
-    document.addEventListener('visibilitychange', onShow);
-    return () => { alive = false; clearInterval(id); document.removeEventListener('visibilitychange', onShow); };
-  }, []);
+    if (document.hidden) schedulePoll(); else refreshStatus();
+  }, isChanging(statusValue.life) ? CHANGING_POLL_MS : STATUS_POLL_MS);
+}
 
+/** Asks the server's status now; one request at a time. */
+export function refreshStatus(): Promise<void> {
+  if (!statusInFlight) statusInFlight = loadStatus().finally(() => { statusInFlight = null; schedulePoll(); });
+  return statusInFlight;
+}
+
+/** The site just asked Exaroton to start the server: the lantern kindles at
+    once, and the status is asked again in a moment and often until it is up. */
+export function expectStarting(): void {
+  startingUntil = Date.now() + STARTING_MS;
+  if (statusValue.life !== 'on') { statusValue = { ...statusValue, online: false, life: 'starting' }; notifyStatus(); }
+  schedulePoll();
+  setTimeout(refreshStatus, 3000);
+}
+
+/** Live server ping, shared and refreshed while the page is looked at. */
+export function useServerStatus(): ServerState {
+  const state = useSyncExternalStore(subscribeStatus, () => statusValue, () => NO_STATUS);
+  useEffect(() => {
+    polling++;
+    if (statusValue.checkedAt === null) refreshStatus(); else schedulePoll();
+    const onShow = () => { if (!document.hidden) refreshStatus(); };
+    document.addEventListener('visibilitychange', onShow);
+    return () => {
+      polling--;
+      if (!polling) clearTimeout(pollTimer);
+      document.removeEventListener('visibilitychange', onShow);
+    };
+  }, []);
   return state;
 }
 

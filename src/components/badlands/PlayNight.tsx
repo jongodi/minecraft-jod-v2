@@ -7,7 +7,8 @@ import { CalendarIcon, Campfire, ChevronIcon } from './Bits';
 import Calendar from './Calendar';
 import PlayerHead from './PlayerHead';
 import type { ServerState } from './hooks';
-import { useMounted } from './hooks';
+import { expectStarting, useMounted } from './hooks';
+import { isChanging } from '@/lib/server-state';
 import { LAST_DAY_AHEAD, TIME_CHOICES, WhenAt, dayLabel, dayLong, dayNum, dayOf, dayValue, isLate, usePlayNight, whenAt } from './night';
 import { plural } from '@/lib/format';
 
@@ -99,6 +100,8 @@ export function NightBoard({ server }: { server: ServerState }) {
     const e = await act(body);
     setBusy(false);
     if (e) setErr({ at, text: e });
+    /* the server was asked to start: the lantern kindles at once, and the status is asked again soon */
+    else if (body.action === 'start') expectStarting();
     return !e;
   };
 
@@ -241,8 +244,11 @@ function NightFire({ night, kicker, me, server, busy, err, copied, picked, onRun
           {night.phase === 'open' && mine.length > 0 && (
             <button type="button" className="b-btn b-btn--small b-btn--ghost" disabled={busy} onClick={() => onRun({ action: 'vote', yes: [] })}>Kemst ekki</button>
           )}
-          {(night.phase === 'soon' || night.phase === 'live') && mine.length > 0 && server.online === false && (
+          {(night.phase === 'soon' || night.phase === 'live') && mine.length > 0 && (server.life === 'off' || server.life === 'crashed') && (
             <button type="button" className="b-btn b-btn--solid" disabled={busy} onClick={() => onRun({ action: 'start' })}>Kveikja á þjóninum</button>
+          )}
+          {(night.phase === 'soon' || night.phase === 'live') && isChanging(server.life) && (
+            <span className="b-note" role="status">{server.life === 'stopping' ? 'Þjónninn er að slokkna.' : 'Þjónninn er að vakna, komdu inn eftir augnablik.'}</span>
           )}
           <button type="button" className="b-btn b-btn--small b-btn--ghost" onClick={onShare}>{copied ? 'Afritað' : 'Deila'}</button>
           {mineIsBy && night.phase !== 'live' && (

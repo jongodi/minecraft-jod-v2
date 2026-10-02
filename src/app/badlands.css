@@ -256,6 +256,22 @@
   pointer-events: none;
 }
 @keyframes b-flicker { 0%, 100% { opacity: 0.7; } 50% { opacity: 1; } }
+/* kindling: the server on its way up (or down). The glass takes the deeper
+   amber, a small flame comes and goes behind it, and the glow is half what a
+   lit lantern throws. */
+.b-lantern.is-kindling { color: var(--tc-white); }
+.b-lantern.is-kindling .b-lantern__glass { fill: var(--lantern-deep); }
+.b-lantern.is-kindling .b-lantern__flame { fill: var(--sun); animation: b-kindle 900ms steps(2, jump-none) infinite; }
+.b-lantern.is-kindling::before {
+  content: '';
+  position: absolute;
+  inset: -60% -80%;
+  background: radial-gradient(closest-side, var(--lantern-glow), transparent);
+  opacity: 0.5;
+  animation: b-flicker calc(var(--dur-lantern) / 2) ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes b-kindle { from { opacity: 1; } to { opacity: 0.3; } }
 
 .b-status {
   display: grid;
@@ -281,6 +297,7 @@
 .b-status__word { font-family: var(--font-data); font-size: var(--fs-data); color: var(--paper); line-height: 1.3; }
 .b-status.is-on .b-status__word { color: var(--online); }
 .b-status.is-off .b-status__word { color: var(--tc-white); }
+.b-status.is-kindling .b-status__word { color: var(--lantern); }
 .b-status__row { font-size: var(--fs-xs); color: var(--text-faint); line-height: 1.5; }
 .b-status__row b { font-family: var(--font-data); font-weight: 400; font-size: var(--fs-data); color: var(--paper); }
 .b-status__meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-3); margin-top: var(--sp-1); color: var(--tc-white); }
