@@ -172,6 +172,7 @@
   padding: var(--sp-3) var(--sp-3);
   outline: none;
 }
+.b-input::placeholder, .b-textarea::placeholder { color: var(--ink-faint); }
 .b-input:focus, .b-textarea:focus { border-color: var(--lantern-deep); box-shadow: 0 0 0 var(--px) var(--lantern-glow); }
 .b-textarea { resize: vertical; min-height: 5.5rem; line-height: 1.5; }
 .b-input.is-error, .b-textarea.is-error { border-color: var(--tc-red); }

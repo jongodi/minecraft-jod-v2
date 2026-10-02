@@ -17,11 +17,9 @@
   },
   "dependencies": {
     "@fontsource/alfa-slab-one": "^5.3.0",
-    "@fontsource/jetbrains-mono": "^5.3.0",
     "@fontsource/pixelify-sans": "^5.3.0",
     "@fontsource/silkscreen": "^5.3.0",
     "@vercel/blob": "^2.3.3",
-    "autoprefixer": "^10.4.27",
     "framer-motion": "^11.3.19",
     "ioredis": "^5.10.1",
     "next": "15.5.27",
@@ -37,8 +35,6 @@
     "eslint": "^8",
     "eslint-config-next": "15.5.27",
     "playwright-core": "^1.56.1",
-    "postcss": "^8.5.10",
-    "tailwindcss": "^3.4.19",
     "typescript": "^5",
     "vitest": "^3.2.7"
   },

@@ -95,7 +95,7 @@ Three families, all self-hosted through `@fontsource`, all verified to render þ
 
 Both label and text carry a real bold, so nothing is ever synthetically emboldened — faux bold smears a bitmap face. Which selectors sit on which side of the prose/label line is collected in one block at the foot of `badlands.css` and `board.css` rather than spread through them, so the line is one thing to read.
 
-Literata, Rye, Caveat and Lora are removed. JetBrains Mono stays for the admin panel and the pack editor, which are out of scope.
+Literata, Rye, Caveat and Lora are removed, and so is JetBrains Mono: the admin panel sets its live values in the same pixel label face as the site.
 
 ## Motion
 
