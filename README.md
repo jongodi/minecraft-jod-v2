@@ -14,9 +14,9 @@ Letur: Alfa Slab One fyrir fyrirsagnir, Pixelify Sans fyrir meginmál og Silkscr
 
 | Hluti | Innihald |
 |---|---|
-| Sólsetur | Merkið, vistfangið sem er afritað með einum smelli, og lukt með stöðu þjónsins, útgáfu og hausum þeirra sem eru inni. Himinninn dökknar og stjörnurnar koma með skruni. |
+| Sólsetur | Merkið, vistfangið sem er afritað með einum smelli, og lukt með stöðu þjónsins, útgáfu og hausum þeirra sem eru inni. Luktin veit líka hvort þjónninn er að vakna, slokkna eða hrundi, og sé slökkt á honum segir hún hvenær hann logaði síðast og hverjir voru inni þá. Undir henni er línan um næsta spilakvöld, sem telur niður á sjálfan daginn. Himinninn dökknar og stjörnurnar koma með skruni. |
 | Heimurinn | Þrívíddarkortið af heimasvæðinu fyllir skjáinn undir mesunum. Það opnast sem kyrrmynd; skoðarinn sjálfur (BlueMap, í fötum JOÐ) hleðst ekki fyrr en ýtt er á luktina, og kyrrmyndin víkur um leið og landslagið undir henni er komið; nákvæmu reitirnir streyma svo inn. Á síma verður ramminn að heilum skjá og bakhnappurinn skilar gestinum aftur á síðuna. Staðirnir liggja í röð neðst með myndunum sínum; veldu stað og póstkortið hans birtist, og hafi staðurinn hnit í heiminum flýgur myndavélin þangað og luktin hans logar í þrívíddinni. Kortið opnast að nóttu svo ljósin í bænum loga, og *Nótt* hleypir sólinni aftur upp, *Teiknað kort* leggur málaða kortið yfir sama ramma, *Myndir* opnar allan vegginn og *Heill skjár* gerir rammann sjálfan að heilum skjá. |
-| Eftirlýst | Herbergi hópsins, sem opnast yfir heiminum (önnur dyrnar í valmyndinni, staðaluktin eða `/#hopur`): myndir af átta félögum í einni röð, lukt logar á bak við þau sem eru inni. Þar undir eftirlýsingaspjöldin á einni rennibraut, eitt fyrir hvern tölfræðiflokk með þremur efstu: viðurnefni þrjótsins efst (Innipúkinn, Slátrarinn, Draugurinn, Ódauðlegi, Vökustaurinn, Flakkarinn, Boxpúðinn, Ræningjabaninn, Plötusnúðurinn), sökin þar undir, sá fyrsti stór og annar og þriðji í tveimur línum undir strikinu. Öll tölfræðin er á síðu hvers og eins. |
+| Eftirlýst | Herbergi hópsins, sem opnast yfir heiminum (önnur dyrnar í valmyndinni, staðaluktin eða `/#hopur`): myndir af átta félögum í einni röð, lukt logar á bak við þau sem eru inni. Þar undir eftirlýsingaspjöldin á einni rennibraut, eitt fyrir hvern tölfræðiflokk með þremur efstu: viðurnefni þrjótsins efst (Innipúkinn, Slátrarinn, Draugurinn, Ódauðlegi, Vökustaurinn, Flakkarinn, Boxpúðinn, Ræningjabaninn, Plötusnúðurinn), sökin þar undir, sá fyrsti stór og annar og þriðji í tveimur línum undir strikinu, og neðst sá sem bætti mestu við sig í vikunni, reiknað úr daglegu afritunum. Öll tölfræðin er á síðu hvers og eins. |
 | Á hillunni | Hitt herbergið (þriðju dyrnar eða `/#hillan`). Hver uppsettur gagnapakki er lítill kassi með sinni pixlateikningu; sá sem þú bendir á fær miðann sinn lesinn upp á búðarborðinu fyrir neðan. |
 | Varðeldurinn | Ein landræma neðst: varðeldur á jörðinni með ljósinu sínu og glæðum, og fjöllin úr sólsetrinu aftur sem dökk útlína. Hópurinn, stjórnborðið, umhverfishljóðið og leiðin aftur upp í sólsetrið. Smelltu á eldinn: þar býr einvígið, viðbragðsleikur í þremur umferðum. |
 
@@ -124,7 +124,7 @@ Afritaðu `.env.local.example` sem `.env.local` og fylltu inn gildin.
 | `GITHUB_TOKEN` | Hefðbundinn GitHub-aðgangslykill án aðgangssviða; hækkar fyrirspurnamörk við athugun gagnapakka, valfrjálst |
 | `CREW_TOKEN_<USERNAME>` | Aðgangslykill hvers félaga, t.d. `CREW_TOKEN_STEBBIAS=...`; varaleið, innskráningartenglar úr stjórnborðinu þurfa engan |
 | `NEXT_PUBLIC_SITE_URL` | Valfrjálst; slóð vefsins í innskráningartenglum, annars slóðin sem stjórnborðið var opnað á |
-| `REDIS_URL` | Redis-tenging fyrir prófíla, færslur, myndalýsigögn og vistuð tölfræðigögn |
+| `REDIS_URL` | Redis-tenging fyrir prófíla, færslur, myndalýsigögn, vistuð tölfræðigögn, spilakvöld og hvenær þjónninn logaði síðast |
 | `BLOB_READ_WRITE_TOKEN` | Vercel Blob-aðgangur fyrir myndir sem er hlaðið upp og fyrir kortagögnin. Geymslan má vera opin eða lokuð; myndir úr lokaðri geymslu eru birtar um `/api/blob/…` og kortagögn um `/bluemap-data/…` |
 | `BLOB_ACCESS` | `public` eða `private`; valfrjálst, sleppir sjálfvirkri athugun á aðgangsstigi Blob-geymslunnar |
 
@@ -141,9 +141,10 @@ Opnaðu [vefinn á localhost:3000](http://localhost:3000).
 
 ```bash
 npm run lint
-npm test                                    # einingaprófin (vitest) í src/lib/__tests__
+npm test                                    # einingaprófin (vitest) í __tests__-möppunum undir src
 npx tsc --noEmit
 npm run build
+node scripts/perf.mjs fyrir /               # skrunhraði, stíll og myndir, á tölvu og hægum síma
 node scripts/shots.mjs shots / /crew        # skjámyndir og yfirflæðisathugun á 1440 og 390 px
 SECTIONS=1 WIDTHS=390,1440 node scripts/shots.mjs shots /   # ein mynd á hvern hluta
 REDUCE=1 node scripts/shots.mjs shots-reduce /             # með prefers-reduced-motion
