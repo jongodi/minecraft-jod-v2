@@ -6,7 +6,7 @@ import Rail from './Rail';
 import { STAT_TABS, isLowerBetter, type StatKey } from './data';
 import type { StatsState } from './hooks';
 import type { WeekPlayer } from '@/app/api/stats/route';
-import { dayLabel } from './night';
+import { dayLabel, sinceAt } from './night';
 
 const TOP = 3;
 
@@ -24,7 +24,8 @@ const WEEK_OF: Partial<Record<StatKey, keyof WeekPlayer>> = {
     lines under the rule. Values are pixel type: they come straight from the
     server's stat files. */
 export default function Wanted({ stats }: { stats: StatsState }) {
-  const when = stats.cachedAt ? new Date(stats.cachedAt).toLocaleString('is-IS', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : null;
+  /* written out in Icelandic (night.ts), not left to the browser's locale data, which falls back to English */
+  const when = stats.cachedAt ? sinceAt(stats.cachedAt) : null;
 
   const posters = STAT_TABS.map(meta => {
     const low = isLowerBetter(meta.id);

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import Link from 'next/link';
 import type { PublicNight } from '@/app/api/playnight/route';
-import { CalendarIcon, Campfire, ChevronIcon } from './Bits';
+import { CalendarIcon, Campfire, CheckIcon, ChevronIcon, CloseIcon } from './Bits';
 import Calendar from './Calendar';
 import PlayerHead from './PlayerHead';
 import type { ServerState } from './hooks';
@@ -210,7 +210,7 @@ function NightFire({ night, kicker, me, server, busy, err, copied, picked, onRun
                 <Heads names={o.yes} />
                 {me && (
                   <span className="b-inline">
-                    <button type="button" className={`b-btn b-btn--small${on ? ' b-btn--solid' : ''}`} aria-pressed={on} disabled={busy} onClick={() => toggle(o.id)}>{on ? 'Ég get ✓' : 'Ég get'}</button>
+                    <button type="button" className={`b-btn b-btn--small${on ? ' b-btn--solid' : ''}`} aria-pressed={on} disabled={busy} onClick={() => toggle(o.id)}>Ég get{on && <CheckIcon className="b-btn__icon" />}</button>
                     {mineIsBy && <button type="button" className="b-btn b-btn--small b-btn--ghost" disabled={busy} onClick={() => onRun({ action: 'choose', option: o.id })}>Velja</button>}
                   </span>
                 )}
@@ -316,7 +316,7 @@ function LightFire({ busy, err, onLight, onCancel }: { busy: boolean; err: strin
           <select className="b-input b-night__select" aria-label={`Klukkan ${i + 1}`} value={r.time} onChange={e => set(i, 'time', e.target.value)}>
             {TIME_CHOICES.map(t => <option key={t} value={t} disabled={late(r.day, t)}>kl. {t}</option>)}
           </select>
-          {rows.length > 1 && <button type="button" className="b-btn b-btn--small b-btn--ghost b-night__drop" aria-label={`Fjarlægja tíma ${i + 1}`} onClick={() => { setOpen(null); setRows(rs => rs.filter((_, k) => k !== i)); }}>✕</button>}
+          {rows.length > 1 && <button type="button" className="b-btn b-btn--small b-btn--ghost b-night__drop" aria-label={`Fjarlægja tíma ${i + 1}`} onClick={() => { setOpen(null); setRows(rs => rs.filter((_, k) => k !== i)); }}><CloseIcon className="b-btn__icon" /></button>}
           {open === i && <Calendar value={r.day} today={today} min={first} max={last} triggerId={trigger(i)} onPick={v => pick(i, v)} onClose={close} />}
         </div>
       ))}

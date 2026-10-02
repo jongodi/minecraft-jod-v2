@@ -66,7 +66,7 @@ export default function Rail({ children, className, label, prevLabel = 'Fyrri', 
 
   return (
     <div className={`b-railwrap${className ? ` ${className}` : ''}`}>
-      <div ref={rail} onScroll={onScroll} className={`b-rail${edges.start ? ' at-start' : ''}${edges.end ? ' at-end' : ''}`} aria-label={label}>
+      <div ref={rail} onScroll={onScroll} className={`b-rail${edges.start ? ' at-start' : ''}${edges.end ? ' at-end' : ''}`} role="group" aria-label={label}>
         {children}
       </div>
       <button type="button" className="b-railwrap__arrow b-railwrap__arrow--l" onClick={() => nudge(-1)} disabled={edges.start} aria-label={prevLabel}><ArrowIcon flip /></button>

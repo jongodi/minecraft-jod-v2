@@ -4,14 +4,14 @@ export function plural(n: number, one: string, many: string): string {
   return n % 10 === 1 && n % 100 !== 11 ? one : many;
 }
 
-/** Format an ISO date string as "1 Jan 2025". */
+/** An ISO date as the browser's Icelandic locale writes it: "1. jan. 2025". */
 export function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('is-IS', {
     day: 'numeric', month: 'short', year: 'numeric',
   });
 }
 
-/** Format an ISO timestamp as a human-readable age ("3d ago", "2h ago", "rétt í þessu"). */
+/** How long ago an ISO moment was: "fyrir 3 dögum", "fyrir 2 klst.", "rétt í þessu". */
 export function formatAge(iso: string): string {
   const diff  = Date.now() - new Date(iso).getTime();
   const mins  = Math.floor(diff / 60_000);

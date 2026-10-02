@@ -162,6 +162,15 @@ export function CloseIcon({ className }: { className?: string }) {
   );
 }
 
+/** A pixel tick: an answer given. */
+export function CheckIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" aria-hidden="true" fill="currentColor" shapeRendering="crispEdges">
+      <path d="M12 3h2v2h-2zm-2 2h2v2h-2zM8 7h2v2H8zM6 9h2v2H6zM2 7h2v2H2zm2 2h2v2H4zm2 2h2v2H6z" />
+    </svg>
+  );
+}
+
 /** The world's tools, drawn so a phone can carry them as keys without words:
     the moon for night, the folded paper map with its trail to an X, and a
     framed picture. */
