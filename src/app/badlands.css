@@ -8,21 +8,56 @@
    ═══════════════════════════════════════════════════════════════ */
 
 /* ─── the evening: one number, driven by scroll ─────────────────
-   --evening does not inherit (see tokens.css), so every element that
-   reads it runs the animation itself. Animating it on one ancestor
-   instead would invalidate the computed style of everything beneath it
-   on every scroll frame, and the readers below carry whole pixel-art
-   SVGs underneath them. */
-@keyframes b-evening { from { --evening: 0; } to { --evening: 1; } }
+   Every reader of the hour derives its look from --evening below: the
+   night layer's opacity, the stars, the sun's fall, the mesas' colour and
+   depth. That number is 0 (sunset) unless the script fallback scrubs it
+   from scroll where scroll-driven animations are missing, or reduced
+   motion fixes it at dusk. It does not inherit (see tokens.css), so each
+   reader carries its own value.
+
+   Where scroll-driven animations exist, nothing derives anything per
+   frame: each element animates its own final property (opacity, transform,
+   fill) from the sunset value to the night value, and the compositor moves
+   the layers. Deriving eight values from one animated custom property cost
+   a style recalculation of the mesas' whole SVG subtree on every scroll
+   frame, nine milliseconds of a sixteen-millisecond budget on a throttled
+   phone (scripts/perf.mjs); the direct animations cost none. */
+@keyframes b-night-in  { to { opacity: 1; } }
+@keyframes b-stars-out { 0%, 45% { opacity: 0; } 100% { opacity: 0.99; } }
+@keyframes b-sun-set   { 0% { transform: translateY(0); opacity: 1; } 37.5% { opacity: 1; } 100% { transform: translateY(75svh); opacity: 0; } }
+@keyframes b-band-dim  { to { opacity: 0.3; } }
+/* the rock darkens into the night behind it; the near ridge keeps the most of its colour */
+@keyframes b-rock-far  { from { fill: var(--tc-red); }    to { fill: color-mix(in oklab, var(--tc-red), var(--sky-night-low) 65%); } }
+@keyframes b-rock-mid  { from { fill: var(--tc-orange); } to { fill: color-mix(in oklab, var(--tc-orange), var(--night) 70%); } }
+@keyframes b-rock-near { from { fill: var(--tc-brown); }  to { fill: color-mix(in oklab, var(--tc-brown), var(--night) 60%); } }
+@keyframes b-snow-dim  { from { fill: #EEEAE2; }          to { fill: color-mix(in oklab, #EEEAE2, var(--night) 40%); } }
+/* the parallax: each layer sinks by its depth, in whole pixels, so the pixel art never lands between two */
+@keyframes b-mesa-far  { to { transform: translateY(56px); } }
+@keyframes b-mesa-mid  { to { transform: translateY(36px); } }
+@keyframes b-mesa-near { to { transform: translateY(16px); } }
 @supports (animation-timeline: scroll()) {
-  .b-sky__night, .b-sky__stars, .b-sky__sun, .b-mesa__layer, .b-mesa__band {
-    animation: b-evening linear both;
+  .b-sky__night, .b-sky__stars, .b-sky__sun, .b-mesa__band, .b-mesa .b-mesa__rock, .b-mesa .b-mesa__snow,
+  .b-mesa__layer--far, .b-mesa__layer--mid, .b-mesa__layer--near {
+    animation-timing-function: linear;
+    animation-fill-mode: both;
     animation-timeline: scroll(root);
     animation-range: 0 120svh;
   }
+  .b-sky__night { animation-name: b-night-in; }
+  .b-sky__stars { animation-name: b-stars-out; }
+  .b-sky__sun   { animation-name: b-sun-set; }
+  .b-mesa__band { animation-name: b-band-dim; }
+  .b-mesa .b-mesa__snow { animation-name: b-snow-dim; }   /* the ridge at the campfire keeps its own fixed shade */
+  .b-mesa__layer--far  { animation-name: b-mesa-far;  animation-timing-function: steps(56, jump-end); }
+  .b-mesa__layer--mid  { animation-name: b-mesa-mid;  animation-timing-function: steps(36, jump-end); }
+  .b-mesa__layer--near { animation-name: b-mesa-near; animation-timing-function: steps(16, jump-end); }
+  .b-mesa__layer--far  .b-mesa__rock { animation-name: b-rock-far; }
+  .b-mesa__layer--mid  .b-mesa__rock { animation-name: b-rock-mid; }
+  .b-mesa__layer--near .b-mesa__rock { animation-name: b-rock-near; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .b-sky__night, .b-sky__stars, .b-sky__sun, .b-mesa__layer, .b-mesa__band { animation: none !important; --evening: 0.7; }
+  .b-sky__night, .b-sky__stars, .b-sky__sun, .b-mesa__layer, .b-mesa__band, .b-mesa__rock, .b-mesa__snow { animation: none !important; }
+  .b-sky__night, .b-sky__stars, .b-sky__sun, .b-mesa__layer, .b-mesa__band, .b-mesa__snow { --evening: 0.7; }
   .b-sky__sun { display: none; }
 }
 
@@ -392,8 +427,8 @@
 .b-hero__version { font-family: var(--font-data); font-size: 0.6rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--paper); text-shadow: 0 var(--px) 0 rgba(21, 16, 13, 0.55); }
 
 .b-mesa { position: absolute; inset-inline: 0; bottom: 0; height: clamp(9rem, 32svh, 20rem); pointer-events: none; }
-/* No will-change here: the layer's colour is animated too, so it has to be
-   repainted either way and promoting it only costs texture memory. */
+/* No will-change here: the rock's colour changes with the hour too, so the
+   layer has to be repainted either way and promoting it only costs texture memory. */
 .b-mesa__layer { position: absolute; inset: 0; transform: translateY(round(nearest, calc(var(--evening) * var(--depth)), 1px)); }
 .b-mesa__layer svg { width: 100%; height: 100%; display: block; shape-rendering: crispEdges; }
 .b-mesa__layer--far  { --depth: 56px; color: color-mix(in oklab, var(--tc-red), var(--sky-night-low) calc(var(--evening) * 65%)); }
@@ -1136,7 +1171,8 @@ html.is-map-full { overflow: hidden; }
 }
 .b-mesa__lit { fill: var(--sun); }
 
-/* Snow on the mesas and the ridge, dimming with the evening as the rock does */
+/* Snow on the mesas and the ridge, dimming with the evening as the rock does.
+   --evening does not inherit, so the fallbacks set it on the snow itself. */
 .b-mesa__snow { fill: color-mix(in oklab, #EEEAE2, var(--night) calc(var(--evening) * 40%)); }
 .b-ridge .b-mesa__snow { fill: color-mix(in oklab, #EEEAE2, var(--night) 45%); }
 .b-foot.is-snow .b-ground::before { height: calc(var(--px) * 2); background: #D9D4CA; opacity: 0.9; }

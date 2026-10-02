@@ -3,12 +3,12 @@
    and nothing under reduced motion (the stylesheet fixes the hour).
 
    --evening does not inherit, so this writes it to each element that reads
-   it, matching the CSS animation in badlands.css. Writing it to <html>
-   instead would invalidate the computed style of every element on the page
-   on every scroll frame. */
+   it (the same set badlands.css animates directly where scroll timelines
+   exist). Writing it to <html> instead would invalidate the computed style
+   of every element on the page on every scroll frame. */
 
 const HERO_SCROLL = 1.2; // viewport heights over which the sun sets; matches animation-range in badlands.css
-const TARGETS = '.b-sky__night, .b-sky__stars, .b-sky__sun, .b-mesa__layer, .b-mesa__band';
+const TARGETS = '.b-sky__night, .b-sky__stars, .b-sky__sun, .b-mesa__layer, .b-mesa__band, .b-mesa__snow';
 
 export function startEveningFallback(): () => void {
   if (typeof window === 'undefined') return () => {};
