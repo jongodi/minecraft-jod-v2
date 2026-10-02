@@ -593,6 +593,11 @@ html.is-map-full { overflow: hidden; }
   padding: var(--sp-2) var(--sp-2) var(--sp-3);
   box-shadow: 0 var(--px) 0 var(--tc-brown), 0 8px 0 rgba(21, 16, 13, 0.35);
 }
+/* it comes up from the foot of the frame, and leaves the same way: World keeps it a beat after its place is let go */
+@keyframes b-card-in  { from { opacity: 0; transform: translateY(12px); } }
+@keyframes b-card-out { to   { opacity: 0; transform: translateY(12px); } }
+.b-frame > .b-card { animation: b-card-in var(--dur-3) var(--ease-out); }
+.b-frame > .b-card.is-leaving { animation: b-card-out var(--dur-2) var(--ease-in) forwards; pointer-events: none; }
 .b-frame > .b-card > * { flex-shrink: 0; }
 .b-frame > .b-card > img,
 .b-frame > .b-card > .b-card__empty { flex-shrink: 1; min-height: 2.5rem; }

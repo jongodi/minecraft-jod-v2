@@ -3,7 +3,6 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { AnimatePresence, motion } from 'framer-motion';
 import type { MapConfig, WorldPoint } from '@/lib/map-types';
 import type { PlacePrints } from '@/app/api/crew/places/route';
 import { DEFAULT_CONFIG } from '@/lib/map-types';
@@ -15,8 +14,7 @@ import PlayerHead from './PlayerHead';
 import Rail, { revealRailItem } from './Rail';
 import { CREW, MAP_POSTER, MAP_URL, handCase, titleCase, type Plate, type RoomId } from './data';
 import type { ServerState } from './hooks';
-import { useInert, useMediaQuery, useReducedMotionPref } from './hooks';
-import { SPRING } from './motion';
+import { useInert, useMediaQuery } from './hooks';
 import { photoProps, PHOTO_SIZES } from './photo';
 
 /* Everything that opens over the world is a screen of its own, fetched when
@@ -56,6 +54,22 @@ function warmViewer() {
     link.href = href;
     document.head.appendChild(link);
   }
+}
+
+/** Keeps the last value a moment after it goes to null, so what was drawn
+    from it can leave the way it came (badlands.css animates .is-leaving);
+    `settle` is for when that animation has ended, and a timer clears it
+    anyway should the animation never run. */
+function useLinger<T>(value: T | null, ms = 400): { shown: T | null; leaving: boolean; settle: () => void } {
+  const [kept, setKept] = useState<T | null>(value);
+  const settle = useCallback(() => setKept(null), []);
+  useEffect(() => {
+    if (value !== null) { setKept(value); return; }
+    const t = setTimeout(settle, ms);
+    return () => clearTimeout(t);
+  }, [value, ms, settle]);
+  const shown = value ?? kept;
+  return { shown, leaving: value === null && shown !== null, settle };
 }
 
 /* a plain click: anything with a modifier keeps the link's own meaning (a new tab) */
@@ -111,7 +125,6 @@ function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
   const places = useInert<HTMLDivElement>(shut);
   const tools  = useInert<HTMLDivElement>(shut);
   const mid    = useInert<HTMLDivElement>(shut);
-  const reduce = useReducedMotionPref();
   /* On phones the viewer opens full screen instead of inside the page, so
      BlueMap's drag and pinch never fight the page scroll. */
   const phone = useMediaQuery('(max-width: 899px)');
@@ -322,7 +335,9 @@ function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
     return () => window.removeEventListener('keydown', onKey);
   }, [selected]);
 
-  const place = config.locations.find(l => l.id === selected) ?? null;
+  const chosen = config.locations.find(l => l.id === selected) ?? null;
+  /* the postcard stays up a beat after its place is let go, to leave the way it came */
+  const { shown: place, leaving, settle } = useLinger(chosen && !shut ? chosen : null);
   const plate = place?.photoId ? plates.find(p => p.id === place.photoId) ?? null : null;
   const lower = server.list.map(n => n.toLowerCase());
   const inside = CREW.filter(n => lower.includes(n.toLowerCase()));
@@ -443,15 +458,11 @@ function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
           </div>
         </div>
 
-        <AnimatePresence>
-          {place && !shut && (
-            <motion.figure
+        {place && (
+            <figure
               key={place.id}
-              className="b-card b-paper"
-              initial={reduce ? { opacity: 0 } : { opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={reduce ? { opacity: 0 } : { opacity: 0, y: 12 }}
-              transition={reduce ? { duration: 0.15 } : SPRING}
+              className={`b-card b-paper${leaving ? ' is-leaving' : ''}`}
+              onAnimationEnd={e => { if (leaving && e.target === e.currentTarget) settle(); }}
               aria-live="polite"
             >
               {plate ? (
@@ -501,9 +512,8 @@ function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
                   <span className="b-card__more">{here.count} {plural(here.count, 'færsla', 'færslur')} af veggjum</span>
                 </div>
               )}
-            </motion.figure>
-          )}
-        </AnimatePresence>
+            </figure>
+        )}
 
         {/* The places: a rail along the foot of the world, each with its photo. */}
         <div ref={places} className="b-places">
