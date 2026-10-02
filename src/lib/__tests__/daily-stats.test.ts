@@ -17,7 +17,7 @@ vi.mock('@/lib/crew', () => ({
 
 const { GET } = await import('../../app/api/cron/daily/route');
 const { readGameStats } = await import('@/lib/stats');
-const { readDay } = await import('@/lib/daily-stats');
+const { readDay, weekOf } = await import('@/lib/daily-stats');
 
 const SECRET = '40a735829386059072566eec7b16de73';
 const UUID = {
@@ -107,5 +107,41 @@ describe('the daily stats copy', () => {
     expect(stats.failed).toEqual([]);
     expect(stats.players.find(p => p.username === 'AmmaGaur')).toMatchObject({ playTimeTicks: 36000, deaths: 9 });
     expect(stats.counters.AmmaGaur.playTimeTicks).toBe(36000);
+  });
+});
+
+describe('the week, from two copies', () => {
+  const counters = (play: number, deaths: number, kills: number, taken = 0, dealt = 0) => ({
+    playTimeTicks: play, deaths, mobKills: kills, playerKills: 0, travelCm: 1000 * play, damageTaken: taken, damageDealt: dealt, raidWins: 0, recordsPlayed: 0,
+  });
+  const copy = (day: string, c: Record<string, ReturnType<typeof counters>>) => ({ day, takenAt: `${day}T12:05:00.000Z`, counters: c, failed: [] });
+
+  it('is how much each counter rose between the oldest and the newest copy', () => {
+    const week = weekOf([
+      copy('2026-10-02', { stebbias: counters(72_000 * 30 + 36_000, 12, 400, 300, 100), joenana: counters(72_000 * 10, 3, 50) }),
+      copy('2026-09-28', { stebbias: counters(72_000 * 25, 11, 380, 100, 50), joenana: counters(72_000 * 10, 3, 50) }),
+      copy('2026-09-25', { stebbias: counters(72_000 * 20, 10, 300, 50, 25), joenana: counters(72_000 * 9, 3, 40) }),
+    ])!;
+    expect(week.from).toBe('2026-09-25');
+    expect(week.to).toBe('2026-10-02');
+    expect(week.players).toEqual([
+      { username: 'stebbias', playTimeHours: 10.5, deaths: 2, mobKills: 100, travelCm: 1000 * (72_000 * 10 + 36_000), raidWins: 0, recordsPlayed: 0, damageRatio: 3.3 },
+      { username: 'joenana',  playTimeHours: 1,    deaths: 0, mobKills: 10,  travelCm: 1000 * 72_000,                 raidWins: 0, recordsPlayed: 0, damageRatio: 0 },
+    ]);
+  });
+
+  it('needs two copies from two days', () => {
+    expect(weekOf([])).toBeNull();
+    expect(weekOf([copy('2026-10-02', { stebbias: counters(1, 1, 1) })])).toBeNull();
+    expect(weekOf([copy('2026-10-02', { stebbias: counters(2, 1, 1) }), copy('2026-10-02', { stebbias: counters(1, 1, 1) })])).toBeNull();
+  });
+
+  it('leaves out a member missing from either copy, and counts a counter that fell as nothing', () => {
+    const week = weekOf([
+      copy('2026-10-02', { stebbias: counters(72_000, 0, 5), AmmaGaur: counters(72_000, 0, 0) }),
+      copy('2026-09-30', { stebbias: counters(72_000 * 2, 4, 1) }),
+    ])!;
+    expect(week.players.map(p => p.username)).toEqual(['stebbias']);
+    expect(week.players[0]).toMatchObject({ playTimeHours: 0, deaths: 0, mobKills: 4 });
   });
 });

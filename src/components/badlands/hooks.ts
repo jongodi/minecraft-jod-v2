@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import type { PlayerStat, StatsResponse } from '@/app/api/stats/route';
+import type { PlayerStat, StatsResponse, WeekStats } from '@/app/api/stats/route';
 import type { LastOnline, StatusResponse } from '@/lib/server-status';
 import { STARTING_MS, isChanging, type ServerLife } from '@/lib/server-state';
 
@@ -109,17 +109,17 @@ export function useServerStatus(): ServerState {
 
 /** `source` is null while the first answer is in flight; `failed` says the
     answer never came, so the board can say so instead of waiting forever. */
-export interface StatsState { players: PlayerStat[]; source: StatsResponse['source'] | null; cachedAt: string | null; failed: boolean }
+export interface StatsState { players: PlayerStat[]; source: StatsResponse['source'] | null; cachedAt: string | null; week: WeekStats | null; failed: boolean }
 
 export function useStats(): StatsState {
-  const [state, setState] = useState<StatsState>({ players: [], source: null, cachedAt: null, failed: false });
+  const [state, setState] = useState<StatsState>({ players: [], source: null, cachedAt: null, week: null, failed: false });
   useEffect(() => {
     let alive = true;
     fetch('/api/stats')
       .then(r => (r.ok ? r.json() : null))
       .then((data: StatsResponse | null) => {
         if (!alive) return;
-        if (data && Array.isArray(data.players)) setState({ players: data.players, source: data.source, cachedAt: data.cachedAt, failed: false });
+        if (data && Array.isArray(data.players)) setState({ players: data.players, source: data.source, cachedAt: data.cachedAt, week: data.week ?? null, failed: false });
         else setState(s => ({ ...s, failed: true }));
       })
       .catch(() => { if (alive) setState(s => ({ ...s, failed: true })); });

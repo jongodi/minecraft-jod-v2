@@ -3,10 +3,20 @@
 import Link from 'next/link';
 import PlayerHead from './PlayerHead';
 import Rail from './Rail';
-import { STAT_TABS, isLowerBetter } from './data';
+import { STAT_TABS, isLowerBetter, type StatKey } from './data';
 import type { StatsState } from './hooks';
+import type { WeekPlayer } from '@/app/api/stats/route';
+import { dayLabel } from './night';
 
 const TOP = 3;
+
+/* The charges that can be counted for a week, from the daily copies: a
+   running total's rise between two days. The others are moments (time
+   since a death, since a rest), the campfire's own, or already a tally. */
+const WEEK_OF: Partial<Record<StatKey, keyof WeekPlayer>> = {
+  playTimeHours: 'playTimeHours', mobKills: 'mobKills', deaths: 'deaths', travelCm: 'travelCm',
+  damageRatio: 'damageRatio', raidWins: 'raidWins', recordsPlayed: 'recordsPlayed',
+};
 
 /** The wanted board: one poster per charge, the top three on each, on one
     rail across the room. The poster names the outlaw first, the charge under
@@ -23,8 +33,14 @@ export default function Wanted({ stats }: { stats: StatsState }) {
       .filter(r => r.val > 0)
       .sort((a, b) => (low ? a.val - b.val : b.val - a.val))
       .slice(0, TOP);
-    return { meta, rows };
+    /* the week's leader for the same charge, where the week can be counted */
+    const key = WEEK_OF[meta.id];
+    const week = key && stats.week
+      ? stats.week.players.map(p => ({ name: p.username, val: p[key] as number })).filter(r => r.val > 0).sort((a, b) => b.val - a.val)[0] ?? null
+      : null;
+    return { meta, rows, week };
   }).filter(p => p.rows.length > 0);   /* a charge nobody has been caught for yet stays off the board */
+  const span = stats.week ? `${dayLabel(stats.week.from)} til ${dayLabel(stats.week.to)}` : '';
 
   return (
     <div className="b-wanted">
@@ -47,7 +63,7 @@ export default function Wanted({ stats }: { stats: StatsState }) {
         </p>
       ) : (
         <Rail className="b-posters" label="Eftirlýsingar" prevLabel="Fyrri spjöld" nextLabel="Næstu spjöld" count={posters.length}>
-          {posters.map(({ meta, rows: [first, ...rest] }) => (
+          {posters.map(({ meta, rows: [first, ...rest], week }) => (
             <div key={meta.id} className="b-paper b-paper--torn b-poster" data-rail-item={meta.id}>
               <span className="b-paper__nail b-paper__nail--l" aria-hidden="true" />
               <span className="b-paper__nail b-paper__nail--r" aria-hidden="true" />
@@ -74,6 +90,18 @@ export default function Wanted({ stats }: { stats: StatsState }) {
                       </li>
                     ))}
                   </ol>
+                </>
+              )}
+              {/* the week's outlaw: whoever's number rose the most since the copy a week ago */}
+              {week && (
+                <>
+                  <span className="b-poster__rule b-poster__rule--week" aria-hidden="true" />
+                  <span className="b-poster__weekhead" title={span}>Í vikunni</span>
+                  <Link href={`/crew/${week.name}`} className="b-poster__row b-poster__row--week" aria-label={`Í vikunni, ${span}: ${week.name}, ${meta.unit(week.val)}`}>
+                    <span className="b-poster__head"><PlayerHead name={week.name} size={32} /></span>
+                    <span className="b-poster__who">{week.name}</span>
+                    <span className="b-poster__num">{meta.unit(week.val)}</span>
+                  </Link>
                 </>
               )}
             </div>
