@@ -10,6 +10,8 @@ const BLOB_DIR = 'bluemap-data';
    keep one copy under unversioned paths, so the version is dropped on the way. */
 const VERSIONED = `/${BLOB_DIR}/:v(v[0-9a-z]{1,16})/maps/:path*`;
 const LOCAL_COPY = existsSync(new URL('./public/bluemap-data/maps', import.meta.url));
+/* a base map's id (src/lib/map-bases.json), as its viewer's address names it */
+const BASE_ID = '[a-z0-9-]+';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -62,6 +64,13 @@ const nextConfig = {
       { source: `/${BLOB_DIR}/maps/:map/assets/playerheads/:file`, destination: '/api/map-head/:file' },
     ];
     const local = LOCAL_COPY ? [{ source: VERSIONED, destination: `/${BLOB_DIR}/maps/:path*` }] : [];
+    /* A base map's viewer (/kort/<id>) is the main viewer's page made over
+       for one map: BlueMap loads its translations and a few pictures relative
+       to the page, and they are the main viewer's own files. */
+    const bases = [
+      { source: `/kort/:id(${BASE_ID})/assets/:path*`, destination: '/bluemap/assets/:path*' },
+      { source: `/kort/:id(${BASE_ID})/lang/:path*`, destination: '/bluemap/lang/:path*' },
+    ];
     const blob = snapshot.blob;
     const store = blob?.base && blob.access === 'public' && !snapshot.packs
       ? [
@@ -69,7 +78,7 @@ const nextConfig = {
           { source: `/${BLOB_DIR}/:path*`, destination: `${blob.base}/${BLOB_DIR}/:path*` },
         ]
       : [];
-    return { beforeFiles: [...heads, ...local], afterFiles: store, fallback: [] };
+    return { beforeFiles: [...heads, ...local, ...bases], afterFiles: store, fallback: [] };
   },
 
   images: {
@@ -93,7 +102,11 @@ const nextConfig = {
   /* /heimskort used to frame the viewer on a page of its own; the world is on the
      home page now, and the button there opens the viewer itself. */
   async redirects() {
-    return [{ source: '/heimskort', destination: '/bluemap/index.html', permanent: false }];
+    return [
+      { source: '/heimskort', destination: '/bluemap/index.html', permanent: false },
+      /* a base map's viewer resolves everything relative to its folder, as /bluemap does */
+      { source: `/kort/:id(${BASE_ID})`, destination: '/kort/:id/index.html', permanent: false },
+    ];
   },
 
   async headers() {
@@ -113,8 +126,9 @@ const nextConfig = {
     // The BlueMap viewer under /bluemap is framed by the home page, so it may be framed
     // by the site itself. It loads block textures as data: URLs and may start workers,
     // and its translations (vue-i18n) compile each message with new Function(), so it
-    // needs 'unsafe-eval' in production too. This applies to BlueMap's own files only;
-    // the site's pages keep the stricter policy above.
+    // needs 'unsafe-eval' in production too. This applies to BlueMap's own files only
+    // (and the base maps' viewers under /kort, the same app); the site's pages keep the
+    // stricter policy above.
     const bluemapCsp = [
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
@@ -148,6 +162,11 @@ const nextConfig = {
         headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
       },
       {
+        // the same files, as a base map's viewer reaches them (rewritten to /bluemap/assets)
+        source: `/kort/:id(${BASE_ID})/assets/:path*`,
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+      },
+      {
         source: '/(.*)',
         headers: [
           { key: 'X-Frame-Options',           value: 'DENY' },
@@ -161,6 +180,14 @@ const nextConfig = {
       {
         // listed after the catch-all so these two headers replace its values here
         source: '/bluemap/:path*',
+        headers: [
+          { key: 'X-Frame-Options',         value: 'SAMEORIGIN' },
+          { key: 'Content-Security-Policy', value: bluemapCsp },
+        ],
+      },
+      {
+        // the base maps' viewers are the same BlueMap app
+        source: '/kort/:path*',
         headers: [
           { key: 'X-Frame-Options',         value: 'SAMEORIGIN' },
           { key: 'Content-Security-Policy', value: bluemapCsp },

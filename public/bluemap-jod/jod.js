@@ -9,7 +9,8 @@
    - holds the camera over the part of the world that is rendered, so nobody
      drifts out into the void;
    - puts the plank with the way back to JOÐ across the top of the full screen
-     map, and turns a place's lantern into its postcard;
+     map (named for the base on a base map's viewer, /kort/<id>), and turns a
+     place's lantern into its postcard;
    - opens the map at night, the hour the site is set in;
    - and, inside the home page's frame, answers the page: when the first view
      is on screen (so the still can hand over), when its menu is open, pausing
@@ -79,13 +80,14 @@
     });
     const title = document.createElement('span');
     title.className = 'jod-plank__title';
-    title.textContent = 'Heimurinn';
+    /* a base map's viewer (/kort/<id>) names its base; the main map is the world */
+    title.textContent = facts.title || 'Heimurinn';
     bar.append(back, title);
     const synced = facts.syncedAt ? new Date(facts.syncedAt) : null;
     if (synced && !Number.isNaN(synced.getTime())) {
       const note = document.createElement('span');
       note.className = 'jod-plank__note';
-      note.textContent = `eins og hann var ${dateIs(synced)}`;
+      note.textContent = facts.title ? `teiknað ${dateIs(synced)}` : `eins og hann var ${dateIs(synced)}`;
       bar.append(note);
     }
     document.body.append(bar);

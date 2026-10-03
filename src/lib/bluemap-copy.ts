@@ -1,12 +1,13 @@
 import { get } from '@vercel/blob';
-import { packedAt, snapshot } from '@/lib/bluemap-snapshot';
+import { mainCopy, type Copy } from '@/lib/bluemap-snapshot';
 import { discard } from '@/lib/bluemap-server';
 
-/* Reads a file of the map copy out of Vercel Blob. map:sync stores the copy
-   as a few large packs (scripts/bluemap-pack.mjs) and the manifest says where
-   each file sits in them, so a file is one range request into its pack: the
-   same bytes BlueMap wrote, nothing unpacked or recompressed. A copy made
-   before packs holds each file as a blob of its own. */
+/* Reads a file of a map copy out of Vercel Blob. map:sync stores the main
+   map's copy as a few large packs (scripts/bluemap-pack.mjs), map:bases each
+   base map's the same way, and the manifest says where each file sits in
+   them, so a file is one range request into its pack: the same bytes BlueMap
+   wrote, nothing unpacked or recompressed. A copy made before packs holds each
+   file as a blob of its own. */
 
 const BLOB_DIR = 'bluemap-data';
 
@@ -27,22 +28,22 @@ export interface CopyFile {
 
 type Fetched = { status: 200 | 304; body: ReadableStream<Uint8Array> | null; headers: Headers | { get(name: string): string | null } };
 
-/** A file of the copy (a path under maps/). Null when the store doesn't hold
-    it; throws when the store can't be read. `ifNoneMatch` only applies to a
-    copy stored file by file. */
-export async function readCopy(path: string, ifNoneMatch?: string): Promise<CopyFile | null> {
-  const packed = packedAt(path);
+/** A file of a copy (a path under maps/), the main map's unless another is
+    named. Null when the store doesn't hold it; throws when the store can't be
+    read. `ifNoneMatch` only applies to a copy stored file by file. */
+export async function readCopy(path: string, ifNoneMatch?: string, copy: Copy = mainCopy): Promise<CopyFile | null> {
+  const packed = copy.packedAt(path);
   if (packed) {
     const { name, offset, length } = packed;
     if (length === 0) return { status: 200, body: null, contentType: contentTypeOf(path), size: 0, etag: null };
-    const body = await readRange(name, offset, length);
+    const body = await readRange(copy, name, offset, length);
     if (body === undefined) return null;
     return { status: 200, body, contentType: contentTypeOf(path), size: length, etag: null };
   }
 
   /* straight from storage: a file the last sync overwrote must not come back
      old from the store's own cache and then be kept for a year */
-  const res = await fetchBlob(`${BLOB_DIR}/${path}`, ifNoneMatch ? { 'If-None-Match': ifNoneMatch } : {}, true);
+  const res = await fetchBlob(copy, `${BLOB_DIR}/${path}`, ifNoneMatch ? { 'If-None-Match': ifNoneMatch } : {}, true);
   if (!res) return null;
   const size = Number(res.headers.get('content-length'));
   return {
@@ -60,13 +61,13 @@ export async function readCopy(path: string, ifNoneMatch?: string): Promise<Copy
    should that also send more than was asked for, the file is cut out of what
    arrived. The map never gets someone else's bytes, and a store that answers
    at all is never given up on. Undefined when the store doesn't hold the pack. */
-async function readRange(name: string, offset: number, length: number): Promise<ReadableStream<Uint8Array> | undefined> {
+async function readRange(copy: Copy, name: string, offset: number, length: number): Promise<ReadableStream<Uint8Array> | undefined> {
   const last = offset + length - 1;
   const range = { range: `bytes=${offset}-${last}` };
   let res: Fetched | null = null;
   for (const fresh of [false, true]) {
     if (res) await discard(res);
-    res = await fetchBlob(name, range, fresh);
+    res = await fetchBlob(copy, name, range, fresh);
     if (!res) return undefined;
     const sent = sentRange(res.headers.get('content-range'));
     if (res.body && sent?.[0] === offset && sent[1] === last) return res.body;
@@ -123,8 +124,8 @@ function slice(body: ReadableStream<Uint8Array>, skip: number, length: number): 
   });
 }
 
-async function fetchBlob(pathname: string, headers: Record<string, string>, fresh: boolean): Promise<Fetched | null> {
-  const blob = snapshot.blob;
+async function fetchBlob(copy: Copy, pathname: string, headers: Record<string, string>, fresh: boolean): Promise<Fetched | null> {
+  const blob = copy.blob;
   if (!blob?.base) return null;
   if (blob.access === 'public') {
     const res = await fetch(`${blob.base}/${pathname.split('/').map(encodeURIComponent).join('/')}`, { headers, cache: 'no-store' });

@@ -642,6 +642,12 @@ html.is-map-full { overflow: hidden; }
 .b-card__fly { width: 100%; margin-top: var(--sp-3); }
 .b-card__fly .b-lantern { width: 0.75rem; height: 1.125rem; }
 
+/* the other bases: a strip under the frame, each base's own 3D map one link away (/kort/<id>) */
+.b-bases { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-4); padding: var(--sp-4) var(--gutter); }
+.b-bases__head { font-family: var(--font-data); font-size: 0.6rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--paper); }
+.b-bases__list { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.b-bases__link .b-lantern { width: 0.75rem; height: 1.125rem; }
+
 /* the places: a rail of chips along the foot of the frame */
 .b-places { position: absolute; inset-inline: 0; bottom: 0; z-index: 3; display: grid; gap: var(--sp-2); padding: var(--sp-6) var(--gutter) var(--sp-4); pointer-events: none; }
 .b-places > * { pointer-events: auto; }

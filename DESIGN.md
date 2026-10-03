@@ -171,6 +171,8 @@ The world is drawn by BlueMap, and its viewer (`public/bluemap`, copied off the 
 
 Only what the viewer reads is copied: BlueMap's render bookkeeping, maps the viewer doesn't list, player heads and source maps stay on the server. Player heads come through `/api/map-head` from the same services as the rest of the site. The live data (players every second, markers every ten) is shared at the CDN for a moment, so every open map in a region costs one call to exaroton; the places with coordinates are added to the markers there, so they stand whether the server runs or not.
 
+The other bases (Joðville, Faraway lands, Bústaður, Shroomy island; `src/lib/map-bases.json`) each have a small map of their own, apart from the main one, and a viewer of their own at `/kort/<id>`: the same app in the same clothes, built with the site from the main viewer's page and settings (`baseViewer` in `scripts/bluemap-brand.mjs`, served by `src/app/kort/[id]/[file]/route.ts` as static files), listing only that map, opening on the base from the main map's distance and angle, held over what is rendered, with the base's name on the plank and the date it was drawn. Under the frame on the home page a strip, *Aðrar stöðvar*, links to each base whose map is on the site, and a place standing inside a base offers that base's map on its postcard (*Joðville í þrívídd*) in place of the main map's button, since the main map doesn't reach it. A base's map is copied to the site only when asked (`npm run map:bases -- --upload <id>`), into a folder of the store the main map's sync never looks in.
+
 ## Every major decision and its purpose
 
 | Decision | Purpose in one sentence |
