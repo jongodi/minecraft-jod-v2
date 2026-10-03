@@ -242,7 +242,7 @@ The one entry type carries all of it. A photo with a caption is a note with a pi
 | Prints and builders on the places | A place carries the crew's own pictures of it and says who built it, so the walls and the world point at each other. |
 | Fógetinn | The campfire's duel posts a signed-in member's best draw to the board, the one charge where less is more. |
 
-The admin panel is out of scope for the evening's design but gains a tab for the crew: who has a token, what hangs on each wall, each member's email address, and the sign-in links, shown with their QR code or sent by post. A member keeps their own address on their wall under *Netfang*, and a member who is signed out can ask for a link by post from *Þetta er ég*; it only ever goes to the address kept for them.
+The admin panel is out of scope for the evening's design but gains a tab for the crew: who has a token, what hangs on each wall, each member's email address, and the sign-in links, shown with their QR code or sent by post. A member keeps their own address on their wall under *Nafn og netfang*, with the name the letters call them by instead of their Minecraft name (a name never shown on the site), and a member who is signed out can ask for a link by post from *Þetta er ég*; it only ever goes to the address kept for them.
 
 ## Næsta spilakvöld
 

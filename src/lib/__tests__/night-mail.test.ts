@@ -25,7 +25,8 @@ const readers = [
   { username: 'joenana', address: 'jo@dæmi.is' },
   { username: 'AmmaGaur', address: 'amma@dæmi.is' },
 ];
-vi.mock('@/lib/crew-email', () => ({ nightReaders: async () => readers }));
+let names: Record<string, string> = {};
+vi.mock('@/lib/crew-email', () => ({ nightReaders: async () => readers, getNames: async () => names }));
 
 const { dueNotices, recipientsOf, nightLetter, mailNights, mailNightOut } = await import('@/lib/night-mail');
 
@@ -117,6 +118,17 @@ describe('the letters', () => {
     expect(nightLetter('soon', night({ chosen: 'a' }), {}, reader).html).toContain('/api/mail-art?t=campfire&amp;k=soon');
   });
 
+  it('calls the crew by the names given, and by username where none is', () => {
+    const named = { stebbias: 'Stefán', ammagaur: 'Amma', joenana: 'Jóna' };
+    const lit = nightLetter('lit', night({ note: 'Brúin' }), {}, reader, 'sunset', named);
+    expect(lit.subject).toBe('Stefán kveikti bál: Brúin');
+    expect(lit.text).toContain('STEFÁN KALLAR SAMAN HÓPINN');
+    const soon = nightLetter('soon', night({ chosen: 'a' }), { stebbias: ['a'], AmmaGaur: ['a'], ingunnbirta: ['a'], joenana: ['a'] }, reader, 'campfire', named);
+    expect(soon.text).toContain('SÖÐLAÐU HESTINN, JÓNA');
+    expect(soon.text).toContain('3 ætla að mæta: Amma, ingunnbirta, Stefán.');
+    expect(soon.text).toContain('https://jodcraft.world/crew/joenana');
+  });
+
   it('the half hour names the others coming, not the reader', () => {
     const m = nightLetter('soon', night({ chosen: 'a' }), { stebbias: ['a'], joenana: ['a'] }, reader);
     expect(m.subject).toBe('Hálftími í bál: kl. 04:00');
@@ -150,13 +162,17 @@ describe('sending, once', () => {
     vi.unstubAllEnvs();
   });
 
-  it('sends a letter once however often it is asked', async () => {
+  it('sends a letter once however often it is asked, calling the crew by name', async () => {
+    names = { stebbias: 'Stefán' };
     store(lit('n1'));
     fetchMock.mockResolvedValue(ok());
     expect(await mailNights(NOW)).toEqual([{ id: 'n1', kind: 'lit', to: 2 }]);
     expect(await mailNights(NOW + 5 * 60_000)).toEqual([]);
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(JSON.parse(fetchMock.mock.calls[0][1].body).map((m: { to: string[] }) => m.to[0])).toEqual(['jo@dæmi.is', 'amma@dæmi.is']);
+    const sent = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(sent.map((m: { to: string[] }) => m.to[0])).toEqual(['jo@dæmi.is', 'amma@dæmi.is']);
+    expect(sent[0].subject).toBe('Stefán kveikti bál á JOÐ');
+    names = {};
   });
 
   it('lets a letter that did not go be tried again on the next run', async () => {

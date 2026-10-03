@@ -250,3 +250,4 @@
 .a-mail__pre { color: var(--text-soft); }
 .a-mail__subject .a-muted, .a-mail__pre .a-muted { display: inline-block; min-width: 4.5rem; font-family: var(--font-data); letter-spacing: 0.08em; text-transform: uppercase; }
 .a-mail__frame { width: 100%; height: 44rem; border: var(--line) solid rgba(209, 178, 161, 0.14); background: #0B0910; }
+.a-crew__name { color: var(--paper); font-weight: 600; }

@@ -164,13 +164,17 @@ function PasswordModal({ username, change, onDone, onClose }: { username: string
   );
 }
 
-// ─── An email address of the member's own ─────────────────────────────────────
-// Where a sign-in link goes when they ask for one, and word of the play
-// nights. Seen only here, by its owner, and by the admin.
+// ─── A name and an email address of the member's own ──────────────────────────
+// The address is where a sign-in link goes when they ask for one, and word of
+// the play nights; the name is what the letters call them instead of their
+// Minecraft name. Seen only here, by its owner, and by the admin.
 
-function EmailModal({ username, onClose }: { username: string; onClose: () => void }) {
-  /* undefined while the saved one is fetched */
-  const [saved,   setSaved]   = useState<{ address: string; nights: boolean } | null | undefined>(undefined);
+interface Contact { email: { address: string; nights: boolean } | null; name: string | null }
+
+function ContactModal({ username, onClose }: { username: string; onClose: () => void }) {
+  /* false while the saved ones are fetched */
+  const [ready,   setReady]   = useState(false);
+  const [name,    setName]    = useState('');
   const [address, setAddress] = useState('');
   const [nights,  setNights]  = useState(true);
   const [error,   setError]   = useState('');
@@ -180,41 +184,43 @@ function EmailModal({ username, onClose }: { username: string; onClose: () => vo
   useEffect(() => {
     fetch(`/api/crew/${username}/email`, { cache: 'no-store' })
       .then(r => (r.ok ? r.json() : null))
-      .then((d: { email: { address: string; nights: boolean } | null } | null) => {
-        const e = d?.email ?? null;
-        setSaved(e);
-        if (e) { setAddress(e.address); setNights(e.nights); }
+      .then((d: Contact | null) => {
+        if (d?.email) { setAddress(d.email.address); setNights(d.email.nights); }
+        if (d?.name) setName(d.name);
       })
-      .catch(() => setSaved(null));
+      .catch(() => {})
+      .finally(() => setReady(true));
   }, [username]);
 
-  async function send(method: 'PUT' | 'DELETE') {
+  async function submit(e: FormEvent) {
+    e.preventDefault();
     setLoading(true);
     setError('');
     try {
-      const res = await fetch(`/api/crew/${username}/email`, { method, headers: { 'Content-Type': 'application/json' }, ...(method === 'PUT' ? { body: JSON.stringify({ email: address, nights }) } : {}) });
+      const res = await fetch(`/api/crew/${username}/email`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, email: address, nights }) });
       if (res.ok) onClose();
       else setError(await errorFrom(res));
     } catch { setError('Nettenging brást. Reyndu aftur.'); }
     finally   { setLoading(false); }
   }
 
-  function submit(e: FormEvent) { e.preventDefault(); send('PUT'); }
-
   return (
-    <div className="b-modal" {...backdrop} role="dialog" aria-modal="true" aria-label="Netfang">
+    <div className="b-modal" {...backdrop} role="dialog" aria-modal="true" aria-label="Nafn og netfang">
       <form className="b-paper b-modal__box" onSubmit={submit}>
-        <p className="b-modal__title">Netfangið þitt</p>
-        <p className="b-modal__sub">þangað fer innskráningartengill þegar þú biður um hann, og póstur um spilakvöldin. Aðrir sjá það ekki.</p>
-        <input type="email" className={`b-input${error ? ' is-error' : ''}`} value={address} onChange={e => setAddress(e.target.value)} placeholder={saved === undefined ? 'sæki…' : 'nafn@dæmi.is'} disabled={saved === undefined} autoFocus autoComplete="email" />
+        <p className="b-modal__title">Nafn og netfang</p>
+        <p className="b-modal__sub">fyrir póstinn frá JOÐ. Aðrir sjá þetta ekki á vefnum; nafnið sést aðeins í bréfunum.</p>
+        <label className="b-modal__label" htmlFor="w-contact-name">Hvað eiga bréfin að kalla þig?</label>
+        <input id="w-contact-name" className={`b-input${error ? ' is-error' : ''}`} value={name} onChange={e => setName(e.target.value)} placeholder={ready ? username : 'sæki…'} disabled={!ready} maxLength={40} autoFocus autoComplete="given-name" />
+        <label className="b-modal__label" htmlFor="w-contact-email">Netfang</label>
+        <input id="w-contact-email" type="email" className={`b-input${error ? ' is-error' : ''}`} value={address} onChange={e => setAddress(e.target.value)} placeholder={ready ? 'nafn@dæmi.is' : 'sæki…'} disabled={!ready} autoComplete="email" />
         <label className="b-modal__check">
-          <input type="checkbox" checked={nights} onChange={e => setNights(e.target.checked)} disabled={saved === undefined} />
+          <input type="checkbox" checked={nights} onChange={e => setNights(e.target.checked)} disabled={!ready} />
           Póstur þegar bál er kveikt, þegar kvöldið er ákveðið, og hálftíma áður en það hefst
         </label>
+        <p className="b-modal__ok">Autt nafn: bréfin segja {username}. Autt netfang: enginn póstur.</p>
         {error && <p className="b-err">{error}</p>}
         <div className="b-modal__actions">
-          <button type="submit" className="b-btn b-btn--solid" disabled={loading || saved === undefined || !address.trim()}>{loading ? 'Vista…' : 'Vista'}</button>
-          {saved && <button type="button" className="b-btn" onClick={() => send('DELETE')} disabled={loading}>Fjarlægja</button>}
+          <button type="submit" className="b-btn b-btn--solid" disabled={loading || !ready}>{loading ? 'Vista…' : 'Vista'}</button>
           <button type="button" className="b-btn" onClick={onClose}>Hætta við</button>
         </div>
       </form>
@@ -351,7 +357,7 @@ export default function Wall({ initial, places, justSignedIn = false }: Props) {
                 {isOwner ? (
                   <>
                     <button className="b-btn b-btn--small" onClick={() => setShowPw(true)}>{hasPassword ? 'Breyta lykilorði' : 'Velja lykilorð'}</button>
-                    <button className="b-btn b-btn--small" onClick={() => setShowEmail(true)}>Netfang</button>
+                    <button className="b-btn b-btn--small" onClick={() => setShowEmail(true)}>Nafn og netfang</button>
                     <button className="b-btn b-btn--small" onClick={signOut}>Skrá út</button>
                   </>
                 ) : me === null ? (
@@ -427,7 +433,7 @@ export default function Wall({ initial, places, justSignedIn = false }: Props) {
 
       {showLogin && <LoginModal username={username} onSuccess={() => { refresh(); setWelcome(true); }} onClose={() => setShowLogin(false)} />}
       {showPw && isOwner && <PasswordModal username={username} change={hasPassword} onDone={() => { refresh(); setWelcome(false); }} onClose={() => setShowPw(false)} />}
-      {showEmail && isOwner && <EmailModal username={username} onClose={() => setShowEmail(false)} />}
+      {showEmail && isOwner && <ContactModal username={username} onClose={() => setShowEmail(false)} />}
       {prints.length > 0 && (
         <WallLightbox photos={prints.map(p => ({ src: p.filename, title: p.caption || undefined, sub: p.takenAt ? `tekin ${formatDate(p.takenAt)}` : formatDate(p.uploadedAt) }))}
           index={lightbox} origin={origin} onClose={closeLightbox} onPrev={prevPhoto} onNext={nextPhoto} />

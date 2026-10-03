@@ -12,6 +12,7 @@ import { MAIL_KINDS, MAIL_NAMES, type MailKind } from '@/lib/email-copy';
 import { THEMES, THEME_NAMES, isTheme, renderLetter, type Theme } from '@/lib/email-design';
 import { readThemes, setTheme } from '@/lib/email-settings';
 import { sampleLetter } from '@/lib/email-samples';
+import { getNames } from '@/lib/crew-email';
 import { canSendEmail, emailProblem, sendEmail, siteUrl } from '@/lib/email';
 
 export const dynamic = 'force-dynamic';
@@ -30,13 +31,13 @@ export async function GET(req: NextRequest) {
 
   if (kind !== null || theme !== null) {
     if (!isKind(kind) || !isTheme(theme)) return NextResponse.json({ error: 'Óþekkt bréf eða útlit.' }, { status: 400 });
-    const { html } = renderLetter(sampleLetter(kind, here), theme, here, { webFonts: req.nextUrl.searchParams.get('fonts') !== '0' });
+    const { html } = renderLetter(sampleLetter(kind, here, await getNames()), theme, here, { webFonts: req.nextUrl.searchParams.get('fonts') !== '0' });
     return new NextResponse(html, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } });
   }
 
-  const themes = await readThemes();
+  const [themes, names] = await Promise.all([readThemes(), getNames()]);
   const mails = MAIL_KINDS.map(k => {
-    const l = sampleLetter(k, here);
+    const l = sampleLetter(k, here, names);
     return { kind: k, ...MAIL_NAMES[k], theme: themes[k], subject: l.subject, preheader: l.preheader };
   });
   return NextResponse.json({ mails, themes: THEMES.map(t => ({ id: t, name: THEME_NAMES[t] })), canSend: canSendEmail() } satisfies AdminMailResponse, { headers: { 'Cache-Control': 'no-store' } });
@@ -63,7 +64,7 @@ export async function POST(req: NextRequest) {
   const theme = isTheme(body.theme) ? body.theme : (await readThemes())[body.kind];
   /* a real letter's pictures and links point at the live site */
   const site = siteUrl();
-  const { subject, html, text } = renderLetter(sampleLetter(body.kind, site), theme, site);
+  const { subject, html, text } = renderLetter(sampleLetter(body.kind, site, await getNames()), theme, site);
   const sent = await sendEmail({ to: (body.to as string).trim(), subject: `[Prufa] ${subject}`, html, text });
   if (!sent.sent) return NextResponse.json({ error: sent.reason }, { status: 502 });
   return NextResponse.json({ ok: true });

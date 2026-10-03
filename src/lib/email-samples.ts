@@ -1,7 +1,8 @@
 // Made-up letters for the admin panel (Póstur): a night stebbias lit to
-// build a bridge, answered by a few of the crew, as joenana would get it.
-// Server only.
+// build a bridge, answered by a few of the crew, as joenana would get it,
+// with the crew called by the names given them. Server only.
 import { nightLetter, signinLetter, type Letter, type MailKind } from '@/lib/email-copy';
+import type { Names } from '@/lib/crew-email';
 import type { Night, Votes } from '@/lib/play-night';
 
 const DAY = 24 * 3600_000;
@@ -14,9 +15,9 @@ function nextSaturday(now: number): number {
   return d.getTime();
 }
 
-export function sampleLetter(kind: MailKind, site: string, now = Date.now()): Letter {
+export function sampleLetter(kind: MailKind, site: string, names: Names = {}, now = Date.now()): Letter {
   if (kind === 'signin') {
-    return signinLetter({ name: 'joenana', url: `${site}/api/crew/invite?lykill=synishorn-ekki-alvoru`, expiresAt: new Date(now + 7 * DAY).toISOString(), uses: 5 });
+    return signinLetter({ name: names.joenana ?? 'joenana', url: `${site}/api/crew/invite?lykill=synishorn-ekki-alvoru`, expiresAt: new Date(now + 7 * DAY).toISOString(), uses: 5 });
   }
   const sat = nextSaturday(now);
   const night: Night = {
@@ -26,5 +27,5 @@ export function sampleLetter(kind: MailKind, site: string, now = Date.now()): Le
     cancelled: kind === 'out', startedBy: null, outcome: null,
   };
   const votes: Votes = { stebbias: ['a', 'b'], AmmaGaur: ['a'], ingunnbirta: ['a'], joenana: ['a', 'b'] };
-  return nightLetter(kind, night, votes, { username: 'joenana', address: '' }, site);
+  return nightLetter(kind, night, votes, { username: 'joenana', address: '' }, site, names);
 }

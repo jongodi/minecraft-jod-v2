@@ -15,7 +15,7 @@
 // hour before. Each letter is claimed in Redis before it goes, so the two
 // never send it twice; one that fails to go is let go again for the next run.
 import { START_BEFORE_MS, currentNights, optionOf, phaseOf, yesFor, type Night, type Votes } from '@/lib/play-night';
-import { nightReaders } from '@/lib/crew-email';
+import { getNames, nightReaders, type Names } from '@/lib/crew-email';
 import { nightLetter as nightWords, type NightNotice, type Reader } from '@/lib/email-copy';
 import { DEFAULT_THEMES, renderLetter, type Theme } from '@/lib/email-design';
 import { readThemes } from '@/lib/email-settings';
@@ -57,10 +57,11 @@ export function recipientsOf(kind: NightNotice, night: Night, votes: Votes, read
   return readers.filter(r => yes.has(r.username.toLowerCase()) && !same(r.username, night.by));
 }
 
-/** The letter for one reader, in the look chosen for it (src/lib/email-copy.ts has the words). */
-export function nightLetter(kind: NightNotice, night: Night, votes: Votes, reader: Reader, theme: Theme = DEFAULT_THEMES[kind]): Mail {
+/** The letter for one reader, in the look chosen for it, calling members by
+    their names where given (src/lib/email-copy.ts has the words). */
+export function nightLetter(kind: NightNotice, night: Night, votes: Votes, reader: Reader, theme: Theme = DEFAULT_THEMES[kind], names: Names = {}): Mail {
   const site = siteUrl();
-  const { subject, html, text } = renderLetter(nightWords(kind, night, votes, reader, site), theme, site);
+  const { subject, html, text } = renderLetter(nightWords(kind, night, votes, reader, site, names), theme, site);
   return { to: reader.address, subject, html, text };
 }
 
@@ -82,10 +83,12 @@ async function claim(id: string, kind: NightNotice): Promise<boolean> {
   return added === 1;
 }
 
-async function deliver(kind: NightNotice, night: Night, votes: Votes, readers: Reader[], themes: Record<NightNotice, Theme>): Promise<number> {
+interface Dress { themes: Record<NightNotice, Theme>; names: Names }
+
+async function deliver(kind: NightNotice, night: Night, votes: Votes, readers: Reader[], { themes, names }: Dress): Promise<number> {
   const to = recipientsOf(kind, night, votes, readers);
   if (to.length === 0 || !(await claim(night.id, kind))) return 0;
-  const res = await sendEmails(to.map(r => nightLetter(kind, night, votes, r, themes[kind])));
+  const res = await sendEmails(to.map(r => nightLetter(kind, night, votes, r, themes[kind], names)));
   if (res.sent) return to.length;
   console.error(`[night-mail] ${kind} for ${night.id} did not go: ${res.reason}`);
   await (await redis()).srem(mailedKey(night.id), kind);
@@ -100,11 +103,11 @@ export async function mailNights(now = Date.now()): Promise<Mailed[]> {
   const readers = await nightReaders();
   if (readers.length === 0) return [];
   const { shown } = await currentNights(now);
-  const themes = await readThemes();
+  const dress = { themes: await readThemes(), names: await getNames() };
   const done: Mailed[] = [];
   for (const { night, votes } of shown) {
     for (const kind of dueNotices(night, now)) {
-      const to = await deliver(kind, night, votes, readers, themes);
+      const to = await deliver(kind, night, votes, readers, dress);
       if (to) done.push({ id: night.id, kind, to });
     }
   }
@@ -115,6 +118,6 @@ export async function mailNights(now = Date.now()): Promise<Mailed[]> {
     the night as it was, since a night put out is cleared away on the next read. */
 export async function mailNightOut(night: Night, votes: Votes): Promise<Mailed[]> {
   if (!canSendEmail() || !process.env.REDIS_URL) return [];
-  const to = await deliver('out', night, votes, await nightReaders(), await readThemes());
+  const to = await deliver('out', night, votes, await nightReaders(), { themes: await readThemes(), names: await getNames() });
   return to ? [{ id: night.id, kind: 'out', to }] : [];
 }

@@ -64,7 +64,7 @@ export default function CrewPanel() {
       {rows === null ? <p className="a-muted">Sæki hópinn…</p> : (
         <table className="a-table">
           <thead>
-            <tr><th>Félagi</th><th>Netfang</th><th>Lykilorð</th><th>Á veggnum</th><th>Opnir tenglar</th><th></th></tr>
+            <tr><th>Félagi</th><th>Nafn og netfang</th><th>Lykilorð</th><th>Á veggnum</th><th>Opnir tenglar</th><th></th></tr>
           </thead>
           <tbody>
             {rows.map(r => (
@@ -74,10 +74,11 @@ export default function CrewPanel() {
                   <div className="a-muted">síðast {when(r.lastEntry)}</div>
                 </td>
                 <td>
+                  {r.name ? <div className="a-crew__name">{r.name}</div> : <div className="a-muted">ekkert nafn, bréfin segja {r.username}</div>}
                   {r.email
                     ? <><span className="a-data">{r.email.address}</span>{!r.email.nights && <div className="a-muted">enginn póstur um spilakvöld</div>}</>
-                    : <span className="a-muted">ekkert</span>}
-                  {' '}<Button tone="ghost" small onClick={() => setEditing(r)}>{r.email ? 'Breyta' : 'Setja inn'}</Button>
+                    : <span className="a-muted">ekkert netfang</span>}
+                  <div><Button tone="ghost" small onClick={() => setEditing(r)}>{r.email || r.name ? 'Breyta' : 'Setja inn'}</Button></div>
                 </td>
                 <td>
                   {r.hasPassword
@@ -109,9 +110,9 @@ export default function CrewPanel() {
           </tbody>
         </table>
       )}
-      <p className="a-help">Gleymt lykilorð: hreinsaðu það hér og sendu nýjan tengil; félaginn velur sér annað á veggnum. Sé netfang skráð getur félaginn líka beðið sjálfur um tengil í pósti undir „Þetta er ég“, og fær póst um spilakvöldin nema hann afþakki það. Aðgangslyklar í umhverfisbreytum (<code>CREW_TOKEN_…</code>) virka áfram undir „Þetta er ég“.</p>
+      <p className="a-help">Gleymt lykilorð: hreinsaðu það hér og sendu nýjan tengil; félaginn velur sér annað á veggnum. Sé netfang skráð getur félaginn líka beðið sjálfur um tengil í pósti undir „Þetta er ég“, og fær póst um spilakvöldin nema hann afþakki það. Bréfin kalla hvern og einn nafninu sem er skráð, annars notandanafninu. Aðgangslyklar í umhverfisbreytum (<code>CREW_TOKEN_…</code>) virka áfram undir „Þetta er ég“.</p>
 
-      {editing && <EmailModal row={editing} onClose={() => setEditing(null)} onSaved={msg => { setEditing(null); setNotice(msg); load(); }} />}
+      {editing && <ContactModal row={editing} onClose={() => setEditing(null)} onSaved={msg => { setEditing(null); setNotice(msg); load(); }} />}
 
       {invite && (
         <Modal title={`Innskráningartengill fyrir ${invite.username}`} onClose={() => setInvite(null)} width="34rem">
@@ -131,35 +132,39 @@ export default function CrewPanel() {
   );
 }
 
-/** A member's address, set or cleared by the admin, so a link can be mailed
-    to someone who has never been in. */
-function EmailModal({ row, onClose, onSaved }: { row: AdminCrewRow; onClose: () => void; onSaved: (msg: string) => void }) {
+/** A member's name and address, set or cleared by the admin, so a link can
+    be mailed to someone who has never been in, and the letters call them by
+    name. An empty field clears it. */
+function ContactModal({ row, onClose, onSaved }: { row: AdminCrewRow; onClose: () => void; onSaved: (msg: string) => void }) {
+  const [name, setName]       = useState(row.name ?? '');
   const [address, setAddress] = useState(row.email?.address ?? '');
   const [nights, setNights]   = useState(row.email?.nights ?? true);
   const [error, setError]     = useState('');
   const [saving, setSaving]   = useState(false);
 
-  async function save(e?: FormEvent, clear = false) {
-    e?.preventDefault();
+  async function save(e: FormEvent) {
+    e.preventDefault();
     setSaving(true); setError('');
     try {
-      await api('/api/admin/crew', { method: 'PUT', body: JSON.stringify({ username: row.username, email: clear ? null : address, nights }) });
-      onSaved(clear ? `✓ Netfang ${row.username} var fjarlægt.` : `✓ Netfang ${row.username} var vistað.`);
+      await api('/api/admin/crew', { method: 'PUT', body: JSON.stringify({ username: row.username, name, email: address, nights }) });
+      onSaved(`✓ Vistað fyrir ${row.username}.`);
     } catch (err) { setError(errText(err)); }
     finally { setSaving(false); }
   }
 
   return (
-    <Modal title={`Netfang ${row.username}`} onClose={onClose} width="30rem">
+    <Modal title={`Nafn og netfang: ${row.username}`} onClose={onClose} width="30rem">
       <form className="a-stack" onSubmit={save}>
-        <Field label="Netfang" help="Þangað fara innskráningartenglar og póstur um spilakvöld. Félaginn sér það og getur breytt því á veggnum sínum; aðrir sjá það ekki.">
-          <input className="a-input" type="email" value={address} onChange={e => setAddress(e.target.value)} placeholder="nafn@dæmi.is" autoComplete="off" autoFocus />
+        <Field label="Nafn" help={`Það sem bréfin kalla ${row.username}, til dæmis fornafnið. Autt nafn: bréfin segja ${row.username}. Sést aðeins í pósti, ekki á vefnum.`}>
+          <input className="a-input" value={name} onChange={e => setName(e.target.value)} placeholder={row.username} maxLength={40} autoComplete="off" autoFocus />
+        </Field>
+        <Field label="Netfang" help="Þangað fara innskráningartenglar og póstur um spilakvöld. Félaginn sér þetta og getur breytt því á veggnum sínum; aðrir sjá það ekki. Autt netfang: enginn póstur.">
+          <input className="a-input" type="email" value={address} onChange={e => setAddress(e.target.value)} placeholder="nafn@dæmi.is" autoComplete="off" />
         </Field>
         <Toggle checked={nights} onChange={setNights} label="Póstur um spilakvöld" />
         <Notice text={error} />
         <div className="a-inline">
-          <Button tone="primary" small type="submit" disabled={saving || !address.trim()}>{saving ? 'Vista…' : 'Vista'}</Button>
-          {row.email && <Button tone="danger" small onClick={() => save(undefined, true)} disabled={saving}>Fjarlægja</Button>}
+          <Button tone="primary" small type="submit" disabled={saving}>{saving ? 'Vista…' : 'Vista'}</Button>
           <Button tone="ghost" small onClick={onClose}>Hætta við</Button>
         </div>
       </form>
