@@ -15,8 +15,10 @@ import { C, cardFonts } from '@/lib/og-card';
    Drawn at twice the size it is shown, for sharp phone screens. */
 
 const W = ART.width * 2, H = ART.height * 2;
+/* the land along the bottom: drawn on a 170-high grid, shown this high */
+const LAND = 136;
 /* the mesa's highest point, which the words stay above */
-const MESA_TOP = H - 170 + 36;
+const MESA_TOP = H - LAND + Math.round(36 * LAND / 170);
 const SKY = { top: '#3B1A20', mid: '#8F3D2E', low: '#D8712F', horizon: '#E9B24A', sun: '#F4D394' };
 
 /** The mark: the badlands' bands with the J cut out of them. */
@@ -45,19 +47,20 @@ function Words({ kind, heading, tagColor, room }: { kind: MailKind; heading: str
   const big = heading ?? title;
   const size = heading ? headingSize(heading, room) : 82;
   return (
-    <div style={{ position: 'absolute', left: 64, top: 46, width: room, maxHeight: MESA_TOP - 46, display: 'flex', flexDirection: 'column' }}>
+    <div style={{ position: 'absolute', left: 64, top: 38, width: room, maxHeight: MESA_TOP - 38, display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
         <Mark size={52} />
         <div style={{ display: 'flex', fontSize: 46, color: C.paper }}>JOÐ</div>
         <div style={{ display: 'flex', marginLeft: 10, padding: '6px 14px', border: `3px solid ${tagColor}`, background: 'rgba(21, 16, 13, 0.55)', color: tagColor, fontFamily: 'Silkscreen', fontSize: 22, letterSpacing: 2 }}>{(heading ? title : tag).toUpperCase()}</div>
       </div>
-      <div style={{ display: 'flex', marginTop: 24, fontSize: size, lineHeight: 1.04, color: C.paper, textShadow: '0 5px 0 rgba(21, 16, 13, 0.45)' }}>{big}</div>
+      {/* two lines of a heading share its words evenly, so no word is left alone on the second */}
+      <div style={{ display: 'flex', marginTop: 18, fontSize: size, lineHeight: 1.04, color: C.paper, textShadow: '0 5px 0 rgba(21, 16, 13, 0.45)', textWrap: 'balance' }}>{big}</div>
     </div>
   );
 }
 
-const shape = (d: string, fill: string, h = 170) => (
-  <svg width={W} height={h} viewBox={`0 0 ${W} ${h}`} style={{ position: 'absolute', left: 0, bottom: 0 }}>
+const shape = (d: string, fill: string) => (
+  <svg width={W} height={LAND} viewBox={`0 0 ${W} 170`} preserveAspectRatio="none" style={{ position: 'absolute', left: 0, bottom: 0 }}>
     <path d={d} fill={fill} shapeRendering="crispEdges" />
   </svg>
 );
@@ -65,8 +68,8 @@ const shape = (d: string, fill: string, h = 170) => (
 function Sunset({ kind, heading }: { kind: MailKind; heading: string | null }) {
   return (
     <div style={{ width: '100%', height: '100%', display: 'flex', position: 'relative', background: `linear-gradient(180deg, ${SKY.top} 0%, ${SKY.mid} 42%, ${SKY.low} 76%, ${SKY.horizon} 100%)`, fontFamily: 'Alfa Slab One' }}>
-      <div style={{ position: 'absolute', right: 94, top: 186, width: 96, height: 96, background: 'rgba(244, 211, 148, 0.25)', display: 'flex' }} />
-      <div style={{ position: 'absolute', right: 110, top: 202, width: 64, height: 64, background: SKY.sun, display: 'flex' }} />
+      <div style={{ position: 'absolute', right: 94, top: MESA_TOP - 108, width: 96, height: 96, background: 'rgba(244, 211, 148, 0.25)', display: 'flex' }} />
+      <div style={{ position: 'absolute', right: 110, top: MESA_TOP - 92, width: 64, height: 64, background: SKY.sun, display: 'flex' }} />
       {shape('M0 170 V96 H90 V62 H160 V80 H260 V44 H340 V80 H520 V96 H640 V70 H800 V36 H900 V70 H1040 V90 H1200 V170 Z', C.red)}
       {shape('M0 170 V132 H140 V106 H230 V132 H420 V98 H540 V132 H760 V116 H860 V132 H1000 V110 H1100 V132 H1200 V170 Z', C.orange)}
       {shape('M0 170 V156 H300 V142 H420 V156 H700 V148 H820 V156 H1200 V170 Z', C.brown)}
@@ -97,7 +100,7 @@ function Campfire({ kind, heading }: { kind: MailKind; heading: string | null })
       {!out && <div style={{ position: 'absolute', right: -22, bottom: -70, width: 460, height: 460, display: 'flex', backgroundImage: 'radial-gradient(circle, rgba(242, 166, 59, 0.38) 0%, rgba(224, 96, 42, 0.16) 38%, rgba(21, 16, 13, 0) 68%)' }} />}
       {shape('M0 170 V110 H120 V84 H210 V104 H330 V70 H430 V100 H600 V120 H760 V92 H860 V112 H1000 V96 H1120 V118 H1200 V170 Z', '#30231B')}
       {shape('M0 170 V142 H1200 V170 Z', '#1E1611')}
-      <div style={{ position: 'absolute', right: 96, bottom: 22, width: 16 * px, height: 14 * px, display: 'flex' }}>
+      <div style={{ position: 'absolute', right: 96, bottom: 16, width: 16 * px, height: 14 * px, display: 'flex' }}>
         {(out ? EMBERS : FLAME).map(([x, y, w, h, c]) => <div key={`${x}-${y}`} style={{ position: 'absolute', left: x * px, top: y * px, width: w * px, height: h * px, background: c, display: 'flex' }} />)}
         <div style={{ position: 'absolute', left: 2 * px, top: 10 * px, width: 12 * px, height: 2 * px, background: C.brown, display: 'flex' }} />
         <div style={{ position: 'absolute', left: 1 * px, top: 12 * px, width: 14 * px, height: px, background: '#3A2618', display: 'flex' }} />

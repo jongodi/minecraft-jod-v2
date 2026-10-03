@@ -37,6 +37,13 @@ describe('a letter in its dress', () => {
     expect(renderLetter(letter(), 'sunset', SITE).html).toContain('content="light only"');
   });
 
+  it('is one card on the mail app\'s own ground, the button\'s address in the small print and its links beside it', () => {
+    const { html } = renderLetter(letter(), 'sunset', SITE);
+    expect(html).toMatch(/<body style="margin:0;padding:0">/);
+    expect(html).toContain('Virkar hnappurinn ekki? Opnaðu <a href="https://jod.test/kvold/a1?x=1&amp;y=&quot;2&quot;"');
+    expect(html).toMatch(/<td class="jod-stack"[^>]*><a href="https:\/\/jod.test\/kvold\/a1\/dagatal.ics"/);
+  });
+
   it('crosses out the times of a night called off', () => {
     expect(renderLetter(letter({ struck: true }), 'sunset', SITE).html).toContain('text-decoration:line-through');
     expect(renderLetter(letter(), 'sunset', SITE).html).not.toContain('line-through');
