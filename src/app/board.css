@@ -107,6 +107,10 @@
 .b-poster__head img { width: 100%; height: 100%; image-rendering: pixelated; object-fit: cover; }
 .b-poster__who { font-family: var(--font-data); font-size: 0.6rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .b-poster__num { font-family: var(--font-data); font-size: 0.6rem; color: var(--tc-red); white-space: nowrap; font-variant-numeric: tabular-nums; }
+/* the week's outlaw, under the three of all time: a dashed rule in red ink, a small heading, one row without a rank */
+.b-poster__rule--week { height: 0; margin-top: var(--sp-3); background: none; border-top: var(--px) dashed var(--tc-red); opacity: 0.45; }
+.b-poster__weekhead { width: 100%; margin-top: var(--sp-2); font-family: var(--font-data); font-size: 0.6rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--tc-red); text-align: left; }
+.b-poster__row--week { grid-template-columns: 1rem minmax(0, 1fr) auto; }
 .b-empty { padding: var(--sp-4) 0; font-size: var(--fs-md); color: var(--text-faint); }
 .b-paper .b-empty { color: var(--ink-faint); }
 .b-source { margin-top: var(--sp-5); font-size: var(--fs-sm); color: var(--text-faint); text-align: center; }

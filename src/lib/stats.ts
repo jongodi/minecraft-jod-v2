@@ -38,6 +38,42 @@ export interface StatsResponse {
   players:  PlayerStat[];
   source:   'live' | 'cached' | 'unavailable';
   cachedAt: string | null;
+  /** the week's numbers, from the daily copies; null until there are two */
+  week:     WeekStats | null;
+}
+
+/** A member's week: how much each counter rose between two daily copies. */
+export interface WeekPlayer {
+  username:      string;
+  /** to one decimal */
+  playTimeHours: number;
+  deaths:        number;
+  mobKills:      number;
+  travelCm:      number;
+  raidWins:      number;
+  recordsPlayed: number;
+  /** damage taken over dealt within the week; 0 when nothing was dealt */
+  damageRatio:   number;
+}
+
+export interface WeekStats {
+  /** the two copies' days, YYYY-MM-DD */
+  from:    string;
+  to:      string;
+  players: WeekPlayer[];
+}
+
+/** The week's numbers from the daily copies, or null without the store or
+    before there are two copies. Never throws: the board posts the week
+    only when it is there. */
+export async function readWeek(now = new Date()): Promise<WeekStats | null> {
+  if (!hasKV()) return null;
+  try {
+    const { readRecentDays, weekOf } = await import('@/lib/daily-stats');
+    return weekOf(await readRecentDays(now));
+  } catch {
+    return null;
+  }
 }
 
 const KV_KEY = 'stats:snapshot';

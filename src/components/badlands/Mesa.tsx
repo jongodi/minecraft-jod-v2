@@ -1,6 +1,8 @@
 /* The badlands silhouettes behind the hero: three mesa layers and the ground.
    Each layer is a stepped outline built from plateaus so the edge reads as
-   terracotta blocks. Depth (parallax) and colour by hour come from CSS. */
+   terracotta blocks. Depth (parallax) and colour by hour come from CSS:
+   scroll-driven animations on the layer and its rock where the browser has
+   them, --evening on the layer where a script drives the hour instead. */
 
 const W = 480;
 const H = 120;
@@ -73,7 +75,8 @@ function Layer({ d, mod, children }: { d: string; mod: string; children?: React.
   return (
     <div className={`b-mesa__layer b-mesa__layer--${mod}`}>
       <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMax slice" aria-hidden="true">
-        <path d={d} fill="currentColor" />
+        {/* the rock: coloured by the layer (the fallbacks) or by its own scroll-driven fill (badlands.css) */}
+        <path className="b-mesa__rock" d={d} fill="currentColor" />
         {children}
       </svg>
     </div>

@@ -3,12 +3,13 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import Link from 'next/link';
 import type { PublicNight } from '@/app/api/playnight/route';
-import { CalendarIcon, Campfire, ChevronIcon } from './Bits';
+import { CalendarIcon, Campfire, CheckIcon, ChevronIcon, CloseIcon } from './Bits';
 import Calendar from './Calendar';
 import PlayerHead from './PlayerHead';
 import type { ServerState } from './hooks';
-import { useMounted } from './hooks';
-import { LAST_DAY_AHEAD, TIME_CHOICES, WhenAt, dayLabel, dayLong, dayNum, dayOf, dayValue, isLate, usePlayNight, whenAt } from './night';
+import { expectStarting, useMounted } from './hooks';
+import { isChanging } from '@/lib/server-state';
+import { LAST_DAY_AHEAD, TIME_CHOICES, WhenAt, dayLabel, dayLong, dayNum, dayOf, dayValue, isLate, untilAt, usePlayNight, whenAt } from './night';
 import { plural } from '@/lib/format';
 
 /* Spilakvöld (src/lib/play-night.ts). The hero carries one line about the
@@ -54,7 +55,9 @@ export function NightLine() {
   } else if (night.phase === 'over') {
     text = `${dayOf(chosen!.at)} · ${night.came.length} ${plural(night.came.length, 'mætti', 'mættu')}`;
   } else {
-    text = `${WhenAt(chosen!.at)} · ${yes.length} ${plural(yes.length, 'mætir', 'mæta')}`;
+    /* on the day, the line counts down to the fire (the store's refresh every minute keeps it current) */
+    const until = untilAt(chosen!.at);
+    text = `${WhenAt(chosen!.at)}${until ? `, ${until}` : ''} · ${yes.length} ${plural(yes.length, 'mætir', 'mæta')}`;
   }
   return (
     <a href="#hopur" className={`b-nightline${night.phase === 'over' ? ' is-embers' : ''}`}>
@@ -99,6 +102,8 @@ export function NightBoard({ server }: { server: ServerState }) {
     const e = await act(body);
     setBusy(false);
     if (e) setErr({ at, text: e });
+    /* the server was asked to start: the lantern kindles at once, and the status is asked again soon */
+    else if (body.action === 'start') expectStarting();
     return !e;
   };
 
@@ -205,7 +210,7 @@ function NightFire({ night, kicker, me, server, busy, err, copied, picked, onRun
                 <Heads names={o.yes} />
                 {me && (
                   <span className="b-inline">
-                    <button type="button" className={`b-btn b-btn--small${on ? ' b-btn--solid' : ''}`} aria-pressed={on} disabled={busy} onClick={() => toggle(o.id)}>{on ? 'Ég get ✓' : 'Ég get'}</button>
+                    <button type="button" className={`b-btn b-btn--small${on ? ' b-btn--solid' : ''}`} aria-pressed={on} disabled={busy} onClick={() => toggle(o.id)}>Ég get{on && <CheckIcon className="b-btn__icon" />}</button>
                     {mineIsBy && <button type="button" className="b-btn b-btn--small b-btn--ghost" disabled={busy} onClick={() => onRun({ action: 'choose', option: o.id })}>Velja</button>}
                   </span>
                 )}
@@ -241,10 +246,17 @@ function NightFire({ night, kicker, me, server, busy, err, copied, picked, onRun
           {night.phase === 'open' && mine.length > 0 && (
             <button type="button" className="b-btn b-btn--small b-btn--ghost" disabled={busy} onClick={() => onRun({ action: 'vote', yes: [] })}>Kemst ekki</button>
           )}
-          {(night.phase === 'soon' || night.phase === 'live') && mine.length > 0 && server.online === false && (
+          {(night.phase === 'soon' || night.phase === 'live') && mine.length > 0 && (server.life === 'off' || server.life === 'crashed') && (
             <button type="button" className="b-btn b-btn--solid" disabled={busy} onClick={() => onRun({ action: 'start' })}>Kveikja á þjóninum</button>
           )}
+          {(night.phase === 'soon' || night.phase === 'live') && isChanging(server.life) && (
+            <span className="b-note" role="status">{server.life === 'stopping' ? 'Þjónninn er að slokkna.' : 'Þjónninn er að vakna, komdu inn eftir augnablik.'}</span>
+          )}
           <button type="button" className="b-btn b-btn--small b-btn--ghost" onClick={onShare}>{copied ? 'Afritað' : 'Deila'}</button>
+          {/* a chosen night goes in the phone's calendar: a calendar file, opened by the calendar app */}
+          {night.phase !== 'open' && night.phase !== 'live' && (
+            <a href={`/kvold/${night.id}/dagatal.ics`} className="b-btn b-btn--small b-btn--ghost" title="Setja kvöldið í dagatalið"><CalendarIcon className="b-btn__icon" />Í dagatalið</a>
+          )}
           {mineIsBy && night.phase !== 'live' && (
             <button type="button" className="b-btn b-btn--small b-btn--ghost" disabled={busy} onClick={() => { if (confirm('Slökkva bálið? Kvöldið fellur niður.')) onRun({ action: 'cancel' }); }}>Slökkva bálið</button>
           )}
@@ -304,7 +316,7 @@ function LightFire({ busy, err, onLight, onCancel }: { busy: boolean; err: strin
           <select className="b-input b-night__select" aria-label={`Klukkan ${i + 1}`} value={r.time} onChange={e => set(i, 'time', e.target.value)}>
             {TIME_CHOICES.map(t => <option key={t} value={t} disabled={late(r.day, t)}>kl. {t}</option>)}
           </select>
-          {rows.length > 1 && <button type="button" className="b-btn b-btn--small b-btn--ghost b-night__drop" aria-label={`Fjarlægja tíma ${i + 1}`} onClick={() => { setOpen(null); setRows(rs => rs.filter((_, k) => k !== i)); }}>✕</button>}
+          {rows.length > 1 && <button type="button" className="b-btn b-btn--small b-btn--ghost b-night__drop" aria-label={`Fjarlægja tíma ${i + 1}`} onClick={() => { setOpen(null); setRows(rs => rs.filter((_, k) => k !== i)); }}><CloseIcon className="b-btn__icon" /></button>}
           {open === i && <Calendar value={r.day} today={today} min={first} max={last} triggerId={trigger(i)} onPick={v => pick(i, v)} onClose={close} />}
         </div>
       ))}

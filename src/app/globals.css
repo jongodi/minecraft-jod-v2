@@ -1,13 +1,8 @@
 @import './tokens.css';
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 /* ─── generic names read by /admin ─────────────────────────────
    The panel paints its own dark root and only reads these.  */
 :root {
-  --font-mono:     'JetBrains Mono', ui-monospace, monospace;
   --bg:            var(--night);
   --bg-elevated:   var(--dusk-2);
   --bg-card:       var(--dusk);
@@ -30,10 +25,23 @@
   --font-body:     var(--font-text);
 }
 
-/* ─── reset & base ─────────────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* ─── reset & base ─────────────────────────────────────────────
+   The site's own ground, in place of a framework's: borders are set by
+   width alone, headings and links carry no look of their own until a
+   rule gives them one, controls inherit their type, pictures are blocks
+   that never overflow, lists carry no bullets. Every rule here is one a
+   stylesheet below relies on. */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; border: 0 solid currentColor; }
 
-html { background: var(--night); color: var(--text); -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+html {
+  background: var(--night);
+  color: var(--text);
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  tab-size: 4;
+  scroll-behavior: smooth;
+}
 body {
   background: var(--night);
   color: var(--text);
@@ -44,9 +52,36 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-img { display: block; max-width: 100%; }
-button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
-a { color: inherit; }
+h1, h2, h3, h4, h5, h6 { font-size: inherit; font-weight: inherit; }
+a { color: inherit; text-decoration: inherit; }
+b, strong { font-weight: bolder; }
+small { font-size: 80%; }
+sub, sup { font-size: 75%; line-height: 0; position: relative; vertical-align: baseline; }
+sub { bottom: -0.25em; }
+sup { top: -0.5em; }
+hr { height: 0; color: inherit; border-top-width: 1px; }
+abbr:where([title]) { text-decoration: underline dotted; }
+code, kbd, samp, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace; font-size: 1em; }
+ol, ul, menu { list-style: none; }
+table { text-indent: 0; border-color: inherit; border-collapse: collapse; }
+button, input, optgroup, select, textarea { font: inherit; letter-spacing: inherit; color: inherit; }
+button, select { text-transform: none; }
+button, input:where([type='button']), input:where([type='reset']), input:where([type='submit']) { -webkit-appearance: button; background: none; }
+button, [role='button'] { cursor: pointer; }
+:disabled { cursor: default; }
+:-moz-focusring { outline: auto; }
+:-moz-ui-invalid { box-shadow: none; }
+::-webkit-inner-spin-button, ::-webkit-outer-spin-button { height: auto; }
+[type='search'] { -webkit-appearance: textfield; outline-offset: -2px; }
+::-webkit-search-decoration { -webkit-appearance: none; }
+::-webkit-file-upload-button { -webkit-appearance: button; font: inherit; }
+::placeholder { opacity: 1; color: var(--text-faint); }
+textarea { resize: vertical; }
+summary { display: list-item; }
+progress { vertical-align: baseline; }
+img, svg, video, canvas, audio, iframe, embed, object { display: block; vertical-align: middle; }
+img, video { max-width: 100%; height: auto; }
+[hidden]:where(:not([hidden='until-found'])) { display: none; }
 
 ::selection { background: var(--tc-orange); color: var(--paper); }
 :focus-visible { outline: var(--px) solid var(--lantern); outline-offset: 3px; }

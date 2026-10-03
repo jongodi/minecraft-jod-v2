@@ -1,4 +1,5 @@
 import posterFile from '@/lib/map-poster.json';
+import { formatNumber } from '@/lib/format';
 export const SERVER_IP = 'play.jodcraft.world';
 
 export const CREW = [
@@ -83,8 +84,9 @@ export function handCase(s: string): string {
   return isShouting(s) ? s.toLocaleLowerCase('is-IS') : s;
 }
 
-const num = (v: number) => v.toLocaleString('is-IS');
-const km  = (cm: number) => `${(cm / 100000).toLocaleString('is-IS', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} km`;
+/* every figure the board posts is written out in Icelandic (src/lib/format.ts), never left to the browser's locale data */
+const num = (v: number) => formatNumber(v);
+const km  = (cm: number) => `${formatNumber(cm / 100000, { max: 1, min: 1 })} km`;
 /* a stretch of game time, from ticks: days and hours, whole hours under a day, minutes under an hour */
 const span = (ticks: number) => {
   const h = Math.floor(ticks / 72000);
@@ -107,7 +109,7 @@ export const STAT_TABS = [
   { id: 'timeSinceDeath', nick: 'Ódauðlegi',      label: 'Tími frá síðasta dauða', unit: span },
   { id: 'timeSinceRest',  nick: 'Vöku\u00ADstaurinn',   label: 'Tími frá því síðast var sofið', unit: span },
   { id: 'travelCm',       nick: 'Flakkarinn',     label: 'Ferðalangur, á eigin fótum', unit: km },
-  { id: 'damageRatio',    nick: 'Boxpúðinn',      label: 'Skaði þeginn á móti veittum', unit: (v: number) => `${v.toLocaleString('is-IS', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}×` },
+  { id: 'damageRatio',    nick: 'Boxpúðinn',      label: 'Skaði þeginn á móti veittum', unit: (v: number) => `${formatNumber(v, { max: 1, min: 1 })}×` },
   { id: 'raidWins',       nick: 'Ræningja\u00ADbaninn', label: 'Árásir hraktar',             unit: num },
   { id: 'recordsPlayed',  nick: 'Plötu\u00ADsnúðurinn', label: 'Plötur spilaðar',            unit: num },
   { id: 'drawMs',         nick: 'Fógetinn',       label: 'Hraðasta skotið við varðeldinn', unit: ms, low: true },

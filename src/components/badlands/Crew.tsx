@@ -9,6 +9,7 @@ import { NightBoard } from './PlayNight';
 import Rail from './Rail';
 import { CREW } from './data';
 import { useStats, type ServerState } from './hooks';
+import { sinceAt } from './night';
 import { formatAge, plural } from '@/lib/format';
 import type { CrewSummary } from '@/app/api/crew/route';
 import type { FeedEntry } from '@/app/api/crew/feed/route';
@@ -24,7 +25,7 @@ function Crew({ server }: { server: ServerState }) {
   const stats = useStats();
   const [summary, setSummary] = useState<Record<string, CrewSummary>>({});
   const [strip, setStrip]     = useState<FeedEntry[] | null>(null);
-  const { online, players, list } = server;
+  const { online, life, players, list, lastOnline } = server;
   const lower = list.map(n => n.toLowerCase());
   const inside = CREW.filter(n => lower.includes(n.toLowerCase())).length;
   const guests = Math.max(0, players - inside);
@@ -64,6 +65,10 @@ function Crew({ server }: { server: ServerState }) {
         <p className="b-note b-crew__who" aria-live="polite">
           {online === null ? 'athuga hver er inni' :
            online ? (inside === 0 ? 'þjónninn er opinn en enginn kominn inn enn' : `${inside} úr hópnum inni núna${guests ? `, gestir: ${guests}` : ''}`) :
+           life === 'starting' || life === 'restarting' ? 'þjónninn er að vakna, komdu inn eftir augnablik' :
+           life === 'stopping' ? 'þjónninn er að slokkna' :
+           life === 'unknown' ? 'næ ekki sambandi við þjóninn í augnablikinu' :
+           life === 'off' && lastOnline ? `slökkt á þjóninum, síðast kveikt ${sinceAt(lastOnline.at)}` :
            'slökkt á þjóninum, allir í pásu'}
         </p>
       </div>
