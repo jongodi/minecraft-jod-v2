@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { readProfile, isCrewUsername, coverPhoto } from '@/lib/crew';
 import { skinDataUrl, printDataUrl, playTimeHours } from '@/lib/crew-og';
 import { SERVER_IP } from '@/components/badlands/data';
+import { formatNumber } from '@/lib/format';
 
 export const alt = 'Eftirlýsingaspjald JOÐ-félaga';
 export const size = { width: 1200, height: 630 };
@@ -16,7 +17,7 @@ export const dynamic = 'force-dynamic';
 const C = { paper: '#E8DCC4', paper2: '#DCCDB0', ink: '#1E1611', inkSoft: '#5A4634', inkFaint: '#6E5A45', red: '#8F3D2E', brown: '#4D3323', wood: '#4D3323', woodLight: '#6B4A2E', night: '#15100D', lantern: '#F2A63B' };
 const FONT_DIR = join(process.cwd(), 'node_modules/@fontsource');
 
-const hours = (h: number) => `${h.toLocaleString('is-IS')} klst.`;
+const hours = (h: number) => `${formatNumber(h)} klst.`;
 
 export default async function Image({ params }: { params: Promise<{ username: string }> }) {
   const { username } = await params;
