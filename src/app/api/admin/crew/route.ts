@@ -7,8 +7,8 @@ import QRCode from 'qrcode';
 import { requireAdmin, unauthorizedResponse } from '@/lib/auth';
 import { readAllProfiles, allPhotos, createInvite, closeInvite, listInvites, inviteUrl, getCrewToken, isCrewUsername, canonicalUsername, type Invite } from '@/lib/crew';
 import { hasPassword, setPasswordHash } from '@/lib/crew-access';
-import { getEmail, mailSignInLink, setEmail, type CrewEmail } from '@/lib/crew-email';
-import { canSendEmail, emailProblem } from '@/lib/email';
+import { getEmail, getNames, mailSignInLink, updateContact, type CrewEmail } from '@/lib/crew-email';
+import { canSendEmail } from '@/lib/email';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,6 +21,8 @@ export interface AdminCrewRow {
   lastEntry:   string | null;
   /** where sign-in links and word of the play nights go; null without one */
   email:       CrewEmail | null;
+  /** what the letters call them; null uses the username */
+  name:        string | null;
   /** open sign-in links, newest first */
   invites:     Array<Omit<Invite, 'key'> & { url: string }>;
 }
@@ -28,6 +30,7 @@ export interface AdminCrewRow {
 export async function GET(req: NextRequest) {
   if (!(await requireAdmin())) return unauthorizedResponse();
   const origin = process.env.NEXT_PUBLIC_SITE_URL ?? req.nextUrl.origin;
+  const names = await getNames();
   const rows: AdminCrewRow[] = await Promise.all((await readAllProfiles()).map(async p => ({
     username:    p.username,
     hasToken:    !!getCrewToken(p.username),
@@ -36,6 +39,7 @@ export async function GET(req: NextRequest) {
     photoCount:  allPhotos(p).length,
     lastEntry:   p.entries[0]?.createdAt ?? null,
     email:       await getEmail(p.username),
+    name:        names[p.username.toLowerCase()] ?? null,
     invites:     (await listInvites(p.username)).map(({ key, ...inv }) => ({ ...inv, url: inviteUrl(origin, key) })),
   })));
   return NextResponse.json(rows, { headers: { 'Cache-Control': 'no-store' } });
@@ -72,22 +76,17 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ url, expiresAt: inv.expiresAt, maxUses: inv.maxUses, svg: await qr(url) } satisfies InviteResponse, { status: 201 });
 }
 
-/** A member's email address: `{ username, email, nights }` sets it, `{ username, email: null }` clears it. */
+/** A member's name and email address: `{ username, name, email, nights }`;
+    an empty name or address clears it, a field left out is left alone. */
 export async function PUT(req: NextRequest) {
   if (!(await requireAdmin())) return unauthorizedResponse();
-  let body: { username?: unknown; email?: unknown; nights?: unknown };
+  let body: { username?: unknown; email?: unknown; nights?: unknown; name?: unknown };
   { const parsed = await jsonObject(req); if (!parsed) return badJson(); body = parsed; }
   if (typeof body.username !== 'string' || !isCrewUsername(body.username)) return NextResponse.json({ error: 'Þessi félagi er ekki á listanum.' }, { status: 400 });
 
-  if (body.email === null) {
-    await setEmail(body.username, null);
-    return NextResponse.json({ ok: true, email: null });
-  }
-  const problem = emailProblem(body.email);
+  const problem = await updateContact(body.username, body);
   if (problem) return NextResponse.json({ error: problem }, { status: 400 });
-  const email: CrewEmail = { address: body.email as string, nights: body.nights !== false };
-  await setEmail(body.username, email);
-  return NextResponse.json({ ok: true, email: await getEmail(body.username) });
+  return NextResponse.json({ ok: true });
 }
 
 /** Close a link early (`{ url }`), or clear a member's password (`{ username, password: null }`) when they have forgotten it. */

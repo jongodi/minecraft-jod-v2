@@ -238,3 +238,16 @@
 
 /* the map's still, in the map copy's panel */
 .a-poster { display: block; width: 100%; max-width: 24rem; height: auto; border: var(--line) solid rgba(209, 178, 161, 0.14); }
+
+/* ─── Póstur: the letters as they arrive ──────────────────────── */
+.a-mail__tools { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3) var(--sp-6); margin-bottom: var(--sp-5); }
+.a-mail__to { flex: 0 1 26rem; min-width: 0; }
+.a-mail { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 34rem), 1fr)); gap: var(--sp-5); }
+.a-mail__item { display: grid; gap: var(--sp-2); align-content: start; min-width: 0; padding: var(--sp-4); border: var(--line) solid rgba(209, 178, 161, 0.14); background: var(--night); }
+.a-mail__head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: var(--sp-2) var(--sp-4); }
+.a-mail__name { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-lg); line-height: 1.15; color: var(--paper); }
+.a-mail__subject, .a-mail__pre { font-size: var(--fs-sm); color: var(--text); overflow-wrap: anywhere; }
+.a-mail__pre { color: var(--text-soft); }
+.a-mail__subject .a-muted, .a-mail__pre .a-muted { display: inline-block; min-width: 4.5rem; font-family: var(--font-data); letter-spacing: 0.08em; text-transform: uppercase; }
+.a-mail__frame { width: 100%; height: 44rem; border: var(--line) solid rgba(209, 178, 161, 0.14); background: #0B0910; }
+.a-crew__name { color: var(--paper); font-weight: 600; }

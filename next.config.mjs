@@ -28,7 +28,7 @@ const nextConfig = {
     '*': ['**/public/bluemap/**', '**/public/bluemap-data/**'],
   },
 
-  /* The link cards read their fonts and pictures by paths built at run time,
+  /* The link cards (and the pictures atop the letters) read their fonts and pictures by paths built at run time,
      which the tracer cannot follow, so without these they were missing from
      the functions and every card answered 500. Only the latin woff files the
      renderer reads (it takes woff, not woff2), the map's still, and the
@@ -39,6 +39,9 @@ const nextConfig = {
       './public/screenshots/*.webp',
     ],
     '/kvold/card': [
+      './node_modules/@fontsource/{alfa-slab-one,silkscreen,pixelify-sans}/files/*-latin-400-normal.woff',
+    ],
+    '/api/mail-art': [
       './node_modules/@fontsource/{alfa-slab-one,silkscreen,pixelify-sans}/files/*-latin-400-normal.woff',
     ],
     '/stadur/[id]/opengraph-image': [
@@ -132,6 +135,14 @@ const nextConfig = {
     return [
       ...store,
       {
+        // the letters' fonts are fetched from mail apps on other sites (and the admin's preview frame)
+        source: '/email-fonts/:path*',
+        headers: [
+          { key: 'Access-Control-Allow-Origin', value: '*' },
+          { key: 'Cache-Control', value: 'public, max-age=2592000' },
+        ],
+      },
+      {
         // the viewer's own files carry a content hash in their names
         source: '/bluemap/assets/:path*',
         headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
@@ -153,6 +164,14 @@ const nextConfig = {
         headers: [
           { key: 'X-Frame-Options',         value: 'SAMEORIGIN' },
           { key: 'Content-Security-Policy', value: bluemapCsp },
+        ],
+      },
+      {
+        // the admin panel shows each letter as it arrives in a frame of its own (Póstur)
+        source: '/api/admin/email',
+        headers: [
+          { key: 'X-Frame-Options',         value: 'SAMEORIGIN' },
+          { key: 'Content-Security-Policy', value: csp.replace("frame-ancestors 'none'", "frame-ancestors 'self'") },
         ],
       },
     ];

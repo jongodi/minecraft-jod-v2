@@ -3,10 +3,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 /* Redis, in memory: strings and lists, as the addresses and the sign-in links use them */
 const kv = new Map<string, string>();
 const lists = new Map<string, string[]>();
+const hashes = new Map<string, Map<string, string>>();
+const hash = (k: string) => { if (!hashes.has(k)) hashes.set(k, new Map()); return hashes.get(k)!; };
 vi.mock('@/lib/redis', () => {
   const redis = {
     get: async (k: string) => kv.get(k) ?? null,
     mget: async (...ks: string[]) => ks.map(k => kv.get(k) ?? null),
+    hgetall: async (k: string) => Object.fromEntries(hash(k)),
+    hset: async (k: string, f: string, v: string) => { hash(k).set(f, v); return 1; },
+    hdel: async (k: string, f: string) => (hash(k).delete(f) ? 1 : 0),
     set: async (k: string, v: string) => { kv.set(k, v); return 'OK'; },
     del: async (k: string) => (kv.delete(k) ? 1 : 0),
     lrange: async (k: string) => lists.get(k) ?? [],
@@ -25,11 +30,44 @@ vi.mock('@/lib/redis', () => {
   };
 });
 
-const { getEmail, setEmail, nightReaders, mailSignInLink } = await import('@/lib/crew-email');
+const { getEmail, setEmail, nightReaders, mailSignInLink, getName, getNames, setName, nameProblem, updateContact } = await import('@/lib/crew-email');
 const { listInvites } = await import('@/lib/crew-access');
 
+describe('a member’s name', () => {
+  beforeEach(() => { kv.clear(); lists.clear(); hashes.clear(); vi.stubEnv('REDIS_URL', 'redis://test'); });
+  afterEach(() => vi.unstubAllEnvs());
+
+  it('is kept tidy under any spelling of the username, and cleared by an empty one', async () => {
+    await setName('JOENANA', '  Jóna   Jónsdóttir ');
+    expect(await getName('joenana')).toBe('Jóna Jónsdóttir');
+    expect(await getNames()).toEqual({ joenana: 'Jóna Jónsdóttir' });
+    await setName('joenana', '');
+    expect(await getName('joenana')).toBeNull();
+  });
+
+  it('turns away what is no name', () => {
+    expect(nameProblem('Stefán')).toBeNull();
+    expect(nameProblem('')).toBeNull();
+    expect(nameProblem('x'.repeat(41))).toMatch(/mest/);
+    expect(nameProblem('<b>Stebbi</b>')).toMatch(/</);
+    expect(nameProblem('jon@dæmi.is')).toMatch(/@/);
+    expect(nameProblem(7)).toMatch(/texti/);
+  });
+
+  it('changes only what a form sends, and nothing when part of it is wrong', async () => {
+    await setEmail('joenana', { address: 'jo@dæmi.is', nights: true });
+    expect(await updateContact('joenana', { name: 'Jóna' })).toBeNull();
+    expect(await getEmail('joenana')).toEqual({ address: 'jo@dæmi.is', nights: true });
+    expect(await updateContact('joenana', { name: 'Jónína', email: 'ekki netfang' })).toMatch(/netfang/);
+    expect(await getName('joenana')).toBe('Jóna');
+    expect(await updateContact('joenana', { name: '', email: '', nights: true })).toBeNull();
+    expect(await getEmail('joenana')).toBeNull();
+    expect(await getName('joenana')).toBeNull();
+  });
+});
+
 describe('a member’s address', () => {
-  beforeEach(() => { kv.clear(); lists.clear(); vi.stubEnv('REDIS_URL', 'redis://test'); });
+  beforeEach(() => { kv.clear(); lists.clear(); hashes.clear(); vi.stubEnv('REDIS_URL', 'redis://test'); });
   afterEach(() => vi.unstubAllEnvs());
 
   it('is kept apart from the wall, trimmed and in lower case, under any spelling of the name', async () => {
@@ -53,7 +91,7 @@ describe('a sign-in link by post', () => {
   const fetchMock = vi.fn();
 
   beforeEach(() => {
-    kv.clear(); lists.clear();
+    kv.clear(); lists.clear(); hashes.clear();
     vi.stubEnv('REDIS_URL', 'redis://test');
     vi.stubEnv('RESEND_API_KEY', 're_test');
     vi.stubGlobal('fetch', fetchMock);
@@ -77,6 +115,19 @@ describe('a sign-in link by post', () => {
     expect(body.to).toEqual(['jo@dæmi.is']);
     expect(body.text).toContain(res.url);
     expect((await listInvites('joenana')).map(i => i.key)).toEqual([res.invite.key]);
+  });
+
+  it('greets the member by the name given, and by username without one', async () => {
+    await setEmail('joenana', { address: 'jo@dæmi.is', nights: true });
+    fetchMock.mockResolvedValue(new Response('{"id":"e1"}', { status: 200 }));
+    await mailSignInLink('joenana', 'https://jod.test');
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).subject).toBe('Lykillinn þinn að JOÐ, joenana');
+    await setName('joenana', 'Jóna');
+    fetchMock.mockResolvedValue(new Response('{"id":"e2"}', { status: 200 }));
+    await mailSignInLink('joenana', 'https://jod.test');
+    const body = JSON.parse(fetchMock.mock.calls[1][1].body);
+    expect(body.subject).toBe('Lykillinn þinn að JOÐ, Jóna');
+    expect(body.text).toContain('GAKKTU Í BÆINN, JÓNA');
   });
 
   it('shuts the link at once when the letter does not go', async () => {

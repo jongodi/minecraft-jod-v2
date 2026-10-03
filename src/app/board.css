@@ -378,6 +378,8 @@
 .b-modal__alt .b-link { border: 0; padding: 0; }
 .b-modal__alt .b-link:disabled { opacity: 0.6; cursor: default; }
 .b-modal__ok { margin-top: var(--sp-3); font-size: var(--fs-sm); color: var(--ink-soft); }
+.b-modal__label { display: block; margin: var(--sp-3) 0 var(--sp-1); font-family: var(--font-data); font-size: var(--fs-xs); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+.b-modal__sub + .b-modal__label { margin-top: 0; }
 .b-modal__check { display: flex; gap: var(--sp-2); align-items: flex-start; margin-top: var(--sp-3); font-size: var(--fs-sm); color: var(--ink-soft); cursor: pointer; }
 .b-modal__check input { margin-top: 0.2em; accent-color: var(--lantern-deep); flex: none; }
 
