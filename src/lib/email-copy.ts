@@ -16,6 +16,9 @@ import { dayTime } from '@/lib/night-share';
 import { plural } from '@/lib/format';
 import type { Names } from '@/lib/crew-email';
 
+/** What the letters call the site: in the sender's name, the picture, the foot and the subjects. */
+export const BRAND = 'JOÐcraft';
+
 export type MailKind = 'signin' | 'lit' | 'chosen' | 'soon' | 'out';
 export const MAIL_KINDS: MailKind[] = ['signin', 'lit', 'chosen', 'soon', 'out'];
 
@@ -39,6 +42,42 @@ export const BANNERS: Record<MailKind, { tag: string; title: string }> = {
   out:    { tag: 'Spilakvöld',  title: 'Bálið slokknaði' },
 };
 
+/** A verse at the foot of each letter: ferskeytlur, four lines of alternating
+    rhyme with their staves (stuðlar and höfuðstafir). Change one here and
+    keep it to four lines. */
+export const VERSES: Record<MailKind, string[]> = {
+  signin: [
+    'Lykill þinn er loksins klár,',
+    'leyfðu þér að dreyma.',
+    'Heimur bíður, hreinn og blár,',
+    'hér má lengi sveima.',
+  ],
+  lit: [
+    'Kveikt er bál og kakó heitt,',
+    'kallar hópinn saman.',
+    'Byggjum hátt og berjumst sveitt,',
+    'bros og glens og gaman.',
+  ],
+  chosen: [
+    'Tíminn festur, tryggt er kvöld,',
+    'tilhlökkun og kæti.',
+    'Svikarinn fær sjálfur gjöld,',
+    'sést hans auða sæti.',
+  ],
+  soon: [
+    'Hneggja klárar, hefst nú kvöld,',
+    'hnakkinn skaltu taka.',
+    'Brýnum sverð og berum skjöld,',
+    'bannað er að slaka.',
+  ],
+  out: [
+    'Slokknar bál, en sólin rís,',
+    'seinna komum aftur.',
+    'Kólnar glóð og kemur ís,',
+    'kviknar nýr þá kraftur.',
+  ],
+};
+
 /** One letter's words. */
 export interface Letter {
   kind:       MailKind;
@@ -54,6 +93,8 @@ export interface Letter {
   struck?:    boolean;
   /** a paragraph each */
   lines:      string[];
+  /** the verse, a line each */
+  verse?:     string[];
   button?:    { label: string; url: string };
   /** smaller links under the button */
   links?:     { label: string; url: string }[];
@@ -68,21 +109,25 @@ const clock = (iso: string) => { const d = new Date(iso); return `${String(d.get
 const lower = (s: string) => s.charAt(0).toLocaleLowerCase('is-IS') + s.slice(1);
 const same = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
 const day = (iso: string) => new Date(iso).toLocaleDateString('is-IS', { day: 'numeric', month: 'long', timeZone: 'UTC' });
+/* "fimm tæki": a few devices in words, as they are written; more as a number */
+const DEVICES = ['', 'eitt', 'tvö', 'þrjú', 'fjögur', 'fimm', 'sex', 'sjö', 'átta', 'níu', 'tíu'];
+const devices = (n: number) => `${DEVICES[n] ?? n} tæki`;
 
 /* ─── the sign-in link ────────────────────────────────────────────────────── */
 
 export function signinLetter({ name, url, expiresAt, uses }: { name: string; url: string; expiresAt: string; uses: number }): Letter {
   return {
     kind: 'signin',
-    subject: `Lykillinn þinn að JOÐ, ${name}`,
-    preheader: `Gildir til ${day(expiresAt)} og opnar ${uses} tæki.`,
+    subject: `Lykillinn þinn að ${BRAND}, ${name}`,
+    preheader: `Gildir til ${day(expiresAt)} og dugar á ${devices(uses)}.`,
     heading: `Gakktu í bæinn, ${name}`,
     lines: [
-      'Hér er lykillinn þinn. Opnaðu hann í símanum eða tölvunni sem þú vilt nota, og tækið man eftir þér í heilt ár.',
-      `Hann gildir til ${day(expiresAt)} og opnar ${uses} tæki. Veldu þér svo lykilorð á veggnum þínum; þá þarftu engan lykil næst.`,
+      'Hér er innskráningarlykillinn þinn. Ýttu á hnappinn í símanum eða tölvunni til að skrá þig inn. Þú helst innskráð/ur í heilt ár.',
+      `Lykillinn gildir til ${day(expiresAt)} og dugar á ${devices(uses)}.`,
     ],
     button: { label: 'Skrá mig inn', url },
-    foot: ['Baðst þú ekki um þennan lykil? Þá má fleygja bréfinu; enginn kemst inn án hans.'],
+    verse: VERSES.signin,
+    foot: ['Baðstu ekki um lykil? Hunsaðu þá bréfið; enginn kemst inn án hans.'],
   };
 }
 
@@ -104,7 +149,8 @@ export function nightLetter(kind: NightNotice, night: Night, votes: Votes, reade
   const quote = night.note || undefined;
   const base = {
     kind, quote,
-    foot: ['Þú færð þessi bréf af því að netfangið þitt er skráð á JOÐ. Viltu frið? Undir „Nafn og netfang“ á veggnum þínum má afþakka bréf um spilakvöld, eða breyta nafninu sem þau kalla þig.'],
+    verse: VERSES[kind],
+    foot: ['Viltu ekki fleiri bréf um spilakvöld? Breyttu því undir „Nafn og netfang“ á veggnum þínum.'],
     footLink: { label: 'Veggurinn þinn', url: `${site}/crew/${reader.username}` },
   };
 
@@ -112,13 +158,13 @@ export function nightLetter(kind: NightNotice, night: Night, votes: Votes, reade
     const times = night.options.map(o => dayTime(o.at));
     return {
       ...base,
-      subject: night.note ? `${by} kveikti bál: ${night.note}` : `${by} kveikti bál á JOÐ`,
-      preheader: chosen ? `${dayTime(chosen.at)}. Kemur þú?` : `${times.length} tímar í boði. Hvenær kemst þú?`,
+      subject: night.note ? `${by} kveikti bál: ${night.note}` : `${by} kveikti bál á ${BRAND}`,
+      preheader: chosen ? `${dayTime(chosen.at)}. Kemurðu?` : `${times.length} tímar í boði. Hvenær kemstu?`,
       heading: `${by} kallar saman hópinn`,
       when: chosen ? [dayTime(chosen.at)] : times,
       lines: chosen
-        ? ['Hnakkurinn bíður. Segðu hinum hvort þú mætir, svo enginn standi einn við eldinn.']
-        : [`Merktu við alla tímana sem þú kemst. Sá tími sem flest komast á verður fyrir valinu þremur tímum fyrir þann fyrsta, nema ${by} velji fyrr.`],
+        ? ['Kemurðu? Svaraðu á vefnum svo hin viti hvort von sé á þér.']
+        : ['Merktu við alla tímana sem þú kemst. Sá tími sem flest komast á verður fyrir valinu.'],
       button: { label: 'Svara kallinu', url },
     };
   }
@@ -127,11 +173,11 @@ export function nightLetter(kind: NightNotice, night: Night, votes: Votes, reade
     const yes = yesFor(votes, chosen.id);
     return {
       ...base,
-      subject: `Kvöldið er ákveðið: ${dayTime(chosen.at)}`,
-      preheader: yes.length ? `${yes.length} ${plural(yes.length, 'ætlar', 'ætla')} að mæta. Kemur þú?` : 'Kemur þú?',
+      subject: `Kvöldið er ákveðið: ${lower(dayTime(chosen.at))}`,
+      preheader: yes.length ? `${yes.length} ${plural(yes.length, 'ætlar', 'ætla')} að mæta. Kemurðu?` : 'Kemurðu?',
       heading: night.chosenBy && night.chosenBy !== 'auto' ? `${who(night.chosenBy)} festi tímann` : 'Flest komast þá',
       when: [dayTime(chosen.at)],
-      lines: [...coming(yes.map(who)), 'Kemur þú? Láttu vita. Þau sem lofa að mæta og mæta ekki lenda á eftirlýsingatöflunni.'],
+      lines: [...coming(yes.map(who)), 'Sá sem lofar en mætir ekki fær nafnbótina Svikarinn.'],
       button: { label: 'Sjá kvöldið', url },
       links: [{ label: 'Setja í dagatalið', url: `${site}/kvold/${night.id}/dagatal.ics` }],
     };
@@ -142,15 +188,15 @@ export function nightLetter(kind: NightNotice, night: Night, votes: Votes, reade
     return {
       ...base,
       subject: `Hálftími í bál: kl. ${clock(chosen.at)}`,
-      preheader: 'Þú sagðist mæta. Þjónninn bíður.',
+      preheader: 'Þú sagðist mæta. Serverinn bíður.',
       heading: `Söðlaðu hestinn, ${who(reader.username)}`,
       when: [dayTime(chosen.at)],
       lines: [
         `Bálið logar kl. ${clock(chosen.at)} og þú sagðist mæta.`,
         ...coming(others.map(who)),
-        'Sofi þjónninn getur þú vakið hann á vefnum. Vistfangið er play.jodcraft.world.',
+        'Ef serverinn sefur geturðu vakið hann á vefnum.',
       ],
-      button: { label: 'Kveikja á þjóninum', url },
+      button: { label: 'Kveikja á servernum', url },
     };
   }
 
@@ -163,8 +209,8 @@ export function nightLetter(kind: NightNotice, night: Night, votes: Votes, reade
     when: chosen ? [dayTime(chosen.at)] : night.options.map(o => dayTime(o.at)),
     struck: true,
     lines: [chosen
-      ? `Ekkert verður af kvöldinu á ${lower(dayTime(chosen.at))}. Hesturinn fær að hvílast, og næsta bál kemur.`
-      : 'Ekkert verður af kvöldinu. Hesturinn fær að hvílast, og næsta bál kemur.'],
+      ? `Ekkert verður af kvöldinu á ${lower(dayTime(chosen.at))}. Hvílum hestana, það kemur annað kvöld.`
+      : 'Ekkert verður af kvöldinu. Hvílum hestana, það kemur annað kvöld.'],
     button: { label: 'Kveikja nýtt bál', url: `${site}/#hopur` },
   };
 }

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { BANNERS, MAIL_KINDS, type Letter } from '@/lib/email-copy';
+import { BANNERS, MAIL_KINDS, VERSES, type Letter } from '@/lib/email-copy';
 import { DEFAULT_THEMES, THEMES, artHeading, artUrl, renderLetter } from '@/lib/email-design';
 import { readThemes, setTheme } from '@/lib/email-settings';
 import { sampleLetter } from '@/lib/email-samples';
@@ -61,7 +61,11 @@ describe('a letter in its dress', () => {
       expect(subject.length).toBeGreaterThan(0);
       expect(html).toContain(`/api/mail-art?t=${t}&amp;k=${k}`);
       expect(html.length).toBeLessThan(60_000);
-      expect(text).toContain('JOÐ · play.jodcraft.world');
+      expect(text).toContain('JOÐcraft · play.jodcraft.world');
+      /* every letter ends on its four-line verse, in both the HTML and the plain text */
+      expect(VERSES[k]).toHaveLength(4);
+      expect(html).toContain(VERSES[k].join('<br>'));
+      expect(text).toContain(VERSES[k].join('\n'));
     }
   });
 });

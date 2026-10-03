@@ -15,7 +15,7 @@
 // for the labels, times and buttons.
 // Mail apps read only the simplest HTML: tables, inline styles, no scripts.
 import { createHmac, timingSafeEqual } from 'node:crypto';
-import { BANNERS, type Letter, type MailKind } from '@/lib/email-copy';
+import { BANNERS, BRAND, type Letter, type MailKind } from '@/lib/email-copy';
 
 export type Theme = 'sunset' | 'campfire';
 export const THEMES: Theme[] = ['sunset', 'campfire'];
@@ -30,7 +30,7 @@ export const DEFAULT_THEMES: Record<MailKind, Theme> = {
 export const isTheme = (v: unknown): v is Theme => v === 'sunset' || v === 'campfire';
 
 /** Bump to make mail apps fetch every picture afresh after the drawing changes. */
-const DESIGN_VERSION = 3;
+const DESIGN_VERSION = 4;
 
 /** The picture's size as shown; it is drawn at twice this. */
 export const ART = { width: 600, height: 190 };
@@ -144,6 +144,11 @@ ${links ? `<td class="jod-stack" style="padding:0 0 0 20px;vertical-align:middle
 </tr></table>`
     : links ? `<p style="margin:0">${links}</p>` : '';
 
+  /* the verse in a printed book's italic, the same in every mail app */
+  const verse = letter.verse?.length
+    ? `<p style="margin:18px 0 6px;padding-left:14px;border-left:2px dotted ${c.rule};font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:15px;line-height:1.55;color:${c.soft}">${letter.verse.map(esc).join('<br>')}</p>`
+    : '';
+
   const small = `font-family:${FONT.text};font-size:12px;line-height:1.5;color:${c.faint}`;
   const foot = letter.foot.map(f => `<p style="margin:0 0 6px;${small}">${esc(f)}</p>`).join('')
     + (letter.button ? `<p style="margin:0 0 6px;${small};word-break:break-all">Virkar hnappurinn ekki? Opnaðu <a href="${esc(letter.button.url)}" style="color:${c.faint}">${esc(letter.button.url)}</a></p>` : '')
@@ -173,17 +178,17 @@ a{text-decoration-thickness:2px;text-underline-offset:3px}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
 <tr><td align="center" style="padding:12px 6px">
 <table role="presentation" width="${ART.width}" cellpadding="0" cellspacing="0" bgcolor="${c.card}" style="width:100%;max-width:${ART.width}px;background:${c.card};border:1px solid ${c.frame}">
-<tr><td style="background:${c.bar}"><a href="${esc(assets)}" style="text-decoration:none"><img src="${esc(art)}" width="${ART.width}" height="${ART.height}" alt="${esc(headingInArt ? letter.heading : `JOÐ · ${BANNERS[letter.kind].title}`)}" style="display:block;width:100%;max-width:${ART.width}px;height:auto;border:0;background:${c.bar};font-family:${FONT.display};${BOLD};font-size:24px;line-height:1.3;text-align:center;color:#E8DCC4"></a></td></tr>
+<tr><td style="background:${c.bar}"><a href="${esc(assets)}" style="text-decoration:none"><img src="${esc(art)}" width="${ART.width}" height="${ART.height}" alt="${esc(headingInArt ? letter.heading : `${BRAND} · ${BANNERS[letter.kind].title}`)}" style="display:block;width:100%;max-width:${ART.width}px;height:auto;border:0;background:${c.bar};font-family:${FONT.display};${BOLD};font-size:24px;line-height:1.3;text-align:center;color:#E8DCC4"></a></td></tr>
 ${strata(3)}
 <tr><td class="jod-pad" bgcolor="${c.card}" style="background:${c.card};padding:24px 40px 10px">
-${heading}${quote}${ticket}${letter.lines.map(p).join('\n')}${actions}
+${heading}${quote}${ticket}${letter.lines.map(p).join('\n')}${actions}${verse}
 </td></tr>
 <tr><td class="jod-pad" bgcolor="${c.card}" style="background:${c.card};padding:8px 40px 20px">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="border-top:2px dashed ${c.rule};padding-top:12px">${foot}</td></tr></table>
 </td></tr>
 ${strata(2)}
-<tr><td align="center" bgcolor="${c.bar}" style="background:${c.bar};padding:11px 20px;font-family:${FONT.label};${BOLD};font-size:10px;letter-spacing:3px;text-transform:uppercase">
-<a href="${esc(assets)}" style="color:#F2A63B;text-decoration:none">JOÐ · play.jodcraft.world</a>
+<tr><td align="center" bgcolor="${c.bar}" style="background:${c.bar};padding:11px 20px;font-family:${FONT.label};${BOLD};font-size:11px;letter-spacing:2px">
+<a href="${esc(assets)}" style="color:#F2A63B;text-decoration:none">${BRAND} · play.jodcraft.world</a>
 </td></tr>
 </table>
 </td></tr>
@@ -199,11 +204,12 @@ ${strata(2)}
     ...letter.lines.flatMap(l => [l, '']),
     ...(letter.button ? [`${letter.button.label}: ${letter.button.url}`, ''] : []),
     ...(letter.links ?? []).flatMap(l => [`${l.label}: ${l.url}`, '']),
+    ...(letter.verse?.length ? [...letter.verse, ''] : []),
     '--',
     ...letter.foot,
     ...(letter.footLink ? [`${letter.footLink.label}: ${letter.footLink.url}`] : []),
     '',
-    'JOÐ · play.jodcraft.world',
+    `${BRAND} · play.jodcraft.world`,
   ].join('\n').trim() + '\n';
 
   return { subject: letter.subject, html, text };
