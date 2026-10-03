@@ -46,6 +46,9 @@ body {
   background: var(--night);
   color: var(--text);
   font-family: var(--font-text);
+  /* Pixelify Sans's fi and fl ligatures point at glyphs the latin subset
+     leaves out, so "yfir" and "flest" came out as "yAr" and "Aest" */
+  font-variant-ligatures: none;
   font-size: var(--fs-md);
   line-height: var(--lh-night);
   overflow-x: clip;

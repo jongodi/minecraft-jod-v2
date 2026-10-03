@@ -99,27 +99,35 @@ describe('the letters', () => {
     expect(m.subject).toBe('stebbias kveikti bál: Byggjum brúna');
     expect(m.text).toContain('„Byggjum brúna“');
     expect(m.text).toContain('kl. 04:00');
-    expect(m.text).toContain('Svara: https://jodcraft.world/kvold/n1#hopur');
+    expect(m.text).toContain('Svara kallinu: https://jodcraft.world/kvold/n1#hopur');
     expect(m.text).toContain('https://jodcraft.world/crew/joenana');
   });
 
   it('a night decided carries the calendar entry and who is coming', () => {
     const m = nightLetter('chosen', night({ chosen: 'b', chosenBy: 'auto' }), { stebbias: ['b'], AmmaGaur: ['b'] }, reader);
-    expect(m.subject).toMatch(/^Spilakvöldið er ákveðið: /);
+    expect(m.subject).toMatch(/^Kvöldið er ákveðið: /);
     expect(m.text).toContain('2 ætla að mæta: AmmaGaur, stebbias.');
     expect(m.text).toContain('https://jodcraft.world/kvold/n1/dagatal.ics');
   });
 
+  it('wears the look it is given, the evening\'s by the fire unless told otherwise', () => {
+    const lit = nightLetter('lit', night(), {}, reader);
+    expect(lit.html).toContain('/api/mail-art?t=sunset&amp;k=lit');
+    expect(nightLetter('lit', night(), {}, reader, 'campfire').html).toContain('/api/mail-art?t=campfire&amp;k=lit');
+    expect(nightLetter('soon', night({ chosen: 'a' }), {}, reader).html).toContain('/api/mail-art?t=campfire&amp;k=soon');
+  });
+
   it('the half hour names the others coming, not the reader', () => {
     const m = nightLetter('soon', night({ chosen: 'a' }), { stebbias: ['a'], joenana: ['a'] }, reader);
-    expect(m.subject).toBe('Spilakvöldið hefst kl. 04:00');
+    expect(m.subject).toBe('Hálftími í bál: kl. 04:00');
     expect(m.text).toContain('1 ætlar að mæta: stebbias.');
   });
 
   it('a fire put out says which evening falls through', () => {
     const m = nightLetter('out', night({ chosen: 'a', note: 'Brúin' }), {}, reader);
-    expect(m.subject).toBe('Spilakvöldinu var aflýst: Brúin');
-    expect(m.text).toContain('Kvöldið á mánudag 5. jan. kl. 04:00 fellur niður.');
+    expect(m.subject).toBe('Bálið slokknaði: Brúin');
+    expect(m.text).toContain('Ekkert verður af kvöldinu á mánudag 5. jan. kl. 04:00.');
+    expect(m.text).toContain('(aflýst) Mánudag 5. jan. kl. 04:00');
   });
 });
 

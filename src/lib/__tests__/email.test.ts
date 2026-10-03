@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DEFAULT_FROM, cleanEmail, emailProblem, letter, sendEmail, sendEmails } from '@/lib/email';
+import { DEFAULT_FROM, cleanEmail, emailProblem, sendEmail, sendEmails } from '@/lib/email';
 
 describe('addresses', () => {
   it('keeps an address trimmed and in lower case', () => {
@@ -16,26 +16,6 @@ describe('addresses', () => {
     expect(emailProblem('a@b.is, c@d.is')).toMatch(/netfang/);
     expect(emailProblem(`${'x'.repeat(250)}@b.is`)).toMatch(/mest/);
     expect(emailProblem(42)).toMatch(/texti/);
-  });
-});
-
-describe('the letter', () => {
-  it('escapes what it is given and says the same in plain text', () => {
-    const { html, text } = letter({
-      heading: 'Bál <b>í kvöld</b>',
-      lines: ['„Byggjum & berjumst“'],
-      button: { label: 'Svara', url: 'https://jodcraft.world/kvold/a1?x=1&y="2"' },
-      links: [{ label: 'Í dagatalið', url: 'https://jodcraft.world/kvold/a1/dagatal.ics' }],
-      foot: 'smátt letur',
-    });
-    expect(html).toContain('Bál &lt;b&gt;í kvöld&lt;/b&gt;');
-    expect(html).toContain('Byggjum &amp; berjumst');
-    expect(html).toContain('href="https://jodcraft.world/kvold/a1?x=1&amp;y=&quot;2&quot;"');
-    expect(html).not.toContain('<b>');
-    expect(text).toContain('Bál <b>í kvöld</b>');
-    expect(text).toContain('Svara: https://jodcraft.world/kvold/a1?x=1&y="2"');
-    expect(text).toContain('Í dagatalið: https://jodcraft.world/kvold/a1/dagatal.ics');
-    expect(text.trim().endsWith('smátt letur')).toBe(true);
   });
 });
 

@@ -53,8 +53,12 @@ Vefurinn sendir póst frá `hallo@jodcraft.world` í gegnum [Resend](https://res
 | Innskráningartengill | félaganum sjálfum | þegar stjórnandinn ýtir á „Senda í pósti“, eða félaginn biður um hann undir „Þetta er ég“ (mest þrír á klukkutíma) |
 | Bál kveikt | öllum nema þeim sem kveikti | strax, meðan bálið er nýtt |
 | Kvöldið ákveðið | öllum nema þeim sem valdi | þegar kvöld með fleiri en einum tíma er ákveðið, af þeim sem kveikti eða sjálfkrafa; með tengli í dagatalið |
-| Hálftími í kvöldið | þeim sem sögðust mæta | frá hálftíma áður, þegar hægt er að kveikja á þjóninum |
-| Bálið slökkt | þeim sem sögðust geta mætt | þegar kvöldinu er aflýst |
+| Hálftími í bál | þeim sem sögðust mæta | frá hálftíma áður, þegar hægt er að kveikja á þjóninum |
+| Bálið slokknaði | þeim sem sögðust geta mætt | þegar kvöldinu er aflýst |
+
+**Orðin og útlitið.** Allt sem bréfin segja (efnislína, forsýnarlínan sem pósthólfið sýnir, myndin efst, fyrirsögn, textinn, hnappurinn og smáa letrið) er á einum stað, í `src/lib/email-copy.ts`, á rödd vefsins. Hvert bréf klæðist öðru af tveimur útlitum (`src/lib/email-design.ts`): **Sólsetur** (himinn og mesa í myndinni, orðin á pappír, negldum upp) eða **Varðeldur** (stjörnur og varðeldur í myndinni, ljós orð á dökkum viði). Sjálfgefið eru bréf dagsins í sólsetri og bréf kvöldsins við eldinn; í stjórnborðinu undir **Póstur** sést hvert bréf eins og það berst, með tilbúnum orðum, þar er útlit hvers bréfs valið (geymt í Redis) og prufa send á hvaða netfang sem er. Rofinn „Sýna eins og Gmail“ sýnir bréfin án letur vefsins, eins og Gmail og Outlook sýna þau.
+
+Myndin efst í hverju bréfi er teiknuð á `/api/mail-art` með letri vefsins, eins og tengilspjöldin, svo hún er eins í öllum póstforritum; orð hennar koma úr `email-copy.ts` en ekki úr slóðinni, og slóðin breytist þegar þau breytast. Textinn biður um sama letur (`public/email-fonts`); Apple Mail og fleiri sýna það, Gmail og Outlook nota staðgengla (Rockwell eða Georgia, Trebuchet, Courier).
 
 Bréfin um spilakvöld fá aðeins þau sem hafa skráð netfang og ekki afþakkað þau (`src/lib/night-mail.ts`). Þau eru send strax eftir að bál er kveikt, valið eða slökkt, og verkið `/api/cron/nights` (á fimm mínútna fresti, sjá `vercel.json`) sendir það sem eftir stendur: kvöld sem var ákveðið sjálfkrafa og hálftímann fyrir kvöldið. Hvert bréf er merkt í Redis áður en það fer, svo það fer aðeins einu sinni; bréf sem komst ekki til skila er reynt aftur í næstu umferð. Tíðara verk en einu sinni á dag þarf Vercel Pro.
 

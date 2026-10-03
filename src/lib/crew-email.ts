@@ -9,7 +9,10 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { CREW_USERNAMES, canonicalUsername } from '@/lib/crew-types';
 import { closeInvite, createInvite, inviteUrl, type Invite } from '@/lib/crew-access';
-import { canSendEmail, cleanEmail, letter, sendEmail } from '@/lib/email';
+import { canSendEmail, cleanEmail, sendEmail, siteUrl } from '@/lib/email';
+import { signinLetter } from '@/lib/email-copy';
+import { renderLetter } from '@/lib/email-design';
+import { readThemes } from '@/lib/email-settings';
 
 const hasKV = () => !!process.env.REDIS_URL;
 
@@ -79,8 +82,6 @@ export async function nightReaders(except: string[] = []): Promise<Array<{ usern
 
 /* ─── a sign-in link by post ──────────────────────────────────────────────── */
 
-const day = (iso: string) => new Date(iso).toLocaleDateString('is-IS', { day: 'numeric', month: 'long', timeZone: 'UTC' });
-
 /** A fresh sign-in link, mailed to the member's address. No link is left
     open that nobody was sent: none is made without an address or a mail key,
     and one whose letter did not go is shut at once. */
@@ -92,16 +93,9 @@ export async function mailSignInLink(username: string, origin: string): Promise<
 
   const invite = await createInvite(name);
   const url = inviteUrl(origin, invite.key);
-  const { html, text } = letter({
-    heading: `Innskráning á JOÐ, ${name}`,
-    lines: [
-      'Hér er tengillinn þinn. Opnaðu hann í símanum eða tölvunni sem þú vilt nota; tækið man eftir þér í eitt ár.',
-      `Hann gildir til ${day(invite.expiresAt)} og fyrir ${invite.maxUses} tæki. Á veggnum þínum getur þú svo valið þér lykilorð.`,
-    ],
-    button: { label: 'Skrá mig inn', url },
-    foot: 'Baðst þú ekki um þetta? Þá má hunsa bréfið; enginn kemst inn nema með tenglinum.',
-  });
-  const result = await sendEmail({ to: email.address, subject: 'Innskráningartengill á JOÐ', html, text });
+  const site = siteUrl();
+  const { subject, html, text } = renderLetter(signinLetter({ name, url, expiresAt: invite.expiresAt, uses: invite.maxUses }), (await readThemes()).signin, site);
+  const result = await sendEmail({ to: email.address, subject, html, text });
   /* a link that never left is shut at once */
   if (!result.sent) { await closeInvite(invite.key); return result; }
   return { sent: true, invite, url, to: email.address };

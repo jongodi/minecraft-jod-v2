@@ -12,6 +12,7 @@ import MapSyncPanel from '@/components/admin/MapSyncPanel';
 import DatapacksPanel from '@/components/admin/DatapacksPanel';
 import GalleryPanel from '@/components/admin/GalleryPanel';
 import CrewPanel from '@/components/admin/CrewPanel';
+import EmailPanel from '@/components/admin/EmailPanel';
 import { confirmLeave, hasUnsaved } from '@/components/admin/unsaved';
 
 const MapPanel = dynamic(() => import('@/components/admin/MapPanel'), { ssr: false });
@@ -22,6 +23,7 @@ const TABS = [
   { id: 'gallery',   label: 'Myndasafn' },
   { id: 'map',       label: 'Landakort' },
   { id: 'crew',      label: 'Hópurinn' },
+  { id: 'mail',      label: 'Póstur' },
 ] as const;
 type Tab = typeof TABS[number]['id'];
 
@@ -91,6 +93,7 @@ export default function AdminPage() {
         {tab === 'gallery'   && <GalleryPanel />}
         {mapOpened && <div hidden={tab !== 'map'}><MapPanel key={mapKey} /></div>}
         {tab === 'crew'      && <CrewPanel />}
+        {tab === 'mail'      && <EmailPanel />}
       </main>
     </div>
   );

@@ -7,6 +7,7 @@ vi.mock('@/lib/redis', () => {
   const redis = {
     get: async (k: string) => kv.get(k) ?? null,
     mget: async (...ks: string[]) => ks.map(k => kv.get(k) ?? null),
+    hgetall: async () => ({}),
     set: async (k: string, v: string) => { kv.set(k, v); return 'OK'; },
     del: async (k: string) => (kv.delete(k) ? 1 : 0),
     lrange: async (k: string) => lists.get(k) ?? [],
