@@ -121,12 +121,12 @@ describe('a sign-in link by post', () => {
     await setEmail('joenana', { address: 'jo@dæmi.is', nights: true });
     fetchMock.mockResolvedValue(new Response('{"id":"e1"}', { status: 200 }));
     await mailSignInLink('joenana', 'https://jod.test');
-    expect(JSON.parse(fetchMock.mock.calls[0][1].body).subject).toBe('Lykillinn þinn að JOÐ, joenana');
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).subject).toBe('Lykillinn þinn að JOÐcraft, joenana');
     await setName('joenana', 'Jóna');
     fetchMock.mockResolvedValue(new Response('{"id":"e2"}', { status: 200 }));
     await mailSignInLink('joenana', 'https://jod.test');
     const body = JSON.parse(fetchMock.mock.calls[1][1].body);
-    expect(body.subject).toBe('Lykillinn þinn að JOÐ, Jóna');
+    expect(body.subject).toBe('Lykillinn þinn að JOÐcraft, Jóna');
     expect(body.text).toContain('GAKKTU Í BÆINN, JÓNA');
   });
 

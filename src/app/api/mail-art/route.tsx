@@ -1,6 +1,6 @@
 import type { NextRequest } from 'next/server';
 import { ImageResponse } from 'next/og';
-import { BANNERS, MAIL_KINDS, type MailKind } from '@/lib/email-copy';
+import { BANNERS, BRAND, MAIL_KINDS, type MailKind } from '@/lib/email-copy';
 import { ART, artHeading, isTheme, type Theme } from '@/lib/email-design';
 import { C, cardFonts } from '@/lib/og-card';
 
@@ -50,7 +50,7 @@ function Words({ kind, heading, tagColor, room }: { kind: MailKind; heading: str
     <div style={{ position: 'absolute', left: 64, top: 38, width: room, maxHeight: MESA_TOP - 38, display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
         <Mark size={52} />
-        <div style={{ display: 'flex', fontSize: 46, color: C.paper }}>JOÐ</div>
+        <div style={{ display: 'flex', fontSize: 46, color: C.paper }}>{BRAND}</div>
         <div style={{ display: 'flex', marginLeft: 10, padding: '6px 14px', border: `3px solid ${tagColor}`, background: 'rgba(21, 16, 13, 0.55)', color: tagColor, fontFamily: 'Silkscreen', fontSize: 22, letterSpacing: 2 }}>{(heading ? title : tag).toUpperCase()}</div>
       </div>
       {/* two lines of a heading share its words evenly, so no word is left alone on the second */}

@@ -6,7 +6,7 @@
 // how local development and preview deployments (the key is set for
 // production only) stay quiet.
 
-export const DEFAULT_FROM = 'JOÐ <hallo@jodcraft.world>';
+export const DEFAULT_FROM = 'JOÐcraft <hallo@jodcraft.world>';
 const API = 'https://api.resend.com';
 
 /** The site's own address, for links in a letter: there is no request to read it off when the cron job writes. */

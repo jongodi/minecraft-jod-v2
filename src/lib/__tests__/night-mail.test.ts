@@ -122,6 +122,7 @@ describe('the letters', () => {
     const named = { stebbias: 'Stefán', ammagaur: 'Amma', joenana: 'Jóna' };
     const lit = nightLetter('lit', night({ note: 'Brúin' }), {}, reader, 'sunset', named);
     expect(lit.subject).toBe('Stefán kveikti bál: Brúin');
+    expect(lit.text).toContain('Kveikt er bál og creeper eytt,');
     expect(lit.text).toContain('STEFÁN KALLAR SAMAN HÓPINN');
     const soon = nightLetter('soon', night({ chosen: 'a' }), { stebbias: ['a'], AmmaGaur: ['a'], ingunnbirta: ['a'], joenana: ['a'] }, reader, 'campfire', named);
     expect(soon.text).toContain('SÖÐLAÐU HESTINN, JÓNA');
@@ -138,7 +139,7 @@ describe('the letters', () => {
   it('a fire put out says which evening falls through', () => {
     const m = nightLetter('out', night({ chosen: 'a', note: 'Brúin' }), {}, reader);
     expect(m.subject).toBe('Bálið slokknaði: Brúin');
-    expect(m.text).toContain('Ekkert verður af kvöldinu á mánudag 5. jan. kl. 04:00.');
+    expect(m.text).toContain('Ekkert verður af kvöldinu á mánudag 5. jan. kl. 04:00. Hvílum hestana, það kemur annað kvöld.');
     expect(m.text).toContain('(aflýst) Mánudag 5. jan. kl. 04:00');
   });
 });
@@ -171,7 +172,7 @@ describe('sending, once', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const sent = JSON.parse(fetchMock.mock.calls[0][1].body);
     expect(sent.map((m: { to: string[] }) => m.to[0])).toEqual(['jo@dæmi.is', 'amma@dæmi.is']);
-    expect(sent[0].subject).toBe('Stefán kveikti bál á JOÐ');
+    expect(sent[0].subject).toBe('Stefán kveikti bál á JOÐcraft');
     names = {};
   });
 
