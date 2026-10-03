@@ -1,14 +1,14 @@
 'use client';
 
 // The crew, from the admin's side: who has a password of their own, how much
-// hangs on each wall, and the sign-in links. A link is handed over in the
-// group chat or scanned; it is good for a week and a handful of devices, and
-// can be closed early. A member who forgets their password gets it cleared
-// here and a fresh link.
-import { useCallback, useEffect, useState } from 'react';
+// hangs on each wall, each member's email address, and the sign-in links. A
+// link is handed over in the group chat, scanned, or sent by post; it is good
+// for a week and a handful of devices, and can be closed early. A member who
+// forgets their password gets it cleared here and a fresh link.
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { plural } from '@/lib/format';
 import type { AdminCrewRow, InviteResponse } from '@/app/api/admin/crew/route';
-import { Button, Modal, Notice, Panel, api, errText } from './ui';
+import { Button, Field, Modal, Notice, Panel, Toggle, api, errText } from './ui';
 
 function when(iso: string | null): string {
   if (!iso) return 'ekkert enn';
@@ -21,6 +21,7 @@ export default function CrewPanel() {
   const [invite, setInvite] = useState<(InviteResponse & { username: string }) | null>(null);
   const [busy, setBusy]     = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [editing, setEditing] = useState<AdminCrewRow | null>(null);
 
   const load = useCallback(async () => {
     try { setRows(await api<AdminCrewRow[]>('/api/admin/crew')); }
@@ -28,10 +29,11 @@ export default function CrewPanel() {
   }, []);
   useEffect(() => { load(); }, [load]);
 
-  async function mint(username: string) {
-    setBusy(username); setNotice(''); setCopied(false);
+  /* a new link, shown with its QR code; with `send` it is mailed to the member too */
+  async function mint(username: string, send = false) {
+    setBusy(`${username}${send ? ':send' : ''}`); setNotice(''); setCopied(false);
     try {
-      const res = await api<InviteResponse>('/api/admin/crew', { method: 'POST', body: JSON.stringify({ username }) });
+      const res = await api<InviteResponse>('/api/admin/crew', { method: 'POST', body: JSON.stringify({ username, send }) });
       setInvite({ ...res, username });
       load();
     } catch (e) { setNotice(errText(e)); }
@@ -62,7 +64,7 @@ export default function CrewPanel() {
       {rows === null ? <p className="a-muted">Sæki hópinn…</p> : (
         <table className="a-table">
           <thead>
-            <tr><th>Félagi</th><th>Lykilorð</th><th>Á veggnum</th><th>Opnir tenglar</th><th></th></tr>
+            <tr><th>Félagi</th><th>Netfang</th><th>Lykilorð</th><th>Á veggnum</th><th>Opnir tenglar</th><th></th></tr>
           </thead>
           <tbody>
             {rows.map(r => (
@@ -70,6 +72,12 @@ export default function CrewPanel() {
                 <td>
                   <a href={`/crew/${r.username}`} target="_blank" rel="noreferrer">{r.username}</a>
                   <div className="a-muted">síðast {when(r.lastEntry)}</div>
+                </td>
+                <td>
+                  {r.email
+                    ? <><span className="a-data">{r.email.address}</span>{!r.email.nights && <div className="a-muted">enginn póstur um spilakvöld</div>}</>
+                    : <span className="a-muted">ekkert</span>}
+                  {' '}<Button tone="ghost" small onClick={() => setEditing(r)}>{r.email ? 'Breyta' : 'Setja inn'}</Button>
                 </td>
                 <td>
                   {r.hasPassword
@@ -90,18 +98,26 @@ export default function CrewPanel() {
                     </ul>
                   )}
                 </td>
-                <td><Button small onClick={() => mint(r.username)} disabled={busy !== null}>{busy === r.username ? 'Bý til…' : 'Nýr tengill'}</Button></td>
+                <td>
+                  <div className="a-inline">
+                    <Button small onClick={() => mint(r.username)} disabled={busy !== null}>{busy === r.username ? 'Bý til…' : 'Nýr tengill'}</Button>
+                    {r.email && <Button small onClick={() => mint(r.username, true)} disabled={busy !== null} title={`Sendir nýjan tengil á ${r.email.address}`}>{busy === `${r.username}:send` ? 'Sendi…' : 'Senda í pósti'}</Button>}
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       )}
-      <p className="a-help">Gleymt lykilorð: hreinsaðu það hér og sendu nýjan tengil; félaginn velur sér annað á veggnum. Aðgangslyklar í umhverfisbreytum (<code>CREW_TOKEN_…</code>) virka áfram undir „Þetta er ég“.</p>
+      <p className="a-help">Gleymt lykilorð: hreinsaðu það hér og sendu nýjan tengil; félaginn velur sér annað á veggnum. Sé netfang skráð getur félaginn líka beðið sjálfur um tengil í pósti undir „Þetta er ég“, og fær póst um spilakvöldin nema hann afþakki það. Aðgangslyklar í umhverfisbreytum (<code>CREW_TOKEN_…</code>) virka áfram undir „Þetta er ég“.</p>
+
+      {editing && <EmailModal row={editing} onClose={() => setEditing(null)} onSaved={msg => { setEditing(null); setNotice(msg); load(); }} />}
 
       {invite && (
         <Modal title={`Innskráningartengill fyrir ${invite.username}`} onClose={() => setInvite(null)} width="34rem">
           <div className="a-stack">
-            <p className="a-help">Sendu {invite.username} tengilinn eða láttu skanna kóðann. Hann gildir til {when(invite.expiresAt)} og fyrir {invite.maxUses} tæki; hvert tæki sem opnar hann er skráð inn sem {invite.username} í eitt ár. Á veggnum getur {invite.username} svo valið sér lykilorð.</p>
+            {invite.sentTo && <Notice text={`✓ Tengillinn var sendur á ${invite.sentTo}.`} />}
+            <p className="a-help">{invite.sentTo ? 'Hann er líka hér, til að afrita eða skanna.' : `Sendu ${invite.username} tengilinn eða láttu skanna kóðann.`} Hann gildir til {when(invite.expiresAt)} og fyrir {invite.maxUses} tæki; hvert tæki sem opnar hann er skráð inn sem {invite.username} í eitt ár. Á veggnum getur {invite.username} svo valið sér lykilorð.</p>
             <div className="a-qr" dangerouslySetInnerHTML={{ __html: invite.svg }} aria-label="QR-kóði með tenglinum" />
             <input className="a-input a-input--data" readOnly value={invite.url} onFocus={e => e.target.select()} aria-label="Tengill" />
             <div className="a-inline">
@@ -112,5 +128,41 @@ export default function CrewPanel() {
         </Modal>
       )}
     </Panel>
+  );
+}
+
+/** A member's address, set or cleared by the admin, so a link can be mailed
+    to someone who has never been in. */
+function EmailModal({ row, onClose, onSaved }: { row: AdminCrewRow; onClose: () => void; onSaved: (msg: string) => void }) {
+  const [address, setAddress] = useState(row.email?.address ?? '');
+  const [nights, setNights]   = useState(row.email?.nights ?? true);
+  const [error, setError]     = useState('');
+  const [saving, setSaving]   = useState(false);
+
+  async function save(e?: FormEvent, clear = false) {
+    e?.preventDefault();
+    setSaving(true); setError('');
+    try {
+      await api('/api/admin/crew', { method: 'PUT', body: JSON.stringify({ username: row.username, email: clear ? null : address, nights }) });
+      onSaved(clear ? `✓ Netfang ${row.username} var fjarlægt.` : `✓ Netfang ${row.username} var vistað.`);
+    } catch (err) { setError(errText(err)); }
+    finally { setSaving(false); }
+  }
+
+  return (
+    <Modal title={`Netfang ${row.username}`} onClose={onClose} width="30rem">
+      <form className="a-stack" onSubmit={save}>
+        <Field label="Netfang" help="Þangað fara innskráningartenglar og póstur um spilakvöld. Félaginn sér það og getur breytt því á veggnum sínum; aðrir sjá það ekki.">
+          <input className="a-input" type="email" value={address} onChange={e => setAddress(e.target.value)} placeholder="nafn@dæmi.is" autoComplete="off" autoFocus />
+        </Field>
+        <Toggle checked={nights} onChange={setNights} label="Póstur um spilakvöld" />
+        <Notice text={error} />
+        <div className="a-inline">
+          <Button tone="primary" small type="submit" disabled={saving || !address.trim()}>{saving ? 'Vista…' : 'Vista'}</Button>
+          {row.email && <Button tone="danger" small onClick={() => save(undefined, true)} disabled={saving}>Fjarlægja</Button>}
+          <Button tone="ghost" small onClick={onClose}>Hætta við</Button>
+        </div>
+      </form>
+    </Modal>
   );
 }
