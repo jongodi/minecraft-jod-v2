@@ -29,6 +29,12 @@ import { manifestText } from './bluemap-pack.mjs';
    when it prunes what the server no longer has. */
 export const OWN_FILES = ['lang/is.conf'];
 
+/* The main map, the only one this viewer shows. BlueMap also renders small
+   maps of other bases (src/lib/map-bases.json, npm run map:bases); they are
+   kept apart from this one, so map:sync doesn't copy them and the viewer's
+   map list never names them. */
+export const MAIN_MAP = 'world';
+
 const SITE = (process.env.NEXT_PUBLIC_SITE_URL || 'https://jodcraft.world').replace(/\/+$/, '');
 
 /* The viewer's view distances, in blocks. The hires layer loads a square of
@@ -181,13 +187,14 @@ export function brand(root = process.cwd()) {
   const settingsFile = join(shell, 'settings.json');
   const settings = readJson(settingsFile, null);
   if (!settings) throw new Error('public/bluemap/settings.json er ekki lesanlegt.');
-  const mapId = (Array.isArray(settings.maps) && settings.maps[0]) || 'world';
+  const mapId = MAIN_MAP;
   const hasCopy = manifest.files.length > 0;
   const root_ = hasCopy && version ? `/bluemap-data/${version}/maps` : settings.mapDataRoot;
   const clamp = (v, min, max) => Math.min(max ?? v, Math.max(min ?? v, v));
   const ours = new Set(['/bluemap-jod/jod.js', '/bluemap-jod/jod.css']);
   const next = {
     ...settings,
+    maps: [mapId],
     mapDataRoot: root_,
     ...(start ? { startLocation: start } : {}),
     hiresSliderDefault: clamp(VIEW.hiresSliderDefault, settings.hiresSliderMin, settings.hiresSliderMax),

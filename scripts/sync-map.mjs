@@ -20,7 +20,7 @@
 // runs they come straight from it.
 //
 // Only what the viewer reads is copied: BlueMap's render bookkeeping
-// (maps/*/rstate), maps the viewer doesn't list, player heads (they come from
+// (maps/*/rstate), every map but the main one, player heads (they come from
 // /api/map-head) and source maps stay on the server. The last step brands the
 // viewer as JOÐ's map (scripts/bluemap-brand.mjs; npm run map:brand on its own).
 //
@@ -35,7 +35,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, sep } from 'node:path';
 import { BlobAccessError, BlobStoreNotFoundError, BlobStoreSuspendedError, del, get, list, put } from '@vercel/blob';
-import { brand, OWN_FILES, versionOf } from './bluemap-brand.mjs';
+import { brand, MAIN_MAP, OWN_FILES, versionOf } from './bluemap-brand.mjs';
 import { BLOB_DIR, blobsOf, manifestText, packBody, planPacks } from './bluemap-pack.mjs';
 
 const ROOT     = process.cwd();
@@ -104,9 +104,10 @@ async function main() {
   }
   console.log(`Les möppur í ${REMOTE} á þjóninum…`);
   const listed = await listedMaps(id);
+  /* only the main map: the small base maps (npm run map:bases) stay on the server */
   const found = (await walk(id)).filter(({ rel }) => {
     const map = rel.match(/^maps\/([^/]+)\//)?.[1];
-    return !map || !listed || listed.has(map);
+    return !map || (map === MAIN_MAP && (!listed || listed.has(map)));
   });
   if (!found.some((f) => f.rel === 'index.html') || !found.some((f) => f.rel.startsWith('maps/'))) {
     fail(`Fann hvorki index.html né kortagögn í ${REMOTE}. Er BlueMap uppsett og búið að teikna kortið?`);
@@ -334,6 +335,7 @@ async function walk(id) {
 function skip(rel) {
   const name = rel.slice(rel.lastIndexOf('/') + 1);
   return name.startsWith('.')
+    || (rel.startsWith('maps/') && rel.split('/')[1] !== MAIN_MAP)  // base maps stay on the server, not even walked
     || name.endsWith('.php')                               // BlueMap's sql.php holds database settings
     || name.endsWith('.map')                               // source maps: only a debugger reads them
     || /^maps\/[^/]+\/live\/players\.json$/.test(rel)      // live, served from the server while it runs

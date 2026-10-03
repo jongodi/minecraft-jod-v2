@@ -12,6 +12,7 @@
     "map:brand": "node scripts/bluemap-brand.mjs",
     "map:warm": "node scripts/map-warm.mjs",
     "map:poster": "node scripts/map-poster.mjs",
+    "map:bases": "node scripts/map-bases.mjs",
     "server:size": "node scripts/server-size.mjs",
     "test": "vitest run"
   },
