@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { BANNERS, MAIL_KINDS, type Letter } from '@/lib/email-copy';
-import { DEFAULT_THEMES, THEMES, artUrl, renderLetter } from '@/lib/email-design';
+import { DEFAULT_THEMES, THEMES, artHeading, artUrl, renderLetter } from '@/lib/email-design';
 import { readThemes, setTheme } from '@/lib/email-settings';
 import { sampleLetter } from '@/lib/email-samples';
 
@@ -56,6 +56,44 @@ describe('a letter in its dress', () => {
       expect(html.length).toBeLessThan(60_000);
       expect(text).toContain('JOÐ · play.jodcraft.world');
     }
+  });
+});
+
+describe('the heading in the picture', () => {
+  afterEach(() => vi.unstubAllEnvs());
+  const parts = (url: string) => new URL(url).searchParams;
+
+  it('is drawn in the picture, signed, when the site has a key', () => {
+    vi.stubEnv('CRON_SECRET', 'a-long-secret-for-the-cron-job');
+    const { html } = renderLetter(letter({ heading: 'Söðlaðu hestinn, Jóna' }), 'campfire', SITE);
+    const src = html.match(/<img src="([^"]+)"/)![1].replace(/&amp;/g, '&');
+    const q = parts(src);
+    expect(artHeading('campfire', 'lit', q.get('h'), q.get('s'))).toBe('Söðlaðu hestinn, Jóna');
+    /* the picture says it, so the paper does not say it again; the picture's alt text does */
+    expect(html).not.toContain('<h1');
+    expect(html).toContain('alt="Söðlaðu hestinn, Jóna"');
+  });
+
+  it('is never drawn from words the site did not sign', () => {
+    vi.stubEnv('CRON_SECRET', 'a-long-secret-for-the-cron-job');
+    const q = parts(artUrl(SITE, 'sunset', 'lit', 'Bál í kvöld'));
+    const forged = Buffer.from('Ókeypis gull hér').toString('base64url');
+    expect(artHeading('sunset', 'lit', forged, q.get('s'))).toBeNull();
+    expect(artHeading('sunset', 'out', q.get('h'), q.get('s'))).toBeNull();
+    expect(artHeading('campfire', 'lit', q.get('h'), q.get('s'))).toBeNull();
+    expect(artHeading('sunset', 'lit', q.get('h'), 'x')).toBeNull();
+    expect(artHeading('sunset', 'lit', null, null)).toBeNull();
+    vi.stubEnv('CRON_SECRET', 'another-secret-after-a-change');
+    expect(artHeading('sunset', 'lit', q.get('h'), q.get('s'))).toBeNull();
+  });
+
+  it('stays on the paper when there is no key to sign it with', () => {
+    vi.stubEnv('CRON_SECRET', '');
+    vi.stubEnv('ADMIN_TOKEN', '');
+    vi.stubEnv('MAIL_ART_SECRET', '');
+    const { html } = renderLetter(letter({ heading: 'Bál í kvöld' }), 'sunset', SITE);
+    expect(html).toContain('>Bál í kvöld</h1>');
+    expect(html).not.toContain('&amp;h=');
   });
 });
 
