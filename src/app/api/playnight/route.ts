@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { getCrewSession } from '@/lib/crew';
+import { canSendEmail } from '@/lib/email';
 import { exarotonStatus, startExaroton } from '@/lib/exaroton';
 import { forgetStatus } from '@/lib/server-status';
 import { errorMessage } from '@/lib/icelandic';
@@ -41,6 +42,16 @@ export interface PlayNightResponse {
 }
 
 const json = (body: unknown, status = 200) => NextResponse.json(body, { status, headers: { 'Cache-Control': 'no-store' } });
+
+/* Word by post of a fire lit, chosen or put out (src/lib/night-mail.ts), sent
+   once the answer has gone so nobody waits on the mail service. */
+function mailAfter(send: (mail: typeof import('@/lib/night-mail')) => Promise<unknown>) {
+  if (!canSendEmail()) return;
+  after(async () => {
+    try { await send(await import('@/lib/night-mail')); }
+    catch (e) { console.error('[playnight] the letters did not go:', e instanceof Error ? e.message : e); }
+  });
+}
 const NO_REDIS = 'Spilakvöld eru aðeins geymd þegar Redis er tengt (REDIS_URL).';
 
 const publicOf = ({ night, votes, seen }: NightState, now: number): PublicNight => ({
@@ -93,6 +104,7 @@ export async function POST(req: NextRequest) {
       await writeNight(night);
       /* whoever lights the fire can make every time they offered */
       await writeVote(night, me, night.options.map(o => o.id), now);
+      mailAfter(m => m.mailNights());
       return json(await view(me));
     }
 
@@ -118,9 +130,11 @@ export async function POST(req: NextRequest) {
         const option = optionOf(night, typeof body?.option === 'string' ? body.option : null);
         if (!option) return json({ error: 'Tíminn fannst ekki.' }, 400);
         await writeNight({ ...night, chosen: option.id, chosenBy: me });
+        mailAfter(m => m.mailNights());
       } else {
         if (phase === 'live' || phase === 'over') return json({ error: 'Kvöldið er hafið.' }, 409);
         await writeNight({ ...night, cancelled: true });
+        mailAfter(m => m.mailNightOut(night, votes));
       }
       return json(await view(me));
     }

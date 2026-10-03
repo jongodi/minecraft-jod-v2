@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { cronAuthorised } from '@/lib/cron';
 import { dayOf, saveDay } from '@/lib/daily-stats';
 import { readGameStats, setCachedStats } from '@/lib/stats';
 
@@ -16,19 +17,8 @@ import { readGameStats, setCachedStats } from '@/lib/stats';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
-/** Compared without an early exit, as the admin token is. */
-function authorised(header: string | null): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret || secret.length < 16 || !header) return false;
-  const expected = `Bearer ${secret}`;
-  if (header.length !== expected.length) return false;
-  let mismatch = 0;
-  for (let i = 0; i < expected.length; i++) mismatch |= header.charCodeAt(i) ^ expected.charCodeAt(i);
-  return mismatch === 0;
-}
-
 export async function GET(req: NextRequest) {
-  if (!authorised(req.headers.get('authorization'))) {
+  if (!cronAuthorised(req.headers.get('authorization'))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
   const token = process.env.EXAROTON_API_KEY;

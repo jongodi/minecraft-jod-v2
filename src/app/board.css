@@ -373,7 +373,13 @@
 .b-modal__box { width: 100%; max-width: 22rem; padding: var(--sp-5); }
 .b-modal__title { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-lg); color: var(--ink); }
 .b-modal__sub { font-size: var(--fs-sm); color: var(--ink-soft); margin: var(--sp-1) 0 var(--sp-4); }
-.b-modal__actions { display: flex; gap: var(--sp-2); margin-top: var(--sp-4); }
+.b-modal__actions { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-4); }
+.b-modal__alt { margin-top: var(--sp-3); font-size: var(--fs-sm); }
+.b-modal__alt .b-link { border: 0; padding: 0; }
+.b-modal__alt .b-link:disabled { opacity: 0.6; cursor: default; }
+.b-modal__ok { margin-top: var(--sp-3); font-size: var(--fs-sm); color: var(--ink-soft); }
+.b-modal__check { display: flex; gap: var(--sp-2); align-items: flex-start; margin-top: var(--sp-3); font-size: var(--fs-sm); color: var(--ink-soft); cursor: pointer; }
+.b-modal__check input { margin-top: 0.2em; accent-color: var(--lantern-deep); flex: none; }
 
 /* ═══════════════════════════════════════════════════════════════
    Label type on the board

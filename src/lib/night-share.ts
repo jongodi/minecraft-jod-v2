@@ -8,8 +8,9 @@ import { plural } from '@/lib/format';
 const DAYS = ['sunnudag', 'mánudag', 'þriðjudag', 'miðvikudag', 'fimmtudag', 'föstudag', 'laugardag'];
 const MONTHS = ['jan.', 'feb.', 'mar.', 'apr.', 'maí', 'jún.', 'júl.', 'ágú.', 'sep.', 'okt.', 'nóv.', 'des.'];
 const cap = (s: string) => s.charAt(0).toLocaleUpperCase('is-IS') + s.slice(1);
-/* Iceland keeps UTC; a link card is drawn once and kept, so no "í kvöld" */
-const when = (iso: string) => {
+/** "Laugardag 10. okt. kl. 20:00". Iceland keeps UTC; a link card is drawn
+    once and kept, and a letter is read whenever, so no "í kvöld". */
+export const dayTime = (iso: string) => {
   const d = new Date(iso);
   return `${cap(DAYS[d.getUTCDay()])} ${d.getUTCDate()}. ${MONTHS[d.getUTCMonth()]} kl. ${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`;
 };
@@ -41,17 +42,17 @@ export async function sharedNight(id?: string): Promise<SharedNight | null> {
     return {
       title: 'Kvöld í kortunum', note: night.note, lit: true,
       count: Math.max(...opts.map(o => o.n)),
-      lines: opts.map(o => `${when(o.at)} · ${o.n} ${plural(o.n, 'getur', 'geta')}`),
+      lines: opts.map(o => `${dayTime(o.at)} · ${o.n} ${plural(o.n, 'getur', 'geta')}`),
     };
   }
   const yes = yesFor(votes, chosen.id).length;
   if (phase === 'over') {
     const came = night.outcome?.came.length;
-    return { title: 'Spilakvöldið er búið', note: night.note, lit: false, count: 0, lines: [when(chosen.at), ...(came !== undefined ? [`${came} ${plural(came, 'mætti', 'mættu')}`] : [])] };
+    return { title: 'Spilakvöldið er búið', note: night.note, lit: false, count: 0, lines: [dayTime(chosen.at), ...(came !== undefined ? [`${came} ${plural(came, 'mætti', 'mættu')}`] : [])] };
   }
   return {
     title: phase === 'live' ? 'Kvöldið er hafið' : 'Næsta spilakvöld', note: night.note, lit: true, count: yes,
-    lines: [when(chosen.at), `${yes} ${plural(yes, 'mætir', 'mæta')}`],
+    lines: [dayTime(chosen.at), `${yes} ${plural(yes, 'mætir', 'mæta')}`],
   };
 }
 

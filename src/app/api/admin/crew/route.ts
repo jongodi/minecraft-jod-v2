@@ -1,11 +1,14 @@
 // The crew, from the admin's side: who has a token, how much hangs on each
-// wall, and a one-time sign-in link (with its QR code) for any member.
+// wall, each member's email address, and a sign-in link (with its QR code,
+// or by post) for any member.
 import { NextRequest, NextResponse } from 'next/server';
 import { badJson, jsonObject } from '@/lib/http';
 import QRCode from 'qrcode';
 import { requireAdmin, unauthorizedResponse } from '@/lib/auth';
 import { readAllProfiles, allPhotos, createInvite, closeInvite, listInvites, inviteUrl, getCrewToken, isCrewUsername, canonicalUsername, type Invite } from '@/lib/crew';
 import { hasPassword, setPasswordHash } from '@/lib/crew-access';
+import { getEmail, mailSignInLink, setEmail, type CrewEmail } from '@/lib/crew-email';
+import { canSendEmail, emailProblem } from '@/lib/email';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,6 +19,8 @@ export interface AdminCrewRow {
   entryCount:  number;
   photoCount:  number;
   lastEntry:   string | null;
+  /** where sign-in links and word of the play nights go; null without one */
+  email:       CrewEmail | null;
   /** open sign-in links, newest first */
   invites:     Array<Omit<Invite, 'key'> & { url: string }>;
 }
@@ -30,26 +35,59 @@ export async function GET(req: NextRequest) {
     entryCount:  p.entries.length,
     photoCount:  allPhotos(p).length,
     lastEntry:   p.entries[0]?.createdAt ?? null,
+    email:       await getEmail(p.username),
     invites:     (await listInvites(p.username)).map(({ key, ...inv }) => ({ ...inv, url: inviteUrl(origin, key) })),
   })));
   return NextResponse.json(rows, { headers: { 'Cache-Control': 'no-store' } });
 }
 
-export interface InviteResponse { url: string; expiresAt: string; maxUses: number; svg: string }
+export interface InviteResponse {
+  url: string; expiresAt: string; maxUses: number; svg: string;
+  /** the address the link was mailed to, when it was sent by post */
+  sentTo?: string;
+}
 
-/** A new sign-in link for a member: good for a week and a handful of devices. */
+const qr = (url: string) => QRCode.toString(url, { type: 'svg', errorCorrectionLevel: 'M', margin: 1, color: { dark: '#1E1611', light: '#E8DCC4' } });
+
+/** A new sign-in link for a member: good for a week and a handful of devices.
+    With `send: true` it is mailed to the member's address instead of only shown. */
 export async function POST(req: NextRequest) {
   if (!(await requireAdmin())) return unauthorizedResponse();
-  let body: { username?: unknown; maxUses?: unknown };
+  let body: { username?: unknown; maxUses?: unknown; send?: unknown };
   { const parsed = await jsonObject(req); if (!parsed) return badJson(); body = parsed; }
   if (typeof body.username !== 'string' || !isCrewUsername(body.username)) return NextResponse.json({ error: 'Þessi félagi er ekki á listanum.' }, { status: 400 });
 
   const username = canonicalUsername(body.username);
-  const inv = await createInvite(username, typeof body.maxUses === 'number' ? body.maxUses : undefined);
   const origin = process.env.NEXT_PUBLIC_SITE_URL ?? req.nextUrl.origin;
+  if (body.send === true) {
+    if (!(await getEmail(username))) return NextResponse.json({ error: `${username} er ekki með netfang. Settu það inn fyrst.` }, { status: 409 });
+    if (!canSendEmail()) return NextResponse.json({ error: 'Póstur er ekki tengdur (RESEND_API_KEY vantar).' }, { status: 503 });
+    const mailed = await mailSignInLink(username, origin);
+    if (!mailed.sent) return NextResponse.json({ error: mailed.reason }, { status: 502 });
+    const { invite, url } = mailed;
+    return NextResponse.json({ url, expiresAt: invite.expiresAt, maxUses: invite.maxUses, svg: await qr(url), sentTo: mailed.to } satisfies InviteResponse, { status: 201 });
+  }
+  const inv = await createInvite(username, typeof body.maxUses === 'number' ? body.maxUses : undefined);
   const url = inviteUrl(origin, inv.key);
-  const svg = await QRCode.toString(url, { type: 'svg', errorCorrectionLevel: 'M', margin: 1, color: { dark: '#1E1611', light: '#E8DCC4' } });
-  return NextResponse.json({ url, expiresAt: inv.expiresAt, maxUses: inv.maxUses, svg } satisfies InviteResponse, { status: 201 });
+  return NextResponse.json({ url, expiresAt: inv.expiresAt, maxUses: inv.maxUses, svg: await qr(url) } satisfies InviteResponse, { status: 201 });
+}
+
+/** A member's email address: `{ username, email, nights }` sets it, `{ username, email: null }` clears it. */
+export async function PUT(req: NextRequest) {
+  if (!(await requireAdmin())) return unauthorizedResponse();
+  let body: { username?: unknown; email?: unknown; nights?: unknown };
+  { const parsed = await jsonObject(req); if (!parsed) return badJson(); body = parsed; }
+  if (typeof body.username !== 'string' || !isCrewUsername(body.username)) return NextResponse.json({ error: 'Þessi félagi er ekki á listanum.' }, { status: 400 });
+
+  if (body.email === null) {
+    await setEmail(body.username, null);
+    return NextResponse.json({ ok: true, email: null });
+  }
+  const problem = emailProblem(body.email);
+  if (problem) return NextResponse.json({ error: problem }, { status: 400 });
+  const email: CrewEmail = { address: body.email as string, nights: body.nights !== false };
+  await setEmail(body.username, email);
+  return NextResponse.json({ ok: true, email: await getEmail(body.username) });
 }
 
 /** Close a link early (`{ url }`), or clear a member's password (`{ username, password: null }`) when they have forgotten it. */

@@ -56,13 +56,25 @@ function earnedBadges(stat: PlayerStat): BadgeDef[] {
   return Array.from(top.values());
 }
 
-// ─── Login: the token, for anyone without a link ──────────────────────────────
+// ─── Login: the password, or a link by post ───────────────────────────────────
 
 function LoginModal({ username, onSuccess, onClose }: { username: string; onSuccess: () => void; onClose: () => void }) {
   const [token,   setToken]   = useState('');
   const [error,   setError]   = useState('');
   const [loading, setLoading] = useState(false);
+  /* a sign-in link asked for by post: on its way, or asked for */
+  const [mail,    setMail]    = useState<'idle' | 'sending' | 'sent'>('idle');
   const backdrop = useWallDialog(onClose);
+
+  async function askForLink() {
+    setMail('sending');
+    setError('');
+    try {
+      const res = await fetch('/api/crew/invite', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username }) });
+      if (res.ok) setMail('sent');
+      else { setError(await errorFrom(res)); setMail('idle'); }
+    } catch { setError('Nettenging brást. Reyndu aftur.'); setMail('idle'); }
+  }
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -83,9 +95,12 @@ function LoginModal({ username, onSuccess, onClose }: { username: string; onSucc
     <div className="b-modal" {...backdrop} role="dialog" aria-modal="true" aria-label="Skrá inn">
       <form className="b-paper b-modal__box" onSubmit={submit}>
         <p className="b-modal__title">Skrá inn sem {username}</p>
-        <p className="b-modal__sub">lykilorðið sem þú valdir þér á veggnum. Ekkert lykilorð enn? Biddu stjórnandann um innskráningartengil.</p>
+        <p className="b-modal__sub">lykilorðið sem þú valdir þér á veggnum. Ekkert lykilorð, eða gleymt? Fáðu tengil í pósti, eða biddu stjórnandann um einn.</p>
         <input type="password" className={`b-input${error ? ' is-error' : ''}`} value={token} onChange={e => setToken(e.target.value)} placeholder="Lykilorð" autoFocus autoComplete="current-password" />
         {error && <p className="b-err">{error}</p>}
+        {mail === 'sent'
+          ? <p className="b-modal__ok" role="status">Sé netfang skráð á {username} kemur tengill í pósti eftir smástund. Opnaðu hann í tækinu sem þú vilt nota.</p>
+          : <p className="b-modal__alt"><button type="button" className="b-link" onClick={askForLink} disabled={mail === 'sending'}>{mail === 'sending' ? 'Sendi…' : 'Senda mér innskráningartengil í pósti'}</button></p>}
         <div className="b-modal__actions">
           <button type="submit" className="b-btn b-btn--solid" disabled={loading || !token}>{loading ? 'Athuga…' : 'Skrá inn'}</button>
           <button type="button" className="b-btn" onClick={onClose}>Hætta við</button>
@@ -95,7 +110,7 @@ function LoginModal({ username, onSuccess, onClose }: { username: string; onSucc
   );
 }
 
-/* The wall's two dialogs share one frame: Escape closes it, the page stays
+/* The wall's dialogs share one frame: Escape closes it, the page stays
    still behind it, and only a click that starts on the dark closes it, so a
    password dragged-to-select past the paper's edge is not thrown away. */
 function useWallDialog(onClose: () => void) {
@@ -149,6 +164,64 @@ function PasswordModal({ username, change, onDone, onClose }: { username: string
   );
 }
 
+// ─── An email address of the member's own ─────────────────────────────────────
+// Where a sign-in link goes when they ask for one, and word of the play
+// nights. Seen only here, by its owner, and by the admin.
+
+function EmailModal({ username, onClose }: { username: string; onClose: () => void }) {
+  /* undefined while the saved one is fetched */
+  const [saved,   setSaved]   = useState<{ address: string; nights: boolean } | null | undefined>(undefined);
+  const [address, setAddress] = useState('');
+  const [nights,  setNights]  = useState(true);
+  const [error,   setError]   = useState('');
+  const [loading, setLoading] = useState(false);
+  const backdrop = useWallDialog(onClose);
+
+  useEffect(() => {
+    fetch(`/api/crew/${username}/email`, { cache: 'no-store' })
+      .then(r => (r.ok ? r.json() : null))
+      .then((d: { email: { address: string; nights: boolean } | null } | null) => {
+        const e = d?.email ?? null;
+        setSaved(e);
+        if (e) { setAddress(e.address); setNights(e.nights); }
+      })
+      .catch(() => setSaved(null));
+  }, [username]);
+
+  async function send(method: 'PUT' | 'DELETE') {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch(`/api/crew/${username}/email`, { method, headers: { 'Content-Type': 'application/json' }, ...(method === 'PUT' ? { body: JSON.stringify({ email: address, nights }) } : {}) });
+      if (res.ok) onClose();
+      else setError(await errorFrom(res));
+    } catch { setError('Nettenging brást. Reyndu aftur.'); }
+    finally   { setLoading(false); }
+  }
+
+  function submit(e: FormEvent) { e.preventDefault(); send('PUT'); }
+
+  return (
+    <div className="b-modal" {...backdrop} role="dialog" aria-modal="true" aria-label="Netfang">
+      <form className="b-paper b-modal__box" onSubmit={submit}>
+        <p className="b-modal__title">Netfangið þitt</p>
+        <p className="b-modal__sub">þangað fer innskráningartengill þegar þú biður um hann, og póstur um spilakvöldin. Aðrir sjá það ekki.</p>
+        <input type="email" className={`b-input${error ? ' is-error' : ''}`} value={address} onChange={e => setAddress(e.target.value)} placeholder={saved === undefined ? 'sæki…' : 'nafn@dæmi.is'} disabled={saved === undefined} autoFocus autoComplete="email" />
+        <label className="b-modal__check">
+          <input type="checkbox" checked={nights} onChange={e => setNights(e.target.checked)} disabled={saved === undefined} />
+          Póstur þegar bál er kveikt, þegar kvöldið er ákveðið, og hálftíma áður en það hefst
+        </label>
+        {error && <p className="b-err">{error}</p>}
+        <div className="b-modal__actions">
+          <button type="submit" className="b-btn b-btn--solid" disabled={loading || saved === undefined || !address.trim()}>{loading ? 'Vista…' : 'Vista'}</button>
+          {saved && <button type="button" className="b-btn" onClick={() => send('DELETE')} disabled={loading}>Fjarlægja</button>}
+          <button type="button" className="b-btn" onClick={onClose}>Hætta við</button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 // ─── The wall ─────────────────────────────────────────────────────────────────
 
 interface Props {
@@ -165,6 +238,7 @@ export default function Wall({ initial, places, justSignedIn = false }: Props) {
 
   const [showLogin,   setShowLogin]   = useState(false);
   const [showPw,      setShowPw]      = useState(false);
+  const [showEmail,   setShowEmail]   = useState(false);
   const [editingBio,  setEditingBio]  = useState(false);
   const [bioText,     setBioText]     = useState(initial.bio);
   const [bioError,    setBioError]    = useState('');
@@ -277,6 +351,7 @@ export default function Wall({ initial, places, justSignedIn = false }: Props) {
                 {isOwner ? (
                   <>
                     <button className="b-btn b-btn--small" onClick={() => setShowPw(true)}>{hasPassword ? 'Breyta lykilorði' : 'Velja lykilorð'}</button>
+                    <button className="b-btn b-btn--small" onClick={() => setShowEmail(true)}>Netfang</button>
                     <button className="b-btn b-btn--small" onClick={signOut}>Skrá út</button>
                   </>
                 ) : me === null ? (
@@ -352,6 +427,7 @@ export default function Wall({ initial, places, justSignedIn = false }: Props) {
 
       {showLogin && <LoginModal username={username} onSuccess={() => { refresh(); setWelcome(true); }} onClose={() => setShowLogin(false)} />}
       {showPw && isOwner && <PasswordModal username={username} change={hasPassword} onDone={() => { refresh(); setWelcome(false); }} onClose={() => setShowPw(false)} />}
+      {showEmail && isOwner && <EmailModal username={username} onClose={() => setShowEmail(false)} />}
       {prints.length > 0 && (
         <WallLightbox photos={prints.map(p => ({ src: p.filename, title: p.caption || undefined, sub: p.takenAt ? `tekin ${formatDate(p.takenAt)}` : formatDate(p.uploadedAt) }))}
           index={lightbox} origin={origin} onClose={closeLightbox} onPrev={prevPhoto} onNext={nextPhoto} />
