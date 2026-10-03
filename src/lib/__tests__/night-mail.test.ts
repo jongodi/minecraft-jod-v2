@@ -122,7 +122,7 @@ describe('the letters', () => {
     const named = { stebbias: 'Stefán', ammagaur: 'Amma', joenana: 'Jóna' };
     const lit = nightLetter('lit', night({ note: 'Brúin' }), {}, reader, 'sunset', named);
     expect(lit.subject).toBe('Stefán kveikti bál: Brúin');
-    expect(lit.text).toContain('Kveikt er bál og kakó heitt,');
+    expect(lit.text).toContain('Kveikt er bál og creeper eytt,');
     expect(lit.text).toContain('STEFÁN KALLAR SAMAN HÓPINN');
     const soon = nightLetter('soon', night({ chosen: 'a' }), { stebbias: ['a'], AmmaGaur: ['a'], ingunnbirta: ['a'], joenana: ['a'] }, reader, 'campfire', named);
     expect(soon.text).toContain('SÖÐLAÐU HESTINN, JÓNA');

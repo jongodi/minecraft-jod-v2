@@ -53,7 +53,7 @@ export const VERSES: Record<MailKind, string[]> = {
     'hér má lengi sveima.',
   ],
   lit: [
-    'Kveikt er bál og kakó heitt,',
+    'Kveikt er bál og creeper eytt,',
     'kallar hópinn saman.',
     'Byggjum hátt og berjumst sveitt,',
     'bros og glens og gaman.',
