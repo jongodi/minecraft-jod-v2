@@ -15,7 +15,7 @@ import Footer from '@/components/badlands/Footer';
 import PlayerHead from '@/components/badlands/PlayerHead';
 import { ArrowIcon, CloseIcon, Star } from '@/components/badlands/Bits';
 import { PAGE_LINKS, STAT_TABS } from '@/components/badlands/data';
-import { useBackdropClose, useCrewSession, useScrollLock } from '@/components/badlands/hooks';
+import { useBackdropClose, useCrewSession, useDialogFocus, useScrollLock } from '@/components/badlands/hooks';
 import { photoProps, PHOTO_SIZES } from '@/components/badlands/photo';
 import Composer from './Composer';
 import Print from './Print';
@@ -64,7 +64,7 @@ function LoginModal({ username, onSuccess, onClose }: { username: string; onSucc
   const [loading, setLoading] = useState(false);
   /* a sign-in link asked for by post: on its way, or asked for */
   const [mail,    setMail]    = useState<'idle' | 'sending' | 'sent'>('idle');
-  const backdrop = useWallDialog(onClose);
+  const { box, backdrop } = useWallDialog(onClose);
 
   async function askForLink() {
     setMail('sending');
@@ -92,7 +92,7 @@ function LoginModal({ username, onSuccess, onClose }: { username: string; onSucc
   }
 
   return (
-    <div className="b-modal" {...backdrop} role="dialog" aria-modal="true" aria-label="Skrá inn">
+    <div ref={box} tabIndex={-1} className="b-modal" {...backdrop} role="dialog" aria-modal="true" aria-label="Skrá inn">
       <form className="b-paper b-modal__box" onSubmit={submit}>
         <p className="b-modal__title">Skrá inn sem {username}</p>
         <p className="b-modal__sub">lykilorðið sem þú valdir þér á veggnum. Ekkert lykilorð, eða gleymt? Fáðu tengil í pósti, eða biddu stjórnandann um einn.</p>
@@ -114,13 +114,16 @@ function LoginModal({ username, onSuccess, onClose }: { username: string; onSucc
    still behind it, and only a click that starts on the dark closes it, so a
    password dragged-to-select past the paper's edge is not thrown away. */
 function useWallDialog(onClose: () => void) {
+  /* the dialog itself, which holds focus until a field inside can take it */
+  const box = useRef<HTMLDivElement>(null);
   useScrollLock();
+  useDialogFocus(box);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
-  return useBackdropClose(onClose);
+  return { box, backdrop: useBackdropClose(onClose) };
 }
 
 // ─── A password of the member's own ───────────────────────────────────────────
@@ -132,7 +135,7 @@ function PasswordModal({ username, change, onDone, onClose }: { username: string
   const [again,   setAgain]   = useState('');
   const [error,   setError]   = useState('');
   const [loading, setLoading] = useState(false);
-  const backdrop = useWallDialog(onClose);
+  const { box, backdrop } = useWallDialog(onClose);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -148,7 +151,7 @@ function PasswordModal({ username, change, onDone, onClose }: { username: string
   }
 
   return (
-    <div className="b-modal" {...backdrop} role="dialog" aria-modal="true" aria-label="Lykilorð">
+    <div ref={box} tabIndex={-1} className="b-modal" {...backdrop} role="dialog" aria-modal="true" aria-label="Lykilorð">
       <form className="b-paper b-modal__box" onSubmit={submit}>
         <p className="b-modal__title">{change ? 'Nýtt lykilorð' : 'Veldu þér lykilorð'}</p>
         <p className="b-modal__sub">með því skráir þú þig inn á hvaða síma eða tölvu sem er undir „Þetta er ég“, án tengils frá stjórnandanum. Minnst {LIMITS_PW} stafir.</p>
@@ -183,7 +186,7 @@ function ContactModal({ username, onClose }: { username: string; onClose: () => 
   const [error,   setError]   = useState('');
   const [loading, setLoading] = useState(false);
   const nameRef = useRef<HTMLInputElement>(null);
-  const backdrop = useWallDialog(onClose);
+  const { box, backdrop } = useWallDialog(onClose);
 
   useEffect(() => {
     let live = true;
@@ -216,7 +219,7 @@ function ContactModal({ username, onClose }: { username: string; onClose: () => 
   }
 
   return (
-    <div className="b-modal" {...backdrop} role="dialog" aria-modal="true" aria-label="Nafn og netfang">
+    <div ref={box} tabIndex={-1} className="b-modal" {...backdrop} role="dialog" aria-modal="true" aria-label="Nafn og netfang">
       <form className="b-paper b-modal__box" onSubmit={submit}>
         <p className="b-modal__title">Nafn og netfang</p>
         <p className="b-modal__sub">fyrir póstinn frá JOÐ. Aðrir sjá þetta ekki á vefnum; nafnið sést aðeins í bréfunum.</p>

@@ -374,6 +374,8 @@
 @media (min-width: 640px) { .b-shots { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 
 .b-modal { position: fixed; inset: 0; z-index: var(--z-modal); background: rgba(12, 10, 20, 0.7); display: grid; place-items: center; padding: var(--sp-4); }
+/* the backdrop holds focus only until a field inside can take it; no ring around the whole screen */
+.b-modal:focus { outline: none; }
 .b-modal__box { width: 100%; max-width: 22rem; padding: var(--sp-5); }
 .b-modal__title { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-lg); color: var(--ink); }
 .b-modal__sub { font-size: var(--fs-sm); color: var(--ink-soft); margin: var(--sp-1) 0 var(--sp-4); }

@@ -102,6 +102,7 @@ function World({ plates, server, syncedOn, bases, room, onCloseRoom }: Props) {
   const [selected, setSelect] = useState<number | null>(null);
   const [drawn, setDrawn]     = useState(false);
   const [album, setAlbum]     = useState(false);
+  const closeAlbum = useCallback(() => setAlbum(false), []);
   const [live, setLive]       = useState(false);
   const [ready, setReady]     = useState(false);
   /* the viewer's map has loaded and window.jod answers */
@@ -331,12 +332,14 @@ function World({ plates, server, syncedOn, bases, room, onCloseRoom }: Props) {
     };
   }, [full, closeFull]);
 
+  /* Escape lets the place go, unless something is open over the postcard:
+     the album, a room. That one closes first, and the place stays picked. */
   useEffect(() => {
-    if (selected === null) return;
+    if (selected === null || album || shut) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setSelect(null); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [selected]);
+  }, [selected, album, shut]);
 
   const chosen = config.locations.find(l => l.id === selected) ?? null;
   /* the postcard stays up a beat after its place is let go, to leave the way it came */
@@ -577,7 +580,7 @@ function World({ plates, server, syncedOn, bases, room, onCloseRoom }: Props) {
         </nav>
       )}
 
-      {album && <Album plates={plates} onClose={() => setAlbum(false)} />}
+      {album && <Album plates={plates} onClose={closeAlbum} />}
     </section>
   );
 }
