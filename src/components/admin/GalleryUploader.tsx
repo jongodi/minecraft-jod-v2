@@ -147,7 +147,8 @@ export default function GalleryUploader({ onUploaded }: { onUploaded: (photo: Ad
 
   function onDrop(e: DragEvent) {
     e.preventDefault(); setDragging(false);
-    if (disabled) return;
+    /* a gallery card dragged here while reordering carries no files: not an upload */
+    if (disabled || e.dataTransfer.files.length === 0) return;
     run(Array.from(e.dataTransfer.files));
   }
 
