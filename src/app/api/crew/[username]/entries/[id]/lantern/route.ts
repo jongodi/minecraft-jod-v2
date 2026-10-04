@@ -14,6 +14,8 @@ export async function POST(_req: NextRequest, { params }: Params) {
 
   let lanterns: string[] | null = null;
   await updateProfile(username, p => {
+    /* the change may run again on a newer wall; only the last run's finding counts */
+    lanterns = null;
     const entry = p.entries.find(e => e.id === id);
     if (!entry) return;
     const me = session.username;

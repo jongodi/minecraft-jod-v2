@@ -21,6 +21,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   let dropped: CrewEntry['photos'] = [];
   try {
     await updateProfile(username, p => {
+      /* the change may run again on a newer wall; only the last run's findings count */
+      updated = null;
+      dropped = [];
       const entry = p.entries.find(e => e.id === id);
       if (!entry) return;
       if (typeof body.text === 'string') entry.text = cleanText(body.text, LIMITS.text);

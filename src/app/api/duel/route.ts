@@ -22,6 +22,7 @@ export async function POST(req: NextRequest) {
   let best = ms;
   let improved = false;
   await updateProfile(session.username, p => {
+    improved = false;   /* the change may run again on a newer wall */
     if (p.bestDrawMs === null || ms < p.bestDrawMs) { p.bestDrawMs = ms; improved = true; }
     best = p.bestDrawMs ?? ms;
   });

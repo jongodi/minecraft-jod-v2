@@ -22,6 +22,8 @@ export async function POST(req: NextRequest, { params }: Params) {
   const reply: CrewReply = { id: randomUUID(), username: session.username, text, createdAt: new Date().toISOString() };
   let found = false;
   await updateProfile(username, p => {
+    /* the change may run again on a newer wall; only the last run's finding counts */
+    found = false;
     const entry = p.entries.find(e => e.id === id);
     if (!entry) return;
     found = true;
