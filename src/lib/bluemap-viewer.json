@@ -1,15 +1,15 @@
 {
   "shell": {
-    "script": "/bluemap/assets/index-DJzYl7wx.js",
+    "script": "/bluemap/assets/index-BhhubAws.js",
     "style": "/bluemap/assets/index-C6zAnFcX.css",
-    "version": "5.27"
+    "version": "5.28"
   },
   "warm": [
-    "/bluemap/assets/index-DJzYl7wx.js",
+    "/bluemap/assets/index-BhhubAws.js",
     "/bluemap/assets/index-C6zAnFcX.css",
     "/bluemap-jod/jod.css",
     "/bluemap-jod/jod.js",
-    "/bluemap-data/vtm3kxn/maps/world/settings.json",
-    "/bluemap-data/vtm3kxn/maps/world/textures.json.gz"
+    "/bluemap-data/vtme3c9/maps/world/settings.json",
+    "/bluemap-data/vtme3c9/maps/world/textures.json.gz"
   ]
 }
