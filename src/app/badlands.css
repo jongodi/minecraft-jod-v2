@@ -630,31 +630,52 @@ html.is-map-full { overflow: hidden; }
 .b-frame.is-drawn .b-hud__title .b-title, .b-frame.is-drawn .b-hud__meta { color: var(--ink); text-shadow: none; }
 .b-frame.is-drawn .b-hud__in img { box-shadow: 0 0 0 1px var(--ink); }
 
-/* the lantern that boots the viewer */
+/* The lantern that boots the viewer: the lantern itself is the control, no
+   panel round it. It hangs in a pool of night that falls over the map around
+   it, which is what keeps its words legible over a busy still, and is drawn
+   at a whole multiple of its 12 by 18 pixels so every pixel stays square.
+   Pointed at, it lifts a step and its word warms to paper. */
 .b-boot {
   pointer-events: auto;
+  position: relative;
+  isolation: isolate;
   display: grid;
   justify-items: center;
   gap: var(--sp-2);
-  padding: var(--sp-5) var(--sp-6);
-  background: var(--pane);
+  padding: var(--sp-5) var(--sp-7);
   color: var(--lantern);
   text-align: center;
   text-decoration: none;
-  box-shadow: var(--bevel);
-  clip-path: var(--notch);
-  transition: background var(--dur-1) var(--ease-out);
+  text-shadow: 0 var(--px) 0 var(--night);
 }
-.b-boot .b-lantern { width: 2rem; height: 3rem; }
-.b-boot__word { font-family: var(--font-data); font-size: var(--fs-data); letter-spacing: 0.04em; text-transform: uppercase; }
+.b-boot::before {
+  content: '';
+  position: absolute;
+  inset: -45% -25%;
+  z-index: -1;
+  background: radial-gradient(closest-side, var(--pane) 35%, var(--veil) 62%, transparent);
+  pointer-events: none;
+}
+.b-boot .b-lantern { width: 4.5rem; height: 6.75rem; margin-bottom: var(--sp-1); transition: transform var(--dur-2) var(--ease-out); }
+.b-boot__word { font-family: var(--font-data); font-size: var(--fs-data-lg); letter-spacing: 0.04em; text-transform: uppercase; transition: color var(--dur-1) var(--ease-out); }
 .b-boot__sub { font-size: var(--fs-sm); color: var(--tc-white); }
-.b-boot:focus-visible { background: var(--scrim-deep); outline: var(--px) solid var(--lantern); outline-offset: calc(var(--px) * -3); }
-@media (hover: hover) { .b-boot:hover { background: var(--scrim-deep); } }
+.b-boot:focus-visible { outline: var(--px) solid var(--lantern); outline-offset: calc(var(--sp-1) * -1); }
+.b-boot:focus-visible .b-lantern { transform: translateY(calc(var(--px) * -2)); }
 .b-boot:focus-visible .b-boot__word { color: var(--paper); }
-@media (hover: hover) { .b-boot:hover .b-boot__word { color: var(--paper); } }
+@media (hover: hover) {
+  .b-boot:hover .b-lantern { transform: translateY(calc(var(--px) * -2)); }
+  .b-boot:hover .b-boot__word { color: var(--paper); }
+}
+@media (prefers-reduced-motion: reduce) { .b-boot .b-lantern { transition: none; } }
+/* a phone's frame is smaller and its word has less room: the lantern at four
+   times its pixels instead of six, the word at the bitmap face's smaller size */
+@media (max-width: 599px) {
+  .b-boot { padding: var(--sp-4) var(--sp-5); }
+  .b-boot .b-lantern { width: 3rem; height: 4.5rem; }
+  .b-boot__word { font-size: var(--fs-data); }
+}
 /* the narrowest phones (320 px): the rail's heading wraps and the frame is
-   at its least, so the lantern's panel drops its small line and some padding
-   rather than run into the places */
+   at its least, so the lantern drops its small line rather than run into the places */
 @media (max-width: 359px) {
   .b-boot { padding: var(--sp-3) var(--sp-4); }
   .b-boot__sub { display: none; }
