@@ -108,7 +108,12 @@ export async function readMap({ strict = false }: { strict?: boolean } = {}): Pr
   let photoIds = new Set<string>();
   try {
     photoIds = new Set((await readGallery()).map(p => p.id));
-  } catch { /* no gallery available: every link resolves to null */ }
+  } catch (e) {
+    /* Shown without a gallery, every link resolves to null. Read in order to
+       be written back (strict), that would save every pin unlinked, so the
+       write is refused instead. */
+    if (strict) throw e;
+  }
 
   return {
     ...config,
