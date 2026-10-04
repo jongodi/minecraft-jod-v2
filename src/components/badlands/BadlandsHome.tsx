@@ -56,7 +56,9 @@ export default function BadlandsHome({ syncedOn, bases }: { syncedOn: string | n
      to and the frame is brought into view here instead. */
   useEffect(() => {
     const read = () => {
-      const h = decodeURIComponent(window.location.hash.slice(1));
+      /* the doors' ids are plain letters, so the hash is read as it is: decoding
+         a pasted #%E0 threw and took the whole page down with it */
+      const h = window.location.hash.slice(1);
       const door = isRoom(h) || h === 'heimur' ? h : null;
       setRoom(isRoom(h) ? h : null);
       setPressed(door);
