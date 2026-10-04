@@ -31,9 +31,13 @@ on:
         description: The server was stopped when this was started (only names the run)
         type: boolean
         default: false
+      inspect:
+        description: Only show how the base maps are drawn next to the main map; change nothing
+        type: boolean
+        default: false
 
 # the admin panel reads which bases a run was for, and how, from this name
-run-name: "${{ format('Map bases: {0}{1}{2}', inputs.bases || 'all', inputs.force && ', forced' || '', inputs.server_off && ', server off' || '') }}"
+run-name: "${{ format('Map bases: {0}{1}{2}{3}', inputs.bases || 'all', inputs.force && ', forced' || '', inputs.server_off && ', server off' || '', inputs.inspect && ', inspect' || '') }}"
 
 permissions:
   contents: write
@@ -68,9 +72,11 @@ jobs:
             exit 1
           fi
 
+      # uploads always run from main, which they commit to; an inspection,
+      # which changes nothing, runs the code of the branch it was started on
       - uses: actions/checkout@v4
         with:
-          ref: main
+          ref: ${{ inputs.inspect && github.ref || 'main' }}
 
       - uses: actions/setup-node@v4
         with:
@@ -95,12 +101,17 @@ jobs:
         id: copy
         run: |
           set -f
+          if [ "$INSPECT" = "true" ]; then
+            npm run map:bases -- --inspect ${BASES//,/ }
+            exit 0
+          fi
           args="--upload ${BASES//,/ }"
           [ "$FORCE" = "true" ] && args="$args --force"
           npm run map:bases -- $args
         env:
           BASES: ${{ inputs.bases }}
           FORCE: ${{ inputs.force }}
+          INSPECT: ${{ inputs.inspect }}
           EXAROTON_API_KEY: ${{ secrets.EXAROTON_API_KEY }}
           BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
 

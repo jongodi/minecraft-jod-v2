@@ -49,13 +49,15 @@ export interface WorkflowRun {
 }
 
 /** The base maps' workflow's run-name (map-bases.yml): "Map bases: jodville faraway",
-    "Map bases: all, forced, server off". `bases` is null for all of them. */
-export function readBasesRunName(title: string): { bases: string[] | null; forced: boolean; offline: boolean } {
+    "Map bases: all, forced, server off", "Map bases: jodville, inspect" (a run
+    that only looked). `bases` is null for all of them. */
+export function readBasesRunName(title: string): { bases: string[] | null; forced: boolean; offline: boolean; inspect: boolean } {
   const [list = '', ...flags] = title.replace(/^Map bases:?\s*/, '').split(',').map(part => part.trim());
   return {
     bases: !list || list === 'all' ? null : list.split(/\s+/),
     forced: flags.includes('forced'),
     offline: flags.includes('server off'),
+    inspect: flags.includes('inspect'),
   };
 }
 

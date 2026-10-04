@@ -10,6 +10,7 @@ import { baseAt } from '@/lib/base-links';
 import { BASES_DIR, BLOB_DIR, basePackDir, planPacks } from '../../../scripts/bluemap-pack.mjs';
 import { baseViewer, heaviness, indexHtml, lighterHires, startTileBytes, viewerAssets } from '../../../scripts/bluemap-brand.mjs';
 import { baseSkip, compareWithCopy, staleBlobs, took } from '../../../scripts/map-bases.mjs';
+import { baseConfig, getKey } from '../../../scripts/bluemap-conf.mjs';
 import config from '@/lib/map-bases.json';
 
 vi.mock('@vercel/blob', async (original) => ({ ...(await original<typeof import('@vercel/blob')>()), get: vi.fn() }));
@@ -312,6 +313,15 @@ describe('weighing a map\'s detailed tiles', () => {
     expect(lighterHires(160, 4)).toBe(80);
     expect(lighterHires(110, 9)).toBe(48);
     expect(lighterHires(70, 9)).toBe(48);
+  });
+});
+
+describe('getKey', () => {
+  it('reads a top-level setting of a map config, a whole block for one, and nothing commented out', () => {
+    const conf = 'name: "World"\n# remove-caves-below-y: 10\nremove-caves-below-y: 55\nrender-mask: [\n  { min-x: -10, max-x: 10 }\n]\n';
+    expect(getKey(conf, 'remove-caves-below-y')).toBe('55');
+    expect(getKey(conf, 'render-mask')).toBe('[\n  { min-x: -10, max-x: 10 }\n]');
+    expect(getKey(conf, 'min-inhabited-time')).toBeNull();
   });
 });
 

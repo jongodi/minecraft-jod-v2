@@ -3,13 +3,15 @@
 // its own on the site at /kort/<id>, apart from the main map.
 //
 //   npm run map:bases              show the configs that would be written, write nothing
-//   npm run map:bases -- --write   write the configs that aren't on the server yet
-//   npm run map:bases -- --write --force   also overwrite ones that are
+//   npm run map:bases -- --write [id...]   write the configs that aren't on the server yet
+//   npm run map:bases -- --write [id...] --force   also overwrite ones that are
+//   npm run map:bases -- --redraw <id...>  write a base's config afresh, purge it and draw it again from scratch
 //   npm run map:bases -- --freeze          freeze every base map (no updates at all)
 //   npm run map:bases -- --refresh <id>    unfreeze one base map and update it now
 //   npm run map:bases -- --upload [id...]  copy base maps to the site (all of them if none is named)
 //   npm run map:bases -- --upload <id> --force   upload it even if nothing changed
 //   npm run map:bases -- --prune [id...]   drop the copies the site no longer reads
+//   npm run map:bases -- --inspect [id...] show how each base map is drawn next to the main map, change nothing
 //
 // The admin panel (Þjónn → Grunnkortin) starts --upload through the "Map
 // bases" GitHub Action (.github/workflows/map-bases.yml), which also commits
@@ -21,6 +23,13 @@
 // Each config is a copy of the main map's (plugins/BlueMap/maps/world.conf)
 // with only its name, place in the list, start position and render mask
 // changed. Every config is also saved under scripts/out/bluemap-maps/ to look at.
+//
+// A base's own drawing settings ("bluemap" in src/lib/map-bases.json, set on
+// top of the main map's by scripts/bluemap-conf.mjs) take hold once it is
+// drawn again with them, and so does a new size: --redraw <id> writes its
+// config, reloads BlueMap and purges the map, which deletes its drawn tiles and
+// draws it again from scratch (the admin panel's "Teikna upp á nýtt" does the
+// same); then --freeze once the drawing is done, and send it to the site.
 //
 // The base maps never update on their own: they are frozen, and only redrawn
 // when asked. After --write: /bluemap reload in the console, let the first
@@ -61,12 +70,13 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, s
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { BlobAccessError, BlobStoreNotFoundError, BlobStoreSuspendedError, del, get, list, put } from '@vercel/blob';
-import { MAIN_MAP, versionOf } from './bluemap-brand.mjs';
+import { MAIN_MAP, startTileBytes, versionOf } from './bluemap-brand.mjs';
+import { baseConfig, DRAWING, getKey, MAPS_DIR } from './bluemap-conf.mjs';
 import { BASES_DIR, basePackDir, blobsOf, manifestText, packBody, PACK_BYTES, planPacks } from './bluemap-pack.mjs';
 
 const ROOT  = process.cwd();
 const API   = 'https://api.exaroton.com/v1/servers';
-const MAPS  = 'plugins/BlueMap/maps';
+const MAPS  = MAPS_DIR;
 const OUT   = join(ROOT, 'scripts', 'out', 'bluemap-maps');
 /* the base maps as they were last fetched off the server, so the next upload only fetches what changed */
 const LOCAL = join(ROOT, 'scripts', 'out', 'map-bases');
@@ -77,6 +87,9 @@ const FREEZE = process.argv.includes('--freeze');
 const REFRESH = process.argv.includes('--refresh') ? process.argv[process.argv.indexOf('--refresh') + 1] : null;
 const UPLOAD = process.argv.includes('--upload') ? named('--upload') : null;
 const PRUNE = process.argv.includes('--prune') ? named('--prune') : null;
+const INSPECT = process.argv.includes('--inspect') ? named('--inspect') : null;
+const REDRAW = process.argv.includes('--redraw') ? named('--redraw') : null;
+const WRITE_IDS = WRITE ? named('--write') : [];
 const PARALLEL = 6;
 const PACK_MAX_AGE = 31536000;     // a pack is never overwritten, so the store's CDN may keep it for good
 /* Cleanup leaves packs this young alone: they may be another upload's, not yet pushed. */
@@ -90,65 +103,6 @@ function named(flag) {
     out.push(arg);
   }
   return out;
-}
-
-/* ---------- HOCON: change one top-level key, keep everything else as it is ---------- */
-
-/** Where the value that starts at `i` ends: past its closing bracket for a
-    { } or [ ] block, otherwise the end of the line. Skips strings and comments. */
-function valueEnd(text, i) {
-  while (text[i] === ' ' || text[i] === '\t') i++;
-  const open = text[i];
-  if (open !== '{' && open !== '[') {
-    const nl = text.indexOf('\n', i);
-    return nl < 0 ? text.length : nl;
-  }
-  let depth = 0;
-  for (let j = i; j < text.length; j++) {
-    const c = text[j];
-    if (c === '"') {
-      for (j++; j < text.length && text[j] !== '"'; j++) if (text[j] === '\\') j++;
-    } else if (c === '#' || (c === '/' && text[j + 1] === '/')) {
-      const nl = text.indexOf('\n', j);
-      j = nl < 0 ? text.length : nl;
-    } else if (c === '{' || c === '[') {
-      depth++;
-    } else if (c === '}' || c === ']') {
-      if (--depth === 0) return j + 1;
-    }
-  }
-  throw new Error('Lokandi sviga vantar í world.conf');
-}
-
-/** Sets a top-level key (one that starts its line, not in a comment) to `value`,
-    or adds it at the end if the file doesn't have it. */
-export function setKey(text, key, value) {
-  const re = new RegExp(`^${key.replace(/-/g, '\\-')}[ \\t]*[:=]?[ \\t]*`, 'm');
-  const m = re.exec(text);
-  if (!m) return `${text.replace(/\s*$/, '')}\n${key}: ${value}\n`;
-  const start = m.index;
-  const end = valueEnd(text, start + m[0].length);
-  return `${text.slice(0, start)}${key}: ${value}${text.slice(end)}`;
-}
-
-/** The main map's config, made into the config for `base` (number `n` in the list). */
-export function baseConfig(worldConf, base, n) {
-  const r = base.radius;
-  let text = worldConf.replace(/\r\n/g, '\n');
-  text = setKey(text, 'name', JSON.stringify(base.name));
-  text = setKey(text, 'sorting', String(n));
-  text = setKey(text, 'start-pos', `{ x: ${base.x}, z: ${base.z} }`);
-  text = setKey(text, 'render-mask', [
-    '[',
-    '  {',
-    `    min-x: ${base.x - r}`,
-    `    max-x: ${base.x + r}`,
-    `    min-z: ${base.z - r}`,
-    `    max-z: ${base.z + r}`,
-    '  }',
-    ']',
-  ].join('\n'));
-  return `# ${base.name}: written by scripts/map-bases.mjs from world.conf. Centre X ${base.x} Z ${base.z}, ${r} blocks each way.\n${text}`;
 }
 
 /* ---------- exaroton ---------- */
@@ -621,6 +575,38 @@ function mb(bytes) {
   return (bytes / 1024 / 1024).toLocaleString('is-IS', { maximumFractionDigits: 1 });
 }
 
+/* --inspect: each base map's drawing settings next to the main map's, and how
+   heavy its first detailed tiles are next to the main map's. Reads only. */
+async function inspect(id, bases) {
+  const read = async (path) => {
+    try { return (await call(`${id}/files/data/${encode(path)}`, { raw: true })).toString('utf8'); } catch { return null; }
+  };
+  const world = await read(`${MAPS}/${MAIN_MAP}.conf`);
+  if (!world) throw new Error(`Fann ekki ${MAPS}/${MAIN_MAP}.conf á þjóninum.`);
+  const flat = (v) => (v === null ? '(ekki sett)' : v.replace(/\s+/g, ' '));
+  const sizes = (m) => { const at = new Map(m.files.map((f, i) => [f, m.packs?.at[i]?.[2] ?? 0])); return (f) => at.get(f) ?? 0; };
+  const main = readJson(join(ROOT, 'src', 'lib', 'bluemap-snapshot.json'), { files: [] });
+  const [, mx, , mz] = String(readJson(join(ROOT, 'public', 'bluemap', 'settings.json'), {}).startLocation ?? '').split(':').map(Number);
+  const mainTile = main.packs ? startTileBytes(main.files, sizes(main), MAIN_MAP, mx, mz) : null;
+
+  console.log(`${MAIN_MAP} (aðalkortið):`);
+  for (const key of DRAWING) console.log(`  ${key.padEnd(32)} ${flat(getKey(world, key))}`);
+  if (mainTile) console.log(`  fyrstu nákvæmu reitirnir: ${(mainTile / 1024).toFixed(0)} KB að meðaltali`);
+  for (const b of bases) {
+    console.log(`\n${b.id} (${b.name}), jörð í Y ${b.y}:`);
+    const conf = await read(`${MAPS}/${b.id}.conf`);
+    if (!conf) { console.log('  engin stilling á þjóninum'); continue; }
+    for (const key of DRAWING) {
+      const v = getKey(conf, key);
+      const same = flat(v) === flat(getKey(world, key));
+      console.log(`  ${key.padEnd(32)} ${flat(v)}${same || key === 'render-mask' ? '' : '   (aðalkortið annað)'}`);
+    }
+    const m = readJson(manifestFile(b.id), { files: [] });
+    const tile = m.packs ? startTileBytes(m.files, sizes(m), b.id, b.x, b.z) : null;
+    if (tile) console.log(`  fyrstu nákvæmu reitirnir: ${(tile / 1024).toFixed(0)} KB að meðaltali${mainTile ? `, ${(tile / mainTile).toFixed(1)} sinnum aðalkortið` : ''}`);
+  }
+}
+
 /* ---------- main ---------- */
 
 async function main() {
@@ -639,6 +625,14 @@ async function main() {
     if (unknown.length) throw new Error(`Ekkert grunnkort heitir "${unknown.join('", "')}". Til eru: ${[...ids].join(', ')}`);
     return names.length ? bases.filter((b) => names.includes(b.id)) : bases;
   };
+
+  if (INSPECT !== null) {
+    const chosen = pick(INSPECT);
+    token = process.env.EXAROTON_API_KEY;
+    if (!token) throw new Error('EXAROTON_API_KEY vantar í .env.local');
+    await inspect(await serverId(), chosen);
+    return;
+  }
 
   if (PRUNE !== null) {
     const chosen = pick(PRUNE);
@@ -683,6 +677,27 @@ async function main() {
     return;
   }
 
+  if (REDRAW !== null) {
+    if (!REDRAW.length) throw new Error('Nefndu kortið sem á að teikna upp á nýtt, til dæmis --redraw jodville.');
+    const chosen = pick(REDRAW);
+    const server = await call(`${id}/`);
+    if (server?.status !== 1) throw new Error('Þjónninn þarf að vera í gangi til að taka við skipunum.');
+    const worldConf = (await call(`${id}/files/data/${encode(`${MAPS}/${MAIN_MAP}.conf`)}`, { raw: true })).toString('utf8');
+    for (const b of chosen) {
+      const conf = baseConfig(worldConf, b, bases.indexOf(b) + 1);
+      await call(`${id}/files/data/${encode(`${MAPS}/${b.id}.conf`)}`, { method: 'PUT', body: conf });
+      console.log(`${b.id}: stillingin skrifuð${b.bluemap ? ` (${Object.entries(b.bluemap).map(([k, v]) => `${k} ${v}`).join(', ')})` : ''}`);
+    }
+    await command(id, 'bluemap reload light');
+    await sleep(15_000);
+    for (const b of chosen) {
+      await command(id, `bluemap unfreeze ${b.id}`);
+      await command(id, `bluemap purge ${b.id}`);
+    }
+    console.log('\nÞegar teikningunni er lokið (/bluemap sýnir framvinduna): npm run map:bases -- --freeze, svo senda kortið á vefinn.');
+    return;
+  }
+
   if (FREEZE || REFRESH !== null) {
     const server = await call(`${id}/`);
     if (server?.status !== 1) throw new Error('Þjónninn þarf að vera í gangi til að taka við skipunum.');
@@ -703,7 +718,9 @@ async function main() {
   mkdirSync(OUT, { recursive: true });
 
   let written = 0;
+  if (WRITE_IDS.length) pick(WRITE_IDS);
   for (const [i, base] of bases.entries()) {
+    if (WRITE_IDS.length && !WRITE_IDS.includes(base.id)) continue;
     const conf = baseConfig(worldConf, base, i + 1);
     writeFileSync(join(OUT, `${base.id}.conf`), conf);
     const path = `${MAPS}/${base.id}.conf`;
