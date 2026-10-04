@@ -380,9 +380,9 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
                     <span className="b-hud__dot" aria-hidden="true" />
                     inni núna
                     {inside.map(n => canFollow ? (
-                      <button key={n} type="button" className={`b-hud__head${following?.toLowerCase() === n.toLowerCase() ? ' is-on' : ''}`}
+                      <button key={n} type="button" className={`b-hud__head b-tip b-tip--below${following?.toLowerCase() === n.toLowerCase() ? ' is-on' : ''}`}
                         aria-pressed={following?.toLowerCase() === n.toLowerCase()}
-                        title={following?.toLowerCase() === n.toLowerCase() ? `Hætta að elta ${n}` : `Elta ${n}`}
+                        data-tip={following?.toLowerCase() === n.toLowerCase() ? `Hætta að elta ${n}` : `Elta ${n}`}
                         onClick={() => follow(n)}>
                         <PlayerHead name={n} size={16} />
                       </button>
@@ -399,22 +399,22 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
                 world among the places' name tags (badlands.css, the HUD on a phone). */}
             <div ref={tools} className="b-hud__tools">
               {viewer && !drawn && !still && (
-                <button type="button" className={`b-btn b-btn--small b-btn--ghost b-hud__tool${night ? ' is-on' : ''}`} aria-pressed={night}
-                  title="Sólin sest og ljósin í bænum loga" onClick={() => jod()?.setNight(!night)}>
+                <button type="button" className={`b-btn b-btn--small b-btn--ghost b-hud__tool b-tip b-tip--below${night ? ' is-on' : ''}`} aria-pressed={night}
+                  data-tip="Sólin sest og ljósin í bænum loga" onClick={() => jod()?.setNight(!night)}>
                   <MoonIcon className="b-btn__icon" /><span className="b-hud__word">Nótt</span>
                 </button>
               )}
               <button type="button" className={`b-btn b-btn--small b-btn--ghost b-hud__tool${drawn ? ' is-on' : ''}`} aria-pressed={drawn}
-                title="Teiknað kort" onClick={() => setDrawn(v => !v)}>
+                onClick={() => setDrawn(v => !v)}>
                 <FoldedMapIcon className="b-btn__icon" /><span className="b-hud__word">Teiknað kort</span>
               </button>
               {/* the album hangs over the page, outside the frame the browser's full screen shows */}
-              <button type="button" className="b-btn b-btn--small b-btn--ghost b-hud__tool" title={`Myndir · ${plates.length}`}
+              <button type="button" className="b-btn b-btn--small b-btn--ghost b-hud__tool"
                 onClick={() => { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); setAlbum(true); }}>
                 <PictureIcon className="b-btn__icon" /><span className="b-hud__word">Myndir<span className="b-hud__sep"> · </span></span><span className="b-hud__count">{plates.length}</span>
               </button>
               {full ? (
-                <button type="button" className="b-btn b-btn--small b-btn--ghost b-hud__tool b-hud__close is-on" aria-label="Loka heilum skjá" title="Loka heilum skjá" onClick={closeFull}>
+                <button type="button" className="b-btn b-btn--small b-btn--ghost b-hud__tool b-hud__close is-on" aria-label="Loka heilum skjá" onClick={closeFull}>
                   <CloseIcon className="b-btn__icon" /><span className="b-hud__word" aria-hidden="true">Loka</span>
                 </button>
               ) : (
@@ -503,7 +503,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
               {here && here.prints.length > 0 && (
                 <div className="b-card__prints" role="group" aria-label="Myndir félaga af þessum stað">
                   {here.prints.slice(0, 4).map(p => (
-                    <Link key={p.id} href={`/crew/${p.username}#${p.entryId}`} className="b-card__print" title={`${p.username}${p.caption ? `: ${p.caption}` : ''}`}>
+                    <Link key={p.id} href={`/crew/${p.username}#${p.entryId}`} className="b-card__print" aria-label={`${p.username}${p.caption ? `: ${p.caption}` : ''}`}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img {...photoProps(p.filename, PHOTO_SIZES.thumb)} alt={p.caption || `Mynd frá ${p.username}`} loading="lazy" decoding="async" width={56} height={40} />
                       <PlayerHead name={p.username} size={16} className="b-card__printhead" />
@@ -515,10 +515,12 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
             </figure>
         )}
 
-        {/* The places: a rail along the foot of the world, each with its photo. */}
+        {/* The places: a rail along the foot of the world, each with its photo,
+            and at its end the other bases, each a lit lantern that leads to a
+            3D map of its own (/kort/<id>): places too, only further off. */}
         <div ref={places} className="b-places">
-          <p className="b-places__head">Staðir · {config.locations.length} · veldu stað til að sjá myndina</p>
-          <Rail label="Staðir" prevLabel="Fyrri staðir" nextLabel="Næstu staðir" count={config.locations.length}>
+          <p className="b-places__head">Staðir · {config.locations.length}{bases.length > 0 && ` · ${bases.length} ${plural(bases.length, 'stöð', 'stöðvar')} með eigið kort, aftast`}</p>
+          <Rail label="Staðir og stöðvar" prevLabel="Fyrri staðir" nextLabel="Næstu staðir" count={config.locations.length + bases.length}>
             {config.locations.map(loc => {
               const thumb = loc.photoId ? plates.find(p => p.id === loc.photoId) ?? null : null;
               const count = pinned[String(loc.id)]?.count ?? 0;
@@ -540,6 +542,16 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
                 </button>
               );
             })}
+            {bases.map(b => (
+              // eslint-disable-next-line @next/next/no-html-link-for-pages -- BlueMap's own app, not a Next page
+              <a key={b.id} href={baseUrl(b.id)} className="b-chip b-chip--base" data-rail-item={`base-${b.id}`}>
+                <span className="b-chip__thumb b-chip__thumb--lantern"><Lantern lit /></span>
+                <span className="b-chip__text">
+                  <span className="b-chip__name">{b.name}</span>
+                  <span className="b-chip__sub">eigið þrívíddarkort</span>
+                </span>
+              </a>
+            ))}
           </Rail>
         </div>
 
@@ -551,21 +563,6 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
           {visited.hillan && <Shelf version={server.version} />}
         </Drawer>
       </div>
-
-      {/* The other bases, each with a 3D map of its own, apart from this one. */}
-      {bases.length > 0 && (
-        <nav className="b-bases" aria-labelledby="stodvar-title">
-          <p id="stodvar-title" className="b-bases__head">Aðrar stöðvar · hver með sitt þrívíddarkort</p>
-          <ul className="b-bases__list">
-            {bases.map(b => (
-              <li key={b.id}>
-                {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- BlueMap's own app, not a Next page */}
-                <a href={baseUrl(b.id)} className="b-btn b-btn--small b-btn--ghost b-bases__link"><Lantern lit /> {b.name}</a>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      )}
 
       {album && <Album plates={plates} onClose={closeAlbum} />}
     </section>

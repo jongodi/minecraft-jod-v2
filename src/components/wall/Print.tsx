@@ -166,10 +166,10 @@ export default function Print({ username, entry, places, me, isOwner, coverPhoto
       )}
 
       <footer className="w-print__meta">
-        <time dateTime={entry.createdAt} title={date(entry.createdAt)}>{age(entry.createdAt)}</time>
+        <time className="b-tip" dateTime={entry.createdAt} data-tip={date(entry.createdAt)}>{age(entry.createdAt)}</time>
         {place && <Link href={`/?stadur=${place.id}#heimur`} className="w-print__place">{place.label}</Link>}
-        <button type="button" className={`w-lantern${lit ? ' is-lit' : ''}`} onClick={toggleLantern} disabled={!me || busyLantern}
-          aria-pressed={lit} title={me ? (lit ? 'Slökkva á luktinni' : 'Kveikja á lukt') : 'Skráðu þig inn á veggnum þínum til að kveikja á lukt'}>
+        <button type="button" className={`w-lantern b-tip${lit ? ' is-lit' : ''}`} onClick={toggleLantern} disabled={!me || busyLantern}
+          aria-pressed={lit} data-tip={me ? (lit ? 'Slökkva á luktinni' : 'Kveikja á lukt') : 'Skráðu þig inn til að kveikja á lukt'}>
           <Lantern lit={lit || entry.lanterns.length > 0} />
           {entry.lanterns.length > 0 && <span>{entry.lanterns.length}</span>}
           <span className="b-visually-hidden">{entry.lanterns.length ? `luktir: ${entry.lanterns.join(', ')}` : 'engin lukt enn'}</span>

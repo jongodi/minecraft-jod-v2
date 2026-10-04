@@ -32,7 +32,7 @@ export default function AmbienceToggle({ className }: { className?: string }) {
   };
 
   return (
-    <button ref={button} type="button" className={`b-sound${on ? ' is-on' : ''}${className ? ` ${className}` : ''}`} onClick={toggle} aria-pressed={on} aria-label={on ? 'Slökkva á vindi og eldi' : 'Kveikja á vindi og eldi'} title={on ? 'Slökkva á umhverfishljóði' : 'Kveikja á umhverfishljóði: vindur og eldur'}>
+    <button ref={button} type="button" className={`b-sound b-tip${on ? ' is-on' : ''}${className ? ` ${className}` : ''}`} onClick={toggle} aria-pressed={on} aria-label={on ? 'Slökkva á vindi og eldi' : 'Kveikja á vindi og eldi'} data-tip={on ? 'Slökkva á vindinum og eldinum' : 'Vindur og eldur'}>
       <SoundIcon on={on} />
     </button>
   );

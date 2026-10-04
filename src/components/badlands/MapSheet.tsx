@@ -141,9 +141,9 @@ export default function MapSheet({ config, selectedId, onSelect }: Props) {
         </svg>
       </motion.div>
       <div className="b-sheet__zoom">
-        <button type="button" aria-label="Stækka kortið" title="Stækka" onClick={() => zoomBy(1.4)}><ZoomIcon kind="in" /></button>
-        <button type="button" aria-label="Minnka kortið" title="Minnka" onClick={() => zoomBy(1 / 1.4)}><ZoomIcon kind="out" /></button>
-        <button type="button" aria-label="Allt kortið" title="Allt kortið" onClick={resetView}><ZoomIcon kind="fit" /></button>
+        <button type="button" className="b-tip" aria-label="Stækka kortið" data-tip="Stækka" onClick={() => zoomBy(1.4)}><ZoomIcon kind="in" /></button>
+        <button type="button" className="b-tip" aria-label="Minnka kortið" data-tip="Minnka" onClick={() => zoomBy(1 / 1.4)}><ZoomIcon kind="out" /></button>
+        <button type="button" className="b-tip" aria-label="Allt kortið" data-tip="Allt kortið" onClick={resetView}><ZoomIcon kind="fit" /></button>
       </div>
     </div>
   );

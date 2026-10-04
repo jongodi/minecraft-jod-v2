@@ -26,7 +26,7 @@ export function Heads({ names, lit }: { names: string[]; lit?: (n: string) => bo
   if (names.length === 0) return null;
   return (
     <span className="b-night__heads">
-      {names.map(n => <span key={n} className={`b-night__head${lit?.(n) ? ' is-in' : ''}`} title={n}><PlayerHead name={n} size={24} /></span>)}
+      {names.map(n => <span key={n} className={`b-night__head b-tip${lit?.(n) ? ' is-in' : ''}`} data-tip={n}><PlayerHead name={n} size={24} /></span>)}
     </span>
   );
 }

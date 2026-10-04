@@ -158,7 +158,7 @@
 /* a small button is still a thumb's target where there is a thumb */
 @media (pointer: coarse) { .b-btn--small { min-height: var(--tap); } }
 /* a tool over the world: paper on a dark pane, lit when pressed */
-.b-btn--ghost { border-color: rgba(232, 220, 196, 0.35); color: var(--paper); background: rgba(21, 16, 13, 0.6); }
+.b-btn--ghost { border-color: rgba(232, 220, 196, 0.35); color: var(--paper); background: var(--veil); }
 .b-btn--ghost:focus-visible,
 .b-btn--ghost.is-on { background: var(--lantern); border-color: var(--lantern); color: var(--night); }
 @media (hover: hover) { .b-btn--ghost:hover { background: var(--lantern); border-color: var(--lantern); color: var(--night); } }
@@ -196,7 +196,7 @@
   padding: var(--sp-2) var(--sp-4);
   border: var(--px) solid var(--lantern);
   border-radius: var(--radius);
-  background: rgba(21, 16, 13, 0.55);
+  background: var(--veil);
   color: var(--lantern);
   font-family: var(--font-data);
   font-size: var(--fs-data);
@@ -289,7 +289,7 @@
   padding: var(--sp-3) var(--sp-4);
   border: var(--line) solid rgba(232, 220, 196, 0.18);
   border-radius: var(--radius);
-  background: rgba(21, 16, 13, 0.55);
+  background: var(--veil);
   color: var(--text-soft);
   text-decoration: none;
   transition: border-color var(--dur-1) var(--ease-out);
@@ -402,7 +402,7 @@
   z-index: var(--z-bar);
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  background: rgba(21, 16, 13, 0.94);
+  background: var(--scrim-deep);
   box-shadow: 0 calc(var(--line) * -1) 0 rgba(209, 178, 161, 0.14);
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
@@ -500,12 +500,12 @@
   transition: opacity var(--dur-3) var(--ease-out);
 }
 /* the dark that falls over the world while a room is open; a tap on it closes the room */
-.b-frame__dim { position: absolute; inset: 0; z-index: 5; background: rgba(21, 16, 13, 0.62); opacity: 0; pointer-events: none; transition: opacity var(--dur-3) var(--ease-out); }
+.b-frame__dim { position: absolute; inset: 0; z-index: 5; background: var(--veil); opacity: 0; pointer-events: none; transition: opacity var(--dur-3) var(--ease-out); }
 .b-frame.is-room .b-frame__dim { opacity: 1; pointer-events: auto; cursor: pointer; }
 /* the world's own controls step back while a room is open */
 .b-hud__mid, .b-places { transition: opacity var(--dur-2) var(--ease-out); }
 .b-frame.is-room .b-hud__mid, .b-frame.is-room .b-places { opacity: 0; }
-.b-frame__shade { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(21, 16, 13, 0.6) 0%, transparent 24%, transparent 60%, rgba(21, 16, 13, 0.72) 100%); }
+.b-frame__shade { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, var(--veil) 0%, transparent 24%, transparent 60%, rgba(21, 16, 13, 0.72) 100%); }
 /* The still is dimmed by a layer of night over it rather than by a filter on
    the picture, so taking on the live map's light when the viewer is asked for
    is one opacity on the compositor, not a full-screen repaint per frame. */
@@ -514,7 +514,7 @@
 .b-frame__view { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; opacity: 0; transition: opacity var(--dur-3) var(--ease-out); }
 .b-frame.is-ready .b-frame__view { opacity: 1; }
 .b-frame.is-ready .b-frame__poster { opacity: 0; }
-.b-frame.is-ready .b-frame__shade { background: linear-gradient(180deg, rgba(21, 16, 13, 0.55) 0%, transparent 18%, transparent 100%); }
+.b-frame.is-ready .b-frame__shade { background: linear-gradient(180deg, var(--veil) 0%, transparent 18%, transparent 100%); }
 .b-frame__sheet { position: absolute; inset: 0; z-index: 2; background: var(--map-water); }
 .b-frame.is-drawn .b-frame__poster, .b-frame.is-drawn .b-frame__shade, .b-frame.is-drawn .b-frame__view { visibility: hidden; }
 /* While the viewer loads, the still takes on the live map's light (the layer
@@ -586,7 +586,7 @@ html.is-map-full { overflow: hidden; }
   justify-items: center;
   gap: var(--sp-2);
   padding: var(--sp-5) var(--sp-6);
-  background: rgba(21, 16, 13, 0.74);
+  background: var(--pane);
   color: var(--lantern);
   text-align: center;
   text-decoration: none;
@@ -597,8 +597,8 @@ html.is-map-full { overflow: hidden; }
 .b-boot .b-lantern { width: 2rem; height: 3rem; }
 .b-boot__word { font-family: var(--font-data); font-size: var(--fs-data); letter-spacing: 0.04em; text-transform: uppercase; }
 .b-boot__sub { font-size: var(--fs-sm); color: var(--tc-white); }
-.b-boot:focus-visible { background: rgba(21, 16, 13, 0.9); outline: var(--px) solid var(--lantern); outline-offset: calc(var(--px) * -3); }
-@media (hover: hover) { .b-boot:hover { background: rgba(21, 16, 13, 0.9); } }
+.b-boot:focus-visible { background: var(--scrim-deep); outline: var(--px) solid var(--lantern); outline-offset: calc(var(--px) * -3); }
+@media (hover: hover) { .b-boot:hover { background: var(--scrim-deep); } }
 .b-boot:focus-visible .b-boot__word { color: var(--paper); }
 @media (hover: hover) { .b-boot:hover .b-boot__word { color: var(--paper); } }
 /* the narrowest phones (320 px): the rail's heading wraps and the frame is
@@ -657,12 +657,6 @@ html.is-map-full { overflow: hidden; }
 .b-card__fly { width: 100%; margin-top: var(--sp-3); }
 .b-card__fly .b-lantern { width: 0.75rem; height: 1.125rem; }
 
-/* the other bases: a strip under the frame, each base's own 3D map one link away (/kort/<id>) */
-.b-bases { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-4); padding: var(--sp-4) var(--gutter); }
-.b-bases__head { font-size: var(--fs-sm); color: var(--paper); }
-.b-bases__list { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
-.b-bases__link .b-lantern { width: 0.75rem; height: 1.125rem; }
-
 /* the places: a rail of chips along the foot of the frame */
 .b-places { position: absolute; inset-inline: 0; bottom: 0; z-index: 3; display: grid; gap: var(--sp-2); padding: var(--sp-6) var(--gutter) var(--sp-4); pointer-events: none; }
 .b-places > * { pointer-events: auto; }
@@ -700,7 +694,7 @@ html.is-map-full { overflow: hidden; }
   width: var(--tap);
   height: var(--tap);
   margin-top: calc(var(--tap) / -2);
-  background: rgba(21, 16, 13, 0.85);
+  background: var(--pane);
   color: var(--lantern);
   box-shadow: inset 0 0 0 var(--px) var(--lantern-glow);
   clip-path: var(--notch);
@@ -744,6 +738,46 @@ html.is-map-full { overflow: hidden; }
 .b-chip__count { position: absolute; top: calc(var(--px) * -1); right: calc(var(--px) * -1); padding: 0 0.3rem; background: var(--lantern); color: var(--night); font-family: var(--font-data); font-size: var(--fs-chip); line-height: 1.6; }
 .b-chip { position: relative; }
 .b-chip.is-on .b-chip__count { background: var(--night); color: var(--lantern); }
+/* the other bases at the end of the rail: a lit lantern where the photo would be, since the chip leads to a 3D map of its own */
+.b-chip--base { text-decoration: none; }
+.b-chip__thumb--lantern { display: grid; place-items: center; background: var(--dusk-2); }
+.b-chip__thumb--lantern .b-lantern { width: 1.25rem; height: 1.875rem; }
+.b-chip--base:focus-visible .b-chip__name, .b-chip--base:hover .b-chip__name { color: var(--lantern); }
+
+/* ─── the tag: what a thing is, on paper, when pointed at or focused ──
+   In place of the browser's grey box, which a touch screen never shows and
+   no theme reaches: a slip of paper above whatever carries data-tip (under
+   it, where the thing stands at the top edge of the frame), for a fine
+   pointer and for a keyboard. Opacity and transform only. */
+.b-tip { position: relative; }
+.b-tip::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + var(--sp-2));
+  z-index: 8;
+  padding: var(--sp-1) var(--sp-2);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-text);
+  font-weight: 400;
+  font-size: var(--fs-sm);
+  line-height: 1.3;
+  letter-spacing: 0;
+  text-transform: none;
+  text-shadow: none;
+  white-space: nowrap;
+  clip-path: var(--notch);
+  box-shadow: 0 var(--px) 0 var(--tc-brown);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, var(--px));
+  transition: opacity var(--dur-1) var(--ease-out), transform var(--dur-1) var(--ease-out);
+}
+.b-tip--below::after { bottom: auto; top: calc(100% + var(--sp-2)); transform: translate(-50%, calc(var(--px) * -1)); }
+.b-tip:focus-visible::after { opacity: 1; transform: translate(-50%, 0); }
+@media (hover: hover) { .b-tip:hover::after { opacity: 1; transform: translate(-50%, 0); } }
+@media (prefers-reduced-motion: reduce) { .b-tip::after { transition: none; } }
 /* the crew's prints under the postcard, each a tap from its wall */
 .b-card__prints { display: flex; align-items: center; gap: var(--sp-1); margin-top: var(--sp-2); padding-inline: var(--sp-1); }
 .b-card__print { position: relative; width: 3.5rem; height: 2.4rem; overflow: hidden; box-shadow: 0 0 0 var(--px) var(--tc-brown); }
@@ -771,7 +805,7 @@ html.is-map-full { overflow: hidden; }
   .b-hud__title { display: contents; }
   .b-hud__title .b-title { grid-area: 1 / 1; min-width: 0; font-size: min(var(--fs-xl), 1.625rem); }
   .b-hud__meta { grid-area: 2 / 1 / 3 / -1; }
-  .b-hud__tools { grid-area: 1 / 2; flex-wrap: nowrap; gap: 0; filter: drop-shadow(0 var(--px) 0 rgba(21, 16, 13, 0.55)); }
+  .b-hud__tools { grid-area: 1 / 2; flex-wrap: nowrap; gap: 0; filter: drop-shadow(0 var(--px) 0 var(--veil)); }
   .b-hud__tool.b-btn {
     position: relative;
     width: var(--tap);
@@ -794,7 +828,7 @@ html.is-map-full { overflow: hidden; }
   /* how many pictures hang on the wall: a tag pinned to the key's corner */
   .b-hud__count { position: absolute; top: calc(var(--px) * -2); right: calc(var(--px) * -2); padding: 0 0.25rem; background: var(--lantern); color: var(--night); font-family: var(--font-data); font-size: var(--fs-chip); line-height: 1.6; letter-spacing: 0; }
   /* the way out stands apart, the same dark nailed-in square that closes a room */
-  .b-hud__tool.b-hud__close.b-btn { margin-left: var(--sp-2); border-left: 0; background: rgba(21, 16, 13, 0.55); color: var(--lantern); box-shadow: none; clip-path: var(--notch); }
+  .b-hud__tool.b-hud__close.b-btn { margin-left: var(--sp-2); border-left: 0; background: var(--veil); color: var(--lantern); box-shadow: none; clip-path: var(--notch); }
   .b-hud__tool.b-hud__close.b-btn .b-btn__icon { width: 1rem; height: 1rem; }
   .b-hud__tool.b-hud__close.b-btn:focus-visible { background: var(--lantern); color: var(--night); }
 
@@ -879,7 +913,7 @@ html.is-map-full { overflow: hidden; }
 @media (max-width: 479px) { .b-room__note { display: none; } }
 
 /* ─── the album: the whole wall, opened over the world ────────── */
-.b-album { position: fixed; inset: 0; z-index: var(--z-drawer); overflow-y: auto; background: rgba(21, 16, 13, 0.94); padding-block: calc(var(--sp-6) + env(safe-area-inset-top, 0px)) var(--sp-8); }
+.b-album { position: fixed; inset: 0; z-index: var(--z-drawer); overflow-y: auto; background: var(--scrim-deep); padding-block: calc(var(--sp-6) + env(safe-area-inset-top, 0px)) var(--sp-8); }
 .b-album__inner { display: grid; gap: var(--sp-4); }
 /* Tiles are square and butt together, so the wall never leaves holes.
    Every fifth picture is hung double size. There is no dense packing:
@@ -930,7 +964,7 @@ html.is-map-full { overflow: hidden; }
 .b-arrowbtn svg { width: 1.125rem; height: 1.125rem; }
 .b-arrowbtn:focus-visible { background: var(--lantern); color: var(--night); }
 @media (hover: hover) { .b-arrowbtn:hover { background: var(--lantern); color: var(--night); } }
-.b-lb__close { position: absolute; top: max(var(--sp-3), env(safe-area-inset-top, 0px)); right: var(--sp-4); z-index: 1; background: rgba(21, 16, 13, 0.6); }
+.b-lb__close { position: absolute; top: max(var(--sp-3), env(safe-area-inset-top, 0px)); right: var(--sp-4); z-index: 1; background: var(--veil); }
 
 /* ─── the crew: portraits in the room ─────────────────────────── */
 .b-crew__row { display: grid; gap: var(--sp-3); margin-bottom: var(--sp-5); }
@@ -1100,7 +1134,7 @@ html.is-map-full { overflow: hidden; }
   display: flex; align-items: center; gap: var(--sp-3);
   max-width: 22rem; padding: var(--sp-2) var(--sp-4);
   border: var(--line) solid rgba(232, 220, 196, 0.18); border-radius: var(--radius);
-  background: rgba(21, 16, 13, 0.55); color: var(--text-soft); text-decoration: none;
+  background: var(--veil); color: var(--text-soft); text-decoration: none;
   font-size: var(--fs-sm); line-height: 1.5;
   transition: border-color var(--dur-1) var(--ease-out);
 }
@@ -1114,7 +1148,7 @@ html.is-map-full { overflow: hidden; }
 .b-night {
   display: grid; gap: var(--sp-4);
   margin-block: var(--sp-6); padding: var(--sp-4) var(--sp-5);
-  border: var(--line) solid rgba(232, 220, 196, 0.18); background: rgba(21, 16, 13, 0.55);
+  border: var(--line) solid rgba(232, 220, 196, 0.18); background: var(--veil);
 }
 .b-night--none { grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; }
 .b-night--live, .b-night--soon, .b-night.is-picked { border-color: var(--lantern); }

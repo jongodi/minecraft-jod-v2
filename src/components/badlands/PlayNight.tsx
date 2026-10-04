@@ -201,7 +201,7 @@ function NightFire({ night, kicker, me, server, busy, err, picked, onRun, onShar
           <button type="button" className="b-btn b-btn--small b-btn--ghost" onClick={onShare}>Deila</button>
           {/* a chosen night goes in the phone's calendar: a calendar file, opened by the calendar app */}
           {night.phase !== 'open' && night.phase !== 'live' && (
-            <a href={`/kvold/${night.id}/dagatal.ics`} className="b-btn b-btn--small b-btn--ghost" title="Setja kvöldið í dagatalið"><CalendarIcon className="b-btn__icon" />Í dagatalið</a>
+            <a href={`/kvold/${night.id}/dagatal.ics`} className="b-btn b-btn--small b-btn--ghost"><CalendarIcon className="b-btn__icon" />Í dagatalið</a>
           )}
           {mineIsBy && night.phase !== 'live' && (
             <button type="button" className="b-btn b-btn--small b-btn--ghost" disabled={busy} onClick={() => { if (confirm('Slökkva bálið? Kvöldið fellur niður.')) onRun({ action: 'cancel' }); }}>Slökkva bálið</button>

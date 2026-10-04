@@ -48,7 +48,7 @@ function Footer({ season: initial }: { season?: Season } = {}) {
       <Ridge snow={season.snow} />
       <div className="b-wrap b-foot__inner">
         <div className="b-foot__camp">
-          <button type="button" className="b-foot__fire" onClick={() => setDuel(true)} aria-haspopup="dialog" aria-label="Einvígi: prófaðu viðbragðstímann" title="Einvígi">
+          <button type="button" className="b-foot__fire b-tip" onClick={() => setDuel(true)} aria-haspopup="dialog" aria-label="Einvígi: prófaðu viðbragðstímann" data-tip="Einvígi">
             <Campfire />
           </button>
           <YuleLad season={season} spot="fire" />

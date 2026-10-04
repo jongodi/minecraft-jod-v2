@@ -397,7 +397,7 @@ export default function Wall({ initial, places, justSignedIn = false }: Props) {
                 {bioError && <p className="b-err" role="alert">{bioError}</p>}
               </div>
             ) : isOwner ? (
-              <button type="button" className={`w-poster__bio w-poster__bio--edit${profile.bio ? '' : ' is-empty'}`} onClick={() => setEditingBio(true)} title="Breyta kynningu">
+              <button type="button" className={`w-poster__bio w-poster__bio--edit b-tip${profile.bio ? '' : ' is-empty'}`} onClick={() => setEditingBio(true)} data-tip="Breyta kynningu">
                 {profile.bio || 'Skrifaðu eina eða tvær línur um þig…'}
               </button>
             ) : (

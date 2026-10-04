@@ -68,7 +68,7 @@ export default function AddressBar({ links, activeId, onDoor, always = false }: 
           <div className="b-bar__end">
             {/* a signed-in member's own head, lit: one tap to their wall from any page */}
             {me && (
-              <Link href={`/crew/${me}`} className="b-bar__me" aria-label={`Veggurinn þinn, ${me}`} title="Veggurinn þinn">
+              <Link href={`/crew/${me}`} className="b-bar__me" aria-label={`Veggurinn þinn, ${me}`}>
                 <PlayerHead name={me} size={24} />
               </Link>
             )}

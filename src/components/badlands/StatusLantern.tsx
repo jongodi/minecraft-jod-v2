@@ -57,7 +57,7 @@ export default function StatusLantern({ server }: { server: ServerState }) {
         {(version || heads.length > 0) && (
           <span className="b-status__row b-status__meta">
             {heads.length > 0 && (
-              <span className={`b-status__heads${online ? '' : ' b-status__heads--then'}`} title={online ? undefined : `síðast inni: ${heads.join(', ')}`} aria-hidden="true">
+              <span className={`b-status__heads b-tip${online ? '' : ' b-status__heads--then'}`} data-tip={`${online ? 'inni' : 'síðast inni'}: ${heads.join(', ')}`} aria-hidden="true">
                 {heads.map(n => <PlayerHead key={n} name={n} size={16} />)}
               </span>
             )}
