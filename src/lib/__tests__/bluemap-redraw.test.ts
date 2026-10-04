@@ -41,7 +41,7 @@ describe('redrawing and freezing on the server', () => {
     fetchMock.mockReset();
   });
 
-  it('writes the base\'s config, reloads BlueMap, and draws the whole map again', async () => {
+  it('writes the base\'s config, reloads BlueMap, and purges the map so it is drawn again from scratch', async () => {
     const wait = vi.fn(async () => undefined);
     await redrawBases('key', ['jodville'], wait);
     expect(calls()).toEqual([
@@ -49,9 +49,13 @@ describe('redrawing and freezing on the server', () => {
       'PUT /files/data/plugins/BlueMap/maps/jodville.conf',
       'POST /command/ bluemap reload light',
       'POST /command/ bluemap unfreeze jodville',
-      'POST /command/ bluemap force-update jodville',
+      'POST /command/ bluemap purge jodville',
     ]);
-    expect(String(fetchMock.mock.calls[1][1].body)).toContain('remove-caves-below-y: 10000');
+    const conf = String(fetchMock.mock.calls[1][1].body);
+    expect(conf).toContain('remove-caves-below-y: 10000');
+    /* 500 blocks each way around 136, -84 */
+    expect(conf).toContain('min-x: -364');
+    expect(conf).toContain('max-z: 416');
     /* the map is asked for only once BlueMap has had time to read the config */
     expect(wait).toHaveBeenCalledWith(RELOAD_WAIT_MS);
   });

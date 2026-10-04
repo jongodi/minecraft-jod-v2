@@ -5,7 +5,7 @@
 //   npm run map:bases              show the configs that would be written, write nothing
 //   npm run map:bases -- --write [id...]   write the configs that aren't on the server yet
 //   npm run map:bases -- --write [id...] --force   also overwrite ones that are
-//   npm run map:bases -- --redraw <id...>  write a base's config afresh and draw it again from scratch
+//   npm run map:bases -- --redraw <id...>  write a base's config afresh, purge it and draw it again from scratch
 //   npm run map:bases -- --freeze          freeze every base map (no updates at all)
 //   npm run map:bases -- --refresh <id>    unfreeze one base map and update it now
 //   npm run map:bases -- --upload [id...]  copy base maps to the site (all of them if none is named)
@@ -26,9 +26,10 @@
 //
 // A base's own drawing settings ("bluemap" in src/lib/map-bases.json, set on
 // top of the main map's by scripts/bluemap-conf.mjs) take hold once it is
-// drawn again with them: --redraw <id> writes its config, reloads BlueMap and
-// redraws the whole map (the admin panel's "Teikna upp á nýtt" does the same);
-// then --freeze once the drawing is done, and send it to the site.
+// drawn again with them, and so does a new size: --redraw <id> writes its
+// config, reloads BlueMap and purges the map, which deletes its drawn tiles and
+// draws it again from scratch (the admin panel's "Teikna upp á nýtt" does the
+// same); then --freeze once the drawing is done, and send it to the site.
 //
 // The base maps never update on their own: they are frozen, and only redrawn
 // when asked. After --write: /bluemap reload in the console, let the first
@@ -691,7 +692,7 @@ async function main() {
     await sleep(15_000);
     for (const b of chosen) {
       await command(id, `bluemap unfreeze ${b.id}`);
-      await command(id, `bluemap force-update ${b.id}`);
+      await command(id, `bluemap purge ${b.id}`);
     }
     console.log('\nÞegar teikningunni er lokið (/bluemap sýnir framvinduna): npm run map:bases -- --freeze, svo senda kortið á vefinn.');
     return;

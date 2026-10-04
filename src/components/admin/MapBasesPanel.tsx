@@ -73,7 +73,7 @@ export default function MapBasesPanel() {
   /* a redraw and a freeze are console commands, answered at once */
   async function onServer(action: 'redraw' | 'freeze', ids: string[]) {
     const name = names.get(ids[0]) ?? ids[0];
-    if (action === 'redraw' && !confirm(`Teikna ${name} upp á nýtt á þjóninum, með eigin stillingum þess? Allt kortið er teiknað aftur, sem tekur nokkrar mínútur, og afritið á vefnum er óbreytt á meðan.`)) return;
+    if (action === 'redraw' && !confirm(`Teikna ${name} upp á nýtt á þjóninum, með stærð þess og eigin stillingum? Teiknaðir reitir þess á þjóninum eru fjarlægðir og það teiknað aftur frá grunni, sem tekur nokkrar mínútur. Afritið á vefnum er óbreytt á meðan; sendu kortið ekki fyrr en teikningunni er lokið.`)) return;
     setStarting(action === 'redraw' ? `redraw:${ids[0]}` : 'freeze'); setMsg('');
     try {
       await api('/api/admin/map-bases', { method: 'POST', body: JSON.stringify({ action, bases: ids }) });

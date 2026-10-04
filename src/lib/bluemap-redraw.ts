@@ -5,10 +5,13 @@ import { baseConfig, MAPS_DIR } from '../../scripts/bluemap-conf.mjs';
 /* Redrawing and freezing the base maps on the server, from the admin panel
    (Þjónn → Grunnkortin) or npm run map:bases -- --redraw / --freeze. A redraw
    writes the base's BlueMap config afresh (the main map's, with the base's
-   own drawing settings from src/lib/map-bases.json, scripts/bluemap-conf.mjs),
-   reloads BlueMap so it reads it, and draws the whole map again with it. The
-   map is unfrozen for that; freeze it again once the drawing is done, then
-   send it to the site. The server must be running: these are console
+   size and own drawing settings from src/lib/map-bases.json,
+   scripts/bluemap-conf.mjs), reloads BlueMap so it reads it, and purges the
+   map: its drawn tiles are deleted and it is drawn again from scratch, so a
+   smaller area leaves nothing behind outside it (a force-update would only
+   redraw inside). The map is unfrozen for that; once the drawing is done,
+   freeze it again and send it to the site. Until then the server's copy is
+   incomplete, while the site's stays as it was. The server must be running: these are console
    commands. */
 
 const API = 'https://api.exaroton.com/v1/servers';
@@ -41,7 +44,7 @@ async function command(token: string, id: string, line: string): Promise<void> {
   });
 }
 
-/** Writes each base's config afresh, reloads BlueMap, and draws each base again from scratch. */
+/** Writes each base's config afresh, reloads BlueMap, and purges each base so it is drawn again from scratch. */
 export async function redrawBases(token: string, ids: string[], wait: Wait = sleep): Promise<void> {
   const id = await getExarotonServerId(token);
   const world = await (await exaroton(token, id, `files/data/${encode(`${MAPS_DIR}/world.conf`)}`)).text();
@@ -58,7 +61,7 @@ export async function redrawBases(token: string, ids: string[], wait: Wait = sle
   await wait(RELOAD_WAIT_MS);
   for (const baseId of ids) {
     await command(token, id, `bluemap unfreeze ${baseId}`);
-    await command(token, id, `bluemap force-update ${baseId}`);
+    await command(token, id, `bluemap purge ${baseId}`);
   }
 }
 
