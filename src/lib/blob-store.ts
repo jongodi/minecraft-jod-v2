@@ -11,6 +11,21 @@ export type BlobAccess = 'public' | 'private';
 export const BLOB_PROXY_PREFIX = '/api/blob/';
 /** Blob path prefixes the proxy is allowed to serve. */
 export const SERVABLE_PREFIXES = ['gallery/', 'crew/'];
+/** The picture types a print may be stored and served as, each with the
+    extension it is filed under. Never SVG: it can carry script, and prints
+    are served from the site's own origin. */
+const IMAGE_TYPES = new Map([
+  ['image/png',  'png'],
+  ['image/jpeg', 'jpg'],
+  ['image/webp', 'webp'],
+  ['image/gif',  'gif'],
+  ['image/avif', 'avif'],
+]);
+export const IMAGE_CONTENT_TYPES = [...IMAGE_TYPES.keys()];
+/** The extension a picture of this type is stored under, or null for anything that isn't one. */
+export const imageExt = (contentType: string): string | null => IMAGE_TYPES.get(contentType) ?? null;
+export const UPLOAD_TYPE_ERROR = 'Aðeins er hægt að hlaða upp myndum (PNG, JPEG, WebP, GIF eða AVIF).';
+
 /** Upper bound for a single photo. Client uploads go straight to Blob, so this is not limited by Vercel's 4.5 MB request body cap. */
 export const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
 

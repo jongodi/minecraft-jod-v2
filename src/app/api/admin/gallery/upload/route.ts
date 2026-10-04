@@ -12,12 +12,11 @@ import { handleUpload, type HandleUploadBody } from '@vercel/blob/client';
 import { addGalleryPhoto } from '@/lib/gallery';
 import { linkPhotoToLocation } from '@/lib/map';
 import { requireAdmin, unauthorizedResponse } from '@/lib/auth';
-import { detectBlobAccess, storageMode, storeImage, MAX_UPLOAD_BYTES } from '@/lib/blob-store';
+import { detectBlobAccess, storageMode, storeImage, imageExt, IMAGE_CONTENT_TYPES, MAX_UPLOAD_BYTES, UPLOAD_TYPE_ERROR } from '@/lib/blob-store';
 import { randomUUID } from 'crypto';
 
 export const dynamic = 'force-dynamic';
 
-const ALLOWED_EXT = new Set(['png', 'jpg', 'jpeg', 'webp', 'gif', 'avif']);
 const GALLERY_PATH = /^gallery\/[0-9a-f-]{36}\.(png|jpe?g|webp|gif|avif)$/;
 
 export async function GET() {
@@ -54,7 +53,7 @@ async function clientUploadHandshake(req: NextRequest) {
       onBeforeGenerateToken: async (pathname) => {
         if (!GALLERY_PATH.test(pathname)) throw new Error('Ógilt skráarheiti.');
         return {
-          allowedContentTypes: ['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/avif'],
+          allowedContentTypes: IMAGE_CONTENT_TYPES,
           maximumSizeInBytes:  MAX_UPLOAD_BYTES,
           addRandomSuffix:     false,
           allowOverwrite:      false,
@@ -84,11 +83,11 @@ async function serverUpload(req: NextRequest) {
   const locationId = typeof locRaw === 'string' && /^\d+$/.test(locRaw) ? Number(locRaw) : null;
 
   if (!file) return NextResponse.json({ error: 'Engin skrá valin.' }, { status: 400 });
-  if (!file.type.startsWith('image/')) return NextResponse.json({ error: 'Aðeins er hægt að hlaða upp myndum.' }, { status: 400 });
-  if (file.size > MAX_UPLOAD_BYTES)   return NextResponse.json({ error: `Skráin er of stór (hámark ${Math.round(MAX_UPLOAD_BYTES / 1024 / 1024)} MB).` }, { status: 400 });
+  /* the type decides the name, so nothing is ever stored under a picture's extension that isn't one */
+  const ext = imageExt(file.type);
+  if (!ext) return NextResponse.json({ error: UPLOAD_TYPE_ERROR }, { status: 400 });
+  if (file.size > MAX_UPLOAD_BYTES) return NextResponse.json({ error: `Skráin er of stór (hámark ${Math.round(MAX_UPLOAD_BYTES / 1024 / 1024)} MB).` }, { status: 400 });
 
-  const rawExt = file.name.split('.').pop()?.toLowerCase() ?? '';
-  const ext = ALLOWED_EXT.has(rawExt) ? rawExt : 'png';
   const id  = randomUUID();
 
   let fileUrl: string;
