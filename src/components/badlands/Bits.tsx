@@ -57,13 +57,16 @@ export function Strata({ className }: { className?: string }) {
   );
 }
 
-const SUN_ROWS = [[3, 6], [2, 8], [1, 10], [1, 10], [0, 12], [0, 12], [0, 12], [0, 12], [1, 10], [1, 10], [2, 8], [3, 6]];
-
-/** A pixel sun, twelve rows. */
+/** The sun as the game draws it: a square, not a disc. A white-hot core in
+    a body of sunlight, inside a ring of glow that lets the sky through.
+    Every player knows this shape from the sky over their own world, and no
+    letter of the name beside it is square. */
 export function Sun() {
   return (
     <svg viewBox="0 0 12 12" aria-hidden="true">
-      {SUN_ROWS.map(([x, w], y) => <rect key={y} x={x} y={y} width={w} height="1" fill="currentColor" />)}
+      <rect x="0" y="0" width="12" height="12" fill="currentColor" opacity="0.35" />
+      <rect x="1" y="1" width="10" height="10" fill="currentColor" />
+      <rect className="b-sun__core" x="3" y="3" width="6" height="6" />
     </svg>
   );
 }

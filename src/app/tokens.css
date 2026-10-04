@@ -113,7 +113,10 @@
   --fs-lg:   1.25rem;   /* 20px */
   --fs-xl:   clamp(1.5rem, 1.1rem + 1.8vw, 2.2rem);
   --fs-2xl:  clamp(2rem, 1.4rem + 3vw, 3.4rem);
-  --fs-hero: clamp(5.5rem, 2rem + 15vw, 18rem);
+  /* the name: nine tenths of a phone's width, a little over half a desktop's
+     (it leaves the sun its own patch of sky), never more than the screen's
+     height can stand in the hero */
+  --fs-hero: clamp(6rem, min(40vw, 44svh), 22rem);
   --fs-chip: 0.5rem;    /* 8px: the numeral on a tag */
   --fs-data: 1rem;      /* 16px */
   --fs-data-lg: 1.5rem; /* 24px */
@@ -164,3 +167,4 @@
   --z-lightbox: 60;
   --z-modal: 70;
 }
+@media (min-width: 900px) { :root { --fs-hero: clamp(12rem, min(23vw, 40svh), 24rem); } }
