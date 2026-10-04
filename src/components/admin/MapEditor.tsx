@@ -706,6 +706,11 @@ function NumField({ value, min, max, onCommit }: { value: number; min: number; m
 
 function WorldField({ value, onChange }: { value: WorldPoint | null; onChange: (w: WorldPoint | null) => void }) {
   const [text, setText] = useState(formatWorldPoint(value));
+  /* follows the place when it changes from outside (Afturkalla, another
+     pin), as NumField does, unless it is being typed in */
+  const shown = formatWorldPoint(value);
+  const focused = useRef(false);
+  useEffect(() => { if (!focused.current) setText(shown); }, [shown]);
   const parsed = parseWorldPoint(text);
   const bad = text.trim() !== '' && parsed === null;
   const commit = () => {
@@ -720,7 +725,9 @@ function WorldField({ value, onChange }: { value: WorldPoint | null; onChange: (
       : 'Hnitin úr F3. Staður með hnit fær lukt í þrívíddarkortinu, og flísin hans á forsíðunni flýgur þangað. Autt = ekki í þrívíddarkortinu.'}>
       <input className="a-input a-input--data" value={text} placeholder="t.d. -6890 64 -8919" inputMode="text" spellCheck={false}
         aria-invalid={bad || undefined}
-        onChange={e => setText(e.target.value)} onBlur={commit}
+        onChange={e => setText(e.target.value)}
+        onFocus={() => { focused.current = true; }}
+        onBlur={() => { focused.current = false; commit(); }}
         onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); commit(); } }} />
     </Field>
   );
