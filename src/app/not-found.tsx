@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import OffTrail from '@/components/badlands/OffTrail';
 
-export const metadata: Metadata = { title: 'Fannst ekki · JOÐ' };
+export const metadata: Metadata = { title: 'Fannst ekki' };
 
 /* Any address the site doesn't have, and a wall for a name that isn't in the crew. */
 export default function NotFound() {

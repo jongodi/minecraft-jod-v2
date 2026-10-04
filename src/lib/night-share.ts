@@ -4,6 +4,7 @@
 import { currentNights, optionOf, phaseOf, yesFor } from '@/lib/play-night';
 import type { Metadata } from 'next';
 import { plural } from '@/lib/format';
+import { SITE_NAME } from '@/components/badlands/data';
 
 const DAYS = ['sunnudag', 'mánudag', 'þriðjudag', 'miðvikudag', 'fimmtudag', 'föstudag', 'laugardag'];
 const MONTHS = ['jan.', 'feb.', 'mar.', 'apr.', 'maí', 'jún.', 'júl.', 'ágú.', 'sep.', 'okt.', 'nóv.', 'des.'];
@@ -58,7 +59,7 @@ export async function sharedNight(id?: string): Promise<SharedNight | null> {
 
 /** The link preview for a night's page: /kvold (the next night) or /kvold/<id>. */
 export function nightMetadata(night: SharedNight, id?: string): Metadata {
-  const title = `${night.title} · JOÐ`;
+  const title = night.title;
   const description = [night.note && `„${night.note}“`, ...night.lines].filter(Boolean).join(' · ');
   const url = id ? `/kvold/${id}` : '/kvold';
   const card = `/kvold/card?${id ? `n=${encodeURIComponent(id)}&` : ''}v=${cardVersion(night)}`;
@@ -67,7 +68,7 @@ export function nightMetadata(night: SharedNight, id?: string): Metadata {
     description,
     alternates: { canonical: url },
     openGraph: {
-      title, description, url, type: 'website', locale: 'is_IS', siteName: 'JOÐ',
+      title, description, url, type: 'website', locale: 'is_IS', siteName: SITE_NAME,
       images: [{ url: card, width: 1200, height: 630, alt: 'Spilakvöld á JOÐ' }],
     },
     twitter: { card: 'summary_large_image', title, description, images: [card] },

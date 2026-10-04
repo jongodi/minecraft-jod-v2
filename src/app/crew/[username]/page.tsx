@@ -6,6 +6,7 @@ import { notFound } from 'next/navigation';
 import { readProfile, isCrewUsername, canonicalUsername, allPhotos } from '@/lib/crew';
 import { readMap } from '@/lib/map';
 import Wall, { type WallPlace } from '@/components/wall/Wall';
+import { SITE_NAME } from '@/components/badlands/data';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,14 +16,14 @@ type Props = { params: Promise<{ username: string }>; searchParams: Promise<Reco
    link shows the poster at once and carries the member's own card. */
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { username } = await params;
-  if (!isCrewUsername(username)) return { title: 'Fannst ekki · JOÐ' };
+  if (!isCrewUsername(username)) return { title: 'Fannst ekki' };
   const profile = await readProfile(username);
   const prints = allPhotos(profile).length;
   const description = profile.bio || `Veggur ${profile.username} á JOÐ: ${profile.entries.length} færslur og ${prints} myndir úr leiknum.`;
   return {
-    title: `${profile.username} · JOÐ`,
+    title: profile.username,
     description,
-    openGraph: { title: `${profile.username}, eftirlýst`, description, type: 'profile', locale: 'is_IS' },
+    openGraph: { title: `${profile.username}, eftirlýst`, description, type: 'profile', locale: 'is_IS', siteName: SITE_NAME },
   };
 }
 

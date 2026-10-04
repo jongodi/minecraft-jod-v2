@@ -5,6 +5,7 @@ import { syncedOn } from '@/lib/bluemap-snapshot';
 import { baseLinks } from '@/lib/bluemap-bases';
 import { loadHomeData } from '@/lib/home-data';
 import { sharedPlace } from '@/lib/place-share';
+import { SITE_NAME } from '@/components/badlands/data';
 
 /* A place's shareable link: the home page itself, with the place's postcard
    open (World reads the id from the address), but with the place's own link
@@ -19,13 +20,13 @@ type Props = { params: Promise<{ id: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const shared = await sharedPlace((await params).id);
   if (!shared) return {};
-  const title = `${shared.title} · JOÐ`;
+  const title = shared.title;
   const url = `/stadur/${shared.place.id}`;
   return {
     title,
     description: shared.description,
     alternates: { canonical: url },
-    openGraph: { title, description: shared.description, url, type: 'website', locale: 'is_IS', siteName: 'JOÐ' },
+    openGraph: { title, description: shared.description, url, type: 'website', locale: 'is_IS', siteName: SITE_NAME },
     twitter: { card: 'summary_large_image', title, description: shared.description },
   };
 }

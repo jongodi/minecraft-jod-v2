@@ -14,7 +14,7 @@ Only this content is used. Nothing below is invented.
 
 | Item | Value | Source |
 |---|---|---|
-| Server name | JOÐ | data.ts, layout.tsx |
+| Server name | JOÐ, the mark and the wordmark; JOÐcraft, the name as it is written | data.ts, layout.tsx |
 | Address | play.jodcraft.world | data.ts |
 | Edition | Java | status lantern, the shelf |
 | Game version(s) | 26.1 and 1.21.11 | datapacks.ts gameVersion; also returned live by the status API |
@@ -31,6 +31,8 @@ Only this content is used. Nothing below is invented.
 | Links | /crew, /admin, "no affiliation with Mojang or Microsoft" | Footer.tsx |
 
 Not present anywhere: server rules, testimonials, uptime or player-count history. So there is no Ordinances section and the board carries only what exists.
+
+**The name.** JOÐ is the mark and the wordmark: the hero, the bar, the favicon, the stamps set in the bitmap face, and the word the players say ("á JOÐ", "JOÐ-félagi"). JOÐcraft is the name as it is written: the end of every page's title, the manifest, the footer's credit, the site name on every link preview and the letters' sender. The mark is the J cut from the strata. A pixel Ð was drawn on the same grid and set beside the J at 16, 32, 64 and 192 px; at 192 it read as Ð, at 16 and 32 its crossbar and counter closed into a solid block and it read as a D, so the J stays.
 
 ## The evening, section by section
 

@@ -12,6 +12,7 @@ import { LAST_DAY_AHEAD, TIME_CHOICES, WhenAt, dayLabel, dayLong, dayNum, dayOf,
 import { Fire, Heads, chosenOf, lower } from './NightLine';
 import { plural } from '@/lib/format';
 import { toast } from './Toast';
+import { SITE_NAME } from './data';
 
 /* Spilakvöld (src/lib/play-night.ts). The crew's room holds the fires
    themselves, up to five planned at once, soonest first: lighting one,
@@ -58,7 +59,7 @@ export function NightBoard({ server }: { server: ServerState }) {
     const url = `${window.location.origin}/kvold/${id}#hopur`;
     const nav = navigator as Navigator & { share?: (d: ShareData) => Promise<void> };
     if (nav.share && matchMedia('(pointer: coarse)').matches) {
-      try { await nav.share({ title: 'Spilakvöld · JOÐ', url }); return; } catch (e) { if ((e as DOMException)?.name === 'AbortError') return; }
+      try { await nav.share({ title: `Spilakvöld · ${SITE_NAME}`, url }); return; } catch (e) { if ((e as DOMException)?.name === 'AbortError') return; }
     }
     try { await navigator.clipboard.writeText(url); toast('Afritað', 'hlekkur á kvöldið', 'límdu hann í spjallið'); }
     catch { window.prompt('Afritaðu hlekkinn:', url); }

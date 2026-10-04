@@ -12,7 +12,7 @@ import { plural } from '@/lib/format';
 import Drawer from './Drawer';
 import PlayerHead from './PlayerHead';
 import Rail, { revealRailItem } from './Rail';
-import { CREW, MAP_POSTER, MAP_URL, handCase, titleCase, type Plate, type RoomId } from './data';
+import { CREW, MAP_POSTER, MAP_URL, SITE_NAME, handCase, titleCase, type Plate, type RoomId } from './data';
 import type { ServerState } from './hooks';
 import { useInert, useMediaQuery } from './hooks';
 import { photoProps, PHOTO_SIZES } from './photo';
@@ -171,7 +171,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
     const url = `${window.location.origin}/stadur/${id}#heimur`;
     const nav = navigator as Navigator & { share?: (d: ShareData) => Promise<void> };
     if (nav.share && matchMedia('(pointer: coarse)').matches) {
-      try { await nav.share({ title: `${title} · JOÐ`, url }); return; }
+      try { await nav.share({ title: `${title} · ${SITE_NAME}`, url }); return; }
       catch (e) { if ((e as DOMException)?.name === 'AbortError') return; }
     }
     try { await navigator.clipboard.writeText(url); toast('Afritað', `hlekkur á ${title}`, 'límdu hann í spjallið'); }

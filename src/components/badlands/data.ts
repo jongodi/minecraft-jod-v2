@@ -1,6 +1,11 @@
 import posterFile from '@/lib/map-poster.json';
 import { formatNumber } from '@/lib/format';
 export const SERVER_IP = 'play.jodcraft.world';
+/* The name as it is written: every page's title ends in it, the manifest,
+   the footer's credit and the link previews carry it. The mark and the hero
+   keep the wordmark, JOÐ, which is also the word the players say. */
+export const SITE_NAME = 'JOÐcraft';
+export const TITLE_TEMPLATE = `%s · ${SITE_NAME}`;
 
 export const CREW = [
   'stebbias', 'AmmaGaur', 'joenana', 'ingunnbirta',

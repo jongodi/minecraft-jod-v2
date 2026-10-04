@@ -166,7 +166,7 @@ describe('a base map\'s viewer', () => {
 
   it('wears the main viewer\'s clothes, with the base\'s name and the edges of its own map', () => {
     const { html } = baseViewer(shell, settings, base, copy);
-    expect(html).toContain('<title>Joðville · JOÐ</title>');
+    expect(html).toContain('<title>Joðville · JOÐcraft</title>');
     expect(html).toContain('src="/bluemap/assets/index-A.js"');
     expect(html).toContain('href="/bluemap-jod/jod.css"');
     expect(html).toContain('href="/bluemap-data/vbase/maps/jodville/textures.json.gz" as="fetch"');
@@ -212,7 +212,7 @@ describe('a base map\'s viewer', () => {
   it('leaves the main viewer\'s page as it was', () => {
     const assets = viewerAssets('<meta name="version" content="5.27"><script type="module" crossorigin src="./assets/index-A.js"></script><link rel="stylesheet" crossorigin href="./assets/index-B.css">');
     const html = indexHtml(assets, { id: 'world', root: '/bluemap-data/vx/maps', version: 'vx', syncedAt: null, files: new Set(), bounds: null, start: null });
-    expect(html).toContain('<title>Heimurinn · JOÐ</title>');
+    expect(html).toContain('<title>Heimurinn · JOÐcraft</title>');
     expect(html).toContain("<!-- Written by scripts/bluemap-brand.mjs (npm run map:brand). map:sync overwrites BlueMap's own copy of this file and brands it again. -->");
     expect(html).not.toContain('"title"');
   });
@@ -226,7 +226,7 @@ describe('a base map\'s viewer', () => {
 
     const page = await ask('jodville', 'index.html');
     expect(page.headers.get('Content-Type')).toBe('text/html; charset=utf-8');
-    expect(await page.text()).toContain('<title>Joðville · JOÐ</title>');
+    expect(await page.text()).toContain('<title>Joðville · JOÐcraft</title>');
 
     const json = await ask('jodville', 'settings.json');
     expect(json.headers.get('Content-Type')).toBe('application/json; charset=utf-8');

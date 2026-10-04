@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { Campfire, ChevronIcon } from './Bits';
 import { Ridge } from './Mesa';
-import { SERVER_IP } from './data';
+import { SERVER_IP, SITE_NAME } from './data';
 import AmbienceToggle from '@/effects/AmbienceToggle';
 import { useBackdropClose, useScrollLock } from './hooks';
 import { YuleLad, seasonClass, useSeason } from './Season';
@@ -65,7 +65,7 @@ function Footer({ season: initial }: { season?: Season } = {}) {
         </Link>
 
         <div className="b-foot__credit">
-          <p>JOÐ, frá 2024 · {SERVER_IP}</p>
+          <p>{SITE_NAME}, frá 2024 · {SERVER_IP}</p>
           <p className="b-foot__small">Engin tengsl við Mojang eða Microsoft.</p>
         </div>
       </div>

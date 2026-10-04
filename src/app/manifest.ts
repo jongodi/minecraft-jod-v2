@@ -1,10 +1,11 @@
 import type { MetadataRoute } from 'next';
+import { SITE_NAME } from '@/components/badlands/data';
 
 /* So a phone can keep the site on its home screen under the strata mark:
    the world with three doors under a thumb, without the browser's frame. */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'JOÐ, Minecraft-heimurinn okkar',
+    name: `${SITE_NAME} · Minecraft-heimurinn okkar`,
     short_name: 'JOÐ',
     description: 'Minecraft-heimur átta vina frá sumrinu 2024. play.jodcraft.world',
     start_url: '/',

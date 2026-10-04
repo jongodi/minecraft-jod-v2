@@ -168,7 +168,7 @@ export function viewerAssets(html) {
     /kort/<id>): its title, description and where the page comes from; left
     out, it is the main map's page at /bluemap. */
 export function indexHtml({ script, style, version }, map, page = {}) {
-  const title = page.title ? `${page.title} · JOÐ` : 'Heimurinn · JOÐ';
+  const title = page.title ? `${page.title} · JOÐcraft` : 'Heimurinn · JOÐcraft';
   const description = page.description ?? 'Heimasvæðið á JOÐ í þrívídd: dragðu, snúðu og stækkaðu. play.jodcraft.world';
   const origin = page.origin ?? 'Written by scripts/bluemap-brand.mjs (npm run map:brand). map:sync overwrites BlueMap\'s own copy of this file and brands it again.';
   const data = map.root ? `${map.root}/${map.id}` : null;
@@ -200,7 +200,7 @@ export function indexHtml({ script, style, version }, map, page = {}) {
         <meta name="version" content="${esc(version)}">
         <meta name="theme-color" content="#15100D">
         <meta name="robots" content="index,nofollow">
-        <meta property="og:site_name" content="JOÐ">
+        <meta property="og:site_name" content="JOÐcraft">
         <meta property="og:title" content="${esc(title)}">
         <meta property="og:description" content="${esc(description)}">
         <meta property="og:type" content="website">

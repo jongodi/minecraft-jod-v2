@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import localFont from 'next/font/local';
 import './globals.css';
-import { SERVER_IP } from '@/components/badlands/data';
+import { SERVER_IP, SITE_NAME, TITLE_TEMPLATE } from '@/components/badlands/data';
 
 /* Three families, self-hosted, four files, all preloaded: each is on the
    first screen. Each is verified to carry þ ð æ ö á é í ó ú ý; the Latin-1
@@ -34,14 +34,14 @@ const data = localFont({
   display: 'swap',
 });
 
-const TITLE = 'JOÐ, Minecraft-heimurinn okkar';
+const TITLE = `${SITE_NAME} · Minecraft-heimurinn okkar`;
 const DESCRIPTION = `Minecraft-heimur átta vina frá sumrinu 2024. Staða þjónsins, hver er inni, landakort, myndir úr leiknum og tölfræði leikmanna. ${SERVER_IP}`;
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://jodcraft.world'),
-  title: TITLE,
+  title: { default: TITLE, template: TITLE_TEMPLATE },
   description: DESCRIPTION,
-  keywords: ['Minecraft', 'lífsbarátta', 'einkaþjónn', 'JOÐ', 'gagnapakkar'],
+  keywords: ['Minecraft', 'lífsbarátta', 'einkaþjónn', 'JOÐ', 'JOÐcraft', 'gagnapakkar'],
   icons: {
     icon: [
       { url: '/icon.svg', type: 'image/svg+xml' },
@@ -53,6 +53,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: TITLE,
+    siteName: SITE_NAME,
     description: `Átta vinir, einn Minecraft-heimur, frá 2024. ${SERVER_IP}`,
     type: 'website',
     locale: 'is_IS',

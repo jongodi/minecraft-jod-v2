@@ -108,7 +108,7 @@ describe('the brand step', () => {
       files: new Set(['maps/world/textures.json.gz']), bounds: null, start: null,
     });
     expect(html).toContain('<html lang="is">');
-    expect(html).toContain('<title>Heimurinn · JOÐ</title>');
+    expect(html).toContain('<title>Heimurinn · JOÐcraft</title>');
     expect(html).not.toMatch(/BlueMap is a tool|avatars\.githubusercontent/);
     expect(html).toContain('href="/bluemap-data/vx/maps/world/textures.json.gz" as="fetch" crossorigin');
     expect(html).not.toContain('world/settings.json" as="fetch"');
