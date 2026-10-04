@@ -15,6 +15,14 @@ export interface Snapshot {
       is [pack, offset, length] of files[i] in names[pack]. A copy made before
       packs has none, and each file is a blob of its own. */
   packs?: { names: string[]; at: [number, number, number][] };
+  /** A short fingerprint of each file's bytes, so the next copy can tell what
+      changed (scripts/bluemap-pack.mjs). */
+  sums?: string[];
+  /** The version each file has been the same since: a file the copy before
+      already had keeps the address it was first sent under, so browsers and
+      the CDN still hold it after a new copy. Left out, every file is the
+      copy's own version. */
+  since?: string[];
 }
 
 /** One map's copy in the store, read off its manifest. */
@@ -34,16 +42,21 @@ export interface Copy {
   has(path: string): boolean;
   /** Where a file of the copy sits in its pack, when the copy is packed. */
   packedAt(path: string): { name: string; offset: number; length: number } | null;
-  /** True when the request names this copy's version, so the answer can be kept forever. */
-  isCurrent(version: string | null): boolean;
+  /** For each file, the version it is read under (`since` in the manifest),
+      or null when the manifest doesn't say and every file is the copy's own. */
+  since: readonly string[] | null;
+  /** True when the request names this copy's version, or the version the
+      file has been the same since, so the answer can be kept forever. */
+  isCurrent(version: string | null, path?: string): boolean;
 }
 
 export function copyOf(manifest: Snapshot): Copy {
   const list = Array.isArray(manifest.files) ? manifest.files : [];
   const files = new Set(list);
   const packs = manifest.packs?.at.length === list.length ? manifest.packs : null;
-  const place = packs ? new Map(list.map((rel, i) => [rel, i])) : null;
   const version = manifest.version ?? null;
+  const since = Array.isArray(manifest.since) && manifest.since.length === list.length ? manifest.since : null;
+  const index = since || packs ? new Map(list.map((rel, i) => [rel, i])) : null;
   return {
     syncedAt: manifest.syncedAt ?? null,
     version,
@@ -54,13 +67,19 @@ export function copyOf(manifest: Snapshot): Copy {
     hasFiles: list.length > 0,
     has: (path) => files.has(path),
     packedAt(path) {
-      const i = place?.get(path);
+      const i = index?.get(path);
       if (!packs || i === undefined) return null;
       const [pack, offset, length] = packs.at[i];
       const name = packs.names[pack];
       return name ? { name, offset, length } : null;
     },
-    isCurrent: (asked) => asked !== null && version !== null && asked === version,
+    since,
+    isCurrent(asked, path) {
+      if (asked === null || version === null) return false;
+      if (asked === version) return true;
+      const i = path === undefined ? undefined : index?.get(path);
+      return since !== null && i !== undefined && since[i] === asked;
+    },
   };
 }
 

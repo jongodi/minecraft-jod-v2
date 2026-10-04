@@ -18,6 +18,12 @@ import { discard, fetchFile, isMissing, resolveServerId } from '@/lib/bluemap-se
    from disk. The version is only in the address: the manifest this
    deployment carries says which packs hold its copy.
 
+   A file that is the same as in an earlier copy keeps that copy's version
+   (`since` in the manifest, scripts/bluemap-pack.mjs), and the viewer asks
+   for the map's detailed tiles under it (public/bluemap-jod/jod.js): that
+   address is kept for a year too, so a new copy only sends visitors back for
+   the tiles that changed.
+
    The base maps (/kort/<id>) are read here the same way, each from its own
    copy: the map named in the path (maps/<id>/…) picks the manifest
    (src/lib/bluemap-bases.ts), and its own version is the one kept for a year.
@@ -66,7 +72,8 @@ export async function GET(req: Request, { params }: Context): Promise<Response> 
   }
   const { version, path } = parseDataPath(segments);
   const copy = baseCopyFor(path) ?? mainCopy;
-  const current = copy.isCurrent(version);
+  /* the copy's version, or the one the file has been the same since */
+  const current = copy.isCurrent(version, path);
 
   /* The copy lists every file it holds, so anything else is missing without
      asking the store: the tiles past the edge of the rendered world, mostly. */

@@ -9,7 +9,9 @@
 //                                 app manifest; the skin (public/bluemap-jod) in
 //                                 <head> so BlueMap's own look never shows; the
 //                                 map's first files preloaded; and the map's
-//                                 facts (version, edges, start view) for jod.js
+//                                 facts (version, edges, start view, and the
+//                                 detailed tiles kept from earlier copies) for
+//                                 jod.js
 //   public/bluemap/settings.json  the map read from /bluemap-data/<version>/maps,
 //                                 the start view from data.ts, and view distances
 //                                 sized to the world that is actually rendered
@@ -118,6 +120,39 @@ export function lighterHires(distance, weight) {
   return weight > 1 ? Math.max(LEAST_HIRES, Math.round(distance / Math.sqrt(weight))) : distance;
 }
 
+/** The map's detailed tiles that are the same as in an earlier copy, by the
+    version they are read under: { [version]: 'x,z x,z …' }, tile coordinates
+    as BlueMap names the tiles, sorted. `since` is the manifest's, parallel to
+    `files`; tiles that are this copy's own `version` are left out, and so is
+    everything else (the texture atlas, the low-detail layers), which the
+    viewer reads under the copy's version. public/bluemap-jod/jod.js asks for
+    each of these tiles under its own version. */
+export function keptTiles(files, since, map, version) {
+  if (!Array.isArray(since) || since.length !== files.length) return {};
+  const byVersion = {};
+  files.forEach((rel, i) => {
+    const v = since[i];
+    if (!v || v === version) return;
+    const m = HIRES.exec(rel);
+    if (!m || m[1] !== map) return;
+    (byVersion[v] ??= []).push([coord(m[2]), coord(m[3])]);
+  });
+  const out = {};
+  for (const v of Object.keys(byVersion).sort()) {
+    out[v] = byVersion[v].sort((a, b) => a[0] - b[0] || a[1] - b[1]).map(([x, z]) => `${x},${z}`).join(' ');
+  }
+  return out;
+}
+
+/** The address the viewer reads a file of a copy under, below /bluemap-data:
+    its own `since` version for a detailed tile the copy kept, otherwise the
+    copy's version (keptTiles above, and jod.js). */
+export function addressOf(rel, i, manifest) {
+  const v = manifest.since?.length === manifest.files?.length ? manifest.since[i] : null;
+  const kept = v && v !== manifest.version && HIRES.test(rel);
+  return `${kept ? v : manifest.version}/${rel}`;
+}
+
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
 /** Reads the hashed script and stylesheet names out of BlueMap's (or an earlier branded) index.html. */
@@ -151,6 +186,8 @@ export function indexHtml({ script, style, version }, map, page = {}) {
     ...(page.title ? { title: page.title } : {}),
     /* how many times heavier its detailed tiles are than the main map's, for jod.js to draw fewer */
     ...(map.weight > 1 ? { weight: map.weight } : {}),
+    /* detailed tiles the same as in an earlier copy, read where browsers and the CDN still have them */
+    ...(map.kept && Object.keys(map.kept).length ? { kept: map.kept } : {}),
   };
   return `<!DOCTYPE html>
 <!-- ${esc(origin)} -->
@@ -241,6 +278,7 @@ export function baseViewer(shell, settings, base, copy, weight = 1) {
     bounds,
     start,
     weight,
+    kept: keptTiles(copy.files, copy.since, base.id, copy.version),
   }, {
     title: base.name,
     description: `${base.name} á JOÐ í þrívídd: dragðu, snúðu og stækkaðu. play.jodcraft.world`,
@@ -323,6 +361,7 @@ export function brand(root = process.cwd()) {
     files: new Set(manifest.files),
     bounds: boundsOf(manifest.files, mapId),
     start,
+    kept: hasCopy && version ? keptTiles(manifest.files, manifest.since, mapId, version) : {},
   }));
 
   /* what the home page fetches ahead when a visitor reaches for the lantern,

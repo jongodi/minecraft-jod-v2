@@ -16,6 +16,7 @@
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { addressOf } from './bluemap-brand.mjs';
 
 const ROOT = process.cwd();
 const SITE = (process.argv.find((a) => a.startsWith('--site='))?.slice('--site='.length)
@@ -56,8 +57,11 @@ async function main() {
   let bytes = 0;
   let done = 0;
   const failed = [];
+  /* each file at the address the viewer asks for it under: a detailed tile
+     the same as in an earlier copy keeps that copy's version */
+  const addresses = new Map(files.map((rel, i) => [rel, addressOf(rel, i, manifest)]));
   await pool(files, async (rel) => {
-    const res = await warm(`${SITE}/bluemap-data/${manifest.version}/${rel}`);
+    const res = await warm(`${SITE}/bluemap-data/${addresses.get(rel)}`);
     if (res.status === 200) {
       bytes += res.bytes;
       if (/^(HIT|STALE)$/i.test(res.cache ?? '')) tally.cached++;

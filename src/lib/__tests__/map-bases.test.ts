@@ -200,6 +200,15 @@ describe('a base map\'s viewer', () => {
     expect(JSON.parse(/window\.JOD_MAP = (\{.*\});/.exec(plain.html)![1])).not.toHaveProperty('weight');
   });
 
+  it('reads the tiles its copy kept from the one before where browsers already have them', () => {
+    const facts = (html: string) => JSON.parse(/window\.JOD_MAP = (\{.*\});/.exec(html)![1]);
+    const kept = baseViewer(shell, settings, base, { ...copy, since: ['vbase', 'vearlier'] });
+    expect(facts(kept.html).kept).toEqual({ vearlier: '4,-3' });
+    /* the map itself is still read under the copy's own version */
+    expect(kept.settings.mapDataRoot).toBe('/bluemap-data/vbase/maps');
+    expect(facts(baseViewer(shell, settings, base, copy).html)).not.toHaveProperty('kept');
+  });
+
   it('leaves the main viewer\'s page as it was', () => {
     const assets = viewerAssets('<meta name="version" content="5.27"><script type="module" crossorigin src="./assets/index-A.js"></script><link rel="stylesheet" crossorigin href="./assets/index-B.css">');
     const html = indexHtml(assets, { id: 'world', root: '/bluemap-data/vx/maps', version: 'vx', syncedAt: null, files: new Set(), bounds: null, start: null });
