@@ -9,7 +9,7 @@ import { baseCopyFor, uploadedBases } from '@/lib/bluemap-bases';
 import { baseAt } from '@/lib/base-links';
 import { BASES_DIR, BLOB_DIR, basePackDir, planPacks } from '../../../scripts/bluemap-pack.mjs';
 import { baseViewer, indexHtml, viewerAssets } from '../../../scripts/bluemap-brand.mjs';
-import { baseSkip, compareWithCopy, staleBlobs } from '../../../scripts/map-bases.mjs';
+import { baseSkip, compareWithCopy, staleBlobs, took } from '../../../scripts/map-bases.mjs';
 import config from '@/lib/map-bases.json';
 
 vi.mock('@vercel/blob', async (original) => ({ ...(await original<typeof import('@vercel/blob')>()), get: vi.fn() }));
@@ -269,6 +269,14 @@ describe('uploading the base maps', () => {
       expect(source).toContain(`@/lib/map-bases/${b.id}.json`);
       expect(() => JSON.parse(readFileSync(join(process.cwd(), 'src', 'lib', 'map-bases', `${b.id}.json`), 'utf8'))).not.toThrow();
     }
+  });
+});
+
+describe('took', () => {
+  it('says a duration the way the logs do', () => {
+    expect(took(4_400)).toBe('4 s');
+    expect(took(139_000)).toBe('2 mín 19 s');
+    expect(took(3_600_000)).toBe('60 mín 0 s');
   });
 });
 

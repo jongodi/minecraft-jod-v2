@@ -14,6 +14,8 @@
 // The admin panel (Þjónn → Grunnkortin) starts --upload through the "Map
 // bases" GitHub Action (.github/workflows/map-bases.yml), which also commits
 // the manifests and, once the site is deployed with them, runs --prune.
+// --upload works whether the server runs or not, and says which it was and
+// how long each step took.
 //
 // Each config is a copy of the main map's (plugins/BlueMap/maps/world.conf)
 // with only its name, place in the list, start position and render mask
@@ -158,6 +160,8 @@ let gap = 150;
 let nextStart = 0;
 let pausedUntil = 0;
 let pushedBack = 0;
+/* ms the lanes were held back because exaroton asked for a pause or stumbled */
+let heldBack = 0;
 
 async function turn() {
   for (;;) {
@@ -209,7 +213,9 @@ async function call(path, { method = 'GET', body, json, raw = false } = {}) {
     }
     const retryAfter = Number(res.headers.get('retry-after'));
     const wait = retryAfter > 0 ? retryAfter * 1000 : Math.min(60_000, 2000 * 2 ** (attempt - 1));
-    pausedUntil = Math.max(pausedUntil, Date.now() + wait);
+    const until = Date.now() + wait;
+    heldBack += Math.max(0, until - Math.max(pausedUntil, Date.now()));
+    pausedUntil = Math.max(pausedUntil, until);
   }
 }
 
@@ -239,6 +245,12 @@ async function command(id, line) {
 
 const encode = (path) => path.split('/').map(encodeURIComponent).join('/');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/** A duration as the logs say it: 45 s, 2 mín 19 s. */
+export function took(ms) {
+  const s = Math.round(ms / 1000);
+  return s < 60 ? `${s} s` : `${Math.floor(s / 60)} mín ${s % 60} s`;
+}
 
 async function pool(items, worker, width = PARALLEL) {
   let next = 0;
@@ -534,6 +546,7 @@ async function readStored(blob, name, offset, length) {
 
 async function uploadBase(id, webroot, base) {
   console.log(`\n${base.id} (${base.name}):`);
+  const started = Date.now();
   try {
     await call(`${id}/files/info/${encode(`${webroot}/maps/${base.id}`)}`);
   } catch (err) {
@@ -541,16 +554,19 @@ async function uploadBase(id, webroot, base) {
     throw new Error(`Kortið ${base.id} er ekki í ${webroot}/maps á þjóninum. Er búið að teikna það (npm run map:bases -- --write, svo /bluemap reload)?`);
   }
   const found = await walkBase(id, webroot, base.id);
+  console.log(`  Möppurnar lesnar á ${took(Date.now() - started)}.`);
   if (!found.some((f) => f.rel === `maps/${base.id}/settings.json`) || !found.some((f) => f.rel.includes('/tiles/'))) {
     throw new Error(`Fann hvorki settings.json né reiti í ${webroot}/maps/${base.id}. Er teikningunni lokið?`);
   }
   const previous = readJson(manifestFile(base.id), { syncedAt: null, files: [] });
   if (!FORCE && await sameAsCopy(id, webroot, found, previous)) {
-    console.log('  Óbreytt frá afritinu á vefnum; ekkert sótt og ekkert sent. (--force sendir það samt.)');
+    console.log(`  Óbreytt frá afritinu á vefnum; ekkert sótt og ekkert sent (${took(Date.now() - started)}). (--force sendir það samt.)`);
     return false;
   }
 
+  const fetching = Date.now();
   await fetchBase(id, webroot, base.id, found);
+  console.log(`  Sótt á ${took(Date.now() - fetching)}.`);
   const files = found.map((f) => f.rel).sort();
 
   const syncedAt = new Date().toISOString();
@@ -567,7 +583,7 @@ async function uploadBase(id, webroot, base) {
   } else {
     console.log('  Náði ekki í origin/main með git, svo engu var eytt úr geymslunni.');
   }
-  console.log(`  Komið í geymsluna, útgáfa ${version}. Geymslan er ${sent.blob.access === 'public' ? 'opin' : 'lokuð'}.`);
+  console.log(`  Komið í geymsluna, útgáfa ${version}. Geymslan er ${sent.blob.access === 'public' ? 'opin' : 'lokuð'}. Alls ${took(Date.now() - started)}.`);
   return true;
 }
 
@@ -638,10 +654,12 @@ async function main() {
   const id = await serverId();
 
   if (chosen) {
+    /* Whether it runs is said, and how long each step took, so a run off a
+       stopped server can be held up against one while it runs. */
     const server = await call(`${id}/`);
-    if (server?.status !== 1) {
-      console.warn('Þjónninn er ekki í gangi. Exaroton afhendir skrár hægt á meðan, svo þetta getur tekið langan tíma.');
-    }
+    const online = server?.status === 1;
+    console.log(online ? 'Þjónninn er í gangi.' : 'Þjónninn er ekki í gangi; kortin eru sótt af honum samt.');
+    const started = Date.now();
     const webroot = await findWebroot(id);
     const sent = [];
     const failed = [];
@@ -654,7 +672,8 @@ async function main() {
         failed.push(b.id);
       }
     }
-    if (pushedBack) console.log(`\nExaroton bað ${pushedBack === 1 ? 'einu sinni' : `${pushedBack} sinnum`} um hlé og afritunin hægði á sér á meðan.`);
+    const paused = heldBack ? `, þar af ${took(heldBack)} í bið eftir exaroton${pushedBack ? ` (bað ${pushedBack === 1 ? 'einu sinni' : `${pushedBack} sinnum`} um hlé)` : ''}` : '';
+    console.log(`\nAlls ${took(Date.now() - started)}${paused}, ${online ? 'meðan þjónninn var í gangi' : 'af slökktum þjóni'}.`);
     if (sent.length) {
       console.log(`\nTil að birta það: git add ${sent.map((b) => `src/lib/map-bases/${b}.json`).join(' ')}, commit og push.`);
       console.log(`Þegar vefurinn er kominn upp með því: npm run map:bases -- --prune ${sent.join(' ')}`);

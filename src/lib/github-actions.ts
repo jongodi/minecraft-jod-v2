@@ -49,11 +49,14 @@ export interface WorkflowRun {
 }
 
 /** The base maps' workflow's run-name (map-bases.yml): "Map bases: jodville faraway",
-    "Map bases: all, forced". `bases` is null for all of them. */
-export function readBasesRunName(title: string): { bases: string[] | null; forced: boolean } {
-  const forced = /, forced$/.test(title);
-  const list = title.replace(/^Map bases:?\s*/, '').replace(/, forced$/, '').trim();
-  return { bases: !list || list === 'all' ? null : list.split(/\s+/), forced };
+    "Map bases: all, forced, server off". `bases` is null for all of them. */
+export function readBasesRunName(title: string): { bases: string[] | null; forced: boolean; offline: boolean } {
+  const [list = '', ...flags] = title.replace(/^Map bases:?\s*/, '').split(',').map(part => part.trim());
+  return {
+    bases: !list || list === 'all' ? null : list.split(/\s+/),
+    forced: flags.includes('forced'),
+    offline: flags.includes('server off'),
+  };
 }
 
 /** True when exaroton says the server is stopped; false while it runs, or
