@@ -515,7 +515,7 @@ function World({ plates, server, syncedOn, bases, room, onCloseRoom }: Props) {
               )}
               {/* what the crew pinned here, each print a tap from its wall */}
               {here && here.prints.length > 0 && (
-                <div className="b-card__prints" aria-label="Myndir félaga af þessum stað">
+                <div className="b-card__prints" role="group" aria-label="Myndir félaga af þessum stað">
                   {here.prints.slice(0, 4).map(p => (
                     <Link key={p.id} href={`/crew/${p.username}#${p.entryId}`} className="b-card__print" title={`${p.username}${p.caption ? `: ${p.caption}` : ''}`}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -539,7 +539,8 @@ function World({ plates, server, syncedOn, bases, room, onCloseRoom }: Props) {
               return (
                 <button key={loc.id} type="button" data-rail-item={loc.id}
                   className={`b-chip${loc.id === selected ? ' is-on' : ''}`} aria-pressed={loc.id === selected} onClick={() => choose(loc.id)}>
-                  {count > 0 && <span className="b-chip__count" aria-label={`${count} ${plural(count, 'færsla', 'færslur')} frá hópnum`}>{count}</span>}
+                  {/* a label on a bare span is not read; the count is spoken as words instead */}
+                  {count > 0 && <><span className="b-chip__count" aria-hidden="true">{count}</span><span className="b-visually-hidden">{`${count} ${plural(count, 'færsla', 'færslur')} frá hópnum, `}</span></>}
                   <span className="b-chip__thumb">
                     {thumb
                       // eslint-disable-next-line @next/next/no-img-element

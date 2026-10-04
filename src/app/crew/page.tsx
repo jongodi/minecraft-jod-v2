@@ -72,7 +72,7 @@ export default function CrewPage() {
                   )}
                   <span className="b-paper__nail b-paper__nail--l" aria-hidden="true" />
                   <span className="b-paper__nail b-paper__nail--r" aria-hidden="true" />
-                  <div className="b-poster__img"><PlayerHead name={m.username} size={128} /></div>
+                  <div className="b-poster__img"><PlayerHead name={m.username} size={128} alt="" /></div>
                   <div className="b-poster__name">{m.username}</div>
                   <div className="b-poster__note">{m.bio || (m.lastEntry ? `festi eitthvað upp ${formatAge(m.lastEntry)}` : 'ekkert heyrst enn')}</div>
                   <div className="b-poster__meta"><span className="b-nowrap">{m.entryCount} {plural(m.entryCount, 'færsla', 'færslur')}</span> · <span className="b-nowrap">{m.photoCount} {plural(m.photoCount, 'mynd', 'myndir')}</span></div>
@@ -103,7 +103,7 @@ export default function CrewPage() {
                       </span>
                     )}
                     {(e.text || e.photos[0]?.caption) && <span className="w-note-card__text">{e.text || e.photos[0]?.caption}</span>}
-                    <span className="w-note-card__who"><PlayerHead name={e.username} size={16} /><b>{e.username}</b><span>{formatAge(e.createdAt)}</span></span>
+                    <span className="w-note-card__who"><PlayerHead name={e.username} size={16} alt="" /><b>{e.username}</b><span>{formatAge(e.createdAt)}</span></span>
                   </Link>
                 </li>
               ))}

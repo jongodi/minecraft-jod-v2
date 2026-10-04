@@ -38,8 +38,15 @@ export default function StatusLantern({ server }: { server: ServerState }) {
   /* a dark lantern says when it last burned, and shows who was in then */
   const last = life === 'off' && lastOnline ? lastOnline : null;
   const heads = online ? inside : (last?.names ?? []);
+  /* the link is named by everything it says (the word alone left out who is
+     in, when it last burned and the version), and where it leads */
+  const row = !said ? 'bíð eftir svari'
+    : online ? (players === 0 ? 'enginn inni enn, en það er opið' : `inni núna: ${players}`)
+    : last ? `síðast kveikt ${sinceAt(last.at)}`
+    : said.row;
+  const name = [word, row, version && `Minecraft ${version}, Java`, 'Sjá hver er inni og eftirlýsingaspjöldin'].filter(Boolean).join('. ');
   return (
-    <a href="#hopur" className={`b-status${state}`} aria-label={`${word}. Sjá hver er inni og eftirlýsingaspjöldin.`}>
+    <a href="#hopur" className={`b-status${state}`} aria-label={`${name}.`}>
       <Lantern lit={burn === 'lit'} className={burn === 'kindling' ? 'is-kindling' : undefined} />
       <span className="b-status__text">
         <span className="b-status__word" role="status" aria-live="polite">{word}</span>
