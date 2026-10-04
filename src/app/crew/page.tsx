@@ -52,9 +52,17 @@ export default function CrewPage() {
             <h1 className="b-title">Hópurinn</h1>
             <p className="b-lede">Öll sem hafa aðgang. Hvert og eitt á sinn vegg: kynningu, tölur úr leiknum, miða og myndir.</p>
           </div>
-          <div className="b-tabs" style={{ marginBottom: 0 }} role="tablist" aria-label="Hópurinn">
+          {/* tabs as a keyboard expects them: one stop for Tab, the arrows go between them */}
+          <div className="b-tabs" style={{ marginBottom: 0 }} role="tablist" aria-label="Hópurinn"
+            onKeyDown={e => {
+              if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
+              e.preventDefault();
+              const next = e.key === 'Home' ? 'members' : e.key === 'End' ? 'board' : tab === 'members' ? 'board' : 'members';
+              setTab(next);
+              document.getElementById(`tab-${next}`)?.focus();
+            }}>
             {(['members', 'board'] as const).map(t => (
-              <button key={t} id={`tab-${t}`} type="button" role="tab" aria-selected={tab === t} aria-controls={`panel-${t}`} className={`b-tab${tab === t ? ' is-active' : ''}`} onClick={() => setTab(t)}>
+              <button key={t} id={`tab-${t}`} type="button" role="tab" aria-selected={tab === t} aria-controls={`panel-${t}`} tabIndex={tab === t ? 0 : -1} className={`b-tab${tab === t ? ' is-active' : ''}`} onClick={() => setTab(t)}>
                 {t === 'members' ? 'Félagar' : `Á töflunni${Array.isArray(feed) && feed.length ? ` (${feed.length})` : ''}`}
               </button>
             ))}
