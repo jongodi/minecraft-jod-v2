@@ -2,7 +2,7 @@
 
 Phase 1 of the design upgrade: a review of the site as it is, before any code is touched. Measured on 4 October 2026 against a production build (`next build` + `next start`) of commit `66ba3b1`, in headless Chromium 1194. The sandbox has no route to minotar.net, mc-heads.net, Exaroton or mcsrvstat, so every screenshot shows the fallbacks the site draws for those: the unknown-head glyph, the dark lantern saying "Náði ekki sambandi". That is itself useful: it is what a visitor sees when the server is down.
 
-Screenshots are in `shots-before/` (not committed; `node scripts/shots.mjs` regenerates them). Lighthouse reports are summarised in section 7.
+Screenshots are in `shots-before/` and, after Phase 4, `shots-final/` (not committed; `node scripts/shots.mjs` regenerates them). Lighthouse reports are summarised in section 7 (baseline) and section 9 (after).
 
 ## 1. The identity as it actually is
 
@@ -210,3 +210,91 @@ Fonts preloaded on every page: 5 files, 51 kB (Alfa Slab 19.1, Silkscreen 400/70
 4. **A pixel Ð as the mark** instead of the pixel J: worth trying as a variant in pass 8, or leave the J?
 
 Everything else in the plan follows from the brief and needs no decision.
+
+## 9. Phase 4: what was done
+
+Eight passes, eight commits on `claude/upbeat-ritchie-mdp79b` after the review commit, then this one. Every pass was built for production, screenshotted at 390 and 1440 (and the home page section by section), and checked for console errors and horizontal overflow before it was committed. The identity in section 1 is unchanged: the same three faces, the same palette, the same evening from sunset to campfire. The four questions in section 8 were answered "go ahead with your recommendations on all four"; what that meant in practice is under *The four questions* below.
+
+### What changed, and why
+
+| Pass | Commit | What changed | Why, in one sentence |
+|---|---|---|---|
+| 1 Housekeeping | `7cbf631` | The `gradient` field left the gallery data and its tests; one `ChevronIcon` with a direction replaced two components; `crispEdges` on the copy, sound and bullet-hole icons; the bar's copy button and the status lantern renamed so their visible words are their accessible names; the lit lantern count on paper set in `--lantern-ink`. | Dead data and the two Lighthouse failures were cleared before anything visual moved. |
+| 2 Navigation | `04c7cf4` | The door bar at the foot of a phone on every page (walls, roll call, 404, admin login), not only the home page; `aria-current` and a lit lantern on the door the visitor is behind; a skip link, *Beint í efnið*, as the first tab stop on every page, landing on `main#efni`; small buttons 44 px tall on coarse pointers. | Three doors, the address one tap away everywhere, and a keyboard is past the bar in one press. |
+| 3 Type | `a384d3c` | Nine sizes (`--fs-sm` 14, `--fs-md` 17, `--fs-lg` 20, `xl`, `2xl`, `hero`, `--fs-chip` 8, `--fs-data` 16, `--fs-data-lg` 24) and `--fs-xs` retired; Silkscreen only at 8, 16 and 24 px and only for what can be pressed and what the server counts; Pixelify Sans 400 and 600 for every word, kickers 600 upper-case; two tracking values; the hero's sub-line given the wordmark's hard pixel shadow; the hint under the address and the fine print cut. | The bitmap face is back on its pixel grid, the words have one voice, and the hero reads on the brightest band of the sky. |
+| 4 Status on the server | `744099b` | `loadHomeData()` reads status, nights, gallery, map config, place prints and season in the server component, each capped at 5 s, under `revalidate` (ISR; the status fetch windows make it 10 s); the client stores are seeded from it and keep polling; the explicit `no-store` fetches that had made `/` dynamic became `next: { revalidate }`, so `/` and `/kvold` are static again; the lantern panel and the night line hold a fixed height. | The hero is complete at first paint and nothing moves when the browser's own answers arrive. |
+| 5 Toast | `61f294d` | One advancement-style toast on paper (`Toast.tsx`, `role="status"`, 2.6 s) confirms every copy and share; the stamp and the typing ticker retired. | One confirmation, drawn in the game's own idiom, instead of two mechanisms saying the same thing. |
+| 6 Performance | `67a759d` | Four font files instead of five (Silkscreen 700 dropped), each with a size-adjusted fallback so the swap moves nothing; `NightLine` split from the play-night board, so the home page no longer ships the board, the form and the calendar; the map viewer warmed on idle without a timeout; particles and the cursor light skipped on low-end devices; the wall's poster skin eager with `fetchpriority="high"`; `experimental.inlineCss` tried and reverted (65 kB of HTML, worse LCP). | A lighter first screen, with 5 kB of JS and 6 kB of fonts off the critical path and no shift at the font swap. |
+| 7 World | `64878b5` | The four bases with their own BlueMap ride at the end of the places rail as lantern chips and their strip under the world is gone; `title=` tooltips replaced by one CSS paper tag (`.b-tip[data-tip]`) that opens on hover and on keyboard focus, in the site's text face; the night's nine alphas collapsed to `--veil`, `--pane`, `--scrim` and `--scrim-deep`. | One list of where to go, tooltips in the site's own hand that a keyboard can open, and four named darks instead of nine numbers. |
+| 8 Brand | `29cedcf` | `SITE_NAME = 'JOÐcraft'` feeds the root title and the template every page's title ends in, the manifest, the footer's credit, the site name on every link preview and the share-sheet titles; the BlueMap viewer and the base maps' pages take the same suffix; the OG image's small line says the written name and its sun moves low over the mesas, clear of it. A pixel Ð mark was drawn and compared with the J; the J stays, and `DESIGN.md` records the rule and the trial. | The site has one written name and one mark, and every tab, preview and letter agrees. |
+| 9 Verify | this commit | The door bar at the foot of a phone made solid night: at 360 and 768 the world's title and tools showed through its 94 % scrim. The measurements and this section. | A floor is not a veil. |
+
+Not done, on purpose: the hero still says JOÐ (the wordmark), the bar still says JOÐ, and the Silkscreen stamps on the link-preview cards still say JOÐ, because the bitmap face has no lower case and the stamps are set in the mark's voice. The admin panel kept its own `--fs-xs`; it is out of the evening's scope.
+
+### The four questions, as decided
+
+1. **JOÐ or JOÐcraft.** JOÐ is the mark and the wordmark: the hero, the bar, the favicon, the stamps in the bitmap face, and the word the players say ("á JOÐ", "JOÐ-félagi"). JOÐcraft is the name as it is written: the end of every page's title, the manifest, the footer's credit, `og:site_name` everywhere, the share titles and the letters. One constant in `data.ts` carries it. A nested layout's title replaces the one above it, template included, so the crew layout states the template again; without that a wall's title had no suffix.
+2. **One toast.** The stamp and the ticker are gone; copying the address anywhere, or sharing a place or a night, puts one paper toast under the bar for 2.6 s, announced politely to a screen reader. The clipboard check in the final run holds `play.jodcraft.world`.
+3. **Bases in the rail.** The rail's label reads *Staðir og stöðvar* with the count of both; the four base chips are last, with a lantern where a place has its print, and link to `/kort/<id>`.
+4. **The Ð mark.** Drawn on the mark's 16 × 16 grid (2 px cells) at the J's height and stroke: stem `8,6 4×20`, bars `8,6 12×4` and `8,22 12×4`, corner steps `20,8 2×2` and `20,22 2×2`, bowl `20,10 4×12`, crossbar `6,14 10×4` (a 2 px bar was also tried). Set beside the J at 16, 32, 64 and 192 px, in the bar, in a browser tab and on paper. At 192 it read as Ð; at 64 as Ð or Đ; at 32 and 16, the sizes a favicon is seen at, the crossbar and the counter closed into a solid block and it read as a D. A J + Ð pair at 16 px was mush. The J keeps its hook and its air at every size, so the J stays. If the mark is ever revisited, the Ð belongs only at 48 px and above.
+
+### Lighthouse, before and after
+
+Same conditions as section 7: Lighthouse 13.5, mobile preset, production build, sandbox network. Two home runs each time, because simulated TBT and LCP vary between runs.
+
+| Page | | Perf | A11y | BP | SEO | FCP | LCP | TBT | CLS |
+|---|---|---|---|---|---|---|---|---|---|
+| `/` | before | 91 / 96 | 100 | 100 | 100 | 1.07 s | 2.77 / 2.71 s | 258 / 60 ms | 0.008 |
+| `/` | after | **97 / 98** | 100 | 100 | 100 | 1.06 s | **2.66 / 2.36 s** | **54 / 38 ms** | **0.000** |
+| `/crew` | before | 97 | 100 | 96 | 100 | 1.07 s | 2.57 s | 49 ms | 0.001 |
+| `/crew` | after | 97 | 100 | 96 | 100 | 1.07 s | 2.56 s | 38 ms | 0.008 |
+| `/crew/stebbias` | before | 90 | 100 | 96 | 100 | 1.07 s | 3.52 s | 113 ms | 0.017 |
+| `/crew/stebbias` | after | 90 | 100 | 96 | 100 | 1.06 s | 3.35 s | 172 ms | 0.019 |
+| `/` desktop | before | 100 | 100 | 100 | 100 | 0.26 s | 0.70 s | 38 ms | 0.003 |
+| `/` desktop | after | 100 | 100 | 100 | 100 | 0.25 s | **0.54 s** | 1 ms | **0.000** |
+| `/crew` desktop | after | 100 | 100 | 96 | 100 | 0.30 s | 0.60 s | 0 ms | 0.000 |
+| `/crew/stebbias` desktop | after | 100 | 100 | 96 | 100 | 0.30 s | 0.60 s | 3 ms | 0.000 |
+
+Against the targets:
+
+- **Performance 95+.** Home 97 to 98, crew 97. The wall stays at 90 for one reason: its LCP is the poster skin from minotar.net, which the sandbox blocks, so the measured 3.35 s is a failed request and the fallback glyph. In production the image is a few kilobytes and is now eager with `fetchpriority="high"`; it needs measuring there.
+- **Accessibility, Best Practices, SEO 100.** Home: all three. Crew and wall lose Best Practices points only for console errors from the blocked head images, which do not occur in production. The two `label-content-name-mismatch` failures from the baseline are gone.
+- **LCP under 2.0 s: not reached in the simulation.** The hero wordmark's simulated LCP is 2.4 to 2.7 s (baseline 2.7 to 2.8 s). Lighthouse's simulation puts every script that started before the paint into the LCP's dependency graph, so the 103 kB React and Next runtime plus the three stylesheets on a simulated slow 4G link set a floor near 2.3 s whatever the hero does. The unthrottled picture is different: LCP equals FCP (0.54 s on desktop) because the size-adjusted fallback holds the wordmark's box and the swap paints in place. The two moves that could lower the floor were tried or ruled out: inlining the CSS made the HTML 65 kB and LCP worse (pass 6), and Server Component islands were weighed in section 6 and not planned because the runtime ships regardless. What is left is the runtime itself, which a React 19 / Next 16 upgrade would shrink.
+- **CLS under 0.05.** Home 0.000 at both sizes, with or without a night planned. Crew 0.008 and wall 0.019: one shift each, in the roll call and in the wall's poster, where the blocked head images fall back to the glyph.
+- **INP under 200 ms.** Lighthouse cannot report INP and the sandbox has no field data. The stand-ins: TBT 38 to 54 ms on the home page, max potential FID 130 to 160 ms, and the scroll probe below with no long frame on a throttled phone. After hydration the home page makes no request but the status poll.
+
+### Bundle, before and after
+
+Gzipped, as served. The shared runtime is the two Next chunks plus 2.7 kB of small shared chunks; the baseline table counted the two chunks only.
+
+| | before | after |
+|---|---|---|
+| `/`, `/kvold`, `/stadur/[id]` First Load JS | 142 kB | **137 kB** (the play-night board, form and calendar left the home page in pass 6) |
+| `/crew` First Load JS | 128 kB | 128 kB |
+| `/crew/[username]` First Load JS | 152 kB | 152 kB |
+| Shared runtime | 103 kB | 103 kB (unchanged through every pass) |
+| Fonts preloaded | 5 files, 51 kB | **4 files, 45 kB** (Alfa Slab 19, Pixelify 400 and 600 9 + 9, Silkscreen 400 8) |
+| CSS on `/` | 17.7 kB in 3 files | 17.8 kB in 3 files (tokens and globals 2.8, badlands 10.9, board 4.2); the crew and wall pages add 3.5 kB |
+| HTML on `/` | | 9.4 kB; `/crew` 5.3 kB; a wall 5.2 kB |
+| Requests after hydration on `/` | 6 (status, nights, gallery, map, places, season) | 0; the status poll continues on its 10 s cadence |
+| Rendering of `/` and `/kvold` | dynamic after pass 4's first cut | static, revalidated every 10 s |
+
+**Scroll probe** (`node scripts/perf.mjs final /`, dpr 2): desktop 1440 × 900 mean frame 24.2 ms, p95 37 ms, 38 of 413 frames long (baseline 26.0, 38, 48 of 392; the long frames are the headless sandbox's software GPU); mobile 390 × 844 at 4× CPU mean 16.8 ms, p95 20.7 ms, **0 of 877 long** (baseline 2 of 947). Images on the home page unchanged: 12, 155 kB on desktop, 35 kB on mobile, none oversized.
+
+### Checks on the final build
+
+- **Keyboard.** The first Tab on every page lands on the skip link, which slides into view at 8 × 8 px with the paper outline (`:focus-visible` confirmed); Enter moves to `#efni`; the next stop is the hero's copy button. On a phone the door bar's lit door carries `aria-current="location"` and its three items are 74 px tall; small buttons measure 44 px on a coarse pointer.
+- **Toast.** Copying from the hero or the bar puts the paper toast under the bar (`role="status"`, `aria-live="polite"`), 351 px wide at 390, gone after 2.6 s; the clipboard holds the address; no console errors.
+- **Six widths.** 360, 390, 768, 1024, 1440 and 1920 on `/`, `/crew` and a wall: `scrollWidth` equals the viewport everywhere, the console is clean at every width, and the overflow detector reports only the mesa SVGs the hero clips and the chips inside the horizontally scrolling rail.
+- **Titles.** Every page's title ends in the written name: `JOÐcraft · Minecraft-heimurinn okkar`, `Hópurinn · JOÐcraft`, `stebbias · JOÐcraft`, `Næsta spilakvöld · JOÐcraft`, `Kastali Goða · JOÐcraft`, `Stjórnborð · JOÐcraft`, `Fannst ekki · JOÐcraft`, `Heimurinn · JOÐcraft` on the map viewer. `og:site_name` is `JOÐcraft` on all of them; the manifest's name matches the title.
+- **Tooltips.** The paper tags open on hover and on focus (computed `opacity: 1` on `::after`, paper background, 14 px text face) on the footer's fire, the sound toggle, the drawn map's three zoom buttons, the status lantern's heads, the HUD's heads and night switch, the wanted board's week head, a print's time and lantern, and the wall's bio button.
+- **Tests and lint.** `tsc`, `next lint` and the 231 unit tests pass on every commit.
+
+### Follow-ups for the owner
+
+1. **The PNG screenshots in `public/screenshots/`** can be deleted once the admin's gallery migration has run against production KV; a record there may still name a `.png`.
+2. **Measure in production**: the wall's LCP with the real skin image, Best Practices on the crew and wall pages, and INP from the field (Vercel Speed Insights or `web-vitals`). The sandbox cannot see any of the three.
+3. **LCP under 2.0 s in the simulation** needs fewer runtime bytes; a React 19 / Next 16 upgrade is the lever, not the hero.
+4. **The wall's `no-store` fetch** still blocks the back-forward cache (`bf-cache` audit); it can take `next: { revalidate }` the way the home data did.
+5. **The remaining translucent values** in `badlands.css` (0.5, 0.7, 0.72) are gradient stops and were left as numbers on purpose.
+6. **Light-on-dark contrast under the sunset** was fixed by the hard shadow on the hero's sub-line; if the copy there ever grows past two lines, check it again at 1440 × 900.

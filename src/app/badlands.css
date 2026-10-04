@@ -402,7 +402,8 @@
   z-index: var(--z-bar);
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  background: var(--scrim-deep);
+  /* solid: it is the floor of the screen, and the world's title under it is not meant to show through */
+  background: var(--night);
   box-shadow: 0 calc(var(--line) * -1) 0 rgba(209, 178, 161, 0.14);
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
