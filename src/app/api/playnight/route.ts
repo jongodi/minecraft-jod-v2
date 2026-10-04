@@ -7,40 +7,21 @@ import { forgetStatus } from '@/lib/server-status';
 import { errorMessage } from '@/lib/icelandic';
 import { jsonObject } from '@/lib/http';
 import {
-  MAX_NOTE, MAX_PLANNED, START_BEFORE_MS, checkTimes, clashOf, currentNights, decidesAt, isPlanned, optionOf, phaseOf,
-  writeNight, writeVote, yesFor, type Night, type NightState, type Phase,
+  MAX_NOTE, MAX_PLANNED, START_BEFORE_MS, checkTimes, clashOf, currentNights, isPlanned, optionOf, phaseOf,
+  writeNight, writeVote, yesFor, type Night,
 } from '@/lib/play-night';
+import { NO_NIGHTS, viewNights, type PlayNightResponse } from '@/lib/play-night-view';
 
 /* Spilakvöld (src/lib/play-night.ts). GET is the nights as the page shows
-   them, for anyone; POST acts on one, for a signed-in crew member:
+   them (src/lib/play-night-view.ts), for anyone; POST acts on one, for a
+   signed-in crew member:
    { action: 'propose', times, note } | { action: 'vote', night, yes } |
    { action: 'choose', night, option } | { action: 'cancel', night } |
    { action: 'start', night }. */
 
 export const dynamic = 'force-dynamic';
 
-export interface PublicNight {
-  id: string;
-  by: string;
-  note: string;
-  phase: Phase;
-  options: { id: string; at: string; yes: string[] }[];
-  chosen: string | null;
-  chosenBy: string | null;
-  /** when an unchosen night is decided on its own */
-  decidesAt: string;
-  startedBy: string | null;
-  /** seen during the evening, or settled the day after */
-  came: string[];
-}
-
-export interface PlayNightResponse {
-  /** those planned, soonest first, then the last one over while its embers glow */
-  nights: PublicNight[];
-  me: string | null;
-  /** how many can be planned at once */
-  max: number;
-}
+export type { PublicNight, PlayNightResponse } from '@/lib/play-night-view';
 
 const json = (body: unknown, status = 200) => NextResponse.json(body, { status, headers: { 'Cache-Control': 'no-store' } });
 
@@ -55,23 +36,10 @@ function mailAfter(send: (mail: typeof import('@/lib/night-mail')) => Promise<un
 }
 const NO_REDIS = 'Spilakvöld eru aðeins geymd þegar Redis er tengt (REDIS_URL).';
 
-const publicOf = ({ night, votes, seen }: NightState, now: number): PublicNight => ({
-  id: night.id, by: night.by, note: night.note, phase: phaseOf(night, now),
-  options: night.options.map(o => ({ ...o, yes: yesFor(votes, o.id) })),
-  chosen: night.chosen, chosenBy: night.chosenBy,
-  decidesAt: new Date(decidesAt(night)).toISOString(),
-  startedBy: night.startedBy,
-  came: night.outcome?.came ?? seen,
-});
-
-async function view(me: string | null): Promise<PlayNightResponse> {
-  const now = Date.now();
-  const { shown } = await currentNights(now);
-  return { nights: shown.map(s => publicOf(s, now)), me, max: MAX_PLANNED };
-}
+const view = (me: string | null): Promise<PlayNightResponse> => viewNights(me);
 
 export async function GET() {
-  if (!process.env.REDIS_URL) return json({ nights: [], me: null, max: MAX_PLANNED } satisfies PlayNightResponse);
+  if (!process.env.REDIS_URL) return json(NO_NIGHTS);
   const me = (await getCrewSession())?.username ?? null;
   try { return json(await view(me)); }
   catch (e) { return json({ error: errorMessage(e) }, 500); }

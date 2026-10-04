@@ -288,10 +288,12 @@
   color: var(--text-soft);
   text-decoration: none;
   transition: border-color var(--dur-1) var(--ease-out);
-  /* The hero puts this in an auto column beside the mark. The pixel face sets
-     a longer line than the serif did, so the panel is capped and its status
-     line wraps instead of taking width off JOÐ. */
-  max-width: 22rem;
+  /* The hero puts this in an auto column beside the mark. One width and one
+     height for every state the server can be in, so the panel never grows or
+     shrinks when the word changes, and never takes width off JOÐ. */
+  width: min(22rem, 100%);
+  min-height: 5.5rem;
+  align-content: center;
 }
 .b-status:focus-visible { border-color: var(--lantern); }
 @media (hover: hover) { .b-status:hover { border-color: var(--lantern); } }

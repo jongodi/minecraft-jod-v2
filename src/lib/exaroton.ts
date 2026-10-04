@@ -20,9 +20,10 @@ export async function getExarotonServerId(token: string): Promise<string> {
   const envId = process.env.EXAROTON_SERVER_ID;
   if (envId) return envId;
 
+  /* the server's id never changes; kept an hour so the pages that read the status stay on their schedule */
   const res = await fetch('https://api.exaroton.com/v1/servers/', {
     headers: { Authorization: `Bearer ${token}` },
-    cache: 'no-store',
+    next: { revalidate: 3600 },
   });
   if (!res.ok) throw new Error(`Ekki tókst að sækja þjónalista frá Exaroton: ${res.status}`);
   const data = await res.json() as { data: ExarotonServer[] };

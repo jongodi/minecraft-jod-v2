@@ -3,12 +3,18 @@
 import { useEffect, useState } from 'react';
 import { NO_SEASON, YULE_LADS, seasonAt, seasonFromParam, type Season } from '@/lib/season';
 
-/** The time of year (src/lib/season.ts). Worked out in the browser once the
-    page is there: the home page is drawn ahead of time, on a day of its own. */
-export function useSeason(): Season {
-  const [season, setSeason] = useState<Season>(NO_SEASON);
+/** The time of year (src/lib/season.ts). The home page is drawn with the
+    server's own day (src/lib/home-data.ts) so the snow and the lanterns are
+    there at first paint; a page drawn with none works it out in the browser.
+    ?arstid= still shows any season on any day. */
+export function useSeason(initial: Season = NO_SEASON): Season {
+  const [season, setSeason] = useState<Season>(initial);
   useEffect(() => {
-    setSeason(seasonFromParam(new URLSearchParams(window.location.search).get('arstid')) ?? seasonAt(new Date()));
+    const asked = seasonFromParam(new URLSearchParams(window.location.search).get('arstid'));
+    if (asked) setSeason(asked);
+    else if (initial === NO_SEASON) setSeason(seasonAt(new Date()));
+  // the seed is the page's first value only
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return season;
 }

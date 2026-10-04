@@ -4,15 +4,16 @@ import '@/app/badlands.css';
 import '@/app/board.css';
 import { useCallback, useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
-import type { GalleryPhoto } from '@/lib/gallery';
 import type { BaseLink } from '@/lib/base-links';
+import type { HomeData } from '@/lib/home-data';
 import Sky from './Sky';
 import AddressBar from './AddressBar';
 import Hero from './Hero';
 import World from './World';
 import Footer from './Footer';
-import { PLATES, SECTIONS, isRoom, sentenceCase, titleCase, type DoorId, type Plate, type RoomId } from './data';
-import { useReducedMotionPref, useScrollSpy, useServerStatus } from './hooks';
+import { SECTIONS, isRoom, type DoorId, type RoomId } from './data';
+import { seedStatus, useReducedMotionPref, useScrollSpy, useServerStatus } from './hooks';
+import { seedNights } from './night';
 import { seasonClass, useSeason } from './Season';
 
 /* Effects load after the page is interactive; none of them is needed for the first paint. */
@@ -25,26 +26,21 @@ const PRESSED_HOLD_MS = 1500;
 
 /** The evening: the sunset, the world, and the campfire. The crew and the
     shelf are rooms that open over the world; the hash says which is open, so
-    /#hopur and /#hillan work from anywhere and the back button closes a room. */
-export default function BadlandsHome({ syncedOn, bases }: { syncedOn: string | null; bases: BaseLink[] }) {
-  const server = useServerStatus();
-  const season = useSeason();
+    /#hopur and /#hillan work from anywhere and the back button closes a room.
+    `initial` is everything the page was drawn with on the server
+    (src/lib/home-data.ts): the status and the nights seed the browser's
+    stores, which keep polling from there; the gallery, the map and the
+    crew's prints are the page's for as long as it is open. */
+export default function BadlandsHome({ syncedOn, bases, initial }: { syncedOn: string | null; bases: BaseLink[]; initial: HomeData }) {
+  seedStatus(initial.status);
+  seedNights(initial.nights);
+  const server = useServerStatus(initial.status);
+  const season = useSeason(initial.season);
   const reduce = useReducedMotionPref();
   const reached = useScrollSpy(['heimur']) === 'heimur';
   const [room, setRoom] = useState<RoomId | null>(null);
   const [pressed, setPressed] = useState<DoorId | null>(null);
-  const [plates, setPlates] = useState<Plate[]>(PLATES);
-
-  /* The admin panel manages the gallery; fall back to the bundled list. */
-  useEffect(() => {
-    fetch('/api/gallery', { cache: 'no-store' })
-      .then(r => (r.ok ? r.json() : null))
-      .then((photos: GalleryPhoto[] | null) => {
-        if (!photos?.length) return;
-        setPlates(photos.map(p => ({ id: p.id, src: p.filename, title: titleCase(p.title), sub: sentenceCase(p.sublabel) })));
-      })
-      .catch(() => {});
-  }, []);
+  const { plates, map, pinned, nights } = initial;
 
   const showWorld = useCallback(() => {
     document.getElementById('heimur')?.scrollIntoView({ block: 'start', behavior: reduce ? 'auto' : 'smooth' });
@@ -137,10 +133,10 @@ export default function BadlandsHome({ syncedOn, bases }: { syncedOn: string | n
       <CursorLight />
       <AddressBar links={SECTIONS} activeId={active} onDoor={openDoor} />
       <main id="efni">
-        <Hero server={server} season={season} />
-        <World plates={plates} server={server} syncedOn={syncedOn} bases={bases} room={room} onCloseRoom={closeRoom} />
+        <Hero server={server} season={season} nights={nights} />
+        <World plates={plates} config={map} pinned={pinned} server={server} syncedOn={syncedOn} bases={bases} room={room} onCloseRoom={closeRoom} />
       </main>
-      <Footer />
+      <Footer season={season} />
     </div>
   );
 }

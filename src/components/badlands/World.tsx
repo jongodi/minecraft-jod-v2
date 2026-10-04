@@ -4,8 +4,7 @@ import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import type { MapConfig, WorldPoint } from '@/lib/map-types';
-import type { PlacePrints } from '@/app/api/crew/places/route';
-import { DEFAULT_CONFIG } from '@/lib/map-types';
+import type { PlacePrints } from '@/lib/crew-places';
 import { baseAt, baseUrl, type BaseLink } from '@/lib/base-links';
 import viewerFiles from '@/lib/bluemap-viewer.json';
 import { CloseIcon, FoldedMapIcon, Lantern, MoonIcon, PictureIcon, Sun } from './Bits';
@@ -78,6 +77,10 @@ const plainClick = (e: React.MouseEvent) => e.button === 0 && !e.metaKey && !e.c
 
 interface Props {
   plates: Plate[];
+  /** the places, zones and paths, as the admin left them, drawn into the page on the server */
+  config: MapConfig;
+  /** what the crew pinned at each place, from their walls, by place id */
+  pinned: Record<string, PlacePrints>;
   server: ServerState;
   syncedOn: string | null;
   /** the other bases with a 3D map of their own (/kort/<id>) */
@@ -97,8 +100,7 @@ interface Props {
     the shelf) rise from the foot of the frame when their door is opened,
     leaving the world in view above them. *Heill skjár* makes the frame itself
     the whole screen, so nothing reloads; on a phone the lantern does. */
-function World({ plates, server, syncedOn, bases, room, onCloseRoom }: Props) {
-  const [config, setConfig]   = useState<MapConfig>(DEFAULT_CONFIG);
+function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseRoom }: Props) {
   const [selected, setSelect] = useState<number | null>(null);
   const [drawn, setDrawn]     = useState(false);
   const [album, setAlbum]     = useState(false);
@@ -122,8 +124,6 @@ function World({ plates, server, syncedOn, bases, room, onCloseRoom }: Props) {
   const hudTop   = useRef<HTMLDivElement>(null);
   /* A room stays mounted once it has been opened, so its fetches happen once. */
   const [visited, setVisited] = useState<Record<RoomId, boolean>>({ hopur: false, hillan: false });
-  /* what the crew pinned at each place, from their walls */
-  const [pinned, setPinned]   = useState<Record<string, PlacePrints>>({});
   /* While a room is open, the world's own controls are out of reach. */
   const shut = room !== null;
   const places = useInert<HTMLDivElement>(shut);
@@ -133,28 +133,17 @@ function World({ plates, server, syncedOn, bases, room, onCloseRoom }: Props) {
      BlueMap's drag and pinch never fight the page scroll. */
   const phone = useMediaQuery('(max-width: 899px)');
 
+  /* A link names its place: a wall's /?stadur=<id>#heimur, or a shared /stadur/<id>. */
   useEffect(() => {
-    fetch('/api/map', { cache: 'no-store' })
-      .then(r => (r.ok ? r.json() : null))
-      .then((cfg: Partial<MapConfig> | null) => {
-        if (!cfg?.locations?.length) return;
-        setConfig({ locations: cfg.locations, zones: cfg.zones ?? [], paths: cfg.paths ?? [], terrain: cfg.terrain });
-        /* a link names its place: a wall's /?stadur=<id>#heimur, or a shared /stadur/<id> */
-        const fromPath = window.location.pathname.match(/^\/stadur\/(\d+)\/?$/)?.[1];
-        const wanted = Number(fromPath ?? new URLSearchParams(window.location.search).get('stadur'));
-        if (wanted && cfg.locations.some(l => l.id === wanted)) {
-          setSelect(wanted);
-          setTimeout(() => revealRailItem(wanted, places.current), 300);
-          /* a shared link whose chat dropped the #heimur: the postcard is down in the world */
-          if (fromPath && !window.location.hash) document.getElementById('heimur')?.scrollIntoView({ block: 'start' });
-        }
-      })
-      .catch(() => {});
-    fetch('/api/crew/places', { cache: 'no-store' })
-      .then(r => (r.ok ? r.json() : null))
-      .then((data: Record<string, PlacePrints> | null) => { if (data) setPinned(data); })
-      .catch(() => {});
-  // places is a ref
+    const fromPath = window.location.pathname.match(/^\/stadur\/(\d+)\/?$/)?.[1];
+    const wanted = Number(fromPath ?? new URLSearchParams(window.location.search).get('stadur'));
+    if (!wanted || !config.locations.some(l => l.id === wanted)) return;
+    setSelect(wanted);
+    const t = setTimeout(() => revealRailItem(wanted, places.current), 300);
+    /* a shared link whose chat dropped the #heimur: the postcard is down in the world */
+    if (fromPath && !window.location.hash) document.getElementById('heimur')?.scrollIntoView({ block: 'start' });
+    return () => clearTimeout(t);
+  // once, on arrival; places is a ref
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

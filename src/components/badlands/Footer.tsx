@@ -10,6 +10,7 @@ import { SERVER_IP } from './data';
 import AmbienceToggle from '@/effects/AmbienceToggle';
 import { useBackdropClose, useScrollLock } from './hooks';
 import { YuleLad, seasonClass, useSeason } from './Season';
+import type { Season } from '@/lib/season';
 
 /* The duel lives behind the fire; nobody pays for it until they tap. */
 const QuickDraw = dynamic(() => import('./QuickDraw'), { ssr: false });
@@ -28,9 +29,9 @@ const LINKS = [
     the fire burning in front of the same mesas the evening opened over. Tap the
     fire and the duel comes out. Climbing back to the sunset rewinds the sky on
     the way up, because the sky is scroll. */
-function Footer() {
+function Footer({ season: initial }: { season?: Season } = {}) {
   const [duel, setDuel] = useState(false);
-  const season = useSeason();
+  const season = useSeason(initial);
   const path = usePathname();
   useScrollLock(duel);
   const backdrop = useBackdropClose(() => setDuel(false));

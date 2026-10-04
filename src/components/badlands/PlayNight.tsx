@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import Link from 'next/link';
-import type { PublicNight } from '@/app/api/playnight/route';
+import type { PlayNightResponse as PublicNightState, PublicNight } from '@/app/api/playnight/route';
 import { CalendarIcon, Campfire, CheckIcon, ChevronIcon, CloseIcon } from './Bits';
 import Calendar from './Calendar';
 import PlayerHead from './PlayerHead';
@@ -37,10 +37,11 @@ function Heads({ names, lit }: { names: string[]; lit?: (n: string) => boolean }
 
 /* ─── the hero's line ─────────────────────────────────────────────────── */
 
-/** One line under the server's lantern about the next fire; a tap opens the crew's room, where they all are. */
-export function NightLine() {
-  const { state } = usePlayNight();
-  const mounted = useMounted();
+/** One line under the server's lantern about the next fire; a tap opens the
+    crew's room, where they all are. Drawn on the server with the page's own
+    answer, so it is there at first paint and nothing under it moves. */
+export function NightLine({ initial }: { initial?: PublicNightState }) {
+  const { state } = usePlayNight(initial);
   const night = state?.nights[0];
   /* on the day the line counts down on its own clock, so it keeps moving
      even when a poll fails or answers nothing new */
@@ -51,8 +52,8 @@ export function NightLine() {
     const id = setInterval(() => setMinute(m => m + 1), 30_000);
     return () => clearInterval(id);
   }, [counting]);
-  if (!mounted || !night) return null;
-  const planned = state.nights.filter(n => n.phase !== 'over').length;
+  if (!night) return null;
+  const planned = state!.nights.filter(n => n.phase !== 'over').length;
   const chosen = chosenOf(night);
   const yes = chosen?.yes ?? [];
   let text: string;
@@ -73,7 +74,8 @@ export function NightLine() {
       <Fire count={night.phase === 'open' ? Math.max(...night.options.map(o => o.yes.length)) : yes.length} embers={night.phase === 'over'} />
       <span className="b-nightline__text">
         <span className="b-nightline__kicker">{night.phase === 'over' ? 'Síðasta spilakvöld' : 'Næsta spilakvöld'}{planned > 1 && ` · ${planned} á dagskrá`}</span>
-        <span>{text}</span>
+        {/* "í kvöld" and the minutes left are told from the clock, which the server read a moment before the browser does */}
+        <span suppressHydrationWarning>{text}</span>
         {night.phase !== 'open' && <Heads names={night.phase === 'over' ? night.came : yes} />}
       </span>
     </a>

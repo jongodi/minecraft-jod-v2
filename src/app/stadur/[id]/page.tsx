@@ -3,15 +3,16 @@ import { redirect } from 'next/navigation';
 import BadlandsHome from '@/components/badlands/BadlandsHome';
 import { syncedOn } from '@/lib/bluemap-snapshot';
 import { baseLinks } from '@/lib/bluemap-bases';
+import { loadHomeData } from '@/lib/home-data';
 import { sharedPlace } from '@/lib/place-share';
 
 /* A place's shareable link: the home page itself, with the place's postcard
    open (World reads the id from the address), but with the place's own link
-   preview, so a link pasted into a chat shows its photo and name. The home
-   page stays prerendered; this one is drawn per place and kept five minutes,
-   so a renamed place or a new photo shows up soon after. */
+   preview, so a link pasted into a chat shows its photo and name. Drawn per
+   place and again every half minute, like the home page, so a renamed place
+   or a new photo shows up soon after. */
 
-export const revalidate = 300;
+export const revalidate = 30;
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -30,7 +31,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function Place({ params }: Props) {
-  const shared = await sharedPlace((await params).id);
+  const [shared, initial] = await Promise.all([sharedPlace((await params).id), loadHomeData()]);
   if (!shared) redirect('/#heimur');
-  return <BadlandsHome syncedOn={syncedOn} bases={baseLinks()} />;
+  return <BadlandsHome syncedOn={syncedOn} bases={baseLinks()} initial={initial} />;
 }

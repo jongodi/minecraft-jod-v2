@@ -135,9 +135,13 @@ async function fromExaroton(): Promise<StatusResponse> {
   const token = process.env.EXAROTON_API_KEY!;
   const id    = await getExarotonServerId(token);
 
+  /* Kept in Next's own data cache for as long as a changing state is kept in
+     memory (CHANGING_CACHE_MS), never longer than the memory cache here. An
+     explicit no-store would make every page that reads the status render on
+     demand instead of on its half-minute schedule (src/app/page.tsx). */
   const res = await fetch(`https://api.exaroton.com/v1/servers/${id}/`, {
     headers: { Authorization: `Bearer ${token}` },
-    cache: 'no-store',
+    next: { revalidate: CHANGING_CACHE_MS / 1000 },
     signal: AbortSignal.timeout(TIMEOUT_MS),
   });
   if (!res.ok) throw new Error('Exaroton server fetch failed');
@@ -165,7 +169,7 @@ async function fromExaroton(): Promise<StatusResponse> {
 async function fromMcsrvstat(): Promise<StatusResponse> {
   try {
     const res = await fetch(`https://api.mcsrvstat.us/3/${getServerHost()}`, {
-      cache: 'no-store',
+      next: { revalidate: CHANGING_CACHE_MS / 1000 },
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
     if (!res.ok) throw new Error('mcsrvstat fetch failed');

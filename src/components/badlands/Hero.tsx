@@ -7,9 +7,10 @@ import StatusLantern from './StatusLantern';
 import { NightLine } from './PlayNight';
 import type { ServerState } from './hooks';
 import type { Season } from '@/lib/season';
+import type { PlayNightResponse } from '@/app/api/playnight/route';
 import { YuleLad } from './Season';
 
-function Hero({ server, season }: { server: ServerState; season: Season }) {
+function Hero({ server, season, nights }: { server: ServerState; season: Season; nights?: PlayNightResponse }) {
   return (
     <section id="top" className="b-hero" aria-label="Sólsetur">
       <div className="b-wrap b-hero__grid">
@@ -21,7 +22,7 @@ function Hero({ server, season }: { server: ServerState; season: Season }) {
         </div>
         <div className="b-hero__side">
           <StatusLantern server={server} />
-          <NightLine />
+          <NightLine initial={nights} />
           <YuleLad season={season} spot="hero" />
         </div>
       </div>

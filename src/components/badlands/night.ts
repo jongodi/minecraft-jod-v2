@@ -43,10 +43,19 @@ function stopPolling() {
   document.removeEventListener('visibilitychange', onShown);
 }
 
-export function usePlayNight() {
-  const state = useSyncExternalStore(subscribe, () => value, () => undefined);
+/** The nights the server drew the page with become the store's first value
+    in the browser (see seedStatus in hooks.ts). Nothing on the server. */
+export function seedNights(initial: PlayNightResponse): void {
+  if (typeof window === 'undefined') return;
+  if (value === undefined) value = initial;
+}
+
+export function usePlayNight(initial?: PlayNightResponse) {
+  const state = useSyncExternalStore(subscribe, () => value, () => initial);
   useEffect(() => {
-    if (value === undefined) refresh();
+    /* the page's own answer is drawn for everyone and names nobody, so the
+       browser asks once for its own, which knows who is signed in */
+    if (value === undefined || value.me === null) refresh();
     startPolling();
     return stopPolling;
   }, []);

@@ -2,33 +2,23 @@
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import type { PlayerStat, StatsResponse, WeekStats } from '@/app/api/stats/route';
-import type { LastOnline, StatusResponse } from '@/lib/server-status';
-import { STARTING_MS, isChanging, type ServerLife } from '@/lib/server-state';
+import type { StatusResponse } from '@/lib/server-status';
+import { NO_STATUS, STARTING_MS, isChanging, toServerState, type ServerState } from '@/lib/server-state';
+
+export type { ServerState } from '@/lib/server-state';
 
 const STATUS_POLL_MS = 60_000;
 /* while the server is on its way up or down, the page asks more often */
 const CHANGING_POLL_MS = 15_000;
+/* a page drawn with the server's own answer asks again soon, since that answer may be a minute old */
+const SEEDED_POLL_MS = 10_000;
 const COPIED_MS = 2400;
-
-export interface ServerState {
-  online:    boolean | null;   // null while the first ping is in flight
-  /** on, off, or on its way between; null while the first ping is in flight */
-  life:      ServerLife | null;
-  players:   number;
-  max:       number;
-  list:      string[];
-  version:   string | null;
-  /** when the server last burned and who was in, while it is dark and the store remembers */
-  lastOnline: LastOnline | null;
-  checkedAt: number | null;
-}
 
 /* ─── the server's status ──────────────────────────────────────────
    One answer shared by everything that asks (the hero's lantern, the
    world's HUD, the crew's room, the fires), refreshed every minute while
    the page is looked at, every quarter of one while the server is on its
    way up or down, and at once after the site itself asked for a start. */
-const NO_STATUS: ServerState = { online: null, life: null, players: 0, max: 20, list: [], version: null, lastOnline: null, checkedAt: null };
 let statusValue: ServerState = NO_STATUS;
 let statusInFlight: Promise<void> | null = null;
 /* a start asked for from the site: the server counts as on its way up until the status says, a few minutes at most */
@@ -46,16 +36,7 @@ async function loadStatus(): Promise<void> {
   try {
     const res  = await fetch('/api/server-status');
     const data = (res.ok ? await res.json() : null) as StatusResponse | null;
-    next = data ? {
-      online:    data.online ?? false,
-      life:      data.life ?? (data.online ? 'on' : 'off'),
-      players:   data.players?.online ?? 0,
-      max:       data.players?.max ?? 20,
-      list:      (data.players?.list ?? []).map(p => p.name),
-      version:   data.version ?? null,
-      lastOnline: data.lastOnline ?? null,
-      checkedAt: Date.now(),
-    } : unreachable();
+    next = data ? toServerState(data) : unreachable();
   } catch {
     next = unreachable();
   }
@@ -90,12 +71,24 @@ export function expectStarting(): void {
   setTimeout(refreshStatus, 3000);
 }
 
-/** Live server ping, shared and refreshed while the page is looked at. */
-export function useServerStatus(): ServerState {
-  const state = useSyncExternalStore(subscribeStatus, () => statusValue, () => NO_STATUS);
+/** The status the server drew the page with becomes the store's first value
+    in the browser, so the first client render matches the markup and nothing
+    moves when the store takes over. Does nothing once the store has an answer
+    of its own, and nothing on the server, where a module lives across requests. */
+export function seedStatus(initial: ServerState): void {
+  if (typeof window === 'undefined') return;
+  if (statusValue.checkedAt === null) statusValue = initial;
+}
+
+/** Live server ping, shared and refreshed while the page is looked at.
+    `initial` is the server's own answer, drawn into the page (src/lib/home-data.ts). */
+export function useServerStatus(initial?: ServerState): ServerState {
+  const state = useSyncExternalStore(subscribeStatus, () => statusValue, () => initial ?? NO_STATUS);
   useEffect(() => {
     polling++;
-    if (statusValue.checkedAt === null) refreshStatus(); else schedulePoll();
+    if (statusValue.checkedAt === null) refreshStatus();
+    else if (initial && statusValue === initial) { clearTimeout(pollTimer); pollTimer = setTimeout(refreshStatus, SEEDED_POLL_MS); }
+    else schedulePoll();
     const onShow = () => { if (!document.hidden) refreshStatus(); };
     document.addEventListener('visibilitychange', onShow);
     return () => {
@@ -103,6 +96,8 @@ export function useServerStatus(): ServerState {
       if (!polling) clearTimeout(pollTimer);
       document.removeEventListener('visibilitychange', onShow);
     };
+  // the seed is the page's first value only; a later prop never restarts the poll
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return state;
 }
