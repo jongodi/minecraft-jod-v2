@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { badJson, jsonObject } from '@/lib/http';
-import { readGallery, writeGallery } from '@/lib/gallery';
+import { readGalleryRaw, writeGallery } from '@/lib/gallery';
 import { requireAdmin, unauthorizedResponse } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Auðkennin þurfa að vera í lista.' }, { status: 400 });
   }
 
-  const gallery = await readGallery();
+  const gallery = await readGalleryRaw();
 
   // Validate: submitted IDs must be a complete, non-duplicate set matching all photos
   if (new Set(ids).size !== ids.length) {

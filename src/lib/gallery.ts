@@ -72,10 +72,12 @@ export async function writeGallery(photos: GalleryPhoto[]): Promise<void> {
   await fs.writeFile(p, JSON.stringify(photos, null, 2) + '\n', 'utf-8');
 }
 
+/** A photo as it is shown: an old English title or sublabel in Icelandic. */
+export const shownPhoto = (photo: GalleryPhoto): GalleryPhoto =>
+  ({ ...photo, title: localizeContent(photo.title), sublabel: localizeContent(photo.sublabel) });
+
 export async function readGallery(): Promise<GalleryPhoto[]> {
-  return (await readStoredGallery()).map(photo => ({
-    ...photo, title: localizeContent(photo.title), sublabel: localizeContent(photo.sublabel),
-  }));
+  return (await readStoredGallery()).map(shownPhoto);
 }
 
 /** The gallery exactly as it is stored, with titles unlocalised. Anything that

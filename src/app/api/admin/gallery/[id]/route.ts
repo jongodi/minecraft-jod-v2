@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { badJson, jsonObject } from '@/lib/http';
-import { readGallery, writeGallery } from '@/lib/gallery';
+import { readGalleryRaw, shownPhoto, writeGallery } from '@/lib/gallery';
 import { linkPhotoToLocation, unlinkPhoto } from '@/lib/map';
 import { requireAdmin, unauthorizedResponse } from '@/lib/auth';
 import { deleteStoredImage } from '@/lib/blob-store';
@@ -17,7 +17,7 @@ export async function PATCH(
   const body = await jsonObject(req);
   if (!body) return badJson();
 
-  const gallery = await readGallery();
+  const gallery = await readGalleryRaw();
   const idx = gallery.findIndex(p => p.id === id);
   if (idx === -1) return NextResponse.json({ error: 'Fannst ekki.' }, { status: 404 });
 
@@ -37,7 +37,7 @@ export async function PATCH(
     linkedLocationId = await linkPhotoToLocation(id, locationId === null ? null : Math.floor(locationId));
   }
 
-  return NextResponse.json({ ...gallery[idx], ...(linkedLocationId !== undefined && { locationId: linkedLocationId }) });
+  return NextResponse.json({ ...shownPhoto(gallery[idx]), ...(linkedLocationId !== undefined && { locationId: linkedLocationId }) });
 }
 
 // DELETE — remove photo from the gallery, from any map pin, and from storage
@@ -48,7 +48,7 @@ export async function DELETE(
   if (!(await requireAdmin())) return unauthorizedResponse();
   const { id } = await params;
 
-  const gallery = await readGallery();
+  const gallery = await readGalleryRaw();
   const photo = gallery.find(p => p.id === id);
   if (!photo) return NextResponse.json({ error: 'Fannst ekki.' }, { status: 404 });
 
