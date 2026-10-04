@@ -9,7 +9,7 @@ const TICKER = 'Afritað. Límdu það inn í leikinn.';
 const TICK_MS = 28;
 
 /** The one action: copy the address. On click a telegraph ticker types the
-    confirmation and the button takes a stamp. Screen readers hear it too. */
+    confirmation and the button takes a stamp. Screen readers hear it once, whole. */
 export default function CopyAddress({ hint = 'smelltu til að afrita vistfangið', className }: { hint?: string; className?: string }) {
   const [copied, copy] = useCopy(SERVER_IP);
   const reduce = useReducedMotionPref();
@@ -34,7 +34,9 @@ export default function CopyAddress({ hint = 'smelltu til að afrita vistfangið
         <span className="b-copy__addr">{SERVER_IP}</span>
         <span className="b-copy__stamp" aria-hidden="true">Afritað</span>
       </button>
-      <p className={`b-copy__hint${copied ? ' is-ticker' : ''}`} aria-live="polite">{copied ? typed : hint}</p>
+      {/* the ticker types for the eye; a screen reader is told the whole sentence once */}
+      <p className={`b-copy__hint${copied ? ' is-ticker' : ''}`} aria-hidden={copied || undefined}>{copied ? typed : hint}</p>
+      <p className="b-visually-hidden" role="status">{copied ? TICKER : ''}</p>
     </div>
   );
 }

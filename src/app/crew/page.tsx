@@ -12,8 +12,11 @@ import AddressBar from '@/components/badlands/AddressBar';
 import Footer from '@/components/badlands/Footer';
 import PlayerHead from '@/components/badlands/PlayerHead';
 import { ArrowIcon } from '@/components/badlands/Bits';
-import { PAGE_LINKS } from '@/components/badlands/data';
+import { CREW, PAGE_LINKS } from '@/components/badlands/data';
 import { photoProps, PHOTO_SIZES } from '@/components/badlands/photo';
+
+/* a member's poster before the list has come: the name, nothing about the wall yet */
+const blankPoster = (username: string): CrewSummary => ({ username, bio: '', entryCount: 0, photoCount: 0, lastEntry: null, cover: null, bestDrawMs: null });
 
 /** The roll call: one poster per member, and beside it the notice board
     with what was pinned last across every wall. */
@@ -49,9 +52,17 @@ export default function CrewPage() {
             <h1 className="b-title">Hópurinn</h1>
             <p className="b-lede">Öll sem hafa aðgang. Hvert og eitt á sinn vegg: kynningu, tölur úr leiknum, miða og myndir.</p>
           </div>
-          <div className="b-tabs" style={{ marginBottom: 0 }} role="tablist" aria-label="Hópurinn">
+          {/* tabs as a keyboard expects them: one stop for Tab, the arrows go between them */}
+          <div className="b-tabs" style={{ marginBottom: 0 }} role="tablist" aria-label="Hópurinn"
+            onKeyDown={e => {
+              if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
+              e.preventDefault();
+              const next = e.key === 'Home' ? 'members' : e.key === 'End' ? 'board' : tab === 'members' ? 'board' : 'members';
+              setTab(next);
+              document.getElementById(`tab-${next}`)?.focus();
+            }}>
             {(['members', 'board'] as const).map(t => (
-              <button key={t} id={`tab-${t}`} type="button" role="tab" aria-selected={tab === t} aria-controls={`panel-${t}`} className={`b-tab${tab === t ? ' is-active' : ''}`} onClick={() => setTab(t)}>
+              <button key={t} id={`tab-${t}`} type="button" role="tab" aria-selected={tab === t} aria-controls={`panel-${t}`} tabIndex={tab === t ? 0 : -1} className={`b-tab${tab === t ? ' is-active' : ''}`} onClick={() => setTab(t)}>
                 {t === 'members' ? 'Félagar' : `Á töflunni${Array.isArray(feed) && feed.length ? ` (${feed.length})` : ''}`}
               </button>
             ))}
@@ -60,10 +71,11 @@ export default function CrewPage() {
 
         {tab === 'members' && (
           <div id="panel-members" role="tabpanel" aria-labelledby="tab-members">
-          {crew === null ? <p className="b-empty" role="status">sæki félagalistann…</p> :
-           crew === 'error' ? <p className="b-empty" role="alert">Náði ekki í félagalistann. Reyndu aftur eftir smástund.</p> :
-          <div className="b-rollcall">
-            {crew.map(m => (
+          {crew === 'error' ? <p className="b-empty" role="alert">Náði ekki í félagalistann. Reyndu aftur eftir smástund.</p> :
+          /* the eight are known before the list comes, so their posters stand at
+             once and only the lines about each wall fill in */
+          <div className="b-rollcall" aria-busy={crew === null}>
+            {(crew ?? CREW.map(blankPoster)).map(m => (
               <div key={m.username}>
                 <Link href={`/crew/${m.username}`} className={`b-paper b-paper--torn b-poster b-poster--crew${m.cover ? ' has-cover' : ''}`}>
                   {m.cover && (
@@ -72,10 +84,16 @@ export default function CrewPage() {
                   )}
                   <span className="b-paper__nail b-paper__nail--l" aria-hidden="true" />
                   <span className="b-paper__nail b-paper__nail--r" aria-hidden="true" />
-                  <div className="b-poster__img"><PlayerHead name={m.username} size={128} /></div>
+                  <div className="b-poster__img"><PlayerHead name={m.username} size={128} alt="" /></div>
                   <div className="b-poster__name">{m.username}</div>
-                  <div className="b-poster__note">{m.bio || (m.lastEntry ? `festi eitthvað upp ${formatAge(m.lastEntry)}` : 'ekkert heyrst enn')}</div>
-                  <div className="b-poster__meta"><span className="b-nowrap">{m.entryCount} {plural(m.entryCount, 'færsla', 'færslur')}</span> · <span className="b-nowrap">{m.photoCount} {plural(m.photoCount, 'mynd', 'myndir')}</span></div>
+                  {crew === null ? (<>
+                    <div className="b-poster__note">sæki vegginn…</div>
+                    {/* held open at the height its line will take, so nothing moves when it comes */}
+                    <div className="b-poster__meta" aria-hidden="true" style={{ visibility: 'hidden' }}><span className="b-nowrap">0 færslur</span> · <span className="b-nowrap">0 myndir</span></div>
+                  </>) : (<>
+                    <div className="b-poster__note">{m.bio || (m.lastEntry ? `festi eitthvað upp ${formatAge(m.lastEntry)}` : 'ekkert heyrst enn')}</div>
+                    <div className="b-poster__meta"><span className="b-nowrap">{m.entryCount} {plural(m.entryCount, 'færsla', 'færslur')}</span> · <span className="b-nowrap">{m.photoCount} {plural(m.photoCount, 'mynd', 'myndir')}</span></div>
+                  </>)}
                 </Link>
               </div>
             ))}
@@ -103,7 +121,7 @@ export default function CrewPage() {
                       </span>
                     )}
                     {(e.text || e.photos[0]?.caption) && <span className="w-note-card__text">{e.text || e.photos[0]?.caption}</span>}
-                    <span className="w-note-card__who"><PlayerHead name={e.username} size={16} /><b>{e.username}</b><span>{formatAge(e.createdAt)}</span></span>
+                    <span className="w-note-card__who"><PlayerHead name={e.username} size={16} alt="" /><b>{e.username}</b><span>{formatAge(e.createdAt)}</span></span>
                   </Link>
                 </li>
               ))}

@@ -1,5 +1,5 @@
-// IP-based sliding-window rate limiter backed by Redis.
-// Falls back to in-memory limiting when Redis is unavailable (local dev).
+// IP-based rate limiter: a fixed window in Redis that starts with the first
+// try, and a sliding one in memory when Redis is unavailable (local dev).
 
 const MAX_ATTEMPTS   = 5;
 const WINDOW_SECONDS = 15 * 60; // 15 minutes
@@ -32,7 +32,9 @@ export async function checkRateLimit(ip: string, action: string, max = MAX_ATTEM
     const { getRedis } = await import('./redis');
     const redis = getRedis();
     const count = await redis.incr(key);
-    if (count === 1) {
+    /* the window starts with the first try; a key left without one (an
+       expire that never landed) would otherwise turn the address away for good */
+    if (count === 1 || (await redis.ttl(key)) === -1) {
       await redis.expire(key, windowSeconds);
     }
     return {

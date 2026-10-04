@@ -5,6 +5,7 @@ import { canSendEmail } from '@/lib/email';
 import { exarotonStatus, startExaroton } from '@/lib/exaroton';
 import { forgetStatus } from '@/lib/server-status';
 import { errorMessage } from '@/lib/icelandic';
+import { jsonObject } from '@/lib/http';
 import {
   MAX_NOTE, MAX_PLANNED, START_BEFORE_MS, checkTimes, clashOf, currentNights, decidesAt, isPlanned, optionOf, phaseOf,
   writeNight, writeVote, yesFor, type Night, type NightState, type Phase,
@@ -76,12 +77,17 @@ export async function GET() {
   catch (e) { return json({ error: errorMessage(e) }, 500); }
 }
 
+const ACTIONS = new Set(['propose', 'vote', 'choose', 'cancel', 'start']);
+
 export async function POST(req: NextRequest) {
   if (!process.env.REDIS_URL) return json({ error: NO_REDIS }, 503);
   const me = (await getCrewSession())?.username ?? null;
   if (!me) return json({ error: 'Skráðu þig inn til að taka þátt.' }, 401);
-  const body = await req.json().catch(() => null) as Record<string, unknown> | null;
-  const action = body?.action;
+  const body = await jsonObject(req);
+  if (!body) return json({ error: 'Ógilt JSON.' }, 400);
+  const action = body.action;
+  /* an unknown action is the request's fault, whichever night it names */
+  if (typeof action !== 'string' || !ACTIONS.has(action)) return json({ error: 'Óþekkt aðgerð.' }, 400);
   const now = Date.now();
 
   try {
@@ -91,10 +97,10 @@ export async function POST(req: NextRequest) {
       if (all.filter(n => isPlanned(n, now)).length >= MAX_PLANNED) {
         return json({ error: `Það eru þegar ${MAX_PLANNED} kvöld á dagskrá. Bíddu þar til eitt er liðið eða slökktu á einu.` }, 409);
       }
-      const times = checkTimes(body?.times, now);
+      const times = checkTimes(body.times, now);
       if ('error' in times) return json({ error: times.error }, 400);
       if (clashOf(all, times.at, now)) return json({ error: 'Annað bál logar þegar sama kvöld. Veldu annan tíma.' }, 409);
-      const note = typeof body?.note === 'string' ? body.note.replace(/\s+/g, ' ').trim().slice(0, MAX_NOTE) : '';
+      const note = typeof body.note === 'string' ? body.note.replace(/\s+/g, ' ').trim().slice(0, MAX_NOTE) : '';
       const night: Night = {
         id: randomUUID().slice(0, 8), by: me, createdAt: new Date(now).toISOString(), note,
         options: times.at.map((at, i) => ({ id: String.fromCharCode(97 + i), at })),
@@ -108,14 +114,14 @@ export async function POST(req: NextRequest) {
       return json(await view(me));
     }
 
-    const cur = shown.find(s => s.night.id === body?.night);
+    const cur = shown.find(s => s.night.id === body.night);
     if (!cur) return json({ error: 'Kvöldið fannst ekki; það gæti hafa verið fellt niður.' }, 404);
     const { night, votes } = cur;
     const phase = phaseOf(night, now);
 
     if (action === 'vote') {
       if (phase === 'live' || phase === 'over') return json({ error: 'Kvöldið er hafið; ekki er lengur hægt að svara.' }, 409);
-      const yes = Array.isArray(body?.yes) ? body.yes.filter((v): v is string => typeof v === 'string') : null;
+      const yes = Array.isArray(body.yes) ? body.yes.filter((v): v is string => typeof v === 'string') : null;
       if (!yes) return json({ error: 'Svar vantar.' }, 400);
       /* once chosen, only the chosen time is answered */
       const allowed = new Set(night.chosen ? [night.chosen] : night.options.map(o => o.id));
@@ -127,7 +133,7 @@ export async function POST(req: NextRequest) {
       if (night.by !== me) return json({ error: 'Aðeins sá sem kveikti bálið getur þetta.' }, 403);
       if (action === 'choose') {
         if (night.chosen) return json({ error: 'Kvöldið er þegar valið.' }, 409);
-        const option = optionOf(night, typeof body?.option === 'string' ? body.option : null);
+        const option = optionOf(night, typeof body.option === 'string' ? body.option : null);
         if (!option) return json({ error: 'Tíminn fannst ekki.' }, 400);
         await writeNight({ ...night, chosen: option.id, chosenBy: me });
         mailAfter(m => m.mailNights());

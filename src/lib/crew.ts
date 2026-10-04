@@ -56,23 +56,6 @@ export async function readAllProfiles(): Promise<CrewProfile[]> {
   return Promise.all(CREW_USERNAMES.map(u => readProfile(u)));
 }
 
-export async function writeProfile(profile: CrewProfile): Promise<void> {
-  const clean = normalizeProfile(profile, profile.username);
-
-  if (hasKV()) {
-    try {
-      const { rSet } = await import('./redis');
-      await rSet(profileKey(clean.username), clean);
-      return;
-    } catch (e) {
-      console.error('Redis writeProfile error:', e);
-      throw new Error(STORE_WRITE_ERROR);
-    }
-  }
-
-  await writeProfileFile(clean);
-}
-
 /* A write goes to a temporary file that is then renamed over the wall, so a
    read that lands mid-write sees the old wall or the new one, never half. */
 async function writeProfileFile(clean: CrewProfile): Promise<void> {

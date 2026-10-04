@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { plural } from '@/lib/format';
-import { parseWorldPoint, type MapConfig, type MapLocation, type MapPath, type MapZone, type WorldPoint } from '@/lib/map-types';
+import { parseWorldPoint, withCurrentLinks, type MapConfig, type MapLocation, type MapPath, type MapZone, type WorldPoint } from '@/lib/map-types';
 import { CREW_USERNAMES } from '@/lib/crew-types';
 import { mapLabel } from '@/lib/icelandic';
 import {
@@ -139,12 +139,6 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
   useEffect(() => { loadPhotos(); }, [loadPhotos]);
 
   useEffect(() => { setUnsaved('map', dirty); return () => setUnsaved('map', false); }, [dirty]);
-  useEffect(() => {
-    if (!dirty) return;
-    const warn = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ''; };
-    window.addEventListener('beforeunload', warn);
-    return () => window.removeEventListener('beforeunload', warn);
-  }, [dirty]);
 
   /* ─── coordinates ─── */
   const toSvg = useCallback((cx: number, cy: number): [number, number] => {
@@ -343,9 +337,14 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
   });
 
   /* ─── save ─── */
-  async function persist(cfg: Doc): Promise<boolean> {
+  async function persist(edited: Doc): Promise<boolean> {
     setSaving(true);
     try {
+      /* the gallery may have linked photos to places since this copy was
+         loaded; links the editor left alone follow the store (if it answers) */
+      const current = await api<MapConfig>('/api/admin/map').catch(() => null);
+      const base = (JSON.parse(saved) as [MapLocation[]])[0];
+      const cfg = current ? { ...edited, locations: withCurrentLinks(edited.locations, base, current.locations) } : edited;
       const r = await api<{ config?: MapConfig }>('/api/admin/map', { method: 'PUT', body: JSON.stringify(cfg) });
       const stored = r.config ? toDoc(r.config) : cfg;
       h.reset(stored);
@@ -706,6 +705,11 @@ function NumField({ value, min, max, onCommit }: { value: number; min: number; m
 
 function WorldField({ value, onChange }: { value: WorldPoint | null; onChange: (w: WorldPoint | null) => void }) {
   const [text, setText] = useState(formatWorldPoint(value));
+  /* follows the place when it changes from outside (Afturkalla, another
+     pin), as NumField does, unless it is being typed in */
+  const shown = formatWorldPoint(value);
+  const focused = useRef(false);
+  useEffect(() => { if (!focused.current) setText(shown); }, [shown]);
   const parsed = parseWorldPoint(text);
   const bad = text.trim() !== '' && parsed === null;
   const commit = () => {
@@ -720,7 +724,9 @@ function WorldField({ value, onChange }: { value: WorldPoint | null; onChange: (
       : 'Hnitin úr F3. Staður með hnit fær lukt í þrívíddarkortinu, og flísin hans á forsíðunni flýgur þangað. Autt = ekki í þrívíddarkortinu.'}>
       <input className="a-input a-input--data" value={text} placeholder="t.d. -6890 64 -8919" inputMode="text" spellCheck={false}
         aria-invalid={bad || undefined}
-        onChange={e => setText(e.target.value)} onBlur={commit}
+        onChange={e => setText(e.target.value)}
+        onFocus={() => { focused.current = true; }}
+        onBlur={() => { focused.current = false; commit(); }}
         onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); commit(); } }} />
     </Field>
   );

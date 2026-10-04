@@ -222,7 +222,7 @@ The other bases (Joðville, Faraway lands, Bústaður, Shroomy island; `src/lib/
 
 ## Out of scope
 
-`/admin` is a tool, so it uses the same tokens in a quieter register (`src/app/admin/admin.css`): night surfaces, amber only on actions, the display slab for panel titles, pixel type for live values. Its map editor draws the same block map as the public site through the shared `MapArt` component, so what the admin sees is what visitors see. The world itself is painted there: the terrain is a grid of blocks (`src/lib/terrain.ts`) saved with the map, and the coastline's beach is derived from it rather than painted, so a hand-drawn coast still looks right. The resource pack editor that used to live at `/rp-editor` was removed with the redesign, along with `three` and `jszip`; the generic token names (`--bg`, `--accent`, `--text`) stay defined in `globals.css` for the admin panel.
+`/admin` is a tool, so it uses the same tokens in a quieter register (`src/app/admin/admin.css`): night surfaces, amber only on actions, the display slab for panel titles, pixel type for live values. Its map editor draws the same block map as the public site through the shared `MapArt` component, so what the admin sees is what visitors see. The world itself is painted there: the terrain is a grid of blocks (`src/lib/terrain.ts`) saved with the map, and the coastline's beach is derived from it rather than painted, so a hand-drawn coast still looks right. The resource pack editor that used to live at `/rp-editor` was removed with the redesign, along with `three` and `jszip`; the admin table's two rule colours (`--border`, `--border-strong`) are the only names of its own left in `globals.css`.
 
 ## The walls
 

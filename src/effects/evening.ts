@@ -15,8 +15,11 @@ export function startEveningFallback(): () => void {
   if (CSS.supports('animation-timeline: scroll()')) return () => {};
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return () => {};
 
-  const targets = Array.from(document.querySelectorAll<HTMLElement | SVGElement>(TARGETS));
-  if (!targets.length) return () => {};
+  /* Looked up again whenever the hour changes, not once: the season's snow
+     and jack-o'-lanterns are drawn after this starts, and a list taken at
+     the start left them in daylight all evening. A lookup is no layout
+     read, and past the hero, pinned at night, nothing runs at all. */
+  const targets = () => document.querySelectorAll<HTMLElement | SVGElement>(TARGETS);
 
   let raf = 0;
   let last = '';
@@ -26,7 +29,7 @@ export function startEveningFallback(): () => void {
     const next = t.toFixed(3);
     if (next === last) return;            // pinned at 1 past the hero: nothing to invalidate
     last = next;
-    for (const el of targets) el.style.setProperty('--evening', next);
+    for (const el of targets()) el.style.setProperty('--evening', next);
   };
   const onScroll = () => { if (!raf) raf = requestAnimationFrame(apply); };
   apply();
@@ -36,6 +39,6 @@ export function startEveningFallback(): () => void {
     window.removeEventListener('scroll', onScroll);
     window.removeEventListener('resize', onScroll);
     cancelAnimationFrame(raf);
-    for (const el of targets) el.style.removeProperty('--evening');
+    for (const el of targets()) el.style.removeProperty('--evening');
   };
 }

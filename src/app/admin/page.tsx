@@ -83,7 +83,12 @@ export default function AdminPage() {
       <main className="a-wrap a-main">
         <nav className="a-tabs" aria-label="Hlutar stjórnborðs">
           {TABS.map(t => (
-            <a key={t.id} href={`#${t.id}`} className={`a-tab${tab === t.id ? ' is-active' : ''}`} aria-current={tab === t.id ? 'page' : undefined} onClick={e => { e.preventDefault(); setTab(t.id); }}>
+            <a key={t.id} href={`#${t.id}`} className={`a-tab${tab === t.id ? ' is-active' : ''}`} aria-current={tab === t.id ? 'page' : undefined} onClick={e => {
+                e.preventDefault();
+                /* every panel but the map's goes away with its tab, and its unsaved work with it */
+                if (t.id !== tab && tab !== 'map' && !confirmLeave([tab])) return;
+                setTab(t.id);
+              }}>
               {t.label}
             </a>
           ))}

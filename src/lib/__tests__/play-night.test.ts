@@ -11,7 +11,7 @@ vi.mock('@/lib/redis', () => ({
     get: async (k: string) => kv.get(k) ?? null,
     del: async (k: string) => (kv.delete(k) ? 1 : 0),
     hdel: async (k: string, f: string) => (hash(k).delete(f) ? 1 : 0),
-    set: async (k: string, v: string) => { kv.set(k, v); return 'OK'; },
+    set: async (k: string, v: string, ...opts: unknown[]) => { if (opts.includes('NX') && kv.has(k)) return null; kv.set(k, v); return 'OK'; },
     hgetall: async (k: string) => Object.fromEntries(hash(k)),
     hset: async (k: string, f: string, v: string) => { hash(k).set(f, v); return 1; },
     hincrby: async (k: string, f: string, n: number) => { const v = Number(hash(k).get(f) ?? 0) + n; hash(k).set(f, String(v)); return v; },
@@ -188,6 +188,13 @@ describe('/api/playnight', () => {
     expect((await post({ action: 'start', night: id })).status).toBe(409);
   });
 
+  it('answers a malformed request or an unknown action as such, not as a missing night', async () => {
+    const raw = await POST(new NextRequest('https://jod.test/api/playnight', { method: 'POST', body: '{' }));
+    expect(raw.status).toBe(400);
+    expect((await post({ action: 'dance' })).status).toBe(400);
+    expect((await post([1, 2])).status).toBe(400);
+  });
+
   it('turns away anyone signed out', async () => {
     session = null;
     expect((await post({ action: 'propose', times: ['2026-10-02T20:00:00Z'] })).status).toBe(401);
@@ -210,6 +217,11 @@ describe('/api/playnight', () => {
     day('2026-10-02', '2026-10-02T12:05:00Z', 100);
 
     vi.setSystemTime(new Date('2026-10-02T12:10:00Z'));
+    /* a second delivery of the daily job that finds the night already claimed counts nothing */
+    kv.set(`playnight:settled:${first.id}`, '1');
+    expect(await lib.settleNights()).toEqual([]);
+    expect(await lib.readNoShows()).toEqual({});
+    kv.delete(`playnight:settled:${first.id}`);
     expect(await lib.settleNights()).toEqual([{ id: first.id, came: ['AmmaGaur'], noShows: ['stebbias'] }]);
     expect(await lib.settleNights()).toEqual([]);
     expect(await lib.readNoShows()).toEqual({ stebbias: 1 });

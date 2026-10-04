@@ -14,6 +14,7 @@ import type { WallPlace } from './Wall';
 
 interface Draft {
   key:      string;
+  file:     File;
   name:     string;
   preview:  string;          // object URL for the thumbnail
   caption:  string;
@@ -55,6 +56,13 @@ export default function Composer({ username, places, onPinned }: Props) {
 
   const patch = useCallback((key: string, p: Partial<Draft>) => setDrafts(ds => ds.map(d => (d.key === key ? { ...d, ...p } : d))), []);
 
+  const send = useCallback((d: Draft) => {
+    const info = storage ?? { mode: 'none' as const, access: null, maxBytes: 0, error: 'Geymslan svarar ekki enn.' };
+    uploadPrint(username, d.file, info, pct => patch(d.key, { progress: pct }))
+      .then(done => { if (dropped.current.has(d.key)) discard(done); else patch(d.key, { done, progress: 100 }); })
+      .catch(e => patch(d.key, { error: e instanceof Error ? e.message : 'Upphleðsla mistókst.' }));
+  }, [patch, storage, username, discard]);
+
   const add = useCallback((files: File[]) => {
     const images = files.filter(f => f.type.startsWith('image/'));
     if (images.length === 0) return;
@@ -62,16 +70,13 @@ export default function Composer({ username, places, onPinned }: Props) {
     if (room <= 0) { setError(`Mest ${LIMITS.photosPer} myndir í einu.`); return; }
     const left = images.length - room;
     setError(left > 0 ? `Mest ${LIMITS.photosPer} myndir í einu; ${left} ${plural(left, 'komst', 'komust')} ekki með.` : '');
-    const fresh: Draft[] = images.slice(0, room).map(f => ({ key: newKey(), name: f.name, preview: URL.createObjectURL(f), caption: '', progress: 0, done: null, error: null }));
+    const fresh: Draft[] = images.slice(0, room).map(f => ({ key: newKey(), file: f, name: f.name, preview: URL.createObjectURL(f), caption: '', progress: 0, done: null, error: null }));
     setDrafts(ds => [...ds, ...fresh]);
-    fresh.forEach((d, i) => {
-      const file = images[i];
-      const info = storage ?? { mode: 'none' as const, access: null, maxBytes: 0, error: 'Geymslan svarar ekki enn.' };
-      uploadPrint(username, file, info, pct => patch(d.key, { progress: pct }))
-        .then(done => { if (dropped.current.has(d.key)) discard(done); else patch(d.key, { done, progress: 100 }); })
-        .catch(e => patch(d.key, { error: e instanceof Error ? e.message : 'Upphleðsla mistókst.' }));
-    });
-  }, [drafts.length, patch, storage, username, discard]);
+    fresh.forEach(send);
+  }, [drafts.length, send]);
+
+  /* a print whose upload failed stays in the slot, red, until it is sent again or taken out */
+  const retry = (d: Draft) => { patch(d.key, { error: null, progress: 0 }); send(d); };
 
   /* Taken out of the slot: the preview goes, and so does the copy already in the store. */
   const remove = (key: string) => {
@@ -120,8 +125,10 @@ export default function Composer({ username, places, onPinned }: Props) {
   }, [add]);
 
   const uploading = drafts.some(d => !d.done && !d.error);
+  /* pinning past a failed print would leave it out and then clear it from the slot without a word */
+  const failed = drafts.some(d => d.error);
   const ready = drafts.filter(d => d.done);
-  const canPin = !pinning && !uploading && (text.trim().length > 0 || ready.length > 0);
+  const canPin = !pinning && !uploading && !failed && (text.trim().length > 0 || ready.length > 0);
 
   async function pin(e: FormEvent) {
     e.preventDefault();
@@ -182,6 +189,7 @@ export default function Composer({ username, places, onPinned }: Props) {
               <input className="w-draft__cap" value={d.caption} onChange={e => patch(d.key, { caption: e.target.value })} maxLength={LIMITS.caption} placeholder="myndatexti" aria-label={`Myndatexti fyrir ${d.name}`} />
               <span className="w-draft__meta">
                 {d.error ? d.error : d.done ? (d.done.takenAt ? `tekin ${formatDate(d.done.takenAt)}` : 'tilbúin') : `hleð upp ${Math.round(d.progress)}%`}
+                {d.error && <> · <button type="button" className="b-link w-draft__retry" onClick={() => retry(d)}>reyna aftur</button></>}
               </span>
             </li>
           ))}
@@ -200,10 +208,10 @@ export default function Composer({ username, places, onPinned }: Props) {
         </label>
         <span className="w-pin__note">{storageNote}</span>
         <button type="submit" className="b-btn b-btn--solid b-btn--small w-pin__go" disabled={!canPin}>
-          {pinning ? 'Festi upp…' : uploading ? 'Hleð upp…' : 'Festa upp'}
+          {pinning ? 'Festi upp…' : uploading ? 'Hleð upp…' : failed ? 'Mynd mistókst' : 'Festa upp'}
         </button>
       </div>
-      {error && <p className="b-err">{error}</p>}
+      {error && <p className="b-err" role="alert">{error}</p>}
     </form>
   );
 }

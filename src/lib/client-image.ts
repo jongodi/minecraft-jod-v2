@@ -59,32 +59,40 @@ export async function prepareImage(file: File): Promise<PreparedImage> {
 
   if (!file.type.startsWith('image/')) throw new Error('Aðeins er hægt að hlaða upp myndum.');
   if (file.type === 'image/gif') return passthrough();
+  /* the store takes PNG, JPEG, WebP, GIF and AVIF only; anything else the
+     browser can read (a phone's HEIC, say) is always redrawn as one of them */
+  const storable = Object.hasOwn(EXT_FOR, file.type);
+  /* where redrawing gives up: the original, if the store takes it as it is */
+  const asIs = (width = 0, height = 0): PreparedImage => {
+    if (storable) return passthrough(width, height);
+    throw new Error('Gat ekki lesið myndina. Prófaðu PNG eða JPEG.');
+  };
 
   let src;
   try { src = await decode(file); }
-  catch { return passthrough(); }
+  catch { return asIs(); }
 
   try {
     const { width, height } = src;
     const scale = Math.min(1, MAX_EDGE / Math.max(width, height));
-    if (scale === 1 && file.size <= SMALL_ENOUGH) return passthrough(width, height);
+    if (storable && scale === 1 && file.size <= SMALL_ENOUGH) return passthrough(width, height);
 
     const w = Math.max(1, Math.round(width * scale));
     const h = Math.max(1, Math.round(height * scale));
     const canvas = document.createElement('canvas');
     canvas.width = w; canvas.height = h;
     const ctx = canvas.getContext('2d');
-    if (!ctx) return passthrough(width, height);
+    if (!ctx) return asIs(width, height);
     ctx.imageSmoothingQuality = 'high';
     src.draw(ctx, w, h);
 
     let out = await toBlob(canvas, 'image/webp', WEBP_QUALITY);
     let ext = 'webp';
     if (!out || out.type !== 'image/webp') { out = await toBlob(canvas, 'image/jpeg', WEBP_QUALITY); ext = 'jpg'; }
-    if (!out) return passthrough(width, height);
+    if (!out) return asIs(width, height);
 
     // Only worth it if we actually shrank the file or the pixels
-    if (scale === 1 && out.size >= file.size) return passthrough(width, height);
+    if (storable && scale === 1 && out.size >= file.size) return passthrough(width, height);
     return { blob: out, ext, contentType: out.type, width: w, height: h, resized: true };
   } finally {
     src.close();

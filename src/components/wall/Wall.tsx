@@ -2,7 +2,7 @@
 
 // A member's wall: their wanted poster at the top, the pin slot under it
 // when it is their own, and everything they have pinned, newest first.
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import type { CrewProfile, CrewEntry } from '@/lib/crew-types';
@@ -15,7 +15,7 @@ import Footer from '@/components/badlands/Footer';
 import PlayerHead from '@/components/badlands/PlayerHead';
 import { ArrowIcon, CloseIcon, Star } from '@/components/badlands/Bits';
 import { PAGE_LINKS, STAT_TABS } from '@/components/badlands/data';
-import { useBackdropClose, useCrewSession, useScrollLock } from '@/components/badlands/hooks';
+import { useBackdropClose, useCrewSession, useDialogFocus, useScrollLock } from '@/components/badlands/hooks';
 import { photoProps, PHOTO_SIZES } from '@/components/badlands/photo';
 import Composer from './Composer';
 import Print from './Print';
@@ -64,7 +64,7 @@ function LoginModal({ username, onSuccess, onClose }: { username: string; onSucc
   const [loading, setLoading] = useState(false);
   /* a sign-in link asked for by post: on its way, or asked for */
   const [mail,    setMail]    = useState<'idle' | 'sending' | 'sent'>('idle');
-  const backdrop = useWallDialog(onClose);
+  const { box, backdrop } = useWallDialog(onClose);
 
   async function askForLink() {
     setMail('sending');
@@ -92,12 +92,12 @@ function LoginModal({ username, onSuccess, onClose }: { username: string; onSucc
   }
 
   return (
-    <div className="b-modal" {...backdrop} role="dialog" aria-modal="true" aria-label="Skrá inn">
+    <div ref={box} tabIndex={-1} className="b-modal" {...backdrop} role="dialog" aria-modal="true" aria-label="Skrá inn">
       <form className="b-paper b-modal__box" onSubmit={submit}>
         <p className="b-modal__title">Skrá inn sem {username}</p>
         <p className="b-modal__sub">lykilorðið sem þú valdir þér á veggnum. Ekkert lykilorð, eða gleymt? Fáðu tengil í pósti, eða biddu stjórnandann um einn.</p>
         <input type="password" className={`b-input${error ? ' is-error' : ''}`} value={token} onChange={e => setToken(e.target.value)} placeholder="Lykilorð" autoFocus autoComplete="current-password" />
-        {error && <p className="b-err">{error}</p>}
+        {error && <p className="b-err" role="alert">{error}</p>}
         {mail === 'sent'
           ? <p className="b-modal__ok" role="status">Sé netfang skráð á {username} kemur tengill í pósti eftir smástund. Opnaðu hann í tækinu sem þú vilt nota.</p>
           : <p className="b-modal__alt"><button type="button" className="b-link" onClick={askForLink} disabled={mail === 'sending'}>{mail === 'sending' ? 'Sendi…' : 'Senda mér innskráningartengil í pósti'}</button></p>}
@@ -114,13 +114,16 @@ function LoginModal({ username, onSuccess, onClose }: { username: string; onSucc
    still behind it, and only a click that starts on the dark closes it, so a
    password dragged-to-select past the paper's edge is not thrown away. */
 function useWallDialog(onClose: () => void) {
+  /* the dialog itself, which holds focus until a field inside can take it */
+  const box = useRef<HTMLDivElement>(null);
   useScrollLock();
+  useDialogFocus(box);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
-  return useBackdropClose(onClose);
+  return { box, backdrop: useBackdropClose(onClose) };
 }
 
 // ─── A password of the member's own ───────────────────────────────────────────
@@ -132,7 +135,7 @@ function PasswordModal({ username, change, onDone, onClose }: { username: string
   const [again,   setAgain]   = useState('');
   const [error,   setError]   = useState('');
   const [loading, setLoading] = useState(false);
-  const backdrop = useWallDialog(onClose);
+  const { box, backdrop } = useWallDialog(onClose);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -148,13 +151,13 @@ function PasswordModal({ username, change, onDone, onClose }: { username: string
   }
 
   return (
-    <div className="b-modal" {...backdrop} role="dialog" aria-modal="true" aria-label="Lykilorð">
+    <div ref={box} tabIndex={-1} className="b-modal" {...backdrop} role="dialog" aria-modal="true" aria-label="Lykilorð">
       <form className="b-paper b-modal__box" onSubmit={submit}>
         <p className="b-modal__title">{change ? 'Nýtt lykilorð' : 'Veldu þér lykilorð'}</p>
         <p className="b-modal__sub">með því skráir þú þig inn á hvaða síma eða tölvu sem er undir „Þetta er ég“, án tengils frá stjórnandanum. Minnst {LIMITS_PW} stafir.</p>
         <input type="password" className={`b-input${error ? ' is-error' : ''}`} value={pw} onChange={e => setPw(e.target.value)} placeholder="Lykilorð" autoFocus autoComplete="new-password" />
         <input type="password" className={`b-input${error ? ' is-error' : ''}`} value={again} onChange={e => setAgain(e.target.value)} placeholder="Aftur, til öryggis" autoComplete="new-password" style={{ marginTop: '0.5rem' }} />
-        {error && <p className="b-err">{error}</p>}
+        {error && <p className="b-err" role="alert">{error}</p>}
         <div className="b-modal__actions">
           <button type="submit" className="b-btn b-btn--solid" disabled={loading || pw.length < LIMITS_PW || !again}>{loading ? 'Vista…' : 'Vista'}</button>
           <button type="button" className="b-btn" onClick={onClose}>Hætta við</button>
@@ -172,25 +175,36 @@ function PasswordModal({ username, change, onDone, onClose }: { username: string
 interface Contact { email: { address: string; nights: boolean } | null; name: string | null }
 
 function ContactModal({ username, onClose }: { username: string; onClose: () => void }) {
-  /* false while the saved ones are fetched */
-  const [ready,   setReady]   = useState(false);
+  /* The saved ones are fetched first. Until they are in, nothing can be
+     saved: empty fields saved over a load that failed would erase them. */
+  const [state,   setState]   = useState<'loading' | 'ready' | 'failed'>('loading');
+  const [attempt, setAttempt] = useState(0);
+  const ready = state === 'ready';
   const [name,    setName]    = useState('');
   const [address, setAddress] = useState('');
   const [nights,  setNights]  = useState(true);
   const [error,   setError]   = useState('');
   const [loading, setLoading] = useState(false);
-  const backdrop = useWallDialog(onClose);
+  const nameRef = useRef<HTMLInputElement>(null);
+  const { box, backdrop } = useWallDialog(onClose);
 
   useEffect(() => {
+    let live = true;
+    setState('loading');
     fetch(`/api/crew/${username}/email`, { cache: 'no-store' })
-      .then(r => (r.ok ? r.json() : null))
-      .then((d: Contact | null) => {
-        if (d?.email) { setAddress(d.email.address); setNights(d.email.nights); }
-        if (d?.name) setName(d.name);
+      .then(r => { if (!r.ok) throw new Error(); return r.json() as Promise<Contact>; })
+      .then(d => {
+        if (!live) return;
+        if (d.email) { setAddress(d.email.address); setNights(d.email.nights); }
+        if (d.name) setName(d.name);
+        setState('ready');
       })
-      .catch(() => {})
-      .finally(() => setReady(true));
-  }, [username]);
+      .catch(() => { if (live) setState('failed'); });
+    return () => { live = false; };
+  }, [username, attempt]);
+
+  /* the first field takes focus once it can be typed in */
+  useEffect(() => { if (ready) nameRef.current?.focus(); }, [ready]);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -205,20 +219,26 @@ function ContactModal({ username, onClose }: { username: string; onClose: () => 
   }
 
   return (
-    <div className="b-modal" {...backdrop} role="dialog" aria-modal="true" aria-label="Nafn og netfang">
+    <div ref={box} tabIndex={-1} className="b-modal" {...backdrop} role="dialog" aria-modal="true" aria-label="Nafn og netfang">
       <form className="b-paper b-modal__box" onSubmit={submit}>
         <p className="b-modal__title">Nafn og netfang</p>
         <p className="b-modal__sub">fyrir póstinn frá JOÐ. Aðrir sjá þetta ekki á vefnum; nafnið sést aðeins í bréfunum.</p>
         <label className="b-modal__label" htmlFor="w-contact-name">Hvað eiga bréfin að kalla þig?</label>
-        <input id="w-contact-name" className={`b-input${error ? ' is-error' : ''}`} value={name} onChange={e => setName(e.target.value)} placeholder={ready ? username : 'sæki…'} disabled={!ready} maxLength={40} autoFocus autoComplete="given-name" />
+        <input ref={nameRef} id="w-contact-name" className={`b-input${error ? ' is-error' : ''}`} value={name} onChange={e => setName(e.target.value)} placeholder={ready ? username : state === 'loading' ? 'sæki…' : ''} disabled={!ready} maxLength={40} autoComplete="given-name" />
         <label className="b-modal__label" htmlFor="w-contact-email">Netfang</label>
-        <input id="w-contact-email" type="email" className={`b-input${error ? ' is-error' : ''}`} value={address} onChange={e => setAddress(e.target.value)} placeholder={ready ? 'nafn@dæmi.is' : 'sæki…'} disabled={!ready} autoComplete="email" />
+        <input id="w-contact-email" type="email" className={`b-input${error ? ' is-error' : ''}`} value={address} onChange={e => setAddress(e.target.value)} placeholder={ready ? 'nafn@dæmi.is' : state === 'loading' ? 'sæki…' : ''} disabled={!ready} autoComplete="email" />
         <label className="b-modal__check">
           <input type="checkbox" checked={nights} onChange={e => setNights(e.target.checked)} disabled={!ready} />
           Póstur þegar bál er kveikt, þegar kvöldið er ákveðið, og hálftíma áður en það hefst
         </label>
         <p className="b-modal__ok">Autt nafn: bréfin segja {username}. Autt netfang: enginn póstur.</p>
-        {error && <p className="b-err">{error}</p>}
+        {state === 'failed' && (
+          <p className="b-err" role="alert">
+            Náði ekki í það sem er skráð, svo ekkert verður vistað í bili.{' '}
+            <button type="button" className="b-link" onClick={() => setAttempt(a => a + 1)}>Reyna aftur</button>
+          </p>
+        )}
+        {error && <p className="b-err" role="alert">{error}</p>}
         <div className="b-modal__actions">
           <button type="submit" className="b-btn b-btn--solid" disabled={loading || !ready}>{loading ? 'Vista…' : 'Vista'}</button>
           <button type="button" className="b-btn" onClick={onClose}>Hætta við</button>
@@ -373,7 +393,7 @@ export default function Wall({ initial, places, justSignedIn = false }: Props) {
                   <button className="b-btn b-btn--solid b-btn--small" onClick={saveBio} disabled={bioSaving}>{bioSaving ? 'Vista…' : 'Vista'}</button>
                   <button className="b-btn b-btn--small" onClick={() => { setEditingBio(false); setBioError(''); setBioText(profile.bio); }}>Hætta við</button>
                 </div>
-                {bioError && <p className="b-err">{bioError}</p>}
+                {bioError && <p className="b-err" role="alert">{bioError}</p>}
               </div>
             ) : isOwner ? (
               <button type="button" className={`w-poster__bio w-poster__bio--edit${profile.bio ? '' : ' is-empty'}`} onClick={() => setEditingBio(true)} title="Breyta kynningu">

@@ -33,6 +33,9 @@
   --lantern:      #F2A63B;
   --lantern-deep: #C9801F;
   --lantern-glow: rgba(242, 166, 59, 0.35);
+  /* the same light written on paper: dark enough to read there (5.4:1), where
+     --lantern-deep is 2.35:1 */
+  --lantern-ink:  #794D13;
 
   /* ── paper and ink: notices ── */
   --paper:      #E8DCC4;
@@ -53,16 +56,18 @@
   --sky-sunset-horizon: #E9B24A;
   --sky-night-top:      #0C0A14;
   --sky-night-low:      #15100D;
+
+  /* ── the dark that falls behind a dialog: the night, not the sky's blue ── */
+  --scrim:      rgba(21, 16, 13, 0.8);
+  --scrim-deep: rgba(21, 16, 13, 0.94);
   --sun:                #F4D394;
   --star:               #E8DCC4;
   --dust:               #C99A5A;
   --ember:              #E0602A;
 
   /* ── map sheet ── */
-  --map-paper:  var(--paper);
   --map-land:   #D9C79E;
   --map-land-2: #CDB98C;
-  --map-shore:  #E6D8B4;
   --map-grass:  #A8AE79;
   --map-grass-2:#939A66;
   --map-sand:   #E6D8B4;
@@ -104,7 +109,6 @@
   --fs-chip: 0.5rem;    /* the numeral chips on frames and map pins: 8px, dead on the grid */
   --fs-data: 1rem;      /* Silkscreen is drawn on 8px; keep multiples of 0.5rem */
   --fs-data-lg: 1.5rem;
-  --fs-data-xl: 2rem;
   --lh-tight: 1.05;
   --lh-text:  1.6;
   --lh-night: 1.7;      /* light-on-dark reads lighter, so it gets more air */
@@ -142,11 +146,9 @@
   --dur-2: 240ms;
   --dur-3: 480ms;
   --dur-lantern: 3400ms;
-  --dur-draw: 1600ms;
 
   /* ── layers ── */
   --z-sky: -1;
-  --z-rail: 40;
   --z-bar: 41;
   --z-drawer: 42;
   --z-light: 45;

@@ -1,7 +1,7 @@
 // Serves photos from a private Vercel Blob store. Paths are UUID-based, so responses
 // are cached for a long time; only the gallery and crew folders are reachable.
 import { NextRequest, NextResponse } from 'next/server';
-import { hasBlob, SERVABLE_PREFIXES } from '@/lib/blob-store';
+import { hasBlob, imageExt, SERVABLE_PREFIXES } from '@/lib/blob-store';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,7 +30,15 @@ export async function GET(
     });
     if (result.statusCode === 304) return new NextResponse(null, { status: 304, headers });
 
-    headers.set('Content-Type', result.blob.contentType || 'application/octet-stream');
+    /* Only a raster picture is answered as one. Anything else that found its
+       way into the store (an SVG can carry script, and this is the site's
+       own origin) goes out as a download the browser won't render. */
+    if (imageExt(result.blob.contentType)) {
+      headers.set('Content-Type', result.blob.contentType);
+    } else {
+      headers.set('Content-Type', 'application/octet-stream');
+      headers.set('Content-Disposition', 'attachment');
+    }
     headers.set('Content-Length', String(result.blob.size));
     return new NextResponse(result.stream, { status: 200, headers });
   } catch (e) {

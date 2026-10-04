@@ -119,7 +119,7 @@ export default function Print({ username, entry, places, me, isOwner, coverPhoto
 
       {photos.length > 0 && (
         <div className={`w-print__pics${many ? ' is-many' : ''}`}>
-          {photos.map(photo => (
+          {photos.map((photo, i) => (
             <figure key={photo.id} className="w-print__pic">
               <button type="button" className="w-print__btn" onClick={open(photo)} aria-label={photo.caption || 'Stækka myndina'}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -127,7 +127,7 @@ export default function Print({ username, entry, places, me, isOwner, coverPhoto
               </button>
               {edit ? (
                 <div className="w-print__edit-pic">
-                  <input className="w-draft__cap" value={photo.caption} maxLength={LIMITS.caption} placeholder="myndatexti"
+                  <input className="w-draft__cap" value={photo.caption} maxLength={LIMITS.caption} placeholder="myndatexti" aria-label={photos.length > 1 ? `Myndatexti, mynd ${i + 1} af ${photos.length}` : 'Myndatexti'}
                     onChange={e => setEdit(s => s && ({ ...s, photos: s.photos.map(p => p.id === photo.id ? { ...p, caption: e.target.value } : p) }))} />
                   <div className="w-print__pic-tools">
                     <button type="button" className={`w-tool${coverPhotoId === photo.id ? ' is-on' : ''}`} onClick={() => onCover(coverPhotoId === photo.id ? null : photo.id)}>
@@ -207,7 +207,7 @@ export default function Print({ username, entry, places, me, isOwner, coverPhoto
         </div>
       )}
 
-      {error && <p className="b-err">{error}</p>}
+      {error && <p className="b-err" role="alert">{error}</p>}
     </article>
   );
 }

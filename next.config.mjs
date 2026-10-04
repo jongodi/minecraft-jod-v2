@@ -115,11 +115,12 @@ const nextConfig = {
       "default-src 'self'",
       // 'unsafe-eval' is required by webpack/react-refresh in dev mode only
       `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
-      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      "style-src 'self' 'unsafe-inline'",
       "img-src 'self' blob: data: https:",
       // The admin panel uploads photos straight to Vercel Blob from the browser
       "connect-src 'self' https://vercel.com https://blob.vercel-storage.com https://*.blob.vercel-storage.com",
-      "font-src 'self' https://fonts.gstatic.com",
+      // the three faces are self-hosted (@fontsource through next/font/local)
+      "font-src 'self'",
       "frame-ancestors 'none'",
     ].join('; ');
 

@@ -4,13 +4,9 @@
 // browser, sent straight to Vercel Blob (or to the server in local dev) and then registered.
 import { useCallback, useEffect, useRef, useState, type DragEvent } from 'react';
 import { plural } from '@/lib/format';
-import { upload } from '@vercel/blob/client';
-import type { GalleryPhoto } from '@/lib/gallery';
 import { prepareImage, formatBytes, MAX_EDGE } from '@/lib/client-image';
-
-export type AdminPhoto = GalleryPhoto & { locationId: number | null };
-
-export interface StorageInfo { mode: 'blob' | 'local' | 'none'; access: 'public' | 'private' | null; maxBytes: number; error: string | null }
+import { errorFrom, newId, sendToBlob, type StorageInfo } from '@/lib/crew-upload';
+import type { AdminPhoto } from './GalleryPanel';
 
 type Stage = 'queued' | 'preparing' | 'uploading' | 'saving' | 'done' | 'error';
 interface Job { key: string; name: string; size: number; stage: Stage; progress: number; note?: string }
@@ -21,27 +17,6 @@ const STAGE_LABEL: Record<Stage, string> = {
 
 function titleFromName(name: string): string {
   return name.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ').replace(/\s+/g, ' ').trim();
-}
-
-function newId(): string {
-  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID();
-  // RFC 4122 v4 layout from Math.random — only for very old browsers
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-    const r = (Math.random() * 16) | 0;
-    return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
-  });
-}
-
-/** Read an error message out of any response, JSON or not (Vercel's 413 page is plain text). */
-async function errorFrom(res: Response): Promise<string> {
-  const text = await res.text().catch(() => '');
-  try {
-    const j = JSON.parse(text) as { error?: string; message?: string };
-    if (j.error || j.message) return j.error ?? j.message!;
-  } catch { /* not json */ }
-  if (res.status === 413) return 'Skráin er of stór fyrir þjóninn.';
-  if (res.status === 401) return 'Innskráningin er útrunnin. Skráðu þig inn aftur.';
-  return `Villa ${res.status}${res.statusText ? ` (${res.statusText})` : ''}`;
 }
 
 const STORAGE_UNKNOWN: StorageInfo = { mode: 'none', access: null, maxBytes: 0, error: 'Náði ekki í stillingar geymslunnar.' };
@@ -74,7 +49,7 @@ export async function uploadGalleryPhoto(
 
   if (info.mode === 'blob') {
     const id = newId();
-    const blob = await upload(`gallery/${id}.${prepared.ext}`, prepared.blob, {
+    const blob = await sendToBlob(`gallery/${id}.${prepared.ext}`, prepared.blob, {
       access:          info.access ?? 'public',
       handleUploadUrl: '/api/admin/gallery/upload',
       contentType:     prepared.contentType,
@@ -147,7 +122,8 @@ export default function GalleryUploader({ onUploaded }: { onUploaded: (photo: Ad
 
   function onDrop(e: DragEvent) {
     e.preventDefault(); setDragging(false);
-    if (disabled) return;
+    /* a gallery card dragged here while reordering carries no files: not an upload */
+    if (disabled || e.dataTransfer.files.length === 0) return;
     run(Array.from(e.dataTransfer.files));
   }
 
