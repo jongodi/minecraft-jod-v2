@@ -5,6 +5,12 @@
    - draws at one of three qualities, Létt, Venjulegt or Mikið, the one
      setting its menu offers in place of BlueMap's sliders; Venjulegt is sharp
      but no heavier than it needs to be, with a smaller hires area on phones;
+   - asks for each detailed tile that is the same as in an earlier copy of
+     the map at the address it had then, so a new copy doesn't send everyone
+     back for the whole map;
+   - draws one frame for each tile that arrives, not a second of frames at
+     the screen's full rate, so a map whose tiles come in slowly doesn't
+     keep the GPU flat out while they do;
    - keeps BlueMap's menu to what a visitor uses: the rest is hidden;
    - holds the camera over the part of the world that is rendered, so nobody
      drifts out into the void;
@@ -39,6 +45,43 @@
   const tell = (type, detail) => {
     if (embedded) window.parent.postMessage({ source: 'jod-map', type, ...detail }, location.origin);
   };
+
+  /* ─── tiles kept from an earlier copy ──────────────────────── */
+
+  /* A new copy of the map has a new version, and the viewer reads the map
+     under it; but a detailed tile that is the same as in an earlier copy is
+     asked for at the address it had then (facts.kept, written by
+     scripts/bluemap-brand.mjs: { version: 'x,z x,z …' }), which the browser
+     and the CDN already hold. Without this every copy sent every visitor
+     back for the whole map, a tile at a time, even when only a corner of it
+     had changed. The /bluemap-data route keeps both addresses for a year. */
+  const kept = new Map();
+  for (const [v, list] of Object.entries(facts.kept || {})) {
+    for (const xz of String(list).split(' ')) if (xz) kept.set(xz, v);
+  }
+  if (kept.size && facts.version && facts.map && typeof window.fetch === 'function') {
+    const prefix = `/bluemap-data/${facts.version}/maps/${facts.map}/tiles/0/`;
+    /* x-2/1/6/z-2/8/4.prbm.gz → -216,-284, as BlueMap lays the tiles out */
+    const TILE = /^x(-?[\d/]+?)\/z(-?[\d/]+)\.prbm(\.gz)?$/;
+    const coord = (s) => Number(s.replace(/\//g, ''));
+    const native = window.fetch.bind(window);
+    window.fetch = (input, init) => {
+      try {
+        const asked = input instanceof Request ? input.url : String(input);
+        const url = new URL(asked, location.href);
+        if (url.origin === location.origin && url.pathname.startsWith(prefix)) {
+          const tail = url.pathname.slice(prefix.length);
+          const m = TILE.exec(tail);
+          const v = m && kept.get(`${coord(m[1])},${coord(m[2])}`);
+          if (v) {
+            url.pathname = `/bluemap-data/${v}/maps/${facts.map}/tiles/0/${tail}`;
+            return native(input instanceof Request ? new Request(url.href, input) : url.href, init);
+          }
+        }
+      } catch { /* anything unexpected goes out as it was asked */ }
+      return native(input, init);
+    };
+  }
 
   const jod = (window.jod = {
     ready: false,
@@ -170,6 +213,23 @@
     if (voidColor && skyColor && voidColor.r + voidColor.g + voidColor.b < 0.02) {
       voidColor.setRGB(skyColor.r * 0.62, skyColor.g * 0.6, skyColor.b * 0.66);
       viewer.redraw();
+    }
+
+    /* A tile that arrives draws one frame. BlueMap draws at the screen's full
+       rate for a whole second after every tile, which is over in a moment when
+       the map comes out of a warm cache; but when the tiles come slowly (a new
+       copy of the map, a base map nobody has opened yet) they arrive a few a
+       second for a minute, and the map draws flat out all that time: it
+       stutters on a phone and a laptop runs hot. Between those single frames
+       BlueMap still draws every 50 ms for the animated blocks, and moving the
+       camera still draws at the full rate. */
+    const events = viewer.events ?? app.events;
+    if (events && typeof viewer.redraw === 'function' && 'lastFrame' in viewer) {
+      events.removeEventListener('bluemapTileLoaded', viewer.redraw);
+      events.addEventListener('bluemapTileLoaded', () => {
+        /* BlueMap's loop draws once 50 ms have passed since its last frame */
+        viewer.lastFrame = Math.min(viewer.lastFrame, performance.now() - 50);
+      });
     }
 
     /* Paused, the viewer draws nothing and stops asking for players. */

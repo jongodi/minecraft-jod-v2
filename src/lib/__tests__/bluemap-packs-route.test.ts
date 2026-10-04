@@ -10,12 +10,15 @@ vi.mock('@/lib/bluemap-snapshot.json', () => ({
     files: ['maps/world/settings.json', 'maps/world/tiles/0/x0/z0.prbm.gz'],
     blob: { base: 'https://store.private.blob.vercel-storage.com', access: 'private' },
     packs: { names: ['bluemap-data/packs/vpack-0.pack'], at: [[0, 0, 10], [0, 10, 5]] },
+    /* the tile is the same as in the copy before, and keeps that copy's address */
+    sums: ['0123456789abcdef', 'fedcba9876543210'],
+    since: ['vpack', 'vold'],
   },
 }));
 
 const PACK = Buffer.from('{"map":12}\x1f\x8b\x08\x00\x07');
-const ask = (path: string) => GET(new Request(`https://jod.test/bluemap-data/vpack/${path}`), {
-  params: Promise.resolve({ path: ['vpack', ...path.split('/')] }),
+const ask = (path: string, version = 'vpack') => GET(new Request(`https://jod.test/bluemap-data/${version}/${path}`), {
+  params: Promise.resolve({ path: [version, ...path.split('/')] }),
 });
 
 /* what the store answers to a range request on the pack */
@@ -107,6 +110,24 @@ describe('/bluemap-data, packed copy', () => {
 
     const tile = await ask('maps/world/tiles/0/x0/z0.prbm.gz');
     expect(Buffer.from(await tile.arrayBuffer()).equals(PACK.subarray(10, 15))).toBe(true);
+  });
+
+  it('keeps a tile for a year under the version it has been the same since, and only that file', async () => {
+    vi.mocked(get).mockImplementation(async (_name, opts) => ranged((opts?.headers as Record<string, string>).range));
+
+    const tile = await ask('maps/world/tiles/0/x0/z0.prbm.gz', 'vold');
+    expect(tile.status).toBe(200);
+    expect(Buffer.from(await tile.arrayBuffer()).equals(PACK.subarray(10, 15))).toBe(true);
+    expect(tile.headers.get('Cache-Control')).toContain('immutable');
+    /* under the copy's own version too */
+    expect((await ask('maps/world/tiles/0/x0/z0.prbm.gz')).headers.get('Cache-Control')).toContain('immutable');
+
+    /* a file that changed since then is not that version's to keep */
+    const settings = await ask('maps/world/settings.json', 'vold');
+    expect(await settings.text()).toBe('{"map":12}');
+    expect(settings.headers.get('Cache-Control')).not.toContain('immutable');
+    /* nor is any other version the tile never had */
+    expect((await ask('maps/world/tiles/0/x0/z0.prbm.gz', 'vother')).headers.get('Cache-Control')).not.toContain('immutable');
   });
 
   it('reads the map off the server when the store will not answer at all', async () => {

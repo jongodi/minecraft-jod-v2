@@ -72,7 +72,7 @@ import { fileURLToPath } from 'node:url';
 import { BlobAccessError, BlobStoreNotFoundError, BlobStoreSuspendedError, del, get, list, put } from '@vercel/blob';
 import { MAIN_MAP, startTileBytes, versionOf } from './bluemap-brand.mjs';
 import { baseConfig, DRAWING, getKey, MAPS_DIR } from './bluemap-conf.mjs';
-import { BASES_DIR, basePackDir, blobsOf, manifestText, packBody, PACK_BYTES, planPacks } from './bluemap-pack.mjs';
+import { BASES_DIR, basePackDir, blobsOf, manifestText, packBody, PACK_BYTES, planPacks, sinceOf, sumOf } from './bluemap-pack.mjs';
 
 const ROOT  = process.cwd();
 const API   = 'https://api.exaroton.com/v1/servers';
@@ -375,13 +375,18 @@ function prune(dir, keep) {
 }
 
 /* Packs the base map's files, sends the packs to the store under a folder of
-   its own, and answers where the store is and the packs. The store is the
-   one the main map is in, public or private as it was made. */
+   its own, and answers where the store is, the packs, and each file's
+   fingerprint and the version it is read under (a file the copy before
+   already had keeps its address, as on the main map). The store is the one
+   the main map is in, public or private as it was made. */
 async function sendBase(base, files, version, previous) {
   const mainBlob = readJson(join(ROOT, 'src', 'lib', 'bluemap-snapshot.json'), {}).blob;
   let access = process.env.BLOB_ACCESS === 'private' || previous.blob?.access === 'private' || mainBlob?.access === 'private' ? 'private' : 'public';
   let storeBase = null;
-  const plan = planPacks(files, (rel) => statSync(localFile(rel)).size, version, PACK_BYTES, basePackDir(base));
+  const sizeOf = (rel) => statSync(localFile(rel)).size;
+  const sums = files.map((rel) => sumOf(readFileSync(localFile(rel))));
+  const since = sinceOf(files, sums, sizeOf, previous, version);
+  const plan = planPacks(files, sizeOf, version, PACK_BYTES, basePackDir(base));
   const bytes = plan.at.reduce((sum, [, , size]) => sum + size, 0);
   const count = plan.names.length;
   console.log(`  Sendi í Vercel Blob: ${files.length} skrár í ${count} ${count === 1 ? 'pakka' : 'pökkum'} (${mb(bytes)} MB)…`);
@@ -407,7 +412,9 @@ async function sendBase(base, files, version, previous) {
     console.log(`    ${p + 1} / ${count}  ${mb(body.length)} MB`);
   }
   if (!storeBase) throw new Error('Fann ekki slóð geymslunnar.');
-  return { blob: { base: storeBase, access }, packs: plan };
+  const kept = since.filter((v) => v !== version).length;
+  if (kept) console.log(`  ${kept} af ${files.length} skrám eru eins og í fyrra afriti og halda slóðinni sinni.`);
+  return { blob: { base: storeBase, access }, packs: plan, sums, since };
 }
 
 /* The site reads each file out of its pack with a range request. Ask for the

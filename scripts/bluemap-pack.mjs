@@ -16,6 +16,18 @@
 // only ever lists and cleans up bluemap-data/, so it never sees them, and
 // map:bases only ever lists bluemap-bases/<id>/.
 
+//
+// A copy's version is in every address the viewer reads it under, so a file
+// at an address is never anything else, and the browser and the CDN keep it
+// for a year. A new copy has a new version, but most of its files are the
+// same as the copy before (a sync after a few builds redraws a few dozen of a
+// thousand tiles), so each file keeps the version it was first sent under for
+// as long as its bytes stay the same (`since` in the manifest, told by `sums`)
+// and the viewer reads the map's detailed tiles at those addresses: a new copy
+// sends visitors back only for the tiles that changed.
+
+import { createHash } from 'node:crypto';
+
 export const BLOB_DIR = 'bluemap-data';
 export const PACK_DIR = `${BLOB_DIR}/packs`;
 export const BASES_DIR = 'bluemap-bases';
@@ -64,6 +76,39 @@ export function packBody(files, plan, p, read) {
 export function blobsOf(manifest) {
   if (!manifest?.blob || !Array.isArray(manifest.files)) return [];
   return manifest.packs?.names ?? manifest.files.map((rel) => `${BLOB_DIR}/${rel}`);
+}
+
+/** A short fingerprint of a file's bytes, kept in the manifest (`sums`) so the
+    next copy can tell which files are the same without the bytes at hand. */
+export function sumOf(body) {
+  return createHash('sha256').update(body).digest('hex').slice(0, 16);
+}
+
+/* map:sync's own rule (scripts/sync-map.mjs): tiles and the texture atlas
+   change size whenever they are redrawn */
+const SIZE_TELLS = /^maps\/[^/]+\/(tiles\/|textures\.json)/;
+
+/** For each of `files`, with its `sums`, the version it is read under: the
+    version the same bytes were first sent under, or this copy's `version`
+    for a file that is new or changed. `previous` is the manifest this copy
+    replaces. One written before sums were kept can only say a tile is the
+    same by its size (as map:sync itself decides what to fetch), and is asked
+    only about tiles and the texture atlas; anything else starts afresh. */
+export function sinceOf(files, sums, sizeOf, previous, version) {
+  const was = previous?.version ?? null;
+  const prevFiles = Array.isArray(previous?.files) ? previous.files : [];
+  const index = new Map(prevFiles.map((rel, i) => [rel, i]));
+  const parallel = (list) => Array.isArray(list) && list.length === prevFiles.length;
+  const prevSums = parallel(previous?.sums) ? previous.sums : null;
+  const prevSince = parallel(previous?.since) ? previous.since : null;
+  const prevAt = parallel(previous?.packs?.at) ? previous.packs.at : null;
+  return files.map((rel, i) => {
+    const j = index.get(rel);
+    if (!was || j === undefined) return version;
+    const kept = prevSince?.[j] ?? was;
+    if (prevSums) return prevSums[j] === sums[i] ? kept : version;
+    return SIZE_TELLS.test(rel) && prevAt?.[j]?.[2] === sizeOf(rel) ? kept : version;
+  });
 }
 
 /** The manifest as it is written to src/lib/bluemap-snapshot.json (and a base

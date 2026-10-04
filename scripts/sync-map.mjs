@@ -36,7 +36,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, s
 import { dirname, join, relative, sep } from 'node:path';
 import { BlobAccessError, BlobStoreNotFoundError, BlobStoreSuspendedError, del, get, list, put } from '@vercel/blob';
 import { brand, MAIN_MAP, OWN_FILES, versionOf } from './bluemap-brand.mjs';
-import { BLOB_DIR, blobsOf, manifestText, packBody, planPacks } from './bluemap-pack.mjs';
+import { BLOB_DIR, blobsOf, manifestText, packBody, planPacks, sinceOf, sumOf } from './bluemap-pack.mjs';
 
 const ROOT     = process.cwd();
 let REMOTE     = 'bluemap/web';   // BlueMap's web folder on the server; read from its webapp.conf in main()
@@ -191,21 +191,27 @@ function readManifest() {
   try { return JSON.parse(readFileSync(MANIFEST, 'utf8')); } catch { return { syncedAt: null, files: [] }; }
 }
 
-function writeManifest(syncedAt, files, { blob, packs }, changed = true) {
-  writeFileSync(MANIFEST, manifestText({ syncedAt, version: versionOf(syncedAt), files, blob, packs }));
+function writeManifest(syncedAt, files, { blob, packs, sums, since }, changed = true) {
+  writeFileSync(MANIFEST, manifestText({ syncedAt, version: versionOf(syncedAt), files, blob, packs, sums, since }));
   brand(ROOT);
   if (changed) console.log(`\nTil að birta það: git add public/bluemap src/lib/bluemap-snapshot.json src/lib/bluemap-viewer.json, commit og push.`);
 }
 
 /* Packs the map files, sends the packs to the store under this sync's
    version, drops what no copy in use still reads, and answers with where the
-   store is, whether it is public, and the packs. The store is either public or
+   store is, whether it is public, the packs, and each file's fingerprint and
+   the version it is read under (scripts/bluemap-pack.mjs): a file the copy
+   before already had keeps its address. The store is either public or
    private, decided when it was made; a private one is read with the token
    through the /bluemap-data route. */
 async function upload(files, syncedAt, previous) {
   let access = process.env.BLOB_ACCESS === 'private' || previous.blob?.access === 'private' ? 'private' : 'public';
   let base = null;
-  const plan = planPacks(files, (rel) => statSync(target(rel)).size, versionOf(syncedAt));
+  const version = versionOf(syncedAt);
+  const sizeOf = (rel) => statSync(target(rel)).size;
+  const sums = files.map((rel) => sumOf(readFileSync(target(rel))));
+  const since = sinceOf(files, sums, sizeOf, previous, version);
+  const plan = planPacks(files, sizeOf, version);
   const bytes = plan.at.reduce((sum, [, , size]) => sum + size, 0);
   const count = plan.names.length;
   console.log(`\nSendi kortið í Vercel Blob: ${files.length} skrár í ${count} ${count === 1 ? 'pakka' : 'pökkum'} (${mb(bytes)} MB)…`);
@@ -251,7 +257,9 @@ async function upload(files, syncedAt, previous) {
   for (let i = 0; i < stale.length; i += 100) await del(stale.slice(i, i + 100), { token: blobToken });
 
   console.log(`Í geymslunni: ${count} ${count === 1 ? 'pakki' : 'pakkar'}${stale.length ? `, ${stale.length} eldri skrár fjarlægðar` : ''}. Geymslan er ${access === 'public' ? 'opin' : 'lokuð'}.`);
-  return { blob: { base, access }, packs: plan };
+  const kept = since.filter((v) => v !== version).length;
+  if (kept) console.log(`${kept} af ${files.length} skrám eru eins og í fyrra afriti og halda slóðinni sinni, svo vafrar og CDN eiga þær áfram.`);
+  return { blob: { base, access }, packs: plan, sums, since };
 }
 
 /* The site reads each file out of its pack with a range request. Ask for the

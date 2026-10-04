@@ -3,8 +3,8 @@ import { parseWorldPoint, DEFAULT_LOCATIONS } from '@/lib/map-types';
 import { sanitizeMapConfig } from '@/lib/map';
 import { placesMarkerSet } from '@/lib/bluemap-markers';
 import { parseDataPath } from '@/lib/bluemap-snapshot';
-import { boundsOf, indexHtml, versionOf, viewerAssets } from '../../../scripts/bluemap-brand.mjs';
-import { blobsOf, manifestText, packBody, planPacks } from '../../../scripts/bluemap-pack.mjs';
+import { addressOf, boundsOf, indexHtml, keptTiles, versionOf, viewerAssets } from '../../../scripts/bluemap-brand.mjs';
+import { blobsOf, manifestText, packBody, planPacks, sinceOf, sumOf } from '../../../scripts/bluemap-pack.mjs';
 
 describe('parseWorldPoint', () => {
   it('reads what F3 and a copied /tp write', () => {
@@ -163,9 +163,81 @@ describe('packing the copy', () => {
   });
 
   it('writes each file\'s place on a line of its own and reads back the same', () => {
-    const manifest = { syncedAt: 'now', version: 'vx', files, packs: planPacks(files, sizeOf, 'vx') };
+    const sums = files.map((rel) => sumOf(bytes[rel]));
+    const manifest = { syncedAt: 'now', version: 'vx', files, packs: planPacks(files, sizeOf, 'vx'), sums, since: files.map(() => 'vx') };
     const text = manifestText(manifest);
     expect(text).toContain('\n      [0, 7, 10],\n');
     expect(JSON.parse(text)).toEqual(manifest);
+  });
+});
+
+describe('the files a new copy keeps', () => {
+  const files = ['maps/world/settings.json', 'maps/world/textures.json.gz', 'maps/world/tiles/0/x0/z0.prbm.gz', 'maps/world/tiles/0/x1/z0.prbm.gz'];
+  const bytes: Record<string, Buffer> = {
+    'maps/world/settings.json': Buffer.from('{"a":1}'),
+    'maps/world/textures.json.gz': Buffer.from('textures'),
+    'maps/world/tiles/0/x0/z0.prbm.gz': Buffer.from('tile zero'),
+    'maps/world/tiles/0/x1/z0.prbm.gz': Buffer.from('tile one'),
+  };
+  const sizeOf = (rel: string) => bytes[rel].length;
+  const sums = files.map((rel) => sumOf(bytes[rel]));
+  const copy = (version: string, since?: string[]) => ({
+    syncedAt: 'then', version, files, packs: planPacks(files, sizeOf, version), sums, ...(since ? { since } : {}),
+  });
+
+  it('fingerprints a file by its bytes', () => {
+    expect(sumOf(Buffer.from('tile zero'))).toBe(sumOf(Buffer.from('tile zero')));
+    expect(sumOf(Buffer.from('tile zero'))).not.toBe(sumOf(Buffer.from('tile zeri')));
+    expect(sumOf(Buffer.alloc(0))).toMatch(/^[0-9a-f]{16}$/);
+  });
+
+  it('keeps the version a file was first sent under for as long as its bytes stay the same', () => {
+    /* the second tile was redrawn, and a new tile came */
+    const next = [...files, 'maps/world/tiles/0/x2/z0.prbm.gz'];
+    const nextSums = [...sums.slice(0, 3), sumOf(Buffer.from('tile one, redrawn')), sumOf(Buffer.from('tile two'))];
+    expect(sinceOf(next, nextSums, () => 0, copy('vb', ['va', 'vb', 'va', 'va']), 'vc'))
+      .toEqual(['va', 'vb', 'va', 'vc', 'vc']);
+    /* a copy that says nothing of since: its files are its own version */
+    expect(sinceOf(files, sums, sizeOf, copy('vb'), 'vc')).toEqual(['vb', 'vb', 'vb', 'vb']);
+  });
+
+  it('starts afresh with no copy before, or one it cannot read', () => {
+    expect(sinceOf(files, sums, sizeOf, { syncedAt: null, files: [] }, 'vc')).toEqual(['vc', 'vc', 'vc', 'vc']);
+    expect(sinceOf(files, sums, sizeOf, null, 'vc')).toEqual(['vc', 'vc', 'vc', 'vc']);
+    /* sums that don't line up with the files are no sums at all */
+    expect(sinceOf(files, sums, sizeOf, { ...copy('vb'), sums: sums.slice(1), packs: undefined }, 'vc')).toEqual(['vc', 'vc', 'vc', 'vc']);
+  });
+
+  it('tells a copy from before sums by the size of its tiles and atlas, as map:sync does, and nothing else', () => {
+    const before = { syncedAt: 'then', version: 'vb', files, packs: planPacks(files, sizeOf, 'vb') };
+    const resized = (rel: string) => (rel.endsWith('x1/z0.prbm.gz') ? 99 : sizeOf(rel));
+    /* settings.json can change without changing size, so it never counts as the same */
+    expect(sinceOf(files, sums, resized, before, 'vc')).toEqual(['vc', 'vb', 'vb', 'vc']);
+  });
+
+  it('lists the detailed tiles kept from earlier copies, by version, for the viewer', () => {
+    const tiles = ['maps/world/tiles/0/x-2/1/6/z-2/8/4.prbm.gz', 'maps/world/tiles/0/x0/z0.prbm.gz', 'maps/world/tiles/0/x-1/z3.prbm.gz', 'maps/world/tiles/1/x0/z0.png', 'maps/world/textures.json.gz', 'maps/other/tiles/0/x5/z5.prbm.gz'];
+    expect(keptTiles(tiles, ['va', 'vc', 'va', 'va', 'va', 'va'], 'world', 'vc')).toEqual({ va: '-216,-284 -1,3' });
+    expect(keptTiles(tiles, ['vb', 'va', 'vc', 'vc', 'vc', 'vc'], 'world', 'vc')).toEqual({ va: '0,0', vb: '-216,-284' });
+    /* nothing to say without since, or with one that doesn't line up */
+    expect(keptTiles(tiles, undefined, 'world', 'vc')).toEqual({});
+    expect(keptTiles(tiles, ['va'], 'world', 'vc')).toEqual({});
+  });
+
+  it('says where the viewer reads each file: a kept tile under its own version, the rest under the copy\'s', () => {
+    const manifest = { version: 'vc', files, since: ['va', 'va', 'va', 'vc'] };
+    expect(files.map((rel, i) => addressOf(rel, i, manifest))).toEqual([
+      'vc/maps/world/settings.json', 'vc/maps/world/textures.json.gz', 'va/maps/world/tiles/0/x0/z0.prbm.gz', 'vc/maps/world/tiles/0/x1/z0.prbm.gz',
+    ]);
+    expect(addressOf(files[2], 2, { version: 'vc', files })).toBe('vc/maps/world/tiles/0/x0/z0.prbm.gz');
+  });
+
+  it('hands the kept tiles to jod.js in the page, and says nothing when there are none', () => {
+    const assets = { script: './assets/index-A.js', style: './assets/index-B.css', version: '5.28' };
+    const map = { id: 'world', root: '/bluemap-data/vc/maps', version: 'vc', syncedAt: null, files: new Set<string>(), bounds: null, start: null };
+    const facts = (html: string) => JSON.parse(/window\.JOD_MAP = (\{.*\});/.exec(html)![1]);
+    expect(facts(indexHtml(assets, { ...map, kept: { va: '0,0 1,0' } })).kept).toEqual({ va: '0,0 1,0' });
+    expect(facts(indexHtml(assets, { ...map, kept: {} }))).not.toHaveProperty('kept');
+    expect(facts(indexHtml(assets, map))).not.toHaveProperty('kept');
   });
 });
