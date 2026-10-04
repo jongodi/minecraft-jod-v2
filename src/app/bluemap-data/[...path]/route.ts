@@ -1,5 +1,6 @@
 import { BlobNotFoundError } from '@vercel/blob';
-import { hasSnapshot, inSnapshot, isCurrentVersion, isPacked, parseDataPath, snapshot } from '@/lib/bluemap-snapshot';
+import { mainCopy, parseDataPath } from '@/lib/bluemap-snapshot';
+import { baseCopyFor } from '@/lib/bluemap-bases';
 import { contentTypeOf, readCopy } from '@/lib/bluemap-copy';
 import { discard, fetchFile, isMissing, resolveServerId } from '@/lib/bluemap-server';
 
@@ -16,6 +17,11 @@ import { discard, fetchFile, isMissing, resolveServerId } from '@/lib/bluemap-se
    and the CDN keep it for a year, and a returning visitor reads the whole map
    from disk. The version is only in the address: the manifest this
    deployment carries says which packs hold its copy.
+
+   The base maps (/kort/<id>) are read here the same way, each from its own
+   copy: the map named in the path (maps/<id>/…) picks the manifest
+   (src/lib/bluemap-bases.ts), and its own version is the one kept for a year.
+   Any other map is the main map's copy, as it always was.
 
    Should the store refuse to be read (paused for going over the plan's usage,
    or a token that no longer fits it), the same files come straight off the
@@ -59,15 +65,16 @@ export async function GET(req: Request, { params }: Context): Promise<Response> 
     return answer(400, 'no-store');
   }
   const { version, path } = parseDataPath(segments);
-  const current = isCurrentVersion(version);
+  const copy = baseCopyFor(path) ?? mainCopy;
+  const current = copy.isCurrent(version);
 
   /* The copy lists every file it holds, so anything else is missing without
      asking the store: the tiles past the edge of the rendered world, mostly. */
-  if (hasSnapshot && !inSnapshot(path)) return answer(404, current ? FOREVER : MISSING_BRIEF);
+  if (copy.hasFiles && !copy.has(path)) return answer(404, current ? FOREVER : MISSING_BRIEF);
 
-  const blob = snapshot.blob;
+  const blob = copy.blob;
   if (!blob?.base) return answer(404, MISSING_BRIEF);
-  if (blob.access === 'public' && !isPacked) {
+  if (blob.access === 'public' && !copy.isPacked) {
     return Response.redirect(`${blob.base}/${BLOB_DIR}/${path.split('/').map(encodeURIComponent).join('/')}`, 307);
   }
   if (blob.access === 'private' && !process.env.BLOB_READ_WRITE_TOKEN) return fromServer(path);
@@ -75,7 +82,7 @@ export async function GET(req: Request, { params }: Context): Promise<Response> 
 
   const cache = current ? FOREVER : FOUND_BRIEF;
   try {
-    const file = await readCopy(path, current ? undefined : req.headers.get('if-none-match') ?? undefined);
+    const file = await readCopy(path, current ? undefined : req.headers.get('if-none-match') ?? undefined, copy);
     if (!file) return answer(404, current ? FOREVER : MISSING_BRIEF);
     const etag = file.etag ? { ETag: file.etag } : undefined;
     if (file.status === 304) return answer(304, cache, null, etag);

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import BadlandsHome from '@/components/badlands/BadlandsHome';
 import { syncedOn } from '@/lib/bluemap-snapshot';
+import { baseLinks } from '@/lib/bluemap-bases';
 import { sharedPlace } from '@/lib/place-share';
 
 /* A place's shareable link: the home page itself, with the place's postcard
@@ -31,5 +32,5 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function Place({ params }: Props) {
   const shared = await sharedPlace((await params).id);
   if (!shared) redirect('/#heimur');
-  return <BadlandsHome syncedOn={syncedOn} />;
+  return <BadlandsHome syncedOn={syncedOn} bases={baseLinks()} />;
 }

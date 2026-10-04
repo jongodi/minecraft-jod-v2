@@ -6,6 +6,7 @@ import Link from 'next/link';
 import type { MapConfig, WorldPoint } from '@/lib/map-types';
 import type { PlacePrints } from '@/app/api/crew/places/route';
 import { DEFAULT_CONFIG } from '@/lib/map-types';
+import { baseAt, baseUrl, type BaseLink } from '@/lib/base-links';
 import viewerFiles from '@/lib/bluemap-viewer.json';
 import { CloseIcon, FoldedMapIcon, Lantern, MoonIcon, PictureIcon, Sun } from './Bits';
 import { plural } from '@/lib/format';
@@ -79,6 +80,8 @@ interface Props {
   plates: Plate[];
   server: ServerState;
   syncedOn: string | null;
+  /** the other bases with a 3D map of their own (/kort/<id>) */
+  bases: BaseLink[];
   /** which room is open over the world, if any */
   room: RoomId | null;
   onCloseRoom: () => void;
@@ -94,7 +97,7 @@ interface Props {
     the shelf) rise from the foot of the frame when their door is opened,
     leaving the world in view above them. *Heill skjár* makes the frame itself
     the whole screen, so nothing reloads; on a phone the lantern does. */
-function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
+function World({ plates, server, syncedOn, bases, room, onCloseRoom }: Props) {
   const [config, setConfig]   = useState<MapConfig>(DEFAULT_CONFIG);
   const [selected, setSelect] = useState<number | null>(null);
   const [drawn, setDrawn]     = useState(false);
@@ -345,6 +348,8 @@ function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
   const canFollow = viewer && !drawn && !still;
   useEffect(() => { if (!canFollow && following) jod()?.unfollow(); }, [canFollow, following, jod]);
   const here = place ? pinned[String(place.id)] ?? null : null;
+  /* a place at another base is seen in that base's own 3D map, not this one */
+  const atBase = place?.world ? baseAt(bases, place.world) : null;
 
   return (
     <section id="heimur" className="b-world" aria-labelledby="heimur-title">
@@ -492,8 +497,14 @@ function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
                   <button type="button" className="b-card__x" onClick={() => setSelect(null)} aria-label="Loka póstkortinu"><CloseIcon /></button>
                 </span>
               </figcaption>
-              {/* a place that stands in the world can be visited there */}
-              {place.world && (!viewer || still) && !drawn && (
+              {/* a place that stands in the world can be visited there, and one at
+                  another base in that base's own map */}
+              {atBase ? (
+                // eslint-disable-next-line @next/next/no-html-link-for-pages -- BlueMap's own app, not a Next page
+                <a href={baseUrl(atBase.id)} className="b-btn b-btn--small b-btn--solid b-card__fly">
+                  <Lantern lit /> {atBase.name} í þrívídd
+                </a>
+              ) : place.world && (!viewer || still) && !drawn && (
                 <button type="button" className="b-btn b-btn--small b-btn--solid b-card__fly" onPointerEnter={warmViewer} onFocus={warmViewer}
                   onClick={() => (phone ? openFull() : setLive(true))}>
                   <Lantern lit /> Sjá staðinn í þrívídd
@@ -550,6 +561,21 @@ function World({ plates, server, syncedOn, room, onCloseRoom }: Props) {
           {visited.hillan && <Shelf version={server.version} />}
         </Drawer>
       </div>
+
+      {/* The other bases, each with a 3D map of its own, apart from this one. */}
+      {bases.length > 0 && (
+        <nav className="b-bases" aria-labelledby="stodvar-title">
+          <p id="stodvar-title" className="b-bases__head">Aðrar stöðvar · hver með sitt þrívíddarkort</p>
+          <ul className="b-bases__list">
+            {bases.map(b => (
+              <li key={b.id}>
+                {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- BlueMap's own app, not a Next page */}
+                <a href={baseUrl(b.id)} className="b-btn b-btn--small b-btn--ghost b-bases__link"><Lantern lit /> {b.name}</a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )}
 
       {album && <Album plates={plates} onClose={() => setAlbum(false)} />}
     </section>

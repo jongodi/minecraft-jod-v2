@@ -5,6 +5,7 @@ import '@/app/board.css';
 import { useCallback, useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import type { GalleryPhoto } from '@/lib/gallery';
+import type { BaseLink } from '@/lib/base-links';
 import Sky from './Sky';
 import AddressBar from './AddressBar';
 import Hero from './Hero';
@@ -25,7 +26,7 @@ const PRESSED_HOLD_MS = 1500;
 /** The evening: the sunset, the world, and the campfire. The crew and the
     shelf are rooms that open over the world; the hash says which is open, so
     /#hopur and /#hillan work from anywhere and the back button closes a room. */
-export default function BadlandsHome({ syncedOn }: { syncedOn: string | null }) {
+export default function BadlandsHome({ syncedOn, bases }: { syncedOn: string | null; bases: BaseLink[] }) {
   const server = useServerStatus();
   const season = useSeason();
   const reduce = useReducedMotionPref();
@@ -107,7 +108,7 @@ export default function BadlandsHome({ syncedOn }: { syncedOn: string | null }) 
       <AddressBar links={SECTIONS} activeId={active} onDoor={openDoor} />
       <main>
         <Hero server={server} season={season} />
-        <World plates={plates} server={server} syncedOn={syncedOn} room={room} onCloseRoom={closeRoom} />
+        <World plates={plates} server={server} syncedOn={syncedOn} bases={bases} room={room} onCloseRoom={closeRoom} />
       </main>
       <Footer />
     </div>

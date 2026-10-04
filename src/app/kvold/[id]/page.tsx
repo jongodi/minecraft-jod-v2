@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import BadlandsHome from '@/components/badlands/BadlandsHome';
 import { syncedOn } from '@/lib/bluemap-snapshot';
+import { baseLinks } from '@/lib/bluemap-bases';
 import { nightMetadata, sharedNight } from '@/lib/night-share';
 
 /* One play night's shareable link, /kvold/<id>#hopur: the home page with the
@@ -21,5 +22,5 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function Night({ params }: Props) {
   if (!(await sharedNight((await params).id))) redirect('/kvold#hopur');
-  return <BadlandsHome syncedOn={syncedOn} />;
+  return <BadlandsHome syncedOn={syncedOn} bases={baseLinks()} />;
 }

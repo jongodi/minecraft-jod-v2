@@ -1,4 +1,9 @@
 {
+  "shell": {
+    "script": "/bluemap/assets/index-DJzYl7wx.js",
+    "style": "/bluemap/assets/index-C6zAnFcX.css",
+    "version": "5.27"
+  },
   "warm": [
     "/bluemap/assets/index-DJzYl7wx.js",
     "/bluemap/assets/index-C6zAnFcX.css",

@@ -125,6 +125,31 @@ Staður sem fær hnit í kortaritlinum (*Í heiminum (X Y Z)*, eins og F3 sýnir
 - `remove-caves-below-y`: hærra gildi sleppir fleiri lokuðum hellum og minnkar reitina.
 - Kort sem vefurinn sýnir ekki (nether, end) má taka úr sambandi svo þjónninn teikni þau ekki.
 
+### Grunnkortin
+
+Hinar stöðvarnar (Joðville, Faraway lands, Bústaður og Shroomy island, í `src/lib/map-bases.json`) eiga hver sitt litla BlueMap-kort, aðskilið frá aðalkortinu, og sinn skoðara á vefnum á `/kort/<id>`, til dæmis `/kort/jodville`. Undir heiminum á forsíðunni er röðin *Aðrar stöðvar* með tengli á hverja stöð sem komin er á vefinn, og póstkort staðar sem stendur innan stöðvar býður kort hennar (*Joðville í þrívídd*).
+
+```bash
+npm run map:bases                       # sýnir stillingarnar sem yrðu skrifaðar á þjóninn
+npm run map:bases -- --write            # skrifar þær sem vantar á þjóninn
+npm run map:bases -- --freeze           # frystir öll grunnkortin
+npm run map:bases -- --refresh <id>     # affrystir eitt kort og teiknar það upp á nýtt
+npm run map:bases -- --upload [id...]   # afritar kortin á vefinn (öll ef ekkert er nefnt)
+npm run map:bases -- --prune [id...]    # fjarlægir afrit sem vefurinn les ekki lengur
+```
+
+Kortin uppfærast aldrei sjálf: þau eru fryst og aðeins teiknuð upp á nýtt þegar beðið er um það. Til að uppfæra eitt:
+
+1. `npm run map:bases -- --refresh <id>` og bíða þar til teikningunni er lokið (`/bluemap` í stjórnborði þjónsins sýnir framvinduna)
+2. `npm run map:bases -- --freeze`
+3. `npm run map:bases -- --upload <id>`
+4. `git add src/lib/map-bases/<id>.json`, commit og push
+5. þegar vefurinn er kominn upp með því: `npm run map:bases -- --prune <id>`
+
+`--upload` sækir möppu kortsins (`bluemap/web/maps/<id>`) af þjóninum í `scripts/out/map-bases/` (ekki í git), aðeins það sem hefur breyst síðan síðast, og sendir það í Vercel Blob í fáum pökkum undir `bluemap-bases/<id>/`, eins og aðalkortið er sent. Skráalistinn, staður hverrar skrár í pökkunum og útgáfan fara í `src/lib/map-bases/<id>.json`. Hafi ekkert breyst er ekkert sent (`--force` sendir samt). Skipunin les og eyðir aðeins undir `bluemap-bases/<id>/`; `map:sync` og Map sync-verkið lesa aðeins `bluemap-data/`, svo hvorugt getur snert gögn hins. Pakkar sem vefurinn gæti enn verið að lesa eru aldrei fjarlægðir: nýja afritið, það sem það leysir af hólmi og það sem síðasta commit og `origin/main` nefna. `--prune` fjarlægir svo eldra afritið þegar nýja er komið í loftið. Skipanirnar þurfa `EXAROTON_API_KEY` og `BLOB_READ_WRITE_TOKEN` í `.env.local`, og best er að keyra `--upload` meðan þjónninn er í gangi.
+
+Skoðarinn á `/kort/<id>` er sami skoðari og á `/bluemap`, í sömu fötum, smíðaður með vefnum sem fastar skrár: hann sýnir aðeins kort stöðvarinnar, les það úr afriti hennar um `/bluemap-data`, opnast yfir miðju stöðvarinnar úr sömu fjarlægð og sama horni og aðalkortið, og myndavélinni er haldið yfir teiknaða svæðinu. Leikmenn og luktir staðanna koma um `/bluemap` eins og á aðalkortinu. Stöð sem hefur ekki verið afrituð á vefinn hefur engan skoðara og engan tengil.
+
 ## Tungumál
 
 Viðmótið, villuskilaboð og sjálfgefnir myndatextar eru á íslensku. Dagsetningar og tölur nota `is-IS`. Það sem félagi skrifar á vegginn sinn er geymt eins og það var slegið inn; React sér um að birta það örugglega.

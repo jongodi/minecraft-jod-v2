@@ -1,6 +1,7 @@
 import { readMap } from '@/lib/map';
 import { PLACES_SET, placesMarkerSet } from '@/lib/bluemap-markers';
-import { hasSnapshot, inSnapshot } from '@/lib/bluemap-snapshot';
+import { hasSnapshot, inSnapshot, mainCopy } from '@/lib/bluemap-snapshot';
+import { baseCopyFor } from '@/lib/bluemap-bases';
 import { readCopy } from '@/lib/bluemap-copy';
 import { discard, fetchFile, isMissing, isOnline, resolveServerId } from '@/lib/bluemap-server';
 
@@ -120,15 +121,17 @@ function fromSnapshot(path: string): Response {
 }
 
 /* The marker sets BlueMap wrote, from the server while it runs and from the
-   copy while it is stopped; an empty set of sets if neither answers. */
+   copy while it is stopped (a base map's from its own, /kort/<id>); an empty
+   set of sets if neither answers. */
 async function baseMarkers(path: string, live: { id: string; token: string } | null): Promise<Record<string, unknown>> {
   try {
     let text: string | null = null;
+    const copy = baseCopyFor(path) ?? mainCopy;
     if (live) {
       const res = await fetchFile(live.id, live.token, path);
       text = res.ok ? await res.text() : (await discard(res), null);
-    } else if (inSnapshot(path)) {
-      const file = await readCopy(path);
+    } else if (copy.has(path)) {
+      const file = await readCopy(path, undefined, copy);
       text = file?.body ? await new Response(file.body).text() : null;
     }
     const data = text ? JSON.parse(text) : null;

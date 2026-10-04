@@ -16,7 +16,9 @@
 //   public/bluemap/lang/settings.conf  Icelandic first (lang/is.conf is ours and
 //                                 map:sync leaves it alone)
 //   src/lib/bluemap-viewer.json   the viewer's files, for the home page to fetch
-//                                 ahead when a visitor reaches for the map
+//                                 ahead when a visitor reaches for the map, and
+//                                 for the base maps' viewers (/kort/<id>, built
+//                                 by baseViewer below) to load
 //
 // and adds `version` to src/lib/bluemap-snapshot.json if an older sync left it out.
 
@@ -89,9 +91,13 @@ export function viewerAssets(html) {
   return { script, style, version };
 }
 
-export function indexHtml({ script, style, version }, map) {
-  const title = 'Heimurinn · JOÐ';
-  const description = 'Heimasvæðið á JOÐ í þrívídd: dragðu, snúðu og stækkaðu. play.jodcraft.world';
+/** The viewer's page. `page` names another map's viewer (a base map's,
+    /kort/<id>): its title, description and where the page comes from; left
+    out, it is the main map's page at /bluemap. */
+export function indexHtml({ script, style, version }, map, page = {}) {
+  const title = page.title ? `${page.title} · JOÐ` : 'Heimurinn · JOÐ';
+  const description = page.description ?? 'Heimasvæðið á JOÐ í þrívídd: dragðu, snúðu og stækkaðu. play.jodcraft.world';
+  const origin = page.origin ?? 'Written by scripts/bluemap-brand.mjs (npm run map:brand). map:sync overwrites BlueMap\'s own copy of this file and brands it again.';
   const data = map.root ? `${map.root}/${map.id}` : null;
   const preload = [
     data && map.files.has(`maps/${map.id}/settings.json`) && `${data}/settings.json`,
@@ -103,9 +109,11 @@ export function indexHtml({ script, style, version }, map) {
     syncedAt: map.syncedAt,
     bounds: map.bounds,
     start: map.start,
+    /* the plank's title on a base map's viewer (public/bluemap-jod/jod.js) */
+    ...(page.title ? { title: page.title } : {}),
   };
   return `<!DOCTYPE html>
-<!-- Written by scripts/bluemap-brand.mjs (npm run map:brand). map:sync overwrites BlueMap's own copy of this file and brands it again. -->
+<!-- ${esc(origin)} -->
 <html lang="is">
     <head>
         <meta charset="utf-8">
@@ -148,6 +156,49 @@ ${preload.map((href) => `        <link rel="preload" href="${esc(href)}" as="fet
     </body>
 </html>
 `;
+}
+
+/** A base map's own viewer (/kort/<id>), built when the site is built
+    (src/app/kort/[id]/[file]/route.ts): the main viewer's page and settings
+    for one map, read from that base's copy. `shell` is the viewer's files as
+    src/lib/bluemap-viewer.json names them, `settings` the main viewer's
+    settings.json, `base` the base as src/lib/map-bases.json lists it and
+    `copy` its manifest (src/lib/map-bases/<id>.json). The camera opens on the
+    base's centre from the main map's distance and angle, and is held over
+    what is rendered; players and the places' lanterns come live through
+    /bluemap, as on the main map. */
+export function baseViewer(shell, settings, base, copy) {
+  const root = `/bluemap-data/${copy.version}/maps`;
+  /* map:x:y:z, then distance:rotation:angle:tilt:ortho:mode, as the main map opens */
+  const view = String(settings.startLocation ?? '').split(':').slice(4);
+  const angle = view.length === 6 ? view.join(':') : '65:2.03:1.08:0:0:perspective';
+  const start = `${base.id}:${base.x}:${base.y}:${base.z}:${angle}`;
+  const r = base.radius;
+  const bounds = boundsOf(copy.files, base.id)
+    ?? { minX: base.x - r, maxX: base.x + r + 1, minZ: base.z - r, maxZ: base.z + r + 1, shape: 'box' };
+  const html = indexHtml(shell, {
+    id: base.id,
+    root,
+    version: copy.version,
+    syncedAt: copy.syncedAt,
+    files: new Set(copy.files),
+    bounds,
+    start,
+  }, {
+    title: base.name,
+    description: `${base.name} á JOÐ í þrívídd: dragðu, snúðu og stækkaðu. play.jodcraft.world`,
+    origin: 'Built from scripts/bluemap-brand.mjs by src/app/kort/[id]/[file]/route.ts when the site is built.',
+  });
+  return {
+    html,
+    settings: {
+      ...settings,
+      maps: [base.id],
+      mapDataRoot: root,
+      liveDataRoot: '/bluemap/maps',
+      startLocation: start,
+    },
+  };
 }
 
 const LANG_SETTINGS = `// Written by scripts/bluemap-brand.mjs: the viewer speaks Icelandic, and English is one choice away.
@@ -216,10 +267,16 @@ export function brand(root = process.cwd()) {
     start,
   }));
 
-  /* what the home page fetches ahead when a visitor reaches for the lantern */
+  /* what the home page fetches ahead when a visitor reaches for the lantern,
+     and the viewer's own files, which the base maps' viewers (/kort/<id>) share */
   const assets = viewerAssets(readFileSync(join(shell, 'index.html'), 'utf8'));
   const data = hasCopy && version ? `${root_}/${mapId}` : null;
   writeFileSync(join(root, 'src', 'lib', 'bluemap-viewer.json'), JSON.stringify({
+    shell: {
+      script: assets.script.replace(/^\.\//, '/bluemap/'),
+      style: assets.style.replace(/^\.\//, '/bluemap/'),
+      version: assets.version,
+    },
     warm: [
       assets.script.replace(/^\.\//, '/bluemap/'),
       assets.style.replace(/^\.\//, '/bluemap/'),
