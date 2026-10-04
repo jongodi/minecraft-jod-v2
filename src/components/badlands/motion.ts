@@ -3,7 +3,6 @@ import type { Transition } from 'framer-motion';
 /* One house style for motion. Critically damped unless a gesture with
    momentum came first; then a little overshoot reads as physical. */
 export const SPRING        = { type: 'spring', bounce: 0,   duration: 0.4 } as const satisfies Transition;
-export const SPRING_SNAPPY = { type: 'spring', bounce: 0,   duration: 0.3 } as const satisfies Transition;
 export const SPRING_THROW  = { type: 'spring', bounce: 0.2, duration: 0.4 } as const satisfies Transition;
 
 /** Where a flick at `velocity` px/s would come to rest (exponential decay, like scroll). */

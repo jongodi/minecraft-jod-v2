@@ -237,22 +237,6 @@ export function useAgo(ts: number | null): string {
   return `fyrir ${Math.floor(s / 60)} mín.`;
 }
 
-/** True once the element has been near the viewport; used to start effects lazily. */
-export function useNearViewport<T extends Element>(margin = '200px'): [React.RefObject<T>, boolean] {
-  const ref = useRef<T>(null);
-  const [near, setNear] = useState(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || !('IntersectionObserver' in window)) { setNear(true); return; }
-    const obs = new IntersectionObserver(entries => {
-      if (entries.some(e => e.isIntersecting)) { setNear(true); obs.disconnect(); }
-    }, { rootMargin: margin });
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, [margin]);
-  return [ref, near];
-}
-
 /** Whether a media query matches; false during SSR and on the first paint. */
 export function useMediaQuery(query: string): boolean {
   const [match, setMatch] = useState(false);

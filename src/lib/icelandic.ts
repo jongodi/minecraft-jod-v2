@@ -13,18 +13,6 @@ const MAP_LABELS: Record<string, string> = {
 };
 export const mapLabel = (value: string): string => MAP_LABELS[value] ?? value;
 
-const VERDICTS: Record<string, string> = { used: 'Í notkun', review: 'Yfirferð', 'safe-remove': 'Má fjarlægja', error: 'Villa' };
-export const verdictLabel = (value: string): string => VERDICTS[value] ?? value;
-const CONFIDENCE: Record<string, string> = { certain: 'Örugg', high: 'Mikil', medium: 'Miðlungs', low: 'Lítil' };
-export const confidenceLabel = (value: string): string => CONFIDENCE[value] ?? value;
-const KINDS: Record<string, string> = {
- texture: 'áferð', texture_meta: 'hreyfilýsigögn', model: 'líkan', blockstate: 'kubbaástand',
- item_definition: 'hlutaskilgreining', font: 'letur', particle: 'ögn', equipment: 'búnaður',
- atlas: 'áferðarsafn', sound: 'hljóð', sounds_json: 'hljóðaskrá', lang: 'tungumálaskrá',
- pack_meta: 'pakkalýsigögn', pack_png: 'pakkamynd', shader: 'skyggir', text: 'texti', other: 'annað',
-};
-export const assetKindLabel = (value: string): string => KINDS[value] ?? value;
-
 const LEGACY_CONTENT: Record<string, string> = {
   "BALLOON PARADISE": "Blöðruparadís",
   "CITY HALL": "Ráðhúsið",
@@ -78,16 +66,4 @@ export function localizeContent(value: string): string {
 export function errorMessage(error: unknown, fallback = 'Óvænt villa kom upp. Reyndu aftur.'): string {
   const message = error instanceof Error ? error.message : typeof error === 'string' ? error : '';
   return /[áðéíóúýþæö]/i.test(message) ? message : fallback;
-}
-export function jsonErrorMessage(error: unknown): string {
-  const message = error instanceof Error ? error.message : String(error);
-  const position = message.match(/position (\d+)/i)?.[1];
-  const reason = /unexpected end|unterminated/i.test(message)
-    ? 'JSON-skráin er ófullgerð.'
-    : /property name|double.quoted/i.test(message)
-      ? 'Heiti JSON-eiginleika þarf að vera innan tvöfaldra gæsalappa.'
-      : /comma|delimiter/i.test(message)
-        ? 'Kommu eða lokunartákn vantar í JSON.'
-        : 'Ógilt JSON. Athugaðu gæsalappir, kommur og sviga.';
-  return position ? `${reason} Staðsetning: ${position}.` : reason;
 }
