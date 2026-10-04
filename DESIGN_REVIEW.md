@@ -306,3 +306,29 @@ Two changes the owner asked for once the passes were in:
 - **The hero's copy button has its stamp back.** *Afritað* is struck across its corner on a press, as before pass 5; the hero no longer drops a toast. The bar's copy keeps the toast, which now says only *Afritað* and the address: the line telling the visitor to paste it into the game is gone, and so is the matching line on the place and night link toasts. A screen reader hears *Afritað* from a live region beside the hero button.
 - **The 3D map flies only to places on its own ground.** `map:brand` now writes the main map's rendered edges into `src/lib/bluemap-viewer.json`, the same edges the viewer holds its camera inside, and `mapAt` (`src/lib/base-links.ts`) decides which map shows a place. A place inside the edges flies the camera as before. A place at another base, Bleika setrið at Joðville for one, leaves the camera where it is, and its postcard's button opens that base's own map. A place beyond every rendered edge gets no 3D button at all.
 
+### The bolder pass
+
+Phase 4 refined the evening without restaging any of it: the same compositions, at better sizes. The owner asked for the design and layout to go further. Three places were still timid, and each was restaged in one commit. Judged with realistic data: the sandbox reaches neither the game server, the stats nor the head service, so screenshots were taken with an online server, three of the crew in, a full week of stats and drawn pixel heads served in their place.
+
+| Commit | What changed | Why |
+|---|---|---|
+| `65875ef` Hero | The name stands at the foot of the sunset among the mesas, the far ridge behind its letters and the middle and near ridges in front of their feet, at half a desktop's width and nine tenths of a phone's. The sun is the game's square sun, setting behind the far ridge on a wide screen. The address and the server's lantern share one line on the dark of the upper sky, the lantern with no panel. | The hero was three stacked layers with the live status floating in a box beside nothing; now it is one scene, and the ridges' existing parallax makes the name rise out of the land as the page scrolls, at no cost per frame. A round pale sun beside the name read as a fourth letter. |
+| `0196269` Posters | One wanted-poster anatomy for the room's board, the roll call and each wall: *Eftirlýst* across the top in the slab over a double rule, the outlaw's face large in a wooden frame, the name in the slab, the alias in red, the charge, the bounty as *Verðlaun*. | The word every wanted poster leads with was the smallest thing on these, the outlaw's face was a thumbnail, and the three pages used three different posters. |
+| `1ac648a` World | The lantern that boots the 3D map is itself the control, at six times its pixels on a wide screen and four on a phone, in a pool of night instead of a panel. | The design says the lantern is what you press; it was a small icon in a generic notched card. |
+
+Found on the way: the sun's size had been written to `--sun`, the sun's colour token, so the sun had been painted in the paper colour of the letters since the hero pass; it is `--sun-size` now.
+
+| Page | Mobile perf | LCP | CLS | Desktop |
+|---|---|---|---|---|
+| `/` | 97 (was 96) | 2.62 s | 0.000 | 100 |
+| `/crew` | 98 (was 97) | 2.28 s | 0.006 | 100 |
+| `/crew/stebbias` | 92 (was 90) | 3.36 s, the blocked skin image | 0.000 | 100 |
+
+First Load JS is unchanged at 138 kB for the home page. No horizontal overflow and no console errors at 360, 390, 768, 1024, 1440 and 1920 on any of the three pages; the server offline and reduced motion were checked on the hero.
+
+Not done, and why:
+
+- **Spacing on a pixel grid.** The spacing scale is already on a 4 px grid, every step a whole number of the art's 2 px pixels. What is off it are the fluid gutter and a few `clamp()` paddings, and pinning those to whole pixels would change nothing a visitor can see.
+- **Tilting the roll call's posters** to break the grid: rotated pixel type falls off its grid and smears.
+- **Still boxed:** the play night's card in the crew's room is a bordered panel, and the room's row of portraits is a row of equal frames. They are the next candidates for the same treatment.
+
