@@ -1215,16 +1215,33 @@ html.is-map-full { overflow: hidden; }
 .b-nightline.is-embers .b-nightline__kicker { color: var(--tc-white); }
 .b-nightline .b-night__heads { margin-top: var(--px); }
 
-.b-night {
-  display: grid; gap: var(--sp-4);
-  margin-block: var(--sp-6); padding: var(--sp-4) var(--sp-5);
-  border: var(--line) solid rgba(232, 220, 196, 0.18); background: var(--veil);
+/* A play night is the crew at a campfire, not a panel: the fire stands on a
+   strip of ground with the heads of who is coming gathered by it, and the
+   words above it. Only the form for lighting one keeps an edge (below). A
+   night opened from its own link (/kvold/<id>) is lit up for a moment. */
+.b-night { display: grid; gap: var(--sp-4); margin-block: var(--sp-7); }
+.b-night--none { grid-template-columns: auto minmax(0, 1fr) auto; align-items: end; column-gap: var(--sp-5); }
+.b-night.is-picked { padding: var(--sp-4); margin-inline: calc(var(--sp-4) * -1); background: var(--veil); box-shadow: 0 0 0 var(--px) var(--lantern-glow); }
+.b-night--live .b-night__kicker, .b-night--soon .b-night__kicker { color: var(--lantern); }
+/* the ground the fire stands on, and the heads beside it standing on the same line */
+.b-night__camp {
+  display: flex; align-items: flex-end; flex-wrap: wrap; gap: var(--sp-2) var(--sp-4);
+  padding-inline: var(--sp-2);
+  border-bottom: calc(var(--px) * 2) solid var(--tc-brown);
+  box-shadow: 0 var(--px) 0 var(--wood-dark);
+  isolation: isolate;
 }
-.b-night--none { grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; }
-.b-night--live, .b-night--soon, .b-night.is-picked { border-color: var(--lantern); }
-.b-night.is-picked { box-shadow: 0 0 0 var(--px) var(--lantern-glow); }
+.b-night__camp .b-night__heads { padding-bottom: var(--px); }
+/* the drawing's logs end two of its sixteen pixels above its foot: the fire is set down onto the ground */
+.b-night__camp .b-night__fire { position: relative; margin-bottom: calc(var(--fire, 3rem) * -0.125); }
+/* its light on the ground round it, where it burns; embers give none */
+.b-night__camp .b-night__fire:has(.b-fire__frame)::before {
+  content: ''; position: absolute; inset: -20% -70% 0; z-index: -1;
+  background: radial-gradient(ellipse 50% 45% at 50% 88%, color-mix(in oklab, var(--ember) 32%, transparent), transparent);
+  pointer-events: none;
+}
 /* several fires, soonest first: one stack, the way to light another at its foot */
-.b-nights { display: grid; gap: var(--sp-4); margin-block: var(--sp-6); }
+.b-nights { display: grid; gap: var(--sp-7); margin-block: var(--sp-6); }
 .b-nights > .b-night { margin-block: 0; scroll-margin-top: var(--sp-4); }
 .b-nights__more { justify-self: start; }
 .b-night__kicker { font-weight: 600; font-size: var(--fs-sm); letter-spacing: 0.04em; text-transform: uppercase; color: var(--tc-yellow); }
@@ -1232,11 +1249,15 @@ html.is-map-full { overflow: hidden; }
 .b-night__top { display: grid; gap: var(--sp-1); }
 .b-night__title { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-xl); line-height: 1.1; color: var(--paper); }
 .b-night q { quotes: '„' '“'; color: var(--paper); }
-.b-night__options { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: var(--sp-3); }
-.b-night__option { display: grid; justify-items: start; align-content: start; gap: var(--sp-2); padding: var(--sp-3); border: var(--line) solid rgba(232, 220, 196, 0.12); }
-.b-night__option.is-on { border-color: var(--lantern); }
+/* an open night's times: campsites side by side on their own patches of ground, no boxes */
+.b-night__options { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: var(--sp-6) var(--sp-5); }
+.b-night__option { display: grid; grid-template-columns: minmax(0, 1fr); justify-items: start; align-content: end; gap: var(--sp-2); }
+.b-night__option .b-night__camp { width: 100%; margin-bottom: var(--sp-1); }
 .b-night__when { font-family: var(--font-data); font-size: var(--fs-data); color: var(--paper); }
-.b-night__one { display: flex; align-items: flex-end; flex-wrap: wrap; gap: var(--sp-4); }
+.b-night__one { display: grid; gap: var(--sp-3); }
+/* one fire has a patch of ground, not a rule across the room; the heads by it are big enough to read as people */
+.b-night__one .b-night__camp { max-width: 32rem; }
+.b-night__one .b-night__head img { width: 2rem; height: 2rem; }
 .b-night__body { display: grid; gap: var(--sp-2); min-width: 0; }
 .b-night__count { font-family: var(--font-data); font-size: var(--fs-data); color: var(--paper); }
 .b-night__heads { display: flex; flex-wrap: wrap; gap: var(--px); }
@@ -1297,8 +1318,10 @@ html.is-map-full { overflow: hidden; }
 .b-cal__day[disabled] { color: var(--ink-faint); opacity: 0.4; cursor: default; }
 .b-night > .b-btn { justify-self: start; }
 .b-night .b-err { color: var(--ember); }
-/* the form's one column may be narrower than the month at its widest, so nothing in it pushes the room wider */
-.b-night--light { grid-template-columns: minmax(0, 1fr); }
+/* The form for lighting a fire keeps an edge: it is a form on the dark of the
+   room. Its one column may be narrower than the month at its widest, so
+   nothing in it pushes the room wider. */
+.b-night--light { grid-template-columns: minmax(0, 1fr); padding: var(--sp-4) var(--sp-5); border: var(--line) solid rgba(232, 220, 196, 0.18); background: var(--veil); }
 @media (max-width: 599px) {
   .b-night--light { padding-inline: var(--sp-4); }
   .b-cal { flex-basis: 100%; margin-right: 0; padding: var(--sp-2); }
