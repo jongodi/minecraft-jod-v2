@@ -53,11 +53,11 @@ export default function MapSyncPanel() {
     try {
       const { offline } = await api<{ offline?: boolean }>('/api/admin/map-sync', { method: 'POST' });
       setMsg(`✓ Afritun ræst${offline ? ' af slökktum þjóni' : ''}. Hún tekur yfirleitt nokkrar mínútur; hafi kortið breyst birtist nýja afritið á vefnum skömmu eftir að henni lýkur.`);
-      /* GitHub lists a new run a moment after it is asked for one */
-      setTimeout(load, 4000);
+      /* GitHub lists a new run a moment after it is asked for one; the
+         button stays down until then, so a second press can't start another */
+      setTimeout(() => { load().finally(() => setStarting(false)); }, 4000);
     } catch (e) {
       setMsg(errText(e));
-    } finally {
       setStarting(false);
     }
   }
