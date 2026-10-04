@@ -74,28 +74,52 @@
 }
 @media (hover: hover) { .b-tab:hover { border-color: var(--lantern); } }
 .b-tab.is-active { background: var(--lantern); color: var(--night); border-color: var(--lantern); box-shadow: var(--bevel); }
-/* The wanted board: one poster per charge, the top three on each. The
-   outlaw's nickname is the poster's title, the charge under it in small
-   type. The posters ride one rail across the room on every width, so the
-   room stays one screen tall and the board is read by walking along it. */
+/* The wanted board: one poster per charge, the top three on each, laid out
+   as a wanted poster is: the word across the top, the outlaw's face large,
+   the name, the alias the charge earns, the charge, the bounty. The posters
+   ride one rail across the room on every width, so the board is read by
+   walking along it. */
 .b-wanted { margin-top: 0; }
 .b-posters .b-rail { gap: var(--sp-3); padding: 4px 3px; align-items: start; }
 /* Wide enough for the longest value the board posts, a stretch of game time
    like "1 d. 14 klst.", on one line beside the leader's head and again beside
    a name in the two rows under the rule; two posters still fit a phone. */
 .b-posters .b-poster { flex: 0 0 15rem; scroll-snap-align: start; }
-.b-poster { display: grid; align-content: start; justify-items: center; text-align: center; padding: var(--sp-5) var(--sp-3) var(--sp-3); }
+.b-poster { display: grid; align-content: start; justify-items: center; text-align: center; padding: var(--sp-5) var(--sp-3) var(--sp-3); container-type: inline-size; }
 .b-poster > * { min-width: 0; max-width: 100%; }
-.b-poster__kicker { font-size: var(--fs-sm); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-faint); }
-.b-poster__stat { margin-top: var(--px); font-family: var(--font-display); font-weight: 400; font-size: var(--fs-lg); line-height: 1.1; color: var(--tc-red); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+/* The masthead: the one word every wanted poster leads with, in the sign
+   painter's slab across the top, sized to the poster it is printed on, over
+   a double rule the way a letterpress poster sets its heading off. */
+.b-poster__mast {
+  display: block;
+  width: 100%;
+  padding-bottom: var(--sp-2);
+  border-bottom: calc(var(--px) * 3) double var(--ink-soft);
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(var(--fs-lg), 12.5cqi, var(--fs-xl));
+  line-height: 1;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink);
+  white-space: nowrap;
+}
+/* the alias the charge earns its outlaw, in red ink under the name, in the quotes Icelandic print uses */
+.b-poster__alias { margin-top: var(--sp-1); font-weight: 600; font-size: var(--fs-md); line-height: 1.3; color: var(--tc-red); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .b-poster__charge { margin-top: var(--px); font-size: var(--fs-sm); line-height: 1.4; color: var(--ink-soft); text-wrap: balance; }
-.b-poster__lead { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: var(--sp-3); width: 100%; margin-top: var(--sp-3); text-decoration: none; color: var(--ink); text-align: left; }
-.b-poster__img { grid-row: span 2; width: 3rem; padding: calc(var(--px) * 2); background: var(--wood); box-shadow: inset 0 0 0 var(--px) var(--wood-light); transition: box-shadow var(--dur-2) var(--ease-out); }
+.b-poster__bounty { display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: 0 var(--sp-2); margin-top: var(--sp-2); }
+.b-poster__bounty .b-poster__val { margin-top: 0; }
+/* the outlaw: the face large in a wooden frame, the name in the slab under it */
+.b-poster__lead { display: grid; justify-items: center; width: 100%; margin-top: var(--sp-4); text-decoration: none; color: var(--ink); }
+.b-poster__img { width: 3rem; padding: calc(var(--px) * 2); background: var(--wood); box-shadow: inset 0 0 0 var(--px) var(--wood-light); transition: box-shadow var(--dur-2) var(--ease-out); }
+.b-poster__lead .b-poster__img { width: 6.5rem; }
 .b-poster__img img { width: 100%; aspect-ratio: 1; object-fit: cover; image-rendering: pixelated; display: block; }
 .b-poster__lead:focus-visible .b-poster__img { box-shadow: 0 0 0 var(--px) var(--lantern-ink); }
 @media (hover: hover) { .b-poster__lead:hover .b-poster__img { box-shadow: 0 0 0 var(--px) var(--lantern-ink); } }
-/* names keep their own casing, in the text face; the numbers are the server's, in the bitmap face */
-.b-poster__name { width: 100%; font-weight: 600; font-size: var(--fs-data); line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* the outlaw's name is the poster's title, in the slab and its own casing; the numbers are the server's, in the bitmap face */
+.b-poster__name { width: 100%; margin-top: var(--sp-2); font-family: var(--font-display); font-weight: 400; font-size: var(--fs-lg); line-height: 1.1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.b-poster__lead:focus-visible .b-poster__name { color: var(--lantern-ink); }
+@media (hover: hover) { .b-poster__lead:hover .b-poster__name { color: var(--lantern-ink); } }
 .b-poster__val { margin-top: var(--px); font-family: var(--font-data); font-size: var(--fs-data); line-height: 1.3; color: var(--tc-red); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .b-poster__rule { width: 100%; height: var(--px); margin-top: var(--sp-3); background: var(--ink); opacity: 0.22; }
 .b-poster__rest { width: 100%; margin-top: var(--sp-1); list-style: none; display: grid; }
@@ -325,9 +349,8 @@
 .b-poster--crew { padding: var(--sp-6) var(--sp-3) var(--sp-4); text-decoration: none; }
 /* the torn edge cuts off a ring drawn outside the poster, so it is drawn inside, clear of the tears */
 .b-poster--crew:focus-visible { outline: calc(var(--px) * 2) solid var(--lantern-ink); outline-offset: calc(var(--px) * -6); }
-.b-poster--crew .b-poster__img { grid-row: auto; margin-top: 0; width: min(100%, 7.5rem); }
-/* the crew's own posters keep the display face for the name: it is the poster's title there */
-.b-poster--crew .b-poster__name { margin-top: var(--sp-3); font-family: var(--font-display); font-weight: 400; font-size: var(--fs-lg); }
+.b-poster--crew .b-poster__img { margin-top: var(--sp-4); width: min(100%, 7.5rem); }
+.b-poster--crew .b-poster__name { margin-top: var(--sp-3); }
 .b-poster__reward { font-size: var(--fs-sm); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-faint); }
 .b-poster__meta { margin-top: var(--sp-2); font-size: var(--fs-sm); color: var(--ink-faint); }
 .b-poster__note { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }

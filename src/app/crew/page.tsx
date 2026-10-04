@@ -85,6 +85,7 @@ export default function CrewPage() {
                   )}
                   <span className="b-paper__nail b-paper__nail--l" aria-hidden="true" />
                   <span className="b-paper__nail b-paper__nail--r" aria-hidden="true" />
+                  <span className="b-poster__mast" aria-hidden="true">Eftirlýst</span>
                   <div className="b-poster__img"><PlayerHead name={m.username} size={128} alt="" /></div>
                   <div className="b-poster__name">{m.username}</div>
                   {crew === null ? (<>
