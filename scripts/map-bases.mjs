@@ -11,6 +11,10 @@
 //   npm run map:bases -- --upload <id> --force   upload it even if nothing changed
 //   npm run map:bases -- --prune [id...]   drop the copies the site no longer reads
 //
+// The admin panel (Þjónn → Grunnkortin) starts --upload through the "Map
+// bases" GitHub Action (.github/workflows/map-bases.yml), which also commits
+// the manifests and, once the site is deployed with them, runs --prune.
+//
 // Each config is a copy of the main map's (plugins/BlueMap/maps/world.conf)
 // with only its name, place in the list, start position and render mask
 // changed. Every config is also saved under scripts/out/bluemap-maps/ to look at.
@@ -26,14 +30,19 @@
 //   4. git add src/lib/map-bases/<id>.json, commit and push
 //   5. once the site is deployed with it: npm run map:bases -- --prune <id>
 //
-// --upload copies a base map's folder (bluemap/web/maps/<id>) off the server
-// into scripts/out/map-bases/, fetching only what changed since the last time,
-// and, if anything did, sends it to Vercel Blob as a few packs
+// Steps 3 to 5 are also one press in the admin panel (Þjónn → Grunnkortin).
+//
+// --upload first compares the server's map with the copy the site has (the
+// file list and tile sizes against the manifest, the few small files against
+// their bytes in the store) and does nothing more if they match. Otherwise it
+// copies the base map's folder (bluemap/web/maps/<id>) off the server into
+// scripts/out/map-bases/, fetching only what changed since the last time it
+// was fetched there, and sends it to Vercel Blob as a few packs
 // (scripts/bluemap-pack.mjs) under bluemap-bases/<id>/, with its manifest in
-// src/lib/map-bases/<id>.json. Nothing goes up when nothing changed. It only
-// ever lists and deletes under bluemap-bases/<id>/, never the main map's
-// packs (bluemap-data/) or another base's, and map:sync only ever lists
-// bluemap-data/, so neither can touch the other. Packs the site may still be
+// src/lib/map-bases/<id>.json. It only ever lists and deletes under
+// bluemap-bases/<id>/, never the main map's packs (bluemap-data/) or another
+// base's, and map:sync only ever lists bluemap-data/, so neither can touch
+// the other. Packs the site may still be
 // reading are kept: the new copy, the one it replaces, and whatever the last
 // commit and origin/main name. --prune then drops the replaced one.
 //
@@ -265,13 +274,29 @@ export function baseSkip(rel) {
     || /^maps\/[^/]+\/assets\/playerheads\//.test(rel);
 }
 
-/** Whether the copy the manifest names still is the map: every file the same
-    as when it went up, none come or gone. */
-export function unchanged(previous, files, changed) {
-  return Boolean(previous?.packs && previous.blob)
-    && changed.size === 0
-    && previous.files.length === files.length
-    && previous.files.every((rel, i) => rel === files[i]);
+/* Tiles and the texture atlas change size whenever they are redrawn, so a
+   matching size means nothing changed; everything else is small and is
+   compared byte for byte (as map:sync does). */
+const TRUST_SIZE = /^maps\/[^/]+\/(tiles\/|textures\.json)/;
+
+/** What the server holds next to the copy the manifest names: `same: false`
+    when the file list or a tile's size differs, otherwise the small files
+    still to compare byte for byte. Answered from the manifest alone, so a
+    machine without the earlier download (a GitHub runner, say) still sends
+    nothing when nothing changed. */
+export function compareWithCopy(found, previous) {
+  if (!previous?.packs || !previous.blob || !Array.isArray(previous.files)) return { same: false, check: [] };
+  const files = found.map((f) => f.rel).sort();
+  if (files.length !== previous.files.length || files.some((rel, i) => rel !== previous.files[i])) return { same: false, check: [] };
+  const at = new Map(previous.files.map((rel, i) => [rel, previous.packs.at[i]]));
+  const check = [];
+  for (const { rel, size } of found) {
+    /* live data BlueMap may write again on its own; it rides along when the map changes */
+    if (/^maps\/[^/]+\/live\//.test(rel)) continue;
+    if (!TRUST_SIZE.test(rel)) check.push(rel);
+    else if (size !== at.get(rel)?.[2]) return { same: false, check: [] };
+  }
+  return { same: true, check: check.sort() };
 }
 
 /** The blobs under a base's folder that nothing reads any more: not in a
@@ -342,10 +367,7 @@ async function fetchBase(id, webroot, base, found) {
   let fetched = 0, done = 0;
   await pool(found, async ({ rel, size }) => {
     const file = localFile(rel);
-    /* tiles and the texture atlas change size whenever they are redrawn;
-       everything else is small and always fetched (as map:sync does) */
-    const trustSize = /^maps\/[^/]+\/(tiles\/|textures\.json)/.test(rel);
-    const current = trustSize && typeof size === 'number' && existsSync(file) && statSync(file).size === size;
+    const current = TRUST_SIZE.test(rel) && typeof size === 'number' && existsSync(file) && statSync(file).size === size;
     if (!current) {
       const body = await call(`${id}/files/data/${encode(`${webroot}/${rel}`)}`, { raw: true });
       const same = existsSync(file) && statSync(file).size === body.length && readFileSync(file).equals(body);
@@ -473,6 +495,43 @@ async function dropStale(base, keepManifests) {
   return stale.length;
 }
 
+/* Whether the server's map is the copy the site has: the file list and tile
+   sizes against the manifest, and each small file against its bytes in the
+   store (a range read each, a handful per map). */
+async function sameAsCopy(id, webroot, found, previous) {
+  const { same, check } = compareWithCopy(found, previous);
+  if (!same) return false;
+  const index = new Map(previous.files.map((rel, i) => [rel, i]));
+  for (const rel of check) {
+    const [pack, offset, length] = previous.packs.at[index.get(rel)];
+    const there = await call(`${id}/files/data/${encode(`${webroot}/${rel}`)}`, { raw: true });
+    if (there.length !== length) return false;
+    if (length === 0) continue;
+    const stored = await readStored(previous.blob, previous.packs.names[pack], offset, length);
+    if (!stored || !stored.equals(there)) return false;
+  }
+  return true;
+}
+
+/* The bytes [offset, offset + length) of a pack in the store, or null if it can't say. */
+async function readStored(blob, name, offset, length) {
+  const url = `${blob.base}/${name}`;
+  const headers = { range: `bytes=${offset}-${offset + length - 1}` };
+  try {
+    const res = blob.access === 'public'
+      ? await fetch(url, { headers, cache: 'no-store' })
+      : await get(url, { access: 'private', headers, token: blobToken() });
+    if (!res || (blob.access === 'public' && !res.ok)) return null;
+    const body = Buffer.from(await new Response(blob.access === 'public' ? res.body : res.stream).arrayBuffer());
+    const sent = /^bytes (\d+)-/.exec(res.headers.get('content-range') ?? '');
+    /* a store that ignores the range sends the whole pack */
+    const start = sent ? Number(sent[1]) : 0;
+    return body.subarray(offset - start, offset - start + length);
+  } catch {
+    return null;
+  }
+}
+
 async function uploadBase(id, webroot, base) {
   console.log(`\n${base.id} (${base.name}):`);
   try {
@@ -485,14 +544,14 @@ async function uploadBase(id, webroot, base) {
   if (!found.some((f) => f.rel === `maps/${base.id}/settings.json`) || !found.some((f) => f.rel.includes('/tiles/'))) {
     throw new Error(`Fann hvorki settings.json né reiti í ${webroot}/maps/${base.id}. Er teikningunni lokið?`);
   }
-  const changed = await fetchBase(id, webroot, base.id, found);
-  const files = found.map((f) => f.rel).sort();
   const previous = readJson(manifestFile(base.id), { syncedAt: null, files: [] });
-
-  if (!FORCE && unchanged(previous, files, changed)) {
-    console.log('  Óbreytt frá síðasta afriti; ekkert sent í geymsluna. (--force sendir það samt.)');
+  if (!FORCE && await sameAsCopy(id, webroot, found, previous)) {
+    console.log('  Óbreytt frá afritinu á vefnum; ekkert sótt og ekkert sent. (--force sendir það samt.)');
     return false;
   }
+
+  await fetchBase(id, webroot, base.id, found);
+  const files = found.map((f) => f.rel).sort();
 
   const syncedAt = new Date().toISOString();
   const version = versionOf(syncedAt);
@@ -585,12 +644,22 @@ async function main() {
     }
     const webroot = await findWebroot(id);
     const sent = [];
-    for (const b of chosen) if (await uploadBase(id, webroot, b)) sent.push(b.id);
+    const failed = [];
+    /* one base failing doesn't hold the others back: what did go up can be published */
+    for (const b of chosen) {
+      try {
+        if (await uploadBase(id, webroot, b)) sent.push(b.id);
+      } catch (err) {
+        console.error(`  Villa: ${explain(err)}`);
+        failed.push(b.id);
+      }
+    }
     if (pushedBack) console.log(`\nExaroton bað ${pushedBack === 1 ? 'einu sinni' : `${pushedBack} sinnum`} um hlé og afritunin hægði á sér á meðan.`);
     if (sent.length) {
       console.log(`\nTil að birta það: git add ${sent.map((b) => `src/lib/map-bases/${b}.json`).join(' ')}, commit og push.`);
       console.log(`Þegar vefurinn er kominn upp með því: npm run map:bases -- --prune ${sent.join(' ')}`);
     }
+    if (failed.length) throw new Error(`Tókst ekki að afrita ${failed.join(', ')}.`);
     return;
   }
 

@@ -9,7 +9,7 @@ import { baseCopyFor, uploadedBases } from '@/lib/bluemap-bases';
 import { baseAt } from '@/lib/base-links';
 import { BASES_DIR, BLOB_DIR, basePackDir, planPacks } from '../../../scripts/bluemap-pack.mjs';
 import { baseViewer, indexHtml, viewerAssets } from '../../../scripts/bluemap-brand.mjs';
-import { baseSkip, staleBlobs, unchanged } from '../../../scripts/map-bases.mjs';
+import { baseSkip, compareWithCopy, staleBlobs } from '../../../scripts/map-bases.mjs';
 import config from '@/lib/map-bases.json';
 
 vi.mock('@vercel/blob', async (original) => ({ ...(await original<typeof import('@vercel/blob')>()), get: vi.fn() }));
@@ -225,12 +225,28 @@ describe('uploading the base maps', () => {
     expect(baseSkip('maps/jodville/textures.json.gz')).toBe(false);
   });
 
-  it('sends nothing when nothing changed', () => {
-    const previous = { files: ['a', 'b'], blob: { base: 'x', access: 'private' }, packs: { names: ['p'], at: [] } };
-    expect(unchanged(previous, ['a', 'b'], new Set())).toBe(true);
-    expect(unchanged(previous, ['a', 'b'], new Set(['a']))).toBe(false);
-    expect(unchanged(previous, ['a'], new Set())).toBe(false);
-    expect(unchanged({ syncedAt: null, files: [] }, [], new Set())).toBe(false);
+  it('tells from the manifest alone whether the server\'s map is the copy the site has', () => {
+    const previous = {
+      files: ['maps/j/live/markers.json', 'maps/j/settings.json', 'maps/j/textures.json.gz', 'maps/j/tiles/0/x1/z1.prbm.gz'],
+      blob: { base: 'x', access: 'private' },
+      packs: { names: ['p'], at: [[0, 0, 2], [0, 2, 9], [0, 11, 500], [0, 511, 300]] },
+    };
+    const found = [
+      { rel: 'maps/j/tiles/0/x1/z1.prbm.gz', size: 300 },
+      { rel: 'maps/j/settings.json', size: 9 },
+      { rel: 'maps/j/textures.json.gz', size: 500 },
+      { rel: 'maps/j/live/markers.json', size: 2 },
+    ];
+    /* tiles and the atlas by size, the small files still to be compared byte for byte, live data not at all */
+    expect(compareWithCopy(found, previous)).toEqual({ same: true, check: ['maps/j/settings.json'] });
+    expect(compareWithCopy(found.map((f) => (f.rel.includes('live') ? { ...f, size: 40 } : f)), previous).same).toBe(true);
+    /* a redrawn tile */
+    expect(compareWithCopy(found.map((f) => (f.rel.includes('tiles') ? { ...f, size: 301 } : f)), previous).same).toBe(false);
+    /* a tile come or gone */
+    expect(compareWithCopy([...found, { rel: 'maps/j/tiles/0/x2/z1.prbm.gz', size: 1 }], previous).same).toBe(false);
+    expect(compareWithCopy(found.slice(1), previous).same).toBe(false);
+    /* nothing uploaded yet */
+    expect(compareWithCopy(found, { syncedAt: null, files: [] }).same).toBe(false);
   });
 
   it('drops only packs no copy in use reads, and none uploaded in the last two hours', () => {

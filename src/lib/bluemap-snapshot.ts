@@ -23,6 +23,8 @@ export interface Copy {
   version: string | null;
   /** Every file the copy holds, as maps/… paths. */
   files: readonly string[];
+  /** How many bytes the files come to, when the copy is packed (0 otherwise). */
+  bytes: number;
   blob: Snapshot['blob'] | null;
   /** Whether the copy is stored in packs. */
   isPacked: boolean;
@@ -46,6 +48,7 @@ export function copyOf(manifest: Snapshot): Copy {
     syncedAt: manifest.syncedAt ?? null,
     version,
     files: list,
+    bytes: packs ? packs.at.reduce((sum, [, , length]) => sum + length, 0) : 0,
     blob: manifest.blob ?? null,
     isPacked: packs !== null,
     hasFiles: list.length > 0,
