@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { plural } from '@/lib/format';
-import { parseWorldPoint, type MapConfig, type MapLocation, type MapPath, type MapZone, type WorldPoint } from '@/lib/map-types';
+import { parseWorldPoint, withCurrentLinks, type MapConfig, type MapLocation, type MapPath, type MapZone, type WorldPoint } from '@/lib/map-types';
 import { CREW_USERNAMES } from '@/lib/crew-types';
 import { mapLabel } from '@/lib/icelandic';
 import {
@@ -343,9 +343,14 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
   });
 
   /* ─── save ─── */
-  async function persist(cfg: Doc): Promise<boolean> {
+  async function persist(edited: Doc): Promise<boolean> {
     setSaving(true);
     try {
+      /* the gallery may have linked photos to places since this copy was
+         loaded; links the editor left alone follow the store (if it answers) */
+      const current = await api<MapConfig>('/api/admin/map').catch(() => null);
+      const base = (JSON.parse(saved) as [MapLocation[]])[0];
+      const cfg = current ? { ...edited, locations: withCurrentLinks(edited.locations, base, current.locations) } : edited;
       const r = await api<{ config?: MapConfig }>('/api/admin/map', { method: 'PUT', body: JSON.stringify(cfg) });
       const stored = r.config ? toDoc(r.config) : cfg;
       h.reset(stored);
