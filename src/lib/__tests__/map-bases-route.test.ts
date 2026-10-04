@@ -40,7 +40,7 @@ describe('/api/admin/map-bases', () => {
       if (url === RUNS) {
         return Response.json({ workflow_runs: [
           { id: 2, status: 'in_progress', conclusion: null, created_at: 'a', updated_at: 'b', html_url: 'u2', display_title: 'Map bases: jodville faraway' },
-          { id: 1, status: 'completed', conclusion: 'success', created_at: 'a', updated_at: 'b', html_url: 'u1', display_title: 'Map bases: all, forced' },
+          { id: 1, status: 'completed', conclusion: 'success', created_at: 'a', updated_at: 'b', html_url: 'u1', display_title: 'Map bases: all, forced, server off' },
         ] });
       }
       return new Response(null, { status: 404 });
@@ -58,12 +58,12 @@ describe('/api/admin/map-bases', () => {
   it('starts the workflow for the bases asked for, in the list\'s order', async () => {
     const res = await start({ bases: ['shroomy', 'jodville'] });
     expect(res.status).toBe(200);
-    expect(JSON.parse(dispatched()?.[1].body)).toEqual({ ref: 'main', inputs: { bases: 'jodville shroomy', force: 'false' } });
+    expect(JSON.parse(dispatched()?.[1].body)).toEqual({ ref: 'main', inputs: { bases: 'jodville shroomy', force: 'false', server_off: 'false' } });
   });
 
   it('starts it for all of them, and sends even unchanged ones when told to', async () => {
     expect((await start({ force: true })).status).toBe(200);
-    expect(JSON.parse(dispatched()?.[1].body)).toEqual({ ref: 'main', inputs: { bases: '', force: 'true' } });
+    expect(JSON.parse(dispatched()?.[1].body)).toEqual({ ref: 'main', inputs: { bases: '', force: 'true', server_off: 'false' } });
   });
 
   it('turns down a base it doesn\'t know, before asking anyone', async () => {
@@ -73,10 +73,12 @@ describe('/api/admin/map-bases', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('turns a run down while the server is stopped', async () => {
+  it('starts it while the server is stopped too, and names the run so', async () => {
     serverStatus = 0;
-    expect((await start({ bases: ['jodville'] })).status).toBe(409);
-    expect(dispatched()).toBeUndefined();
+    const res = await start({ bases: ['jodville'] });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true, offline: true });
+    expect(JSON.parse(dispatched()?.[1].body)).toEqual({ ref: 'main', inputs: { bases: 'jodville', force: 'false', server_off: 'true' } });
   });
 
   it('says what the site has of each base, and what each run was for', async () => {
@@ -87,7 +89,8 @@ describe('/api/admin/map-bases', () => {
       id: 'bustadur', name: 'Bústaður', syncedAt: '2026-10-03T12:00:00.000Z', files: 2, bytes: 2148,
     });
     expect(bases.find((b: { id: string }) => b.id === 'jodville').syncedAt).toBeNull();
-    expect(runs.map((r: { bases: string[] | null; forced: boolean }) => [r.bases, r.forced])).toEqual([[['jodville', 'faraway'], false], [null, true]]);
+    expect(runs.map((r: { bases: string[] | null; forced: boolean; offline: boolean }) => [r.bases, r.forced, r.offline]))
+      .toEqual([[['jodville', 'faraway'], false, false], [null, true, true]]);
   });
 
   it('says what is missing without a GitHub token', async () => {
@@ -100,9 +103,11 @@ describe('/api/admin/map-bases', () => {
 
 describe('readBasesRunName', () => {
   it('reads which bases a run was for', () => {
-    expect(readBasesRunName('Map bases: jodville')).toEqual({ bases: ['jodville'], forced: false });
-    expect(readBasesRunName('Map bases: all')).toEqual({ bases: null, forced: false });
-    expect(readBasesRunName('Map bases: faraway shroomy, forced')).toEqual({ bases: ['faraway', 'shroomy'], forced: true });
-    expect(readBasesRunName('Map bases')).toEqual({ bases: null, forced: false });
+    expect(readBasesRunName('Map bases: jodville')).toEqual({ bases: ['jodville'], forced: false, offline: false });
+    expect(readBasesRunName('Map bases: all')).toEqual({ bases: null, forced: false, offline: false });
+    expect(readBasesRunName('Map bases: faraway shroomy, forced')).toEqual({ bases: ['faraway', 'shroomy'], forced: true, offline: false });
+    expect(readBasesRunName('Map bases: all, server off')).toEqual({ bases: null, forced: false, offline: true });
+    expect(readBasesRunName('Map bases: jodville, forced, server off')).toEqual({ bases: ['jodville'], forced: true, offline: true });
+    expect(readBasesRunName('Map bases')).toEqual({ bases: null, forced: false, offline: false });
   });
 });

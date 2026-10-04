@@ -36,6 +36,8 @@ export interface MapBasesRun {
   bases: string[] | null;
   /** Sent even if nothing changed. */
   forced: boolean;
+  /** Started while the server was stopped. */
+  offline: boolean;
 }
 
 export interface MapBasesState {
@@ -85,18 +87,18 @@ export async function POST(req: NextRequest) {
   const ids = BASES.map(b => b.id).filter(id => asked.includes(id));
   const force = body?.force === true;
 
-  /* a stopped server hands out its files far too slowly for a whole map */
-  if (await serverStopped()) {
-    return NextResponse.json({ error: 'Þjónninn er ekki í gangi. Ræstu hann fyrst: grunnkortin eru sótt af honum.' }, { status: 409 });
-  }
+  /* Runs whether the server is on or not. A run started while it is stopped
+     is named so, and its log says how long each step took, so the two can be
+     held up against each other. */
+  const offline = await serverStopped();
 
   try {
     const res = await github('/dispatches', {
       method: 'POST',
-      body: JSON.stringify({ ref: 'main', inputs: { bases: ids.join(' '), force: force ? 'true' : 'false' } }),
+      body: JSON.stringify({ ref: 'main', inputs: { bases: ids.join(' '), force: force ? 'true' : 'false', server_off: offline ? 'true' : 'false' } }),
     });
     if (!res.ok) return NextResponse.json({ error: await githubError(res) }, { status: 502 });
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, offline });
   } catch (err) {
     return NextResponse.json({ error: errorMessage(err) }, { status: 500 });
   }

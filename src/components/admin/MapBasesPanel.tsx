@@ -57,8 +57,8 @@ export default function MapBasesPanel() {
   async function start(ids: string[]) {
     setStarting(ids.length === 1 ? ids[0] : 'all'); setMsg('');
     try {
-      await api('/api/admin/map-bases', { method: 'POST', body: JSON.stringify({ bases: ids, force }) });
-      setMsg('✓ Sending ræst. Hvert kort er borið saman við afritið á vefnum og aðeins sent ef það hefur breyst; nýtt afrit birtist á vefnum skömmu eftir að henni lýkur.');
+      const { offline } = await api<{ offline?: boolean }>('/api/admin/map-bases', { method: 'POST', body: JSON.stringify({ bases: ids, force }) });
+      setMsg(`✓ Sending ræst${offline ? ' af slökktum þjóni' : ''}. Hvert kort er borið saman við afritið á vefnum og aðeins sent ef það hefur breyst; nýtt afrit birtist á vefnum skömmu eftir að henni lýkur.`);
       /* GitHub lists a new run a moment after it is asked for one */
       setTimeout(load, 4000);
     } catch (e) {
@@ -100,7 +100,7 @@ export default function MapBasesPanel() {
           <div className="a-field">
             <Toggle checked={force} onChange={setForce} disabled={starting !== null || running} label="Senda þótt ekkert hafi breyst" />
             <span className="a-help">
-              Þjónninn þarf að vera í gangi. Kort sem hefur ekki breyst er hvorki sótt né sent. Til að teikna kort upp á nýtt: npm run map:bases -- --refresh &lt;id&gt;, bíða þar til teikningunni lýkur, svo --freeze, og senda það svo héðan. Gamla afritið er fjarlægt sjálfkrafa þegar það nýja er komið á vefinn.
+              Þjónninn má vera slökktur. Keyrslan er þá merkt svo og skráin á GitHub segir hve lengi hvert skref tók, svo bera megi tímann saman við keyrslu meðan hann er í gangi. Kort sem hefur ekki breyst er hvorki sótt né sent. Til að teikna kort upp á nýtt: npm run map:bases -- --refresh &lt;id&gt;, bíða þar til teikningunni lýkur, svo --freeze, og senda það svo héðan. Gamla afritið er fjarlægt sjálfkrafa þegar það nýja er komið á vefinn.
             </span>
           </div>
           <Notice text={msg} />
@@ -112,7 +112,7 @@ export default function MapBasesPanel() {
                 return (
                   <div key={run.id} className="a-row a-row--sync">
                     <span className={`a-status a-status--${st.tone}`}>{st.label}</span>
-                    <span className="a-row__meta">{when(run.createdAt)} · {which}{run.forced && ', þótt ekkert hefði breyst'}</span>
+                    <span className="a-row__meta">{when(run.createdAt)} · {which}{run.forced && ', þótt ekkert hefði breyst'}{run.offline && ', af slökktum þjóni'}</span>
                     <span className="a-row__actions">
                       <a className="a-btn a-btn--ghost a-btn--small" href={run.url} target="_blank" rel="noreferrer">Skoða á GitHub</a>
                     </span>
