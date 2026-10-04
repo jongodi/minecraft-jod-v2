@@ -69,19 +69,47 @@ export default function BadlandsHome({ syncedOn, bases }: { syncedOn: string | n
     return () => window.removeEventListener('hashchange', read);
   }, [showWorld]);
 
-  /* A door in the bar: the world itself, or a room over it. */
+  /* A door in the bar: the world itself, or a room over it. Opening a room
+     makes one history entry, marked as the doors' own; going from that room
+     to the other, or out to the world, reuses it, so Back always leaves the
+     rooms instead of walking back through them. */
   const openDoor = useCallback((id: string) => {
     const next = isRoom(id) ? id : null;
     const hash = next ? `#${next}` : '#heimur';
-    if (window.location.hash !== hash) history.pushState(null, '', hash);
+    if (window.location.hash !== hash) {
+      const state = { jodRoom: !!next };
+      if (isRoom(window.location.hash.slice(1)) && history.state?.jodRoom) history.replaceState(state, '', hash);
+      else history.pushState(state, '', hash);
+    }
     setRoom(next);
     setPressed(next ?? 'heimur');
     showWorld();
   }, [showWorld]);
+  /* ✕, Escape or a tap on the dark world. The entry a door made is taken
+     back, so Back afterwards does not open the room again; a room arrived at
+     by a link (/#hopur, /kvold/<id>#hopur) just loses its hash. */
   const closeRoom = useCallback(() => {
-    if (isRoom(window.location.hash.slice(1))) history.pushState(null, '', window.location.pathname + window.location.search);
+    if (isRoom(window.location.hash.slice(1))) {
+      if (history.state?.jodRoom) history.back();
+      else history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
     setRoom(null);
   }, []);
+
+  /* Any link on the page to a door (the status lantern, the night's line)
+     goes through the door itself. A plain #hopur did nothing when the hash
+     already said #hopur: no hashchange, and no element by that id. */
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      const id = (e.target as Element | null)?.closest?.('a[href^="#"]')?.getAttribute('href')?.slice(1);
+      if (!id || !(isRoom(id) || id === 'heimur')) return;
+      e.preventDefault();
+      openDoor(id);
+    };
+    document.addEventListener('click', onClick);
+    return () => document.removeEventListener('click', onClick);
+  }, [openDoor]);
 
   useEffect(() => {
     if (!room) return;
