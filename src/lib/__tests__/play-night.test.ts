@@ -188,6 +188,13 @@ describe('/api/playnight', () => {
     expect((await post({ action: 'start', night: id })).status).toBe(409);
   });
 
+  it('answers a malformed request or an unknown action as such, not as a missing night', async () => {
+    const raw = await POST(new NextRequest('https://jod.test/api/playnight', { method: 'POST', body: '{' }));
+    expect(raw.status).toBe(400);
+    expect((await post({ action: 'dance' })).status).toBe(400);
+    expect((await post([1, 2])).status).toBe(400);
+  });
+
   it('turns away anyone signed out', async () => {
     session = null;
     expect((await post({ action: 'propose', times: ['2026-10-02T20:00:00Z'] })).status).toBe(401);
