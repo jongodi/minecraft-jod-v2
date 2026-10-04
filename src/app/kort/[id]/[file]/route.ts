@@ -2,7 +2,7 @@ import { baseNamed, uploadedBases } from '@/lib/bluemap-bases';
 import { mainCopy, type Copy } from '@/lib/bluemap-snapshot';
 import viewer from '@/lib/bluemap-viewer.json';
 import settings from '../../../../../public/bluemap/settings.json';
-import { MAIN_MAP, baseViewer, heaviness, startTileBytes } from '../../../../../scripts/bluemap-brand.mjs';
+import { MAIN_MAP, baseViewer, heaviness, openingView, startTileBytes } from '../../../../../scripts/bluemap-brand.mjs';
 
 /* A base map's own viewer: /kort/<id>/index.html and its settings.json, the
    main viewer (public/bluemap) made over for that one map. Built with the
@@ -41,7 +41,9 @@ export async function GET(_req: Request, { params }: Context): Promise<Response>
   const { id, file } = await params;
   const base = baseNamed(id);
   if (!base || !uploadedBases().includes(base) || !(file in FILES)) return new Response(null, { status: 404 });
-  const weight = heaviness(startTileBytes(base.copy.files, sizeIn(base.copy), base.id, base.x, base.z), mainTile);
+  /* weighed where it opens, as that is what a phone loads first */
+  const open = openingView(base, settings);
+  const weight = heaviness(startTileBytes(base.copy.files, sizeIn(base.copy), base.id, open.x, open.z), mainTile);
   const page = baseViewer(viewer.shell, settings, base, base.copy, weight);
   const body = file === 'index.html' ? page.html : JSON.stringify(page.settings);
   return new Response(body, {

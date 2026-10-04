@@ -181,6 +181,14 @@ describe('a base map\'s viewer', () => {
     expect(facts.bounds).toEqual({ minX: -414, maxX: 687, minZ: -634, maxZ: 467, shape: 'box' });
   });
 
+  it('opens on the base\'s own view when it has one', () => {
+    const { settings: s, html } = baseViewer(shell, settings, { ...base, view: '131:115:-20:89:-3.09:1.19:0:0:perspective' }, copy);
+    expect(s.startLocation).toBe('jodville:131:115:-20:89:-3.09:1.19:0:0:perspective');
+    expect(JSON.parse(/window\.JOD_MAP = (\{.*\});/.exec(html)![1]).start).toBe('jodville:131:115:-20:89:-3.09:1.19:0:0:perspective');
+    /* a view that isn't one is passed over for the centre */
+    expect(baseViewer(shell, settings, { ...base, view: '131:115' }, copy).settings.startLocation).toBe('jodville:136:128:-84:65:2.03:1.08:0:0:perspective');
+  });
+
   it('loads fewer detailed tiles of a map much heavier than the main one, from the first frame', () => {
     const heavy = baseViewer(shell, settings, base, copy, 9);
     /* 160 / 3 → 53 blocks, a 3×3 square of tiles instead of 11×11 */
