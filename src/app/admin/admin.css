@@ -20,7 +20,6 @@
 .a-tab { display: inline-flex; align-items: center; gap: var(--sp-2); min-height: var(--tap); padding: var(--sp-2) var(--sp-4); border-bottom: var(--px) solid transparent; color: var(--text-soft); font-weight: 600; white-space: nowrap; text-decoration: none; }
 .a-tab:hover { color: var(--lantern); }
 .a-tab.is-active { color: var(--lantern); border-bottom-color: var(--lantern); }
-.a-tab__count { font-family: var(--font-data); font-size: 0.65rem; color: var(--text-faint); }
 .a-main { padding-block: var(--sp-5) var(--sp-8); }
 
 /* ─── panels ──────────────────────────────────────────────────── */
@@ -63,17 +62,16 @@
 /* ─── form fields ─────────────────────────────────────────────── */
 .a-field { display: grid; gap: var(--sp-1); min-width: 0; align-content: start; }
 .a-label { font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-faint); }
-.a-input, .a-select, .a-textarea {
+.a-input, .a-select {
   width: 100%; min-height: var(--tap); padding: var(--sp-2) var(--sp-3);
   background: var(--night); border: var(--line) solid rgba(209, 178, 161, 0.3); border-radius: var(--radius);
   color: var(--paper); font: inherit; font-size: var(--fs-sm); outline: none;
 }
-.a-input:focus, .a-select:focus, .a-textarea:focus { border-color: var(--lantern); box-shadow: 0 0 0 var(--px) var(--lantern-glow); }
+.a-input:focus, .a-select:focus { border-color: var(--lantern); box-shadow: 0 0 0 var(--px) var(--lantern-glow); }
 .a-input.is-changed { border-color: var(--lantern-deep); }
 .a-input--data { font-family: var(--font-data); font-size: 0.8rem; }
 .a-input--short { width: 7.5rem; }
 .a-input--num { width: 5.5rem; font-variant-numeric: tabular-nums; }
-.a-textarea { resize: vertical; min-height: 4.5rem; line-height: 1.5; }
 .a-select { cursor: pointer; }
 .a-help { color: var(--text-faint); font-size: var(--fs-xs); line-height: 1.5; }
 .a-form-row { display: grid; gap: var(--sp-3); grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); }
@@ -106,7 +104,6 @@
 .a-rows { display: grid; }
 .a-row { display: grid; grid-template-columns: 2.25rem minmax(10rem, 2fr) minmax(6rem, 1fr) auto; gap: var(--sp-2) var(--sp-3); align-items: center; padding: var(--sp-3) 0; border-bottom: var(--line) solid rgba(209, 178, 161, 0.12); }
 .a-row.is-hidden { opacity: 0.55; }
-.a-row__no { font-family: var(--font-data); font-size: 0.65rem; color: var(--text-faint); }
 .a-row__name { font-weight: 600; color: var(--paper); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .a-row__meta { font-size: var(--fs-xs); color: var(--text-faint); }
 .a-row__actions { display: flex; flex-wrap: wrap; gap: var(--sp-1); justify-content: flex-end; }

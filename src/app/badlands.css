@@ -112,7 +112,6 @@
 .b-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--sp-3) var(--sp-6); margin-bottom: var(--sp-6); }
 .b-head > * { min-width: 0; }
 .b-head--tight { margin-bottom: var(--sp-4); }
-.b-data { font-family: var(--font-data); font-size: var(--fs-data); line-height: 1.3; letter-spacing: 0; font-variant-numeric: tabular-nums; }
 .b-visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* ─── strata: slices of the badlands between the hours ────────── */

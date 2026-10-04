@@ -1,28 +1,11 @@
 @import './tokens.css';
 
-/* ─── generic names read by /admin ─────────────────────────────
-   The panel paints its own dark root and only reads these.  */
+/* ─── the admin table's two rules ───────────────────────────────
+   The panel paints its own dark root; these are the only names of their
+   own it reads (the generic --bg, --accent and the like were never read). */
 :root {
-  --bg:            var(--night);
-  --bg-elevated:   var(--dusk-2);
-  --bg-card:       var(--dusk);
-  --accent:        var(--lantern);
-  --accent-dim:    var(--lantern-deep);
-  --accent-glow:   rgba(242, 166, 59, 0.16);
-  --accent-faint:  rgba(242, 166, 59, 0.06);
-  --accent-trace:  rgba(242, 166, 59, 0.025);
-  --muted:         var(--text-faint);
-  --faint:         #6F6150;
   --border:        #3A2C22;
   --border-strong: #55433A;
-  --status-online:  var(--online);
-  --status-offline: var(--offline);
-  --status-gold:    var(--lantern);
-  --accent-rgb:    242, 166, 59;
-  --bg-rgb:        21, 16, 13;
-  --text-rgb:      232, 220, 196;
-  --card:          var(--bg-card);
-  --font-body:     var(--font-text);
 }
 
 /* ─── reset & base ─────────────────────────────────────────────

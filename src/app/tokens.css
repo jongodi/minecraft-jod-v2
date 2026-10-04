@@ -62,10 +62,8 @@
   --ember:              #E0602A;
 
   /* ── map sheet ── */
-  --map-paper:  var(--paper);
   --map-land:   #D9C79E;
   --map-land-2: #CDB98C;
-  --map-shore:  #E6D8B4;
   --map-grass:  #A8AE79;
   --map-grass-2:#939A66;
   --map-sand:   #E6D8B4;
@@ -107,7 +105,6 @@
   --fs-chip: 0.5rem;    /* the numeral chips on frames and map pins: 8px, dead on the grid */
   --fs-data: 1rem;      /* Silkscreen is drawn on 8px; keep multiples of 0.5rem */
   --fs-data-lg: 1.5rem;
-  --fs-data-xl: 2rem;
   --lh-tight: 1.05;
   --lh-text:  1.6;
   --lh-night: 1.7;      /* light-on-dark reads lighter, so it gets more air */
@@ -145,11 +142,9 @@
   --dur-2: 240ms;
   --dur-3: 480ms;
   --dur-lantern: 3400ms;
-  --dur-draw: 1600ms;
 
   /* ── layers ── */
   --z-sky: -1;
-  --z-rail: 40;
   --z-bar: 41;
   --z-drawer: 42;
   --z-light: 45;
