@@ -33,6 +33,9 @@
   --lantern:      #F2A63B;
   --lantern-deep: #C9801F;
   --lantern-glow: rgba(242, 166, 59, 0.35);
+  /* the same light written on paper: dark enough to read there (5.4:1), where
+     --lantern-deep is 2.35:1 */
+  --lantern-ink:  #794D13;
 
   /* ── paper and ink: notices ── */
   --paper:      #E8DCC4;
