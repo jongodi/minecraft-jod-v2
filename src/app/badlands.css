@@ -235,7 +235,7 @@
 /* Over the sunset the faint label colour sits on the brightest orange of the
    sky and all but disappears; there it is paper, set off by a one-pixel
    shadow the way the HUD's labels are set off from the map. */
-.b-hero .b-copy__hint { color: var(--paper); text-shadow: 0 var(--px) 0 rgba(21, 16, 13, 0.55); }
+.b-hero .b-copy__hint { color: var(--paper); text-shadow: 0 var(--px) 0 var(--night); }
 .b-copy__hint.is-ticker { font-family: var(--font-data); font-size: var(--fs-xs); color: var(--paper); }
 .b-copy__hint.is-ticker::after { content: '_'; color: var(--lantern); animation: b-blink 1s steps(2, start) infinite; }
 @keyframes b-blink { to { visibility: hidden; } }
@@ -299,13 +299,12 @@
 .b-status.is-on .b-status__word { color: var(--online); }
 .b-status.is-off .b-status__word { color: var(--tc-white); }
 .b-status.is-kindling .b-status__word { color: var(--lantern); }
-.b-status__row { font-size: var(--fs-xs); color: var(--text-faint); line-height: 1.5; }
+.b-status__row { font-size: var(--fs-xs); color: var(--tc-white); line-height: 1.5; }
 .b-status__row b { font-family: var(--font-data); font-weight: 400; font-size: var(--fs-data); color: var(--paper); }
 .b-status__meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-3); margin-top: var(--sp-1); color: var(--tc-white); }
 .b-status__heads { display: inline-flex; gap: var(--px); }
 .b-status__heads img { width: 1rem; height: 1rem; image-rendering: pixelated; box-shadow: 0 0 0 1px var(--night); }
-/* who was in when the lantern last burned: in the dark, like the portraits of those who are out */
-/* who was in then, faded the way an old tintype fades: brown, never grey */
+/* who was in when the lantern last burned: faded the way an old tintype fades, brown, never grey */
 .b-status__heads--then img { filter: sepia(0.7) brightness(0.7); }
 
 /* ─── the bar: the mark, three doors, the address ─────────────── */
@@ -447,7 +446,7 @@
 .b-hero__action { margin-top: var(--sp-6); }
 .b-hero__side { display: grid; gap: var(--sp-3); justify-items: start; }
 @media (min-width: 900px) { .b-hero__side { justify-items: end; padding-bottom: var(--sp-2); } }
-.b-hero__version { font-family: var(--font-data); font-size: 0.6rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--paper); text-shadow: 0 var(--px) 0 rgba(21, 16, 13, 0.55); }
+.b-hero__version { font-family: var(--font-data); font-size: 0.6rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--paper); text-shadow: 0 var(--px) 0 var(--night); }
 
 .b-mesa { position: absolute; inset-inline: 0; bottom: 0; height: clamp(9rem, 32svh, 20rem); pointer-events: none; }
 /* No will-change here: the rock's colour changes with the hour too, so the
