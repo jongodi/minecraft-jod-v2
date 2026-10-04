@@ -85,7 +85,7 @@
 .w-draft__pic { position: relative; aspect-ratio: 16 / 10; overflow: hidden; background: var(--paper-2); box-shadow: 0 0 0 var(--px) var(--tc-brown); }
 .w-draft__pic img { width: 100%; height: 100%; object-fit: cover; opacity: 0.6; transition: opacity var(--dur-2) var(--ease-out); }
 .w-draft.is-done .w-draft__pic img { opacity: 1; }
-.w-draft.is-error .w-draft__pic img { opacity: 0.3; filter: grayscale(1); }
+.w-draft.is-error .w-draft__pic img { opacity: 0.3; filter: sepia(1); }
 .w-draft__bar { position: absolute; left: 0; right: 0; bottom: 0; height: calc(var(--px) * 2); background: rgba(30, 22, 17, 0.25); }
 .w-draft__bar::after { content: ''; position: absolute; inset: 0; background: var(--lantern-deep); transform: scaleX(var(--p, 0)); transform-origin: left center; transition: transform var(--dur-2) var(--ease-out); }
 .w-draft__x { position: absolute; top: var(--px); right: var(--px); width: 1.75rem; height: 1.75rem; display: grid; place-items: center; background: rgba(21, 16, 13, 0.75); color: var(--paper); font-family: var(--font-data); font-size: var(--fs-xs); }

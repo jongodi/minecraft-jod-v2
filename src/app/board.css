@@ -336,7 +336,7 @@
 .b-badge { display: inline-flex; align-items: center; gap: var(--sp-1); }
 .b-badge .b-star { width: 1rem; height: 1rem; color: var(--tc-red); }
 
-.b-modal { position: fixed; inset: 0; z-index: var(--z-modal); background: rgba(12, 10, 20, 0.7); display: grid; place-items: center; padding: var(--sp-4); }
+.b-modal { position: fixed; inset: 0; z-index: var(--z-modal); background: var(--scrim); display: grid; place-items: center; padding: var(--sp-4); }
 /* the backdrop holds focus only until a field inside can take it; no ring around the whole screen */
 .b-modal:focus { outline: none; }
 .b-modal__box { width: 100%; max-width: 22rem; padding: var(--sp-5); }

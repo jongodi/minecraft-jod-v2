@@ -56,6 +56,10 @@
   --sky-sunset-horizon: #E9B24A;
   --sky-night-top:      #0C0A14;
   --sky-night-low:      #15100D;
+
+  /* ── the dark that falls behind a dialog: the night, not the sky's blue ── */
+  --scrim:      rgba(21, 16, 13, 0.8);
+  --scrim-deep: rgba(21, 16, 13, 0.94);
   --sun:                #F4D394;
   --star:               #E8DCC4;
   --dust:               #C99A5A;

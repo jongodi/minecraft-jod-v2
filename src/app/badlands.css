@@ -305,7 +305,8 @@
 .b-status__heads { display: inline-flex; gap: var(--px); }
 .b-status__heads img { width: 1rem; height: 1rem; image-rendering: pixelated; box-shadow: 0 0 0 1px var(--night); }
 /* who was in when the lantern last burned: in the dark, like the portraits of those who are out */
-.b-status__heads--then img { filter: grayscale(0.6) brightness(0.7); }
+/* who was in then, faded the way an old tintype fades: brown, never grey */
+.b-status__heads--then img { filter: sepia(0.7) brightness(0.7); }
 
 /* ─── the bar: the mark, three doors, the address ─────────────── */
 .b-bar {
@@ -903,7 +904,7 @@ html.is-map-full { overflow: hidden; }
 @media (min-width: 720px) { .b-frame-pic--hero .b-frame-pic__cap { font-size: var(--fs-sm); } }
 
 /* ─── lightbox ────────────────────────────────────────────────── */
-.b-lb { position: fixed; inset: 0; z-index: var(--z-lightbox); background: rgba(12, 10, 20, 0.94); color: var(--paper); display: grid; grid-template-rows: 1fr auto; padding: 3.5rem var(--sp-4) var(--sp-5); }
+.b-lb { position: fixed; inset: 0; z-index: var(--z-lightbox); background: var(--scrim-deep); color: var(--paper); display: grid; grid-template-rows: 1fr auto; padding: 3.5rem var(--sp-4) var(--sp-5); }
 .b-lb__img { min-height: 0; display: grid; place-items: center; overflow: hidden; }
 .b-lb__card { max-width: min(90vw, 1100px); max-height: 100%; cursor: grab; touch-action: none; will-change: transform; }
 .b-lb__card:active { cursor: grabbing; }
@@ -916,7 +917,7 @@ html.is-map-full { overflow: hidden; }
 .b-arrowbtn svg { width: 1.125rem; height: 1.125rem; }
 .b-arrowbtn:focus-visible { background: var(--lantern); color: var(--night); }
 @media (hover: hover) { .b-arrowbtn:hover { background: var(--lantern); color: var(--night); } }
-.b-lb__close { position: absolute; top: max(var(--sp-3), env(safe-area-inset-top, 0px)); right: var(--sp-4); z-index: 1; background: rgba(12, 10, 20, 0.6); }
+.b-lb__close { position: absolute; top: max(var(--sp-3), env(safe-area-inset-top, 0px)); right: var(--sp-4); z-index: 1; background: rgba(21, 16, 13, 0.6); }
 
 /* ─── the crew: portraits in the room ─────────────────────────── */
 .b-crew__row { display: grid; gap: var(--sp-3); margin-bottom: var(--sp-5); }
@@ -960,7 +961,7 @@ html.is-map-full { overflow: hidden; }
 .b-shelf__lede { font-size: var(--fs-md); }
 
 /* ─── duel: the arena at night, behind the fire ───────────────── */
-.b-duelbox { position: fixed; inset: 0; z-index: var(--z-modal); display: grid; place-items: center; padding: var(--sp-4); background: rgba(12, 10, 20, 0.8); overflow-y: auto; }
+.b-duelbox { position: fixed; inset: 0; z-index: var(--z-modal); display: grid; place-items: center; padding: var(--sp-4); background: var(--scrim); overflow-y: auto; }
 .b-duelbox__in { width: 100%; max-width: 64rem; }
 .b-duelpanel { padding: var(--sp-5); background: var(--dusk-2); box-shadow: var(--bevel); clip-path: var(--notch); }
 .b-duel { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-5); }
@@ -1127,7 +1128,7 @@ html.is-map-full { overflow: hidden; }
 .b-night__head img { width: 1.5rem; height: 1.5rem; image-rendering: pixelated; box-shadow: 0 0 0 1px var(--night); }
 .b-nightline .b-night__head img { width: 1rem; height: 1rem; }
 /* during the evening, those who said yes and aren't in yet stand in the dark */
-.b-night--live .b-night__head:not(.is-in) img { filter: grayscale(1) brightness(0.6); }
+.b-night--live .b-night__head:not(.is-in) img { filter: sepia(1) brightness(0.55); }
 .b-night__head.is-in img { box-shadow: 0 0 0 1px var(--night), 0 0 0 calc(1px + var(--px)) var(--online); }
 .b-night__row .b-night__select { flex: 1 1 8rem; width: auto; max-width: 11rem; }
 /* the day is a button that opens a month on paper under its row */
