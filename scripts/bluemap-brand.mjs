@@ -80,6 +80,44 @@ export function boundsOf(files, map, tile = { size: 32, translate: 2 }) {
   };
 }
 
+/* How far around the camera a phone draws in full detail (PHONE_HIRES in
+   public/bluemap-jod/jod.js): 110 blocks, a 7×7 square of hires tiles. */
+const PHONE_REACH = 110;
+/* the least a heavy map is cut to: 48 blocks, a 3×3 square */
+const LEAST_HIRES = 48;
+
+/** The mean size, as stored, of the hires tiles a phone loads first: the
+    square around (x, z) that PHONE_REACH reaches. Null when there are none. */
+export function startTileBytes(files, sizeOf, map, x, z, reach = PHONE_REACH) {
+  const each = Math.floor(reach / 32);
+  const tx = Math.floor((x - 2) / 32), tz = Math.floor((z - 2) / 32);
+  let count = 0, bytes = 0;
+  for (const f of files) {
+    const m = HIRES.exec(f);
+    if (!m || m[1] !== map) continue;
+    if (Math.abs(coord(m[2]) - tx) > each || Math.abs(coord(m[3]) - tz) > each) continue;
+    count++;
+    bytes += sizeOf(f);
+  }
+  return count ? bytes / count : null;
+}
+
+/** How many times heavier a map's first detailed tiles are than the main
+    map's, to one decimal; 1 when not a quarter heavier or more, or unknown. */
+export function heaviness(mapBytes, mainBytes) {
+  if (!mapBytes || !mainBytes) return 1;
+  const w = mapBytes / mainBytes;
+  return w >= 1.25 ? Math.round(w * 10) / 10 : 1;
+}
+
+/** A hires view distance for a map `weight` times heavier than the main one:
+    about the same weight of tiles in memory (the square's area goes down by
+    the weight), never less than a 3×3 square. public/bluemap-jod/jod.js does
+    the same for its quality choices. */
+export function lighterHires(distance, weight) {
+  return weight > 1 ? Math.max(LEAST_HIRES, Math.round(distance / Math.sqrt(weight))) : distance;
+}
+
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
 /** Reads the hashed script and stylesheet names out of BlueMap's (or an earlier branded) index.html. */
@@ -111,6 +149,8 @@ export function indexHtml({ script, style, version }, map, page = {}) {
     start: map.start,
     /* the plank's title on a base map's viewer (public/bluemap-jod/jod.js) */
     ...(page.title ? { title: page.title } : {}),
+    /* how many times heavier its detailed tiles are than the main map's, for jod.js to draw fewer */
+    ...(map.weight > 1 ? { weight: map.weight } : {}),
   };
   return `<!DOCTYPE html>
 <!-- ${esc(origin)} -->
@@ -166,8 +206,12 @@ ${preload.map((href) => `        <link rel="preload" href="${esc(href)}" as="fet
     `copy` its manifest (src/lib/map-bases/<id>.json). The camera opens on the
     base's centre from the main map's distance and angle, and is held over
     what is rendered; players and the places' lanterns come live through
-    /bluemap, as on the main map. */
-export function baseViewer(shell, settings, base, copy) {
+    /bluemap, as on the main map. `weight` says how many times heavier the
+    base's first detailed tiles are than the main map's (heaviness above): a
+    heavy map loads a smaller square of them from the very first frame, so a
+    phone's tab isn't overwhelmed (Joðville's mountains are about nine times
+    the main map's). */
+export function baseViewer(shell, settings, base, copy, weight = 1) {
   const root = `/bluemap-data/${copy.version}/maps`;
   /* map:x:y:z, then distance:rotation:angle:tilt:ortho:mode, as the main map opens */
   const view = String(settings.startLocation ?? '').split(':').slice(4);
@@ -184,6 +228,7 @@ export function baseViewer(shell, settings, base, copy) {
     files: new Set(copy.files),
     bounds,
     start,
+    weight,
   }, {
     title: base.name,
     description: `${base.name} á JOÐ í þrívídd: dragðu, snúðu og stækkaðu. play.jodcraft.world`,
@@ -197,6 +242,7 @@ export function baseViewer(shell, settings, base, copy) {
       mapDataRoot: root,
       liveDataRoot: '/bluemap/maps',
       startLocation: start,
+      hiresSliderDefault: lighterHires(Number(settings.hiresSliderDefault) || 160, weight),
     },
   };
 }

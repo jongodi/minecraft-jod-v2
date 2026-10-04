@@ -8,7 +8,7 @@ import { GET as kort, generateStaticParams } from '../../app/kort/[id]/[file]/ro
 import { baseCopyFor, uploadedBases } from '@/lib/bluemap-bases';
 import { baseAt } from '@/lib/base-links';
 import { BASES_DIR, BLOB_DIR, basePackDir, planPacks } from '../../../scripts/bluemap-pack.mjs';
-import { baseViewer, indexHtml, viewerAssets } from '../../../scripts/bluemap-brand.mjs';
+import { baseViewer, heaviness, indexHtml, lighterHires, startTileBytes, viewerAssets } from '../../../scripts/bluemap-brand.mjs';
 import { baseSkip, compareWithCopy, staleBlobs, took } from '../../../scripts/map-bases.mjs';
 import config from '@/lib/map-bases.json';
 
@@ -180,6 +180,17 @@ describe('a base map\'s viewer', () => {
     expect(facts.bounds).toEqual({ minX: -414, maxX: 687, minZ: -634, maxZ: 467, shape: 'box' });
   });
 
+  it('loads fewer detailed tiles of a map much heavier than the main one, from the first frame', () => {
+    const heavy = baseViewer(shell, settings, base, copy, 9);
+    /* 160 / 3 → 53 blocks, a 3×3 square of tiles instead of 11×11 */
+    expect(heavy.settings.hiresSliderDefault).toBe(53);
+    expect(JSON.parse(/window\.JOD_MAP = (\{.*\});/.exec(heavy.html)![1]).weight).toBe(9);
+    /* one as heavy as the main map is left as it is */
+    const plain = baseViewer(shell, settings, base, copy);
+    expect(plain.settings.hiresSliderDefault).toBe(160);
+    expect(JSON.parse(/window\.JOD_MAP = (\{.*\});/.exec(plain.html)![1])).not.toHaveProperty('weight');
+  });
+
   it('leaves the main viewer\'s page as it was', () => {
     const assets = viewerAssets('<meta name="version" content="5.27"><script type="module" crossorigin src="./assets/index-A.js"></script><link rel="stylesheet" crossorigin href="./assets/index-B.css">');
     const html = indexHtml(assets, { id: 'world', root: '/bluemap-data/vx/maps', version: 'vx', syncedAt: null, files: new Set(), bounds: null, start: null });
@@ -274,6 +285,33 @@ describe('uploading the base maps', () => {
       expect(source).toContain(`@/lib/map-bases/${b.id}.json`);
       expect(() => JSON.parse(readFileSync(join(process.cwd(), 'src', 'lib', 'map-bases', `${b.id}.json`), 'utf8'))).not.toThrow();
     }
+  });
+});
+
+describe('weighing a map\'s detailed tiles', () => {
+  const tile = (x: number, z: number) => `maps/m/tiles/0/x${x}/z${z}.prbm.gz`;
+  const files = [tile(0, 0), tile(1, 1), tile(3, 0), tile(4, 0), 'maps/m/tiles/1/x0/z0.prbm.gz', 'maps/m/settings.json'];
+  const sizes: Record<string, number> = { [tile(0, 0)]: 100, [tile(1, 1)]: 300, [tile(3, 0)]: 500, [tile(4, 0)]: 9000 };
+  const sizeOf = (f: string) => sizes[f] ?? 1;
+
+  it('averages the hires tiles a phone loads first, around where the map opens', () => {
+    /* 110 blocks reach 3 tiles each way from the start's tile: x4 is past it, lowres and other files don't count */
+    expect(startTileBytes(files, sizeOf, 'm', 10, 10)).toBe(300);
+    expect(startTileBytes(files, sizeOf, 'other', 10, 10)).toBeNull();
+  });
+
+  it('says how many times heavier, only when it is a quarter heavier or more', () => {
+    expect(heaviness(2994, 331)).toBe(9);
+    expect(heaviness(400, 331)).toBe(1);
+    expect(heaviness(null, 331)).toBe(1);
+    expect(heaviness(500, null)).toBe(1);
+  });
+
+  it('cuts the detailed square by the weight, never below 3×3', () => {
+    expect(lighterHires(160, 1)).toBe(160);
+    expect(lighterHires(160, 4)).toBe(80);
+    expect(lighterHires(110, 9)).toBe(48);
+    expect(lighterHires(70, 9)).toBe(48);
   });
 });
 
