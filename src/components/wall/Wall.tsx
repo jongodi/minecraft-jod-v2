@@ -2,7 +2,7 @@
 
 // A member's wall: their wanted poster at the top, the pin slot under it
 // when it is their own, and everything they have pinned, newest first.
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import type { CrewProfile, CrewEntry } from '@/lib/crew-types';
@@ -172,25 +172,36 @@ function PasswordModal({ username, change, onDone, onClose }: { username: string
 interface Contact { email: { address: string; nights: boolean } | null; name: string | null }
 
 function ContactModal({ username, onClose }: { username: string; onClose: () => void }) {
-  /* false while the saved ones are fetched */
-  const [ready,   setReady]   = useState(false);
+  /* The saved ones are fetched first. Until they are in, nothing can be
+     saved: empty fields saved over a load that failed would erase them. */
+  const [state,   setState]   = useState<'loading' | 'ready' | 'failed'>('loading');
+  const [attempt, setAttempt] = useState(0);
+  const ready = state === 'ready';
   const [name,    setName]    = useState('');
   const [address, setAddress] = useState('');
   const [nights,  setNights]  = useState(true);
   const [error,   setError]   = useState('');
   const [loading, setLoading] = useState(false);
+  const nameRef = useRef<HTMLInputElement>(null);
   const backdrop = useWallDialog(onClose);
 
   useEffect(() => {
+    let live = true;
+    setState('loading');
     fetch(`/api/crew/${username}/email`, { cache: 'no-store' })
-      .then(r => (r.ok ? r.json() : null))
-      .then((d: Contact | null) => {
-        if (d?.email) { setAddress(d.email.address); setNights(d.email.nights); }
-        if (d?.name) setName(d.name);
+      .then(r => { if (!r.ok) throw new Error(); return r.json() as Promise<Contact>; })
+      .then(d => {
+        if (!live) return;
+        if (d.email) { setAddress(d.email.address); setNights(d.email.nights); }
+        if (d.name) setName(d.name);
+        setState('ready');
       })
-      .catch(() => {})
-      .finally(() => setReady(true));
-  }, [username]);
+      .catch(() => { if (live) setState('failed'); });
+    return () => { live = false; };
+  }, [username, attempt]);
+
+  /* the first field takes focus once it can be typed in */
+  useEffect(() => { if (ready) nameRef.current?.focus(); }, [ready]);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -210,15 +221,21 @@ function ContactModal({ username, onClose }: { username: string; onClose: () => 
         <p className="b-modal__title">Nafn og netfang</p>
         <p className="b-modal__sub">fyrir póstinn frá JOÐ. Aðrir sjá þetta ekki á vefnum; nafnið sést aðeins í bréfunum.</p>
         <label className="b-modal__label" htmlFor="w-contact-name">Hvað eiga bréfin að kalla þig?</label>
-        <input id="w-contact-name" className={`b-input${error ? ' is-error' : ''}`} value={name} onChange={e => setName(e.target.value)} placeholder={ready ? username : 'sæki…'} disabled={!ready} maxLength={40} autoFocus autoComplete="given-name" />
+        <input ref={nameRef} id="w-contact-name" className={`b-input${error ? ' is-error' : ''}`} value={name} onChange={e => setName(e.target.value)} placeholder={ready ? username : state === 'loading' ? 'sæki…' : ''} disabled={!ready} maxLength={40} autoComplete="given-name" />
         <label className="b-modal__label" htmlFor="w-contact-email">Netfang</label>
-        <input id="w-contact-email" type="email" className={`b-input${error ? ' is-error' : ''}`} value={address} onChange={e => setAddress(e.target.value)} placeholder={ready ? 'nafn@dæmi.is' : 'sæki…'} disabled={!ready} autoComplete="email" />
+        <input id="w-contact-email" type="email" className={`b-input${error ? ' is-error' : ''}`} value={address} onChange={e => setAddress(e.target.value)} placeholder={ready ? 'nafn@dæmi.is' : state === 'loading' ? 'sæki…' : ''} disabled={!ready} autoComplete="email" />
         <label className="b-modal__check">
           <input type="checkbox" checked={nights} onChange={e => setNights(e.target.checked)} disabled={!ready} />
           Póstur þegar bál er kveikt, þegar kvöldið er ákveðið, og hálftíma áður en það hefst
         </label>
         <p className="b-modal__ok">Autt nafn: bréfin segja {username}. Autt netfang: enginn póstur.</p>
-        {error && <p className="b-err">{error}</p>}
+        {state === 'failed' && (
+          <p className="b-err" role="alert">
+            Náði ekki í það sem er skráð, svo ekkert verður vistað í bili.{' '}
+            <button type="button" className="b-link" onClick={() => setAttempt(a => a + 1)}>Reyna aftur</button>
+          </p>
+        )}
+        {error && <p className="b-err" role="alert">{error}</p>}
         <div className="b-modal__actions">
           <button type="submit" className="b-btn b-btn--solid" disabled={loading || !ready}>{loading ? 'Vista…' : 'Vista'}</button>
           <button type="button" className="b-btn" onClick={onClose}>Hætta við</button>
