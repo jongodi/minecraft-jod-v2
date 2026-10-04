@@ -139,12 +139,6 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
   useEffect(() => { loadPhotos(); }, [loadPhotos]);
 
   useEffect(() => { setUnsaved('map', dirty); return () => setUnsaved('map', false); }, [dirty]);
-  useEffect(() => {
-    if (!dirty) return;
-    const warn = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ''; };
-    window.addEventListener('beforeunload', warn);
-    return () => window.removeEventListener('beforeunload', warn);
-  }, [dirty]);
 
   /* ─── coordinates ─── */
   const toSvg = useCallback((cx: number, cy: number): [number, number] => {

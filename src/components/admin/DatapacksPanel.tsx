@@ -9,6 +9,7 @@ import { categoryLabel } from '@/lib/icelandic';
 import PixelGlyph from '@/components/badlands/PixelGlyph';
 import { GENERIC_GLYPHS, PACK_GLYPHS, glyphFor } from '@/components/badlands/packGlyphs';
 import { Button, Field, Kbd, Modal, Notice, Panel, Toggle, api, errText } from './ui';
+import { setUnsaved } from './unsaved';
 
 const CATEGORIES = ['BUILD', 'COMBAT', 'SURVIVAL', 'QOL', 'STRUCTURE', 'SOCIAL', 'LOOT', 'TRADE', 'CRAFT', 'WORLD'];
 const SOURCES = [{ id: 'modrinth', label: 'Modrinth' }, { id: 'github', label: 'GitHub' }, { id: 'manual', label: 'Handvirkt' }] as const;
@@ -68,6 +69,9 @@ export default function DatapacksPanel() {
   useEffect(() => { load().then(check); }, [load, check]);
 
   const changed = useMemo(() => packs.filter(p => (versions[p.id] ?? '') !== (p.currentVersion ?? '')), [packs, versions]);
+  /* typed versions are lost with the panel, so leaving it asks first */
+  const unsaved = changed.length > 0;
+  useEffect(() => { setUnsaved('datapacks', unsaved); return () => setUnsaved('datapacks', false); }, [unsaved]);
 
   async function saveVersions() {
     setSaving(true); setMsg('');
