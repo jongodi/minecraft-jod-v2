@@ -110,7 +110,7 @@ npm run map:brand
 | Skrá | Hvað |
 |---|---|
 | `public/bluemap-jod/jod.css` | Útlitið: litir, pixlaletrið, viður, pappír og luktir staðanna |
-| `public/bluemap-jod/jod.js` | Plankinn með leiðinni heim, myndavélin haldin yfir teiknaða heiminum, skerpa miðuð við tvo skjápunkta, reitir sem eru eins og í fyrra afriti sóttir á gömlu slóðina sína, ein mynd teiknuð fyrir hvern reit sem berst (BlueMap teiknar annars á fullum hraða í heila sekúndu eftir hvern reit, og meðan reitirnir koma hægt heldur það skjákortinu á fullu allan tímann), og samtalið við forsíðuna (framvinda, hlé, nótt, flug á stað) |
+| `public/bluemap-jod/jod.js` | Plankinn með leiðinni heim, myndavélin haldin yfir teiknaða heiminum, skerpa miðuð við tvo skjápunkta, reitir sem eru eins og í fyrra afriti sóttir á gömlu slóðina sína, Venjulegt létt skref fyrir skref á tæki sem nær ekki að teikna það mjúklega meðan myndavélin hreyfist (færri dílar, svo hring færri nákvæmir reitir; tækið man skrefið í þrjá daga, og gæði sem valin eru í valmyndinni eru aldrei létt), mælir í horninu með `?maelir` í vistfanginu (rammar á sekúndu, teikniköll, þríhyrningar, reitir og dílar), ein mynd teiknuð fyrir hvern reit sem berst (BlueMap teiknar annars á fullum hraða í heila sekúndu eftir hvern reit, og meðan reitirnir koma hægt heldur það skjákortinu á fullu allan tímann), og samtalið við forsíðuna (framvinda, hlé, nótt, flug á stað) |
 | `public/bluemap/lang/is.conf` | Allur texti skoðarans á íslensku |
 
 Afritunin tekur aðeins það sem skoðarinn les. Skrár BlueMap um hvað hefur verið teiknað (`maps/*/rstate`), kort sem skoðarinn sýnir ekki, hausar leikmanna og kóðakort verða eftir á þjóninum. Hausar leikmanna í kortinu koma um `/api/map-head`.

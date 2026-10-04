@@ -11,6 +11,9 @@
    - draws one frame for each tile that arrives, not a second of frames at
      the screen's full rate, so a map whose tiles come in slowly doesn't
      keep the GPU flat out while they do;
+   - eases Venjulegt off a step at a time on a device that can't draw it
+     smoothly while the camera moves (and, with ?maelir, shows what each
+     frame costs);
    - keeps BlueMap's menu to what a visitor uses: the rest is hidden;
    - holds the camera over the part of the world that is rendered, so nobody
      drifts out into the void;
@@ -359,6 +362,9 @@
       }
     });
 
+    keepSmooth(app);
+    if (params.has('maelir')) meter(app);
+
     jod.ready = true;
     tell('hello', {});
     if (embedded) progress(app);
@@ -407,9 +413,12 @@
       mikid:     { hires: light(phone ? 160 : 250),               scale: Math.min(2, 3 / dpr) },
     };
     applyQuality = (q) => {
-      const t = table[q];
-      if (!t) return;
+      const base = table[q];
+      if (!base) return;
       qualityNow = q;
+      /* Venjulegt is eased to what this device draws smoothly (keepSmooth
+         below); a quality picked in the menu is drawn as it is */
+      const t = q === 'venjulegt' && !picked ? eased(base, easeStep) : base;
       viewer.superSampling = t.scale;
       viewer.data.loadedHiresViewDistance = t.hires;
       viewer.updateLoadedMapArea();
@@ -418,6 +427,133 @@
       tidy();
     };
     applyQuality(qualityNow);
+    /* the next step that actually draws less, or null at the last */
+    nextEase = () => {
+      const now = eased(table.venjulegt, easeStep);
+      for (let n = easeStep + 1; n <= EASE_STEPS; n++) {
+        const t = eased(table.venjulegt, n);
+        if (t.hires !== now.hires || t.scale !== now.scale) return n;
+      }
+      return null;
+    };
+  }
+
+  /* ─── keeping it smooth ────────────────────────────────────── */
+
+  /* Venjulegt was sized for a good computer: since 29 September an 11×11
+     square of detailed tiles at two device pixels per CSS pixel, and every
+     detailed tile is many draws (one per block texture in it). A slower
+     machine can't draw that fast enough while the camera moves, and the map
+     stutters. So while the camera moves the frame rate is watched, and if it
+     stays under about 38 frames a second Venjulegt eases off a step: fewer
+     device pixels, a ring fewer of detailed tiles, fewer pixels again, and
+     another ring. A step that doesn't help (a screen held to 30 frames a
+     second on battery, say) is taken back and the easing stops there. The
+     step is kept in the browser for a few days, so the next visit starts
+     smooth. A quality picked in the menu is never eased. */
+  const EASE_KEY = 'jod-map-ease';
+  const EASE_STEPS = 4;
+  const EASE_DAYS = 3;
+  /* a frame slower than this, as the median of a stretch of moving frames, is too slow */
+  const SLOW_MS = 26;
+  let picked = false;
+  let easeStep = (() => {
+    try {
+      const kept = JSON.parse(localStorage.getItem(EASE_KEY) || 'null');
+      if (kept && Date.now() - kept.at < EASE_DAYS * 864e5) return Math.min(EASE_STEPS, Math.max(0, kept.step | 0));
+    } catch { /* none kept */ }
+    return 0;
+  })();
+  const saveEase = () => { try { localStorage.setItem(EASE_KEY, JSON.stringify({ step: easeStep, at: Date.now() })); } catch { /* this visit only */ } };
+  let nextEase = () => null;
+  function eased(t, n) {
+    const dpr = window.devicePixelRatio || 1;
+    return {
+      hires: n >= 4 ? Math.max(48, t.hires - 64) : n >= 2 ? Math.max(48, t.hires - 32) : t.hires,
+      scale: n >= 3 ? Math.min(t.scale, 1 / dpr) : n >= 1 ? Math.min(t.scale, 1.5 / dpr) : t.scale,
+    };
+  }
+
+  function keepSmooth(app) {
+    const viewer = app.mapViewer;
+    const started = performance.now();
+    const gaps = [];
+    let last = 0;
+    let settleUntil = started + 3000;   /* the opening glide, while the first tiles pour in */
+    let trial = null;                   /* a step just taken: { from, before } */
+    const median = (list) => [...list].sort((a, b) => a - b)[list.length >> 1];
+    const draw = viewer.render.bind(viewer);
+    viewer.render = (...args) => {
+      draw(...args);
+      const now = performance.now();
+      /* only frames drawn back to back while the camera moves say how fast it can draw */
+      const moving = Date.now() - viewer.lastRedrawChange < 1000;
+      const gap = now - last;
+      last = now;
+      /* a gap over a second is a pause (a hidden tab, a stopped loop), not a frame */
+      if (!moving || jod.paused || document.hidden || now < settleUntil || gap > 1000) return;
+      if (qualityNow !== 'venjulegt' || picked) return;
+      gaps.push(gap);
+      /* judged after 30 frames, or 3 seconds of them on a device that draws few */
+      if (gaps.length < 30 && !(gaps.length >= 6 && gaps.reduce((a, b) => a + b, 0) >= 3000)) return;
+      const m = median(gaps);
+      gaps.length = 0;
+      if (trial) {
+        /* the step didn't make it noticeably faster: drawing isn't what holds it back */
+        if (m > trial.before * 0.85) {
+          easeStep = trial.from;
+          saveEase();
+          applyQuality('venjulegt');
+          keepSmooth.done = true;
+        }
+        trial = null;
+        settleUntil = now + 1000;
+        return;
+      }
+      if (keepSmooth.done || m <= SLOW_MS) return;
+      const n = nextEase();
+      if (n === null) return;
+      trial = { from: easeStep, before: m };
+      easeStep = n;
+      saveEase();
+      applyQuality('venjulegt');
+      settleUntil = now + 1000;
+    };
+  }
+
+  /* ─── ?maelir: what the map costs to draw ──────────────────── */
+
+  /* A readout in the corner, for telling where a slow map's time goes:
+     frames a second while moving, draw calls and triangles per frame, how
+     many detailed tiles are drawn, device pixels per CSS pixel, and the
+     easing step. Only with ?maelir in the address. */
+  function meter(app) {
+    const viewer = app.mapViewer;
+    const info = viewer.renderer?.info;
+    if (!info) return;
+    info.autoReset = false;
+    const box = document.createElement('output');
+    box.className = 'jod-meter';
+    document.body.append(box);
+    const frames = [];
+    let calls = 0, triangles = 0;
+    const draw = viewer.render.bind(viewer);
+    viewer.render = (...args) => {
+      info.reset();
+      draw(...args);
+      calls = info.render.calls;
+      triangles = info.render.triangles;
+      frames.push(performance.now());
+    };
+    const n = (v) => Math.round(v).toLocaleString('is-IS');
+    setInterval(() => {
+      const now = performance.now();
+      while (frames.length && now - frames[0] > 1000) frames.shift();
+      let tiles = 0;
+      viewer.map?.hiresTileManager?.tiles?.forEach((t) => { if (t.model) tiles++; });
+      const px = (window.devicePixelRatio || 1) * viewer.superSampling;
+      box.textContent = `${frames.length} rammar/s · ${n(calls)} teikniköll · ${n(triangles / 1000)} þús. þríhyrningar · ${tiles} reitir · ${px.toFixed(2)} dílar/punkt · létt ${easeStep}${picked ? ' (valið)' : ''}`;
+    }, 500);
   }
 
   /* ─── the menu: only what a visitor uses ───────────────────── */
@@ -478,8 +614,9 @@
         label.className = 'label';
         label.textContent = QUALITY_LABEL[q];
         button.append(label);
-        button.addEventListener('click', () => applyQuality(q));
-        button.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); applyQuality(q); } });
+        const pick = () => { picked = true; applyQuality(q); };
+        button.addEventListener('click', pick);
+        button.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } });
         content.append(button);
       }
       const help = document.createElement('p');

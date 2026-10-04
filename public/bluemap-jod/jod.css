@@ -502,3 +502,19 @@ html.jod-embed #map-container::after { background: radial-gradient(ellipse 80% 7
 .jod-pin.is-chosen .jod-pin__label .jod-pin__more { display: block; font-family: var(--jod-font-data); font-size: 0.6rem; letter-spacing: 0.04em; color: var(--jod-ink); }
 /* in the frame, night and day is the HUD's lantern */
 html.jod-embed .day-night-switch { display: none; }
+
+/* ?maelir: what each frame costs (public/bluemap-jod/jod.js) */
+.jod-meter {
+  position: fixed;
+  right: 8px;
+  bottom: 8px;
+  z-index: 1000;
+  max-width: calc(100vw - 16px);
+  padding: 4px 8px;
+  font-family: var(--jod-font-data);
+  font-size: 0.65rem;
+  letter-spacing: 0.04em;
+  color: var(--jod-paper);
+  background: rgba(21, 16, 13, 0.85);
+  pointer-events: none;
+}
