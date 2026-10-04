@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { SoundIcon } from '@/components/badlands/Bits';
 import { isRemembered, remember, startAmbience, stopAmbience } from './ambience';
 
@@ -8,13 +8,22 @@ import { isRemembered, remember, startAmbience, stopAmbience } from './ambience'
     key, since browsers will not start audio before a gesture. */
 export default function AmbienceToggle({ className }: { className?: string }) {
   const [on, setOn] = useState(false);
+  const button = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!isRemembered()) return;
-    const arm = () => { if (startAmbience()) setOn(true); };
-    window.addEventListener('pointerdown', arm, { once: true });
-    window.addEventListener('keydown', arm, { once: true });
-    return () => { window.removeEventListener('pointerdown', arm); window.removeEventListener('keydown', arm); stopAmbience(); };
+    /* One gesture arms it, whichever comes first. A gesture on the toggle
+       itself is the toggle's own to answer: starting the sound here as well
+       had its click stop it again at once. */
+    const arm = (e: Event) => {
+      disarm();
+      if (button.current?.contains(e.target as Node)) return;
+      if (startAmbience()) setOn(true);
+    };
+    const disarm = () => { window.removeEventListener('pointerdown', arm); window.removeEventListener('keydown', arm); };
+    window.addEventListener('pointerdown', arm);
+    window.addEventListener('keydown', arm);
+    return () => { disarm(); stopAmbience(); };
   }, []);
 
   const toggle = () => {
@@ -23,7 +32,7 @@ export default function AmbienceToggle({ className }: { className?: string }) {
   };
 
   return (
-    <button type="button" className={`b-sound${on ? ' is-on' : ''}${className ? ` ${className}` : ''}`} onClick={toggle} aria-pressed={on} aria-label={on ? 'Slökkva á vindi og eldi' : 'Kveikja á vindi og eldi'} title={on ? 'Slökkva á umhverfishljóði' : 'Kveikja á umhverfishljóði: vindur og eldur'}>
+    <button ref={button} type="button" className={`b-sound${on ? ' is-on' : ''}${className ? ` ${className}` : ''}`} onClick={toggle} aria-pressed={on} aria-label={on ? 'Slökkva á vindi og eldi' : 'Kveikja á vindi og eldi'} title={on ? 'Slökkva á umhverfishljóði' : 'Kveikja á umhverfishljóði: vindur og eldur'}>
       <SoundIcon on={on} />
     </button>
   );
