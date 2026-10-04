@@ -53,9 +53,15 @@ export default function CrewPanel() {
     catch (e) { setNotice(errText(e)); }
   }
 
-  async function copy(url: string) {
-    try { await navigator.clipboard.writeText(url); setCopied(true); }
-    catch { setCopied(false); }
+  /* from the new link's dialog, the button itself says so; from a row, the notice at the top does */
+  async function copy(url: string, fromRow = false) {
+    try {
+      await navigator.clipboard.writeText(url);
+      if (fromRow) setNotice('✓ Tengillinn er afritaður.'); else setCopied(true);
+    } catch {
+      setCopied(false);
+      setNotice(`✗ Vafrinn leyfði ekki að afrita. Tengillinn: ${url}`);
+    }
   }
 
   return (
@@ -92,7 +98,7 @@ export default function CrewPanel() {
                       {r.invites.map(inv => (
                         <li key={inv.url}>
                           <span className="a-muted">{inv.uses} af {inv.maxUses} notuð · til {when(inv.expiresAt)}</span>
-                          <Button tone="ghost" small onClick={() => copy(inv.url)}>Afrita</Button>
+                          <Button tone="ghost" small onClick={() => copy(inv.url, true)}>Afrita</Button>
                           <Button tone="ghost" small onClick={() => close(inv.url)}>Loka</Button>
                         </li>
                       ))}
@@ -119,7 +125,7 @@ export default function CrewPanel() {
           <div className="a-stack">
             {invite.sentTo && <Notice text={`✓ Tengillinn var sendur á ${invite.sentTo}.`} />}
             <p className="a-help">{invite.sentTo ? 'Hann er líka hér, til að afrita eða skanna.' : `Sendu ${invite.username} tengilinn eða láttu skanna kóðann.`} Hann gildir til {when(invite.expiresAt)} og fyrir {invite.maxUses} tæki; hvert tæki sem opnar hann er skráð inn sem {invite.username} í eitt ár. Á veggnum getur {invite.username} svo valið sér lykilorð.</p>
-            <div className="a-qr" dangerouslySetInnerHTML={{ __html: invite.svg }} aria-label="QR-kóði með tenglinum" />
+            <div className="a-qr" role="img" dangerouslySetInnerHTML={{ __html: invite.svg }} aria-label="QR-kóði með tenglinum" />
             <input className="a-input a-input--data" readOnly value={invite.url} onFocus={e => e.target.select()} aria-label="Tengill" />
             <div className="a-inline">
               <Button tone="primary" small onClick={() => copy(invite.url)}>{copied ? 'Afritað' : 'Afrita tengil'}</Button>

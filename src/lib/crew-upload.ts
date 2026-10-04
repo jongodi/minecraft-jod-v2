@@ -20,7 +20,7 @@ export async function fetchStorageInfo(username: string): Promise<StorageInfo> {
   }
 }
 
-function newId(): string {
+export function newId(): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID();
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
     const r = (Math.random() * 16) | 0;
@@ -37,7 +37,24 @@ export async function errorFrom(res: Response): Promise<string> {
   } catch { /* not json */ }
   if (res.status === 413) return 'Skráin er of stór fyrir þjóninn.';
   if (res.status === 401) return 'Innskráningin er útrunnin. Skráðu þig inn aftur.';
-  return `Villa ${res.status}${res.statusText ? ` (${res.statusText})` : ''}`;
+  /* the status text is the browser's English; the number is enough to report */
+  return `Villa ${res.status}`;
+}
+
+/** A picture sent straight to Vercel Blob. Its client speaks English and,
+    when the site's handshake turns an upload away, drops the site's own
+    words for "Failed to retrieve the client token"; the message is put back
+    into Icelandic here. */
+export async function sendToBlob(...args: Parameters<typeof upload>): ReturnType<typeof upload> {
+  try {
+    return await upload(...args);
+  } catch (e) {
+    const m = e instanceof Error ? e.message : '';
+    if (!m.startsWith('Vercel Blob:')) throw e;
+    throw new Error(/client token/i.test(m)
+      ? 'Geymslan tók ekki við myndinni; innskráningin gæti verið útrunnin. Endurhlaðaðu síðuna og reyndu aftur.'
+      : 'Ekki tókst að senda myndina í geymsluna. Reyndu aftur.');
+  }
 }
 
 /** Shrink and store one print. `onProgress` gets 0 to 100 while it travels. */
@@ -50,7 +67,7 @@ export async function uploadPrint(username: string, file: File, info: StorageInf
   if (info.mode === 'blob') {
     const id = newId();
     const pathname = crewBlobPath(username, id, prepared.ext);
-    const blob = await upload(pathname, prepared.blob, {
+    const blob = await sendToBlob(pathname, prepared.blob, {
       access:          info.access ?? 'public',
       handleUploadUrl: `/api/crew/${username}/upload`,
       contentType:     prepared.contentType,

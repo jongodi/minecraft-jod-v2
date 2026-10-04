@@ -86,3 +86,26 @@ export const DEFAULT_CONFIG: MapConfig = {
   zones:     DEFAULT_ZONES,
   paths:     DEFAULT_PATHS,
 };
+
+/**
+ * The map editor's places, with the photo links it never touched brought up
+ * to date. The gallery links photos to places and writes the map itself, so
+ * an editor holding unsaved work has an old copy of those links; saving it
+ * as it stands would undo whatever the gallery did meanwhile.
+ *
+ * `base` is what the editor loaded (or last saved), `current` what the store
+ * holds now. A link the editor changed is kept, and wins: a photo it gave to
+ * a place leaves any other place the store had put it on.
+ */
+export function withCurrentLinks(mine: MapLocation[], base: MapLocation[], current: MapLocation[]): MapLocation[] {
+  const link = (l: MapLocation | undefined) => l?.photoId ?? null;
+  const was = new Map(base.map(l => [l.id, l]));
+  const now = new Map(current.map(l => [l.id, l]));
+  const changed = (l: MapLocation) => !was.has(l.id) || link(l) !== link(was.get(l.id));
+  const given = new Set(mine.filter(l => changed(l) && link(l) !== null).map(link));
+  return mine.map(l => {
+    if (changed(l) || !now.has(l.id)) return l;
+    const photoId = link(now.get(l.id));
+    return { ...l, photoId: photoId !== null && given.has(photoId) ? null : photoId };
+  });
+}

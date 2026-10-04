@@ -237,22 +237,6 @@ export function useAgo(ts: number | null): string {
   return `fyrir ${Math.floor(s / 60)} mín.`;
 }
 
-/** True once the element has been near the viewport; used to start effects lazily. */
-export function useNearViewport<T extends Element>(margin = '200px'): [React.RefObject<T>, boolean] {
-  const ref = useRef<T>(null);
-  const [near, setNear] = useState(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || !('IntersectionObserver' in window)) { setNear(true); return; }
-    const obs = new IntersectionObserver(entries => {
-      if (entries.some(e => e.isIntersecting)) { setNear(true); obs.disconnect(); }
-    }, { rootMargin: margin });
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, [margin]);
-  return [ref, near];
-}
-
 /** Whether a media query matches; false during SSR and on the first paint. */
 export function useMediaQuery(query: string): boolean {
   const [match, setMatch] = useState(false);
@@ -323,14 +307,45 @@ export function useCrewSession(): { me: Me; hasPassword: boolean; refresh: () =>
   return { me, hasPassword, refresh: refreshMe, signOut };
 }
 
+/* The dialogs open right now, innermost last: only that one keeps Tab. */
+const traps: HTMLElement[] = [];
+const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+function keepTab(e: KeyboardEvent) {
+  const box = traps[traps.length - 1];
+  if (e.key !== 'Tab' || !box) return;
+  const items = Array.from(box.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(el => !el.closest('[inert]') && el.getClientRects().length > 0);
+  const at = document.activeElement;
+  const first = items[0];
+  const last = items[items.length - 1];
+  if (!first) { e.preventDefault(); return; }
+  if (!box.contains(at)) { e.preventDefault(); (e.shiftKey ? last : first).focus(); }
+  else if (e.shiftKey && at === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && at === last) { e.preventDefault(); first.focus(); }
+}
+
 /** A dialog takes the keyboard with it: focus moves to `ref` when it opens
-    and goes back to whatever opened it when it closes, so a keyboard user
-    is never left tabbing through the page hidden behind it. */
+    (unless a field inside already took it with autoFocus), Tab goes round
+    inside it, and focus goes back to whatever opened it when it closes, so a
+    keyboard user is never left tabbing through the page hidden behind it. */
 export function useDialogFocus<T extends HTMLElement>(ref: React.RefObject<T>): void {
+  /* read while rendering: by the time an effect runs, a field inside with
+     autoFocus has taken focus and would be remembered as the opener */
+  const [opener] = useState(() => (typeof document === 'undefined' ? null : document.activeElement as HTMLElement | null));
   useEffect(() => {
-    const opener = document.activeElement as HTMLElement | null;
-    ref.current?.focus({ preventScroll: true });
-    return () => { if (opener?.isConnected) opener.focus({ preventScroll: true }); };
+    const el = ref.current;
+    const box = el?.closest<HTMLElement>('[role="dialog"]') ?? el;
+    if (!box) return;
+    if (!box.contains(document.activeElement)) el?.focus({ preventScroll: true });
+    traps.push(box);
+    if (traps.length === 1) document.addEventListener('keydown', keepTab);
+    return () => {
+      traps.splice(traps.indexOf(box), 1);
+      if (traps.length === 0) document.removeEventListener('keydown', keepTab);
+      /* only once the dialog has really gone: React's strict mode runs this
+         with the dialog still standing, and the field inside keeps its focus */
+      if (!box.isConnected && opener?.isConnected) opener.focus({ preventScroll: true });
+    };
   // once, on open and close
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

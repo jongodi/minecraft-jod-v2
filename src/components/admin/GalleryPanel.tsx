@@ -7,6 +7,7 @@ import type { MapConfig, MapLocation } from '@/lib/map-types';
 import GalleryUploader from './GalleryUploader';
 import ScreenshotFormat from './ScreenshotFormat';
 import { Button, Field, Notice, Panel, api, errText } from './ui';
+import { setUnsaved } from './unsaved';
 
 /** A gallery photo as the admin API returns it: with the id of the map pin it is linked to. */
 export type AdminPhoto = GalleryPhoto & { locationId: number | null };
@@ -24,6 +25,10 @@ export default function GalleryPanel() {
   const [msg, setMsg] = useState('');
   const [dragId, setDragId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
+  /* a photo open for editing with changes in it is lost with the panel, so leaving it asks first */
+  const open = editing ? photos.find(p => p.id === editing) : undefined;
+  const unsaved = !!open && (draft.title !== open.title || draft.sublabel !== open.sublabel || draft.locationId !== open.locationId);
+  useEffect(() => { setUnsaved('gallery', unsaved); return () => setUnsaved('gallery', false); }, [unsaved]);
 
   const load = useCallback(async () => {
     setLoading(true);

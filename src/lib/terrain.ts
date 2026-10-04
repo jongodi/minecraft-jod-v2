@@ -4,8 +4,6 @@
 export const TERRAIN_CELL = 20;
 export const TERRAIN_COLS = 50;
 export const TERRAIN_ROWS = 32;
-export const TERRAIN_W = TERRAIN_COLS * TERRAIN_CELL;
-export const TERRAIN_H = TERRAIN_ROWS * TERRAIN_CELL;
 
 export type Material = '~' | 's' | 'l' | 'g' | 'r' | 'f';
 export const WATER: Material = '~';

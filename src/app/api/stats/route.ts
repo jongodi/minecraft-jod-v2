@@ -28,11 +28,18 @@ export async function GET() {
   }
 
   try {
-    const { players } = await readGameStats(token);
-
-    // Only cache if we got meaningful data
+    const read = await readGameStats(token);
+    let players = read.players;
     const now = new Date().toISOString();
-    if (players.some(p => p.playTimeTicks > 0 || p.deaths > 0 || p.mobKills > 0)) {
+
+    if (read.failed.length) {
+      /* A file that could not be read this time is not a member who never
+         played: they keep their last numbers, and the snapshot (the board's
+         fallback and the wall's bounty) is not written over with zeros. */
+      const last = new Map((await getCachedStats())?.players.map(p => [p.username, p]));
+      players = players.map(p => (read.failed.includes(p.username) && last.get(p.username)) || p);
+    } else if (players.some(p => p.playTimeTicks > 0 || p.deaths > 0 || p.mobKills > 0)) {
+      // Only cache if we got meaningful data
       await setCachedStats(players);
     }
 

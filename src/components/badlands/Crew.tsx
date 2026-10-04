@@ -52,7 +52,7 @@ function Crew({ server }: { server: ServerState }) {
               <li key={name}>
                 <Link href={`/crew/${name}`} className={`b-folk__item${on ? ' is-in' : ''}`}>
                   <span className="b-folk__frame">
-                    <PlayerHead name={name} size={96} />
+                    <PlayerHead name={name} size={96} alt="" />
                     {on && <span className="b-folk__in">inni</span>}
                   </span>
                   <span className="b-folk__name">{name}</span>
@@ -93,7 +93,7 @@ function Crew({ server }: { server: ServerState }) {
                   </span>
                 )}
                 {(e.text || e.photos[0]?.caption) && <span className="w-note-card__text">{e.text || e.photos[0]?.caption}</span>}
-                <span className="w-note-card__who"><PlayerHead name={e.username} size={16} /><b>{e.username}</b><span>{formatAge(e.createdAt)}</span></span>
+                <span className="w-note-card__who"><PlayerHead name={e.username} size={16} alt="" /><b>{e.username}</b><span>{formatAge(e.createdAt)}</span></span>
               </Link>
             ))}
           </Rail>

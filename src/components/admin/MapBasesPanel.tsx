@@ -61,11 +61,11 @@ export default function MapBasesPanel() {
     try {
       const { offline } = await api<{ offline?: boolean }>('/api/admin/map-bases', { method: 'POST', body: JSON.stringify({ bases: ids, force }) });
       setMsg(`✓ Sending ræst${offline ? ' af slökktum þjóni' : ''}. Hvert kort er borið saman við afritið á vefnum og aðeins sent ef það hefur breyst; nýtt afrit birtist á vefnum skömmu eftir að henni lýkur.`);
-      /* GitHub lists a new run a moment after it is asked for one */
-      setTimeout(load, 4000);
+      /* GitHub lists a new run a moment after it is asked for one; the
+         buttons stay down until then, so a second press can't start another */
+      setTimeout(() => { load().finally(() => setStarting(null)); }, 4000);
     } catch (e) {
       setMsg(errText(e));
-    } finally {
       setStarting(null);
     }
   }

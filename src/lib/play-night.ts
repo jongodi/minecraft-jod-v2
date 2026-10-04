@@ -174,6 +174,8 @@ const LEGACY_KEY = 'playnight:current';
 const votesKey = (id: string) => `playnight:votes:${id}`;
 const seenKey = (id: string) => `playnight:seen:${id}`;
 export const NO_SHOWS_KEY = 'playnight:noshows';
+/** playnight:settled:<id>, set once a night's no-shows are counted */
+const SETTLED_PREFIX = 'playnight:settled:';
 /* answers and sightings outlive the night by a month, for the day-after count */
 const KEEP_S = 45 * 24 * 3600;
 /** seconds to keep a night's answers: until its latest evening is over, then the month */
@@ -280,10 +282,13 @@ async function settleOne(night: Night, now: number): Promise<{ id: string; came:
   /* the copy after the evening isn't there yet: tomorrow, then */
   if (!copyAfter && now < end + 2 * DAY) return null;
 
+  /* claimed before anything is counted: a daily job delivered twice must not
+     charge anyone twice for the same night */
+  const r = await redis();
+  if (!(await r.set(`${SETTLED_PREFIX}${night.id}`, '1', 'EX', KEEP_S, 'NX'))) return null;
   const votes = await readVotes(night.id);
   const outcome = outcomeOf(yesFor(votes, chosen.id), await readSeen(night.id), copyBefore?.counters ?? null, copyAfter?.counters ?? null);
   await writeNight({ ...night, outcome });
-  const r = await redis();
   for (const u of outcome.noShows) await r.hincrby(NO_SHOWS_KEY, u, 1);
   return { id: night.id, ...outcome };
 }

@@ -1,0 +1,27 @@
+'use client';
+
+import '@/app/badlands.css';
+import '@/app/board.css';
+import type { ReactNode } from 'react';
+import AddressBar from './AddressBar';
+import Footer from './Footer';
+import { Lantern } from './Bits';
+import { PAGE_LINKS } from './data';
+
+/** Off the trail: a link that leads nowhere, or a page that broke on the way.
+    The bar and the fire stay where they always are, so the way back is too;
+    the lantern over the words is dark, because nothing here burns. */
+export default function OffTrail({ title, children, actions }: { title: string; children: ReactNode; actions: ReactNode }) {
+  return (
+    <div className="b">
+      <AddressBar links={PAGE_LINKS} always />
+      <main className="b-wrap b-page b-stray">
+        <Lantern lit={false} className="b-stray__lantern" />
+        <h1 className="b-title">{title}</h1>
+        <p className="b-lede">{children}</p>
+        <div className="b-stray__actions">{actions}</div>
+      </main>
+      <Footer />
+    </div>
+  );
+}

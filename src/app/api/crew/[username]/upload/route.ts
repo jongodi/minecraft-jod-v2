@@ -11,7 +11,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { badJson, jsonObject } from '@/lib/http';
 import { handleUpload, type HandleUploadBody } from '@vercel/blob/client';
 import { requireOwner, isCrewUsername, readProfile, allPhotos, CREW_PATH, crewBlobPath } from '@/lib/crew';
-import { detectBlobAccess, storageMode, storeImage, deleteStoredImage, MAX_UPLOAD_BYTES } from '@/lib/blob-store';
+import { detectBlobAccess, storageMode, storeImage, deleteStoredImage, imageExt, IMAGE_CONTENT_TYPES, MAX_UPLOAD_BYTES, UPLOAD_TYPE_ERROR } from '@/lib/blob-store';
 import { photoFromDraft } from '@/lib/crew-photos';
 import { randomUUID } from 'crypto';
 
@@ -19,8 +19,6 @@ export const dynamic = 'force-dynamic';
 
 type Params = { params: Promise<{ username: string }> };
 
-const ALLOWED_EXT = new Set(['png', 'jpg', 'jpeg', 'webp', 'gif', 'avif']);
-const CONTENT_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/avif'];
 const unauthorized = () => NextResponse.json({ error: 'Þú þarft að skrá þig inn með réttum aðgangi.' }, { status: 401 });
 
 export async function GET(_req: NextRequest, { params }: Params) {
@@ -61,7 +59,7 @@ async function clientUploadHandshake(req: NextRequest, username: string) {
         const m = CREW_PATH.exec(pathname);
         if (!m || m[1] !== username.toLowerCase()) throw new Error('Ógilt skráarheiti.');
         return {
-          allowedContentTypes: CONTENT_TYPES,
+          allowedContentTypes: IMAGE_CONTENT_TYPES,
           maximumSizeInBytes:  MAX_UPLOAD_BYTES,
           addRandomSuffix:     false,
           allowOverwrite:      false,
@@ -85,11 +83,11 @@ async function serverUpload(req: NextRequest, username: string) {
 
   const file = formData.get('file') as File | null;
   if (!file) return NextResponse.json({ error: 'Engin skrá valin.' }, { status: 400 });
-  if (!file.type.startsWith('image/')) return NextResponse.json({ error: 'Aðeins er hægt að hlaða upp myndum.' }, { status: 400 });
-  if (file.size > MAX_UPLOAD_BYTES)   return NextResponse.json({ error: `Skráin er of stór (hámark ${Math.round(MAX_UPLOAD_BYTES / 1024 / 1024)} MB).` }, { status: 400 });
+  /* the type decides the name, so nothing is ever stored under a picture's extension that isn't one */
+  const ext = imageExt(file.type);
+  if (!ext) return NextResponse.json({ error: UPLOAD_TYPE_ERROR }, { status: 400 });
+  if (file.size > MAX_UPLOAD_BYTES) return NextResponse.json({ error: `Skráin er of stór (hámark ${Math.round(MAX_UPLOAD_BYTES / 1024 / 1024)} MB).` }, { status: 400 });
 
-  const rawExt = file.name.split('.').pop()?.toLowerCase() ?? '';
-  const ext = ALLOWED_EXT.has(rawExt) ? rawExt : 'png';
   const id  = randomUUID();
   const pathname = crewBlobPath(username, id, ext);
 

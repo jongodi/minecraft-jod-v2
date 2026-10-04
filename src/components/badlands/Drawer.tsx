@@ -22,17 +22,27 @@ export default function Drawer({ id, open, title, note, onClose, children }: Pro
   const close = useRef<HTMLButtonElement>(null);
   const body = useRef<HTMLDivElement>(null);
   const wasOpen = useRef(false);
+  /* what had focus when the room opened: a door, the lantern, the night's line */
+  const opener = useRef<HTMLElement | null>(null);
   const root = useInert<HTMLElement>(!open);
 
   /* Focus lands on the way out when the room opens, and the room starts at
-     its top each time. */
+     its top each time. When it closes, focus goes back to whatever opened
+     it, rather than being left on a room that has just gone inert. */
   useEffect(() => {
     if (open && !wasOpen.current) {
+      const from = document.activeElement;
+      opener.current = from instanceof HTMLElement && from !== document.body && !root.current?.contains(from) ? from : null;
       close.current?.focus({ preventScroll: true });
       if (body.current) body.current.scrollTop = 0;
+    } else if (!open && wasOpen.current) {
+      const at = document.activeElement;
+      const lost = !at || at === document.body || !!root.current?.contains(at);
+      if (lost && opener.current?.isConnected) opener.current.focus({ preventScroll: true });
+      opener.current = null;
     }
     wasOpen.current = open;
-  }, [open]);
+  }, [open, root]);
 
   return (
     <section

@@ -59,7 +59,23 @@ export default function Rail({ children, className, label, prevLabel = 'Fyrri', 
     return () => el.removeEventListener('wheel', onWheel);
   }, []);
 
+  /* An arrow that reaches its end is hidden and disabled; if it had focus,
+     focus crosses to the other arrow instead of falling to the page. */
+  const prev = useRef<HTMLButtonElement>(null);
+  const next = useRef<HTMLButtonElement>(null);
+  /* the arrow pressed last, still held while the browser drops focus from it */
+  const pressed = useRef<HTMLButtonElement | null>(null);
+  useEffect(() => {
+    const at = document.activeElement;
+    const dropped = !at || at === document.body;
+    if (edges.start && pressed.current === prev.current && (dropped || at === prev.current)) next.current?.focus({ preventScroll: true });
+    else if (edges.end && pressed.current === next.current && (dropped || at === next.current)) prev.current?.focus({ preventScroll: true });
+    else return;
+    pressed.current = null;
+  }, [edges]);
+
   const nudge = (dir: 1 | -1) => {
+    pressed.current = dir === 1 ? next.current : prev.current;
     const el = rail.current;
     if (el) el.scrollBy({ left: dir * el.clientWidth * 0.8, behavior: reduce ? 'auto' : 'smooth' });
   };
@@ -69,14 +85,16 @@ export default function Rail({ children, className, label, prevLabel = 'Fyrri', 
       <div ref={rail} onScroll={onScroll} className={`b-rail${edges.start ? ' at-start' : ''}${edges.end ? ' at-end' : ''}`} role="group" aria-label={label}>
         {children}
       </div>
-      <button type="button" className="b-railwrap__arrow b-railwrap__arrow--l" onClick={() => nudge(-1)} disabled={edges.start} aria-label={prevLabel}><ArrowIcon flip /></button>
-      <button type="button" className="b-railwrap__arrow b-railwrap__arrow--r" onClick={() => nudge(1)}  disabled={edges.end}   aria-label={nextLabel}><ArrowIcon /></button>
+      <button ref={prev} type="button" className="b-railwrap__arrow b-railwrap__arrow--l" onClick={() => nudge(-1)} disabled={edges.start} aria-label={prevLabel}><ArrowIcon flip /></button>
+      <button ref={next} type="button" className="b-railwrap__arrow b-railwrap__arrow--r" onClick={() => nudge(1)}  disabled={edges.end}   aria-label={nextLabel}><ArrowIcon /></button>
     </div>
   );
 }
 
-/** Scroll the rail item carrying `data-rail-item="<id>"` into view. */
+/** Scroll the rail item carrying `data-rail-item="<id>"` into view: in one
+    step under reduced motion, as the arrows do. */
 export function revealRailItem(id: string | number, within?: HTMLElement | null) {
   const root = within ?? document;
-  root.querySelector<HTMLElement>(`[data-rail-item="${id}"]`)?.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' });
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  root.querySelector<HTMLElement>(`[data-rail-item="${id}"]`)?.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: reduce ? 'auto' : 'smooth' });
 }
