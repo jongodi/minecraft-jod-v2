@@ -81,7 +81,7 @@
 
 /* the prints on their way up: a thumbnail, a caption line, a progress bar */
 .w-pin__prints { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); gap: var(--sp-3); }
-.w-draft { display: grid; gap: var(--sp-1); }
+.w-draft { display: grid; align-content: start; gap: var(--sp-1); }
 .w-draft__pic { position: relative; aspect-ratio: 16 / 10; overflow: hidden; background: var(--paper-2); box-shadow: 0 0 0 var(--px) var(--tc-brown); }
 .w-draft__pic img { width: 100%; height: 100%; object-fit: cover; opacity: 0.6; transition: opacity var(--dur-2) var(--ease-out); }
 .w-draft.is-done .w-draft__pic img { opacity: 1; }
@@ -98,6 +98,9 @@
 .w-draft__cap::placeholder { color: var(--ink-faint); }
 .w-draft__cap:focus { border-bottom-color: var(--lantern-deep); }
 .w-draft__meta { font-family: var(--font-data); font-size: 0.6rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* a failed print says why in full, and how to send it again */
+.w-draft.is-error .w-draft__meta { white-space: normal; color: var(--tc-red); }
+.w-draft__retry { padding: 0; border: 0; background: none; font: inherit; letter-spacing: inherit; text-transform: inherit; cursor: pointer; }
 .w-draft.is-error .w-draft__meta { color: var(--tc-red); white-space: normal; }
 
 /* ─── the wall ──────────────────────────────────────────────── */
