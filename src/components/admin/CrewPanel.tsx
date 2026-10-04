@@ -53,9 +53,15 @@ export default function CrewPanel() {
     catch (e) { setNotice(errText(e)); }
   }
 
-  async function copy(url: string) {
-    try { await navigator.clipboard.writeText(url); setCopied(true); }
-    catch { setCopied(false); }
+  /* from the new link's dialog, the button itself says so; from a row, the notice at the top does */
+  async function copy(url: string, fromRow = false) {
+    try {
+      await navigator.clipboard.writeText(url);
+      if (fromRow) setNotice('✓ Tengillinn er afritaður.'); else setCopied(true);
+    } catch {
+      setCopied(false);
+      setNotice(`✗ Vafrinn leyfði ekki að afrita. Tengillinn: ${url}`);
+    }
   }
 
   return (
@@ -92,7 +98,7 @@ export default function CrewPanel() {
                       {r.invites.map(inv => (
                         <li key={inv.url}>
                           <span className="a-muted">{inv.uses} af {inv.maxUses} notuð · til {when(inv.expiresAt)}</span>
-                          <Button tone="ghost" small onClick={() => copy(inv.url)}>Afrita</Button>
+                          <Button tone="ghost" small onClick={() => copy(inv.url, true)}>Afrita</Button>
                           <Button tone="ghost" small onClick={() => close(inv.url)}>Loka</Button>
                         </li>
                       ))}
