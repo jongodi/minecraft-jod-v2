@@ -1,0 +1,108 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { NextRequest } from 'next/server';
+import { GET, POST } from '../../app/api/admin/map-bases/route';
+import { readBasesRunName } from '@/lib/github-actions';
+
+vi.mock('@/lib/auth', () => ({
+  requireAdmin: vi.fn(async () => true),
+  unauthorizedResponse: () => new Response(null, { status: 401 }),
+}));
+vi.mock('@/lib/map-bases/bustadur.json', () => ({
+  default: {
+    syncedAt: '2026-10-03T12:00:00.000Z',
+    version: 'vbase',
+    files: ['maps/bustadur/settings.json', 'maps/bustadur/tiles/0/x1/z1.prbm.gz'],
+    blob: { base: 'https://store.private.blob.vercel-storage.com', access: 'private' },
+    packs: { names: ['bluemap-bases/bustadur/vbase-0.pack'], at: [[0, 0, 100], [0, 100, 2048]] },
+  },
+}));
+
+const RUNS = 'https://api.github.com/repos/jongodi/minecraft-jod-v2/actions/workflows/map-bases.yml/runs?per_page=5';
+const DISPATCH = 'https://api.github.com/repos/jongodi/minecraft-jod-v2/actions/workflows/map-bases.yml/dispatches';
+const start = (body?: unknown) => POST(new NextRequest('https://jod.test/api/admin/map-bases', {
+  method: 'POST',
+  ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+}));
+
+describe('/api/admin/map-bases', () => {
+  const fetchMock = vi.fn();
+  let serverStatus = 1;
+
+  beforeEach(() => {
+    vi.stubEnv('MAP_SYNC_GITHUB_TOKEN', 'github-test');
+    vi.stubEnv('EXAROTON_API_KEY', 'exaroton-test');
+    vi.stubEnv('EXAROTON_SERVER_ID', 'srv');
+    vi.stubGlobal('fetch', fetchMock);
+    serverStatus = 1;
+    fetchMock.mockImplementation(async (url: string) => {
+      if (url.startsWith('https://api.exaroton.com/')) return Response.json({ data: { status: serverStatus } });
+      if (url === DISPATCH) return new Response(null, { status: 204 });
+      if (url === RUNS) {
+        return Response.json({ workflow_runs: [
+          { id: 2, status: 'in_progress', conclusion: null, created_at: 'a', updated_at: 'b', html_url: 'u2', display_title: 'Map bases: jodville faraway' },
+          { id: 1, status: 'completed', conclusion: 'success', created_at: 'a', updated_at: 'b', html_url: 'u1', display_title: 'Map bases: all, forced' },
+        ] });
+      }
+      return new Response(null, { status: 404 });
+    });
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+    fetchMock.mockReset();
+  });
+
+  const dispatched = () => fetchMock.mock.calls.find(([url]) => url === DISPATCH);
+
+  it('starts the workflow for the bases asked for, in the list\'s order', async () => {
+    const res = await start({ bases: ['shroomy', 'jodville'] });
+    expect(res.status).toBe(200);
+    expect(JSON.parse(dispatched()?.[1].body)).toEqual({ ref: 'main', inputs: { bases: 'jodville shroomy', force: 'false' } });
+  });
+
+  it('starts it for all of them, and sends even unchanged ones when told to', async () => {
+    expect((await start({ force: true })).status).toBe(200);
+    expect(JSON.parse(dispatched()?.[1].body)).toEqual({ ref: 'main', inputs: { bases: '', force: 'true' } });
+  });
+
+  it('turns down a base it doesn\'t know, before asking anyone', async () => {
+    const res = await start({ bases: ['jodville', 'world'] });
+    expect(res.status).toBe(400);
+    expect((await start({ bases: ['jodville; rm -rf /'] })).status).toBe(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('turns a run down while the server is stopped', async () => {
+    serverStatus = 0;
+    expect((await start({ bases: ['jodville'] })).status).toBe(409);
+    expect(dispatched()).toBeUndefined();
+  });
+
+  it('says what the site has of each base, and what each run was for', async () => {
+    const res = await GET();
+    const { bases, runs } = await res.json();
+    expect(bases.map((b: { id: string }) => b.id)).toEqual(['jodville', 'faraway', 'bustadur', 'shroomy']);
+    expect(bases.find((b: { id: string }) => b.id === 'bustadur')).toEqual({
+      id: 'bustadur', name: 'Bústaður', syncedAt: '2026-10-03T12:00:00.000Z', files: 2, bytes: 2148,
+    });
+    expect(bases.find((b: { id: string }) => b.id === 'jodville').syncedAt).toBeNull();
+    expect(runs.map((r: { bases: string[] | null; forced: boolean }) => [r.bases, r.forced])).toEqual([[['jodville', 'faraway'], false], [null, true]]);
+  });
+
+  it('says what is missing without a GitHub token', async () => {
+    vi.stubEnv('MAP_SYNC_GITHUB_TOKEN', '');
+    expect((await start()).status).toBe(503);
+    expect((await GET()).status).toBe(503);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('readBasesRunName', () => {
+  it('reads which bases a run was for', () => {
+    expect(readBasesRunName('Map bases: jodville')).toEqual({ bases: ['jodville'], forced: false });
+    expect(readBasesRunName('Map bases: all')).toEqual({ bases: null, forced: false });
+    expect(readBasesRunName('Map bases: faraway shroomy, forced')).toEqual({ bases: ['faraway', 'shroomy'], forced: true });
+    expect(readBasesRunName('Map bases')).toEqual({ bases: null, forced: false });
+  });
+});

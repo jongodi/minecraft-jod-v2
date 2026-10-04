@@ -231,6 +231,10 @@
 /* the map copy's runs: state, when, link */
 .a-row--sync { grid-template-columns: 6.5rem minmax(0, 1fr) auto; }
 
+/* the base maps: name, what the site has, view and send */
+.a-row--base { grid-template-columns: minmax(7rem, 1fr) minmax(0, 2.5fr) 9.5rem; }
+@media (max-width: 700px) { .a-row--base { grid-template-columns: minmax(0, 1fr); } }
+
 /* the map's history: when, what changed, restore */
 .a-row--history { grid-template-columns: 8.5rem minmax(0, 1fr) auto; }
 .a-row__name--wrap { white-space: normal; overflow: visible; font-weight: 400; }
