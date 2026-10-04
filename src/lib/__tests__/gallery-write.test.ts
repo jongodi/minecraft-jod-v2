@@ -18,7 +18,7 @@ const { PATCH, DELETE } = await import('../../app/api/admin/gallery/[id]/route')
 const { POST: reorder } = await import('../../app/api/admin/gallery/reorder/route');
 afterAll(() => { delete process.env.REDIS_URL; });
 
-const photo = (id: string, title: string, order: number) => ({ id, filename: `/screenshots/${id}.webp`, title, sublabel: '', gradient: '', active: true, order });
+const photo = (id: string, title: string, order: number) => ({ id, filename: `/screenshots/${id}.webp`, title, sublabel: '', active: true, order });
 const stored = () => store.get('gallery:photos') as ReturnType<typeof photo>[];
 const json = (method: string, body: unknown) => new NextRequest('https://jod.test/x', { method, body: JSON.stringify(body), headers: { 'content-type': 'application/json' } });
 

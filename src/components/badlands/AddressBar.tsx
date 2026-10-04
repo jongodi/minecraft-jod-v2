@@ -71,7 +71,9 @@ export default function AddressBar({ links, activeId, onDoor, always = false }: 
                 <PlayerHead name={me} size={24} />
               </Link>
             )}
-            <button type="button" className="b-bar__addr" onClick={copy} aria-label={`Afrita vistfang þjónsins, ${SERVER_IP}`}>
+            {/* named by what it shows: the address and the verb, with the verb's object spelled out for a screen reader */}
+            <button type="button" className="b-bar__addr" onClick={copy}>
+              <span className="b-visually-hidden">Afrita vistfang þjónsins: </span>
               <span>{SERVER_IP}</span>
               <b aria-live="polite">{copied ? 'afritað' : 'afrita'}</b>
             </button>

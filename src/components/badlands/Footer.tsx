@@ -4,7 +4,7 @@ import { memo, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { Campfire, Chevron } from './Bits';
+import { Campfire, ChevronIcon } from './Bits';
 import { Ridge } from './Mesa';
 import { SERVER_IP } from './data';
 import AmbienceToggle from '@/effects/AmbienceToggle';
@@ -59,7 +59,7 @@ function Footer() {
         </nav>
 
         <Link href="/#top" className="b-btn b-btn--small b-foot__up">
-          <Chevron className="b-foot__upchev" />
+          <ChevronIcon dir="up" className="b-foot__upchev" />
           Aftur í sólsetrið
         </Link>
 

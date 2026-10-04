@@ -7,7 +7,6 @@ export interface GalleryPhoto {
   filename:  string;
   title:     string;
   sublabel:  string;
-  gradient:  string;
   active:    boolean;
   order:     number;
 }
@@ -97,7 +96,6 @@ export async function addGalleryPhoto(input: { id: string; fileUrl: string; titl
     filename: input.fileUrl,
     title:    input.title.trim().slice(0, 100) || 'Ný mynd úr leiknum',
     sublabel: input.sublabel.trim().slice(0, 100),
-    gradient: 'linear-gradient(160deg, #1a1a1a 0%, #2a2a2a 100%)',
     active:   true,
     order:    maxOrder + 1,
   };

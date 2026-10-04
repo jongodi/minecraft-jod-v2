@@ -135,7 +135,7 @@
 .w-lantern .b-lantern .b-lantern__glass { fill: var(--paper-2); }
 .w-lantern .b-lantern.is-lit { color: var(--tc-brown); }
 .w-lantern .b-lantern.is-lit .b-lantern__glass { fill: var(--lantern); }
-.w-lantern.is-lit { color: var(--lantern-deep); }
+.w-lantern.is-lit { color: var(--lantern-ink); }
 @media (hover: hover) { .w-lantern:not([disabled]):hover { color: var(--ink); } }
 .w-lantern[disabled] { cursor: default; }
 

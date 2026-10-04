@@ -123,21 +123,8 @@ export function Campfire({ embers = false, className }: { embers?: boolean; clas
 /** Copy icon: two overlapping pixel sheets. */
 export function CopyIcon() {
   return (
-    <svg viewBox="0 0 16 16" aria-hidden="true" fill="currentColor">
+    <svg viewBox="0 0 16 16" aria-hidden="true" fill="currentColor" shapeRendering="crispEdges">
       <path d="M2 2h8v2H4v6H2V2zm4 4h8v8H6V6zm2 2v4h4V8H8z" />
-    </svg>
-  );
-}
-
-/** A chunky pixel chevron, pointing down. Rotate it for the other three ways. */
-export function Chevron({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 16 16" aria-hidden="true" fill="currentColor" shapeRendering="crispEdges">
-      <rect x="2"  y="5" width="2" height="2" />
-      <rect x="12" y="5" width="2" height="2" />
-      <rect x="4"  y="7" width="2" height="2" />
-      <rect x="10" y="7" width="2" height="2" />
-      <rect x="6"  y="9" width="4" height="2" />
     </svg>
   );
 }
@@ -212,9 +199,14 @@ export function CalendarIcon({ className }: { className?: string }) {
   );
 }
 
-/** A pixel chevron, pointing the way a month is turned. */
-export function ChevronIcon({ dir, className }: { dir: 'left' | 'right' | 'down'; className?: string }) {
-  const d = { left: 'M9 3h2v2H9zM7 5h2v2H7zM5 7h2v2H5zm2 2h2v2H7zm2 2h2v2H9z', right: 'M5 3h2v2H5zm2 2h2v2H7zm2 2h2v2H9zM7 9h2v2H7zm-2 2h2v2H5z', down: 'M3 5h2v2H3zm2 2h2v2H5zm2 2h2v2H7zm2-2h2v2H9zm2-2h2v2h-2z' }[dir];
+/** The pixel chevron: the way a month is turned, the way back up the evening. */
+export function ChevronIcon({ dir, className }: { dir: 'left' | 'right' | 'down' | 'up'; className?: string }) {
+  const d = {
+    left:  'M9 3h2v2H9zM7 5h2v2H7zM5 7h2v2H5zm2 2h2v2H7zm2 2h2v2H9z',
+    right: 'M5 3h2v2H5zm2 2h2v2H7zm2 2h2v2H9zM7 9h2v2H7zm-2 2h2v2H5z',
+    down:  'M3 5h2v2H3zm2 2h2v2H5zm2 2h2v2H7zm2-2h2v2H9zm2-2h2v2h-2z',
+    up:    'M7 5h2v2H7zM5 7h2v2H5zm4 0h2v2H9zM3 9h2v2H3zm8 0h2v2h-2z',
+  }[dir];
   return (
     <svg className={className} viewBox="0 0 16 16" aria-hidden="true" fill="currentColor" shapeRendering="crispEdges">
       <path d={d} />
@@ -233,12 +225,12 @@ export function ZoomIcon({ kind }: { kind: 'in' | 'out' | 'fit' }) {
   );
 }
 
-/** Sound: a small speaker, with waves when on. */
+/** Sound: a small pixel speaker, with two waves when on. */
 export function SoundIcon({ on }: { on: boolean }) {
   return (
-    <svg viewBox="0 0 16 16" aria-hidden="true" fill="currentColor">
-      <path d="M2 6h3l4-3v10l-4-3H2V6z" />
-      {on && <path d="M11 5h2v6h-2V5zm3-2h1v10h-1V3z" />}
+    <svg viewBox="0 0 16 16" aria-hidden="true" fill="currentColor" shapeRendering="crispEdges">
+      <path d="M2 6h3v4H2zM5 4h2v8H5zM7 2h2v12H7z" />
+      {on && <path d="M11 5h2v6h-2zm3-2h1v10h-1z" />}
     </svg>
   );
 }
@@ -251,16 +243,16 @@ export function Star({ className }: { className?: string }) {
   );
 }
 
+/** A bullet hole in the arena's sky: a pixel burst, drawn on the same grid as everything else. */
 export function BulletHole({ x, y }: { x: number; y: number }) {
   return (
-    <svg className="b-arena__hole" style={{ left: `${x}%`, top: `${y}%` }} viewBox="0 0 34 34" aria-hidden="true">
-      {[0, 40, 85, 130, 175, 220, 265, 310].map((a, i) => {
-        const r = (a * Math.PI) / 180;
-        const len = 10 + (i % 3) * 3;
-        return <line key={a} x1={17 + Math.cos(r) * 6} y1={17 + Math.sin(r) * 6} x2={17 + Math.cos(r) * (6 + len)} y2={17 + Math.sin(r) * (6 + len)} stroke="var(--night)" strokeWidth="1.2" strokeOpacity="0.8" />;
-      })}
-      <circle cx="17" cy="17" r="6" fill="var(--night)" />
-      <circle cx="15.5" cy="15.5" r="2" fill="var(--tc-brown)" />
+    <svg className="b-arena__hole" style={{ left: `${x}%`, top: `${y}%` }} viewBox="0 0 16 16" aria-hidden="true" shapeRendering="crispEdges">
+      <g fill="var(--night)" fillOpacity="0.8">
+        <path d="M7 0h2v4H7zM7 12h2v4H7zM0 7h4v2H0zM12 7h4v2h-4z" />
+        <path d="M2 2h1v1H2zm1 1h1v1H3zm1 1h1v1H4zM13 2h1v1h-1zm-1 1h1v1h-1zm-1 1h1v1h-1zM2 13h1v1H2zm1-1h1v1H3zm1-1h1v1H4zM13 13h1v1h-1zm-1-1h1v1h-1zm-1-1h1v1h-1z" />
+      </g>
+      <rect x="5" y="5" width="6" height="6" fill="var(--night)" />
+      <rect x="6" y="6" width="2" height="2" fill="var(--tc-brown)" />
     </svg>
   );
 }
