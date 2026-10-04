@@ -133,27 +133,31 @@ Hinar stöðvarnar (Joðville, Faraway lands, Bústaður og Shroomy island, í `
 
 ```bash
 npm run map:bases                       # sýnir stillingarnar sem yrðu skrifaðar á þjóninn
-npm run map:bases -- --write            # skrifar þær sem vantar á þjóninn
+npm run map:bases -- --write [id...]    # skrifar þær sem vantar á þjóninn (--force skrifar líka yfir)
+npm run map:bases -- --redraw <id...>   # skrifar stillingu korts upp á nýtt og teiknar það allt aftur
 npm run map:bases -- --freeze           # frystir öll grunnkortin
-npm run map:bases -- --refresh <id>     # affrystir eitt kort og teiknar það upp á nýtt
+npm run map:bases -- --refresh <id>     # affrystir eitt kort og teiknar það sem hefur breyst
+npm run map:bases -- --inspect [id...]  # sýnir hvernig hvert kort er teiknað hjá aðalkortinu, breytir engu
 npm run map:bases -- --upload [id...]   # afritar kortin á vefinn (öll ef ekkert er nefnt)
 npm run map:bases -- --prune [id...]    # fjarlægir afrit sem vefurinn les ekki lengur
 ```
 
 Kortin uppfærast aldrei sjálf: þau eru fryst og aðeins teiknuð upp á nýtt þegar beðið er um það. Til að uppfæra eitt:
 
-1. `npm run map:bases -- --refresh <id>` og bíða þar til teikningunni er lokið (`/bluemap` í stjórnborði þjónsins sýnir framvinduna)
-2. `npm run map:bases -- --freeze`
+1. **Teikna upp á nýtt** við kortið í stjórnborðinu (Þjónn → Grunnkortin), eða `npm run map:bases -- --redraw <id>`, og bíða þar til teikningunni er lokið (`/bluemap` í leiknum sýnir framvinduna). Þjónninn þarf að vera í gangi.
+2. **Frysta grunnkortin**, eða `npm run map:bases -- --freeze`
 3. senda það á vefinn: hnappurinn **Senda** við kortið í stjórnborðinu (Þjónn → Grunnkortin), sem gerir allt hitt sjálfur; eða úr eigin tölvu:
    1. `npm run map:bases -- --upload <id>`
    2. `git add src/lib/map-bases/<id>.json`, commit og push
    3. þegar vefurinn er kominn upp með því: `npm run map:bases -- --prune <id>`
 
+**Eigin teiknistillingar.** Grunnkort er teiknað eins og aðalkortið, nema stöð hafi sínar eigin BlueMap-stillingar undir `bluemap` í `src/lib/map-bases.json`; þær eru settar ofan á stillingar aðalkortsins (`scripts/bluemap-conf.mjs`) og taka gildi þegar kortið er teiknað upp á nýtt. Joðville er þannig: öll kortin fela hella undir Y 62 (`remove-caves-below-y`), sem hentar jörð rétt ofan við það, en Joðville stendur í fjöllum í Y 128 og allir hellar inni í þeim voru teiknaðir, svo reitirnir urðu um níu sinnum þyngri en aðalkortsins. Joðville felur því hella alls staðar (`remove-caves-below-y: 10000`, eins og [wiki BlueMap](https://github.com/BlueMap-Minecraft/BlueMapWiki/blob/master/wiki/configs/Maps.md) bendir á); yfirborðið heldur sér (`cave-detection-ocean-floor: -5`), og upplýstar byggingar neðanjarðar líka (`cave-detection-uses-block-light: true`). *Teikna upp á nýtt* skrifar stillingu kortsins á þjóninn, endurhleður BlueMap (`/bluemap reload light`) og teiknar allt kortið aftur (`/bluemap force-update`). `--inspect` sýnir teiknistillingar hvers korts hjá aðalkortinu og hve þungir fyrstu reitirnir eru (líka sem `inspect` á GitHub: Actions → Map bases).
+
 **Úr stjórnborðinu.** Hnapparnir ræsa GitHub Action (`.github/workflows/map-bases.yml`), eins og afritun aðalkortsins gerir: með einu korti, eða *Senda öll grunnkortin*. Verkið sendir kortin (`--upload`), ýtir nýju skráalistunum á `main` svo Vercel birti þau, bíður þar til Vercel segir nýju útgáfuna komna í loftið og fjarlægir þá afritin sem hún leysti af hólmi (`--prune`). Það þarf sömu tvö leyndarmál og Map sync (`EXAROTON_API_KEY` og `BLOB_READ_WRITE_TOKEN` undir Settings → Secrets and variables → Actions) og hnappurinn sama `MAP_SYNC_GITHUB_TOKEN` í Vercel. Þjónninn má vera slökktur (sjá *Þjónninn má vera slökktur* að ofan): keyrsla sem er ræst á meðan heitir þá „server off“ og stjórnborðið merkir hana. Skráin á GitHub segir hve lengi hvert skref tók: möppurnar lesnar, skrárnar sóttar, hvert kort alls, og hve mikið af öllu var bið eftir exaroton. Fyrsta afritun allra fjögurra (2,1 GB) tók 15 mínútur. Það má líka ræsa á GitHub undir Actions → Map bases → Run workflow. Mistakist eitt kort fara hin samt upp.
 
 `--upload` ber fyrst kortið á þjóninum saman við afritið á vefnum: skráalistann og stærð reitanna við skráalistann í `src/lib/map-bases/<id>.json`, og litlu skrárnar bæti fyrir bæti við það sem er í geymslunni. Sé það eins er ekkert sótt og ekkert sent (`--force` sendir samt), hvort sem afritunin er keyrð úr eigin tölvu eða á GitHub. Annars sækir hún möppu kortsins (`bluemap/web/maps/<id>`) af þjóninum í `scripts/out/map-bases/` (ekki í git), aðeins það sem hefur breyst síðan það var síðast sótt þangað, og sendir það í Vercel Blob í fáum pökkum undir `bluemap-bases/<id>/`, eins og aðalkortið er sent. Skráalistinn, staður hverrar skrár í pökkunum og útgáfan fara í `src/lib/map-bases/<id>.json`. Skipunin les og eyðir aðeins undir `bluemap-bases/<id>/`; `map:sync` og Map sync-verkið lesa aðeins `bluemap-data/`, svo hvorugt getur snert gögn hins. Pakkar sem vefurinn gæti enn verið að lesa eru aldrei fjarlægðir: nýja afritið, það sem það leysir af hólmi og það sem síðasta commit og `origin/main` nefna. `--prune` fjarlægir svo eldra afritið þegar nýja er komið í loftið. Skipanirnar þurfa `EXAROTON_API_KEY` og `BLOB_READ_WRITE_TOKEN` í `.env.local`. `--upload` virkar hvort sem þjónninn er í gangi eða ekki og segir hvort var, og hve lengi hvert skref tók.
 
-Skoðarinn á `/kort/<id>` er sami skoðari og á `/bluemap`, í sömu fötum, smíðaður með vefnum sem fastar skrár: hann sýnir aðeins kort stöðvarinnar, les það úr afriti hennar um `/bluemap-data`, opnast yfir miðju stöðvarinnar úr sömu fjarlægð og sama horni og aðalkortið, og myndavélinni er haldið yfir teiknaða svæðinu. Leikmenn og luktir staðanna koma um `/bluemap` eins og á aðalkortinu. Stöð sem hefur ekki verið afrituð á vefinn hefur engan skoðara og engan tengil. Séu fyrstu nákvæmu reitir korts miklu þyngri en aðalkortsins (reitirnir sem sími hleður fyrst, umhverfis upphafsstaðinn) sækir skoðarinn minna svæði af þeim, svo síminn haldi álíka þunga í minninu: Joðville í fjöllunum er um níu sinnum þyngra, og byrjar því á 3×3 reitum í stað 11×11. Þetta er reiknað úr skráalistunum þegar vefurinn er smíðaður (`heaviness` í `scripts/bluemap-brand.mjs`) og gæðavalið í skoðaranum fylgir því.
+Skoðarinn á `/kort/<id>` er sami skoðari og á `/bluemap`, í sömu fötum, smíðaður með vefnum sem fastar skrár: hann sýnir aðeins kort stöðvarinnar, les það úr afriti hennar um `/bluemap-data`, opnast yfir miðju stöðvarinnar úr sömu fjarlægð og sama horni og aðalkortið, og myndavélinni er haldið yfir teiknaða svæðinu. Leikmenn og luktir staðanna koma um `/bluemap` eins og á aðalkortinu. Stöð sem hefur ekki verið afrituð á vefinn hefur engan skoðara og engan tengil. Séu fyrstu nákvæmu reitir korts miklu þyngri en aðalkortsins (reitirnir sem sími hleður fyrst, umhverfis upphafsstaðinn) sækir skoðarinn minna svæði af þeim, svo síminn haldi álíka þunga í minninu: Joðville í fjöllunum var um níu sinnum þyngra, og byrjaði því á 3×3 reitum í stað 11×11, þar til það er teiknað upp á nýtt með eigin stillingum sínum (sjá *Eigin teiknistillingar*). Þetta er reiknað úr skráalistunum þegar vefurinn er smíðaður (`heaviness` í `scripts/bluemap-brand.mjs`) og gæðavalið í skoðaranum fylgir því.
 
 ## Tungumál
 

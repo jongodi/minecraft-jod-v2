@@ -5,8 +5,10 @@ import type { MapBasesRun, MapBasesState } from '@/app/api/admin/map-bases/route
 import { Button, Notice, Panel, Toggle, api, errText } from './ui';
 
 /* Sends the base maps to the site (the "Map bases" GitHub Action), one or
-   all of them, and follows its runs. While a run is under way the list is
-   checked every ten seconds. */
+   all of them, and follows its runs; redraws a base on the server with its
+   own drawing settings, and freezes the bases again once that is done
+   (src/lib/bluemap-redraw.ts). While a run is under way the list is checked
+   every ten seconds. */
 
 const WATCH_MS = 10_000;
 
@@ -27,7 +29,7 @@ export default function MapBasesPanel() {
   const [state, setState] = useState<MapBasesState | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
-  /* which start is being sent: a base's id, or 'all' */
+  /* what is being asked for: a base's id or 'all' (sending), 'redraw:<id>', or 'freeze' */
   const [starting, setStarting] = useState<string | null>(null);
   const [msg, setMsg] = useState('');
   const [force, setForce] = useState(false);
@@ -68,6 +70,23 @@ export default function MapBasesPanel() {
     }
   }
 
+  /* a redraw and a freeze are console commands, answered at once */
+  async function onServer(action: 'redraw' | 'freeze', ids: string[]) {
+    const name = names.get(ids[0]) ?? ids[0];
+    if (action === 'redraw' && !confirm(`Teikna ${name} upp á nýtt á þjóninum, með eigin stillingum þess? Allt kortið er teiknað aftur, sem tekur nokkrar mínútur, og afritið á vefnum er óbreytt á meðan.`)) return;
+    setStarting(action === 'redraw' ? `redraw:${ids[0]}` : 'freeze'); setMsg('');
+    try {
+      await api('/api/admin/map-bases', { method: 'POST', body: JSON.stringify({ action, bases: ids }) });
+      setMsg(action === 'redraw'
+        ? `✓ ${name} er í teikningu á þjóninum. /bluemap í leiknum sýnir framvinduna. Þegar henni er lokið: Frysta grunnkortin, og svo Senda.`
+        : '✓ Grunnkortin eru fryst: þau breytast ekki á þjóninum fyrr en þau eru teiknuð upp á nýtt.');
+    } catch (e) {
+      setMsg(errText(e));
+    } finally {
+      setStarting(null);
+    }
+  }
+
   return (
     <Panel
       title="Grunnkortin"
@@ -85,6 +104,9 @@ export default function MapBasesPanel() {
                 </span>
                 <span className="a-row__actions">
                   {b.syncedAt && <a className="a-btn a-btn--ghost a-btn--small" href={`/kort/${b.id}`} target="_blank" rel="noreferrer">Skoða</a>}
+                  <Button tone="ghost" small onClick={() => onServer('redraw', [b.id])} disabled={starting !== null}>
+                    {starting === `redraw:${b.id}` ? 'Sendi skipun' : 'Teikna upp á nýtt'}
+                  </Button>
                   <Button small onClick={() => start([b.id])} disabled={starting !== null || running}>
                     {starting === b.id ? 'Sendi' : 'Senda'}
                   </Button>
@@ -96,11 +118,14 @@ export default function MapBasesPanel() {
             <Button tone="primary" onClick={() => start([])} disabled={starting !== null || running}>
               {starting === 'all' ? 'Sendi' : running ? 'Sending í gangi' : 'Senda öll grunnkortin'}
             </Button>
+            <Button onClick={() => onServer('freeze', [])} disabled={starting !== null}>
+              {starting === 'freeze' ? 'Sendi skipun' : 'Frysta grunnkortin'}
+            </Button>
           </div>
           <div className="a-field">
             <Toggle checked={force} onChange={setForce} disabled={starting !== null || running} label="Senda þótt ekkert hafi breyst" />
             <span className="a-help">
-              Þjónninn má vera slökktur: skrárnar koma jafn hratt af honum og meðan hann er í gangi. Skráin á GitHub segir hve lengi hvert skref tók. Kort sem hefur ekki breyst er hvorki sótt né sent. Til að teikna kort upp á nýtt: npm run map:bases -- --refresh &lt;id&gt;, bíða þar til teikningunni lýkur, svo --freeze, og senda það svo héðan. Gamla afritið er fjarlægt sjálfkrafa þegar það nýja er komið á vefinn.
+              Þjónninn má vera slökktur: skrárnar koma jafn hratt af honum og meðan hann er í gangi. Skráin á GitHub segir hve lengi hvert skref tók. Kort sem hefur ekki breyst er hvorki sótt né sent. Gamla afritið er fjarlægt sjálfkrafa þegar það nýja er komið á vefinn. Til að teikna kort upp á nýtt með eigin stillingum þess (src/lib/map-bases.json): Teikna upp á nýtt, bíða þar til teikningunni lýkur (/bluemap í leiknum sýnir framvinduna), Frysta grunnkortin, og svo Senda. Þjónninn þarf að vera í gangi til að teikna og frysta.
             </span>
           </div>
           <Notice text={msg} />
@@ -112,7 +137,7 @@ export default function MapBasesPanel() {
                 return (
                   <div key={run.id} className="a-row a-row--sync">
                     <span className={`a-status a-status--${st.tone}`}>{st.label}</span>
-                    <span className="a-row__meta">{when(run.createdAt)} · {which}{run.forced && ', þótt ekkert hefði breyst'}{run.offline && ', af slökktum þjóni'}</span>
+                    <span className="a-row__meta">{when(run.createdAt)} · {which}{run.forced && ', þótt ekkert hefði breyst'}{run.offline && ', af slökktum þjóni'}{run.inspect && ', aðeins skoðað'}</span>
                     <span className="a-row__actions">
                       <a className="a-btn a-btn--ghost a-btn--small" href={run.url} target="_blank" rel="noreferrer">Skoða á GitHub</a>
                     </span>

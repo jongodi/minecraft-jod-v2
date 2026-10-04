@@ -231,8 +231,8 @@
 /* the map copy's runs: state, when, link */
 .a-row--sync { grid-template-columns: 6.5rem minmax(0, 1fr) auto; }
 
-/* the base maps: name, what the site has, view and send */
-.a-row--base { grid-template-columns: minmax(7rem, 1fr) minmax(0, 2.5fr) 9.5rem; }
+/* the base maps: name, what the site has, view, redraw and send */
+.a-row--base { grid-template-columns: minmax(7rem, 1fr) minmax(0, 2fr) 19rem; }
 @media (max-width: 700px) { .a-row--base { grid-template-columns: minmax(0, 1fr); } }
 
 /* the map's history: when, what changed, restore */

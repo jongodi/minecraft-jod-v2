@@ -9,7 +9,8 @@ import { baseCopyFor, uploadedBases } from '@/lib/bluemap-bases';
 import { baseAt } from '@/lib/base-links';
 import { BASES_DIR, BLOB_DIR, basePackDir, planPacks } from '../../../scripts/bluemap-pack.mjs';
 import { baseViewer, heaviness, indexHtml, lighterHires, startTileBytes, viewerAssets } from '../../../scripts/bluemap-brand.mjs';
-import { baseSkip, compareWithCopy, getKey, staleBlobs, took } from '../../../scripts/map-bases.mjs';
+import { baseSkip, compareWithCopy, staleBlobs, took } from '../../../scripts/map-bases.mjs';
+import { baseConfig, getKey } from '../../../scripts/bluemap-conf.mjs';
 import config from '@/lib/map-bases.json';
 
 vi.mock('@vercel/blob', async (original) => ({ ...(await original<typeof import('@vercel/blob')>()), get: vi.fn() }));

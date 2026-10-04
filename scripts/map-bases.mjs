@@ -3,8 +3,9 @@
 // its own on the site at /kort/<id>, apart from the main map.
 //
 //   npm run map:bases              show the configs that would be written, write nothing
-//   npm run map:bases -- --write   write the configs that aren't on the server yet
-//   npm run map:bases -- --write --force   also overwrite ones that are
+//   npm run map:bases -- --write [id...]   write the configs that aren't on the server yet
+//   npm run map:bases -- --write [id...] --force   also overwrite ones that are
+//   npm run map:bases -- --redraw <id...>  write a base's config afresh and draw it again from scratch
 //   npm run map:bases -- --freeze          freeze every base map (no updates at all)
 //   npm run map:bases -- --refresh <id>    unfreeze one base map and update it now
 //   npm run map:bases -- --upload [id...]  copy base maps to the site (all of them if none is named)
@@ -22,6 +23,12 @@
 // Each config is a copy of the main map's (plugins/BlueMap/maps/world.conf)
 // with only its name, place in the list, start position and render mask
 // changed. Every config is also saved under scripts/out/bluemap-maps/ to look at.
+//
+// A base's own drawing settings ("bluemap" in src/lib/map-bases.json, set on
+// top of the main map's by scripts/bluemap-conf.mjs) take hold once it is
+// drawn again with them: --redraw <id> writes its config, reloads BlueMap and
+// redraws the whole map (the admin panel's "Teikna upp á nýtt" does the same);
+// then --freeze once the drawing is done, and send it to the site.
 //
 // The base maps never update on their own: they are frozen, and only redrawn
 // when asked. After --write: /bluemap reload in the console, let the first
@@ -63,11 +70,12 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { BlobAccessError, BlobStoreNotFoundError, BlobStoreSuspendedError, del, get, list, put } from '@vercel/blob';
 import { MAIN_MAP, startTileBytes, versionOf } from './bluemap-brand.mjs';
+import { baseConfig, DRAWING, getKey, MAPS_DIR } from './bluemap-conf.mjs';
 import { BASES_DIR, basePackDir, blobsOf, manifestText, packBody, PACK_BYTES, planPacks } from './bluemap-pack.mjs';
 
 const ROOT  = process.cwd();
 const API   = 'https://api.exaroton.com/v1/servers';
-const MAPS  = 'plugins/BlueMap/maps';
+const MAPS  = MAPS_DIR;
 const OUT   = join(ROOT, 'scripts', 'out', 'bluemap-maps');
 /* the base maps as they were last fetched off the server, so the next upload only fetches what changed */
 const LOCAL = join(ROOT, 'scripts', 'out', 'map-bases');
@@ -79,6 +87,8 @@ const REFRESH = process.argv.includes('--refresh') ? process.argv[process.argv.i
 const UPLOAD = process.argv.includes('--upload') ? named('--upload') : null;
 const PRUNE = process.argv.includes('--prune') ? named('--prune') : null;
 const INSPECT = process.argv.includes('--inspect') ? named('--inspect') : null;
+const REDRAW = process.argv.includes('--redraw') ? named('--redraw') : null;
+const WRITE_IDS = WRITE ? named('--write') : [];
 const PARALLEL = 6;
 const PACK_MAX_AGE = 31536000;     // a pack is never overwritten, so the store's CDN may keep it for good
 /* Cleanup leaves packs this young alone: they may be another upload's, not yet pushed. */
@@ -92,80 +102,6 @@ function named(flag) {
     out.push(arg);
   }
   return out;
-}
-
-/* ---------- HOCON: change one top-level key, keep everything else as it is ---------- */
-
-/** Where the value that starts at `i` ends: past its closing bracket for a
-    { } or [ ] block, otherwise the end of the line. Skips strings and comments. */
-function valueEnd(text, i) {
-  while (text[i] === ' ' || text[i] === '\t') i++;
-  const open = text[i];
-  if (open !== '{' && open !== '[') {
-    const nl = text.indexOf('\n', i);
-    return nl < 0 ? text.length : nl;
-  }
-  let depth = 0;
-  for (let j = i; j < text.length; j++) {
-    const c = text[j];
-    if (c === '"') {
-      for (j++; j < text.length && text[j] !== '"'; j++) if (text[j] === '\\') j++;
-    } else if (c === '#' || (c === '/' && text[j + 1] === '/')) {
-      const nl = text.indexOf('\n', j);
-      j = nl < 0 ? text.length : nl;
-    } else if (c === '{' || c === '[') {
-      depth++;
-    } else if (c === '}' || c === ']') {
-      if (--depth === 0) return j + 1;
-    }
-  }
-  throw new Error('Lokandi sviga vantar í world.conf');
-}
-
-/** Sets a top-level key (one that starts its line, not in a comment) to `value`,
-    or adds it at the end if the file doesn't have it. */
-export function setKey(text, key, value) {
-  const re = new RegExp(`^${key.replace(/-/g, '\\-')}[ \\t]*[:=]?[ \\t]*`, 'm');
-  const m = re.exec(text);
-  if (!m) return `${text.replace(/\s*$/, '')}\n${key}: ${value}\n`;
-  const start = m.index;
-  const end = valueEnd(text, start + m[0].length);
-  return `${text.slice(0, start)}${key}: ${value}${text.slice(end)}`;
-}
-
-/** A top-level key's value as written (a whole { } or [ ] block for one), or null. */
-export function getKey(text, key) {
-  const re = new RegExp(`^${key.replace(/-/g, '\\-')}[ \\t]*[:=]?[ \\t]*`, 'm');
-  const m = re.exec(text);
-  if (!m) return null;
-  const start = m.index + m[0].length;
-  return text.slice(start, valueEnd(text, start)).trim();
-}
-
-/* What decides how heavy a map's tiles are, in BlueMap's map config. */
-const DRAWING = [
-  'remove-caves-below-y', 'cave-detection-ocean-floor', 'cave-detection-uses-block-light',
-  'min-inhabited-time', 'render-edges', 'edge-light-strength', 'ignore-missing-light-data', 'render-mask',
-];
-
-/** The main map's config, made into the config for `base` (number `n` in the list). */
-export function baseConfig(worldConf, base, n) {
-  const r = base.radius;
-  let text = worldConf.replace(/\r\n/g, '\n');
-  text = setKey(text, 'name', JSON.stringify(base.name));
-  text = setKey(text, 'sorting', String(n));
-  text = setKey(text, 'start-pos', `{ x: ${base.x}, z: ${base.z} }`);
-  text = setKey(text, 'render-mask', [
-    '[',
-    '  {',
-    `    min-x: ${base.x - r}`,
-    `    max-x: ${base.x + r}`,
-    `    min-z: ${base.z - r}`,
-    `    max-z: ${base.z + r}`,
-    '  }',
-    ']',
-  ].join('\n'));
-  return `# ${base.name}: written by scripts/map-bases.mjs from world.conf. Centre X ${base.x} Z ${base.z}, ${r} blocks each way.\n${text}`;
 }
 
 /* ---------- exaroton ---------- */
@@ -740,6 +676,27 @@ async function main() {
     return;
   }
 
+  if (REDRAW !== null) {
+    if (!REDRAW.length) throw new Error('Nefndu kortið sem á að teikna upp á nýtt, til dæmis --redraw jodville.');
+    const chosen = pick(REDRAW);
+    const server = await call(`${id}/`);
+    if (server?.status !== 1) throw new Error('Þjónninn þarf að vera í gangi til að taka við skipunum.');
+    const worldConf = (await call(`${id}/files/data/${encode(`${MAPS}/${MAIN_MAP}.conf`)}`, { raw: true })).toString('utf8');
+    for (const b of chosen) {
+      const conf = baseConfig(worldConf, b, bases.indexOf(b) + 1);
+      await call(`${id}/files/data/${encode(`${MAPS}/${b.id}.conf`)}`, { method: 'PUT', body: conf });
+      console.log(`${b.id}: stillingin skrifuð${b.bluemap ? ` (${Object.entries(b.bluemap).map(([k, v]) => `${k} ${v}`).join(', ')})` : ''}`);
+    }
+    await command(id, 'bluemap reload light');
+    await sleep(15_000);
+    for (const b of chosen) {
+      await command(id, `bluemap unfreeze ${b.id}`);
+      await command(id, `bluemap force-update ${b.id}`);
+    }
+    console.log('\nÞegar teikningunni er lokið (/bluemap sýnir framvinduna): npm run map:bases -- --freeze, svo senda kortið á vefinn.');
+    return;
+  }
+
   if (FREEZE || REFRESH !== null) {
     const server = await call(`${id}/`);
     if (server?.status !== 1) throw new Error('Þjónninn þarf að vera í gangi til að taka við skipunum.');
@@ -760,7 +717,9 @@ async function main() {
   mkdirSync(OUT, { recursive: true });
 
   let written = 0;
+  if (WRITE_IDS.length) pick(WRITE_IDS);
   for (const [i, base] of bases.entries()) {
+    if (WRITE_IDS.length && !WRITE_IDS.includes(base.id)) continue;
     const conf = baseConfig(worldConf, base, i + 1);
     writeFileSync(join(OUT, `${base.id}.conf`), conf);
     const path = `${MAPS}/${base.id}.conf`;

@@ -22,6 +22,9 @@ vi.mock('@/lib/map-bases/jodville.json', () => ({ default: { syncedAt: null, fil
 vi.mock('@/lib/map-bases/faraway.json', () => ({ default: { syncedAt: null, files: [] } }));
 vi.mock('@/lib/map-bases/shroomy.json', () => ({ default: { syncedAt: null, files: [] } }));
 
+const { redrawBases, freezeBases } = vi.hoisted(() => ({ redrawBases: vi.fn(async () => undefined), freezeBases: vi.fn(async () => undefined) }));
+vi.mock('@/lib/bluemap-redraw', () => ({ redrawBases, freezeBases }));
+
 const RUNS = 'https://api.github.com/repos/jongodi/minecraft-jod-v2/actions/workflows/map-bases.yml/runs?per_page=5';
 const DISPATCH = 'https://api.github.com/repos/jongodi/minecraft-jod-v2/actions/workflows/map-bases.yml/dispatches';
 const start = (body?: unknown) => POST(new NextRequest('https://jod.test/api/admin/map-bases', {
@@ -56,6 +59,8 @@ describe('/api/admin/map-bases', () => {
     vi.unstubAllEnvs();
     vi.unstubAllGlobals();
     fetchMock.mockReset();
+    redrawBases.mockClear();
+    freezeBases.mockClear();
   });
 
   const dispatched = () => fetchMock.mock.calls.find(([url]) => url === DISPATCH);
@@ -98,6 +103,25 @@ describe('/api/admin/map-bases', () => {
       .toEqual([[['jodville', 'faraway'], false, false], [null, true, true]]);
   });
 
+  it('redraws a named base on the running server, and freezes them all, without GitHub', async () => {
+    const redraw = await start({ action: 'redraw', bases: ['jodville'] });
+    expect(redraw.status).toBe(200);
+    expect(redrawBases).toHaveBeenCalledWith('exaroton-test', ['jodville']);
+    const freeze = await start({ action: 'freeze' });
+    expect(await freeze.json()).toEqual({ ok: true, action: 'freeze', bases: ['jodville', 'faraway', 'bustadur', 'shroomy'] });
+    expect(freezeBases).toHaveBeenCalledWith('exaroton-test', ['jodville', 'faraway', 'bustadur', 'shroomy']);
+    expect(dispatched()).toBeUndefined();
+  });
+
+  it('wants a base named to redraw, and a running server for the commands', async () => {
+    expect((await start({ action: 'redraw' })).status).toBe(400);
+    serverStatus = 0;
+    expect((await start({ action: 'redraw', bases: ['jodville'] })).status).toBe(409);
+    expect((await start({ action: 'freeze' })).status).toBe(409);
+    expect(redrawBases).not.toHaveBeenCalled();
+    expect(freezeBases).not.toHaveBeenCalled();
+  });
+
   it('says what is missing without a GitHub token', async () => {
     vi.stubEnv('MAP_SYNC_GITHUB_TOKEN', '');
     expect((await start()).status).toBe(503);
@@ -108,11 +132,12 @@ describe('/api/admin/map-bases', () => {
 
 describe('readBasesRunName', () => {
   it('reads which bases a run was for', () => {
-    expect(readBasesRunName('Map bases: jodville')).toEqual({ bases: ['jodville'], forced: false, offline: false });
-    expect(readBasesRunName('Map bases: all')).toEqual({ bases: null, forced: false, offline: false });
-    expect(readBasesRunName('Map bases: faraway shroomy, forced')).toEqual({ bases: ['faraway', 'shroomy'], forced: true, offline: false });
-    expect(readBasesRunName('Map bases: all, server off')).toEqual({ bases: null, forced: false, offline: true });
-    expect(readBasesRunName('Map bases: jodville, forced, server off')).toEqual({ bases: ['jodville'], forced: true, offline: true });
-    expect(readBasesRunName('Map bases')).toEqual({ bases: null, forced: false, offline: false });
+    expect(readBasesRunName('Map bases: jodville')).toEqual({ bases: ['jodville'], forced: false, offline: false, inspect: false });
+    expect(readBasesRunName('Map bases: all')).toEqual({ bases: null, forced: false, offline: false, inspect: false });
+    expect(readBasesRunName('Map bases: faraway shroomy, forced')).toEqual({ bases: ['faraway', 'shroomy'], forced: true, offline: false, inspect: false });
+    expect(readBasesRunName('Map bases: all, server off')).toEqual({ bases: null, forced: false, offline: true, inspect: false });
+    expect(readBasesRunName('Map bases: jodville, forced, server off')).toEqual({ bases: ['jodville'], forced: true, offline: true, inspect: false });
+    expect(readBasesRunName('Map bases')).toEqual({ bases: null, forced: false, offline: false, inspect: false });
+    expect(readBasesRunName('Map bases: jodville faraway, inspect')).toMatchObject({ bases: ['jodville', 'faraway'], inspect: true });
   });
 });
