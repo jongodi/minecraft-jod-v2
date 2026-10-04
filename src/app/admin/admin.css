@@ -3,7 +3,7 @@
    site, quieter. Amber still means "you can act here".
    ═══════════════════════════════════════════════════════════════ */
 
-.a { min-height: 100svh; background: var(--night); color: var(--text); font-family: var(--font-text); font-size: var(--fs-sm); line-height: 1.5; }
+.a { --fs-xs: 0.8rem; min-height: 100svh; background: var(--night); color: var(--text); font-family: var(--font-text); font-size: var(--fs-sm); line-height: 1.5; }
 .a-wrap { width: 100%; max-width: 1280px; margin-inline: auto; padding-inline: var(--gutter); }
 
 /* ─── top bar and tabs ────────────────────────────────────────── */

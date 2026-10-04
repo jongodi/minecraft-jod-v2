@@ -46,7 +46,7 @@
 }
 .b-paper__nail--l { left: var(--sp-4); margin-left: 0; }
 .b-paper__nail--r { left: auto; right: var(--sp-4); margin-left: 0; }
-.b-paper__kicker { font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
+.b-paper__kicker { font-size: var(--fs-sm); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-faint); }
 .b-paper p { line-height: var(--lh-text); }
 .b-paper .b-link { color: var(--lantern-ink); }
 @media (hover: hover) { .b-paper .b-link:hover { color: var(--ink); } }
@@ -66,8 +66,10 @@
   border: var(--px) solid rgba(242, 166, 59, 0.45);
   border-radius: var(--radius);
   color: var(--lantern);
-  font-size: var(--fs-sm);
-  font-weight: 600;
+  font-family: var(--font-data);
+  font-size: var(--fs-data);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   transition: background var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out), border-color var(--dur-1) var(--ease-out);
 }
 @media (hover: hover) { .b-tab:hover { border-color: var(--lantern); } }
@@ -84,30 +86,35 @@
 .b-posters .b-poster { flex: 0 0 15rem; scroll-snap-align: start; }
 .b-poster { display: grid; align-content: start; justify-items: center; text-align: center; padding: var(--sp-5) var(--sp-3) var(--sp-3); }
 .b-poster > * { min-width: 0; max-width: 100%; }
-.b-poster__kicker { font-size: 0.6rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
-.b-poster__stat { margin-top: var(--px); font-family: var(--font-display); font-weight: 400; font-size: 1.15rem; line-height: 1.1; color: var(--tc-red); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-.b-poster__charge { margin-top: var(--px); font-family: var(--font-data); font-size: 0.6rem; line-height: 1.4; letter-spacing: 0.02em; text-transform: uppercase; color: var(--ink-soft); text-wrap: balance; }
+.b-poster__kicker { font-size: var(--fs-sm); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-faint); }
+.b-poster__stat { margin-top: var(--px); font-family: var(--font-display); font-weight: 400; font-size: var(--fs-lg); line-height: 1.1; color: var(--tc-red); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.b-poster__charge { margin-top: var(--px); font-size: var(--fs-sm); line-height: 1.4; color: var(--ink-soft); text-wrap: balance; }
 .b-poster__lead { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: var(--sp-3); width: 100%; margin-top: var(--sp-3); text-decoration: none; color: var(--ink); text-align: left; }
 .b-poster__img { grid-row: span 2; width: 3rem; padding: calc(var(--px) * 2); background: var(--wood); box-shadow: inset 0 0 0 var(--px) var(--wood-light); transition: box-shadow var(--dur-2) var(--ease-out); }
 .b-poster__img img { width: 100%; aspect-ratio: 1; object-fit: cover; image-rendering: pixelated; display: block; }
 .b-poster__lead:focus-visible .b-poster__img { box-shadow: 0 0 0 var(--px) var(--lantern-ink); }
 @media (hover: hover) { .b-poster__lead:hover .b-poster__img { box-shadow: 0 0 0 var(--px) var(--lantern-ink); } }
-.b-poster__name { width: 100%; font-family: var(--font-data); font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.b-poster__val { margin-top: var(--px); font-family: var(--font-data); font-size: 0.9rem; font-weight: 700; line-height: 1.3; color: var(--tc-red); white-space: nowrap; font-variant-numeric: tabular-nums; }
+/* names keep their own casing, in the text face; the numbers are the server's, in the bitmap face */
+.b-poster__name { width: 100%; font-weight: 600; font-size: var(--fs-data); line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.b-poster__val { margin-top: var(--px); font-family: var(--font-data); font-size: var(--fs-data); line-height: 1.3; color: var(--tc-red); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .b-poster__rule { width: 100%; height: var(--px); margin-top: var(--sp-3); background: var(--ink); opacity: 0.22; }
 .b-poster__rest { width: 100%; margin-top: var(--sp-1); list-style: none; display: grid; }
-.b-poster__row { display: grid; grid-template-columns: 0.9rem 1rem minmax(0, 1fr) auto; align-items: center; gap: var(--sp-1); min-height: 1.6rem; text-decoration: none; color: var(--ink); text-align: left; }
+/* a row under the rule: the rank and the head down the side, the name with its number on the line beneath; at the bitmap face's size the two did not share a line on a poster this wide */
+.b-poster__row { display: grid; grid-template-columns: auto 1rem minmax(0, 1fr); align-items: center; gap: 0 var(--sp-2); padding-block: var(--sp-1); text-decoration: none; color: var(--ink); text-align: left; }
+.b-poster__row .b-poster__rank, .b-poster__row .b-poster__head { grid-row: span 2; }
+.b-poster__row .b-poster__who, .b-poster__row .b-poster__num { grid-column: 3; }
 .b-poster__row:focus-visible { color: var(--lantern-ink); }
 @media (hover: hover) { .b-poster__row:hover { color: var(--lantern-ink); } }
-.b-poster__rank { font-family: var(--font-data); font-size: 0.6rem; color: var(--ink-faint); }
+.b-poster__rank { font-family: var(--font-data); font-size: var(--fs-data); color: var(--ink-faint); }
 .b-poster__head { width: 1rem; height: 1rem; box-shadow: 0 0 0 1px var(--ink-soft); }
 .b-poster__head img { width: 100%; height: 100%; image-rendering: pixelated; object-fit: cover; }
-.b-poster__who { font-family: var(--font-data); font-size: 0.6rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.b-poster__num { font-family: var(--font-data); font-size: 0.6rem; color: var(--tc-red); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.b-poster__who { font-weight: 600; font-size: var(--fs-sm); line-height: 1.4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.b-poster__num { font-family: var(--font-data); font-size: var(--fs-data); line-height: 1.3; color: var(--tc-red); white-space: nowrap; font-variant-numeric: tabular-nums; }
 /* the week's outlaw, under the three of all time: a dashed rule in red ink, a small heading, one row without a rank */
 .b-poster__rule--week { height: 0; margin-top: var(--sp-3); background: none; border-top: var(--px) dashed var(--tc-red); opacity: 0.45; }
-.b-poster__weekhead { width: 100%; margin-top: var(--sp-2); font-family: var(--font-data); font-size: 0.6rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--tc-red); text-align: left; }
-.b-poster__row--week { grid-template-columns: 1rem minmax(0, 1fr) auto; }
+.b-poster__weekhead { width: 100%; margin-top: var(--sp-2); font-weight: 600; font-size: var(--fs-sm); letter-spacing: 0.04em; text-transform: uppercase; color: var(--tc-red); text-align: left; }
+.b-poster__row--week { grid-template-columns: 1rem minmax(0, 1fr); }
+.b-poster__row--week .b-poster__who, .b-poster__row--week .b-poster__num { grid-column: 2; }
 .b-empty { padding: var(--sp-4) 0; font-size: var(--fs-md); color: var(--text-faint); }
 .b-paper .b-empty { color: var(--ink-faint); }
 
@@ -180,7 +187,7 @@
 .b-counter__glyph svg { width: 100%; height: 100%; display: block; }
 .b-counter__text { display: grid; gap: var(--px); min-width: 0; }
 .b-counter__name { font-weight: 600; font-size: var(--fs-md); line-height: 1.3; color: var(--ink); }
-.b-counter__meta { font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); }
+.b-counter__meta { font-size: var(--fs-sm); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-faint); }
 .b-counter__desc { margin-top: var(--sp-1); font-size: var(--fs-sm); line-height: 1.45; color: var(--ink-soft); }
 
 /* ─── campfire: the footer ────────────────────────────────────── */
@@ -256,7 +263,7 @@
 @media (hover: hover) { .b-foot__sound:hover { background: rgba(242, 166, 59, 0.12); } }
 .b-foot__sound.is-on { background: var(--lantern); color: var(--night); }
 @media (min-width: 720px) { .b-foot__nav { justify-content: flex-start; } }
-.b-foot__link { display: inline-flex; align-items: center; min-height: var(--tap); padding-inline: var(--sp-1); color: var(--lantern); font-size: var(--fs-sm); font-weight: 600; text-decoration: none; border-bottom: var(--px) solid transparent; }
+.b-foot__link { display: inline-flex; align-items: center; min-height: var(--tap); padding-inline: var(--sp-1); color: var(--lantern); font-family: var(--font-data); font-size: var(--fs-data); letter-spacing: 0.04em; text-transform: uppercase; text-decoration: none; border-bottom: var(--px) solid transparent; }
 .b-foot__link:focus-visible { border-bottom-color: var(--lantern); color: var(--paper); }
 @media (hover: hover) { .b-foot__link:hover { border-bottom-color: var(--lantern); color: var(--paper); } }
 .b-foot__link[aria-current] { color: var(--paper); border-bottom-color: var(--lantern); }
@@ -270,7 +277,7 @@
 
 .b-foot__credit { grid-area: credit; }
 .b-foot__credit p { font-size: var(--fs-sm); color: var(--text-soft); line-height: 1.5; }
-.b-foot__credit .b-foot__small { font-size: var(--fs-xs); color: var(--text-faint); }
+.b-foot__credit .b-foot__small { font-size: var(--fs-sm); color: var(--text-faint); }
 
 .b-ground {
   position: relative;
@@ -305,7 +312,7 @@
 
 /* ─── crew pages ──────────────────────────────────────────────── */
 .b-page { padding-block: clamp(5rem, 9vw, 7rem) clamp(3rem, 8vw, 6rem); }
-.b-back { display: inline-flex; align-items: center; gap: var(--sp-2); min-height: var(--tap); font-size: var(--fs-sm); color: var(--lantern); text-decoration: none; }
+.b-back { display: inline-flex; align-items: center; gap: var(--sp-2); min-height: var(--tap); font-family: var(--font-data); font-size: var(--fs-data); letter-spacing: 0.04em; text-transform: uppercase; color: var(--lantern); text-decoration: none; }
 @media (hover: hover) { .b-back:hover { color: var(--paper); } }
 .b-back svg { width: 1rem; height: 1rem; shape-rendering: crispEdges; }
 /* off the trail (404 and a page that broke): the words stand alone under a dark lantern */
@@ -320,17 +327,17 @@
 .b-poster--crew:focus-visible { outline: calc(var(--px) * 2) solid var(--lantern-ink); outline-offset: calc(var(--px) * -6); }
 .b-poster--crew .b-poster__img { grid-row: auto; margin-top: 0; width: min(100%, 7.5rem); }
 /* the crew's own posters keep the display face for the name: it is the poster's title there */
-.b-poster--crew .b-poster__name { margin-top: var(--sp-3); font-family: var(--font-display); font-weight: 400; font-size: clamp(1.1rem, 2.2vw, 1.4rem); letter-spacing: 0; text-transform: none; }
-.b-poster__reward { font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); }
-.b-poster__meta { margin-top: var(--sp-2); font-size: var(--fs-xs); color: var(--ink-faint); }
+.b-poster--crew .b-poster__name { margin-top: var(--sp-3); font-family: var(--font-display); font-weight: 400; font-size: var(--fs-lg); }
+.b-poster__reward { font-size: var(--fs-sm); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-faint); }
+.b-poster__meta { margin-top: var(--sp-2); font-size: var(--fs-sm); color: var(--ink-faint); }
 .b-poster__note { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .b-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 var(--sp-5); margin-top: var(--sp-5); }
 @media (min-width: 640px) { .b-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .b-stat { min-width: 0; padding: var(--sp-2) 0; border-top: var(--line) solid var(--ink-faint); }
 /* the same order as the poster: the outlaw's name first, the charge under it */
-.b-stat__k { font-size: var(--fs-xs); color: var(--ink-faint); }
-.b-stat__k b { display: block; font-weight: 700; color: var(--ink-soft); overflow-wrap: break-word; }
-.b-stat__k small { display: block; font-size: 0.6rem; letter-spacing: 0.04em; text-transform: uppercase; }
+.b-stat__k { font-size: var(--fs-sm); color: var(--ink-faint); }
+.b-stat__k b { display: block; font-weight: 600; color: var(--ink-soft); overflow-wrap: break-word; }
+.b-stat__k small { display: block; font-size: var(--fs-sm); }
 .b-stat__v { margin-top: var(--sp-1); font-family: var(--font-data); font-size: var(--fs-data); }
 .b-badges { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-4); margin-top: var(--sp-4); list-style: none; font-size: var(--fs-sm); color: var(--ink-soft); }
 .b-badge { display: inline-flex; align-items: center; gap: var(--sp-1); }
@@ -347,53 +354,24 @@
 .b-modal__alt .b-link { border: 0; padding: 0; }
 .b-modal__alt .b-link:disabled { opacity: 0.6; cursor: default; }
 .b-modal__ok { margin-top: var(--sp-3); font-size: var(--fs-sm); color: var(--ink-soft); }
-.b-modal__label { display: block; margin: var(--sp-3) 0 var(--sp-1); font-family: var(--font-data); font-size: var(--fs-xs); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+.b-modal__label { display: block; margin: var(--sp-3) 0 var(--sp-1); font-weight: 600; font-size: var(--fs-sm); letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-soft); }
 .b-modal__sub + .b-modal__label { margin-top: 0; }
 .b-modal__check { display: flex; gap: var(--sp-2); align-items: flex-start; margin-top: var(--sp-3); font-size: var(--fs-sm); color: var(--ink-soft); cursor: pointer; }
 .b-modal__check input { margin-top: 0.2em; accent-color: var(--lantern-ink); flex: none; }
 
 /* ═══════════════════════════════════════════════════════════════
-   Label type on the board
-   Same line as badlands.css draws: short strings in the pixel face,
-   running prose in the text face. What stays prose here is a crew
-   member's bio and the text of a post. Last in the file so it settles
-   earlier declarations.
+   Label type on the board: the same line badlands.css draws. The bitmap
+   face is on the tabs, the footer's links, the way back, and every number
+   the posters carry, each at its own rule above; everything written on
+   paper is in the text face, and nothing here is set under 14 px.
    ═══════════════════════════════════════════════════════════════ */
-
-.b-paper__kicker,
 .b-tab,
-.b-poster__kicker,
-.b-poster__reward,
-.b-poster__meta,
-.b-poster__note,
-.b-empty,
-.b-counter__name,
-.b-counter__meta,
-.b-counter__desc,
 .b-foot__link,
-.b-foot__credit p,
 .b-back,
-.b-stat__k,
-.b-badges {
+.b-poster__val,
+.b-poster__num,
+.b-poster__rank,
+.b-stat__v {
   font-family: var(--font-data);
-}
-
-/* Tracking that suited the serif's small caps is too much for a face this
-   wide; enough is left to keep the uppercase labels from closing up. */
-.b-paper__kicker,
-.b-poster__kicker,
-.b-poster__reward,
-.b-counter__meta {
-  letter-spacing: 0.04em;
-}
-
-/* An empty state is a whole sentence; at body size the pixel face shouts it. */
-.b-empty { font-size: var(--fs-sm); }
-
-/* No synthetic bold on the bitmap face: these read as labels, not emphasis. */
-.b-poster__note,
-.b-counter__desc,
-.b-stat__k,
-.b-empty {
   font-weight: 400;
 }

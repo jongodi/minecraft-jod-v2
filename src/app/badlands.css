@@ -90,9 +90,9 @@
 .b-sky__sun {
   position: absolute;
   right: clamp(8%, 14vw, 24%);
-  top: 10svh;
-  width: clamp(3rem, 6vw, 5rem);
-  height: clamp(3rem, 6vw, 5rem);
+  top: 14svh;
+  width: clamp(4rem, 8vw, 7rem);
+  height: clamp(4rem, 8vw, 7rem);
   color: var(--sun);
   transform: translateY(calc(var(--evening) * 75svh));
   opacity: calc(1.6 - var(--evening) * 1.6);
@@ -105,7 +105,7 @@
 /* room for the door bar at the foot of a phone */
 @media (max-width: 899px) { .b { padding-bottom: calc(var(--doorbar) + env(safe-area-inset-bottom, 0px)); } }
 .b-wrap { position: relative; z-index: 1; width: 100%; max-width: var(--wrap); margin-inline: auto; padding-inline: var(--gutter); }
-.b-title { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-2xl); line-height: var(--lh-tight); color: var(--paper); letter-spacing: -0.01em; }
+.b-title { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-2xl); line-height: var(--lh-tight); color: var(--paper); letter-spacing: -0.02em; }
 .b-title--small { font-size: var(--fs-xl); }
 .b-lede { font-size: var(--fs-lg); line-height: 1.5; color: var(--text-soft); max-width: var(--measure); }
 .b-note { font-size: var(--fs-sm); color: var(--text-faint); line-height: 1.5; }
@@ -136,10 +136,10 @@
   border: var(--px) solid var(--lantern);
   border-radius: var(--radius);
   color: var(--lantern);
-  font-family: var(--font-text);
-  font-weight: 600;
-  font-size: var(--fs-sm);
-  letter-spacing: 0.02em;
+  font-family: var(--font-data);
+  font-weight: 400;
+  font-size: var(--fs-data);
+  letter-spacing: 0.04em;
   text-decoration: none;
   white-space: nowrap;
   transition: background var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
@@ -154,7 +154,7 @@
 .b-btn--solid { background: var(--lantern); color: var(--night); box-shadow: var(--bevel); }
 .b-btn--solid:active { box-shadow: var(--bevel-in); }
 @media (hover: hover) { .b-btn--solid:hover { background: var(--lantern-deep); border-color: var(--lantern-deep); color: var(--night); } }
-.b-btn--small { min-height: 2.25rem; padding: var(--sp-1) var(--sp-3); font-size: var(--fs-xs); }
+.b-btn--small { min-height: 2.25rem; padding: var(--sp-1) var(--sp-3); }
 /* a small button is still a thumb's target where there is a thumb */
 @media (pointer: coarse) { .b-btn--small { min-height: var(--tap); } }
 /* a tool over the world: paper on a dark pane, lit when pressed */
@@ -169,7 +169,7 @@
   border-radius: var(--radius);
   color: var(--ink);
   font-family: var(--font-text);
-  font-size: 1rem;
+  font-size: var(--fs-md);
   padding: var(--sp-3) var(--sp-3);
   outline: none;
 }
@@ -220,8 +220,8 @@
   color: var(--tc-red);
   background: var(--paper);
   font-family: var(--font-display);
-  font-size: var(--fs-xs);
-  letter-spacing: 0.08em;
+  font-size: var(--fs-sm);
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   transform: rotate(-8deg) scale(0);
   opacity: 0;
@@ -238,7 +238,7 @@
    sky and all but disappears; there it is paper, set off by a one-pixel
    shadow the way the HUD's labels are set off from the map. */
 .b-hero .b-copy__hint { color: var(--paper); text-shadow: 0 var(--px) 0 var(--night); }
-.b-copy__hint.is-ticker { font-family: var(--font-data); font-size: var(--fs-xs); color: var(--paper); }
+.b-copy__hint.is-ticker { font-family: var(--font-data); font-size: var(--fs-data); color: var(--paper); }
 .b-copy__hint.is-ticker::after { content: '_'; color: var(--lantern); animation: b-blink 1s steps(2, start) infinite; }
 @keyframes b-blink { to { visibility: hidden; } }
 
@@ -301,7 +301,7 @@
 .b-status.is-on .b-status__word { color: var(--online); }
 .b-status.is-off .b-status__word { color: var(--tc-white); }
 .b-status.is-kindling .b-status__word { color: var(--lantern); }
-.b-status__row { font-size: var(--fs-xs); color: var(--tc-white); line-height: 1.5; }
+.b-status__row { font-size: var(--fs-sm); color: var(--tc-white); line-height: 1.5; }
 .b-status__row b { font-family: var(--font-data); font-weight: 400; font-size: var(--fs-data); color: var(--paper); }
 .b-status__meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-3); margin-top: var(--sp-1); color: var(--tc-white); }
 .b-status__heads { display: inline-flex; gap: var(--px); }
@@ -349,14 +349,14 @@
 .b-bar__mark { display: inline-flex; align-items: center; gap: var(--sp-2); font-family: var(--font-display); font-size: var(--fs-lg); color: var(--paper); text-decoration: none; transition: background var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease-out); }
 .b-bar__mark svg { width: 1.5rem; height: 1.5rem; shape-rendering: crispEdges; }
 @media (hover: hover) { .b-bar__mark:hover { color: var(--lantern); } }
-.b-bar__addr { display: inline-flex; align-items: center; gap: var(--sp-3); min-height: var(--tap); padding-inline: var(--sp-2); font-family: var(--font-data); font-size: var(--fs-xs); color: var(--paper); border-radius: var(--radius); transition: background var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease-out); }
+.b-bar__addr { display: inline-flex; align-items: center; gap: var(--sp-3); min-height: var(--tap); padding-inline: var(--sp-2); font-family: var(--font-data); font-size: var(--fs-data); color: var(--paper); border-radius: var(--radius); transition: background var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease-out); }
 .b-bar__addr { min-width: 0; }
 .b-bar__addr span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.b-bar__addr b { font-family: var(--font-text); font-weight: 600; font-size: var(--fs-xs); color: var(--lantern); letter-spacing: 0.02em; }
+.b-bar__addr b { font-family: var(--font-text); font-weight: 600; font-size: var(--fs-sm); color: var(--lantern); }
 @media (hover: hover) { .b-bar__addr:hover b { color: var(--paper); } }
 @media (max-width: 399px) { .b-bar__mark span { display: none; } }
-/* the narrowest phones: the tag is the address alone, and a tap still copies it */
-@media (max-width: 359px) { .b-bar__addr b { display: none; } }
+/* on a phone the tag is the address alone, and a tap still copies it: the verb would not fit beside it at the bitmap face's size */
+@media (max-width: 479px) { .b-bar__addr b { display: none; } }
 .b-bar__end { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; }
 /* the signed-in member's head in the bar: framed in wood, a lantern's glow behind it */
 .b-bar__me { position: relative; display: grid; place-items: center; width: var(--tap); height: var(--tap); flex-shrink: 0; }
@@ -376,8 +376,8 @@
   padding-block: var(--sp-1);
   color: var(--text-soft);
   font-family: var(--font-data);
-  font-size: var(--fs-xs);
-  letter-spacing: 0.06em;
+  font-size: var(--fs-data);
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   text-decoration: none;
   border-bottom: var(--px) solid transparent;
@@ -409,12 +409,14 @@
   padding: var(--sp-2) var(--sp-1);
   color: var(--text-faint);
   font-family: var(--font-data);
-  font-size: 0.6rem;
-  letter-spacing: 0.06em;
+  font-size: var(--fs-data);
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   text-decoration: none;
 }
 .b-doorbar__item .b-lantern { width: 1.1rem; height: 1.65rem; }
+/* the narrowest phones: a long door name keeps its size and loses its air */
+@media (max-width: 359px) { .b-doorbar__item { letter-spacing: 0; } }
 /* the lit door carries a rule along its top edge, the phone's version of the bar's underline */
 .b-doorbar__item.is-here { color: var(--lantern); box-shadow: inset 0 var(--px) 0 var(--lantern); }
 
@@ -438,16 +440,19 @@
   font-weight: 400;
   font-size: var(--fs-hero);
   line-height: 0.85;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.02em;
   color: var(--paper);
   overflow-wrap: normal;
   text-shadow: 0 var(--px) 0 var(--tc-brown), 0 calc(var(--px) * 3) 0 rgba(21, 16, 13, 0.35);
 }
-.b-hero__sub { margin-top: var(--sp-4); font-size: var(--fs-lg); color: var(--paper); max-width: 34ch; line-height: 1.4; }
+/* Every line of hero text wears the game's own text shadow: one hard pixel of
+   night under it, which is how Minecraft keeps light text legible over any
+   sky. On a wide screen the sub-line falls on the brightest band of the
+   sunset, where paper alone read at under 4:1. */
+.b-hero__sub { margin-top: var(--sp-4); font-size: var(--fs-lg); color: var(--paper); max-width: 34ch; line-height: 1.4; text-shadow: 0 var(--px) 0 var(--night); }
 .b-hero__action { margin-top: var(--sp-6); }
 .b-hero__side { display: grid; gap: var(--sp-3); justify-items: start; }
 @media (min-width: 900px) { .b-hero__side { justify-items: end; padding-bottom: var(--sp-2); } }
-.b-hero__version { font-family: var(--font-data); font-size: 0.6rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--paper); text-shadow: 0 var(--px) 0 var(--night); }
 
 .b-mesa { position: absolute; inset-inline: 0; bottom: 0; height: clamp(9rem, 32svh, 20rem); pointer-events: none; }
 /* No will-change here: the rock's colour changes with the hour too, so the
@@ -552,7 +557,7 @@ html.is-map-full { overflow: hidden; }
 .b-hud__top { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-3) var(--sp-4); flex-wrap: wrap; }
 .b-hud__title { display: grid; gap: var(--sp-1); }
 .b-hud__title .b-title { font-size: var(--fs-xl); text-shadow: 0 var(--px) 0 var(--night); }
-.b-hud__meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-3); font-family: var(--font-data); font-size: 0.6rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--tc-white); text-shadow: 0 1px 0 var(--night); }
+.b-hud__meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-3); font-size: var(--fs-sm); color: var(--tc-white); text-shadow: 0 var(--px) 0 var(--night); }
 .b-hud__in { display: inline-flex; align-items: center; gap: var(--sp-2); }
 .b-hud__in img { width: 1rem; height: 1rem; image-rendering: pixelated; box-shadow: 0 0 0 1px var(--night); }
 .b-hud__dot { width: 0.5rem; height: 0.5rem; background: var(--online); box-shadow: 0 0 0 1px var(--night); }
@@ -583,8 +588,8 @@ html.is-map-full { overflow: hidden; }
   transition: background var(--dur-1) var(--ease-out);
 }
 .b-boot .b-lantern { width: 2rem; height: 3rem; }
-.b-boot__word { font-family: var(--font-data); font-size: var(--fs-data); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
-.b-boot__sub { font-family: var(--font-data); font-size: 0.6rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--tc-white); }
+.b-boot__word { font-family: var(--font-data); font-size: var(--fs-data); letter-spacing: 0.04em; text-transform: uppercase; }
+.b-boot__sub { font-size: var(--fs-sm); color: var(--tc-white); }
 .b-boot:focus-visible { background: rgba(21, 16, 13, 0.9); outline: var(--px) solid var(--lantern); outline-offset: calc(var(--px) * -3); }
 @media (hover: hover) { .b-boot:hover { background: rgba(21, 16, 13, 0.9); } }
 .b-boot:focus-visible .b-boot__word { color: var(--paper); }
@@ -596,7 +601,7 @@ html.is-map-full { overflow: hidden; }
   .b-boot { padding: var(--sp-3) var(--sp-4); }
   .b-boot__sub { display: none; }
 }
-.b-boot__wait { font-family: var(--font-data); font-size: var(--fs-xs); color: var(--paper); text-shadow: 0 1px 0 var(--night); }
+.b-boot__wait { font-family: var(--font-data); font-size: var(--fs-data); color: var(--paper); text-shadow: 0 var(--px) 0 var(--night); }
 
 /* the postcard of the chosen place. Scoped to the frame: board.css gives every
    sheet of paper position: relative, and this one has to sit over the world. */
@@ -647,7 +652,7 @@ html.is-map-full { overflow: hidden; }
 
 /* the other bases: a strip under the frame, each base's own 3D map one link away (/kort/<id>) */
 .b-bases { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-4); padding: var(--sp-4) var(--gutter); }
-.b-bases__head { font-family: var(--font-data); font-size: 0.6rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--paper); }
+.b-bases__head { font-size: var(--fs-sm); color: var(--paper); }
 .b-bases__list { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
 .b-bases__link .b-lantern { width: 0.75rem; height: 1.125rem; }
 
@@ -655,7 +660,7 @@ html.is-map-full { overflow: hidden; }
 .b-places { position: absolute; inset-inline: 0; bottom: 0; z-index: 3; display: grid; gap: var(--sp-2); padding: var(--sp-6) var(--gutter) var(--sp-4); pointer-events: none; }
 .b-places > * { pointer-events: auto; }
 @media (max-width: 899px) { .b-places { padding-bottom: var(--sp-3); } }
-.b-places__head { font-family: var(--font-data); font-size: 0.6rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--paper); text-shadow: 0 1px 0 var(--night); }
+.b-places__head { font-size: var(--fs-sm); color: var(--paper); text-shadow: 0 var(--px) 0 var(--night); }
 /* min-width: a grid item would otherwise grow to fit every chip instead of scrolling */
 .b-railwrap { position: relative; min-width: 0; }
 .b-rail {
@@ -709,6 +714,7 @@ html.is-map-full { overflow: hidden; }
   align-items: center;
   gap: var(--sp-3);
   min-width: 12rem;
+  max-width: 17rem;
   padding: var(--sp-1) var(--sp-3) var(--sp-1) var(--sp-1);
   text-align: left;
   color: var(--paper);
@@ -724,8 +730,8 @@ html.is-map-full { overflow: hidden; }
 .b-chip__thumb img { width: 100%; height: 100%; object-fit: cover; }
 .b-chip__thumb--empty { display: block; width: 100%; height: 100%; background: repeating-linear-gradient(45deg, var(--dusk) 0 4px, var(--dusk-2) 4px 8px); }
 .b-chip__text { display: grid; min-width: 0; }
-.b-chip__name { font-family: var(--font-data); font-size: 0.6rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.b-chip__sub { font-family: var(--font-data); font-size: 0.6rem; line-height: 1.5; color: var(--text-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.b-chip__name { font-weight: 600; font-size: var(--fs-data); line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.b-chip__sub { font-size: var(--fs-sm); line-height: 1.4; color: var(--text-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .b-chip.is-on .b-chip__sub { color: rgba(21, 16, 13, 0.7); }
 /* how many things the crew pinned at this place */
 .b-chip__count { position: absolute; top: calc(var(--px) * -1); right: calc(var(--px) * -1); padding: 0 0.3rem; background: var(--lantern); color: var(--night); font-family: var(--font-data); font-size: var(--fs-chip); line-height: 1.6; }
@@ -738,8 +744,8 @@ html.is-map-full { overflow: hidden; }
 .b-card__print .b-card__printhead { position: absolute; right: 0; bottom: 0; width: 0.9rem; height: 0.9rem; image-rendering: pixelated; box-shadow: 0 0 0 1px var(--paper); }
 .b-card__print:focus-visible { box-shadow: 0 0 0 var(--px) var(--lantern-deep); }
 @media (hover: hover) { .b-card__print:hover { box-shadow: 0 0 0 var(--px) var(--lantern-deep); } }
-.b-card__more { font-family: var(--font-data); font-size: 0.6rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-faint); margin-left: var(--sp-1); }
-.b-card__builders { font-family: var(--font-data); font-size: 0.6rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-faint); }
+.b-card__more { font-size: var(--fs-sm); color: var(--ink-faint); margin-left: var(--sp-1); }
+.b-card__builders { font-size: var(--fs-sm); color: var(--ink-faint); }
 
 @media (max-width: 899px) {
   /* the whole screen between the two bars: the world is the phone's window */
@@ -856,7 +862,7 @@ html.is-map-full { overflow: hidden; }
   box-shadow: inset 0 0 0 var(--px) rgba(21, 16, 13, 0.35);
 }
 .b-room__title { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-lg); line-height: 1; color: var(--paper); text-shadow: 0 var(--px) 0 var(--wood-dark); white-space: nowrap; }
-.b-room__note { flex: 1 1 auto; min-width: 0; font-family: var(--font-data); font-size: 0.6rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--tc-white); text-shadow: 0 1px 0 var(--wood-dark); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.b-room__note { flex: 1 1 auto; min-width: 0; font-size: var(--fs-sm); color: var(--tc-white); text-shadow: 0 var(--px) 0 var(--wood-dark); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .b-room__close { flex-shrink: 0; margin-left: auto; width: var(--tap); height: var(--tap); display: inline-grid; place-items: center; color: var(--lantern); font-family: var(--font-data); font-size: var(--fs-data); background: rgba(21, 16, 13, 0.35); clip-path: var(--notch); }
 .b-room__close svg { width: 1rem; height: 1rem; }
 .b-room__close:focus-visible { background: var(--lantern); color: var(--night); }
@@ -899,9 +905,9 @@ html.is-map-full { overflow: hidden; }
 @media (hover: hover) { .b-frame-pic:hover .b-frame-pic__dim { opacity: 0; } }
 .b-frame-pic__plate { display: flex; align-items: baseline; gap: var(--sp-2); min-width: 0; padding: var(--px) var(--sp-2); background: var(--paper); clip-path: var(--notch); }
 .b-frame-pic__no { font-family: var(--font-data); font-size: var(--fs-chip); line-height: 2; color: var(--ink-faint); flex-shrink: 0; }
-.b-frame-pic__cap { font-family: var(--font-data); font-size: var(--fs-xs); line-height: 1.5; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.b-frame-pic__cap { font-size: var(--fs-sm); line-height: 1.5; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .b-frame-pic__cap b { font-weight: 600; color: var(--ink); }
-@media (min-width: 720px) { .b-frame-pic--hero .b-frame-pic__cap { font-size: var(--fs-sm); } }
+@media (min-width: 720px) { .b-frame-pic--hero .b-frame-pic__cap { font-size: var(--fs-md); } }
 
 /* ─── lightbox ────────────────────────────────────────────────── */
 .b-lb { position: fixed; inset: 0; z-index: var(--z-lightbox); background: var(--scrim-deep); color: var(--paper); display: grid; grid-template-rows: 1fr auto; padding: 3.5rem var(--sp-4) var(--sp-5); }
@@ -912,7 +918,7 @@ html.is-map-full { overflow: hidden; }
 .b-lb__bar { display: flex; justify-content: space-between; align-items: flex-end; gap: var(--sp-4); margin-top: var(--sp-4); }
 .b-lb__cap { font-size: var(--fs-lg); line-height: 1.3; }
 .b-lb__cap small { display: block; font-size: var(--fs-sm); color: var(--text-soft); }
-.b-lb__count { font-family: var(--font-data); font-size: var(--fs-xs); color: var(--text-soft); }
+.b-lb__count { font-family: var(--font-data); font-size: var(--fs-data); color: var(--text-soft); }
 .b-arrowbtn { width: var(--tap); height: var(--tap); border: var(--px) solid var(--lantern); color: var(--lantern); border-radius: var(--radius); display: inline-flex; align-items: center; justify-content: center; }
 .b-arrowbtn svg { width: 1.125rem; height: 1.125rem; }
 .b-arrowbtn:focus-visible { background: var(--lantern); color: var(--night); }
@@ -924,14 +930,17 @@ html.is-map-full { overflow: hidden; }
 .b-crew__who { text-align: center; text-wrap: balance; }
 @media (min-width: 900px) {
   .b-crew__row { grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: var(--sp-6); }
-  .b-crew__who { text-align: right; max-width: 18rem; }
+  /* narrow enough that eight portraits beside it keep a column the longest name fits */
+  .b-crew__who { text-align: right; max-width: 14rem; }
 }
-.b-folk { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp-4) var(--sp-3); list-style: none; }
-@media (min-width: 480px) { .b-folk { gap: var(--sp-4); } }
-@media (min-width: 720px) { .b-folk { grid-template-columns: repeat(8, minmax(0, 1fr)); max-width: 44rem; } }
+.b-folk { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp-4) var(--sp-1); list-style: none; }
+@media (min-width: 480px) { .b-folk { gap: var(--sp-4) var(--sp-3); } }
+@media (min-width: 1100px) { .b-folk { grid-template-columns: repeat(8, minmax(0, 1fr)); max-width: 52rem; } }
 .b-folk > li { min-width: 0; }
 .b-folk__item { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); justify-items: center; gap: var(--sp-2); min-width: 0; text-decoration: none; color: var(--text-soft); text-align: center; }
 .b-folk__frame { position: relative; width: 100%; max-width: 4.5rem; padding: var(--px); background: var(--tc-brown); }
+/* where the eight stand in one row there is room for larger portraits */
+@media (min-width: 1100px) { .b-folk__frame { max-width: 5.5rem; } }
 .b-folk__frame img { width: 100%; aspect-ratio: 1; object-fit: cover; image-rendering: pixelated; }
 /* whoever is out sits in the dark: a layer over the head, lifted (one
    opacity) for whoever is in and for the one pointed at */
@@ -947,16 +956,15 @@ html.is-map-full { overflow: hidden; }
   background: radial-gradient(closest-side, var(--lantern-glow), transparent);
   animation: b-flicker var(--dur-lantern) ease-in-out infinite;
 }
-/* A name under a portrait has one line and a column four heads wide on a phone.
-   The regular cut of the pixel face at 0.6rem with no tracking is the largest
-   setting at which the longest name (ingunnbirta) still fits that column; the
-   ellipsis stays as the fallback for a name added later. */
-.b-folk__name { width: 100%; font-size: 0.6rem; line-height: 1.5; letter-spacing: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* A name under a portrait has one line and a column four heads wide on a phone:
+   the text face, bold, at small print is 84 px for the longest name
+   (ingunnbirta) against an 86 px column at 390 px; the ellipsis stays as the
+   fallback for a narrower phone or a name added later. */
+.b-folk__name { width: 100%; font-weight: 600; font-size: var(--fs-sm); line-height: 1.5; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .b-folk__item:focus-visible .b-folk__name { color: var(--lantern); }
 @media (hover: hover) { .b-folk__item:hover .b-folk__name { color: var(--lantern); } }
-.b-folk__count { width: 100%; font-family: var(--font-data); font-size: 0.6rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.b-folk__in { position: absolute; z-index: 1; top: -0.5rem; right: -0.25rem; padding: 0.1rem 0.35rem; background: var(--online); color: var(--night); font-family: var(--font-data); font-size: var(--fs-xs); line-height: 1.2; }
-@media (max-width: 479px) { .b-folk__in { font-size: 0.6rem; } }
+.b-folk__count { width: 100%; font-size: var(--fs-sm); color: var(--text-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.b-folk__in { position: absolute; z-index: 1; top: -0.5rem; right: -0.25rem; padding: 0.1rem 0.35rem; background: var(--online); color: var(--night); font-family: var(--font-data); font-size: var(--fs-data); line-height: 1.2; text-transform: uppercase; }
 .b-crew__foot { margin-top: var(--sp-5); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-3); }
 .b-shelf__lede { font-size: var(--fs-md); }
 
@@ -992,20 +1000,19 @@ html.is-map-full { overflow: hidden; }
 @keyframes b-smoke { 0% { opacity: 0.9; transform: scale(0.4); } 100% { opacity: 0; transform: scale(2.2) translateY(-30px); } }
 .b-arena__hole { position: absolute; width: 34px; height: 34px; margin: -17px 0 0 -17px; pointer-events: none; }
 .b-arena__call { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: var(--sp-4) var(--sp-4) 24%; pointer-events: none; }
-.b-arena__big { font-family: var(--font-display); font-size: clamp(2.4rem, 8vw, 5.5rem); line-height: 1; color: var(--paper); text-shadow: var(--px) var(--px) 0 var(--night); }
+.b-arena__big { font-family: var(--font-display); font-size: var(--fs-2xl); line-height: 1; color: var(--paper); text-shadow: var(--px) var(--px) 0 var(--night); }
 .is-draw .b-arena__big { color: var(--lantern); animation: b-pop var(--dur-2) var(--ease-out); }
-.is-result.is-hit .b-arena__big { font-family: var(--font-data); font-size: clamp(2rem, 6vw, 4rem); }
+.is-result.is-hit .b-arena__big { font-family: var(--font-data); font-size: calc(var(--fs-data-lg) * 2); }   /* 48px: six of the face's pixels, on the grid */
 @keyframes b-pop { 0% { transform: scale(0.6); } 100% { transform: none; } }
-.b-arena__small { margin-top: var(--sp-2); font-size: var(--fs-md); color: var(--paper); text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7); max-width: 30ch; }
-.b-arena__corner { position: absolute; top: var(--sp-2); left: var(--sp-3); font-family: var(--font-data); font-size: var(--fs-xs); color: var(--paper); text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6); }
+.b-arena__small { margin-top: var(--sp-2); font-size: var(--fs-md); color: var(--paper); text-shadow: 0 var(--px) 0 var(--night); max-width: 30ch; }
+.b-arena__corner { position: absolute; top: var(--sp-2); left: var(--sp-3); font-family: var(--font-data); font-size: var(--fs-data); color: var(--paper); text-shadow: 0 var(--px) 0 var(--night); }
 .b-arena__corner--r { left: auto; right: var(--sp-3); }
 /* A phone's arena is 4:3 and a thumb wide: the call starts below the corner
    labels and its small line drops a size, so the round count, the call and
    the instructions no longer sit on top of one another. */
 @media (max-width: 639px) {
   .b-arena__call { padding: 2.25rem var(--sp-3) 18%; }
-  .b-arena__big { font-size: clamp(2rem, 9vw, 3rem); }
-  .b-arena__small { font-size: var(--fs-xs); line-height: 1.5; }
+  .b-arena__small { font-size: var(--fs-sm); line-height: 1.5; }
   .b-duelpanel { padding: var(--sp-4); }
 }
 .b-fig { transition: transform 0.18s var(--ease-out); transform-box: fill-box; transform-origin: bottom center; }
@@ -1019,61 +1026,59 @@ html.is-map-full { overflow: hidden; }
 .b-stub { position: relative; padding: var(--sp-3) var(--sp-2); text-align: center; color: var(--ink); background: var(--paper); border: var(--px) solid transparent; }
 .b-stub.is-live { border-color: var(--lantern); }
 .b-stub.is-foul { color: var(--tc-red); }
-.b-stub__k { font-size: var(--fs-xs); color: var(--ink-faint); }
+.b-stub__k { font-size: var(--fs-sm); color: var(--ink-faint); }
 .b-stub__v { margin-top: var(--sp-1); font-family: var(--font-data); font-size: var(--fs-data); }
 .b-duel__readout { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-4); }
-.b-duel__k { font-size: var(--fs-xs); color: var(--text-faint); }
+.b-duel__k { font-size: var(--fs-sm); color: var(--text-faint); }
 .b-duel__v { margin-top: var(--sp-1); font-family: var(--font-data); font-size: var(--fs-data); color: var(--paper); display: inline-flex; align-items: center; gap: var(--sp-2); }
 .b-star { width: 1.1rem; height: 1.1rem; color: var(--tc-yellow); flex-shrink: 0; }
 .b-duel__rules { font-size: var(--fs-sm); line-height: 1.5; color: var(--text-faint); max-width: 34ch; }
 
 /* ═══════════════════════════════════════════════════════════════
-   Label type
-   Everything on the page that is a short string — navigation, controls,
-   captions, tags, counts, notes — is set in the pixel face. Only running
-   prose stays in the text face: the hero line, a section's opening
-   sentence, a crew member's own words. Collected here rather than spread
-   through the file so the line between the two is one thing to read, and
-   placed last so it settles any earlier font-family on the same selector.
+   Label type: two pixel faces, two voices.
+   The bitmap face (Silkscreen) is for what can be pressed and what the
+   server counts: the doors, the buttons, the address, numbers, times,
+   versions and counts, the status word. It is drawn on an 8 px grid and
+   set only at 16 or 24 px (8 px for a tag's numeral), where every pixel of
+   it lands on whole device pixels; it has one cut, so nothing is ever
+   synthetically emboldened. The text face (Pixelify Sans) carries every
+   word the site says, however short: notes, captions, kickers, sub-labels
+   and names, at 14, 17 or 20 px. Collected here, last in the file, so the
+   line between the two is one thing to read.
    ═══════════════════════════════════════════════════════════════ */
 
-.b-note,
 .b-btn,
-.b-input,
-.b-err,
-.b-copy__hint,
-.b-status__row,
-.b-bar__addr b,
-.b-folk__name,
-.b-card__sub,
-.b-card__emptytext,
-.b-arena__small,
-.b-stub__k,
-.b-duel__k,
-.b-duel__rules,
-.b-lb__cap,
+.b-door,
+.b-doorbar__item,
+.b-bar__addr,
+.b-copy__btn,
+.b-status__word,
+.b-status__row b,
+.b-boot__word,
+.b-boot__wait,
+.b-lb__count,
 .b-arrowbtn,
-.b-lb__close {
+.b-lb__close,
+.b-folk__in,
+.b-arena__corner,
+.b-stub__v,
+.b-duel__v,
+.b-night__when,
+.b-night__count,
+.b-cal,
+.b-chip__count,
+.b-hud__count,
+.b-frame-pic__no {
   font-family: var(--font-data);
-}
-
-/* Silkscreen carries a real bold, so 600 resolves to it and nothing is
-   synthetically emboldened; a faux-bold bitmap face smears. */
-.b-note,
-.b-copy__hint,
-.b-status__row,
-.b-folk__name,
-.b-card__sub,
-.b-duel__rules,
-.b-arena__small {
   font-weight: 400;
 }
 
-/* The pixel face is already wide; the tracking that opened up the serif's
-   small caps would push these labels out of their boxes. */
-.b-btn {
-  font-family: var(--font-data);
-  letter-spacing: 0.02em;
+/* capitals in the bitmap face take a little air; nothing else is tracked */
+.b-btn,
+.b-door,
+.b-doorbar__item,
+.b-boot__word {
+  letter-spacing: 0.04em;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1089,13 +1094,13 @@ html.is-map-full { overflow: hidden; }
   max-width: 22rem; padding: var(--sp-2) var(--sp-4);
   border: var(--line) solid rgba(232, 220, 196, 0.18); border-radius: var(--radius);
   background: rgba(21, 16, 13, 0.55); color: var(--text-soft); text-decoration: none;
-  font-size: var(--fs-xs); line-height: 1.5;
+  font-size: var(--fs-sm); line-height: 1.5;
   transition: border-color var(--dur-1) var(--ease-out);
 }
 .b-nightline:focus-visible { border-color: var(--lantern); }
 @media (hover: hover) { .b-nightline:hover { border-color: var(--lantern); } }
 .b-nightline__text { display: grid; gap: var(--px); min-width: 0; }
-.b-nightline__kicker { font-family: var(--font-data); font-size: 0.6rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--lantern); }
+.b-nightline__kicker { font-weight: 600; font-size: var(--fs-sm); letter-spacing: 0.04em; text-transform: uppercase; color: var(--lantern); }
 .b-nightline.is-embers .b-nightline__kicker { color: var(--tc-white); }
 .b-nightline .b-night__heads { margin-top: var(--px); }
 
@@ -1111,7 +1116,7 @@ html.is-map-full { overflow: hidden; }
 .b-nights { display: grid; gap: var(--sp-4); margin-block: var(--sp-6); }
 .b-nights > .b-night { margin-block: 0; scroll-margin-top: var(--sp-4); }
 .b-nights__more { justify-self: start; }
-.b-night__kicker { font-family: var(--font-data); font-size: var(--fs-xs); letter-spacing: 0.06em; text-transform: uppercase; color: var(--tc-yellow); }
+.b-night__kicker { font-weight: 600; font-size: var(--fs-sm); letter-spacing: 0.04em; text-transform: uppercase; color: var(--tc-yellow); }
 .b-night--over .b-night__kicker { color: var(--tc-white); }
 .b-night__top { display: grid; gap: var(--sp-1); }
 .b-night__title { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-xl); line-height: 1.1; color: var(--paper); }
@@ -1165,13 +1170,13 @@ html.is-map-full { overflow: hidden; }
 @media (hover: hover) { .b-cal__turn:hover:not([disabled]) { background: var(--lantern); border-color: var(--lantern-deep); } }
 .b-cal__turn[disabled] { opacity: 0.3; cursor: default; box-shadow: none; }
 .b-cal__grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: var(--px); }
-.b-cal__wd { padding-block: var(--sp-1); text-align: center; font-size: var(--fs-xs); color: var(--ink-soft); }
+.b-cal__wd { padding-block: var(--sp-1); text-align: center; font-size: var(--fs-data); color: var(--ink-soft); }
 .b-cal__wd:nth-child(n + 6):nth-child(-n + 7) { color: var(--tc-red); }
 .b-cal__day, .b-cal__blank { aspect-ratio: 1; min-height: 2.25rem; }
 .b-cal__day {
   display: grid; place-items: center; padding: 0;
   border: 0; background: transparent; color: var(--ink); cursor: pointer;
-  font-family: var(--font-data); font-size: var(--fs-sm); line-height: 1;
+  font-family: var(--font-data); font-size: var(--fs-data); line-height: 1;
   transition: background var(--dur-1) var(--ease-out);
 }
 .b-cal__day.is-today { box-shadow: inset 0 0 0 var(--px) var(--tc-red); }
@@ -1186,7 +1191,6 @@ html.is-map-full { overflow: hidden; }
 @media (max-width: 599px) {
   .b-night--light { padding-inline: var(--sp-4); }
   .b-cal { flex-basis: 100%; margin-right: 0; padding: var(--sp-2); }
-  .b-cal__month { font-size: var(--fs-sm); }
   .b-night__row .b-night__select { max-width: none; }
 }
 @media (max-width: 599px) { .b-night--none { grid-template-columns: auto minmax(0, 1fr); } .b-night--none > .b-btn { grid-column: 1 / -1; justify-self: start; } }
@@ -1227,5 +1231,5 @@ html.is-map-full { overflow: hidden; }
 }
 .b-lad--fire .b-lad__note { right: auto; left: 0; }
 .b-lad__note b { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-lg, 1.25rem); color: var(--tc-red); }
-.b-lad__note small { font-family: var(--font-data); font-size: 0.65rem; letter-spacing: 0.04em; color: var(--ink-faint); }
+.b-lad__note small { font-size: var(--fs-sm); color: var(--ink-faint); }
 @media (prefers-reduced-motion: reduce) { .b-lad__who { transition: none; } }

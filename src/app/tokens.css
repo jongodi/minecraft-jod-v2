@@ -99,16 +99,20 @@
   --font-text:    var(--font-text-loaded, 'Pixelify Sans'), 'Trebuchet MS', sans-serif;
   --font-data:    var(--font-data-loaded, 'Silkscreen'), 'Courier New', monospace;
 
-  --fs-xs:   0.8rem;
-  --fs-sm:   0.9rem;
-  --fs-md:   1.0625rem;
-  --fs-lg:   1.25rem;
+  /* Nine sizes. The text face (Pixelify Sans) at three: small print, body,
+     lede. The slab at four: the lede size for a small title, then xl, 2xl
+     and the wordmark. The bitmap face (Silkscreen) is drawn on an 8 px grid,
+     so it is set only where every one of its pixels lands on whole device
+     pixels: 16 and 24 px, and 8 px for the numeral on a tag. */
+  --fs-sm:   0.875rem;  /* 14px */
+  --fs-md:   1.0625rem; /* 17px */
+  --fs-lg:   1.25rem;   /* 20px */
   --fs-xl:   clamp(1.5rem, 1.1rem + 1.8vw, 2.2rem);
   --fs-2xl:  clamp(2rem, 1.4rem + 3vw, 3.4rem);
-  --fs-hero: clamp(5.5rem, 2rem + 15vw, 14rem);
-  --fs-chip: 0.5rem;    /* the numeral chips on frames and map pins: 8px, dead on the grid */
-  --fs-data: 1rem;      /* Silkscreen is drawn on 8px; keep multiples of 0.5rem */
-  --fs-data-lg: 1.5rem;
+  --fs-hero: clamp(5.5rem, 2rem + 15vw, 18rem);
+  --fs-chip: 0.5rem;    /* 8px: the numeral on a tag */
+  --fs-data: 1rem;      /* 16px */
+  --fs-data-lg: 1.5rem; /* 24px */
   --lh-tight: 1.05;
   --lh-text:  1.6;
   --lh-night: 1.7;      /* light-on-dark reads lighter, so it gets more air */

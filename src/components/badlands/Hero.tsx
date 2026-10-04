@@ -15,14 +15,14 @@ function Hero({ server, season }: { server: ServerState; season: Season }) {
       <div className="b-wrap b-hero__grid">
         <div>
           <h1 className="b-hero__mark">JOÐ</h1>
-          <p className="b-hero__sub">Minecraft-heimur átta vina, frá sumrinu 2024.</p>
+          {/* one line says what this is and who it is for; the resource pack is the shelf's to mention */}
+          <p className="b-hero__sub">Minecraft-heimur átta vina, frá sumrinu 2024. Aðgangur með boði.</p>
           <div className="b-hero__action"><CopyAddress /></div>
         </div>
         <div className="b-hero__side">
           <StatusLantern server={server} />
           <NightLine />
           <YuleLad season={season} spot="hero" />
-          <p className="b-hero__version">aðgangur með boði · útlitspakkinn sækist sjálfkrafa</p>
         </div>
       </div>
       <Mesa snow={season.snow} halloween={season.halloween} />
