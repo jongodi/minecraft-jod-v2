@@ -42,6 +42,15 @@ export function NightLine() {
   const { state } = usePlayNight();
   const mounted = useMounted();
   const night = state?.nights[0];
+  /* on the day the line counts down on its own clock, so it keeps moving
+     even when a poll fails or answers nothing new */
+  const counting = night?.phase === 'chosen' || night?.phase === 'soon';
+  const [, setMinute] = useState(0);
+  useEffect(() => {
+    if (!counting) return;
+    const id = setInterval(() => setMinute(m => m + 1), 30_000);
+    return () => clearInterval(id);
+  }, [counting]);
   if (!mounted || !night) return null;
   const planned = state.nights.filter(n => n.phase !== 'over').length;
   const chosen = chosenOf(night);
@@ -55,7 +64,7 @@ export function NightLine() {
   } else if (night.phase === 'over') {
     text = `${dayOf(chosen!.at)} · ${night.came.length} ${plural(night.came.length, 'mætti', 'mættu')}`;
   } else {
-    /* on the day, the line counts down to the fire (the store's refresh every minute keeps it current) */
+    /* on the day, the line counts down to the fire */
     const until = untilAt(chosen!.at);
     text = `${WhenAt(chosen!.at)}${until ? `, ${until}` : ''} · ${yes.length} ${plural(yes.length, 'mætir', 'mæta')}`;
   }

@@ -26,12 +26,29 @@ async function load(): Promise<void> {
 const refresh = () => { if (!inFlight) inFlight = load().finally(() => { inFlight = null; }); return inFlight; };
 const subscribe = (l: () => void) => { listeners.add(l); return () => { listeners.delete(l); }; };
 
+/* One poll for the whole page, however many read it (the hero's line, and
+   the crew's room once it has been opened): every minute while the tab is
+   in view, and at once when it comes back into view. */
+let readers = 0;
+let poll: ReturnType<typeof setInterval> | undefined;
+const onShown = () => { if (!document.hidden) refresh(); };
+function startPolling() {
+  if (readers++ > 0) return;
+  poll = setInterval(onShown, 60_000);
+  document.addEventListener('visibilitychange', onShown);
+}
+function stopPolling() {
+  if (--readers > 0) return;
+  clearInterval(poll);
+  document.removeEventListener('visibilitychange', onShown);
+}
+
 export function usePlayNight() {
   const state = useSyncExternalStore(subscribe, () => value, () => undefined);
   useEffect(() => {
     if (value === undefined) refresh();
-    const id = setInterval(() => { if (!document.hidden) refresh(); }, 60_000);
-    return () => clearInterval(id);
+    startPolling();
+    return stopPolling;
   }, []);
   /** Posts an action; the answer is the night as it now stands, or an Icelandic error. */
   const act = useCallback(async (body: Record<string, unknown>): Promise<string | null> => {
