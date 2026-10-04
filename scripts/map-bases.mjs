@@ -10,6 +10,7 @@
 //   npm run map:bases -- --upload [id...]  copy base maps to the site (all of them if none is named)
 //   npm run map:bases -- --upload <id> --force   upload it even if nothing changed
 //   npm run map:bases -- --prune [id...]   drop the copies the site no longer reads
+//   npm run map:bases -- --inspect [id...] show how each base map is drawn next to the main map, change nothing
 //
 // The admin panel (Þjónn → Grunnkortin) starts --upload through the "Map
 // bases" GitHub Action (.github/workflows/map-bases.yml), which also commits
@@ -61,7 +62,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, s
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { BlobAccessError, BlobStoreNotFoundError, BlobStoreSuspendedError, del, get, list, put } from '@vercel/blob';
-import { MAIN_MAP, versionOf } from './bluemap-brand.mjs';
+import { MAIN_MAP, startTileBytes, versionOf } from './bluemap-brand.mjs';
 import { BASES_DIR, basePackDir, blobsOf, manifestText, packBody, PACK_BYTES, planPacks } from './bluemap-pack.mjs';
 
 const ROOT  = process.cwd();
@@ -77,6 +78,7 @@ const FREEZE = process.argv.includes('--freeze');
 const REFRESH = process.argv.includes('--refresh') ? process.argv[process.argv.indexOf('--refresh') + 1] : null;
 const UPLOAD = process.argv.includes('--upload') ? named('--upload') : null;
 const PRUNE = process.argv.includes('--prune') ? named('--prune') : null;
+const INSPECT = process.argv.includes('--inspect') ? named('--inspect') : null;
 const PARALLEL = 6;
 const PACK_MAX_AGE = 31536000;     // a pack is never overwritten, so the store's CDN may keep it for good
 /* Cleanup leaves packs this young alone: they may be another upload's, not yet pushed. */
@@ -130,6 +132,21 @@ export function setKey(text, key, value) {
   const end = valueEnd(text, start + m[0].length);
   return `${text.slice(0, start)}${key}: ${value}${text.slice(end)}`;
 }
+
+/** A top-level key's value as written (a whole { } or [ ] block for one), or null. */
+export function getKey(text, key) {
+  const re = new RegExp(`^${key.replace(/-/g, '\\-')}[ \\t]*[:=]?[ \\t]*`, 'm');
+  const m = re.exec(text);
+  if (!m) return null;
+  const start = m.index + m[0].length;
+  return text.slice(start, valueEnd(text, start)).trim();
+}
+
+/* What decides how heavy a map's tiles are, in BlueMap's map config. */
+const DRAWING = [
+  'remove-caves-below-y', 'cave-detection-ocean-floor', 'cave-detection-uses-block-light',
+  'min-inhabited-time', 'render-edges', 'edge-light-strength', 'ignore-missing-light-data', 'render-mask',
+];
 
 /** The main map's config, made into the config for `base` (number `n` in the list). */
 export function baseConfig(worldConf, base, n) {
@@ -621,6 +638,38 @@ function mb(bytes) {
   return (bytes / 1024 / 1024).toLocaleString('is-IS', { maximumFractionDigits: 1 });
 }
 
+/* --inspect: each base map's drawing settings next to the main map's, and how
+   heavy its first detailed tiles are next to the main map's. Reads only. */
+async function inspect(id, bases) {
+  const read = async (path) => {
+    try { return (await call(`${id}/files/data/${encode(path)}`, { raw: true })).toString('utf8'); } catch { return null; }
+  };
+  const world = await read(`${MAPS}/${MAIN_MAP}.conf`);
+  if (!world) throw new Error(`Fann ekki ${MAPS}/${MAIN_MAP}.conf á þjóninum.`);
+  const flat = (v) => (v === null ? '(ekki sett)' : v.replace(/\s+/g, ' '));
+  const sizes = (m) => { const at = new Map(m.files.map((f, i) => [f, m.packs?.at[i]?.[2] ?? 0])); return (f) => at.get(f) ?? 0; };
+  const main = readJson(join(ROOT, 'src', 'lib', 'bluemap-snapshot.json'), { files: [] });
+  const [, mx, , mz] = String(readJson(join(ROOT, 'public', 'bluemap', 'settings.json'), {}).startLocation ?? '').split(':').map(Number);
+  const mainTile = main.packs ? startTileBytes(main.files, sizes(main), MAIN_MAP, mx, mz) : null;
+
+  console.log(`${MAIN_MAP} (aðalkortið):`);
+  for (const key of DRAWING) console.log(`  ${key.padEnd(32)} ${flat(getKey(world, key))}`);
+  if (mainTile) console.log(`  fyrstu nákvæmu reitirnir: ${(mainTile / 1024).toFixed(0)} KB að meðaltali`);
+  for (const b of bases) {
+    console.log(`\n${b.id} (${b.name}), jörð í Y ${b.y}:`);
+    const conf = await read(`${MAPS}/${b.id}.conf`);
+    if (!conf) { console.log('  engin stilling á þjóninum'); continue; }
+    for (const key of DRAWING) {
+      const v = getKey(conf, key);
+      const same = flat(v) === flat(getKey(world, key));
+      console.log(`  ${key.padEnd(32)} ${flat(v)}${same || key === 'render-mask' ? '' : '   (aðalkortið annað)'}`);
+    }
+    const m = readJson(manifestFile(b.id), { files: [] });
+    const tile = m.packs ? startTileBytes(m.files, sizes(m), b.id, b.x, b.z) : null;
+    if (tile) console.log(`  fyrstu nákvæmu reitirnir: ${(tile / 1024).toFixed(0)} KB að meðaltali${mainTile ? `, ${(tile / mainTile).toFixed(1)} sinnum aðalkortið` : ''}`);
+  }
+}
+
 /* ---------- main ---------- */
 
 async function main() {
@@ -639,6 +688,14 @@ async function main() {
     if (unknown.length) throw new Error(`Ekkert grunnkort heitir "${unknown.join('", "')}". Til eru: ${[...ids].join(', ')}`);
     return names.length ? bases.filter((b) => names.includes(b.id)) : bases;
   };
+
+  if (INSPECT !== null) {
+    const chosen = pick(INSPECT);
+    token = process.env.EXAROTON_API_KEY;
+    if (!token) throw new Error('EXAROTON_API_KEY vantar í .env.local');
+    await inspect(await serverId(), chosen);
+    return;
+  }
 
   if (PRUNE !== null) {
     const chosen = pick(PRUNE);
