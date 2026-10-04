@@ -1,2 +1,5 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# the BlueMap Entities patch carries CRLF lines for upstream files that use them
+tools/bluemap-entities/patches/*.patch -text

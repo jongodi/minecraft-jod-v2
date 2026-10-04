@@ -1,0 +1,1192 @@
+From e8f93d9c8708288f4cffeba001bd1faeb341241d Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sun, 4 Oct 2026 15:13:20 +0000
+Subject: [PATCH] Render only animals inside a configured box, at their scale
+ attribute
+
+- bluemap-entities.properties next to the jar holds the box (block
+  coordinates, bounds included). It is created with the defaults if it is
+  missing and re-read on every BlueMap resource load (/bluemap reload).
+- After all resource packs are loaded, a resource-pack extension drops every
+  entity-state that is not an animal (passive and neutral animals, fish,
+  water mobs, bats; no hostile mobs, villagers, golems, allays or props)
+  and routes every remaining part through FilteredRendererType, including
+  parts that use BlueMap's own default renderer.
+- FilteredRendererType skips entities outside the box and scales each
+  rendered part by the entity's minecraft:scale attribute, around the
+  entity's feet before BlueMap rotates and places it.
+- The mob entity-classes now extend LivingEntity, which reads the final
+  minecraft:scale value from the saved attributes list (base, add_value,
+  add_multiplied_base, add_multiplied_total, clamped to 0.0625..16) with a
+  lenient field deserializer, so a malformed attribute can never drop an
+  entity. Animals without an own class (bat, cod, tadpole) use it as well.
+- Tests run against BlueMap's real entity deserializer and tile model.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01UcEcjHB2xgUsmrFLaA4fZn
+---
+ build.gradle.kts                              |  11 +-
+ .../bluecolored/bluemap/entities/Addon.java   |  10 ++
+ .../data/AttributeScaleDeserializer.java      | 136 +++++++++++++++
+ .../bluemap/entities/entity/AgeEntity.java    |   3 +-
+ .../bluemap/entities/entity/ArmorStand.java   |   3 +-
+ .../bluemap/entities/entity/BabyEntity.java   |   3 +-
+ .../bluemap/entities/entity/CopperGolem.java  |   3 +-
+ .../bluemap/entities/entity/CubeMob.java      |   3 +-
+ .../bluemap/entities/entity/LivingEntity.java |  24 +++
+ .../bluemap/entities/entity/Pufferfish.java   |   3 +-
+ .../bluemap/entities/entity/Salmon.java       |   3 +-
+ .../bluemap/entities/entity/Skeleton.java     |   3 +-
+ .../bluemap/entities/entity/SnowGolem.java    |   3 +-
+ .../bluemap/entities/entity/TropicalFish.java |   3 +-
+ .../bluemap/entities/filter/Animals.java      |  29 ++++
+ .../filter/EntityFilterExtension.java         |  70 ++++++++
+ .../entities/filter/FilteredRendererType.java |  59 +++++++
+ .../bluemap/entities/filter/RenderBox.java    | 111 ++++++++++++
+ .../bluemap/entities/AttributeScaleTest.java  | 100 +++++++++++
+ .../de/bluecolored/bluemap/entities/Nbt.java  | 103 +++++++++++
+ .../entities/filter/EntityFilterTest.java     | 161 ++++++++++++++++++
+ 21 files changed, 823 insertions(+), 21 deletions(-)
+ create mode 100644 src/main/java/de/bluecolored/bluemap/entities/data/AttributeScaleDeserializer.java
+ create mode 100644 src/main/java/de/bluecolored/bluemap/entities/entity/LivingEntity.java
+ create mode 100644 src/main/java/de/bluecolored/bluemap/entities/filter/Animals.java
+ create mode 100644 src/main/java/de/bluecolored/bluemap/entities/filter/EntityFilterExtension.java
+ create mode 100644 src/main/java/de/bluecolored/bluemap/entities/filter/FilteredRendererType.java
+ create mode 100644 src/main/java/de/bluecolored/bluemap/entities/filter/RenderBox.java
+ create mode 100644 src/test/java/de/bluecolored/bluemap/entities/AttributeScaleTest.java
+ create mode 100644 src/test/java/de/bluecolored/bluemap/entities/Nbt.java
+ create mode 100644 src/test/java/de/bluecolored/bluemap/entities/filter/EntityFilterTest.java
+
+diff --git a/build.gradle.kts b/build.gradle.kts
+index fa475ce..18c7e10 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -4,7 +4,7 @@ plugins {
+ }
+ 
+ group = "de.bluecolored.bluemap.entities"
+-version = "1.5"
++version = "1.5-jod"
+ 
+ repositories {
+     mavenCentral()
+@@ -24,6 +24,11 @@ dependencies {
+ 
+     // only to warn if the addon is loaded as a paper-plugin
+     compileOnly ( "io.papermc.paper:paper-api:26.1.2.build.+" )
++
++    testImplementation ( "de.bluecolored:bluemap-core:5.23" )
++    testImplementation ( platform("org.junit:junit-bom:5.13.4") )
++    testImplementation ( "org.junit.jupiter:junit-jupiter" )
++    testRuntimeOnly ( "org.junit.platform:junit-platform-launcher" )
+ }
+ 
+ java {
+@@ -35,6 +40,10 @@ tasks.withType(JavaCompile::class).configureEach {
+     options.encoding = "utf-8"
+ }
+ 
++tasks.test {
++    useJUnitPlatform()
++}
++
+ tasks.processResources {
+     val props = mapOf("version" to project.version)
+     inputs.properties(props)
+diff --git a/src/main/java/de/bluecolored/bluemap/entities/Addon.java b/src/main/java/de/bluecolored/bluemap/entities/Addon.java
+index b3a64bc..7a1193b 100644
+--- a/src/main/java/de/bluecolored/bluemap/entities/Addon.java
++++ b/src/main/java/de/bluecolored/bluemap/entities/Addon.java
+@@ -1,10 +1,13 @@
+ package de.bluecolored.bluemap.entities;
+ 
+ import de.bluecolored.bluemap.core.map.hires.entity.EntityRendererType;
++import de.bluecolored.bluemap.core.resources.pack.resourcepack.ResourcePack;
+ import de.bluecolored.bluemap.core.util.Key;
+ import de.bluecolored.bluemap.core.world.mca.entity.EntityType;
+ import de.bluecolored.bluemap.core.world.mca.entity.MCAEntity;
+ import de.bluecolored.bluemap.entities.entity.*;
++import de.bluecolored.bluemap.entities.filter.Animals;
++import de.bluecolored.bluemap.entities.filter.EntityFilterExtension;
+ import de.bluecolored.bluemap.entities.renderer.*;
+ 
+ import java.util.logging.Logger;
+@@ -84,6 +87,10 @@ public class Addon implements Runnable {
+         EntityType.REGISTRY.register(new EntityType.Impl(Key.minecraft("zombie_villager"), ZombieVillager.class));
+         EntityType.REGISTRY.register(new EntityType.Impl(Key.minecraft("cushion"), Cushion.class));
+ 
++        // the other animals (bat, cod, tadpole) need the scale attribute too, types with an own class keep theirs
++        for (Key type : Animals.TYPES)
++            EntityType.REGISTRY.register(new EntityType.Impl(type, LivingEntity.class));
++
+ 
+         EntityRendererType.REGISTRY.register(new EntityRendererType.Impl(Key.minecraft("llama"), LlamaRenderer::new));
+         EntityRendererType.REGISTRY.register(new EntityRendererType.Impl(Key.minecraft("trader_llama"), LlamaRenderer::new));
+@@ -138,6 +145,9 @@ public class Addon implements Runnable {
+         EntityRendererType.REGISTRY.register(new EntityRendererType.Impl(Key.minecraft("villager"), VillagerRenderer::new));
+         EntityRendererType.REGISTRY.register(new EntityRendererType.Impl(Key.minecraft("zombie_villager"), VillagerRenderer::new));
+         EntityRendererType.REGISTRY.register(new EntityRendererType.Impl(Key.minecraft("cushion"), CushionRenderer::new));
++
++        // render only animals inside the configured box, at the size of their scale attribute
++        ResourcePack.Extension.REGISTRY.register(EntityFilterExtension.TYPE);
+     }
+ 
+ }
+diff --git a/src/main/java/de/bluecolored/bluemap/entities/data/AttributeScaleDeserializer.java b/src/main/java/de/bluecolored/bluemap/entities/data/AttributeScaleDeserializer.java
+new file mode 100644
+index 0000000..48de7c5
+--- /dev/null
++++ b/src/main/java/de/bluecolored/bluemap/entities/data/AttributeScaleDeserializer.java
+@@ -0,0 +1,136 @@
++package de.bluecolored.bluemap.entities.data;
++
++import de.bluecolored.bluenbt.NBTReader;
++import de.bluecolored.bluenbt.TagType;
++import de.bluecolored.bluenbt.TypeDeserializer;
++import org.jetbrains.annotations.Nullable;
++
++import java.io.IOException;
++
++/**
++ * Reads the final value of the <code>minecraft:scale</code> attribute from a living entity's saved
++ * <code>attributes</code> list. Since 1.21.2 (and still in 26.2) the list looks like
++ * <pre>attributes: [{id: "minecraft:scale", base: 2.0d, modifiers: [{id: "...", amount: 0.5d, operation: "add_value"}]}]</pre>
++ * The value is computed like vanilla's <code>AttributeInstance#calculateValue</code>.
++ * <p>
++ * Malformed entries are skipped instead of throwing: a failed field makes BlueMap drop the whole entity-class,
++ * and the entity would then not render at all.
++ * </p>
++ */
++public class AttributeScaleDeserializer implements TypeDeserializer<Float> {
++
++    // vanilla: new RangedAttribute("attribute.name.scale", 1.0, 0.0625, 16.0)
++    public static final float DEFAULT_SCALE = 1f;
++    private static final double MIN_SCALE = 0.0625, MAX_SCALE = 16.0;
++
++    @Override
++    public Float read(NBTReader reader) throws IOException {
++        if (reader.peek() != TagType.LIST) {
++            reader.skip();
++            return DEFAULT_SCALE;
++        }
++
++        float scale = DEFAULT_SCALE;
++        reader.beginList();
++        while (reader.hasNext()) {
++            if (reader.peek() != TagType.COMPOUND) {
++                reader.skip();
++                continue;
++            }
++            Double value = readScaleAttribute(reader);
++            if (value != null) scale = value.floatValue();
++        }
++        reader.endList();
++        return scale;
++    }
++
++    /** reads one attribute compound and returns its final value, or null if it is not the scale attribute */
++    private static @Nullable Double readScaleAttribute(NBTReader reader) throws IOException {
++        String id = null;
++        double base = DEFAULT_SCALE;
++        double addValue = 0, addMultipliedBase = 0, multiplyTotal = 1;
++
++        reader.beginCompound();
++        while (reader.hasNext()) {
++            String name = reader.name();
++            TagType type = reader.peek();
++
++            if (name.equals("id") && type == TagType.STRING) {
++                id = reader.nextString();
++            } else if (name.equals("base") && isNumber(type)) {
++                base = readNumber(reader);
++            } else if (name.equals("modifiers") && type == TagType.LIST) {
++                reader.beginList();
++                while (reader.hasNext()) {
++                    if (reader.peek() != TagType.COMPOUND) {
++                        reader.skip();
++                        continue;
++                    }
++
++                    double amount = 0;
++                    String operation = null;
++                    reader.beginCompound();
++                    while (reader.hasNext()) {
++                        String modifierName = reader.name();
++                        TagType modifierType = reader.peek();
++                        if (modifierName.equals("amount") && isNumber(modifierType)) {
++                            amount = readNumber(reader);
++                        } else if (modifierName.equals("operation") && modifierType == TagType.STRING) {
++                            operation = reader.nextString();
++                        } else {
++                            reader.skip();
++                        }
++                    }
++                    reader.endCompound();
++
++                    if (operation == null) continue;
++                    switch (operation) {
++                        case "add_value" -> addValue += amount;
++                        case "add_multiplied_base" -> addMultipliedBase += amount;
++                        case "add_multiplied_total" -> multiplyTotal *= 1 + amount;
++                        default -> {}
++                    }
++                }
++                reader.endList();
++            } else {
++                reader.skip();
++            }
++        }
++        reader.endCompound();
++
++        if (!isScale(id)) return null;
++
++        double value = base + addValue;
++        value += value * addMultipliedBase;
++        value *= multiplyTotal;
++
++        if (Double.isNaN(value)) return MIN_SCALE;
++        return Math.clamp(value, MIN_SCALE, MAX_SCALE);
++    }
++
++    private static boolean isScale(@Nullable String id) {
++        if (id == null) return false;
++        if (id.startsWith("minecraft:")) id = id.substring("minecraft:".length());
++        return id.equals("scale") || id.equals("generic.scale"); // generic.scale: worlds saved before 1.21.2
++    }
++
++    private static boolean isNumber(TagType type) {
++        return switch (type) {
++            case BYTE, SHORT, INT, LONG, FLOAT, DOUBLE -> true;
++            default -> false;
++        };
++    }
++
++    private static double readNumber(NBTReader reader) throws IOException {
++        return switch (reader.peek()) {
++            case BYTE -> reader.nextByte();
++            case SHORT -> reader.nextShort();
++            case INT -> reader.nextInt();
++            case LONG -> reader.nextLong();
++            case FLOAT -> reader.nextFloat();
++            case DOUBLE -> reader.nextDouble();
++            default -> throw new IllegalStateException("Not a number: " + reader.peek());
++        };
++    }
++
++}
+diff --git a/src/main/java/de/bluecolored/bluemap/entities/entity/AgeEntity.java b/src/main/java/de/bluecolored/bluemap/entities/entity/AgeEntity.java
+index 71da376..c6698b2 100644
+--- a/src/main/java/de/bluecolored/bluemap/entities/entity/AgeEntity.java
++++ b/src/main/java/de/bluecolored/bluemap/entities/entity/AgeEntity.java
+@@ -24,7 +24,6 @@
+  */
+ package de.bluecolored.bluemap.entities.entity;
+ 
+-import de.bluecolored.bluemap.core.world.mca.entity.MCAEntity;
+ import de.bluecolored.bluenbt.NBTName;
+ import lombok.EqualsAndHashCode;
+ import lombok.Getter;
+@@ -34,7 +33,7 @@ import lombok.ToString;
+ @EqualsAndHashCode(callSuper = true)
+ @ToString
+ @SuppressWarnings("FieldMayBeFinal")
+-public class AgeEntity extends MCAEntity {
++public class AgeEntity extends LivingEntity {
+ 
+     @NBTName("Age") int age;
+ }
+diff --git a/src/main/java/de/bluecolored/bluemap/entities/entity/ArmorStand.java b/src/main/java/de/bluecolored/bluemap/entities/entity/ArmorStand.java
+index 943c5e1..c34f6c8 100644
+--- a/src/main/java/de/bluecolored/bluemap/entities/entity/ArmorStand.java
++++ b/src/main/java/de/bluecolored/bluemap/entities/entity/ArmorStand.java
+@@ -24,7 +24,6 @@
+  */
+ package de.bluecolored.bluemap.entities.entity;
+ 
+-import de.bluecolored.bluemap.core.world.mca.entity.MCAEntity;
+ import de.bluecolored.bluenbt.NBTName;
+ import lombok.EqualsAndHashCode;
+ import lombok.Getter;
+@@ -34,7 +33,7 @@ import lombok.ToString;
+ @EqualsAndHashCode(callSuper = true)
+ @ToString
+ @SuppressWarnings("FieldMayBeFinal")
+-public class ArmorStand extends MCAEntity {
++public class ArmorStand extends LivingEntity {
+ 
+     @NBTName("Small") boolean small;
+ }
+diff --git a/src/main/java/de/bluecolored/bluemap/entities/entity/BabyEntity.java b/src/main/java/de/bluecolored/bluemap/entities/entity/BabyEntity.java
+index be9318b..1a8541b 100644
+--- a/src/main/java/de/bluecolored/bluemap/entities/entity/BabyEntity.java
++++ b/src/main/java/de/bluecolored/bluemap/entities/entity/BabyEntity.java
+@@ -24,7 +24,6 @@
+  */
+ package de.bluecolored.bluemap.entities.entity;
+ 
+-import de.bluecolored.bluemap.core.world.mca.entity.MCAEntity;
+ import de.bluecolored.bluenbt.NBTName;
+ import lombok.EqualsAndHashCode;
+ import lombok.Getter;
+@@ -34,7 +33,7 @@ import lombok.ToString;
+ @EqualsAndHashCode(callSuper = true)
+ @ToString
+ @SuppressWarnings("FieldMayBeFinal")
+-public class BabyEntity extends MCAEntity {
++public class BabyEntity extends LivingEntity {
+ 
+     @NBTName("IsBaby") boolean isBaby;
+ }
+diff --git a/src/main/java/de/bluecolored/bluemap/entities/entity/CopperGolem.java b/src/main/java/de/bluecolored/bluemap/entities/entity/CopperGolem.java
+index 46f9b90..27f8fa4 100644
+--- a/src/main/java/de/bluecolored/bluemap/entities/entity/CopperGolem.java
++++ b/src/main/java/de/bluecolored/bluemap/entities/entity/CopperGolem.java
+@@ -24,7 +24,6 @@
+  */
+ package de.bluecolored.bluemap.entities.entity;
+ 
+-import de.bluecolored.bluemap.core.world.mca.entity.MCAEntity;
+ import de.bluecolored.bluenbt.NBTDeserializer;
+ import de.bluecolored.bluenbt.NBTName;
+ import de.bluecolored.bluenbt.NBTReader;
+@@ -39,7 +38,7 @@ import java.io.IOException;
+ @EqualsAndHashCode(callSuper = true)
+ @ToString
+ @SuppressWarnings("FieldMayBeFinal")
+-public class CopperGolem extends MCAEntity {
++public class CopperGolem extends LivingEntity {
+ 
+     @NBTName("weather_state") State state;
+ 
+diff --git a/src/main/java/de/bluecolored/bluemap/entities/entity/CubeMob.java b/src/main/java/de/bluecolored/bluemap/entities/entity/CubeMob.java
+index 29473ca..7a3be36 100644
+--- a/src/main/java/de/bluecolored/bluemap/entities/entity/CubeMob.java
++++ b/src/main/java/de/bluecolored/bluemap/entities/entity/CubeMob.java
+@@ -24,7 +24,6 @@
+  */
+ package de.bluecolored.bluemap.entities.entity;
+ 
+-import de.bluecolored.bluemap.core.world.mca.entity.MCAEntity;
+ import de.bluecolored.bluenbt.NBTName;
+ import lombok.EqualsAndHashCode;
+ import lombok.Getter;
+@@ -34,7 +33,7 @@ import lombok.ToString;
+ @EqualsAndHashCode(callSuper = true)
+ @ToString
+ @SuppressWarnings("FieldMayBeFinal")
+-public class CubeMob extends MCAEntity {
++public class CubeMob extends LivingEntity {
+ 
+     @NBTName("Size") int size;
+ 
+diff --git a/src/main/java/de/bluecolored/bluemap/entities/entity/LivingEntity.java b/src/main/java/de/bluecolored/bluemap/entities/entity/LivingEntity.java
+new file mode 100644
+index 0000000..d5056e1
+--- /dev/null
++++ b/src/main/java/de/bluecolored/bluemap/entities/entity/LivingEntity.java
+@@ -0,0 +1,24 @@
++package de.bluecolored.bluemap.entities.entity;
++
++import de.bluecolored.bluemap.core.world.mca.entity.MCAEntity;
++import de.bluecolored.bluemap.entities.data.AttributeScaleDeserializer;
++import de.bluecolored.bluenbt.NBTDeserializer;
++import de.bluecolored.bluenbt.NBTName;
++import lombok.EqualsAndHashCode;
++import lombok.Getter;
++import lombok.ToString;
++
++/**
++ * Base for the mob entity-classes: carries the <code>minecraft:scale</code> attribute, so its model can be rendered at its real size.
++ */
++@Getter
++@EqualsAndHashCode(callSuper = true)
++@ToString
++@SuppressWarnings("FieldMayBeFinal")
++public class LivingEntity extends MCAEntity {
++
++    @NBTName("attributes")
++    @NBTDeserializer(AttributeScaleDeserializer.class)
++    float attributeScale = AttributeScaleDeserializer.DEFAULT_SCALE;
++
++}
+diff --git a/src/main/java/de/bluecolored/bluemap/entities/entity/Pufferfish.java b/src/main/java/de/bluecolored/bluemap/entities/entity/Pufferfish.java
+index 3a1350b..80a077c 100644
+--- a/src/main/java/de/bluecolored/bluemap/entities/entity/Pufferfish.java
++++ b/src/main/java/de/bluecolored/bluemap/entities/entity/Pufferfish.java
+@@ -24,7 +24,6 @@
+  */
+ package de.bluecolored.bluemap.entities.entity;
+ 
+-import de.bluecolored.bluemap.core.world.mca.entity.MCAEntity;
+ import de.bluecolored.bluenbt.NBTName;
+ import lombok.EqualsAndHashCode;
+ import lombok.Getter;
+@@ -34,7 +33,7 @@ import lombok.ToString;
+ @EqualsAndHashCode(callSuper = true)
+ @ToString
+ @SuppressWarnings("FieldMayBeFinal")
+-public class Pufferfish extends MCAEntity {
++public class Pufferfish extends LivingEntity {
+ 
+     @NBTName("PuffState") int puffState;
+ 
+diff --git a/src/main/java/de/bluecolored/bluemap/entities/entity/Salmon.java b/src/main/java/de/bluecolored/bluemap/entities/entity/Salmon.java
+index f9e6e41..c72037e 100644
+--- a/src/main/java/de/bluecolored/bluemap/entities/entity/Salmon.java
++++ b/src/main/java/de/bluecolored/bluemap/entities/entity/Salmon.java
+@@ -24,7 +24,6 @@
+  */
+ package de.bluecolored.bluemap.entities.entity;
+ 
+-import de.bluecolored.bluemap.core.world.mca.entity.MCAEntity;
+ import de.bluecolored.bluenbt.NBTName;
+ import lombok.EqualsAndHashCode;
+ import lombok.Getter;
+@@ -34,7 +33,7 @@ import lombok.ToString;
+ @EqualsAndHashCode(callSuper = true)
+ @ToString
+ @SuppressWarnings("FieldMayBeFinal")
+-public class Salmon extends MCAEntity {
++public class Salmon extends LivingEntity {
+ 
+     @NBTName("type") String type;
+ 
+diff --git a/src/main/java/de/bluecolored/bluemap/entities/entity/Skeleton.java b/src/main/java/de/bluecolored/bluemap/entities/entity/Skeleton.java
+index 496fd79..f2b6cea 100644
+--- a/src/main/java/de/bluecolored/bluemap/entities/entity/Skeleton.java
++++ b/src/main/java/de/bluecolored/bluemap/entities/entity/Skeleton.java
+@@ -24,13 +24,12 @@
+  */
+ package de.bluecolored.bluemap.entities.entity;
+ 
+-import de.bluecolored.bluemap.core.world.mca.entity.MCAEntity;
+ import lombok.Getter;
+ import lombok.ToString;
+ 
+ @Getter
+ @ToString
+ @SuppressWarnings("FieldMayBeFinal")
+-public class Skeleton extends MCAEntity {
++public class Skeleton extends LivingEntity {
+ 
+ }
+diff --git a/src/main/java/de/bluecolored/bluemap/entities/entity/SnowGolem.java b/src/main/java/de/bluecolored/bluemap/entities/entity/SnowGolem.java
+index 2814981..eb88f50 100644
+--- a/src/main/java/de/bluecolored/bluemap/entities/entity/SnowGolem.java
++++ b/src/main/java/de/bluecolored/bluemap/entities/entity/SnowGolem.java
+@@ -24,7 +24,6 @@
+  */
+ package de.bluecolored.bluemap.entities.entity;
+ 
+-import de.bluecolored.bluemap.core.world.mca.entity.MCAEntity;
+ import de.bluecolored.bluenbt.NBTName;
+ import lombok.EqualsAndHashCode;
+ import lombok.Getter;
+@@ -34,7 +33,7 @@ import lombok.ToString;
+ @EqualsAndHashCode(callSuper = true)
+ @ToString
+ @SuppressWarnings("FieldMayBeFinal")
+-public class SnowGolem extends MCAEntity {
++public class SnowGolem extends LivingEntity {
+ 
+     @NBTName("Pumpkin") boolean hasPumpkin;
+ }
+diff --git a/src/main/java/de/bluecolored/bluemap/entities/entity/TropicalFish.java b/src/main/java/de/bluecolored/bluemap/entities/entity/TropicalFish.java
+index 5345b38..6d8f102 100644
+--- a/src/main/java/de/bluecolored/bluemap/entities/entity/TropicalFish.java
++++ b/src/main/java/de/bluecolored/bluemap/entities/entity/TropicalFish.java
+@@ -24,7 +24,6 @@
+  */
+ package de.bluecolored.bluemap.entities.entity;
+ 
+-import de.bluecolored.bluemap.core.world.mca.entity.MCAEntity;
+ import de.bluecolored.bluenbt.NBTName;
+ import lombok.EqualsAndHashCode;
+ import lombok.Getter;
+@@ -34,7 +33,7 @@ import lombok.ToString;
+ @EqualsAndHashCode(callSuper = true)
+ @ToString
+ @SuppressWarnings("FieldMayBeFinal")
+-public class TropicalFish extends MCAEntity {
++public class TropicalFish extends LivingEntity {
+ 
+     @NBTName("Variant") int variant;
+ 
+diff --git a/src/main/java/de/bluecolored/bluemap/entities/filter/Animals.java b/src/main/java/de/bluecolored/bluemap/entities/filter/Animals.java
+new file mode 100644
+index 0000000..9ceaf2f
+--- /dev/null
++++ b/src/main/java/de/bluecolored/bluemap/entities/filter/Animals.java
+@@ -0,0 +1,29 @@
++package de.bluecolored.bluemap.entities.filter;
++
++import de.bluecolored.bluemap.core.util.Key;
++
++import java.util.Set;
++import java.util.stream.Collectors;
++import java.util.stream.Stream;
++
++/**
++ * The only entity-types that are rendered: passive and neutral animals.
++ * <p>
++ * Follows how the game itself (and Paper's API) types its mobs: animals, horse-likes, fish, water-mobs and bats,
++ * minus hoglins (an animal, but hostile). Hostile mobs, villagers, golems, allays and props
++ * (boats, minecarts, armor stands, item frames, paintings, ...) are not in here.
++ * </p>
++ */
++public final class Animals {
++
++    public static final Set<Key> TYPES = Stream.of(
++            "armadillo", "axolotl", "bat", "bee", "camel", "camel_husk", "cat", "chicken", "cod", "cow",
++            "dolphin", "donkey", "fox", "frog", "glow_squid", "goat", "happy_ghast", "horse", "llama",
++            "mooshroom", "mule", "nautilus", "ocelot", "panda", "parrot", "pig", "polar_bear", "pufferfish",
++            "rabbit", "salmon", "sheep", "skeleton_horse", "sniffer", "squid", "strider", "tadpole",
++            "trader_llama", "tropical_fish", "turtle", "wolf", "zombie_horse", "zombie_nautilus"
++    ).map(Key::minecraft).collect(Collectors.toUnmodifiableSet());
++
++    private Animals() {}
++
++}
+diff --git a/src/main/java/de/bluecolored/bluemap/entities/filter/EntityFilterExtension.java b/src/main/java/de/bluecolored/bluemap/entities/filter/EntityFilterExtension.java
+new file mode 100644
+index 0000000..607392f
+--- /dev/null
++++ b/src/main/java/de/bluecolored/bluemap/entities/filter/EntityFilterExtension.java
+@@ -0,0 +1,70 @@
++package de.bluecolored.bluemap.entities.filter;
++
++import de.bluecolored.bluemap.core.map.hires.entity.EntityRendererType;
++import de.bluecolored.bluemap.core.resources.pack.ResourcePool;
++import de.bluecolored.bluemap.core.resources.pack.resourcepack.ResourcePack;
++import de.bluecolored.bluemap.core.resources.pack.resourcepack.ResourcePackExtension;
++import de.bluecolored.bluemap.core.resources.pack.resourcepack.entitystate.EntityState;
++import de.bluecolored.bluemap.core.resources.pack.resourcepack.entitystate.Part;
++import de.bluecolored.bluemap.core.util.Key;
++import de.bluecolored.bluemap.entities.Addon;
++import lombok.RequiredArgsConstructor;
++
++import java.nio.file.Path;
++import java.util.HashMap;
++import java.util.Map;
++
++/**
++ * Runs after BlueMap has loaded all resource-packs (on startup and on every <code>/bluemap reload</code>):
++ * <ul>
++ *     <li>drops the entity-state of everything that is not one of the {@link Animals}, so BlueMap never renders
++ *     those entities, whichever pack the entity-state came from</li>
++ *     <li>routes every part that is left through {@link FilteredRendererType} (box filter and scale attribute),
++ *     including parts that use BlueMap's own default renderer</li>
++ * </ul>
++ */
++@RequiredArgsConstructor
++public class EntityFilterExtension implements ResourcePackExtension {
++
++    public static final ResourcePack.Extension<EntityFilterExtension> TYPE = new ResourcePack.Extension<>() {
++        private final Key key = new Key("bluemap_entities", "entity_filter");
++
++        @Override
++        public Key getKey() {
++            return key;
++        }
++
++        @Override
++        public EntityFilterExtension create(ResourcePack pack) {
++            return new EntityFilterExtension(pack);
++        }
++    };
++
++    private final ResourcePack resourcePack;
++
++    @Override
++    public void loadResources(Iterable<Path> roots) {
++        Path file = RenderBox.configFile();
++        RenderBox box = RenderBox.load(file);
++        apply(resourcePack.getEntityStates(), box);
++        Addon.LOGGER.info("Rendering only animals inside " + box + " (" + file + ")");
++    }
++
++    static void apply(ResourcePool<EntityState> entityStates, RenderBox box) {
++        entityStates.keySet().removeIf(type ->
++                !type.getNamespace().equals(Key.BLUEMAP_NAMESPACE) &&
++                !Animals.TYPES.contains(type)
++        );
++
++        Map<EntityRendererType, EntityRendererType> filtered = new HashMap<>();
++        for (EntityState state : entityStates.values()) {
++            Part[] parts = state.getParts();
++            if (parts == null) continue;
++            for (Part part : parts) {
++                if (part == null || part.getRenderer() instanceof FilteredRendererType) continue;
++                part.setRenderer(filtered.computeIfAbsent(part.getRenderer(), type -> new FilteredRendererType(type, box)));
++            }
++        }
++    }
++
++}
+diff --git a/src/main/java/de/bluecolored/bluemap/entities/filter/FilteredRendererType.java b/src/main/java/de/bluecolored/bluemap/entities/filter/FilteredRendererType.java
+new file mode 100644
+index 0000000..10460ef
+--- /dev/null
++++ b/src/main/java/de/bluecolored/bluemap/entities/filter/FilteredRendererType.java
+@@ -0,0 +1,59 @@
++package de.bluecolored.bluemap.entities.filter;
++
++import de.bluecolored.bluemap.core.map.TextureGallery;
++import de.bluecolored.bluemap.core.map.hires.RenderSettings;
++import de.bluecolored.bluemap.core.map.hires.TileModelView;
++import de.bluecolored.bluemap.core.map.hires.entity.EntityRenderer;
++import de.bluecolored.bluemap.core.map.hires.entity.EntityRendererType;
++import de.bluecolored.bluemap.core.resources.pack.resourcepack.ResourcePack;
++import de.bluecolored.bluemap.core.resources.pack.resourcepack.entitystate.Part;
++import de.bluecolored.bluemap.core.util.Key;
++import de.bluecolored.bluemap.core.world.Entity;
++import de.bluecolored.bluemap.core.world.block.BlockNeighborhood;
++import de.bluecolored.bluemap.entities.entity.LivingEntity;
++import lombok.RequiredArgsConstructor;
++
++/**
++ * Wraps the renderer of an entity-state part: entities outside the {@link RenderBox} are skipped, and the part is
++ * scaled by the entity's <code>minecraft:scale</code> attribute.
++ */
++@RequiredArgsConstructor
++public class FilteredRendererType implements EntityRendererType {
++
++    private final EntityRendererType delegate;
++    private final RenderBox box;
++
++    @Override
++    public Key getKey() {
++        return delegate.getKey();
++    }
++
++    @Override
++    public EntityRenderer create(ResourcePack resourcePack, TextureGallery textureGallery, RenderSettings renderSettings) {
++        return new Renderer(delegate.create(resourcePack, textureGallery, renderSettings), box);
++    }
++
++    @RequiredArgsConstructor
++    private static class Renderer implements EntityRenderer {
++
++        private final EntityRenderer delegate;
++        private final RenderBox box;
++
++        @Override
++        public void render(Entity entity, BlockNeighborhood block, Part part, TileModelView tileModel) {
++            if (!box.contains(entity.getPos())) return;
++
++            int start = tileModel.getStart();
++            delegate.render(entity, block, part, tileModel);
++
++            // the model is still in entity space here (origin at the feet, not yet rotated or moved into place),
++            // so this scales it around the feet like the game does
++            if (entity instanceof LivingEntity living && living.getAttributeScale() != 1f) {
++                float scale = living.getAttributeScale();
++                tileModel.initialize(start).scale(scale, scale, scale);
++            }
++        }
++
++    }
++
++}
+diff --git a/src/main/java/de/bluecolored/bluemap/entities/filter/RenderBox.java b/src/main/java/de/bluecolored/bluemap/entities/filter/RenderBox.java
+new file mode 100644
+index 0000000..e3c5af9
+--- /dev/null
++++ b/src/main/java/de/bluecolored/bluemap/entities/filter/RenderBox.java
+@@ -0,0 +1,111 @@
++package de.bluecolored.bluemap.entities.filter;
++
++import com.flowpowered.math.vector.Vector3d;
++import de.bluecolored.bluemap.entities.Addon;
++
++import java.io.IOException;
++import java.io.Reader;
++import java.nio.file.Files;
++import java.nio.file.Path;
++import java.util.Properties;
++import java.util.logging.Level;
++
++/**
++ * The box entities are rendered in, in block coordinates (as F3 shows them), both bounds included.
++ * <p>
++ * It is read from a small properties file next to the addon jar every time BlueMap loads its resources
++ * (startup and <code>/bluemap reload</code>), and written with the defaults if it is missing.
++ * </p>
++ */
++public record RenderBox(int minX, int maxX, int minY, int maxY, int minZ, int maxZ) {
++
++    public static final String FILE_NAME = "bluemap-entities.properties";
++    public static final RenderBox DEFAULT = new RenderBox(-6975, -6869, 60, 90, -8878, -8793);
++
++    public RenderBox {
++        if (minX > maxX) { int t = minX; minX = maxX; maxX = t; }
++        if (minY > maxY) { int t = minY; minY = maxY; maxY = t; }
++        if (minZ > maxZ) { int t = minZ; minZ = maxZ; maxZ = t; }
++    }
++
++    public boolean contains(Vector3d pos) {
++        int x = pos.getFloorX(), y = pos.getFloorY(), z = pos.getFloorZ();
++        return
++                x >= minX && x <= maxX &&
++                y >= minY && y <= maxY &&
++                z >= minZ && z <= maxZ;
++    }
++
++    @Override
++    public String toString() {
++        return "x %d..%d, y %d..%d, z %d..%d".formatted(minX, maxX, minY, maxY, minZ, maxZ);
++    }
++
++    /** next to the addon jar (plugins/BlueMap/packs on Paper), or the working directory if the jar can't be located */
++    public static Path configFile() {
++        try {
++            Path jar = Path.of(RenderBox.class.getProtectionDomain().getCodeSource().getLocation().toURI());
++            if (Files.isRegularFile(jar)) return jar.resolveSibling(FILE_NAME);
++        } catch (Exception ignore) {}
++        return Path.of(FILE_NAME).toAbsolutePath();
++    }
++
++    public static RenderBox load(Path file) {
++        if (!Files.exists(file)) {
++            try {
++                Files.writeString(file, DEFAULT.toConfig());
++                Addon.LOGGER.info("Created " + file + " with the default render box.");
++            } catch (IOException ex) {
++                Addon.LOGGER.log(Level.WARNING, "Failed to create " + file + ", using the default render box.", ex);
++            }
++            return DEFAULT;
++        }
++
++        Properties properties = new Properties();
++        try (Reader reader = Files.newBufferedReader(file)) {
++            properties.load(reader);
++        } catch (IOException | IllegalArgumentException ex) {
++            Addon.LOGGER.log(Level.WARNING, "Failed to read " + file + ", using the default render box.", ex);
++            return DEFAULT;
++        }
++
++        return new RenderBox(
++                read(properties, file, "min-x", DEFAULT.minX),
++                read(properties, file, "max-x", DEFAULT.maxX),
++                read(properties, file, "min-y", DEFAULT.minY),
++                read(properties, file, "max-y", DEFAULT.maxY),
++                read(properties, file, "min-z", DEFAULT.minZ),
++                read(properties, file, "max-z", DEFAULT.maxZ)
++        );
++    }
++
++    private static int read(Properties properties, Path file, String key, int fallback) {
++        String value = properties.getProperty(key);
++        if (value == null) {
++            Addon.LOGGER.warning("'" + key + "' is missing in " + file + ", using " + fallback + ".");
++            return fallback;
++        }
++        try {
++            return Integer.parseInt(value.strip());
++        } catch (NumberFormatException ex) {
++            Addon.LOGGER.warning("'" + key + "' in " + file + " is not a whole number (" + value + "), using " + fallback + ".");
++            return fallback;
++        }
++    }
++
++    String toConfig() {
++        return """
++                # BlueMap Entities (patched build)
++                # Only animals standing inside this box are rendered on the map, everything outside it is skipped.
++                # Block coordinates as F3 shows them, both bounds are included.
++                # After editing: /bluemap reload, then re-render the area (/bluemap force-update ...).
++                min-x=%d
++                max-x=%d
++                min-y=%d
++                max-y=%d
++                min-z=%d
++                max-z=%d
++                """.formatted(minX, maxX, minY, maxY, minZ, maxZ);
++    }
++
++}
+diff --git a/src/test/java/de/bluecolored/bluemap/entities/AttributeScaleTest.java b/src/test/java/de/bluecolored/bluemap/entities/AttributeScaleTest.java
+new file mode 100644
+index 0000000..51aceb5
+--- /dev/null
++++ b/src/test/java/de/bluecolored/bluemap/entities/AttributeScaleTest.java
+@@ -0,0 +1,100 @@
++package de.bluecolored.bluemap.entities;
++
++import de.bluecolored.bluemap.core.world.Entity;
++import de.bluecolored.bluemap.entities.entity.AgeVariantEntity;
++import de.bluecolored.bluemap.entities.entity.Horse;
++import de.bluecolored.bluemap.entities.entity.LivingEntity;
++import org.junit.jupiter.api.Test;
++
++import java.util.List;
++import java.util.Map;
++
++import static de.bluecolored.bluemap.entities.Nbt.*;
++import static org.junit.jupiter.api.Assertions.*;
++
++class AttributeScaleTest {
++
++    private static float scaleOf(Map<String, Object> entity) {
++        Entity parsed = read(entity);
++        assertInstanceOf(LivingEntity.class, parsed, "parsed as " + parsed.getClass());
++        return ((LivingEntity) parsed).getAttributeScale();
++    }
++
++    private static Map<String, Object> withAttributes(String id, Object attributes) {
++        Map<String, Object> entity = entity(id, -6900.5, 70, -8820.5);
++        entity.put("attributes", attributes);
++        return entity;
++    }
++
++    @Test
++    void baseValue() {
++        assertEquals(2f, scaleOf(withAttributes("minecraft:cow", List.of(
++                attribute("minecraft:max_health", 10.0),
++                attribute("minecraft:scale", 2.0),
++                attribute("minecraft:movement_speed", 0.2)
++        ))));
++    }
++
++    @Test
++    void modifiersCombineLikeVanilla() {
++        // (1 + 1) = 2, * (1 + 0.5) = 3, * (1 + 1) = 6
++        assertEquals(6f, scaleOf(withAttributes("minecraft:sheep", List.of(attribute("minecraft:scale", 1.0,
++                modifier(1.0, "add_multiplied_total"),
++                modifier(0.5, "add_multiplied_base"),
++                modifier(1.0, "add_value")
++        )))));
++    }
++
++    @Test
++    void clampedToVanillaRange() {
++        assertEquals(16f, scaleOf(withAttributes("minecraft:pig", List.of(attribute("minecraft:scale", 100.0)))));
++        assertEquals(0.0625f, scaleOf(withAttributes("minecraft:pig", List.of(attribute("minecraft:scale", 0.0)))));
++    }
++
++    @Test
++    void defaultsToOne() {
++        assertEquals(1f, scaleOf(entity("minecraft:cow", 0, 64, 0)));
++        assertEquals(1f, scaleOf(withAttributes("minecraft:cow", List.of(attribute("minecraft:max_health", 10.0)))));
++        assertEquals(1f, scaleOf(withAttributes("minecraft:cow", List.of())));
++    }
++
++    @Test
++    void legacyIdAndOtherNumberTypes() {
++        assertEquals(3f, scaleOf(withAttributes("minecraft:chicken", List.of(attribute("minecraft:generic.scale", 3.0)))));
++        assertEquals(2f, scaleOf(withAttributes("minecraft:chicken", List.of(attribute("scale", 2)))));
++        assertEquals(2.5f, scaleOf(withAttributes("minecraft:chicken", List.of(attribute("minecraft:scale", 2.5f)))));
++    }
++
++    @Test
++    void malformedAttributesKeepTheEntity() {
++        // attributes as a compound instead of a list
++        Entity entity = read(withAttributes("minecraft:cow", Map.of("id", "minecraft:scale", "base", 3.0)));
++        assertInstanceOf(AgeVariantEntity.class, entity);
++        assertEquals(1f, ((LivingEntity) entity).getAttributeScale());
++
++        // a base that is not a number, modifiers that are not compounds or miss their operation
++        Map<String, Object> broken = attribute("minecraft:scale", "big");
++        broken.put("modifiers", List.of(1, 2, 3));
++        assertEquals(1f, scaleOf(withAttributes("minecraft:cow", List.of(broken))));
++        assertEquals(2f, scaleOf(withAttributes("minecraft:cow", List.of(attribute("minecraft:scale", 2.0,
++                Map.of("id", "minecraft:x", "amount", 5.0))))));
++    }
++
++    @Test
++    void entitiesKeepTheirAddonClass() {
++        Map<String, Object> horse = withAttributes("minecraft:horse", List.of(attribute("minecraft:scale", 4.0)));
++        horse.put("Variant", 3);
++        Entity parsed = read(horse);
++        assertInstanceOf(Horse.class, parsed);
++        assertEquals(3, ((Horse) parsed).getVariant());
++        assertEquals(4f, ((Horse) parsed).getAttributeScale());
++    }
++
++    @Test
++    void animalsWithoutAnOwnClassGetTheScaleToo() {
++        assertEquals(2f, scaleOf(withAttributes("minecraft:bat", List.of(attribute("minecraft:scale", 2.0)))));
++        assertEquals(2f, scaleOf(withAttributes("minecraft:cod", List.of(attribute("minecraft:scale", 2.0)))));
++        assertEquals(2f, scaleOf(withAttributes("minecraft:tadpole", List.of(attribute("minecraft:scale", 2.0)))));
++    }
++
++}
+diff --git a/src/test/java/de/bluecolored/bluemap/entities/Nbt.java b/src/test/java/de/bluecolored/bluemap/entities/Nbt.java
+new file mode 100644
+index 0000000..97d2f27
+--- /dev/null
++++ b/src/test/java/de/bluecolored/bluemap/entities/Nbt.java
+@@ -0,0 +1,103 @@
++package de.bluecolored.bluemap.entities;
++
++import de.bluecolored.bluemap.core.world.Entity;
++import de.bluecolored.bluemap.core.world.mca.MCAUtil;
++
++import java.io.ByteArrayInputStream;
++import java.io.ByteArrayOutputStream;
++import java.io.DataOutputStream;
++import java.io.IOException;
++import java.io.UncheckedIOException;
++import java.util.LinkedHashMap;
++import java.util.List;
++import java.util.Map;
++
++/** Writes entity NBT like the game saves it in entities/*.mca, and reads it back with BlueMap's own deserializer. */
++public final class Nbt {
++
++    static {
++        new Addon().run(); // register the addon's entity classes before BlueMap builds its entity deserializer
++    }
++
++    private Nbt() {}
++
++    public static Map<String, Object> entity(String id, double x, double y, double z) {
++        Map<String, Object> nbt = new LinkedHashMap<>();
++        nbt.put("id", id);
++        nbt.put("Pos", List.of(x, y, z));
++        nbt.put("Rotation", List.of(90f, 0f));
++        nbt.put("Age", 0);
++        return nbt;
++    }
++
++    public static Map<String, Object> attribute(String id, Object base, Object... modifiers) {
++        Map<String, Object> nbt = new LinkedHashMap<>();
++        nbt.put("id", id);
++        nbt.put("base", base);
++        if (modifiers.length > 0) nbt.put("modifiers", List.of(modifiers));
++        return nbt;
++    }
++
++    public static Map<String, Object> modifier(double amount, String operation) {
++        Map<String, Object> nbt = new LinkedHashMap<>();
++        nbt.put("id", "minecraft:datapack_size");
++        nbt.put("amount", amount);
++        nbt.put("operation", operation);
++        return nbt;
++    }
++
++    public static Entity read(Map<String, Object> entity) {
++        try {
++            return MCAUtil.BLUENBT.read(new ByteArrayInputStream(write(entity)), Entity.class);
++        } catch (IOException ex) {
++            throw new UncheckedIOException(ex);
++        }
++    }
++
++    static byte[] write(Map<String, Object> root) throws IOException {
++        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
++        DataOutputStream out = new DataOutputStream(bytes);
++        out.writeByte(10);
++        out.writeUTF("");
++        writePayload(out, root);
++        return bytes.toByteArray();
++    }
++
++    private static int tagType(Object value) {
++        return switch (value) {
++            case Byte b -> 1;
++            case Integer i -> 3;
++            case Float f -> 5;
++            case Double d -> 6;
++            case String s -> 8;
++            case List<?> l -> 9;
++            case Map<?, ?> m -> 10;
++            default -> throw new IllegalArgumentException("unsupported: " + value);
++        };
++    }
++
++    private static void writePayload(DataOutputStream out, Object value) throws IOException {
++        switch (value) {
++            case Byte b -> out.writeByte(b);
++            case Integer i -> out.writeInt(i);
++            case Float f -> out.writeFloat(f);
++            case Double d -> out.writeDouble(d);
++            case String s -> out.writeUTF(s);
++            case List<?> list -> {
++                out.writeByte(list.isEmpty() ? 0 : tagType(list.getFirst()));
++                out.writeInt(list.size());
++                for (Object element : list) writePayload(out, element);
++            }
++            case Map<?, ?> map -> {
++                for (Map.Entry<?, ?> entry : map.entrySet()) {
++                    out.writeByte(tagType(entry.getValue()));
++                    out.writeUTF((String) entry.getKey());
++                    writePayload(out, entry.getValue());
++                }
++                out.writeByte(0);
++            }
++            default -> throw new IllegalArgumentException("unsupported: " + value);
++        }
++    }
++
++}
+diff --git a/src/test/java/de/bluecolored/bluemap/entities/filter/EntityFilterTest.java b/src/test/java/de/bluecolored/bluemap/entities/filter/EntityFilterTest.java
+new file mode 100644
+index 0000000..e1a3fe4
+--- /dev/null
++++ b/src/test/java/de/bluecolored/bluemap/entities/filter/EntityFilterTest.java
+@@ -0,0 +1,161 @@
++package de.bluecolored.bluemap.entities.filter;
++
++import com.flowpowered.math.vector.Vector3d;
++import de.bluecolored.bluemap.core.map.hires.ArrayTileModel;
++import de.bluecolored.bluemap.core.map.hires.TileModelView;
++import de.bluecolored.bluemap.core.map.hires.entity.EntityRenderer;
++import de.bluecolored.bluemap.core.map.hires.entity.EntityRendererType;
++import de.bluecolored.bluemap.core.resources.ResourcePath;
++import de.bluecolored.bluemap.core.resources.pack.ResourcePool;
++import de.bluecolored.bluemap.core.resources.pack.resourcepack.entitystate.EntityState;
++import de.bluecolored.bluemap.core.resources.pack.resourcepack.entitystate.Part;
++import de.bluecolored.bluemap.core.util.Key;
++import de.bluecolored.bluemap.core.world.Entity;
++import org.junit.jupiter.api.Test;
++import org.junit.jupiter.api.io.TempDir;
++
++import java.lang.reflect.Field;
++import java.nio.file.Files;
++import java.nio.file.Path;
++import java.util.Arrays;
++import java.util.List;
++import java.util.Map;
++import java.util.Set;
++
++import static de.bluecolored.bluemap.entities.Nbt.*;
++import static org.junit.jupiter.api.Assertions.*;
++
++class EntityFilterTest {
++
++    private static final RenderBox BOX = RenderBox.DEFAULT;
++
++    @Test
++    void boxBoundsAreInclusiveBlockCoordinates() {
++        assertTrue(BOX.contains(new Vector3d(-6975.0, 60.0, -8878.0)));
++        assertTrue(BOX.contains(new Vector3d(-6868.01, 90.99, -8792.01))); // still in blocks -6869 / 90 / -8793
++        assertFalse(BOX.contains(new Vector3d(-6868.0, 70, -8800)));
++        assertFalse(BOX.contains(new Vector3d(-6975.01, 70, -8800)));
++        assertFalse(BOX.contains(new Vector3d(-6900, 59.99, -8800)));
++        assertFalse(BOX.contains(new Vector3d(-6900, 91.0, -8800)));
++        assertFalse(BOX.contains(new Vector3d(-6900, 70, -8792.0)));
++        assertFalse(BOX.contains(new Vector3d(-6900, 70, -8878.01)));
++    }
++
++    @Test
++    void missingConfigIsCreatedWithTheDefaults(@TempDir Path dir) throws Exception {
++        Path file = dir.resolve(RenderBox.FILE_NAME);
++        assertEquals(BOX, RenderBox.load(file));
++        String text = Files.readString(file);
++        assertTrue(text.contains("min-x=-6975") && text.contains("max-x=-6869"), text);
++        assertTrue(text.contains("min-y=60") && text.contains("max-y=90"), text);
++        assertTrue(text.contains("min-z=-8878") && text.contains("max-z=-8793"), text);
++        assertEquals(BOX, RenderBox.load(file)); // and reads back the same
++    }
++
++    @Test
++    void configIsParsedLeniently(@TempDir Path dir) throws Exception {
++        Path file = dir.resolve(RenderBox.FILE_NAME);
++        Files.writeString(file, """
++                # swapped x bounds, a broken y, z missing
++                min-x = 10
++                max-x = -10
++                min-y = abc
++                max-y = 200
++                """);
++        assertEquals(new RenderBox(-10, 10, 60, 200, -8878, -8793), RenderBox.load(file));
++    }
++
++    @Test
++    void onlyAnimalEntityStatesAreKept() {
++        ResourcePool<EntityState> states = new ResourcePool<>();
++        for (String type : List.of("cow", "bat", "zombie", "creeper", "hoglin", "villager", "iron_golem", "allay",
++                "oak_boat", "poplar_boat", "minecart", "armor_stand", "cushion", "item_frame", "painting"))
++            states.put(Key.minecraft(type), state());
++        states.put(Key.bluemap("missing"), state());
++
++        EntityFilterExtension.apply(states, BOX);
++
++        assertEquals(Set.of(Key.minecraft("cow"), Key.minecraft("bat"), Key.bluemap("missing")), Set.copyOf(states.keySet()));
++
++        EntityRendererType cow = states.get(Key.minecraft("cow")).getParts()[0].getRenderer();
++        EntityRendererType bat = states.get(Key.minecraft("bat")).getParts()[0].getRenderer();
++        assertInstanceOf(FilteredRendererType.class, cow);
++        assertSame(cow, bat, "one wrapper per wrapped renderer");
++        assertEquals(EntityRendererType.DEFAULT.getKey(), cow.getKey());
++
++        EntityFilterExtension.apply(states, BOX);
++        assertSame(cow, states.get(Key.minecraft("cow")).getParts()[0].getRenderer(), "not wrapped twice");
++    }
++
++    @Test
++    void everyAnimalHasAnEntityState() {
++        for (Key type : Animals.TYPES) {
++            String path = "assets/minecraft/entitystates/" + type.getValue() + ".json";
++            assertNotNull(getClass().getClassLoader().getResource(path), path);
++        }
++    }
++
++    @Test
++    void scaleIsAppliedToTheRenderedPartOnly() throws Exception {
++        ArrayTileModel model = new ArrayTileModel(8);
++        TileModelView view = new TileModelView(model);
++
++        // a part that was rendered before, it has to stay as it is
++        int earlier = view.initialize().add(1);
++        model.setPositions(earlier, 1, 1, 1, 1, 1, 1, 1, 1, 1);
++
++        Entity cow = read(scaled("minecraft:cow", -6900.5, 70, -8820.5, 3.0));
++        render(cow, view.initialize());
++
++        float[] positions = positions(model);
++        assertEquals(2, model.size());
++        assertArrayEquals(new float[]{ 1, 1, 1, 1, 1, 1, 1, 1, 1 }, Arrays.copyOfRange(positions, 0, 9));
++        assertArrayEquals(new float[]{ 3, 6, 9, 12, 15, 18, 21, 24, 27 }, Arrays.copyOfRange(positions, 9, 18));
++    }
++
++    @Test
++    void unscaledEntitiesAreRenderedAsIs() throws Exception {
++        ArrayTileModel model = new ArrayTileModel(8);
++        render(read(entity("minecraft:sheep", -6900.5, 70, -8820.5)), new TileModelView(model));
++        assertArrayEquals(new float[]{ 1, 2, 3, 4, 5, 6, 7, 8, 9 }, Arrays.copyOfRange(positions(model), 0, 9));
++    }
++
++    @Test
++    void entitiesOutsideTheBoxAreSkipped() {
++        ArrayTileModel model = new ArrayTileModel(8);
++        assertFalse(render(read(scaled("minecraft:cow", 0.5, 70, 0.5, 3.0)), new TileModelView(model)));
++        assertFalse(render(read(scaled("minecraft:cow", -6900.5, 100, -8820.5, 3.0)), new TileModelView(model)));
++        assertEquals(0, model.size());
++    }
++
++    private static Map<String, Object> scaled(String id, double x, double y, double z, double scale) {
++        Map<String, Object> entity = entity(id, x, y, z);
++        entity.put("attributes", List.of(attribute("minecraft:scale", scale)));
++        return entity;
++    }
++
++    private static EntityState state() {
++        return new EntityState(new Part[]{ new Part(new ResourcePath<>(Key.MINECRAFT_NAMESPACE, "entity/test")) });
++    }
++
++    /** renders one face (1,2,3 .. 7,8,9) through the filter, returns whether the wrapped renderer was called */
++    private static boolean render(Entity entity, TileModelView view) {
++        boolean[] called = { false };
++        EntityRendererType face = new EntityRendererType.Impl(Key.bluemap("test"), (pack, gallery, settings) ->
++                (e, block, part, tileModel) -> {
++                    called[0] = true;
++                    int f = tileModel.add(1);
++                    tileModel.getTileModel().setPositions(f, 1, 2, 3, 4, 5, 6, 7, 8, 9);
++                });
++        EntityRenderer renderer = new FilteredRendererType(face, BOX).create(null, null, null);
++        renderer.render(entity, null, null, view);
++        return called[0];
++    }
++
++    private static float[] positions(ArrayTileModel model) throws ReflectiveOperationException {
++        Field field = ArrayTileModel.class.getDeclaredField("position");
++        field.setAccessible(true);
++        return (float[]) field.get(model);
++    }
++
++}
+-- 
+2.43.0
+

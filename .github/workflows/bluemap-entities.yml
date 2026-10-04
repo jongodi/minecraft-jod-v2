@@ -1,0 +1,56 @@
+name: BlueMap Entities
+
+# Builds the patched BlueMap Entities addon (tools/bluemap-entities, see its
+# README) with Gradle: upstream at a pinned commit plus our patch, entity
+# models generated from the Minecraft 26.3 client jar, tests included. The jar
+# is committed next to the patch, ready for plugins/BlueMap/packs/ on the
+# server, and kept as a run artifact too. Runs when the patch changes, or here
+# under Actions → BlueMap Entities → Run workflow.
+
+on:
+  push:
+    paths:
+      - tools/bluemap-entities/patches/**
+      - tools/bluemap-entities/build.sh
+      - .github/workflows/bluemap-entities.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: bluemap-entities-${{ github.ref }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 25
+
+      - name: Build
+        run: bash tools/bluemap-entities/build.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bluemap-entities
+          path: tools/bluemap-entities/BlueMapEntities-*.jar
+
+      - name: Commit the jar
+        run: |
+          git add -A tools/bluemap-entities
+          if git diff --cached --quiet; then
+            echo "The jar has not changed."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "BlueMap Entities jar (automatic)"
+          git pull --rebase origin "$GITHUB_REF_NAME"
+          git push origin "HEAD:$GITHUB_REF_NAME"
