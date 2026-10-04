@@ -6,6 +6,7 @@
       "bluemap": { "remove-caves-below-y": 10000 } },
     { "id": "faraway",  "name": "Faraway lands",  "x": 9820,  "y": 64,  "z": 4341,  "radius": 350, "frozen": true },
     { "id": "bustadur", "name": "Bústaður",       "x": 2251,  "y": 76,  "z": -1126, "radius": 60,  "frozen": true },
-    { "id": "shroomy",  "name": "Shroomy island", "x": -1267, "y": 71,  "z": -610,  "radius": 350, "frozen": true }
+    { "id": "shroomy",  "name": "Shroomy island", "x": -1267, "y": 71,  "z": -610,  "radius": 350, "frozen": true,
+      "view": "-1304:54:-641:89:-0.87:0.97:0:0:perspective" }
   ]
 }
