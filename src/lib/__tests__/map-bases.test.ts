@@ -36,6 +36,11 @@ vi.mock('@/lib/map-bases/jodville.json', () => ({
   },
 }));
 
+/* the bases not uploaded in these tests, whatever the real manifests hold */
+vi.mock('@/lib/map-bases/faraway.json', () => ({ default: { syncedAt: null, files: [] } }));
+vi.mock('@/lib/map-bases/bustadur.json', () => ({ default: { syncedAt: null, files: [] } }));
+vi.mock('@/lib/map-bases/shroomy.json', () => ({ default: { syncedAt: null, files: [] } }));
+
 const BASE_PACK = Buffer.from('{}{"base":1}\x1f\x8b\x08\x00\x07');
 const MAIN_PACK = Buffer.from('{"main":12}');
 

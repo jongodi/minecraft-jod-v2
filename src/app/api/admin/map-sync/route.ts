@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { requireAdmin, unauthorizedResponse } from '@/lib/auth';
 import { errorMessage } from '@/lib/icelandic';
 import { snapshot } from '@/lib/bluemap-snapshot';
@@ -21,7 +21,7 @@ export interface MapSyncRun {
   createdAt: string;
   updatedAt: string;
   url: string;
-  /** Started to copy even though the server was stopped. */
+  /** Started while the server was stopped. */
   offline: boolean;
 }
 
@@ -54,25 +54,18 @@ export async function GET() {
   }
 }
 
-export async function POST(req: NextRequest) {
+export async function POST() {
   if (!(await requireAdmin())) return unauthorizedResponse();
   if (!process.env.MAP_SYNC_GITHUB_TOKEN) return NextResponse.json({ error: NO_TOKEN }, { status: 503 });
 
-  /* { offline: true } copies even off a stopped server: slowly, since
-     exaroton hands out a stopped server's files far more slowly. */
-  const body = await req.json().catch(() => null) as { offline?: unknown } | null;
-  const offline = body?.offline === true;
-
-  /* Otherwise the workflow copies nothing while the server is stopped, so
-     say so here instead of starting a run that quietly does nothing. */
-  if (!offline && await serverStopped()) {
-    return NextResponse.json({ error: 'Þjónninn er ekki í gangi. Ræstu hann fyrst, eða hakaðu við „Líka þótt þjónninn sé slökktur“.' }, { status: 409 });
-  }
+  /* Copies whether the server runs or not; a run started while it is
+     stopped is named so, for the panel to say. */
+  const offline = await serverStopped();
 
   try {
-    const res = await github('/dispatches', { method: 'POST', body: JSON.stringify({ ref: 'main', ...(offline ? { inputs: { offline: 'true' } } : {}) }) });
+    const res = await github('/dispatches', { method: 'POST', body: JSON.stringify({ ref: 'main', inputs: { server_off: offline ? 'true' : 'false' } }) });
     if (!res.ok) return NextResponse.json({ error: await githubError(res) }, { status: 502 });
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, offline });
   } catch (err) {
     return NextResponse.json({ error: errorMessage(err) }, { status: 500 });
   }

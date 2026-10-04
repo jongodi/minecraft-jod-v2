@@ -17,6 +17,11 @@ vi.mock('@/lib/map-bases/bustadur.json', () => ({
   },
 }));
 
+/* only Bústaður is on the site in these tests, whatever the real manifests hold */
+vi.mock('@/lib/map-bases/jodville.json', () => ({ default: { syncedAt: null, files: [] } }));
+vi.mock('@/lib/map-bases/faraway.json', () => ({ default: { syncedAt: null, files: [] } }));
+vi.mock('@/lib/map-bases/shroomy.json', () => ({ default: { syncedAt: null, files: [] } }));
+
 const RUNS = 'https://api.github.com/repos/jongodi/minecraft-jod-v2/actions/workflows/map-bases.yml/runs?per_page=5';
 const DISPATCH = 'https://api.github.com/repos/jongodi/minecraft-jod-v2/actions/workflows/map-bases.yml/dispatches';
 const start = (body?: unknown) => POST(new NextRequest('https://jod.test/api/admin/map-bases', {

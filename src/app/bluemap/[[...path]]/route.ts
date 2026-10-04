@@ -16,8 +16,9 @@ import { discard, fetchFile, isMissing, isOnline, resolveServerId } from '@/lib/
    reached as /bluemap-data. With map-data-root pointed at that copy in
    BlueMap's webapp.conf, the viewer loads the map from the store and only live
    data (players, markers) comes through here. Anything else that still arrives
-   is served live while the server runs and from the copy once it stops, since
-   exaroton hands out files far too slowly then to draw a map.
+   is served live while the server runs and from the copy once it stops: a
+   stopped server's map doesn't change, and the copy answers without spending
+   exaroton's limit on how often it may be asked.
 
    Live data is shared: the viewer asks for players.json every second and
    markers.json every ten, so the CDN keeps each answer for a moment and every

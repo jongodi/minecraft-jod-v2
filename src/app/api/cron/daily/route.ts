@@ -7,8 +7,7 @@ import { readGameStats, setCachedStats } from '@/lib/stats';
    Iceland: every crew member's running totals are read off the server and
    kept for the day (src/lib/daily-stats.ts). Noon, so a whole evening, late
    night included, falls between two copies. The server need not be running:
-   exaroton hands out a stopped server's files too, only more slowly, and
-   these are a handful of small ones.
+   exaroton hands out a stopped server's files as it does a running one's.
 
    It also settles the play nights of the evenings before (src/lib/play-night.ts).
 

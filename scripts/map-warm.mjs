@@ -2,8 +2,8 @@
 // every file when visitors ask for it. Meant for while the Blob store is
 // paused and the site reads the map off the Minecraft server: the CDN then
 // keeps each file for a month, so the map opens quickly even while the server
-// is stopped. Run it while the server is on, once the deployment that should
-// serve the map is live, and again after a new deployment.
+// is stopped. Run it once the deployment that should serve the map is live,
+// and again after a new deployment; the server may be on or off.
 //
 //   npm run map:warm
 //   npm run map:warm -- --site=https://minecraft-jod.vercel.app
@@ -48,11 +48,6 @@ async function main() {
   if (settings.mapDataRoot !== expected) {
     fail(`Vefurinn les kortið úr ${settings.mapDataRoot}, en afritið hér er ${expected}. `
       + 'Keyrðu git pull, eða bíddu eftir að nýjasta útgáfan fari í loftið, og reyndu aftur.');
-  }
-
-  const status = await fetch(`${SITE}/api/server-status`).then((res) => res.json()).catch(() => null);
-  if (status?.online === false) {
-    console.warn('Þjónninn er ekki í gangi, svo exaroton afhendir skrárnar hægt. Fljótlegra er að hita kortið meðan hann er í gangi.\n');
   }
 
   console.log(`Hita kortið á ${SITE}: ${files.length} skrár…`);

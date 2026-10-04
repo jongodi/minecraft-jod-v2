@@ -4,8 +4,6 @@
 //   npm run map:sync            fetch what changed since the last copy, upload it
 //   npm run map:sync -- --full  fetch everything again, upload everything
 //   npm run map:sync -- --push  upload the local copy as it is, without exaroton
-//   npm run map:sync -- --only-online  do nothing while the server is stopped
-//                                (the scheduled sync, .github/workflows/map-sync.yml)
 //
 // The viewer (a few MB) goes to public/bluemap and travels with the site. The
 // map data (hundreds of MB) goes to public/bluemap-data as a local copy for
@@ -26,10 +24,12 @@
 //
 // Reads EXAROTON_API_KEY (and EXAROTON_SERVER_ID and BLUEMAP_WEBROOT, if set)
 // and BLOB_READ_WRITE_TOKEN from .env.local. BlueMap's web folder is found from
-// its own webapp.conf unless BLUEMAP_WEBROOT names it. Run it while the server is online:
-// exaroton hands out files very slowly once a server has stopped. exaroton also
-// limits how fast the API may be called, so requests are spaced out and slow
-// down further whenever it asks.
+// its own webapp.conf unless BLUEMAP_WEBROOT names it. It works whether the
+// server runs or not: a stopped server's files came off exaroton as quickly as
+// a running one's (the base maps' first copy, 4 October 2026, against this
+// map's on 28 September). What sets the pace is exaroton's limit on how fast
+// the API may be called, so requests are spaced out and slow down further
+// whenever it asks.
 
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
@@ -49,7 +49,6 @@ const MIN_GAP  = 60;      // ms between request starts, at the fastest
 const MAX_GAP  = 3000;    // ms between request starts, when exaroton keeps pushing back
 const FULL     = process.argv.includes('--full');
 const PUSH     = process.argv.includes('--push');
-const ONLY_ONLINE = process.argv.includes('--only-online');
 const PACK_MAX_AGE = 31536000;     // a pack is never overwritten, so the store's CDN may keep it for good
 /* Cleanup leaves packs this young alone: they may be another sync's, uploaded
    but not yet pushed (the scheduled one and one from a PC, at the same time). */
@@ -80,14 +79,7 @@ async function main() {
 
   const id = await serverId();
   const server = await call(`${id}/`);
-  if (server?.status !== 1 && ONLY_ONLINE) {
-    console.log('Þjónninn er ekki í gangi; ekkert sótt. Exaroton afhendir skrár of hægt á meðan.');
-    return;
-  }
-  if (server?.status !== 1) {
-    console.warn('Þjónninn er ekki í gangi. Exaroton afhendir skrár hægt á meðan, svo þetta getur tekið langan tíma.');
-    console.warn('Mun fljótlegra er að afrita kortið meðan þjónninn er í gangi.\n');
-  }
+  if (server?.status !== 1) console.log('Þjónninn er ekki í gangi; kortið er sótt af honum samt.\n');
 
   REMOTE = await findWebroot(id);
   try {

@@ -100,7 +100,7 @@ export default function MapBasesPanel() {
           <div className="a-field">
             <Toggle checked={force} onChange={setForce} disabled={starting !== null || running} label="Senda þótt ekkert hafi breyst" />
             <span className="a-help">
-              Þjónninn má vera slökktur. Keyrslan er þá merkt svo og skráin á GitHub segir hve lengi hvert skref tók, svo bera megi tímann saman við keyrslu meðan hann er í gangi. Kort sem hefur ekki breyst er hvorki sótt né sent. Til að teikna kort upp á nýtt: npm run map:bases -- --refresh &lt;id&gt;, bíða þar til teikningunni lýkur, svo --freeze, og senda það svo héðan. Gamla afritið er fjarlægt sjálfkrafa þegar það nýja er komið á vefinn.
+              Þjónninn má vera slökktur: skrárnar koma jafn hratt af honum og meðan hann er í gangi. Skráin á GitHub segir hve lengi hvert skref tók. Kort sem hefur ekki breyst er hvorki sótt né sent. Til að teikna kort upp á nýtt: npm run map:bases -- --refresh &lt;id&gt;, bíða þar til teikningunni lýkur, svo --freeze, og senda það svo héðan. Gamla afritið er fjarlægt sjálfkrafa þegar það nýja er komið á vefinn.
             </span>
           </div>
           <Notice text={msg} />

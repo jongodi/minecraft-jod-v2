@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { MapSyncRun, MapSyncState } from '@/app/api/admin/map-sync/route';
 import { MAP_POSTER } from '@/components/badlands/data';
-import { Button, Notice, Panel, Toggle, api, errText } from './ui';
+import { Button, Notice, Panel, api, errText } from './ui';
 
 /* Starts the map copy (the "Map sync" GitHub Action) and follows its runs.
    While a run is under way the list is checked every ten seconds. */
@@ -27,7 +27,6 @@ export default function MapSyncPanel() {
   const [loading, setLoading] = useState(true);
   const [starting, setStarting] = useState(false);
   const [msg, setMsg] = useState('');
-  const [offline, setOffline] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -50,13 +49,10 @@ export default function MapSyncPanel() {
   }, [running, load]);
 
   async function start() {
-    if (offline && !confirm('Afrita kortið þótt þjónninn sé slökktur? Exaroton afhendir skrárnar mjög hægt á meðan, svo þetta getur tekið upp í nokkra klukkutíma. Kortið á vefnum virkar áfram á meðan.')) return;
     setStarting(true); setMsg('');
     try {
-      await api('/api/admin/map-sync', { method: 'POST', body: JSON.stringify({ offline }) });
-      setMsg(offline
-        ? '✓ Afritun ræst af slökktum þjóni. Hún getur tekið langan tíma; staðan hér uppfærist á meðan.'
-        : '✓ Afritun ræst. Hún tekur yfirleitt nokkrar mínútur; hafi kortið breyst birtist nýja afritið á vefnum skömmu eftir að henni lýkur.');
+      const { offline } = await api<{ offline?: boolean }>('/api/admin/map-sync', { method: 'POST' });
+      setMsg(`✓ Afritun ræst${offline ? ' af slökktum þjóni' : ''}. Hún tekur yfirleitt nokkrar mínútur; hafi kortið breyst birtist nýja afritið á vefnum skömmu eftir að henni lýkur.`);
       /* GitHub lists a new run a moment after it is asked for one */
       setTimeout(load, 4000);
     } catch (e) {
@@ -88,12 +84,9 @@ export default function MapSyncPanel() {
               {starting ? 'Sendi' : running ? 'Afritun í gangi' : 'Afrita kortið núna'}
             </Button>
           </div>
-          <div className="a-field">
-            <Toggle checked={offline} onChange={setOffline} disabled={starting || running} label="Líka þótt þjónninn sé slökktur" />
-            <span className="a-help">
-              Best er að afrita meðan þjónninn er í gangi: þá tekur það nokkrar mínútur. Sé hann slökktur afhendir Exaroton skrárnar mjög hægt og afritunin getur tekið klukkutíma eða meira.
-            </span>
-          </div>
+          <p className="a-help">
+            Þjónninn má vera slökktur: skrárnar koma jafn hratt af honum og meðan hann er í gangi. Það sem ræður hraðanum er hve oft Exaroton leyfir að spurt sé.
+          </p>
           <Notice text={msg} />
           {state.runs.length > 0 && (
             <div className="a-rows" aria-label="Síðustu afritanir">
