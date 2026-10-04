@@ -1,4 +1,4 @@
-From e8f93d9c8708288f4cffeba001bd1faeb341241d Mon Sep 17 00:00:00 2001
+From d9e083bedd101ea8bf8800b7513fe55916923336 Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Sun, 4 Oct 2026 15:13:20 +0000
 Subject: [PATCH] Render only animals inside a configured box, at their scale
@@ -25,7 +25,7 @@ Subject: [PATCH] Render only animals inside a configured box, at their scale
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01UcEcjHB2xgUsmrFLaA4fZn
 ---
- build.gradle.kts                              |  11 +-
+ build.gradle.kts                              |  13 +-
  .../bluecolored/bluemap/entities/Addon.java   |  10 ++
  .../data/AttributeScaleDeserializer.java      | 136 +++++++++++++++
  .../bluemap/entities/entity/AgeEntity.java    |   3 +-
@@ -46,7 +46,7 @@ Claude-Session: https://claude.ai/code/session_01UcEcjHB2xgUsmrFLaA4fZn
  .../bluemap/entities/AttributeScaleTest.java  | 100 +++++++++++
  .../de/bluecolored/bluemap/entities/Nbt.java  | 103 +++++++++++
  .../entities/filter/EntityFilterTest.java     | 161 ++++++++++++++++++
- 21 files changed, 823 insertions(+), 21 deletions(-)
+ 21 files changed, 825 insertions(+), 21 deletions(-)
  create mode 100644 src/main/java/de/bluecolored/bluemap/entities/data/AttributeScaleDeserializer.java
  create mode 100644 src/main/java/de/bluecolored/bluemap/entities/entity/LivingEntity.java
  create mode 100644 src/main/java/de/bluecolored/bluemap/entities/filter/Animals.java
@@ -58,7 +58,7 @@ Claude-Session: https://claude.ai/code/session_01UcEcjHB2xgUsmrFLaA4fZn
  create mode 100644 src/test/java/de/bluecolored/bluemap/entities/filter/EntityFilterTest.java
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index fa475ce..18c7e10 100644
+index fa475ce..35e0d21 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -4,7 +4,7 @@ plugins {
@@ -70,19 +70,21 @@ index fa475ce..18c7e10 100644
  
  repositories {
      mavenCentral()
-@@ -24,6 +24,11 @@ dependencies {
+@@ -24,6 +24,13 @@ dependencies {
  
      // only to warn if the addon is loaded as a paper-plugin
      compileOnly ( "io.papermc.paper:paper-api:26.1.2.build.+" )
 +
-+    testImplementation ( "de.bluecolored:bluemap-core:5.23" )
++    // bluemap-core's pom names bluemap-api without a version, the tests do not need it
++    testImplementation ( "de.bluecolored:bluemap-core:5.23" ) { exclude ( group = "de.bluecolored", module = "bluemap-api" ) }
++    testImplementation ( "com.flowpowered:flow-math:1.0.3" )
 +    testImplementation ( platform("org.junit:junit-bom:5.13.4") )
 +    testImplementation ( "org.junit.jupiter:junit-jupiter" )
 +    testRuntimeOnly ( "org.junit.platform:junit-platform-launcher" )
  }
  
  java {
-@@ -35,6 +40,10 @@ tasks.withType(JavaCompile::class).configureEach {
+@@ -35,6 +42,10 @@ tasks.withType(JavaCompile::class).configureEach {
      options.encoding = "utf-8"
  }
  

@@ -33,7 +33,7 @@ fi
 
 # the scale attribute's range in the client the models came from, for the record
 for client in $(find ~/.gradle/caches "$work/.gradle" -path '*26.3*' -name '*.jar' -size +5M 2>/dev/null); do
-  if unzip -l "$client" | grep -q 'net/minecraft/world/entity/ai/attributes/Attributes.class'; then
+  if unzip -l "$client" 'net/minecraft/world/entity/ai/attributes/Attributes.class' > /dev/null 2>&1; then
     echo "minecraft:scale in $(basename "$client"):"
     javap -c -p -constants -cp "$client" net.minecraft.world.entity.ai.attributes.Attributes 2>/dev/null \
       | grep -A 6 'attribute.name.scale' || true

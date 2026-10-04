@@ -19,7 +19,7 @@ A patched build of [BlueMap Entities](https://github.com/BlueMap-Minecraft/BlueM
 Needs BlueMap 5.24 or newer (the first release that reads 26.3 worlds); 5.28 is the latest. `/bluemap version` shows yours.
 
 1. Stop the server. A new addon jar is only loaded on a full restart, not by `/bluemap reload`.
-2. Remove any other BlueMap Entities jar from `plugins/BlueMap/packs/`: two addons with the same id stop BlueMap from loading addons at all.
+2. Remove any other BlueMap Entities jar from `plugins/BlueMap/packs/`: with two addons of the same id BlueMap fails to load at all.
 3. Put `BlueMapEntities-1.5-jod.jar` in `plugins/BlueMap/packs/` (not in `plugins/`).
 4. Start the server. The console says `Rendering only animals inside x -6975..-6869, y 60..90, z -8878..-8793 (.../plugins/BlueMap/packs/bluemap-entities.properties)`, and the file is created.
 5. Redraw the box: `/bluemap force-update world -6922 -8836 70`. If the map was drawn with the unpatched addon before, redraw all of it instead (`/bluemap force-update world`), so the entities outside the box disappear too.
