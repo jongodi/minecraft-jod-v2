@@ -211,7 +211,7 @@ export default function Composer({ username, places, onPinned }: Props) {
           {pinning ? 'Festi upp…' : uploading ? 'Hleð upp…' : failed ? 'Mynd mistókst' : 'Festa upp'}
         </button>
       </div>
-      {error && <p className="b-err">{error}</p>}
+      {error && <p className="b-err" role="alert">{error}</p>}
     </form>
   );
 }

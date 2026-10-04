@@ -97,7 +97,7 @@ function LoginModal({ username, onSuccess, onClose }: { username: string; onSucc
         <p className="b-modal__title">Skrá inn sem {username}</p>
         <p className="b-modal__sub">lykilorðið sem þú valdir þér á veggnum. Ekkert lykilorð, eða gleymt? Fáðu tengil í pósti, eða biddu stjórnandann um einn.</p>
         <input type="password" className={`b-input${error ? ' is-error' : ''}`} value={token} onChange={e => setToken(e.target.value)} placeholder="Lykilorð" autoFocus autoComplete="current-password" />
-        {error && <p className="b-err">{error}</p>}
+        {error && <p className="b-err" role="alert">{error}</p>}
         {mail === 'sent'
           ? <p className="b-modal__ok" role="status">Sé netfang skráð á {username} kemur tengill í pósti eftir smástund. Opnaðu hann í tækinu sem þú vilt nota.</p>
           : <p className="b-modal__alt"><button type="button" className="b-link" onClick={askForLink} disabled={mail === 'sending'}>{mail === 'sending' ? 'Sendi…' : 'Senda mér innskráningartengil í pósti'}</button></p>}
@@ -157,7 +157,7 @@ function PasswordModal({ username, change, onDone, onClose }: { username: string
         <p className="b-modal__sub">með því skráir þú þig inn á hvaða síma eða tölvu sem er undir „Þetta er ég“, án tengils frá stjórnandanum. Minnst {LIMITS_PW} stafir.</p>
         <input type="password" className={`b-input${error ? ' is-error' : ''}`} value={pw} onChange={e => setPw(e.target.value)} placeholder="Lykilorð" autoFocus autoComplete="new-password" />
         <input type="password" className={`b-input${error ? ' is-error' : ''}`} value={again} onChange={e => setAgain(e.target.value)} placeholder="Aftur, til öryggis" autoComplete="new-password" style={{ marginTop: '0.5rem' }} />
-        {error && <p className="b-err">{error}</p>}
+        {error && <p className="b-err" role="alert">{error}</p>}
         <div className="b-modal__actions">
           <button type="submit" className="b-btn b-btn--solid" disabled={loading || pw.length < LIMITS_PW || !again}>{loading ? 'Vista…' : 'Vista'}</button>
           <button type="button" className="b-btn" onClick={onClose}>Hætta við</button>
@@ -393,7 +393,7 @@ export default function Wall({ initial, places, justSignedIn = false }: Props) {
                   <button className="b-btn b-btn--solid b-btn--small" onClick={saveBio} disabled={bioSaving}>{bioSaving ? 'Vista…' : 'Vista'}</button>
                   <button className="b-btn b-btn--small" onClick={() => { setEditingBio(false); setBioError(''); setBioText(profile.bio); }}>Hætta við</button>
                 </div>
-                {bioError && <p className="b-err">{bioError}</p>}
+                {bioError && <p className="b-err" role="alert">{bioError}</p>}
               </div>
             ) : isOwner ? (
               <button type="button" className={`w-poster__bio w-poster__bio--edit${profile.bio ? '' : ' is-empty'}`} onClick={() => setEditingBio(true)} title="Breyta kynningu">

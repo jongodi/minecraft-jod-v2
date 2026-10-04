@@ -125,7 +125,7 @@ export default function CrewPanel() {
           <div className="a-stack">
             {invite.sentTo && <Notice text={`✓ Tengillinn var sendur á ${invite.sentTo}.`} />}
             <p className="a-help">{invite.sentTo ? 'Hann er líka hér, til að afrita eða skanna.' : `Sendu ${invite.username} tengilinn eða láttu skanna kóðann.`} Hann gildir til {when(invite.expiresAt)} og fyrir {invite.maxUses} tæki; hvert tæki sem opnar hann er skráð inn sem {invite.username} í eitt ár. Á veggnum getur {invite.username} svo valið sér lykilorð.</p>
-            <div className="a-qr" dangerouslySetInnerHTML={{ __html: invite.svg }} aria-label="QR-kóði með tenglinum" />
+            <div className="a-qr" role="img" dangerouslySetInnerHTML={{ __html: invite.svg }} aria-label="QR-kóði með tenglinum" />
             <input className="a-input a-input--data" readOnly value={invite.url} onFocus={e => e.target.select()} aria-label="Tengill" />
             <div className="a-inline">
               <Button tone="primary" small onClick={() => copy(invite.url)}>{copied ? 'Afritað' : 'Afrita tengil'}</Button>
