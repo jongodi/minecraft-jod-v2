@@ -9,7 +9,7 @@ export const ENTRY_MS = 3 * 3600_000;
 /** 2026-10-03T20:00:00.000Z as the calendar writes it: 20261003T200000Z */
 const stamp = (ms: number) => new Date(ms).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
 /** text in a calendar line: backslashes, semicolons, commas and line breaks are escaped */
-const escapeText = (s: string) => s.replace(/\\/g, '\\\\').replace(/;/g, '\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
+const escapeText = (s: string) => s.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
 
 /** Lines longer than 75 bytes are folded onto the next, which starts with a space; a multi-byte letter is never cut in two. */
 export function fold(line: string): string {

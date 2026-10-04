@@ -17,7 +17,7 @@ describe('a play night as a calendar entry', () => {
     expect(lines).toContain('DTSTART:20261004T200000Z');
     expect(lines).toContain('DTEND:20261004T230000Z');
     expect(lines).toContain('UID:spilakvold-ab12cd34@jodcraft.world');
-    expect(lines).toContain('SUMMARY:Spilakvöld á JOÐ: Fara í Nether\\, taka með\; nesti');
+    expect(lines).toContain('SUMMARY:Spilakvöld á JOÐ: Fara í Nether\\, taka með\\; nesti');
     expect(lines).toContain('URL:https://jodcraft.world/kvold/ab12cd34#hopur');
     expect(ics.endsWith('END:VCALENDAR\r\n')).toBe(true);
   });
