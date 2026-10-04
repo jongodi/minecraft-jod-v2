@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import type { MapConfig, WorldPoint } from '@/lib/map-types';
 import type { PlacePrints } from '@/lib/crew-places';
-import { baseAt, baseUrl, type BaseLink } from '@/lib/base-links';
+import { baseUrl, mapAt, type BaseLink, type MapBounds } from '@/lib/base-links';
 import viewerFiles from '@/lib/bluemap-viewer.json';
 import { CloseIcon, FoldedMapIcon, Lantern, MoonIcon, PictureIcon, Sun } from './Bits';
 import { plural } from '@/lib/format';
@@ -41,6 +41,9 @@ type ViewerMessage = {
   /** follow: who the camera keeps with now, and who it let go of for walking out of the world */
   name?: string | null; outside?: string;
 };
+
+/* The main map's rendered edges, as map:brand wrote them; null before a copy is synced. */
+const MAIN_BOUNDS = (viewerFiles as { bounds?: MapBounds | null }).bounds ?? null;
 
 /* The viewer's code and the map's first files, fetched ahead the moment a
    visitor reaches for the lantern (hover, focus or touch), so a press finds
@@ -94,10 +97,12 @@ interface Props {
 /** Dusk: the world is the page. BlueMap fills the viewport under the mesas,
     opening as a still of the home area; the viewer itself boots only when the
     lantern is pressed, and the still stays up until the first tiles are drawn.
-    The places hang along the foot with their photos; a place with world
-    coordinates stands in the 3D map as a lantern, its chip flies the camera
-    there and its lantern opens its postcard. The painted map lays over the same
-    frame, the album opens on top, and the two rooms of the evening (the crew,
+    The places hang along the foot with their photos; a place that stands on
+    the map's rendered ground is a lantern in the 3D map, its chip flies the
+    camera there and its lantern opens its postcard. A place at another base
+    is seen in that base's own map, from its postcard's button; the camera
+    never sets off over the void to look for it. The painted map lays over
+    the same frame, the album opens on top, and the two rooms of the evening (the crew,
     the shelf) rise from the foot of the frame when their door is opened,
     leaving the world in view above them. *Heill skjár* makes the frame itself
     the whole screen, so nothing reloads; on a phone the lantern does. */
@@ -174,7 +179,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
       try { await nav.share({ title: `${title} · ${SITE_NAME}`, url }); return; }
       catch (e) { if ((e as DOMException)?.name === 'AbortError') return; }
     }
-    try { await navigator.clipboard.writeText(url); toast('Afritað', `hlekkur á ${title}`, 'límdu hann í spjallið'); }
+    try { await navigator.clipboard.writeText(url); toast('Afritað', `hlekkur á ${title}`); }
     catch { window.prompt('Afritaðu hlekkinn:', url); }
   }, []);
 
@@ -230,13 +235,16 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [live]);
 
-  /* The chosen place, in 3D: the camera flies to it if it stands in the world. */
+  /* The chosen place, in 3D: the camera flies to it only if it stands on this
+     map's rendered ground. A place at another base, or out past the edge of
+     the render, would send it over nothing; that place's postcard opens the
+     map that has it instead, if one does. */
   useEffect(() => {
     if (!viewer) return;
     const loc = config.locations.find(l => l.id === selected);
-    if (loc?.world) jod()?.flyTo(loc.world, loc.id);
+    if (loc?.world && mapAt(bases, MAIN_BOUNDS, loc.world) === 'main') jod()?.flyTo(loc.world, loc.id);
     else jod()?.choose(null);
-  }, [viewer, selected, config.locations, jod]);
+  }, [viewer, selected, config.locations, bases, jod]);
 
   /* The viewer draws nothing while nobody can see it: scrolled away, under a
      room, the album or the painted map. */
@@ -338,8 +346,9 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
   const canFollow = viewer && !drawn && !still;
   useEffect(() => { if (!canFollow && following) jod()?.unfollow(); }, [canFollow, following, jod]);
   const here = place ? pinned[String(place.id)] ?? null : null;
-  /* a place at another base is seen in that base's own 3D map, not this one */
-  const atBase = place?.world ? baseAt(bases, place.world) : null;
+  /* the 3D map that shows the chosen place: this one, a base's own, or none */
+  const seen = place?.world ? mapAt(bases, MAIN_BOUNDS, place.world) : null;
+  const atBase = seen !== null && seen !== 'main' ? seen : null;
 
   return (
     <section id="heimur" className="b-world" aria-labelledby="heimur-title">
@@ -486,14 +495,14 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
                   <button type="button" className="b-card__x" onClick={() => setSelect(null)} aria-label="Loka póstkortinu"><CloseIcon /></button>
                 </span>
               </figcaption>
-              {/* a place that stands in the world can be visited there, and one at
-                  another base in that base's own map */}
+              {/* a place on this map's ground can be visited here, one at another
+                  base in that base's own map, and one in neither has no 3D to offer */}
               {atBase ? (
                 // eslint-disable-next-line @next/next/no-html-link-for-pages -- BlueMap's own app, not a Next page
                 <a href={baseUrl(atBase.id)} className="b-btn b-btn--small b-btn--solid b-card__fly">
                   <Lantern lit /> {atBase.name} í þrívídd
                 </a>
-              ) : place.world && (!viewer || still) && !drawn && (
+              ) : seen === 'main' && (!viewer || still) && !drawn && (
                 <button type="button" className="b-btn b-btn--small b-btn--solid b-card__fly" onPointerEnter={warmViewer} onFocus={warmViewer}
                   onClick={() => (phone ? openFull() : setLive(true))}>
                   <Lantern lit /> Sjá staðinn í þrívídd

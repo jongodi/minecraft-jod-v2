@@ -61,7 +61,7 @@ export function NightBoard({ server }: { server: ServerState }) {
     if (nav.share && matchMedia('(pointer: coarse)').matches) {
       try { await nav.share({ title: `Spilakvöld · ${SITE_NAME}`, url }); return; } catch (e) { if ((e as DOMException)?.name === 'AbortError') return; }
     }
-    try { await navigator.clipboard.writeText(url); toast('Afritað', 'hlekkur á kvöldið', 'límdu hann í spjallið'); }
+    try { await navigator.clipboard.writeText(url); toast('Afritað', 'hlekkur á kvöldið'); }
     catch { window.prompt('Afritaðu hlekkinn:', url); }
   };
 

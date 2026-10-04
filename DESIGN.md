@@ -108,7 +108,7 @@ One scroll value drives the evening. Effects are separate modules, each switchab
 - Particles: one canvas, dust at sunset that becomes embers at the campfire, paused off-screen and when the tab is hidden, DPR capped at 2, fewer on phones.
 - Lantern navigation: three lanterns, one per door, in the bar on desktop and in a bar at the foot of the screen on phones. One is lit at a time: the door the visitor is behind. They are links, so amber is correct.
 - Cursor light: fine pointers only. One pre-rasterised disc of warm light follows the pointer, moved by transform. Off on touch.
-- Copy address: a telegraph ticker types the confirmation, the button takes a stamp; Clipboard API with a textarea fallback; announced via `aria-live`.
+- Copy address: the hero's button takes a stamp, *Afritað*, struck across its corner; the bar's copy drops a paper toast under the plank that says *Afritað* and the address, nothing more. Clipboard API with a textarea fallback; both announced via `aria-live`.
 - Ambient sound: wind and a distant fire from Web Audio noise and filters, off by default, toggle in the lantern rail, remembered in localStorage.
 - Rooms: one transform to open, one opacity to darken the world behind; nothing else moves.
 - Reduced motion: no parallax, no particles, no scroll scrubbing, no sun, rooms appear in place. The page shows a fixed dusk-to-night composition with the stars out.

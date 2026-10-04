@@ -20,7 +20,9 @@
 //   src/lib/bluemap-viewer.json   the viewer's files, for the home page to fetch
 //                                 ahead when a visitor reaches for the map, and
 //                                 for the base maps' viewers (/kort/<id>, built
-//                                 by baseViewer below) to load
+//                                 by baseViewer below) to load; and the map's
+//                                 edges, so the home page flies the camera only
+//                                 to places that stand on the rendered world
 //
 // and adds `version` to src/lib/bluemap-snapshot.json if an older sync left it out.
 
@@ -352,6 +354,9 @@ export function brand(root = process.cwd()) {
   };
   writeFileSync(settingsFile, JSON.stringify(next));
 
+  /* the rendered world's edges: the viewer keeps its camera inside them, and
+     the home page flies it only to places that stand within them */
+  const bounds = boundsOf(manifest.files, mapId);
   const html = readFileSync(join(shell, 'index.html'), 'utf8');
   writeFileSync(join(shell, 'index.html'), indexHtml(viewerAssets(html), {
     id: mapId,
@@ -359,13 +364,14 @@ export function brand(root = process.cwd()) {
     version,
     syncedAt: manifest.syncedAt,
     files: new Set(manifest.files),
-    bounds: boundsOf(manifest.files, mapId),
+    bounds,
     start,
     kept: hasCopy && version ? keptTiles(manifest.files, manifest.since, mapId, version) : {},
   }));
 
   /* what the home page fetches ahead when a visitor reaches for the lantern,
-     and the viewer's own files, which the base maps' viewers (/kort/<id>) share */
+     the viewer's own files, which the base maps' viewers (/kort/<id>) share,
+     and the map's edges */
   const assets = viewerAssets(readFileSync(join(shell, 'index.html'), 'utf8'));
   const data = hasCopy && version ? `${root_}/${mapId}` : null;
   writeFileSync(join(root, 'src', 'lib', 'bluemap-viewer.json'), JSON.stringify({
@@ -381,6 +387,7 @@ export function brand(root = process.cwd()) {
       '/bluemap-jod/jod.js',
       ...(data ? [`${data}/settings.json`, `${data}/textures.json.gz`].filter((f) => manifest.files.includes(f.replace(`${root_}/`, 'maps/'))) : []),
     ],
+    bounds,
   }, null, 2) + '\n');
 
   writeFileSync(join(shell, 'lang', 'settings.conf'), LANG_SETTINGS);

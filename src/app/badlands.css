@@ -185,7 +185,7 @@
 /* a pixel icon inside a label button: one text line tall, on the grid */
 .b-btn__icon { width: 0.75rem; height: 0.75rem; flex-shrink: 0; }
 
-/* ─── the copy action: the pixel address on a button ──────────── */
+/* ─── the copy action: the pixel address on a button, and a stamp ─ */
 .b-copy { position: relative; display: inline-grid; justify-items: start; }
 .b-copy__btn {
   position: relative;
@@ -210,6 +210,34 @@
 .b-copy__btn svg { width: 1rem; height: 1rem; shape-rendering: crispEdges; flex-shrink: 0; }
 .b-copy__addr { white-space: nowrap; }
 @media (min-width: 480px) { .b-copy__btn { font-size: var(--fs-data-lg); } }
+/* the answer to a press: a rubber stamp struck across the button's corner, in
+   the red of the strata on paper, the way a notice is marked done */
+.b-copy__stamp {
+  position: absolute;
+  right: -0.6rem;
+  top: -0.9rem;
+  padding: 0.15rem 0.5rem;
+  border: var(--px) solid var(--tc-red);
+  border-radius: var(--radius);
+  color: var(--tc-red);
+  background: var(--paper);
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transform: rotate(-8deg) scale(0);
+  opacity: 0;
+  pointer-events: none;
+}
+.b-copy.is-copied .b-copy__stamp { animation: b-stamp var(--dur-3) var(--ease-out) forwards; }
+@keyframes b-stamp {
+  0%   { transform: rotate(-8deg) scale(1.8); opacity: 0; }
+  60%  { transform: rotate(-8deg) scale(0.96); opacity: 1; }
+  100% { transform: rotate(-8deg) scale(1); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .b-copy.is-copied .b-copy__stamp { animation: none; transform: rotate(-8deg); opacity: 1; }
+}
 
 /* ─── the toast: the one confirmation ─────────────────────────────
    The advancement toast every Minecraft player knows, as this site would
@@ -245,7 +273,6 @@
 .b-toast__text { display: grid; gap: var(--px); min-width: 0; }
 .b-toast__title { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-lg); line-height: 1.1; color: var(--ink); }
 .b-toast__data { font-family: var(--font-data); font-size: var(--fs-data); color: var(--lantern-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.b-toast__line { font-size: var(--fs-sm); color: var(--ink-soft); }
 
 /* ─── the lantern (also the status readout) ───────────────────── */
 .b-lantern { position: relative; display: inline-block; width: 1.5rem; height: 2.25rem; color: var(--text-faint); }

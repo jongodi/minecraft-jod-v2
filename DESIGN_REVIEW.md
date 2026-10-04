@@ -298,3 +298,11 @@ Gzipped, as served. The shared runtime is the two Next chunks plus 2.7 kB of sma
 4. **The wall's `no-store` fetch** still blocks the back-forward cache (`bf-cache` audit); it can take `next: { revalidate }` the way the home data did.
 5. **The remaining translucent values** in `badlands.css` (0.5, 0.7, 0.72) are gradient stops and were left as numbers on purpose.
 6. **Light-on-dark contrast under the sunset** was fixed by the hard shadow on the hero's sub-line; if the copy there ever grows past two lines, check it again at 1440 × 900.
+
+### After Phase 4
+
+Two changes the owner asked for once the passes were in:
+
+- **The hero's copy button has its stamp back.** *Afritað* is struck across its corner on a press, as before pass 5; the hero no longer drops a toast. The bar's copy keeps the toast, which now says only *Afritað* and the address: the line telling the visitor to paste it into the game is gone, and so is the matching line on the place and night link toasts. A screen reader hears *Afritað* from a live region beside the hero button.
+- **The 3D map flies only to places on its own ground.** `map:brand` now writes the main map's rendered edges into `src/lib/bluemap-viewer.json`, the same edges the viewer holds its camera inside, and `mapAt` (`src/lib/base-links.ts`) decides which map shows a place. A place inside the edges flies the camera as before. A place at another base, Bleika setrið at Joðville for one, leaves the camera where it is, and its postcard's button opens that base's own map. A place beyond every rendered edge gets no 3D button at all.
+

@@ -6,7 +6,7 @@ import { GET as data } from '../../app/bluemap-data/[...path]/route';
 import { GET as live } from '../../app/bluemap/[[...path]]/route';
 import { GET as kort, generateStaticParams } from '../../app/kort/[id]/[file]/route';
 import { baseCopyFor, uploadedBases } from '@/lib/bluemap-bases';
-import { baseAt } from '@/lib/base-links';
+import { baseAt, mapAt, onMap, type MapBounds } from '@/lib/base-links';
 import { BASES_DIR, BLOB_DIR, basePackDir, planPacks } from '../../../scripts/bluemap-pack.mjs';
 import { baseViewer, heaviness, indexHtml, lighterHires, startTileBytes, viewerAssets } from '../../../scripts/bluemap-brand.mjs';
 import { baseSkip, compareWithCopy, staleBlobs, took } from '../../../scripts/map-bases.mjs';
@@ -361,5 +361,42 @@ describe('baseAt', () => {
     expect(baseAt(bases, { x: 90, z: 0 })?.id).toBe('b');
     expect(baseAt(bases, { x: 0, z: 101 })).toBeNull();
     expect(baseAt([], { x: 0, z: 0 })).toBeNull();
+  });
+});
+
+describe('mapAt', () => {
+  /* the main map's edges as map:brand writes them, far from the bases */
+  const main: MapBounds = { minX: -7454, maxX: -6398, minZ: -9438, maxZ: -8382, shape: 'box' };
+  const bases = [
+    { id: 'jodville', name: 'Joðville', x: 136, z: -84, radius: 500 },
+    { id: 'shroomy', name: 'Shroomy island', x: -1267, z: -610, radius: 350 },
+  ];
+
+  it('keeps a place on the main map\'s ground on the main map, edges included', () => {
+    expect(mapAt(bases, main, { x: -6890, z: -8919 })).toBe('main');
+    expect(mapAt(bases, main, { x: -7454, z: -8382 })).toBe('main');
+  });
+
+  it('sends a place at another base to that base\'s own map, never the main one', () => {
+    expect(mapAt(bases, main, { x: 200, z: -60 })).toMatchObject({ id: 'jodville' });
+    expect(mapAt(bases, main, { x: -1300, z: -640 })).toMatchObject({ id: 'shroomy' });
+  });
+
+  it('has no 3D map for a place past every rendered edge', () => {
+    expect(mapAt(bases, main, { x: -7460, z: -8900 })).toBeNull();
+    expect(mapAt(bases, main, { x: 5000, z: 5000 })).toBeNull();
+    expect(mapAt([], main, { x: 0, z: 0 })).toBeNull();
+  });
+
+  it('takes a place no base holds to be on the main map while its edges are unknown', () => {
+    expect(mapAt(bases, null, { x: 5000, z: 5000 })).toBe('main');
+    expect(mapAt(bases, null, { x: 200, z: -60 })).toMatchObject({ id: 'jodville' });
+  });
+
+  it('reads a round render as the circle inside its box', () => {
+    const round: MapBounds = { minX: -100, maxX: 100, minZ: -100, maxZ: 100, shape: 'circle' };
+    expect(onMap(round, { x: 0, z: 99 })).toBe(true);
+    expect(onMap(round, { x: 90, z: 90 })).toBe(false);
+    expect(onMap({ ...round, shape: 'box' }, { x: 90, z: 90 })).toBe(true);
   });
 });

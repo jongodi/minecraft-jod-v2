@@ -11,8 +11,9 @@ export interface MapLocation {
   photoId?: string | null;
   /** The crew members who built it, by username. The postcard says so, and their walls list it. */
   builders?: string[];
-  /** Where it stands in the game, as F3 shows it. A place with these gets a lantern in the 3D map,
-      and its chip on the rail flies the camera there. `null` = not placed in the world. */
+  /** Where it stands in the game, as F3 shows it. A place with these on the main map's rendered
+      ground gets a lantern in the 3D map, and its chip on the rail flies the camera there; one at
+      another base is opened in that base's own map instead. `null` = not placed in the world. */
   world?: WorldPoint | null;
 }
 

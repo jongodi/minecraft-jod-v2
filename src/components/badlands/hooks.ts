@@ -139,16 +139,16 @@ export function useScrollLock(active = true): void {
 }
 
 /** Copy a string with the Clipboard API, or a hidden textarea where that is
-    missing. The toast says it was done (src/components/badlands/Toast.tsx);
-    `copied` flips back after a couple of seconds for anything that wants to
-    know besides. */
-export function useCopy(text: string): [boolean, () => void] {
+    missing. The toast says it was done (src/components/badlands/Toast.tsx),
+    unless the caller says so itself (`toast: false`, the hero's stamp);
+    `copied` flips back after a couple of seconds either way. */
+export function useCopy(text: string, { toast: withToast = true }: { toast?: boolean } = {}): [boolean, () => void] {
   const [copied, setCopied] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout>>();
   const copy = useCallback(() => {
     const done = () => {
       setCopied(true);
-      toast('Afritað', text, 'límdu það inn í leikinn');
+      if (withToast) toast('Afritað', text);
       clearTimeout(timer.current);
       timer.current = setTimeout(() => setCopied(false), COPIED_MS);
     };
@@ -158,7 +158,7 @@ export function useCopy(text: string): [boolean, () => void] {
       legacyCopy(text);
       done();
     }
-  }, [text]);
+  }, [text, withToast]);
   useEffect(() => () => clearTimeout(timer.current), []);
   return [copied, copy];
 }
