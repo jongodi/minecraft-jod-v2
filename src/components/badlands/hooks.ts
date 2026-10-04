@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from '
 import type { PlayerStat, StatsResponse, WeekStats } from '@/app/api/stats/route';
 import type { StatusResponse } from '@/lib/server-status';
 import { NO_STATUS, STARTING_MS, isChanging, toServerState, type ServerState } from '@/lib/server-state';
+import { toast } from './Toast';
 
 export type { ServerState } from '@/lib/server-state';
 
@@ -137,14 +138,17 @@ export function useScrollLock(active = true): void {
   }, [active]);
 }
 
-/** Copy a string with the Clipboard API, or a hidden textarea where that is missing.
-    `copied` flips back after a couple of seconds. */
+/** Copy a string with the Clipboard API, or a hidden textarea where that is
+    missing. The toast says it was done (src/components/badlands/Toast.tsx);
+    `copied` flips back after a couple of seconds for anything that wants to
+    know besides. */
 export function useCopy(text: string): [boolean, () => void] {
   const [copied, setCopied] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout>>();
   const copy = useCallback(() => {
     const done = () => {
       setCopied(true);
+      toast('Afritað', text, 'límdu það inn í leikinn');
       clearTimeout(timer.current);
       timer.current = setTimeout(() => setCopied(false), COPIED_MS);
     };

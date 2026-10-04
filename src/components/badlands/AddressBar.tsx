@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Lantern, Mark, Strata } from './Bits';
 import PlayerHead from './PlayerHead';
+import ToastHost from './Toast';
 import { SERVER_IP, type NavLink } from './data';
 import { useCopy, useCrewSession } from './hooks';
 
@@ -28,7 +29,7 @@ const SOLID_AFTER = 40; // px of scroll before the bar takes a surface
     lantern is lit while the visitor is behind it, and only ever one is. */
 export default function AddressBar({ links, activeId, onDoor, always = false }: Props) {
   const [solid, setSolid] = useState(always);
-  const [copied, copy]    = useCopy(SERVER_IP);
+  const [, copy]          = useCopy(SERVER_IP);
   const { me } = useCrewSession();
 
   useEffect(() => {
@@ -71,17 +72,18 @@ export default function AddressBar({ links, activeId, onDoor, always = false }: 
                 <PlayerHead name={me} size={24} />
               </Link>
             )}
-            {/* named by what it shows: the address and the verb, with the verb's object spelled out for a screen reader */}
+            {/* named by what it shows: the address and the verb, with the verb's object spelled out for a screen reader; the toast says it was done */}
             <button type="button" className="b-bar__addr" onClick={copy}>
               <span className="b-visually-hidden">Afrita vistfang þjónsins: </span>
               <span>{SERVER_IP}</span>
-              <b aria-live="polite">{copied ? 'afritað' : 'afrita'}</b>
+              <b>afrita</b>
             </button>
           </div>
         </div>
         {/* the ground under the plank: the same slice of strata that divides the hours */}
         <Strata className="b-bar__strata" />
       </header>
+      <ToastHost />
 
       {/* the same three doors at the foot of a phone on every page, so the
           walls and a lost trail are never a page without the evening's doors */}

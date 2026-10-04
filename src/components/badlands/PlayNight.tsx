@@ -11,6 +11,7 @@ import { expectStarting, useMounted } from './hooks';
 import { isChanging } from '@/lib/server-state';
 import { LAST_DAY_AHEAD, TIME_CHOICES, WhenAt, dayLabel, dayLong, dayNum, dayOf, dayValue, isLate, untilAt, usePlayNight, whenAt } from './night';
 import { plural } from '@/lib/format';
+import { toast } from './Toast';
 
 /* Spilakvöld (src/lib/play-night.ts). The hero carries one line about the
    next one under the server's lantern; the crew's room holds the fires
@@ -91,7 +92,6 @@ export function NightBoard({ server }: { server: ServerState }) {
   const [busy, setBusy] = useState(false);
   /* an error goes by the fire it came from, or the new one ('new') */
   const [err, setErr] = useState<{ at: string; text: string } | null>(null);
-  const [copied, setCopied] = useState<string | null>(null);
   /* /kvold/<id> is one night's link: that fire is lit up and brought into view */
   const [picked, setPicked] = useState<string | null>(null);
   const shown = useRef(false);
@@ -124,7 +124,7 @@ export function NightBoard({ server }: { server: ServerState }) {
     if (nav.share && matchMedia('(pointer: coarse)').matches) {
       try { await nav.share({ title: 'Spilakvöld · JOÐ', url }); return; } catch (e) { if ((e as DOMException)?.name === 'AbortError') return; }
     }
-    try { await navigator.clipboard.writeText(url); setCopied(id); setTimeout(() => setCopied(c => (c === id ? null : c)), 2500); }
+    try { await navigator.clipboard.writeText(url); toast('Afritað', 'hlekkur á kvöldið', 'límdu hann í spjallið'); }
     catch { window.prompt('Afritaðu hlekkinn:', url); }
   };
 
@@ -163,7 +163,6 @@ export function NightBoard({ server }: { server: ServerState }) {
           server={server}
           busy={busy}
           err={err?.at === n.id ? err.text : ''}
-          copied={copied === n.id}
           picked={picked === n.id}
           onRun={body => run(n.id, { ...body, night: n.id })}
           onShare={() => share(n.id)}
@@ -181,9 +180,9 @@ export function NightBoard({ server }: { server: ServerState }) {
 }
 
 /** One fire: the times it offers and who can make each, or the night chosen and who is coming. */
-function NightFire({ night, kicker, me, server, busy, err, copied, picked, onRun, onShare }: {
+function NightFire({ night, kicker, me, server, busy, err, picked, onRun, onShare }: {
   night: PublicNight; kicker: string; me: string | null; server: ServerState;
-  busy: boolean; err: string; copied: boolean; picked: boolean;
+  busy: boolean; err: string; picked: boolean;
   onRun: (body: Record<string, unknown>) => void; onShare: () => void;
 }) {
   const mine = me ? night.options.filter(o => o.yes.some(y => lower(y) === lower(me))).map(o => o.id) : [];
@@ -263,7 +262,7 @@ function NightFire({ night, kicker, me, server, busy, err, copied, picked, onRun
           {(night.phase === 'soon' || night.phase === 'live') && isChanging(server.life) && (
             <span className="b-note" role="status">{server.life === 'stopping' ? 'Þjónninn er að slokkna.' : 'Þjónninn er að vakna, komdu inn eftir augnablik.'}</span>
           )}
-          <button type="button" className="b-btn b-btn--small b-btn--ghost" onClick={onShare}>{copied ? 'Afritað' : 'Deila'}</button>
+          <button type="button" className="b-btn b-btn--small b-btn--ghost" onClick={onShare}>Deila</button>
           {/* a chosen night goes in the phone's calendar: a calendar file, opened by the calendar app */}
           {night.phase !== 'open' && night.phase !== 'live' && (
             <a href={`/kvold/${night.id}/dagatal.ics`} className="b-btn b-btn--small b-btn--ghost" title="Setja kvöldið í dagatalið"><CalendarIcon className="b-btn__icon" />Í dagatalið</a>

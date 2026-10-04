@@ -156,6 +156,7 @@
   --z-bar: 41;
   --z-drawer: 42;
   --z-light: 45;
+  --z-toast: 50;
   --z-lightbox: 60;
   --z-modal: 70;
 }
