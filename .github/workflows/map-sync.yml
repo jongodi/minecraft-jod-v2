@@ -2,12 +2,11 @@ name: Map sync
 
 # Copies the BlueMap map off the Minecraft server into Vercel Blob when it is
 # started by hand: from the admin panel (Þjónn → Þrívíddarkortið), or here
-# under Actions → Map sync → Run workflow. A run does nothing when BlueMap
-# hasn't redrawn anything since the last copy, and nothing while the server is
-# stopped unless it is told to copy anyway: exaroton hands out files very
-# slowly then, so such a run can take a long time. Otherwise it uploads the new
-# copy as a few packs, takes a new still of the map (npm run map:poster), and
-# commits both to main, which Vercel deploys.
+# under Actions → Map sync → Run workflow, whether the server runs or not: a
+# stopped server's files come off exaroton as quickly as a running one's. A run
+# does nothing when BlueMap hasn't redrawn anything since the last copy.
+# Otherwise it uploads the new copy as a few packs, takes a new still of the
+# map (npm run map:poster), and commits both to main, which Vercel deploys.
 #
 # Needs two repository secrets (Settings → Secrets and variables → Actions):
 # EXAROTON_API_KEY and BLOB_READ_WRITE_TOKEN, the same as in .env.local.
@@ -15,13 +14,13 @@ name: Map sync
 on:
   workflow_dispatch:
     inputs:
-      offline:
-        description: Copy even if the server is stopped (slow)
+      server_off:
+        description: The server was stopped when this was started (only names the run)
         type: boolean
         default: false
 
-# the admin panel tells the two kinds of run apart by this name
-run-name: ${{ inputs.offline && 'Map sync, server off' || 'Map sync' }}
+# the admin panel marks a run started while the server was stopped by this name
+run-name: ${{ inputs.server_off && 'Map sync, server off' || 'Map sync' }}
 
 permissions:
   contents: write
@@ -36,8 +35,8 @@ jobs:
     if: github.repository == 'jongodi/minecraft-jod-v2'
     runs-on: ubuntu-latest
     # the first run, or one after the saved copy has expired, fetches the whole
-    # map, and off a stopped server that takes far longer
-    timeout-minutes: ${{ inputs.offline && 300 || 90 }}
+    # map: about ten minutes, most of it waiting on exaroton's request limit
+    timeout-minutes: 90
 
     steps:
       - name: Check the secrets
@@ -74,14 +73,8 @@ jobs:
           restore-keys: map-copy-
 
       - name: Sync the map
-        run: |
-          if [ "$OFFLINE" = "true" ]; then
-            npm run map:sync
-          else
-            npm run map:sync -- --only-online
-          fi
+        run: npm run map:sync
         env:
-          OFFLINE: ${{ inputs.offline }}
           EXAROTON_API_KEY: ${{ secrets.EXAROTON_API_KEY }}
           BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
 

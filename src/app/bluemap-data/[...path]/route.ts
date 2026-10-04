@@ -26,8 +26,8 @@ import { discard, fetchFile, isMissing, resolveServerId } from '@/lib/bluemap-se
    Should the store refuse to be read (paused for going over the plan's usage,
    or a token that no longer fits it), the same files come straight off the
    Minecraft server through the exaroton file API, as the map was read before
-   there was a copy: slower, and slower still while the server is stopped, but
-   the map still opens. */
+   there was a copy, whether the server runs or not: slower, as exaroton
+   limits how often it may be asked, but the map still opens. */
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

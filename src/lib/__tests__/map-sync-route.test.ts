@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { NextRequest } from 'next/server';
 import { GET, POST } from '../../app/api/admin/map-sync/route';
 
 vi.mock('@/lib/auth', () => ({
@@ -8,10 +7,7 @@ vi.mock('@/lib/auth', () => ({
 }));
 
 const DISPATCH = 'https://api.github.com/repos/jongodi/minecraft-jod-v2/actions/workflows/map-sync.yml/dispatches';
-const start = (body?: unknown) => POST(new NextRequest('https://jod.test/api/admin/map-sync', {
-  method: 'POST',
-  ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-}));
+const start = () => POST();
 
 describe('/api/admin/map-sync', () => {
   const fetchMock = vi.fn();
@@ -47,22 +43,26 @@ describe('/api/admin/map-sync', () => {
   it('starts the workflow while the server runs', async () => {
     const res = await start();
     expect(res.status).toBe(200);
-    expect(JSON.parse(dispatched()?.[1].body)).toEqual({ ref: 'main' });
+    expect(await res.json()).toEqual({ ok: true, offline: false });
+    expect(JSON.parse(dispatched()?.[1].body)).toEqual({ ref: 'main', inputs: { server_off: 'false' } });
   });
 
-  it('turns a run down while the server is stopped', async () => {
+  it('starts it while the server is stopped too, and names the run so', async () => {
     serverStatus = 0;
-    const res = await start({ offline: false });
-    expect(res.status).toBe(409);
-    expect(dispatched()).toBeUndefined();
-  });
-
-  it('copies off a stopped server when asked to, without asking exaroton', async () => {
-    serverStatus = 0;
-    const res = await start({ offline: true });
+    const res = await start();
     expect(res.status).toBe(200);
-    expect(JSON.parse(dispatched()?.[1].body)).toEqual({ ref: 'main', inputs: { offline: 'true' } });
-    expect(fetchMock.mock.calls.some(([url]) => String(url).startsWith('https://api.exaroton.com/'))).toBe(false);
+    expect(await res.json()).toEqual({ ok: true, offline: true });
+    expect(JSON.parse(dispatched()?.[1].body)).toEqual({ ref: 'main', inputs: { server_off: 'true' } });
+  });
+
+  it('starts it when exaroton can\'t say, as if the server runs', async () => {
+    fetchMock.mockImplementation(async (url: string) => {
+      if (url.startsWith('https://api.exaroton.com/')) return new Response(null, { status: 502 });
+      if (url === DISPATCH) return new Response(null, { status: 204 });
+      return new Response(null, { status: 404 });
+    });
+    expect((await start()).status).toBe(200);
+    expect(JSON.parse(dispatched()?.[1].body)).toEqual({ ref: 'main', inputs: { server_off: 'false' } });
   });
 
   it('tells the runs off a stopped server apart', async () => {

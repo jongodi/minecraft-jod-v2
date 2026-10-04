@@ -87,9 +87,8 @@ export async function POST(req: NextRequest) {
   const ids = BASES.map(b => b.id).filter(id => asked.includes(id));
   const force = body?.force === true;
 
-  /* Runs whether the server is on or not. A run started while it is stopped
-     is named so, and its log says how long each step took, so the two can be
-     held up against each other. */
+  /* Runs whether the server is on or not: a stopped server's files come off
+     exaroton as quickly. A run started while it is stopped is named so. */
   const offline = await serverStopped();
 
   try {

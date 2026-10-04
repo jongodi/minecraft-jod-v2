@@ -4,8 +4,9 @@ name: Map bases
 # Vercel Blob when started by hand: from the admin panel (Þjónn →
 # Grunnkortin), or here under Actions → Map bases → Run workflow. Each base is
 # first compared with the copy the site has, and nothing is fetched or sent
-# for one that hasn't changed. It runs whether the server is on or not; the
-# log says which, and how long each step took. A changed one goes up as a few packs under
+# for one that hasn't changed. It runs whether the server is on or not (a
+# stopped server's files come off exaroton as quickly); the log says which,
+# and how long each step took. A changed one goes up as a few packs under
 # bluemap-bases/<id>/ (npm run map:bases -- --upload), its manifest is
 # committed to main, which Vercel deploys, and once that deployment is live
 # the copy it replaced is dropped (--prune).
@@ -48,9 +49,10 @@ jobs:
   upload:
     if: github.repository == 'jongodi/minecraft-jod-v2'
     runs-on: ubuntu-latest
-    # Joðville alone is about a gigabyte the first time, and the server may
-    # be stopped (how much slower that is, the log's timings say)
-    timeout-minutes: 300
+    # The first copy of all four (2.1 GB, Joðville 1.5 GB of it) took 15
+    # minutes off a stopped server, no slower than off a running one; the
+    # limit leaves room for a slow day.
+    timeout-minutes: 120
 
     steps:
       - name: Check the secrets

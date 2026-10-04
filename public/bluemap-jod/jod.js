@@ -332,11 +332,19 @@
     const viewer = app.mapViewer;
     const dpr = window.devicePixelRatio || 1;
     const normal = Math.min(1, 2 / dpr);
+    /* A map whose detailed tiles are much heavier than the main map's (a base
+       map of mountains, /kort/<id>) draws a smaller square of them, so a phone
+       holds about the same weight: facts.weight says how many times heavier,
+       and lighterHires in scripts/bluemap-brand.mjs, which wrote it, does the
+       same. Never less than 3×3 tiles. The map's own settings.json is already
+       made lighter, so `desk` is left as it is. */
+    const weight = Math.max(1, Number(facts.weight) || 1);
+    const light = (d) => (weight > 1 ? Math.max(48, Math.round(d / Math.sqrt(weight))) : d);
     const desk = Number(app.settings?.hiresSliderDefault) || 160;
     const table = {
-      lett:      { hires: phone ? 70 : 100,          scale: normal / 2 },
-      venjulegt: { hires: phone ? PHONE_HIRES : desk, scale: normal },
-      mikid:     { hires: phone ? 160 : 250,         scale: Math.min(2, 3 / dpr) },
+      lett:      { hires: light(phone ? 70 : 100),                scale: normal / 2 },
+      venjulegt: { hires: phone ? light(PHONE_HIRES) : desk,      scale: normal },
+      mikid:     { hires: light(phone ? 160 : 250),               scale: Math.min(2, 3 / dpr) },
     };
     applyQuality = (q) => {
       const t = table[q];

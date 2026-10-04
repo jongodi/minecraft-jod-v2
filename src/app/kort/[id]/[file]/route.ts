@@ -1,7 +1,8 @@
 import { baseNamed, uploadedBases } from '@/lib/bluemap-bases';
+import { mainCopy, type Copy } from '@/lib/bluemap-snapshot';
 import viewer from '@/lib/bluemap-viewer.json';
 import settings from '../../../../../public/bluemap/settings.json';
-import { baseViewer } from '../../../../../scripts/bluemap-brand.mjs';
+import { MAIN_MAP, baseViewer, heaviness, startTileBytes } from '../../../../../scripts/bluemap-brand.mjs';
 
 /* A base map's own viewer: /kort/<id>/index.html and its settings.json, the
    main viewer (public/bluemap) made over for that one map. Built with the
@@ -29,11 +30,19 @@ export function generateStaticParams(): { id: string; file: File }[] {
 
 type Context = { params: Promise<{ id: string; file: string }> };
 
+const sizeIn = (copy: Copy) => (path: string) => copy.packedAt(path)?.length ?? 0;
+
+/* The main map's first detailed tiles, around where it opens: what a base
+   map's are weighed against (heaviness in scripts/bluemap-brand.mjs). */
+const [, mainX, , mainZ] = String(settings.startLocation ?? '').split(':').map(Number);
+const mainTile = startTileBytes(mainCopy.files, sizeIn(mainCopy), MAIN_MAP, mainX, mainZ);
+
 export async function GET(_req: Request, { params }: Context): Promise<Response> {
   const { id, file } = await params;
   const base = baseNamed(id);
   if (!base || !uploadedBases().includes(base) || !(file in FILES)) return new Response(null, { status: 404 });
-  const page = baseViewer(viewer.shell, settings, base, base.copy);
+  const weight = heaviness(startTileBytes(base.copy.files, sizeIn(base.copy), base.id, base.x, base.z), mainTile);
+  const page = baseViewer(viewer.shell, settings, base, base.copy, weight);
   const body = file === 'index.html' ? page.html : JSON.stringify(page.settings);
   return new Response(body, {
     headers: {

@@ -14,8 +14,9 @@
 // The admin panel (Þjónn → Grunnkortin) starts --upload through the "Map
 // bases" GitHub Action (.github/workflows/map-bases.yml), which also commits
 // the manifests and, once the site is deployed with them, runs --prune.
-// --upload works whether the server runs or not, and says which it was and
-// how long each step took.
+// --upload works whether the server runs or not (a stopped server's files came
+// off exaroton as quickly: the first copy of all four, 4 October 2026), and
+// says which it was and how long each step took.
 //
 // Each config is a copy of the main map's (plugins/BlueMap/maps/world.conf)
 // with only its name, place in the list, start position and render mask
