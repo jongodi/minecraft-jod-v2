@@ -104,12 +104,15 @@
   opacity: calc(1.6 - var(--evening) * 1.6);
   will-change: transform, opacity;
 }
-/* On a phone the name spans the screen above the mesas, so the sun hangs in
-   the open sky between the address and the name instead of behind its Ð. */
-@media (max-width: 899px) { .b-sky__sun { top: 46svh; } }
+/* On a phone the name spans the screen above the mesas, so there is no room
+   for the sun on the horizon. It hangs instead in the hero's own open row,
+   between the words and the name (.b-hero__sun below), sized to the room that
+   row has: the words above grow with a planned night or a dark lantern's
+   last-seen line, and a sun pinned to the sky at one height ran under them. */
+@media (max-width: 899px) { .b-sky__sun { display: none; } }
 .b-sky svg { display: block; shape-rendering: crispEdges; }
 /* the white-hot middle of the game's square sun, tinted toward the sunlight round it */
-.b-sun__core { fill: color-mix(in oklab, var(--sun), #FFF8EA 60%); }
+.b-sky .b-sun__core, .b-hero__sun .b-sun__core { fill: color-mix(in oklab, var(--sun), #FFF8EA 60%); }
 
 /* ─── page frame ──────────────────────────────────────────────── */
 .b { position: relative; isolation: isolate; color: var(--text); }
@@ -486,6 +489,39 @@
    peeking out over it like a stray grey rule. */
 @media (max-width: 899px) { .b-hero { min-height: calc(100svh - var(--doorbar) - env(safe-area-inset-bottom, 0px)); } }
 .b-hero__stage { display: grid; grid-template-rows: auto minmax(var(--sp-7), 1fr) auto; }
+.b-hero__sun { display: none; }
+@keyframes b-hero-sun-out { to { opacity: 0; } }
+@media (max-width: 899px) {
+  .b-hero__sun {
+    display: block;
+    grid-row: 2;
+    align-self: center;
+    justify-self: end;
+    height: min(4.5rem, 100%);
+    aspect-ratio: 1;
+    margin-right: 6%;
+    color: var(--sun);
+    /* it takes the room the row has and asks for none: sized by its content, an SVG
+       at 100% of an undecided row falls back to 300 px and pushed the hero taller */
+    contain: size;
+  }
+  .b-hero__sun svg { display: block; width: 100%; height: 100%; shape-rendering: crispEdges; }
+  /* it goes as the evening comes, as the sky's sun sets */
+  @supports (animation-timeline: scroll()) {
+    .b-hero__sun { animation: b-hero-sun-out linear both; animation-timeline: scroll(root); animation-range: 0 60svh; }
+  }
+}
+@media (prefers-reduced-motion: reduce) { .b-hero__sun { display: none; } }
+/* A phone on its side has no height for a title card: the name at the foot
+   fell below the door bar, so the first screen had no name on it. There the
+   name comes first, as it did before the hero was staged, and the words
+   follow; the sun has no row to hang in. */
+@media (max-width: 899px) and (max-height: 500px) {
+  .b-hero .b-hero__stage { grid-template-rows: auto auto minmax(var(--sp-7), 1fr); }
+  .b-hero .b-hero__mark { grid-row: 1; }
+  .b-hero .b-hero__lead { grid-row: 2; margin-top: var(--sp-4); }
+  .b-hero .b-hero__sun { display: none; }
+}
 .b-hero__lead { grid-row: 1; position: relative; z-index: 3; }
 .b-hero__mark {
   grid-row: 3;
@@ -505,10 +541,24 @@
    sky. On a wide screen the sub-line falls on the brightest band of the
    sunset, where paper alone read at under 4:1. */
 .b-hero__sub { font-size: var(--fs-lg); color: var(--paper); max-width: 34ch; line-height: 1.4; text-shadow: 0 var(--px) 0 var(--night); }
-/* the address and the server's lantern on one line: the two things a player needs, side by side */
-.b-hero__action { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-4) var(--sp-7); margin-top: var(--sp-5); }
-/* one width in every state the server can be in, so the line never rewraps when the word changes */
-.b-hero__side { display: grid; gap: var(--sp-2); justify-items: start; flex: 0 1 22rem; min-width: 0; }
+/* the address and the server's lantern on one line: the two things a player needs, side by side;
+   the address keeps level with the lantern however many lines hang under it */
+.b-hero__action { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--sp-4) var(--sp-7); margin-top: var(--sp-5); }
+@media (min-width: 900px) { .b-hero__action .b-copy { margin-top: var(--sp-5); } }
+/* One width in every state the server can be in, so the line never rewraps
+   when the word changes. Without a panel, its small words lay straight on the
+   sunset, and on a phone that is the bright middle of the sky (3:1 against
+   the row's colour); so the lantern hangs in a pool of night, as the world's
+   does, dark enough under the words to read and gone at its edges. */
+.b-hero__side { position: relative; isolation: isolate; display: grid; gap: var(--sp-2); justify-items: start; flex: 0 1 22rem; min-width: 0; }
+.b-hero__side::before {
+  content: '';
+  position: absolute;
+  inset: -1.5rem -2.5rem;
+  z-index: -1;
+  background: radial-gradient(closest-side, var(--veil) 50%, rgba(21, 16, 13, 0.3) 78%, transparent);
+  pointer-events: none;
+}
 
 .b-mesa { position: absolute; inset-inline: 0; bottom: 0; height: var(--mesa-h, clamp(9rem, 32svh, 20rem)); pointer-events: none; }
 /* the far ridge stands behind the name, the middle and near ones in front of its feet */
@@ -1222,7 +1272,8 @@ html.is-map-full { overflow: hidden; }
 .b-night { display: grid; gap: var(--sp-4); margin-block: var(--sp-7); }
 .b-night--none { grid-template-columns: auto minmax(0, 1fr) auto; align-items: end; column-gap: var(--sp-5); }
 .b-night.is-picked { padding: var(--sp-4); margin-inline: calc(var(--sp-4) * -1); background: var(--veil); box-shadow: 0 0 0 var(--px) var(--lantern-glow); }
-.b-night--live .b-night__kicker, .b-night--soon .b-night__kicker { color: var(--lantern); }
+/* a night under way says so in the green the server's lantern uses for on; amber is only for what can be pressed */
+.b-night--live .b-night__kicker { color: var(--online); }
 /* the ground the fire stands on, and the heads beside it standing on the same line */
 .b-night__camp {
   display: flex; align-items: flex-end; flex-wrap: wrap; gap: var(--sp-2) var(--sp-4);

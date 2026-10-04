@@ -92,9 +92,19 @@ export default function Rail({ children, className, label, prevLabel = 'Fyrri', 
 }
 
 /** Scroll the rail item carrying `data-rail-item="<id>"` into view: in one
-    step under reduced motion, as the arrows do. */
+    step under reduced motion, as the arrows do. Only the rail moves, sideways:
+    scrollIntoView would move the page too, and on a phone a shared place's
+    link (/stadur/<id>) brings the world into view while this runs, so the
+    page's own scroll was cut short to wherever the chip first showed. */
 export function revealRailItem(id: string | number, within?: HTMLElement | null) {
   const root = within ?? document;
+  const item = root.querySelector<HTMLElement>(`[data-rail-item="${id}"]`);
+  const rail = item?.closest<HTMLElement>('.b-rail');
+  if (!item || !rail) return;
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  root.querySelector<HTMLElement>(`[data-rail-item="${id}"]`)?.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: reduce ? 'auto' : 'smooth' });
+  const box = rail.getBoundingClientRect();
+  const at = item.getBoundingClientRect();
+  /* nearest, as scrollIntoView would put it: only as far as it takes to show the whole item */
+  const by = at.left < box.left ? at.left - box.left : at.right > box.right ? at.right - box.right : 0;
+  if (by) rail.scrollBy({ left: by, behavior: reduce ? 'auto' : 'smooth' });
 }

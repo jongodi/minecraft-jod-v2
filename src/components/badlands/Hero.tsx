@@ -2,6 +2,7 @@
 
 import { memo } from 'react';
 import Mesa from './Mesa';
+import { Sun } from './Bits';
 import CopyAddress from './CopyAddress';
 import StatusLantern from './StatusLantern';
 import { NightLine } from './NightLine';
@@ -21,6 +22,8 @@ function Hero({ server, season, nights }: { server: ServerState; season: Season;
           then the address and the server's lantern side by side. */}
       <div className="b-wrap b-hero__stage">
         <h1 className="b-hero__mark">JOÐ</h1>
+        {/* a phone's sun: in the open sky between the words and the name, so no line above it ever crosses it (badlands.css) */}
+        <div className="b-hero__sun" aria-hidden="true"><Sun /></div>
         <div className="b-hero__lead">
           {/* one line says what this is and who it is for; the resource pack is the shelf's to mention */}
           <p className="b-hero__sub">Minecraft-heimur átta vina, frá sumrinu 2024. Aðgangur með boði.</p>

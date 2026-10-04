@@ -332,3 +332,22 @@ Not done, and why:
 - **Tilting the roll call's posters** to break the grid: rotated pixel type falls off its grid and smears.
 - **Still boxed:** the play night's card in the crew's room is a bordered panel, and the room's row of portraits is a row of equal frames. They are the next candidates for the same treatment.
 
+### The fires, and a review on phones
+
+**The play nights** were the last boxed thing in the crew's room, and an open night put each time in a box inside that box. A night is now drawn as the crew at a campfire: the fire on a patch of ground, the heads of who is coming standing beside it, and an open night's times as campsites side by side. Only the form for lighting a fire keeps an edge. The row of portraits was looked at with real heads and left alone: it already says who is in with a lit lantern behind each.
+
+**A review** followed: a separate read of the whole diff for bugs, and a sweep of every page, tab, room and overlay on a phone at 390 and 360 with staged data (the hero copied and the bar copied, the world, a postcard, the drawn map and a pin on it, the album, the lightbox, the map full screen, both rooms scrolled, a crate on the shelf, the campfire and the duel, the roll call and its board tab, a wall and its sign-in, a night's link, a place's link, the 404 and the admin sign-in). What it found and what was done:
+
+| Found | Fixed |
+|---|---|
+| With a play night planned, the hero's night line ran across the sun on a phone, light words on its white core. | On a phone the sun hangs in the hero's own open row between the words and the name, sized to that row; the sky's sun is for wider screens. |
+| Without their panel the lantern's small words measured about 3:1 against the bright middle of the sky on a phone. | A soft pool of night behind the lantern; every line now measures 5.0:1 or better at 360, 390, 1024 × 600, 1440 and on a phone on its side. |
+| A phone on its side (844 × 390) had no name on its first screen: the title card put it under the door bar. | Below 500 px of height the name comes first and the words follow. |
+| A shared place link (/stadur/<id>) on a phone stopped 83 px short, with a strip of the hero above the world. Older than this pass. | Revealing the place's chip scrolls only the rail, never the page, so the page's own scroll to the world finishes. |
+| "Eftirlýst" could clip on the narrowest roll-call cards, and long names were cut short at 320 px. | The masthead's and the name's smallest size is the scale's smallest; both scale with the poster. |
+| The square sun's white core also lit the faint sun on a postcard with no photo yet. | The core is lit only in the sky and the hero. |
+| A night under way had an amber kicker, against the rule that amber is only for what can be pressed. | It says so in the server lantern's green. |
+| The admin sign-in still signed itself "JOÐ". | It says JOÐcraft and the address, from the same constant as everywhere else. |
+
+After the fixes: no horizontal overflow and no console errors in any of the 27 states at 390 or 360; Lighthouse mobile 98 for the home page (LCP 2.35 s, CLS 0), 97 for the roll call, 91 for a wall (its LCP is the skin image the sandbox blocks), desktop 100.
+

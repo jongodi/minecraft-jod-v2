@@ -66,7 +66,7 @@ export function Sun() {
     <svg viewBox="0 0 12 12" aria-hidden="true">
       <rect x="0" y="0" width="12" height="12" fill="currentColor" opacity="0.35" />
       <rect x="1" y="1" width="10" height="10" fill="currentColor" />
-      <rect className="b-sun__core" x="3" y="3" width="6" height="6" />
+      <rect className="b-sun__core" x="3" y="3" width="6" height="6" fill="currentColor" />
     </svg>
   );
 }

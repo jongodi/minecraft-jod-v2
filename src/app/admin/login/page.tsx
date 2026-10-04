@@ -5,6 +5,7 @@ import { Suspense, useEffect, useRef, useState, type FormEvent } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Mark } from '@/components/badlands/Bits';
 import { Button, Field, Notice } from '@/components/admin/ui';
+import { SERVER_IP, SITE_NAME } from '@/components/badlands/data';
 
 /* Only a path on this site. The middleware sets `next` to the page that sent
    the admin here, but anyone can write a link with their own: a
@@ -47,7 +48,7 @@ function LoginForm() {
           <Mark />
           <div>
             <p className="a-panel__title">Stjórnborð</p>
-            <p className="a-muted">JOÐ, play.jodcraft.world</p>
+            <p className="a-muted">{SITE_NAME} · {SERVER_IP}</p>
           </div>
         </div>
         <div className="a-stack">
