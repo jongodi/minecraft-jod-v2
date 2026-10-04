@@ -211,12 +211,24 @@ ${preload.map((href) => `        <link rel="preload" href="${esc(href)}" as="fet
     heavy map loads a smaller square of them from the very first frame, so a
     phone's tab isn't overwhelmed (Joðville's mountains are about nine times
     the main map's). */
+/** Where a base map's viewer opens: the base's own view if it has one
+    ("view" in src/lib/map-bases.json, x:y:z:distance:rotation:angle:tilt:ortho:mode,
+    as BlueMap's address writes it after the #), otherwise its centre seen from
+    the main map's distance and angle. */
+export function openingView(base, settings) {
+  const own = String(base.view ?? '').split(':');
+  if (own.length === 9 && own.slice(0, 8).every((v) => Number.isFinite(Number(v)) && v !== '')) {
+    return { x: Number(own[0]), z: Number(own[2]), start: `${base.id}:${own.join(':')}` };
+  }
+  const view = String(settings.startLocation ?? '').split(':').slice(4);
+  const angle = view.length === 6 ? view.join(':') : '65:2.03:1.08:0:0:perspective';
+  return { x: base.x, z: base.z, start: `${base.id}:${base.x}:${base.y}:${base.z}:${angle}` };
+}
+
 export function baseViewer(shell, settings, base, copy, weight = 1) {
   const root = `/bluemap-data/${copy.version}/maps`;
   /* map:x:y:z, then distance:rotation:angle:tilt:ortho:mode, as the main map opens */
-  const view = String(settings.startLocation ?? '').split(':').slice(4);
-  const angle = view.length === 6 ? view.join(':') : '65:2.03:1.08:0:0:perspective';
-  const start = `${base.id}:${base.x}:${base.y}:${base.z}:${angle}`;
+  const { start } = openingView(base, settings);
   const r = base.radius;
   const bounds = boundsOf(copy.files, base.id)
     ?? { minX: base.x - r, maxX: base.x + r + 1, minZ: base.z - r, maxZ: base.z + r + 1, shape: 'box' };

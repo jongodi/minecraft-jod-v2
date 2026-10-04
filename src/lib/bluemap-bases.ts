@@ -27,6 +27,8 @@ export interface Base {
   z: number;
   /** blocks each way from the centre that are rendered */
   radius: number;
+  /** where its viewer opens, if not over the centre (BlueMap's x:y:z:distance:… after the map's id) */
+  view?: string;
   copy: Copy;
 }
 
@@ -37,6 +39,7 @@ export const BASES: Base[] = config.bases.map((b) => ({
   y: b.y,
   z: b.z,
   radius: b.radius,
+  ...('view' in b && typeof b.view === 'string' ? { view: b.view } : {}),
   copy: copyOf((MANIFESTS[b.id] as Snapshot | undefined) ?? EMPTY),
 }));
 

@@ -1,7 +1,8 @@
 {
-  "note": "Separate BlueMap maps of other bases. Kept out of the main map (world) on purpose. npm run map:bases writes their configs on the server. Y is ground level; the viewer opens slightly above it. \"bluemap\" holds a base's own drawing settings, set on top of the main map's (scripts/bluemap-conf.mjs): Joðville's mountains stand far above the main map's cave cut-off, so its caves are cut everywhere, as BlueMap's wiki suggests (10000); the surface is kept by cave-detection-ocean-floor and lit builds by cave-detection-uses-block-light.",
+  "note": "Separate BlueMap maps of other bases. Kept out of the main map (world) on purpose. npm run map:bases writes their configs on the server. Y is ground level; the viewer opens slightly above it. \"view\" is where a base's viewer opens instead (everything after jodville: in the address BlueMap shows once the view is framed). \"bluemap\" holds a base's own drawing settings, set on top of the main map's (scripts/bluemap-conf.mjs): Joðville's mountains stand far above the main map's cave cut-off, so its caves are cut everywhere, as BlueMap's wiki suggests (10000); the surface is kept by cave-detection-ocean-floor and lit builds by cave-detection-uses-block-light.",
   "bases": [
     { "id": "jodville", "name": "Joðville",       "x": 136,   "y": 128, "z": -84,   "radius": 500, "frozen": true,
+      "view": "131:115:-20:89:-3.09:1.19:0:0:perspective",
       "bluemap": { "remove-caves-below-y": 10000 } },
     { "id": "faraway",  "name": "Faraway lands",  "x": 9820,  "y": 64,  "z": 4341,  "radius": 350, "frozen": true },
     { "id": "bustadur", "name": "Bústaður",       "x": 2251,  "y": 76,  "z": -1126, "radius": 60,  "frozen": true },
