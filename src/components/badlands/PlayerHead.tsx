@@ -11,6 +11,8 @@ interface Props {
   className?: string;
   /** '' where the name is written beside the head, so it is not read twice */
   alt?: string;
+  /** on the first screen and the largest thing on it (a wall's poster): fetched first, not lazily */
+  priority?: boolean;
 }
 
 /* When neither service answers: a blank head drawn on the same 8 by 8 grid,
@@ -30,7 +32,7 @@ const UNKNOWN_BODY = `data:image/svg+xml,${encodeURIComponent(
 
 /** Pixel head (or whole skin) from minotar, with mc-heads as a fallback. Raw
     <img> on purpose: Next's image optimiser would blur the 8×8 texture. */
-export default function PlayerHead({ name, size = 64, full = false, className, alt }: Props) {
+export default function PlayerHead({ name, size = 64, full = false, className, alt, priority = false }: Props) {
   const px = size * 4;
   const src = full ? bodyUrl(name, px) : headUrl(name, px);
   const fallback = full ? bodyFallback(name, px) : headFallback(name, px);
@@ -42,7 +44,8 @@ export default function PlayerHead({ name, size = 64, full = false, className, a
       alt={alt ?? (full ? `${name}, skinnið` : `${name}, hausinn`)}
       width={px}
       height={full ? px * 2 : px}
-      loading="lazy"
+      loading={priority ? 'eager' : 'lazy'}
+      fetchPriority={priority ? 'high' : undefined}
       decoding="async"
       onError={e => {
         const img = e.currentTarget;

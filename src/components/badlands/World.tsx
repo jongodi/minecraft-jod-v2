@@ -152,12 +152,14 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
     if (room && !visited[room]) setVisited(v => ({ ...v, [room]: true }));
   }, [room, visited]);
 
-  /* The rooms' code is fetched once the page is idle, so a door opens at once. */
+  /* The rooms' code is fetched once the browser is truly idle, so a door
+     opens at once later and the first seconds, when a slow phone is still
+     drawing the hero, pay nothing for rooms nobody has opened. */
   useEffect(() => {
-    const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void };
+    const w = window as Window & { requestIdleCallback?: (cb: () => void) => number; cancelIdleCallback?: (id: number) => void };
     const warm = () => { import('./Crew'); import('./Shelf'); };
-    if (w.requestIdleCallback) { const id = w.requestIdleCallback(warm, { timeout: 4000 }); return () => w.cancelIdleCallback?.(id); }
-    const id = setTimeout(warm, 2500);
+    if (w.requestIdleCallback) { const id = w.requestIdleCallback(warm); return () => w.cancelIdleCallback?.(id); }
+    const id = setTimeout(warm, 6000);
     return () => clearTimeout(id);
   }, []);
 

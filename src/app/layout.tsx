@@ -3,17 +3,19 @@ import localFont from 'next/font/local';
 import './globals.css';
 import { SERVER_IP } from '@/components/badlands/data';
 
-/* Three families, self-hosted, all three drawn on a pixel grid. Each is
-   verified to carry þ ð æ ö á é í ó ú ý; the Latin-1 block lives in the
-   "latin" subset files, not in "latin-ext". */
+/* Three families, self-hosted, four files, all preloaded: each is on the
+   first screen. Each is verified to carry þ ð æ ö á é í ó ú ý; the Latin-1
+   block lives in the "latin" subset files, not in "latin-ext". Every face
+   gets a size-adjusted fallback, so the line a word takes before its font
+   arrives is the line it keeps, and the swap moves nothing. */
 const display = localFont({
   src: '../../node_modules/@fontsource/alfa-slab-one/files/alfa-slab-one-latin-400-normal.woff2',
   weight: '400',
   variable: '--font-display-loaded',
   display: 'swap',
 });
-/* Running prose. A pixel face with text proportions, so a paragraph still
-   reads at length where Silkscreen would not. */
+/* Every word the site says, long or short. A pixel face with text
+   proportions, crisp at any size; the bold cut carries names and kickers. */
 const text = localFont({
   src: [
     { path: '../../node_modules/@fontsource/pixelify-sans/files/pixelify-sans-latin-400-normal.woff2', weight: '400', style: 'normal' },
@@ -21,19 +23,15 @@ const text = localFont({
   ],
   variable: '--font-text-loaded',
   display: 'swap',
-  adjustFontFallback: false,
 });
-/* Labels, navigation, data: everything that is a short string. Both cuts are
-   real, so nothing on the page is ever synthetically bolded — faux bold
-   smears a bitmap face. */
+/* What can be pressed and what the server counts: the doors, the buttons,
+   the address, the numbers. One cut; nothing on the site asks it for bold,
+   and a faux bold would smear a bitmap face. */
 const data = localFont({
-  src: [
-    { path: '../../node_modules/@fontsource/silkscreen/files/silkscreen-latin-400-normal.woff2', weight: '400', style: 'normal' },
-    { path: '../../node_modules/@fontsource/silkscreen/files/silkscreen-latin-700-normal.woff2', weight: '700', style: 'normal' },
-  ],
+  src: '../../node_modules/@fontsource/silkscreen/files/silkscreen-latin-400-normal.woff2',
+  weight: '400',
   variable: '--font-data-loaded',
   display: 'swap',
-  adjustFontFallback: false,
 });
 
 const TITLE = 'JOÐ, Minecraft-heimurinn okkar';

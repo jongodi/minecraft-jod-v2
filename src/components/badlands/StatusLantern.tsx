@@ -46,7 +46,8 @@ export default function StatusLantern({ server }: { server: ServerState }) {
       <Lantern lit={burn === 'lit'} className={burn === 'kindling' ? 'is-kindling' : undefined} />
       <span className="b-status__text">
         <span className="b-status__word" role="status" aria-live="polite">{word}</span>
-        <span className="b-status__row">
+        {/* "athugað rétt í þessu" is told from the clock, which the server read before the browser does */}
+        <span className="b-status__row" suppressHydrationWarning>
           {!said ? 'bíð eftir svari' :
            online ? (players === 0 ? 'enginn inni enn, en það er opið' : <>inni núna: <b>{players}</b></>) :
            last ? `síðast kveikt ${sinceAt(last.at)}` :

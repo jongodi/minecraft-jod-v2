@@ -236,6 +236,23 @@ export function useAgo(ts: number | null): string {
   return `fyrir ${Math.floor(s / 60)} mín.`;
 }
 
+/** Whether the device has room for the effects (the dust and the embers,
+    the cursor's light), and the browser an idle moment to start them in.
+    Not for a device that asked for less data, or has little memory or few
+    cores; never before the first paint has settled. False on the server. */
+export function useEffectsAllowed(): boolean {
+  const [ok, setOk] = useState(false);
+  useEffect(() => {
+    const nav = navigator as Navigator & { deviceMemory?: number; connection?: { saveData?: boolean } };
+    if (nav.connection?.saveData || (nav.deviceMemory ?? 8) < 4 || (nav.hardwareConcurrency ?? 8) < 4) return;
+    const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void };
+    if (w.requestIdleCallback) { const id = w.requestIdleCallback(() => setOk(true), { timeout: 3000 }); return () => w.cancelIdleCallback?.(id); }
+    const t = setTimeout(() => setOk(true), 1500);
+    return () => clearTimeout(t);
+  }, []);
+  return ok;
+}
+
 /** Whether a media query matches; false during SSR and on the first paint. */
 export function useMediaQuery(query: string): boolean {
   const [match, setMatch] = useState(false);

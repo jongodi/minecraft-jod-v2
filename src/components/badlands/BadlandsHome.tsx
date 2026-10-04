@@ -12,7 +12,7 @@ import Hero from './Hero';
 import World from './World';
 import Footer from './Footer';
 import { SECTIONS, isRoom, type DoorId, type RoomId } from './data';
-import { seedStatus, useReducedMotionPref, useScrollSpy, useServerStatus } from './hooks';
+import { seedStatus, useEffectsAllowed, useReducedMotionPref, useScrollSpy, useServerStatus } from './hooks';
 import { seedNights } from './night';
 import { seasonClass, useSeason } from './Season';
 
@@ -36,6 +36,7 @@ export default function BadlandsHome({ syncedOn, bases, initial }: { syncedOn: s
   seedNights(initial.nights);
   const server = useServerStatus(initial.status);
   const season = useSeason(initial.season);
+  const effects = useEffectsAllowed();
   const reduce = useReducedMotionPref();
   const reached = useScrollSpy(['heimur']) === 'heimur';
   const [room, setRoom] = useState<RoomId | null>(null);
@@ -129,8 +130,9 @@ export default function BadlandsHome({ syncedOn, bases, initial }: { syncedOn: s
   return (
     <div className={`b${seasonClass(season)}`}>
       <Sky />
-      <Particles heroId="top" fireId="campfire" snow={season.snow} fireworks={season.fireworks} />
-      <CursorLight />
+      {/* the effects start once the browser is idle, and not at all on a device without room for them */}
+      {effects && <Particles heroId="top" fireId="campfire" snow={season.snow} fireworks={season.fireworks} />}
+      {effects && <CursorLight />}
       <AddressBar links={SECTIONS} activeId={active} onDoor={openDoor} />
       <main id="efni">
         <Hero server={server} season={season} nights={nights} />

@@ -363,7 +363,8 @@ export default function Wall({ initial, places, justSignedIn = false }: Props) {
             <img className="w-poster__cover" {...photoProps(cover.filename, PHOTO_SIZES.cover)} alt="" aria-hidden="true" decoding="async" />
           )}
           <span className="b-paper__nail" aria-hidden="true" />
-          <div className="w-poster__skin"><PlayerHead name={username} size={96} full /></div>
+          {/* the largest thing on the wall's first screen: fetched first, not when it scrolls near */}
+          <div className="w-poster__skin"><PlayerHead name={username} size={96} full priority /></div>
           <div className="w-poster__body">
             <div className="w-poster__top">
               <div>

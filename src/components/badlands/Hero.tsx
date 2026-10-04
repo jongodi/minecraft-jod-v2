@@ -4,7 +4,7 @@ import { memo } from 'react';
 import Mesa from './Mesa';
 import CopyAddress from './CopyAddress';
 import StatusLantern from './StatusLantern';
-import { NightLine } from './PlayNight';
+import { NightLine } from './NightLine';
 import type { ServerState } from './hooks';
 import type { Season } from '@/lib/season';
 import type { PlayNightResponse } from '@/app/api/playnight/route';
