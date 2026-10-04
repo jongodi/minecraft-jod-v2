@@ -188,6 +188,9 @@
 .w-note-card:focus-visible { outline: var(--px) solid var(--lantern-ink); outline-offset: calc(var(--px) * -3); }
 @media (hover: hover) { .w-note-card:hover { outline: var(--px) solid var(--lantern-ink); outline-offset: calc(var(--px) * -3); } }
 
+/* the word-sized actions on a print are a thumb's height where there is a thumb */
+@media (pointer: coarse) { .w-print__actions button, .w-tool, .w-lantern, .w-reply__when button { min-height: var(--tap); } }
+
 /* the label type on the wall, in one place like the other sheets */
 .w-pin__note, .w-draft__meta, .w-print__cap, .w-print__meta, .w-lantern, .w-tool, .w-reply__who, .w-reply__when, .w-note-card__who, .w-welcome { font-family: var(--font-data); }
 

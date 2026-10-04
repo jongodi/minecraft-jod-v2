@@ -15,7 +15,7 @@ interface Props {
   activeId?: string | null;
   /** on the home page: open a door in place instead of following the hash */
   onDoor?: (id: string) => void;
-  /** solid from the start, and no bar at the foot: the other pages */
+  /** solid from the start: the other pages, which have no sunset to lie over */
   always?: boolean;
 }
 
@@ -53,7 +53,7 @@ export default function AddressBar({ links, activeId, onDoor, always = false }: 
         </a>
       );
     }
-    return <Link key={l.id} href={l.href} className={className}>{inner}</Link>;
+    return <Link key={l.id} href={l.href} className={className} aria-current={here ? 'location' : undefined}>{inner}</Link>;
   };
 
   return (
@@ -83,11 +83,11 @@ export default function AddressBar({ links, activeId, onDoor, always = false }: 
         <Strata className="b-bar__strata" />
       </header>
 
-      {!always && (
-        <nav className="b-doorbar" aria-label="Efnisyfirlit">
-          {links.map(l => door(l, 'b-doorbar__item'))}
-        </nav>
-      )}
+      {/* the same three doors at the foot of a phone on every page, so the
+          walls and a lost trail are never a page without the evening's doors */}
+      <nav className="b-doorbar" aria-label="Efnisyfirlit">
+        {links.map(l => door(l, 'b-doorbar__item'))}
+      </nav>
     </>
   );
 }

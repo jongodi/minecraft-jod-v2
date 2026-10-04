@@ -77,7 +77,11 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <link rel="preconnect" href="https://mc-heads.net" />
       </head>
       {/* extensions like Grammarly write their own attributes onto <body> before React loads */}
-      <body suppressHydrationWarning>{children}</body>
+      <body suppressHydrationWarning>
+        {/* the first stop for a keyboard: past the bar, straight to the page's main landmark */}
+        <a href="#efni" className="b-skip">Beint í efnið</a>
+        {children}
+      </body>
     </html>
   );
 }

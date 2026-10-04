@@ -72,6 +72,31 @@ img, video { max-width: 100%; height: auto; }
 ::selection { background: var(--tc-orange); color: var(--paper); }
 :focus-visible { outline: var(--px) solid var(--lantern); outline-offset: 3px; }
 
+/* ─── the skip link ─────────────────────────────────────────────
+   The first thing in the tab order on every page: a lit tag that drops in
+   from above the bar when it has focus and leads to the main landmark,
+   which every page marks #efni. Out of sight otherwise, moved rather than
+   clipped so a keyboard sees it arrive. */
+.b-skip {
+  position: fixed;
+  top: var(--sp-2);
+  left: var(--sp-2);
+  z-index: 100;
+  padding: var(--sp-2) var(--sp-4);
+  background: var(--lantern);
+  color: var(--night);
+  font-family: var(--font-data);
+  font-size: var(--fs-data);
+  text-decoration: none;
+  clip-path: var(--notch);
+  box-shadow: var(--bevel);
+  transform: translateY(calc(-100% - var(--sp-4)));
+  transition: transform var(--dur-2) var(--ease-out);
+}
+.b-skip:focus-visible { transform: none; outline-color: var(--paper); outline-offset: calc(var(--px) * -3); }
+/* the landmark it leads to stops short of the bar fixed across the top */
+#efni { scroll-margin-top: var(--bar); }
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }

@@ -136,7 +136,7 @@ export default function BadlandsHome({ syncedOn, bases }: { syncedOn: string | n
       <Particles heroId="top" fireId="campfire" snow={season.snow} fireworks={season.fireworks} />
       <CursorLight />
       <AddressBar links={SECTIONS} activeId={active} onDoor={openDoor} />
-      <main>
+      <main id="efni">
         <Hero server={server} season={season} />
         <World plates={plates} server={server} syncedOn={syncedOn} bases={bases} room={room} onCloseRoom={closeRoom} />
       </main>

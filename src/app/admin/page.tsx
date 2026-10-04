@@ -80,7 +80,7 @@ export default function AdminPage() {
         </div>
       </header>
 
-      <main className="a-wrap a-main">
+      <main id="efni" className="a-wrap a-main">
         <nav className="a-tabs" aria-label="Hlutar stjórnborðs">
           {TABS.map(t => (
             <a key={t.id} href={`#${t.id}`} className={`a-tab${tab === t.id ? ' is-active' : ''}`} aria-current={tab === t.id ? 'page' : undefined} onClick={e => {

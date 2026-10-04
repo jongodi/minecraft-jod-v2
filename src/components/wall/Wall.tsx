@@ -340,8 +340,8 @@ export default function Wall({ initial, places, justSignedIn = false }: Props) {
 
   return (
     <div className="b">
-      <AddressBar links={PAGE_LINKS} always />
-      <main className="b-wrap b-page w-page">
+      <AddressBar links={PAGE_LINKS} activeId="hopur" always />
+      <main id="efni" className="b-wrap b-page w-page">
         <Link href="/crew" className="b-back"><ArrowIcon flip /> allur hópurinn</Link>
 
         {welcome && isOwner && (

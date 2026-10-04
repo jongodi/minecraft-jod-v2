@@ -41,8 +41,9 @@ export default function CrewPage() {
 
   return (
     <div className="b">
-      <AddressBar links={PAGE_LINKS} always />
-      <main className="b-wrap b-page">
+      {/* the walls are the crew's room continued, so its lantern burns here too */}
+      <AddressBar links={PAGE_LINKS} activeId="hopur" always />
+      <main id="efni" className="b-wrap b-page">
         <Link href="/" className="b-back"><ArrowIcon flip /> aftur á forsíðu</Link>
         {staleLink && (
           <p className="w-welcome" role="status">Þessi innskráningartengill er útrunninn eða þegar notaður. Biddu stjórnandann um nýjan.</p>

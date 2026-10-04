@@ -15,7 +15,7 @@ export default function OffTrail({ title, children, actions }: { title: string; 
   return (
     <div className="b">
       <AddressBar links={PAGE_LINKS} always />
-      <main className="b-wrap b-page b-stray">
+      <main id="efni" className="b-wrap b-page b-stray">
         <Lantern lit={false} className="b-stray__lantern" />
         <h1 className="b-title">{title}</h1>
         <p className="b-lede">{children}</p>
