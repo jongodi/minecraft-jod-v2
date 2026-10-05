@@ -597,3 +597,62 @@ A review of the whole diff found six more, all fixed and measured:
 
 **The server's lantern, without the smudge.** It hung in a soft radial pool of night, which kept its small words readable but was the one soft-edged thing on a page of hard pixels: a dark blur that ran under the address button and off the side of a phone. It is now a plate, the hard band of shadow the game lays its chat on, square cut with the notched corners every tag on the site has. On an upright phone the address button and the plate are one column of one width; on a wide screen they hang side by side from one top line, the lantern's word level with the address. A night planned is a second entry on the plate under a hairline, its fire in the lantern's column and its words aligned with the lantern's. Two lines got shorter: "athugað rétt í þessu" is gone, and the moment of the answer shows only once it is two minutes old ("athugað fyrir 3 mín."), since a fresh one said nothing a lit or dark lantern did not; and the version reads as the launcher shows it, without the host's build number ("26.3", not "26.3 (182)"). Every line on the plate reads at 5.9:1 or better from 360 to 1920 px, with a night planned; without any backing the words fell to 2.3:1 on a wide screen.
 
+---
+
+## Part 5. Twelve more: the sky, the land, the world, the rooms and the fire
+
+A brainstorm on 5 October 2026 asked what was still missing once the three passes above were in. The answer: the identity is a landscape, and the page told it more than it showed it. The hero was a logo over a gradient; every hour between sunset and night was one flat maroon; the ridges past the nearest were flat fills; a cold grey band of BlueMap's sky crossed the top of the world; the boot lantern hung in the one soft blur on the page; the rooms had no walls; and the fire, the page's last scene, was an icon beside the credits. Twelve ideas came out of it, and all twelve were built, in five passes and three follow-ups on `claude/clever-darwin-ccdsk4`. Every pass: `tsc`, `next lint`, the unit tests (236 on `main`, 240 with the moon's four), screenshots at 390 and 1440 with staged data, and a production build.
+
+### What changed, and why
+
+| Pass | What | Why, in one sentence |
+|---|---|---|
+| The sky | **Afterglow**: a band of the sunset riding with the land behind the ridges holds while the night takes the top of the sky, and goes last. **Clouds**: the game's flat clouds in the band of sky between the words and the name, lit from below at sunset and grey at night, drifting a few cells east; four on a wide screen, two on a phone, clear of every line of words. **The moon**: tonight's, in one of the game's eight phases (`src/lib/moon.ts`, tested against the almanac for October and November 2026), comes up over the J in the first third of a screen of scroll and stands risen in the night sky of the roll call and the walls; `?tungl=0` … `7` shows any phase. | Every hour between sunset and night now looks like that hour, and the empty sky has the game's own things in it. |
+| The land | **Strata in every ridge**: bands in all three, faint on the far one; the far ridge a third of the way to the horizon's colour, with a stepped gold haze at its foot that goes with the afterglow. **The name cut from the strata**: five clays under every downward edge, a whole pixel count each, on the link preview too. **The crew on the ridge**: whole skins with a lit lantern in hand on the near plateau, each a link to their wall. | The badlands are the first identity pillar, and the name and the people now stand in them. |
+| The world | **The page's night over the town**: `jod.js` gives BlueMap `--night` as its sky after dark (the colour over the light BlueMap multiplies it by), the map's own sky by day; the still was recoloured to match and `map:poster` takes every new one through the same script. **A lantern on a post**: hung from the arm of a fence post, a sign nailed under it, a paper tag under the sign; no pool of night. **The town's lights come on**: three layers of lamplight taken off the still by `scripts/map-lights.mjs` (about 7 kB together) light one after another when the world is reached. | The world is the page, and arriving in it at nightfall is the concept's one big turn. |
+| The rooms | **Walls** of boards in both rooms (`--wall`); paper stands off them by a hard two-pixel shadow (`.b-hang`). **The shelf as a store**: slatted crates twice the size with their glyph on a nailed paper tag, two shelves of seven beside a counter sized to one label. **A notice board** on the roll call: the eight posters on one board of planks, capped and on two posts. | A room entered through a door should look like a room. |
+| The fire | The fire in the middle of the band at eight times its pixels in a ring of stones, its light across the ground and on the foot of the ridge; the way up and the wind either side; the small print on the earth under the ground. | The page ends on its last light, so the light gets the middle. |
+
+### Where the build differs from the cards, and why
+
+- **The town's lights are taken off the night still, not a day still crossfading to night.** The sandbox can't reach the map data (a private Blob store, and the live site is outside the network policy), so no new still could be rendered here. Working from the still that exists turned out better anyway: a day still would have shown a bright town under a sky the scroll had already made night, where lamps lighting up at dusk is exactly the hour the page is at.
+- **The lights are a state, not a scroll animation.** Held on a view timeline they were composited on every frame of the scroll through the world, and the desktop probe's long frames went from about 25 to about 117 per scroll. As a transition (on when the world is 55 % in view, off again back at the sunset) they cost the compositor a second and a half, and work in every browser, view timelines or not.
+- **The ridges' night is a layer over each ridge, not their rock's fill.** With bands in all three ridges, animating the fill repainted them every frame and a throttled phone went from 0 to 13 long frames per scroll. Each ridge is now painted once in its sunset colours with the night as a second drawing of its outline fading in: a scroll frame repaints nothing in the land, and the phone is back to 1 or 2.
+- **The haze is stepped, not dithered.** A dither pattern was another thing to rasterise every frame while the fill still animated; two flat steps of gold read the same at the ridge's scale.
+- **The moon rises above the J, not out of it.** Rising from behind the letter, it showed half risen as a lump on the J's top bar, and a three-column crescent with a crater read as an exclamation mark; it now comes up the last step into its place, and the phases have a bowed terminator, the lit share only, as the game draws them.
+- **On a phone two figures stand on the ridge and the rest are a count.** The plateau there stands in front of the name's feet, and a third figure covered the O's window.
+- **The clouds are two layers the size of their band**, not three the size of the screen: the sky is behind the whole page and every layer in it is composited on every frame.
+- **The lights' address is a hash of their own bytes**, not the still's: lights taken again with other settings would otherwise have been answered from a year-long cache.
+
+### Measured
+
+Production builds of `main` (`4848bf7`) and of this branch, served side by side in the same session, staged data.
+
+**Bundle** (First Load JS, as Next reports it): `/` 138 → 140 kB, `/crew` 131 → 132 kB, `/crew/[username]` 152 → 154 kB; shared runtime 103 kB in both. CSS gzipped: the page sheet 14.0 → 15.1 kB, the board's 2.8 → 3.3 kB. New images: three lights layers, 2.1 to 2.6 kB each; the recoloured still 258 → 245 kB; the riders' skins only while someone is in.
+
+**Lighthouse 12, mobile preset**, three runs each on `/`:
+
+| | Perf | A11y | BP | SEO | FCP | LCP | TBT | CLS |
+|---|---|---|---|---|---|---|---|---|
+| `main` | 90 / 97 / 97 | 100 | 96 / 100 / 100 | 100 | 1.1 s | 2.6 / 2.6 / 2.5 s | 300 / 40 / 30 ms | 0 |
+| this branch | 92 / 95 / 97 | 100 | 96 / 100 / 100 | 100 | 1.1 s | 2.6 / 2.6 / 2.5 s | 250 / 150 / 80 ms | 0 |
+
+`/crew`: 97 / 100 / 96 / 100 on both, LCP 2.6 s, CLS 0.008 on `main` and 0.006 here. The LCP element is still the name, which paints with its cut at first paint. Best Practices loses points only to the head images the sandbox blocks, on both.
+
+**Scroll probe** (`scripts/perf.mjs`, dpr 2):
+
+| | `main` | this branch |
+|---|---|---|
+| Phone 390 × 844, 4× CPU | mean 16.7–16.8 ms, p95 18.8–19.5 ms, 0–5 long of ~870 | mean 16.7–16.8 ms, p95 18.8–19.6 ms, 1–7 long of ~940 |
+| Desktop 1440 × 900 | mean 23.5–23.8 ms, p95 32–36 ms, 22–27 long of ~410 | mean 26.7–27.0 ms, p95 36–39 ms, 49–66 long of ~440 |
+
+The phone, the figure this repo has always held to, is level. The desktop gap is the sandbox's software compositor at double density: every layer in the sky and the land is blended on the CPU there, 5 megapixels at a time. Switching features off one by one showed no single one left that is worth trading for it, and a desktop GPU composites a few more layers for nothing.
+
+**Responsive and console.** `/`, `/crew`, a wall, `/kvold`, `/stadur/2` and the 404 at 360, 390, 768, 1024, 1440 and 1920: `scrollWidth` equals the viewport everywhere. A React hydration error (#418) appeared once in a sequence of page loads at 360; it appears in the same sequence on `main` too, so it is older than this pass and is noted below.
+
+### Worth doing later
+
+1. **Take a new still with the map sync** (Þjónn → Afrita kortið núna, or `npm run map:poster` against a local copy). It will come out of `jod.js` with the page's night for its sky, and its lights will be taken off it; the still committed here was recoloured by hand to match.
+2. **Find the intermittent hydration mismatch (React #418)** that shows on some loads at 360 px on `main` and here alike; something rendered on the server with the time in it, probably.
+3. **Measure the riders with real skins.** minotar's body render was staged here; check the figures' scale with the real ones, and whether the armour layer reads at 12 units wide.
+

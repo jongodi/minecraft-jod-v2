@@ -151,7 +151,7 @@
 /* The band of sky they hang in, a third of the screen deep: each set of
    clouds is a layer of its own the size of the band, not of the screen, since
    the sky is behind the whole page and is composited on every scroll frame. */
-.b-sky__clouds { position: absolute; inset-inline: 0; top: 33%; height: 36%; --cpx: 6px; }
+.b-sky__clouds { position: absolute; inset-inline: 0; top: 33%; height: 36%; --cpx: 6px; overflow: clip; }   /* a cloud drifting past the edge of the screen goes out of the sky, not off the page */
 .b-clouds {
   position: absolute;
   inset: 0;
