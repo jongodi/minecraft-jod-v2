@@ -578,3 +578,10 @@ Two changes asked for once the pass was live:
 - **The 3D map's frame is as it was before the pass.** The ridge over its top, the block break and the delayed, fading still are gone; the frame has its top plank and the desktop tools their old buttons back. Two things stay: the still keeps the size it is drawn at on a phone (the blur fix from pass 0), and it is drawn from the browser's first render rather than the page's markup, so it does not share the hero's first seconds; it is requested about 0.2 s into the load and is in place long before the frame is scrolled to, with no fade.
 
 Measured after: Lighthouse mobile on `/` 98 / 99 / 96 (LCP 2.1 / 2.1 / 2.6 s, CLS 0), Accessibility, Best Practices and SEO 100; every hero line 4.8:1 or better at 360, 390 and 768 with a night planned; no horizontal scroll at 360 to 1920.
+
+A last sweep before pushing found four small things, all fixed:
+
+- **The bar's server lantern waits for the bar to take its surface.** Over the sunset at the top of the home page it said what the hero's own lantern says a few lines lower, in a smaller voice; it now shows once the page has scrolled and the bar is solid, and on every other page from the start.
+- **A phone on its side gets a shorter hotbar.** At 740 × 360 the three slots took a fifth of the height; the label now sits beside the lantern and the bar is 3.25rem, so the hero's sentence keeps two lines above it.
+- **The 404's crew link says "Eftirlýst"**, the name of the room it opens, not the old "Hópurinn".
+- The large wax seal style, which nothing used any more, is gone from the stylesheet.
