@@ -2,10 +2,12 @@
 // Usage: node scripts/shots.mjs <outDir> [path ...]
 // Example: node scripts/shots.mjs shots / /crew /crew/stebbias
 // Env: BASE (default http://localhost:3000), CHROME (executable), REDUCE=1 (reduced motion),
-//      SECTIONS=1 (one shot per section), WIDTHS=360,768 (viewport widths; default 1440,390)
+//      SECTIONS=1 (one shot per section), WIDTHS=360,768 (viewport widths; default 1440,390),
+//      STAGE=1 (the server on, three in, a week of stats and drawn heads: scripts/stage.mjs)
 import { chromium } from 'playwright-core';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { restatus, stage } from './stage.mjs';
 
 const BASE = process.env.BASE ?? 'http://localhost:3000';
 const [outDir = 'shots', ...paths] = process.argv.slice(2);
@@ -30,9 +32,11 @@ for (const [w, h] of SIZES) {
   page.on('console', m => { if (m.type() === 'error' || m.type() === 'warning') errors.push(`${m.type()}: ${m.text()}`); });
   page.on('pageerror', e => errors.push(`pageerror: ${e.message}`));
   if (process.env.REDUCE === '1') await page.emulateMedia({ reducedMotion: 'reduce' });
+  if (process.env.STAGE === '1') await stage(page);
   for (const p of pages) {
     await page.goto(BASE + p, { waitUntil: 'load' });
     await page.waitForTimeout(2000);
+    if (process.env.STAGE === '1') await restatus(page);
     const base = (p === '/' ? 'home' : p.replace(/^\//, '').replace(/\//g, '_')) + `-${w}`;
     await page.screenshot({ path: join(outDir, `${base}.png`), fullPage: true });
     if (process.env.SECTIONS === '1' && p === '/') {

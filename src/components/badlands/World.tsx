@@ -354,7 +354,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
     <section id="heimur" className="b-world" aria-labelledby="heimur-title">
       <div ref={frameRef} className={`b-frame${live ? ' is-live' : ''}${ready ? ' is-ready' : ''}${drawn ? ' is-drawn' : ''}${shut ? ' is-room' : ''}${full === 'overlay' ? ' is-full' : ''}${live && still ? ' is-still' : ''}${menu && ready ? ' is-menu' : ''}`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img {...photoProps(MAP_POSTER, PHOTO_SIZES.poster)} className="b-frame__poster" alt="Heimasvæðið á JOÐ séð úr lofti" width={1920} height={1080} decoding="async" fetchPriority="low" />
+        <img {...photoProps(MAP_POSTER, PHOTO_SIZES.poster)} className="b-frame__poster" alt="Heimasvæðið á JOÐ séð úr lofti" width={1920} height={1080} loading="lazy" decoding="async" fetchPriority="low" />
         <div className="b-frame__shade" aria-hidden="true" />
 
         {/* The viewer lays itself out for the frame (jod-embed in public/bluemap-jod/jod.css)

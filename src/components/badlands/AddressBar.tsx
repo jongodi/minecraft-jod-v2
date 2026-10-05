@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Lantern, Mark, Strata } from './Bits';
+import { CopyIcon, Lantern, Mark, Strata } from './Bits';
 import PlayerHead from './PlayerHead';
 import ToastHost from './Toast';
 import { SERVER_IP, type NavLink } from './data';
@@ -73,10 +73,15 @@ export default function AddressBar({ links, activeId, onDoor, always = false }: 
               </Link>
             )}
             {/* named by what it shows: the address and the verb, with the verb's object spelled out for a screen reader; the toast says it was done */}
+            {/* the button is a full tap tall; the paper tag drawn on it is the
+                plank's own height, and a notched tag would clip a taller hit area */}
             <button type="button" className="b-bar__addr" onClick={copy}>
-              <span className="b-visually-hidden">Afrita vistfang þjónsins: </span>
-              <span>{SERVER_IP}</span>
-              <b>afrita</b>
+              <span className="b-bar__tag">
+                <CopyIcon />
+                <span className="b-visually-hidden">Afrita vistfang þjónsins: </span>
+                <span className="b-bar__ip">{SERVER_IP}</span>
+                <b>afrita</b>
+              </span>
             </button>
           </div>
         </div>
