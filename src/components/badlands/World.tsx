@@ -182,6 +182,21 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
   useEffect(() => { setPosterOn(true); }, []);
   /* the town's lights coming on over the still: not on a device that skips the effects */
   const effects = useEffectsAllowed();
+  /* They come on when the world is most of the way into view, and go out
+     again when the visitor climbs back up to the sunset, where it is not yet
+     night: a state, like the name's windows, so it is a short transition
+     (badlands.css) rather than an animation held for the whole scroll. */
+  const [lit, setLit] = useState(false);
+  useEffect(() => {
+    const el = frameRef.current;
+    if (!el || !effects || !('IntersectionObserver' in window)) { setLit(true); return; }
+    const io = new IntersectionObserver(([e]) => {
+      if (e.intersectionRatio >= 0.55) setLit(true);
+      else if (e.intersectionRatio < 0.15 && e.boundingClientRect.top > 0) setLit(false);
+    }, { threshold: [0, 0.15, 0.55] });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [effects]);
 
   /* The rooms' code is fetched once the browser is truly idle, so a door
      opens at once later and the first seconds, when a slow phone is still
@@ -383,12 +398,12 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
         {posterOn && <img {...photoProps(MAP_POSTER, PHOTO_SIZES.poster)} className="b-frame__poster" alt="Heimasvæðið á JOÐ séð úr lofti" width={1920} height={1080} decoding="async" fetchPriority="low" />}
         {/* The town's lights come on as the world comes into view: the still
             arrives in the dusk, and its lanterns light one group after
-            another (badlands.css, on a view timeline). The light is taken off
+            another (badlands.css). The light is taken off
             the still itself (scripts/map-lights.mjs), a pool round every lamp
             it shows; the live map has its own. Under the frame's shade, so
             the dark at its edges falls on the lamplight too. */}
         {posterOn && effects && MAP_LIGHTS.length > 0 && (
-          <div className="b-frame__town" aria-hidden="true">
+          <div className={`b-frame__town${lit ? ' is-lit' : ''}`} aria-hidden="true">
             <div className="b-frame__dusk" />
             {MAP_LIGHTS.map((src, i) => (
               // eslint-disable-next-line @next/next/no-img-element -- a few kB of soft light, drawn at a quarter of the still's size

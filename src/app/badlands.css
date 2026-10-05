@@ -942,29 +942,25 @@
 .b-frame.is-ready .b-frame__poster { opacity: 0; }
 .b-frame.is-ready .b-frame__shade { background: linear-gradient(180deg, var(--veil) 0%, transparent 18%, transparent 100%); }
 .b-frame__sheet { position: absolute; inset: 0; z-index: 2; background: var(--map-water); }
-/* The town's lights coming on as the world scrolls into view (World.tsx,
-   scripts/map-lights.mjs): the still arrives in the dusk, a layer of night
-   over it that lifts as the frame comes up, and three layers of lamplight
-   taken off the still come on one after another over it, so the lanterns
-   in the streets light by groups. Each is one opacity on a view timeline.
-   Where there are no view timelines, under reduced motion, and once the live
-   map is up, the town is simply lit. */
+/* The town's lights coming on (World.tsx, scripts/map-lights.mjs): the still
+   arrives in the dusk, a layer of night over it, and when the world is most
+   of the way into view the night lifts and three layers of lamplight taken
+   off the still come on one after another, so the lanterns in the streets
+   light by groups; climbing back up to the sunset puts them out. A state,
+   like the name's windows: a short transition, so the layers are the
+   compositor's only while they change (held as a scroll animation, they were
+   composited on every frame of the scroll). Under reduced motion they change
+   in place; on a device that skips the effects, and once the live map is up,
+   there is no dusk and no layer of lights at all. */
 .b-frame__town { position: absolute; inset: 0; pointer-events: none; }
-.b-frame__dusk { position: absolute; inset: 0; background: var(--night); opacity: 0; }
-.b-frame__lights { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 45%; }
+.b-frame__dusk { position: absolute; inset: 0; background: var(--night); opacity: 0.5; transition: opacity 1200ms var(--ease-out); }
+.b-frame__lights { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 45%; opacity: 0; transition: opacity 500ms var(--ease-out); }
+.b-frame__town.is-lit .b-frame__dusk { opacity: 0; }
+.b-frame__town.is-lit .b-frame__lights { opacity: 1; }
+.b-frame__town.is-lit .b-frame__lights--2 { transition-delay: 300ms; }
+.b-frame__town.is-lit .b-frame__lights--3 { transition-delay: 600ms; }
 .b-frame.is-ready .b-frame__town, .b-frame.is-drawn .b-frame__town { visibility: hidden; }
-@keyframes b-dusk-lift { from { opacity: 0.5; } to { opacity: 0; } }
-@keyframes b-lights-on { from { opacity: 0; } to { opacity: 1; } }
-@supports (animation-timeline: view()) {
-  @media (prefers-reduced-motion: no-preference) {
-    .b-frame__dusk, .b-frame__lights { animation: linear both; animation-timeline: view(); }
-    .b-frame__dusk { animation-name: b-dusk-lift; animation-range: entry 25% entry 90%; }
-    .b-frame__lights { animation-name: b-lights-on; }
-    .b-frame__lights--1 { animation-range: entry 40% entry 55%; }
-    .b-frame__lights--2 { animation-range: entry 55% entry 70%; }
-    .b-frame__lights--3 { animation-range: entry 70% entry 85%; }
-  }
-}
+@media (prefers-reduced-motion: reduce) { .b-frame__dusk, .b-frame__lights { transition: none; } }
 .b-frame.is-drawn .b-frame__poster, .b-frame.is-drawn .b-frame__shade, .b-frame.is-drawn .b-frame__view { visibility: hidden; }
 /* While the viewer loads, the still takes on the live map's light (the layer
    over it lifts, above), so the hand-over, once the first tiles are drawn, is
