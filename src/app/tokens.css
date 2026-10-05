@@ -137,7 +137,9 @@
   --gutter: clamp(1rem, 0.5rem + 3vw, 3rem);
   --wrap:   1160px;
   --bar:    3.5rem;     /* the bar at the top */
-  --doorbar: 3.75rem;   /* the door bar at the foot of a phone */
+  --doorbar: 4.5rem;    /* the hotbar at the foot of a phone, with its strip */
+  --slot:    3.5rem;    /* one of its slots */
+  --offhand: 4.25rem;   /* the offhand slot, set apart beside them */
   --tap:    2.75rem;    /* minimum tap target */
 
   /* ── shape ── */

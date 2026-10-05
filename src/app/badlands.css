@@ -123,7 +123,7 @@
 /* ─── page frame ──────────────────────────────────────────────── */
 .b { position: relative; isolation: isolate; color: var(--text); }
 /* room for the door bar at the foot of a phone */
-@media (max-width: 899px) { .b { padding-bottom: calc(var(--doorbar) + env(safe-area-inset-bottom, 0px)); } }
+@media (max-width: 759px) { .b { padding-bottom: calc(var(--doorbar) + env(safe-area-inset-bottom, 0px)); } }
 .b-wrap { position: relative; z-index: 1; width: 100%; max-width: var(--wrap); margin-inline: auto; padding-inline: var(--gutter); }
 .b-title { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-2xl); line-height: var(--lh-tight); color: var(--paper); letter-spacing: -0.02em; }
 .b-title--small { font-size: var(--fs-xl); }
@@ -422,9 +422,11 @@
 .b-bar__me:focus-visible img { box-shadow: 0 0 0 var(--px) var(--paper); }
 @media (hover: hover) { .b-bar__me:hover img { box-shadow: 0 0 0 var(--px) var(--paper); } }
 
-/* three lanterns in the bar; one is lit, the door the visitor is behind */
-.b-doors { display: none; gap: var(--sp-6); }
-@media (min-width: 900px) { .b-doors { display: flex; } }
+/* three lanterns in the bar; one is lit, the door the visitor is behind.
+   From 760 px the bar has room for them; below, they are the hotbar's. */
+.b-doors { display: none; gap: var(--sp-5); }
+@media (min-width: 760px) { .b-doors { display: flex; } }
+@media (min-width: 1100px) { .b-doors { gap: var(--sp-6); } }
 .b-door {
   display: inline-flex;
   align-items: center;
@@ -444,39 +446,86 @@
 @media (hover: hover) { .b-door:hover { color: var(--lantern); } }
 .b-door.is-here { color: var(--lantern); border-bottom-color: var(--lantern); }
 
-/* the same three lanterns at the foot of a phone, in reach of a thumb */
-.b-doorbar {
+/* The server's lantern in the bar, on every page: the lantern and a word or a
+   count beside it, in the chat colours the hero's lantern uses. One width in
+   every state, so nothing beside it moves when the answer comes. */
+.b-bar__status { display: inline-flex; align-items: center; gap: var(--sp-2); min-height: var(--tap); padding-inline: var(--sp-1); color: var(--tc-white); text-decoration: none; text-shadow: 0 var(--px) 0 var(--night); }
+.b-bar__status .b-lantern { width: 1.1rem; height: 1.65rem; }
+.b-bar__state { min-width: 4.25rem; font-weight: 600; font-size: var(--fs-sm); white-space: nowrap; }
+.b-bar__status.is-on .b-bar__state { color: var(--online); }
+.b-bar__status.is-kindling .b-bar__state { color: var(--lantern); }
+.b-bar__status.is-off .b-bar__state { color: var(--tc-white); }
+@media (hover: hover) { .b-bar__status:hover .b-bar__state { text-decoration: underline var(--px); text-underline-offset: 0.35em; } }
+.b-bar__status:focus-visible .b-bar__state { text-decoration: underline var(--px); text-underline-offset: 0.35em; }
+/* The address: on a phone it is the offhand slot's, below; between 760 and
+   1100 px the doors take the room its letters need, so the tag is the glyph
+   and the verb (the address is still its name, and the toast shows it). */
+@media (max-width: 759px) { .b-bar__addr { display: none; } }
+@media (min-width: 760px) and (max-width: 1099px) {
+  .b-bar__ip { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+}
+@media (min-width: 760px) and (max-width: 899px) { .b-bar__mark span { display: none; } }
+
+/* ─── the hotbar: the doors at the foot of a phone ───────────────
+   The game's own inventory bar: three slots, sunk into a strip, the one in
+   hand framed in a light square one pixel larger than the slot, as the game
+   frames it. Set apart on the right, the offhand slot, which holds the
+   address. Solid: it is the floor of the screen, and the world's title under
+   it is not meant to show through. */
+.b-hotbar {
   position: fixed;
   inset-inline: 0;
   bottom: 0;
   z-index: var(--z-bar);
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  /* solid: it is the floor of the screen, and the world's title under it is not meant to show through */
+  grid-template-columns: minmax(0, 1fr) var(--offhand);
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-2) calc(var(--sp-2) + env(safe-area-inset-bottom, 0px));
   background: var(--night);
   box-shadow: 0 calc(var(--line) * -1) 0 rgba(209, 178, 161, 0.14);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
-@media (min-width: 900px) { .b-doorbar { display: none; } }
-.b-doorbar__item {
+@media (min-width: 760px) { .b-hotbar { display: none; } }
+.b-hotbar__slots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.b-slot {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: var(--sp-1);
-  min-height: var(--doorbar);
-  padding: var(--sp-2) var(--sp-1);
-  color: var(--text-faint);
-  font-family: var(--font-data);
-  font-size: var(--fs-data);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  min-height: var(--slot);
+  padding: var(--sp-1);
+  color: var(--tc-white);
   text-decoration: none;
+  /* sunk into the strip: shadow on the top and left, light on the bottom and right */
+  background: var(--dusk-2);
+  box-shadow: var(--bevel-in), 0 0 0 var(--px) var(--wood-dark);
 }
-.b-doorbar__item .b-lantern { width: 1.1rem; height: 1.65rem; }
-/* the narrowest phones: a long door name keeps its size and loses its air */
-@media (max-width: 359px) { .b-doorbar__item { letter-spacing: 0; } }
-/* the lit door carries a rule along its top edge, the phone's version of the bar's underline */
-.b-doorbar__item.is-here { color: var(--lantern); box-shadow: inset 0 var(--px) 0 var(--lantern); }
+.b-hotbar__slots .b-slot + .b-slot { margin-left: var(--px); }
+.b-slot .b-lantern { width: 1.1rem; height: 1.65rem; }
+.b-slot svg { flex-shrink: 0; }
+.b-slot--off > svg { width: 1.5rem; height: 1.5rem; color: var(--lantern); }
+/* the label: the kicker's face (Pixelify 600, capitals), since the bitmap
+   face at its 16 px grid needs 104 px for HEIMURINN and a slot on a 360 px
+   phone has 90 */
+.b-slot__label { font-weight: 600; font-size: var(--fs-sm); line-height: 1.2; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; }
+/* the slot in hand: a light frame over the slot's edge, notched, a pixel of
+   night round it so it reads on the strip, and the lantern lit inside */
+.b-slot.is-here { z-index: 1; color: var(--lantern); }
+.b-slot.is-here::after {
+  content: '';
+  position: absolute;
+  inset: calc(var(--px) * -2);
+  border: var(--px) solid var(--paper);
+  box-shadow: 0 0 0 var(--px) var(--night), inset 0 0 0 var(--px) var(--night);
+  clip-path: var(--notch);
+  pointer-events: none;
+}
+@media (hover: hover) { .b-slot:hover { color: var(--paper); } }
+.b-slot:focus-visible { outline: var(--px) solid var(--lantern); outline-offset: calc(var(--px) * -4); }
+.b-slot--off { color: var(--paper); }
+.b-slot--off:active { background: var(--lantern-deep); color: var(--night); }
+.b-slot--off:active > svg { color: var(--night); }
 
 /* ─── arrival: sunset over the mesa ───────────────────────────── */
 .b-hero {
@@ -494,10 +543,10 @@
 }
 @media (min-width: 900px) { .b-hero { --mark-sink: 0.3; } }
 .b-hero > .b-wrap { z-index: auto; }
-/* On a phone the door bar is fixed over the foot of the screen: the sunset
+/* On a phone the hotbar is fixed over the foot of the screen: the sunset
    ends where it begins, so the mesas stand on the bar instead of one plateau
    peeking out over it like a stray grey rule. */
-@media (max-width: 899px) { .b-hero { min-height: calc(100svh - var(--doorbar) - env(safe-area-inset-bottom, 0px)); } }
+@media (max-width: 759px) { .b-hero { min-height: calc(100svh - var(--doorbar) - env(safe-area-inset-bottom, 0px)); } }
 .b-hero__stage { display: grid; grid-template-rows: auto minmax(var(--sp-7), 1fr) auto; }
 .b-hero__sun { display: none; }
 /* The phone's sun sets too: pulled down a quarter faster than the page lifts
@@ -933,6 +982,8 @@ html.is-map-full { overflow: hidden; }
 @media (max-width: 899px) {
   /* the whole screen between the two bars: the world is the phone's window */
   .b-frame { height: calc(100svh - var(--bar) - var(--doorbar) - env(safe-area-inset-bottom, 0px)); min-height: 30rem; }
+  /* a tablet's doors are in the bar, so its frame runs to the foot of the screen */
+  @media (min-width: 760px) { .b-frame { height: calc(100svh - var(--bar)); } }
   .b-hud { padding: var(--sp-3) var(--gutter); }
   /* the lantern in the middle already opens the viewer full screen on a phone */
   .b-hud__tools a { display: none; }
@@ -1232,7 +1283,6 @@ html.is-map-full { overflow: hidden; }
 
 .b-btn,
 .b-door,
-.b-doorbar__item,
 .b-bar__addr,
 .b-copy__btn,
 .b-status__word,
@@ -1259,7 +1309,6 @@ html.is-map-full { overflow: hidden; }
 /* capitals in the bitmap face take a little air; nothing else is tracked */
 .b-btn,
 .b-door,
-.b-doorbar__item,
 .b-boot__word {
   letter-spacing: 0.04em;
 }

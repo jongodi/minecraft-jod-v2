@@ -37,8 +37,12 @@ export const ROOMS = ['hopur', 'hillan'] as const;
 export type RoomId = typeof ROOMS[number];
 export const isRoom = (s: string | null | undefined): s is RoomId => s === 'hopur' || s === 'hillan';
 
-/* The same doors from another page: they lead back to the home page's sections. */
-export const PAGE_LINKS = SECTIONS.map(l => ({ label: l.label, href: `/${l.href}`, id: l.id }));
+/* The same doors from another page. The world and the shelf lead back to the
+   home page's own; the crew's door leads to the crew's own page, the roll
+   call, which the walls belong to. A door lit on the roll call or a wall
+   that took the visitor back to the home page's room was lit for one place
+   and led to another. */
+export const PAGE_LINKS = SECTIONS.map(l => ({ label: l.label, href: l.id === 'hopur' ? '/crew' : `/${l.href}`, id: l.id }));
 
 /* The view the 3D map opens on, in BlueMap's own link format:
    map:x:y:z:distance:rotation:angle:tilt:ortho:mode. To change it, open the map

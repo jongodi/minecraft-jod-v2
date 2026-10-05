@@ -21,7 +21,7 @@ export const PHOTO_SIZES = {
      overflows the width: on a phone held upright about 1.8 times the screen.
      Asking for the screen's width there fetched a picture a third of the
      size it is drawn at. */
-  poster:   '(max-aspect-ratio: 16/9) calc((100vh - 7.25rem) * 16 / 9), 100vw',
+  poster:   '(max-aspect-ratio: 16/9) calc((100vh - 8rem) * 16 / 9), 100vw',
   /* the postcard of a chosen place: 22rem on desktop, the frame's width on phones */
   card:     '(min-width: 900px) 352px, calc(100vw - 2rem)',
   /* a place's thumbnail on the rail: 3.5rem */

@@ -217,18 +217,23 @@
 .b-counter__desc { margin-top: var(--sp-1); font-size: var(--fs-sm); line-height: 1.45; color: var(--ink-soft); }
 
 /* ─── campfire: the footer ────────────────────────────────────── */
-/* One band of ground, no taller than it needs to be. The sections of the
-   evening are already on the rail, in the bar and in the drawer, so the footer
-   posts only what is not part of the evening and gives the room to the fire. */
+/* One band of ground, no taller than it needs to be. The doors are in the bar
+   and the hotbar, so the footer carries only the way back up, the wind and
+   fire, and the small print, and gives the room to the fire, which stands on
+   the ground strip. On a phone the way up and the sound share one row, so
+   the fire is reached a row sooner. */
 .b-foot { position: relative; --ground: calc(var(--px) * 14); padding-top: var(--sp-6); overflow: clip; }
 .b-foot__inner {
   position: relative;
   z-index: 2;   /* the fire stands on the ground strip and its light falls across it */
   display: grid;
-  grid-template-areas: 'nav' 'up' 'credit' 'camp';
+  grid-template-columns: auto auto;
+  grid-template-areas: 'up nav' 'credit credit' 'camp camp';
+  justify-content: center;
   justify-items: center;
+  align-items: center;
   text-align: center;
-  gap: var(--sp-4);
+  gap: var(--sp-4) var(--sp-3);
   /* the floor: how high the text stands above the ground, so it clears the
      ridge behind it and the fire has a horizon to burn in front of */
   --floor: 3.25rem;
@@ -236,15 +241,13 @@
 }
 @media (min-width: 720px) {
   .b-foot__inner {
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    grid-template-areas:
-      'camp nav    up'
-      'camp credit up';
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    grid-template-areas: 'camp credit nav up';
+    justify-content: stretch;
     align-items: end;
     justify-items: start;
     text-align: left;
     column-gap: var(--sp-6);
-    row-gap: var(--sp-2);
   }
 }
 
@@ -282,21 +285,16 @@
 }
 .b-ridge svg { width: 100%; height: 100%; display: block; shape-rendering: crispEdges; }
 
-/* the rooms off the evening, and the wind-and-fire toggle */
-.b-foot__nav { grid-area: nav; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--sp-1) var(--sp-5); }
+/* the wind-and-fire toggle */
+.b-foot__nav { grid-area: nav; display: flex; align-items: center; }
 .b-foot__sound { display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2); width: var(--tap); height: var(--tap); color: var(--lantern); }
 .b-foot__sound svg { width: 1.25rem; height: 1.25rem; shape-rendering: crispEdges; }
 @media (hover: hover) { .b-foot__sound:hover { background: rgba(242, 166, 59, 0.12); } }
 .b-foot__sound.is-on { background: var(--lantern); color: var(--night); }
-@media (min-width: 720px) { .b-foot__nav { justify-content: flex-start; } }
-.b-foot__link { display: inline-flex; align-items: center; min-height: var(--tap); padding-inline: var(--sp-1); color: var(--lantern); font-family: var(--font-data); font-size: var(--fs-data); letter-spacing: 0.04em; text-transform: uppercase; text-decoration: none; border-bottom: var(--px) solid transparent; }
-.b-foot__link:focus-visible { border-bottom-color: var(--lantern); color: var(--paper); }
-@media (hover: hover) { .b-foot__link:hover { border-bottom-color: var(--lantern); color: var(--paper); } }
-.b-foot__link[aria-current] { color: var(--paper); border-bottom-color: var(--lantern); }
 
 /* the way back up the evening */
 .b-foot__up { grid-area: up; gap: var(--sp-2); }
-@media (min-width: 720px) { .b-foot__up { align-self: center; justify-self: end; } }
+@media (min-width: 720px) { .b-foot__up { justify-self: end; } }
 .b-foot__upchev { width: 0.875rem; height: 0.875rem; flex-shrink: 0; transition: transform var(--dur-2) var(--ease-out); }
 .b-foot__up:focus-visible .b-foot__upchev { transform: translateY(calc(var(--px) * -1)); }
 @media (hover: hover) { .b-foot__up:hover .b-foot__upchev { transform: translateY(calc(var(--px) * -1)); } }
@@ -304,6 +302,10 @@
 .b-foot__credit { grid-area: credit; }
 .b-foot__credit p { font-size: var(--fs-sm); color: var(--text-soft); line-height: 1.5; }
 .b-foot__credit .b-foot__small { font-size: var(--fs-sm); color: var(--text-faint); }
+/* the owner's way in: in the small print, lit and underlined, since its colour alone is too close to the words round it */
+.b-foot__admin { color: var(--lantern); text-decoration: underline var(--px); text-underline-offset: 0.3em; white-space: nowrap; }
+@media (hover: hover) { .b-foot__admin:hover { color: var(--paper); } }
+.b-foot__admin:focus-visible { color: var(--paper); }
 
 .b-ground {
   position: relative;
@@ -386,12 +388,11 @@
 
 /* ═══════════════════════════════════════════════════════════════
    Label type on the board: the same line badlands.css draws. The bitmap
-   face is on the tabs, the footer's links, the way back, and every number
+   face is on the tabs, the way back, and every number
    the posters carry, each at its own rule above; everything written on
    paper is in the text face, and nothing here is set under 14 px.
    ═══════════════════════════════════════════════════════════════ */
 .b-tab,
-.b-foot__link,
 .b-back,
 .b-poster__val,
 .b-poster__num,
