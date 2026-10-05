@@ -39,7 +39,7 @@
 @keyframes b-glow-out  { 0%, 40% { opacity: 1; } 100% { opacity: 0; } }
 @keyframes b-haze-out  { 0%, 30% { opacity: 1; } 85%, 100% { opacity: 0; } }
 /* the clouds drift a sixth of a screen east over the evening, in steps of one cell of their own drawing */
-@keyframes b-clouds-drift { to { transform: translateX(120px); } }
+@keyframes b-clouds-drift { from { transform: translateX(0); } to { transform: translateX(120px); } }
 @keyframes b-clouds-day   { 0%, 30% { opacity: 1; } 70%, 100% { opacity: 0; } }
 @keyframes b-clouds-night { 0%, 35% { opacity: 0; } 85%, 100% { opacity: 1; } }
 @supports (animation-timeline: scroll()) {
@@ -59,7 +59,7 @@
   .b-mesa__layer--far  .b-mesa__shade { animation-name: b-shade-far; }
   .b-mesa__layer--mid  .b-mesa__shade { animation-name: b-shade-mid; }
   .b-mesa__layer--near .b-mesa__shade { animation-name: b-shade-near; }
-  .b-hero__glow, .b-sky__clouds, .b-clouds, .b-mesa__haze {
+  .b-hero__glow, .b-clouds, .b-mesa__haze {
     animation-timing-function: linear;
     animation-fill-mode: both;
     animation-timeline: scroll(root);
@@ -67,15 +67,16 @@
   }
   .b-hero__glow    { animation-name: b-glow-out; }
   .b-mesa__haze    { animation-name: b-haze-out; }
-  .b-sky__clouds   { animation-name: b-clouds-drift; animation-timing-function: steps(20, jump-end); }
-  .b-clouds--day   { animation-name: b-clouds-day; }
-  .b-clouds--night { animation-name: b-clouds-night; }
+  /* each set drifts and fades on its own: two layers, not a third round them */
+  .b-clouds        { animation-timing-function: steps(20, jump-end), linear; }
+  .b-clouds--day   { animation-name: b-clouds-drift, b-clouds-day; }
+  .b-clouds--night { animation-name: b-clouds-drift, b-clouds-night; }
 }
 @media (prefers-reduced-motion: reduce) {
   .b-sky__night, .b-sky__stars, .b-sky__sun, .b-mesa__layer, .b-mesa__shade,
-  .b-hero__glow, .b-sky__clouds, .b-clouds, .b-hero__moon, .b-mesa__haze { animation: none !important; }
+  .b-hero__glow, .b-clouds, .b-hero__moon, .b-mesa__haze { animation: none !important; }
   .b-sky__night, .b-sky__stars, .b-sky__sun, .b-mesa__layer, .b-mesa__shade,
-  .b-hero__glow, .b-sky__clouds, .b-clouds, .b-hero__moon, .b-mesa__haze { --evening: 0.7; }
+  .b-hero__glow, .b-clouds, .b-hero__moon, .b-mesa__haze { --evening: 0.7; }
   .b-sky__sun { display: none; }
 }
 
@@ -147,14 +148,16 @@
    so a scroll frame is two opacities and one transform. Never behind a line
    of words: the places are chosen clear of the sentence, the address and the
    lantern's plate at every width. */
-.b-sky__clouds {
+/* The band of sky they hang in, a third of the screen deep: each set of
+   clouds is a layer of its own the size of the band, not of the screen, since
+   the sky is behind the whole page and is composited on every scroll frame. */
+.b-sky__clouds { position: absolute; inset-inline: 0; top: 33%; height: 36%; --cpx: 6px; }
+.b-clouds {
   position: absolute;
   inset: 0;
-  --cpx: 6px;   /* one cell of a cloud */
-  transform: translateX(round(nearest, calc(var(--evening) * 120px), 6px));
-  will-change: transform;
+  transform: translateX(round(nearest, calc(var(--evening) * 120px), var(--cpx)));
+  will-change: transform, opacity;
 }
-.b-clouds { position: absolute; inset: 0; will-change: opacity; }
 .b-clouds--day   { opacity: clamp(0, calc((0.7 - var(--evening)) * 2.5), 1); }
 .b-clouds--night { opacity: clamp(0, calc((var(--evening) - 0.35) * 2), 1); }
 .b-cloud { position: absolute; width: calc(var(--w) * var(--cpx)); height: calc(var(--h) * var(--cpx)); }
@@ -163,18 +166,19 @@
 /* at night the game greys its clouds with the sky: a shade lighter than the dark round them, never a hole in the stars */
 .b-clouds--night .b-cloud__body  { fill: color-mix(in oklab, var(--tc-white), var(--night) 80%); fill-opacity: 0.9; }
 .b-clouds--night .b-cloud__under { fill: var(--dusk-2); fill-opacity: 0.9; }
-/* a wide screen: four, two in the open sky over the name, two under the sun */
-.b-cloud--1 { left: 3%;  top: 47%; }
-.b-cloud--2 { left: 36%; top: 52%; }
-.b-cloud--3 { left: 64%; top: 37%; }   /* clear of the sun's path as it sets */
-.b-cloud--4 { left: 89%; top: 45%; }
-/* a phone: two, left of the sun in the hero's open row, smaller */
+/* a wide screen: four, two in the open sky over the name, two under the sun
+   (places in the band: 47 %, 52 %, 37 % and 45 % of the screen's height) */
+.b-cloud--1 { left: 3%;  top: 38.9%; }
+.b-cloud--2 { left: 36%; top: 52.8%; }
+.b-cloud--3 { left: 64%; top: 11.1%; }   /* clear of the sun's path as it sets */
+.b-cloud--4 { left: 89%; top: 33.3%; }
+/* a phone: two, left of the sun in the hero's open row, smaller (57 % and 63 % of the screen) */
 @media (max-width: 899px) {
-  .b-sky__clouds { --cpx: 4px; transform: translateX(round(nearest, calc(var(--evening) * 120px), 4px)); }
-  .b-cloud--1 { left: 4%;  top: 57%; }
-  .b-cloud--2 { left: 24%; top: 63%; }
+  .b-sky__clouds { --cpx: 4px; }
+  .b-cloud--1 { left: 4%;  top: 66.7%; }
+  .b-cloud--2 { left: 24%; top: 83.3%; }
   .b-sky .b-cloud--3, .b-sky .b-cloud--4 { display: none; }   /* .b-sky svg would otherwise show them */
-  .b-sky__clouds { animation-timing-function: steps(30, jump-end); }   /* the drift in steps of a phone's smaller cell */
+  .b-clouds { animation-timing-function: steps(30, jump-end), linear; }   /* the drift in steps of a phone's smaller cell */
 }
 /* the white-hot middle of the game's square sun, tinted toward the sunlight round it */
 .b-sky .b-sun__core, .b-hero__sun .b-sun__core { fill: color-mix(in oklab, var(--sun), #FFF8EA 60%); }
@@ -953,7 +957,7 @@
 @keyframes b-lights-on { from { opacity: 0; } to { opacity: 1; } }
 @supports (animation-timeline: view()) {
   @media (prefers-reduced-motion: no-preference) {
-    .b-frame__dusk, .b-frame__lights { animation: linear both; animation-timeline: view(); will-change: opacity; }
+    .b-frame__dusk, .b-frame__lights { animation: linear both; animation-timeline: view(); }
     .b-frame__dusk { animation-name: b-dusk-lift; animation-range: entry 25% entry 90%; }
     .b-frame__lights { animation-name: b-lights-on; }
     .b-frame__lights--1 { animation-range: entry 40% entry 55%; }
