@@ -7,9 +7,10 @@
 import { chromium } from 'playwright-core';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { restatus, stage } from './stage.mjs';
 
 const BASE = process.env.BASE ?? 'http://localhost:3000';
+/* staging draws its heads with sharp, which comes with next only as an optional dependency: load it only when asked for */
+const staged = process.env.STAGE === '1' ? await import('./stage.mjs') : null;
 const [outDir = 'shots', ...paths] = process.argv.slice(2);
 const pages = paths.length ? paths : ['/'];
 const SIZES = (process.env.WIDTHS ?? '1440,390').split(',').map(w => [Number(w), Number(w) < 800 ? 844 : 900]);
@@ -32,11 +33,11 @@ for (const [w, h] of SIZES) {
   page.on('console', m => { if (m.type() === 'error' || m.type() === 'warning') errors.push(`${m.type()}: ${m.text()}`); });
   page.on('pageerror', e => errors.push(`pageerror: ${e.message}`));
   if (process.env.REDUCE === '1') await page.emulateMedia({ reducedMotion: 'reduce' });
-  if (process.env.STAGE === '1') await stage(page);
+  if (staged) await staged.stage(page);
   for (const p of pages) {
     await page.goto(BASE + p, { waitUntil: 'load' });
     await page.waitForTimeout(2000);
-    if (process.env.STAGE === '1') await restatus(page);
+    if (staged) await staged.restatus(page);
     const base = (p === '/' ? 'home' : p.replace(/^\//, '').replace(/\//g, '_')) + `-${w}`;
     await page.screenshot({ path: join(outDir, `${base}.png`), fullPage: true });
     if (process.env.SECTIONS === '1' && p === '/') {

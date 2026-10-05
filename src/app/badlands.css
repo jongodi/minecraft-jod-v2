@@ -125,7 +125,7 @@
 
 /* ─── page frame ──────────────────────────────────────────────── */
 .b { position: relative; isolation: isolate; color: var(--text); }
-/* room for the door bar at the foot of a phone */
+/* room for the hotbar at the foot of a phone */
 @media (max-width: 759px) { .b { padding-bottom: calc(var(--doorbar) + env(safe-area-inset-bottom, 0px)); } }
 .b-wrap { position: relative; z-index: 1; width: 100%; max-width: var(--wrap); margin-inline: auto; padding-inline: var(--gutter); }
 .b-title { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-2xl); line-height: var(--lh-tight); color: var(--paper); letter-spacing: -0.02em; }
@@ -432,8 +432,6 @@
 @media (hover: hover) { .b-bar__addr:hover b { color: var(--paper); } }
 /* on the narrowest phones the mark is the strata J alone, a full tap wide, its icon kept on the gutter's line */
 @media (max-width: 399px) { .b-bar__mark span { display: none; } .b-bar__mark { margin-inline-start: calc((var(--tap) - 1.5rem) / -2); } }
-/* on a phone the tag is the address alone, and a tap still copies it: the verb would not fit beside it at the bitmap face's size */
-@media (max-width: 479px) { .b-bar__addr b { display: none; } }
 .b-bar__end { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; }
 /* the signed-in member's head in the bar: framed in wood, a lantern's glow behind it */
 .b-bar__me { position: relative; display: grid; place-items: center; width: var(--tap); height: var(--tap); flex-shrink: 0; }
@@ -483,11 +481,20 @@
 .b-bar__status.is-off .b-bar__state { color: var(--tc-white); }
 @media (hover: hover) { .b-bar__status:hover .b-bar__state { text-decoration: underline var(--px); text-underline-offset: 0.35em; } }
 .b-bar__status:focus-visible .b-bar__state { text-decoration: underline var(--px); text-underline-offset: 0.35em; }
-/* The address: on a phone it is the hero's own button; between 760 and
-   1100 px the doors take the room its letters need, so the tag is the glyph
-   and the verb (the address is still its name, and the toast shows it). */
-@media (max-width: 759px) { .b-bar__addr { display: none; } }
-@media (min-width: 760px) and (max-width: 1099px) {
+/* The address: on a phone on the home page it is the hero's own button, a
+   thumb's reach below; on every other page the plank keeps it. Under 1100 px
+   the doors or the server's lantern take the room its letters need, so the
+   tag is the glyph and the verb (the address is still its name, and the toast
+   shows it), and it does not give way to a signed-in member's head: from
+   760 px the doors close up instead. */
+@media (max-width: 759px) {
+  .b-bar--home .b-bar__addr { display: none; }
+  /* the server's lantern is then the last thing on the plank */
+  .b-bar--home .b-bar__status::after { left: auto; right: 0; --tip-x: 0%; }
+}
+.b-bar__addr { flex-shrink: 0; }
+@media (min-width: 760px) and (max-width: 899px) { .b-doors { gap: var(--sp-4); } }
+@media (max-width: 1099px) {
   .b-bar__ip { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 }
 @media (min-width: 760px) and (max-width: 899px) { .b-bar__mark span { display: none; } }
@@ -538,14 +545,14 @@
    slot from a 360 px phone up */
 .b-slot__label { font-weight: 600; font-size: var(--fs-sm); line-height: 1.2; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; }
 /* the slot in hand: a light frame over the slot's edge, notched, a pixel of
-   night round it so it reads on the strip, and the lantern lit inside */
+   night inside it so it reads against the slot, and the lantern lit inside */
 .b-slot.is-here { z-index: 1; color: var(--lantern); }
 .b-slot.is-here::after {
   content: '';
   position: absolute;
   inset: calc(var(--px) * -2);
   border: var(--px) solid var(--paper);
-  box-shadow: 0 0 0 var(--px) var(--night), inset 0 0 0 var(--px) var(--night);
+  box-shadow: inset 0 0 0 var(--px) var(--night);
   clip-path: var(--notch);
   pointer-events: none;
 }
@@ -632,6 +639,9 @@
   .b-hero .b-hero__side::before { display: none; }
   .b-hero .b-hero__action .b-status { width: 100%; min-height: 0; padding-block: 0; }
   .b-hero .b-hero__sun { display: none; }
+  /* the middle ridges grow with the width, and from 768 px they would stand
+     over the lower half of the name; the far and near ones frame it alone */
+  .b-hero .b-mesa__layer--mid { display: none; }
 }
 .b-hero__lead { grid-row: 1; position: relative; z-index: 3; }
 .b-hero__mark {
@@ -1058,12 +1068,12 @@ html.is-map-full { overflow: hidden; }
   box-shadow: 0 var(--px) 0 var(--tc-brown);
   opacity: 0;
   pointer-events: none;
-  transform: translate(-50%, var(--px));
+  transform: translate(var(--tip-x, -50%), var(--px));
   transition: opacity var(--dur-1) var(--ease-out), transform var(--dur-1) var(--ease-out);
 }
-.b-tip--below::after { bottom: auto; top: calc(100% + var(--sp-2)); transform: translate(-50%, calc(var(--px) * -1)); }
-.b-tip:focus-visible::after { opacity: 1; transform: translate(-50%, 0); }
-@media (hover: hover) { .b-tip:hover::after { opacity: 1; transform: translate(-50%, 0); } }
+.b-tip--below::after { bottom: auto; top: calc(100% + var(--sp-2)); transform: translate(var(--tip-x, -50%), calc(var(--px) * -1)); }
+.b-tip:focus-visible::after { opacity: 1; transform: translate(var(--tip-x, -50%), 0); }
+@media (hover: hover) { .b-tip:hover::after { opacity: 1; transform: translate(var(--tip-x, -50%), 0); } }
 @media (prefers-reduced-motion: reduce) { .b-tip::after { transition: none; } }
 /* the crew's prints under the postcard, each a tap from its wall */
 .b-card__prints { display: flex; align-items: center; gap: var(--sp-1); margin-top: var(--sp-2); padding-inline: var(--sp-1); }

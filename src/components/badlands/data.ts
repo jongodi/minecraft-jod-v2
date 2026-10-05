@@ -24,7 +24,7 @@ export const bodyFallback = (name: string, size = 256) => `https://mc-heads.net/
 
 export interface NavLink { label: string; href: string; id?: string }
 
-/* The three doors of the evening, each a lantern in the bar (a tab on phones).
+/* The three doors of the evening, each a lantern in the bar (a hotbar slot on phones).
    The first is the world itself; the other two are rooms that open over it.
    A door's id is also the hash that opens it, so /#hopur works from anywhere. */
 export type DoorId = 'heimur' | 'hopur' | 'hillan';

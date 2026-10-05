@@ -60,8 +60,9 @@ function BarLantern({ server, home }: { server: ServerState; home: boolean }) {
     the address with its copy action. On the home page it lies over the sunset
     and takes a surface once the page has scrolled; elsewhere it is solid from
     the start. On phones the doors move to a hotbar at the foot of the screen,
-    in reach of a thumb, and the address is the hero's own button. A door's
-    lantern is lit while the visitor is behind it, and only ever one is. */
+    in reach of a thumb; on the home page the address is then the hero's own
+    button, and on every other page it stays on the plank. A door's lantern is
+    lit while the visitor is behind it, and only ever one is. */
 export default function AddressBar({ links, activeId, onDoor, always = false, status }: Props) {
   const [solid, setSolid] = useState(always);
   const [, copy]          = useCopy(SERVER_IP);
@@ -98,7 +99,7 @@ export default function AddressBar({ links, activeId, onDoor, always = false, st
 
   return (
     <>
-      <header className={`b-bar${solid ? ' is-solid' : ''}`}>
+      <header className={`b-bar${onDoor ? ' b-bar--home' : ''}${solid ? ' is-solid' : ''}`}>
         <div className="b-wrap b-bar__inner">
           <Link href="/" className="b-bar__mark" aria-label="JOÐ, forsíða"><Mark /><span>JOÐ</span></Link>
           <nav className="b-doors" aria-label="Efnisyfirlit">

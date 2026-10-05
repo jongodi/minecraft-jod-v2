@@ -585,3 +585,12 @@ A last sweep before pushing found four small things, all fixed:
 - **A phone on its side gets a shorter hotbar.** At 740 × 360 the three slots took a fifth of the height; the label now sits beside the lantern and the bar is 3.25rem, so the hero's sentence keeps two lines above it.
 - **The 404's crew link says "Eftirlýst"**, the name of the room it opens, not the old "Hópurinn".
 - The large wax seal style, which nothing used any more, is gone from the stylesheet.
+
+A review of the whole diff found six more, all fixed and measured:
+
+- **Phones can copy the address on every page again.** With the offhand slot gone, the hero's button was the only copy action on a phone, and only the home page has a hero. Off the home page the bar's tag is back on phones as the copy glyph and *afrita*, the same tag tablets get; the whole address beside the lantern would have been cut to half its letters at 360 px.
+- **"afrita" stays whole from 760 to 775 px with a member signed in.** The member's head used to squeeze the tag until the notch cut the last letter; the tag no longer gives way, and the doors close up below 900 px.
+- **No blank space under a wall.** From 1024 px the poster spans the rows beside it, and the rows nothing filled each kept a gap: up to 200 px under a busy wall. The rows have no gap now and each thing in the right column keeps its own distance.
+- **The name is whole on a phone on its side from 768 px.** The middle ridges grow with the width and stood over the lower half of JOÐ there; in that layout the far and near ridges frame it alone.
+- **The selected hotbar slot's frame**: a ring of night outside it was clipped by its own notch and never drawn; it is gone, and the comment says what is drawn.
+- Dead rules and stale comments (the back link's styles, a phone rule that could not apply, the toast's lantern), and `npm run shots` loads the staging module (and with it `sharp`) only when `STAGE=1`.

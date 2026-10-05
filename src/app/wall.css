@@ -6,14 +6,18 @@
    short strings, the text face for what a member wrote.
    ═══════════════════════════════════════════════════════════════ */
 
-.w-page { display: grid; gap: clamp(1.5rem, 4vw, 2.5rem); }
+.w-page { --w-gap: clamp(1.5rem, 4vw, 2.5rem); display: grid; gap: var(--w-gap); }
 /* From 1024 px the wall is two columns: the member's poster on the left, the
    same portrait poster the roll call hangs, only larger, so the poster pressed
    is the poster arrived at; and everything they pinned in a column beside it,
-   where a wide poster used to leave two thirds of its paper empty. */
+   where a wide poster used to leave two thirds of its paper empty. The poster
+   spans the rows of however many things stand beside it; the rows it spans
+   and nothing fills would each keep a gap, so the rows have none and each
+   thing in the right column after the first keeps its distance itself. */
 @media (min-width: 1024px) {
-  .w-page { grid-template-columns: minmax(0, 22rem) minmax(0, 1fr); align-items: start; column-gap: clamp(2rem, 4vw, 3.5rem); }
+  .w-page { grid-template-columns: minmax(0, 22rem) minmax(0, 1fr); align-items: start; column-gap: clamp(2rem, 4vw, 3.5rem); row-gap: 0; }
   .w-page > * { grid-column: 2; margin-inline: 0; max-width: none; }
+  .w-page > :not(.w-poster) ~ :not(.w-poster) { margin-top: var(--w-gap); }
   .w-page > .w-poster { grid-column: 1; grid-row: 1 / span 6; }
   .w-page .w-wall { max-width: none; }
 }

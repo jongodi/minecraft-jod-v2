@@ -176,9 +176,6 @@
 .b-nightsky { position: absolute; inset-inline: 0; top: 0; height: clamp(19rem, 14rem + 12vw, 26rem); z-index: 0; overflow: clip; pointer-events: none; background: linear-gradient(180deg, var(--sky-night-top), var(--night) 92%); --ground: 0px; }
 .b-nightsky__stars { position: absolute; inset: 0; width: 100%; height: 100%; color: var(--star); opacity: 0.55; }
 .b-nightsky .b-ridge { height: clamp(3.5rem, 8vw, 6rem); }
-.b-back { display: inline-flex; align-items: center; gap: var(--sp-2); min-height: var(--tap); font-family: var(--font-data); font-size: var(--fs-data); letter-spacing: 0.04em; text-transform: uppercase; color: var(--lantern); text-decoration: none; }
-@media (hover: hover) { .b-back:hover { color: var(--paper); } }
-.b-back svg { width: 1rem; height: 1rem; shape-rendering: crispEdges; }
 /* off the trail (404 and a page that broke): the words stand alone under a dark lantern */
 .b-stray { display: grid; align-content: center; justify-items: start; gap: var(--sp-4); min-height: 70svh; }
 .b-stray .b-lantern.b-stray__lantern { width: 3rem; height: 4.5rem; margin-bottom: var(--sp-2); }
@@ -225,12 +222,11 @@
 
 /* ═══════════════════════════════════════════════════════════════
    Label type on the board: the same line badlands.css draws. The bitmap
-   face is on the tabs, the way back, and every number
+   face is on the tabs and every number
    the posters carry, each at its own rule above; everything written on
    paper is in the text face, and nothing here is set under 14 px.
    ═══════════════════════════════════════════════════════════════ */
 .b-tab,
-.b-back,
 .b-poster__val,
 .b-poster__num,
 .b-poster__rank,
