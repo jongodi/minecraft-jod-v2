@@ -351,3 +351,5 @@ Not done, and why:
 
 After the fixes: no horizontal overflow and no console errors in any of the 27 states at 390 or 360; Lighthouse mobile 98 for the home page (LCP 2.35 s, CLS 0), 97 for the roll call, 91 for a wall (its LCP is the skin image the sandbox blocks), desktop 100.
 
+**The sun sets again.** Two of the changes above had stopped it, as side effects: the restaged hero started the desktop sun on the horizon, where it was behind the ridge after a few lines of scroll, and the phone fix moved the sun into the hero, where it rose with the page and faded. Now on a wide screen it starts high on the right (just above the name's line where the address line fills the width) and sinks behind the far ridge as the page scrolls, and on a phone it is pulled down a quarter faster than the page lifts it, so it sinks behind the name and the ridges. It still never sits under a line of words, measured at seven sizes with a play night planned.
+

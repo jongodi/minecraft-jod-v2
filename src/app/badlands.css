@@ -87,16 +87,21 @@
   will-change: opacity;
 }
 .b-sky__stars { position: absolute; inset: 0; width: 100%; height: 100%; color: var(--star); opacity: calc((var(--evening) - 0.45) * 1.8); will-change: opacity; }
-/* The sun sits on the horizon, its foot behind the far ridge: the last of
-   the light, low and large, not a disc pinned in a corner of the sky. The
-   mesas' height is the hero's (--mesa-h), restated here because the sky is
-   fixed behind the page, not inside the hero; on a phone the horizon is the
-   top of the door bar. */
+/* The sun sets as the page scrolls: it sinks (b-sun-set) while the mesas
+   rise with the page, and goes down behind the far ridge. So it starts high
+   enough for that to be seen. Where the address line leaves the right of the
+   sky open (1180 px and up) it starts high on the right, as the evening
+   always opened; narrower, that line fills the width, so it starts in the
+   open sky just above the name's line, right of the name. Started on the
+   horizon, as it briefly was, it was behind the ridge after a few lines of
+   scroll and never seen to set. The mesas' height (--mesa-h) and the name's
+   sink (0.3 of it on a wide screen, .b-hero) are restated here because the
+   sky is fixed behind the page, not inside the hero. */
 .b-sky { --mesa-h: clamp(9rem, 32svh, 20rem); --sun-size: clamp(4.5rem, 11vw, 10rem); --horizon: 100svh; }
 .b-sky__sun {
   position: absolute;
   right: clamp(6%, 12vw, 18%);
-  top: calc(var(--horizon) - var(--mesa-h) * 0.42 - var(--sun-size) * 0.66);
+  top: calc(var(--horizon) - var(--mesa-h) * 0.3 - var(--fs-hero) * 0.8 - var(--sun-size) - var(--sp-4));
   width: var(--sun-size);
   height: var(--sun-size);
   color: var(--sun);
@@ -104,6 +109,7 @@
   opacity: calc(1.6 - var(--evening) * 1.6);
   will-change: transform, opacity;
 }
+@media (min-width: 1180px) { .b-sky__sun { top: 14svh; } }
 /* On a phone the name spans the screen above the mesas, so there is no room
    for the sun on the horizon. It hangs instead in the hero's own open row,
    between the words and the name (.b-hero__sun below), sized to the room that
@@ -490,7 +496,15 @@
 @media (max-width: 899px) { .b-hero { min-height: calc(100svh - var(--doorbar) - env(safe-area-inset-bottom, 0px)); } }
 .b-hero__stage { display: grid; grid-template-rows: auto minmax(var(--sp-7), 1fr) auto; }
 .b-hero__sun { display: none; }
-@keyframes b-hero-sun-out { to { opacity: 0; } }
+/* The phone's sun sets too: pulled down a quarter faster than the page lifts
+   it, so on the screen it sinks while the land rises past it, and goes down
+   behind the name and the ridges (each painted over it in the hero's stacking
+   order), fading at the last. */
+@keyframes b-hero-sun-set {
+  0%   { transform: translateY(0); opacity: 1; }
+  70%  { opacity: 1; }
+  100% { transform: translateY(75svh); opacity: 0; }
+}
 @media (max-width: 899px) {
   .b-hero__sun {
     display: block;
@@ -504,11 +518,13 @@
     /* it takes the room the row has and asks for none: sized by its content, an SVG
        at 100% of an undecided row falls back to 300 px and pushed the hero taller */
     contain: size;
+    /* where a script drives the hour instead (src/effects/evening.ts): the same set, from --evening */
+    transform: translateY(calc(var(--evening) * 150svh));
+    opacity: calc((0.5 - var(--evening)) * 6.67);
   }
   .b-hero__sun svg { display: block; width: 100%; height: 100%; shape-rendering: crispEdges; }
-  /* it goes as the evening comes, as the sky's sun sets */
   @supports (animation-timeline: scroll()) {
-    .b-hero__sun { animation: b-hero-sun-out linear both; animation-timeline: scroll(root); animation-range: 0 60svh; }
+    .b-hero__sun { animation: b-hero-sun-set linear both; animation-timeline: scroll(root); animation-range: 0 60svh; }
   }
 }
 @media (prefers-reduced-motion: reduce) { .b-hero__sun { display: none; } }
