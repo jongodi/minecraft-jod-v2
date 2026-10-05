@@ -278,8 +278,6 @@
 }
 .b-seal svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .b-seal__eth { position: relative; font-family: var(--font-display); font-size: 1.625rem; line-height: 1; color: color-mix(in oklab, var(--tc-red), var(--paper) 72%); text-shadow: 0 var(--px) 0 color-mix(in oklab, var(--tc-red), var(--night) 55%); transform: translate(calc(var(--px) * 0.5), calc(var(--px) * -0.5)); }
-.b-seal--lg { width: 4.5rem; height: 4.5rem; }
-.b-seal--lg .b-seal__eth { font-size: 2.5rem; }
 
 /* ─── the toast: the one confirmation ─────────────────────────────
    The advancement toast every Minecraft player knows, as this site would
@@ -472,6 +470,12 @@
    count beside it, in the chat colours the hero's lantern uses. One width in
    every state, so nothing beside it moves when the answer comes. */
 .b-bar__status { display: inline-flex; align-items: center; gap: var(--sp-2); min-height: var(--tap); padding-inline: var(--sp-1); color: var(--tc-white); text-decoration: none; text-shadow: 0 var(--px) 0 var(--night); }
+/* Over the sunset the hero's own lantern says the same thing, larger and right
+   below it, so the bar's waits until the bar takes its surface; it keeps its
+   width meanwhile, so nothing beside it moves when it comes. Every other page's
+   bar is solid from the start. */
+.b-bar:not(.is-solid) .b-bar__status { visibility: hidden; opacity: 0; }
+.b-bar__status { transition: opacity var(--dur-2) var(--ease-out), visibility var(--dur-2); }
 .b-bar__status .b-lantern { width: 1.1rem; height: 1.65rem; }
 .b-bar__state { min-width: 4.25rem; font-weight: 600; font-size: var(--fs-sm); white-space: nowrap; }
 .b-bar__status.is-on .b-bar__state { color: var(--online); }
@@ -505,6 +509,13 @@
   box-shadow: 0 calc(var(--line) * -1) 0 rgba(209, 178, 161, 0.14);
 }
 @media (min-width: 760px) { .b-hotbar { display: none; } }
+/* A phone on its side has height to spare for nothing: the slots lay the
+   lantern beside the name, a tap tall, and the strip gives back a third. */
+@media (max-height: 500px) {
+  .b-hotbar { padding-block: var(--sp-1) calc(var(--sp-1) + env(safe-area-inset-bottom, 0px)); }
+  .b-hotbar .b-slot { flex-direction: row; gap: var(--sp-2); min-height: var(--tap); }
+  .b-hotbar .b-slot .b-lantern { width: 0.9rem; height: 1.35rem; }
+}
 .b-slot {
   position: relative;
   display: flex;

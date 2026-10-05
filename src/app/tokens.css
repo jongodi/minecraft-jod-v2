@@ -169,3 +169,5 @@
   --z-modal: 70;
 }
 @media (min-width: 900px) { :root { --fs-hero: clamp(12rem, min(23vw, 40svh), 24rem); } }
+/* on a phone on its side the hotbar's slots lay their lantern beside the name, a tap tall (badlands.css) */
+@media (max-height: 500px) { :root { --doorbar: 3.25rem; } }
