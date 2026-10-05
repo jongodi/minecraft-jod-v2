@@ -634,8 +634,8 @@
   .b-hero .b-hero__sub { grid-row: 2; position: relative; z-index: 3; margin-inline: var(--gutter); padding-top: var(--sp-4); }
   .b-hero .b-hero__action { grid-row: 3; position: relative; z-index: 3; flex-direction: column; align-items: stretch; gap: var(--sp-3); margin-top: 0; padding: var(--sp-3) var(--gutter) var(--sp-5); }
   .b-hero .b-hero__action .b-copy { display: grid; justify-items: start; margin-top: 0; }
-  /* on the ground the lantern's words have their own dark; the pool of night was for the sky */
-  .b-hero .b-hero__side { flex: none; }
+  /* on the ground the lantern's words have their own dark; the plate is for the sky */
+  .b-hero .b-hero__side { flex: none; padding: 0; }
   .b-hero .b-hero__side::before { display: none; }
   .b-hero .b-hero__action .b-status { width: 100%; min-height: 0; padding-block: 0; }
   .b-hero .b-hero__sun { display: none; }
@@ -689,23 +689,39 @@
    between the name and everything else: the bold cut at the title size, on the
    dark of the upper sky. It was 20 px under a 350 px name, and read as a caption. */
 @media (min-width: 900px) { .b-hero__sub { font-size: var(--fs-xl); font-weight: 600; line-height: 1.25; max-width: 32ch; text-shadow: 0 var(--px) 0 var(--night), 0 calc(var(--px) * 2) 0 rgba(21, 16, 13, 0.35); } }
-/* the address and the server's lantern on one line: the two things a player needs, side by side;
-   the address keeps level with the lantern however many lines hang under it */
-.b-hero__action { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--sp-4) var(--sp-7); margin-top: var(--sp-5); }
-@media (min-width: 900px) { .b-hero__action .b-copy { margin-top: var(--sp-5); } }
-/* One width in every state the server can be in, so the line never rewraps
-   when the word changes. Without a panel, its small words lay straight on the
-   sunset, and on a phone that is the bright middle of the sky (3:1 against
-   the row's colour); so the lantern hangs in a pool of night, as the world's
-   does, dark enough under the words to read and gone at its edges. */
-.b-hero__side { position: relative; isolation: isolate; display: grid; gap: var(--sp-2); justify-items: start; flex: 0 1 22rem; min-width: 0; }
-.b-hero__side::before {
-  content: '';
-  position: absolute;
-  inset: -2.5rem -3rem;
-  z-index: -1;
-  background: radial-gradient(closest-side, var(--pane) 66%, rgba(21, 16, 13, 0.45) 86%, transparent);
-  pointer-events: none;
+/* the address and the server's lantern on one line: the two things a player
+   needs, side by side, the button and the plate hanging from one top line
+   however many lines hang under the lantern */
+.b-hero__action { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--sp-4) var(--sp-5); margin-top: var(--sp-5); }
+/* The server's lantern and its words on a plate: the hard band of shadow the
+   game lays its chat on, so a line reads over any sky. Square cut, with the
+   notched pixel corners every tag on the site has: no soft edge, which no
+   surface in a pixel world has. Without it the small words lay straight on
+   the sunset and read at 2:1 to 4:1, worst on a phone, where they fall on
+   the bright middle of the sky. One width in every state the server can be
+   in, so the line never rewraps when the word changes. The plate is drawn
+   behind the words rather than clipping them, so a tag pointed at inside it
+   is not cut off. */
+.b-hero__side { position: relative; isolation: isolate; display: grid; gap: var(--sp-2); justify-items: start; flex: 0 1 22.5rem; min-width: 0; padding: var(--sp-3) var(--sp-5) var(--sp-3) var(--sp-4); }
+.b-hero__side::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--plate); clip-path: var(--notch); pointer-events: none; }
+/* the plate takes the words' own height, so the lantern's word sits level
+   with the address beside it however many lines hang under it */
+.b-hero__side .b-status { min-height: 0; padding-block: 0; }
+/* a night planned is a second entry on the same plate, under a hairline: its
+   fire stands in the lantern's column and its words start where the lantern's do */
+.b-hero__side .b-nightline { gap: var(--sp-4); width: 100%; max-width: none; margin-top: var(--sp-1); padding-top: var(--sp-3); border-top: var(--line) solid rgba(209, 178, 161, 0.14); }
+.b-hero__side .b-nightline .b-night__fire { width: 2.75rem; height: 2.75rem; }
+/* Held upright, a phone stacks them: the address and the lantern are one
+   column, one width, the button over the plate. */
+@media (max-width: 899px) and (min-height: 501px) {
+  .b-hero__action { flex-direction: column; align-items: stretch; gap: var(--sp-3); max-width: 26rem; }
+  .b-hero__action .b-copy { display: grid; }
+  .b-hero__action .b-copy__btn { width: 100%; }
+  .b-hero__side { flex: none; padding-inline: var(--sp-4); }
+  .b-hero__side .b-status { width: 100%; min-height: 0; gap: var(--sp-3); }
+  .b-hero__side .b-status .b-lantern { width: 2.25rem; height: 3.35rem; }
+  .b-hero__side .b-nightline { gap: var(--sp-3); }
+  .b-hero__side .b-nightline .b-night__fire { width: 2.25rem; height: 2.25rem; }
 }
 
 .b-mesa { position: absolute; inset-inline: 0; bottom: 0; height: var(--mesa-h, clamp(9rem, 32svh, 20rem)); pointer-events: none; }
