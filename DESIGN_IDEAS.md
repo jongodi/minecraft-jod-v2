@@ -1,12 +1,12 @@
 # JOÐcraft: design ideas
 
-The next design pass on jodcraft.world. Part 1 is the site as it stands today. Part 2 is the ideas, filtered, with one recommended direction and a plan in passes. **Nothing in the code has changed yet.** Pick what you want built and I'll start.
+The next design pass on jodcraft.world. Part 1 is the site as it stood before the pass. Part 2 is the ideas, filtered, with one recommended direction and a plan in passes. Part 3, at the end, is what was built: everything recommended plus both optional ideas, in nine commits, with the numbers before and after.
 
 Measured on 5 October 2026 against a production build (`next build` + `next start`) of `5d3556c`, in headless Chromium 1194. This builds on `DESIGN.md` (the concept) and `DESIGN_REVIEW.md` (the passes from 4 October). I've left out anything those passes already tried and rejected, and say so where it matters.
 
 **Sandbox limits.** The sandbox can't reach Exaroton, mcsrvstat, minotar or mc-heads. So every screenshot shows the fallbacks: the dark lantern saying *Náði ekki sambandi* and the question-mark heads. That's also what a visitor sees when those services are down.
 
-Screenshots referenced below are in `docs/design-ideas/before/` (WebP, 756 kB in all).
+Screenshots for Part 1 are in `docs/design-ideas/before/` (WebP). Part 3 adds a staged before-and-after set (`staged-before/`, `after/`) and three side-by-side comparisons, 2.7 MB in all.
 
 ---
 
@@ -460,9 +460,110 @@ One commit per pass. After each one: `next build`, screenshots at 390 and 1440 c
 
 **Honest note on LCP.** The previous pass couldn't get the simulated mobile LCP under 2.0 s. The runtime (103 kB) and the blocking CSS set a floor around 2.3 s in Lighthouse's model. Pass 7 goes after the CSS and the hydrated markup. If it still won't go under 2.0 s, the remaining lever is the React 19 / Next 16 upgrade, which I'd propose as a separate change rather than fold into a design pass.
 
-## What I need from you
+## The picks
 
-1. **Navigation:** Concept 1 (hotbar and offhand), 2 (the same plank, set straight) or 3?
-2. **The crew door's name:** keep *Eftirlýst* (my pick) or switch to *Hópurinn*?
-3. **Signature moments:** which of C1 to C5? My pick is C1, C2 and C3, with C4 and C5 optional.
-4. **The phone hero:** OK to move the address button below the name, onto the dark ground?
+All of the recommendation, and both optional ideas: Concept 1 (hotbar and offhand), the crew door named *Eftirlýst*, signature moments C1 to C5, and the phone's address on the ground under the name.
+
+---
+
+## Part 3. What was built
+
+Nine commits on `feat/design-ideas-hotbar` after this document's first version, one per pass. After every pass: `next build`, `tsc`, `next lint`, the 236 unit tests, screenshots at 390 and 1440 against the pass before, and any effect checked on a 4× CPU phone profile, before the commit.
+
+**Staged data.** `scripts/stage.mjs` (new; `STAGE=1` in `scripts/shots.mjs`) serves the screenshots a running server with three of the crew in, a week of stats, drawn pixel heads in place of minotar and mc-heads, and, with `STAGE_NIGHT=1`, a play night two days out. Every "after" screenshot below uses it, and so does the matching "before" set, so the two compare like for like. Nothing in it ships.
+
+### What changed, and why
+
+| Pass | Commit | What | Why, in one sentence |
+|---|---|---|---|
+| 0 Fixes | `625c708` | The map still is requested at the width it is drawn (`sizes` follows the portrait frame's height); the bar's mark and address are full 44 px taps; the copy glyph replaces the tag's nail; the Resource Pack Editor sentence left `DESIGN.md`. | The world was a blur on every phone, the main action was under the minimum target size, and the editor's last trace was a line of prose. |
+| 1 Navigation | `3b152b4` | The phone's door bar became the hotbar (three slots sunk in a strip, the one in hand framed in light) with the offhand slot beside it copying the address; the server's lantern rides in the bar on every page; the doors move into the bar from 760 px; the crew's door leads to `/crew` from every other page and is lit there and on the walls; the footer's crew link went and *Stjórnborð* moved into the small print. | One reachable place for everything on a phone, status on every page, and a lit door that never leads somewhere else. |
+| 2 Hero | `20cdc1b` | Under 900 px the hero reads down: sentence, sun, the name among the ridges, and a band of the ridges' dark ground under them with the address (full width on a phone) and the lantern; a phone on its side puts the sentence and the address on the same ground. On a wide screen the sentence takes the middle step (Pixelify 600 at `--fs-xl`, two lines), the sun stands on the wrap's right edge, and the lantern's pool of night is deeper. | The brand comes first and the action sits under the thumb on a phone, and the wide hero has three levels on two edges. |
+| 3 The valley | `eee016b` | The hero's ground runs on over the top of the world's frame as a stepped ridge, low under the HUD's title and tools and peaking in the open sky between, its edge lit by a pixel of the rock's brown; it sinks a few art pixels to rest on a view timeline as the world comes up. | The page's one big turn happens in the land instead of at a ruled line. |
+| 4 Someone's home | `6d12e62` | The counters of the O and the Ð are windows that light, panes and all, while somebody is in; the crew who are in stand on a plateau of the near ridge as their heads, at the land's own scale, each a link to their wall. | The name answers "is anyone on?" before a word is read. |
+| 5 Rooms and tools | `35bea83` | Room titles to `--fs-xl`, headings inside to `--fs-lg`; an empty crew room says its state in one line under the portraits; the desktop map tools are the phone's wooden keys with their words. | A room's name is its largest thing, three empty notes read as three failures, and one control should have one look. |
+| 6 Crew pages | `45b5f8f` | `/crew` and the walls hang in the night sky with the stars and the far ridge (`NightSky.tsx`); the roll call is titled *Eftirlýst* and carries the next fire's line; the back links went; from 1024 px a wall is two columns with the roll call's portrait poster on the left; on a phone the skin and the name share a row. | The crew's pages are the same evening, and the poster you press is the poster you arrive at. |
+| 7 Performance | `f410c5d` | The home page's first paint waits for one page stylesheet instead of two (the paper, campfire and effects moved into `badlands.css`; the posters and counter come with the rooms); the map still is asked for after load and idle, or at once if the frame is on screen, and fades up. | Fewer render-blocking bytes, and the sharp still off the critical path. |
+| 8 Seal and break | `d26a6fe` | JOÐ's seal (the Ð in red wax, 48 px) on the foot of each wanted poster, the copy toast and the corner of a member's poster; when the 3D map is drawn, the still breaks away block by block from the lantern outward. | The Ð finally has a place where it reads as Ð, and the one moment a visitor asks for more gets the game's own verb for "remove this". |
+
+**Where the build differs from the plan, and why**
+
+- **The tablet breakpoint is 760 px, not 640.** Measured, the mark, three doors, the lantern and the address tag need about 700 px; between 760 and 1100 px the tag is the copy glyph and the verb (the address stays its accessible name and the toast shows it).
+- **The campfire stays at the foot on a phone.** The plan said "fire first", but the fire stands on the ground strip, which is what makes it a campfire. Instead the way up and the sound share one row, so the fire comes a row sooner.
+- **A phone on its side got the ground band too.** Not in the plan; its sentence sat on the brightest band of the sky at 2.0:1, and on the ground it reads at 12:1.
+- **No Server Component conversion.** Since passes 4 and 6 the hero and the mesa read live status (windows and heads), the footer reads the season and the duel's state, and the sky is a few lines; nothing static enough was left to move, so the gains came from the stylesheet split and the deferred still instead. `experimental.inlineCss` was tried again with the smaller sheet and was worse (FCP 1.3 s, LCP 2.8 s); not kept.
+- **Focus.** The dialogs (album, lightbox, duel, the wall's sign-in) already trapped Tab and returned focus (`useDialogFocus`). The rooms stay non-modal on purpose: the doors must stay usable to go from one room to the other, and the world under a room is inert.
+- **On the toast the seal took the lantern's place**, where the game's advancement toast shows the item, rather than adding a second icon a 360 px toast had no room for.
+- **The phone's still costs more bytes than before**, by design: 150 kB fetched on a phone against 35 kB (the sharp file instead of a third-size one), now after the page has loaded, never on the first screen's path.
+
+### Before and after
+
+Staged pairs (same data both sides) in `docs/design-ideas/staged-before/` and `docs/design-ideas/after/`, same file names: `home-390-top`, `home-1440-top`, `home-390-heimur`, `home-1440-heimur`, `home-*-hopur`, `home-*-hillan`, `home-*-campfire`, the full home page at both widths, `crew-*`, `crew_stebbias-*`. Side by side:
+
+- `docs/design-ideas/compare-390-hero.webp`: the phone hero, before and after.
+- `docs/design-ideas/compare-1440-hero.webp`: the wide hero.
+- `docs/design-ideas/compare-1440-wall.webp`: a member's wall.
+
+Moments in `docs/design-ideas/after/`: `windows-heads-1440`, `windows-heads-390` and `windows-dark-1440` (C1 lit and dark), `valley-1440` and `valley-390` (C2), `block-break-1440` (C4, mid-sweep), `toast-seal-1440` and `seal-wall` (C5), `hero-360-night` (a planned night on the smallest phone), `hero-844x390` (a phone on its side), `room-empty-1440` (the crew room's one line), `bar-1024` (the doors in the bar), `crew-1440-night`.
+
+### Lighthouse, before and after
+
+Lighthouse 13, mobile preset (Moto G Power, simulated slow 4G, 4× CPU), production builds, the same sandbox. "Before" is `5d3556c` rebuilt and served beside the final build in the same session; the three runs from the start of the session (84, 97, 95) are in Part 1.
+
+| Page | | Perf | A11y | BP | SEO | FCP | LCP | TBT | CLS |
+|---|---|---|---|---|---|---|---|---|---|
+| `/` ×3 | before | 97 / 97 / 98 | 100 | 100 | 100 | 1.1 s | 2.6 / 2.6 / 2.3 s | 50 / 50 / 50 ms | 0 |
+| `/` ×3 | after | **99 / 99 / 99** | 100 | 100 | 100 | 1.1 s | **2.1 / 2.0 / 2.1 s** | 60 / 30 / 40 ms | 0 |
+| `/crew` ×2 | before | 98 / 99 | 100 | 96 | 100 | 1.1 s | 2.3 / 2.1 s | 50 / 30 ms | 0.006 |
+| `/crew` ×2 | after | 97 / 97 | 100 | 96 | 100 | 1.1 s | 2.6 / 2.6 s | 60 / 60 ms | 0.008 |
+| `/crew/stebbias` ×2 | before | 92 / 96 | 100 | 96 | 100 | 1.1 s | 3.3 / 2.7 s | 80 / 90 ms | 0 |
+| `/crew/stebbias` ×2 | after | 96 / 92 | 100 | 96 | 100 | 1.1 s | 2.3 / 3.4 s | 160 / 70 ms | 0.003 |
+| `/` desktop | after | 100 | 100 | 100 | 100 | 0.3 s | 0.6 s | 0 ms | 0 |
+| `/crew` desktop | after | 100 | 100 | 96 | 100 | 0.3 s | 0.6 s | 0 ms | 0 |
+
+Against the targets:
+
+- **Performance 95+.** Home 99 on every run; the roll call 97 to 99 before and after (a paired run gave both builds the same 2.13 s LCP, so the difference is run-to-run noise plus about 4 kB of JS for the bar's lantern and the night line); a wall 92 to 96, its LCP being the skin image the sandbox cannot fetch.
+- **Accessibility, Best Practices, SEO 100.** Home 100 / 100 / 100. The crew pages lose Best Practices points only for console errors from the blocked head images, which do not occur in production.
+- **LCP under 2.0 s.** Home went from 2.3 to 2.6 s to 2.0 to 2.1 s simulated, at the line but not reliably under it. Why it stops there: Lighthouse's LCP model counts every request that starts before the observed LCP, the async scripts included, and the name paints at first paint (about 0.17 s unthrottled), by when Next's runtime has started; so the simulated LCP is the time to download the runtime. Unthrottled, LCP equals FCP. The remaining lever is fewer runtime bytes (React 19 / Next 16).
+- **CLS under 0.05.** Home 0, roll call 0.008, wall 0.003, with or without a night planned, the bar's lantern held at one width.
+- **INP under 200 ms.** Not measurable in the sandbox. Stand-ins: TBT 30 to 60 ms on the home page, and after hydration the page makes no request but the status poll.
+
+### Bundle, before and after
+
+Gzipped, as served; the shared runtime is 103 kB in both.
+
+| Route | JS before | JS after | CSS before | CSS after |
+|---|---|---|---|---|
+| `/`, `/kvold`, `/stadur/[id]` | 134.4 kB | 136.2 kB | 15.6 kB in 2 files | **14.4 kB in 1** (+ the layout's) |
+| `/crew` | 125.1 kB | 128.9 kB | 19.0 kB in 3 | 21.0 kB in 3 |
+| `/crew/[username]` | 148.3 kB | 149.8 kB | 19.0 kB in 3 | 21.0 kB in 3 |
+| 404 | 101.1 kB | 101.5 kB | | |
+
+The home page gained 1.8 kB of JS for the hotbar, the bar's lantern, the windows and the heads; the block break is a 0.7 kB chunk fetched only when the 3D map is asked for. `board.css` (2.9 kB) now arrives with the rooms on the home page.
+
+### Effects on a throttled phone
+
+`node scripts/perf.mjs` (dpr 2), before → after:
+
+| | before | after |
+|---|---|---|
+| Mobile 390 × 844, 4× CPU, scroll | mean 16.8 ms, p95 20.0 ms, 1 long of 842 | mean 16.8 ms, p95 20.9 ms, 1 long of 785 |
+| Mobile style recalculation over the scroll | 1243 ms | 1164 ms |
+| Desktop 1440 × 900, scroll | mean 21.9 ms, p95 33.3 ms, 32 long of 531 | mean 21.8 ms, p95 31.4 ms, 25 long of 567 |
+| Images fetched on a phone | 35 kB | 150 kB (the sharp still, after load) |
+
+Everything new moves by transform or opacity only: the valley ridge (one transform in eight whole-pixel steps on a view timeline), the windows (one opacity), the block break (opacity per block). Under reduced motion the ridge stands still, the windows and toast change in place, and the break is the old fade; on devices that skip effects (`useEffectsAllowed`: few cores, little memory, Save-Data) the break is the fade too.
+
+### Contrast and responsiveness
+
+Measured on the background under each hero line with the text hidden (5th percentile of the pixels in its box; the lowest single samples are dust and star pixels), with and without a night planned: 7.3 to 8.9:1 at 360, 390 and 768; 4.9 to 8.3:1 at 1024, 1440 and 1920; 8.9 to 12.3:1 on a phone on its side. At 360, 390, 768, 1024, 1440 and 1920, on the home page, the roll call, a wall, a night and the 404, `scrollWidth` equals the viewport everywhere; the overflow detector reports only the mesa SVGs the hero clips and the thumbnails inside the scrolling places rail.
+
+### Worth doing later
+
+1. **The React 19 / Next 16 upgrade**, as its own change: the runtime's bytes are the one thing between the home page and a reliable sub-2.0 s simulated LCP.
+2. **A portrait still for phones.** `map:poster` could take a second still from BlueMap at 9:16; the phone would then fetch a picture shaped like its frame, sharp at dpr 3 for about half of today's 150 kB (the 1920-wide landscape still is still upscaled about 2× on a dpr 3 phone, because the crop shows only a third of its width).
+3. **Measure in production**: INP from the field (`web-vitals` or Vercel Speed Insights), a wall's LCP with real skins, and Best Practices on the crew pages without the blocked heads.
+4. **The seal on what leaves the site**: the link-preview cards (`/crew/[username]/opengraph-image`, `/kvold/card`) and the foot of the letters, at 48 px or more.
+5. **Number keys for the doors on desktop**, 1 to 3 as in the game's hotbar, announced in the doors' tooltips.
+6. **The wall's poster held in view on tall screens** (sticky where the poster fits the viewport), so a long wall keeps its owner beside it.
