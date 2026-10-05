@@ -20,6 +20,14 @@ const SAID: Record<ServerLife, { word: string; row: string; burn: 'lit' | 'kindl
   unknown:    { word: 'Náði ekki sambandi',     row: 'reyni aftur eftir smástund',     burn: 'dark' },
 };
 
+/* The moment of the last answer is said only once it is stale: two polls
+   missed. Every minute it was "rétt í þessu" or "fyrir 40 sek.", which said
+   nothing a lit or dark lantern did not. */
+const STALE_MS = 120_000;
+/* The version as a player picks it in the launcher: the server's build
+   number in brackets after it ("26.3 (182)") is the host's, not theirs. */
+const launcherVersion = (v: string) => v.replace(/\s*\([^)]*\)\s*$/, '');
+
 /** The server's own lantern. Lit with the player count and the heads of who is
     in when the server is up, kindling while it is on its way up or down, dark
     and labelled when it is not. It carries the version too, and opens the
@@ -29,6 +37,7 @@ const SAID: Record<ServerLife, { word: string; row: string; burn: 'lit' | 'kindl
 export default function StatusLantern({ server }: { server: ServerState }) {
   const { online, life, players, list, version, lastOnline, checkedAt } = server;
   const ago = useAgo(checkedAt);
+  const stale = checkedAt !== null && Date.now() - checkedAt >= STALE_MS;
   const said = life ? SAID[life] : null;
   const word = said?.word ?? 'Athuga stöðuna';
   const burn = said?.burn ?? null;
@@ -46,13 +55,13 @@ export default function StatusLantern({ server }: { server: ServerState }) {
       <Lantern lit={burn === 'lit'} className={burn === 'kindling' ? 'is-kindling' : undefined} />
       <span className="b-status__text">
         <span className="b-status__word" role="status" aria-live="polite">{word}</span>
-        {/* "athugað rétt í þessu" is told from the clock, which the server read before the browser does */}
+        {/* how stale the answer is is told from the clock, which the server read before the browser does */}
         <span className="b-status__row" suppressHydrationWarning>
           {!said ? 'bíð eftir svari' :
            online ? (players === 0 ? 'enginn inni enn, en það er opið' : <>inni núna: <b>{players}</b></>) :
            last ? `síðast kveikt ${sinceAt(last.at)}` :
            said.row}
-          {checkedAt && ago && burn !== 'kindling' ? `, ${online ? '' : 'athugað '}${ago}` : ''}
+          {stale && ago && burn !== 'kindling' ? `, athugað ${ago}` : ''}
         </span>
         {(version || heads.length > 0) && (
           <span className="b-status__row b-status__meta">
@@ -61,7 +70,7 @@ export default function StatusLantern({ server }: { server: ServerState }) {
                 {heads.map(n => <PlayerHead key={n} name={n} size={16} />)}
               </span>
             )}
-            {version && <span>Minecraft {version} · Java</span>}
+            {version && <span>Minecraft {launcherVersion(version)} · Java</span>}
           </span>
         )}
         <span className="b-visually-hidden">. Sjá hver er inni og eftirlýsingaspjöldin.</span>

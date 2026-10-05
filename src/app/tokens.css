@@ -62,6 +62,7 @@
      dialog, and the deep dark of an album or a lightbox ── */
   --veil:       rgba(21, 16, 13, 0.6);
   --pane:       rgba(21, 16, 13, 0.8);
+  --plate:      rgba(21, 16, 13, 0.72);   /* the hard band of shadow small words sit on over a bright sky */
   --scrim:      rgba(21, 16, 13, 0.8);
   --scrim-deep: rgba(21, 16, 13, 0.94);
   --sun:                #F4D394;
