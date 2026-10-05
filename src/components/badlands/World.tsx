@@ -10,12 +10,11 @@ import viewerFiles from '@/lib/bluemap-viewer.json';
 import { CloseIcon, FoldedMapIcon, Lantern, MoonIcon, PictureIcon, Sun } from './Bits';
 import { plural } from '@/lib/format';
 import Drawer from './Drawer';
-import { ValleyRidge } from './Mesa';
 import PlayerHead from './PlayerHead';
 import Rail, { revealRailItem } from './Rail';
 import { CREW, MAP_POSTER, MAP_URL, SITE_NAME, handCase, titleCase, type Plate, type RoomId } from './data';
 import type { ServerState } from './hooks';
-import { useEffectsAllowed, useInert, useMediaQuery, useReducedMotionPref } from './hooks';
+import { useInert, useMediaQuery } from './hooks';
 import { photoProps, PHOTO_SIZES } from './photo';
 import { toast } from './Toast';
 
@@ -24,8 +23,6 @@ import { toast } from './Toast';
 const MapSheet = dynamic(() => import('./MapSheet'), { ssr: false });
 const Album    = dynamic(() => import('./Album'),    { ssr: false });
 const Crew     = dynamic(() => import('./Crew'),     { ssr: false });
-/* the still breaking away when the live map is drawn: fetched only once the map is asked for */
-const BlockBreak = dynamic(() => import('./BlockBreak'), { ssr: false });
 const Shelf    = dynamic(() => import('./Shelf'),    { ssr: false });
 
 /** What public/bluemap-jod/jod.js offers the page, once the viewer's map has loaded. */
@@ -160,28 +157,13 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
     if (room && !visited[room]) setVisited(v => ({ ...v, [room]: true }));
   }, [room, visited]);
 
-  /* The still is never on the first screen, but on a phone the frame starts
-     right under the hero, inside the distance a lazy image is fetched from,
-     so it came down with the page and shared the slow first seconds with the
-     hero's name. It is asked for once the page has loaded and the browser is
-     idle, or at once if the frame is already on screen (a link to a place or
-     a room lands there). Until then the frame is its own night. */
+  /* The still is drawn from the browser's first render on, not into the
+     page's markup: on a phone the frame starts right under the hero, so a
+     still in the markup came down with the hero's name and shared its first
+     seconds. Asked for once the page has hydrated, it is there long before
+     anyone has scrolled to the world, as it always was, with no fade. */
   const [posterOn, setPosterOn] = useState(false);
-  useEffect(() => {
-    if (posterOn) return;
-    const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void };
-    let idle = 0;
-    const on = () => setPosterOn(true);
-    const afterLoad = () => { idle = w.requestIdleCallback ? w.requestIdleCallback(on, { timeout: 2000 }) : window.setTimeout(on, 200); };
-    if (document.readyState === 'complete') afterLoad(); else window.addEventListener('load', afterLoad, { once: true });
-    const seen = new IntersectionObserver(entries => { if (entries.some(e => e.isIntersecting)) on(); });
-    if (frameRef.current) seen.observe(frameRef.current);
-    return () => {
-      window.removeEventListener('load', afterLoad);
-      if (idle) (w.cancelIdleCallback ?? window.clearTimeout)(idle);
-      seen.disconnect();
-    };
-  }, [posterOn]);
+  useEffect(() => { setPosterOn(true); }, []);
 
   /* The rooms' code is fetched once the browser is truly idle, so a door
      opens at once later and the first seconds, when a slow phone is still
@@ -305,24 +287,6 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
   const hidden = !inView || shut || album || drawn || still;
   useEffect(() => { if (viewer) jod()?.pause(hidden); }, [viewer, hidden, jod]);
 
-  /* When the live map has drawn its first view the still breaks away block
-     by block (BlockBreak.tsx) instead of fading, once, where effects run and
-     motion is welcome; a still not yet drawn, the painted map open over it,
-     reduced motion or a device that skips effects get the fade. */
-  const posterRef = useRef<HTMLImageElement>(null);
-  const effects = useEffectsAllowed();
-  const reduce = useReducedMotionPref();
-  const [breaking, setBreaking] = useState(false);
-  const broke = useRef(false);
-  useEffect(() => { if (live) import('./BlockBreak'); }, [live]);
-  useEffect(() => {
-    if (!ready || broke.current) return;
-    broke.current = true;
-    const img = posterRef.current;
-    if (effects && !reduce && !drawn && img?.complete && img.naturalWidth > 0) setBreaking(true);
-  }, [ready, effects, reduce, drawn]);
-  const endBreak = useCallback(() => setBreaking(false), []);
-
   /* The viewer says when its first view is drawn, which is usually well under
      a second. Should it not have said so in four (a slow texture download, or
      a viewer without JOÐ's script), it is shown anyway and fills in live. The
@@ -396,10 +360,9 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
 
   return (
     <section id="heimur" className="b-world" aria-labelledby="heimur-title">
-      <ValleyRidge />
-      <div ref={frameRef} className={`b-frame${live ? ' is-live' : ''}${ready ? ' is-ready' : ''}${drawn ? ' is-drawn' : ''}${shut ? ' is-room' : ''}${full === 'overlay' ? ' is-full' : ''}${live && still ? ' is-still' : ''}${menu && ready ? ' is-menu' : ''}${breaking ? ' is-breaking' : ''}`}>
+      <div ref={frameRef} className={`b-frame${live ? ' is-live' : ''}${ready ? ' is-ready' : ''}${drawn ? ' is-drawn' : ''}${shut ? ' is-room' : ''}${full === 'overlay' ? ' is-full' : ''}${live && still ? ' is-still' : ''}${menu && ready ? ' is-menu' : ''}`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        {posterOn && <img ref={posterRef} {...photoProps(MAP_POSTER, PHOTO_SIZES.poster)} className="b-frame__poster" alt="Heimasvæðið á JOÐ séð úr lofti" width={1920} height={1080} decoding="async" fetchPriority="low" />}
+        {posterOn && <img {...photoProps(MAP_POSTER, PHOTO_SIZES.poster)} className="b-frame__poster" alt="Heimasvæðið á JOÐ séð úr lofti" width={1920} height={1080} decoding="async" fetchPriority="low" />}
         <div className="b-frame__shade" aria-hidden="true" />
 
         {/* The viewer lays itself out for the frame (jod-embed in public/bluemap-jod/jod.css)
@@ -412,10 +375,6 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
             className="b-frame__view"
             allow="fullscreen"
           />
-        )}
-
-        {breaking && frameRef.current && posterRef.current && (
-          <BlockBreak frame={frameRef.current} img={posterRef.current} onDone={endBreak} />
         )}
 
         {drawn && (

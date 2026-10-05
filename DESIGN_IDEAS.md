@@ -567,3 +567,14 @@ Measured on the background under each hero line with the text hidden (5th percen
 4. **The seal on what leaves the site**: the link-preview cards (`/crew/[username]/opengraph-image`, `/kvold/card`) and the foot of the letters, at 48 px or more.
 5. **Number keys for the doors on desktop**, 1 to 3 as in the game's hotbar, announced in the doors' tooltips.
 6. **The wall's poster held in view on tall screens** (sticky where the poster fits the viewport), so a long wall keeps its owner beside it.
+
+---
+
+## Part 4. After living with it
+
+Two changes asked for once the pass was live:
+
+- **The phone's hero is the full-screen title card again.** Held upright, the sunset and JOÐ fill the screen down to the hotbar, with the sentence, the address and the lantern on the dark of the upper sky, as before the pass; the band of dark ground under the ridges is gone there. The windows and the heads on the ridge stay. A phone on its side keeps the ground band, since there the sentence would otherwise sit on the brightest band of the sky at 2:1. The offhand slot left the hotbar: the three doors share its width, and on a phone the address is the hero's own button.
+- **The 3D map's frame is as it was before the pass.** The ridge over its top, the block break and the delayed, fading still are gone; the frame has its top plank and the desktop tools their old buttons back. Two things stay: the still keeps the size it is drawn at on a phone (the blur fix from pass 0), and it is drawn from the browser's first render rather than the page's markup, so it does not share the hero's first seconds; it is requested about 0.2 s into the load and is in place long before the frame is scrolled to, with no fade.
+
+Measured after: Lighthouse mobile on `/` 98 / 99 / 96 (LCP 2.1 / 2.1 / 2.6 s, CLS 0), Accessibility, Best Practices and SEO 100; every hero line 4.8:1 or better at 360, 390 and 768 with a night planned; no horizontal scroll at 360 to 1920.
