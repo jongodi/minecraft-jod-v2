@@ -65,7 +65,8 @@ export default function Wanted({ stats }: { stats: StatsState }) {
       ) : (
         <Rail className="b-posters" label="Eftirlýsingar" prevLabel="Fyrri spjöld" nextLabel="Næstu spjöld" count={posters.length}>
           {posters.map(({ meta, rows: [first, ...rest], week }) => (
-            <div key={meta.id} className="b-paper b-paper--torn b-poster" data-rail-item={meta.id}>
+            <div key={meta.id} className="b-hang" data-rail-item={meta.id}>
+            <div className="b-paper b-paper--torn b-poster">
               <span className="b-paper__nail b-paper__nail--l" aria-hidden="true" />
               <span className="b-paper__nail b-paper__nail--r" aria-hidden="true" />
               <span className="b-poster__mast">Eftirlýst</span>
@@ -107,6 +108,7 @@ export default function Wanted({ stats }: { stats: StatsState }) {
               )}
               {/* the board's authority: the seal at the poster's foot */}
               <Seal className="b-poster__seal" />
+            </div>
             </div>
           ))}
         </Rail>

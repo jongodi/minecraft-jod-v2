@@ -17,6 +17,7 @@ import { chromium } from 'playwright-core';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
+import { writeLights } from './map-lights.mjs';
 
 const require = createRequire(import.meta.url);
 const sharp = require('sharp');
@@ -110,5 +111,7 @@ writeFileSync('public/map-poster.webp', webp);
 /* the home page asks for /map-poster.webp?v=<this>: the image optimiser keeps
    an address's images for a year, so a new still needs a new address */
 const version = createHash('sha256').update(webp).digest('hex').slice(0, 10);
-writeFileSync('src/lib/map-poster.json', JSON.stringify({ version }, null, 2) + '\n');
-console.log(`public/map-poster.webp skrifað, ${WIDTH}×${HEIGHT} (útgáfa ${version})`);
+/* the town's lights, taken off the new still (scripts/map-lights.mjs) */
+const lights = await writeLights('public/map-poster.webp');
+writeFileSync('src/lib/map-poster.json', JSON.stringify({ version, lights: lights.version }, null, 2) + '\n');
+console.log(`public/map-poster.webp skrifað, ${WIDTH}×${HEIGHT} (útgáfa ${version}), og ljósin í bænum: ${lights.found} ljóspixlar`);

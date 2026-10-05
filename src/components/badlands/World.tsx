@@ -12,9 +12,9 @@ import { plural } from '@/lib/format';
 import Drawer from './Drawer';
 import PlayerHead from './PlayerHead';
 import Rail, { revealRailItem } from './Rail';
-import { CREW, MAP_POSTER, MAP_URL, SITE_NAME, handCase, titleCase, type Plate, type RoomId } from './data';
+import { CREW, MAP_LIGHTS, MAP_POSTER, MAP_URL, SITE_NAME, handCase, titleCase, type Plate, type RoomId } from './data';
 import type { ServerState } from './hooks';
-import { useInert, useMediaQuery } from './hooks';
+import { useEffectsAllowed, useInert, useMediaQuery } from './hooks';
 import { photoProps, PHOTO_SIZES } from './photo';
 import { toast } from './Toast';
 
@@ -74,6 +74,22 @@ function useLinger<T>(value: T | null, ms = 400): { shown: T | null; leaving: bo
   }, [value, ms, settle]);
   const shown = value ?? kept;
   return { shown, leaving: value === null && shown !== null, settle };
+}
+
+/** The way into the 3D map: a lantern hung from the arm of a fence post
+    planted in the world, the sign nailed to the post under it, and what it
+    does on a paper tag. The lantern is the control, as it always was; the
+    wood and the paper are what keep its words legible over the still, where
+    a soft pool of night round it was the one blurred edge on the page. */
+function Signpost({ sub }: { sub: string }) {
+  return (
+    <>
+      <span className="b-boot__post" aria-hidden="true" />
+      <Lantern lit />
+      <span className="b-boot__word">Ferðast um heiminn</span>
+      <span className="b-boot__sub">{sub}</span>
+    </>
+  );
 }
 
 /* a plain click: anything with a modifier keeps the link's own meaning (a new tab) */
@@ -164,6 +180,23 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
      anyone has scrolled to the world, as it always was, with no fade. */
   const [posterOn, setPosterOn] = useState(false);
   useEffect(() => { setPosterOn(true); }, []);
+  /* the town's lights coming on over the still: not on a device that skips the effects */
+  const effects = useEffectsAllowed();
+  /* They come on when the world is most of the way into view, and go out
+     again when the visitor climbs back up to the sunset, where it is not yet
+     night: a state, like the name's windows, so it is a short transition
+     (badlands.css) rather than an animation held for the whole scroll. */
+  const [lit, setLit] = useState(false);
+  useEffect(() => {
+    const el = frameRef.current;
+    if (!el || !effects || !('IntersectionObserver' in window)) { setLit(true); return; }
+    const io = new IntersectionObserver(([e]) => {
+      if (e.intersectionRatio >= 0.55) setLit(true);
+      else if (e.intersectionRatio < 0.15 && e.boundingClientRect.top > 0) setLit(false);
+    }, { threshold: [0, 0.15, 0.55] });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [effects]);
 
   /* The rooms' code is fetched once the browser is truly idle, so a door
      opens at once later and the first seconds, when a slow phone is still
@@ -363,6 +396,22 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
       <div ref={frameRef} className={`b-frame${live ? ' is-live' : ''}${ready ? ' is-ready' : ''}${drawn ? ' is-drawn' : ''}${shut ? ' is-room' : ''}${full === 'overlay' ? ' is-full' : ''}${live && still ? ' is-still' : ''}${menu && ready ? ' is-menu' : ''}`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         {posterOn && <img {...photoProps(MAP_POSTER, PHOTO_SIZES.poster)} className="b-frame__poster" alt="Heimasvæðið á JOÐ séð úr lofti" width={1920} height={1080} decoding="async" fetchPriority="low" />}
+        {/* The town's lights come on as the world comes into view: the still
+            arrives in the dusk, and its lanterns light one group after
+            another (badlands.css). The light is taken off
+            the still itself (scripts/map-lights.mjs), a pool round every lamp
+            it shows; the live map has its own. Under the frame's shade, so
+            the dark at its edges falls on the lamplight too. */}
+        {posterOn && effects && MAP_LIGHTS.length > 0 && (
+          <div className={`b-frame__town${lit ? ' is-lit' : ''}`} aria-hidden="true">
+            <div className="b-frame__dusk" />
+            {MAP_LIGHTS.map((src, i) => (
+              // eslint-disable-next-line @next/next/no-img-element -- a few kB of soft light, drawn at a quarter of the still's size
+              <img key={src} src={src} className={`b-frame__lights b-frame__lights--${i + 1}`} alt="" width={480} height={270} decoding="async" fetchPriority="low" />
+            ))}
+          </div>
+        )}
+
         <div className="b-frame__shade" aria-hidden="true" />
 
         {/* The viewer lays itself out for the frame (jod-embed in public/bluemap-jod/jod.css)
@@ -450,15 +499,11 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
                 // eslint-disable-next-line @next/next/no-html-link-for-pages
                 <a href={MAP_URL} className="b-boot" onTouchStart={warmViewer} onFocus={warmViewer}
                   onClick={e => { if (plainClick(e)) { e.preventDefault(); openFull(); } }}>
-                  <Lantern lit />
-                  <span className="b-boot__word">Ferðast um heiminn</span>
-                  <span className="b-boot__sub">opnar þrívíddarkortið á heilum skjá</span>
+                  <Signpost sub="opnar þrívíddarkortið á heilum skjá" />
                 </a>
               ) : (
                 <button type="button" className="b-boot" onPointerEnter={warmViewer} onFocus={warmViewer} onClick={() => setLive(true)}>
-                  <Lantern lit />
-                  <span className="b-boot__word">Ferðast um heiminn</span>
-                  <span className="b-boot__sub">hleður þrívíddarkortið · dragðu, snúðu, stækkaðu</span>
+                  <Signpost sub="hleður þrívíddarkortið · dragðu, snúðu, stækkaðu" />
                 </button>
               )
             )}
