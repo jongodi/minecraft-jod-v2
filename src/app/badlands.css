@@ -452,10 +452,7 @@
    same slice of strata the hours are divided by along its foot, the address on
    a paper tag nailed to it. */
 .b-bar.is-solid {
-  background:
-    repeating-linear-gradient(90deg, rgba(21, 16, 13, 0.18) 0 var(--px), transparent var(--px) 13px),
-    repeating-linear-gradient(90deg, transparent 0 37px, rgba(255, 240, 210, 0.04) 37px 39px),
-    linear-gradient(180deg, var(--wood-light) 0 var(--px), var(--wood) var(--px) calc(100% - var(--px) * 2), var(--wood-dark) calc(100% - var(--px) * 2));
+  background: var(--plank);
   box-shadow: inset 0 0 0 var(--px) rgba(21, 16, 13, 0.35);
 }
 .b-bar__strata { pointer-events: none; opacity: 0; transition: opacity var(--dur-3) var(--ease-out); }
@@ -941,6 +938,29 @@
 .b-frame.is-ready .b-frame__poster { opacity: 0; }
 .b-frame.is-ready .b-frame__shade { background: linear-gradient(180deg, var(--veil) 0%, transparent 18%, transparent 100%); }
 .b-frame__sheet { position: absolute; inset: 0; z-index: 2; background: var(--map-water); }
+/* The town's lights coming on as the world scrolls into view (World.tsx,
+   scripts/map-lights.mjs): the still arrives in the dusk, a layer of night
+   over it that lifts as the frame comes up, and three layers of lamplight
+   taken off the still come on one after another over it, so the lanterns
+   in the streets light by groups. Each is one opacity on a view timeline.
+   Where there are no view timelines, under reduced motion, and once the live
+   map is up, the town is simply lit. */
+.b-frame__town { position: absolute; inset: 0; pointer-events: none; }
+.b-frame__dusk { position: absolute; inset: 0; background: var(--night); opacity: 0; }
+.b-frame__lights { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 45%; }
+.b-frame.is-ready .b-frame__town, .b-frame.is-drawn .b-frame__town { visibility: hidden; }
+@keyframes b-dusk-lift { from { opacity: 0.5; } to { opacity: 0; } }
+@keyframes b-lights-on { from { opacity: 0; } to { opacity: 1; } }
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .b-frame__dusk, .b-frame__lights { animation: linear both; animation-timeline: view(); will-change: opacity; }
+    .b-frame__dusk { animation-name: b-dusk-lift; animation-range: entry 25% entry 90%; }
+    .b-frame__lights { animation-name: b-lights-on; }
+    .b-frame__lights--1 { animation-range: entry 40% entry 55%; }
+    .b-frame__lights--2 { animation-range: entry 55% entry 70%; }
+    .b-frame__lights--3 { animation-range: entry 70% entry 85%; }
+  }
+}
 .b-frame.is-drawn .b-frame__poster, .b-frame.is-drawn .b-frame__shade, .b-frame.is-drawn .b-frame__view { visibility: hidden; }
 /* While the viewer loads, the still takes on the live map's light (the layer
    over it lifts, above), so the hand-over, once the first tiles are drawn, is
@@ -1004,36 +1024,89 @@ html.is-map-full { overflow: hidden; }
 .b-frame.is-drawn .b-hud__title .b-title, .b-frame.is-drawn .b-hud__meta { color: var(--ink); text-shadow: none; }
 .b-frame.is-drawn .b-hud__in img { box-shadow: 0 0 0 1px var(--ink); }
 
-/* The lantern that boots the viewer: the lantern itself is the control, no
-   panel round it. It hangs in a pool of night that falls over the map around
-   it, which is what keeps its words legible over a busy still, and is drawn
-   at a whole multiple of its 12 by 18 pixels so every pixel stays square.
-   Pointed at, it lifts a step and its word warms to paper. */
+/* The way into the 3D map: a lantern hung from the arm of a fence post
+   planted in the world, a sign nailed to the post under it, and a paper tag
+   under the sign. The lantern is the control and lifts a step when pointed
+   at; the sign's word warms to paper. The words are read off the wood and
+   the paper, so nothing soft has to be laid over the still to keep them
+   legible: the soft pool of night it used to hang in was the one blurred
+   edge on a page of hard pixels. The post stands left of the lantern, its
+   arm reaching over to the chain; drawn at whole multiples of the art's pixel. */
 .b-boot {
+  --arm: 6.5rem;     /* from the post to the lantern */
+  --chain: 1.25rem;
   pointer-events: auto;
   position: relative;
   isolation: isolate;
   display: grid;
   justify-items: center;
-  gap: var(--sp-2);
-  padding: var(--sp-5) var(--sp-7);
+  padding: 0 var(--sp-4) var(--sp-7);
   color: var(--lantern);
   text-align: center;
   text-decoration: none;
-  text-shadow: 0 var(--px) 0 var(--night);
 }
-.b-boot::before {
+/* the post, its arm along the top, and the chain the lantern hangs by */
+.b-boot__post {
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  bottom: 0;
+  left: calc(50% - var(--arm) - var(--px) * 3);
+  width: calc(var(--px) * 6);
+  background: var(--plank-up);
+  box-shadow: calc(var(--px) * 2) 0 0 rgba(21, 16, 13, 0.45);
+}
+.b-boot__post::before {
   content: '';
   position: absolute;
-  inset: -45% -25%;
-  z-index: -1;
-  background: radial-gradient(closest-side, var(--pane) 35%, var(--veil) 62%, transparent);
-  pointer-events: none;
+  top: 0;
+  left: 0;
+  width: calc(var(--arm) + var(--px) * 7);
+  height: calc(var(--px) * 4);
+  background: var(--plank);
+  box-shadow: 0 var(--px) 0 rgba(21, 16, 13, 0.45);
 }
-.b-boot .b-lantern { width: 4.5rem; height: 6.75rem; margin-bottom: var(--sp-1); transition: transform var(--dur-2) var(--ease-out); }
-.b-boot__word { font-family: var(--font-data); font-size: var(--fs-data-lg); letter-spacing: 0.04em; text-transform: uppercase; transition: color var(--dur-1) var(--ease-out); }
-.b-boot__sub { font-size: var(--fs-sm); color: var(--tc-white); }
-.b-boot:focus-visible { outline: var(--px) solid var(--lantern); outline-offset: calc(var(--sp-1) * -1); }
+/* its foot, a block of the ground it is planted in */
+.b-boot::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  bottom: 0;
+  left: calc(50% - var(--arm) - var(--px) * 6);
+  width: calc(var(--px) * 12);
+  height: calc(var(--px) * 3);
+  background: var(--wood-dark);
+  box-shadow: inset 0 var(--px) 0 var(--tc-brown);
+}
+.b-boot__post::after {
+  content: '';
+  position: absolute;
+  top: calc(var(--px) * 4);
+  left: calc(var(--arm) + var(--px) * 2);
+  width: var(--px);
+  height: var(--chain);
+  /* links of iron, a pixel each with a pixel between */
+  background: repeating-linear-gradient(180deg, var(--ink-faint) 0 var(--px), transparent var(--px) calc(var(--px) * 2));
+}
+.b-boot .b-lantern { width: 4.5rem; height: 6.75rem; margin-top: calc(var(--chain) + var(--px) * 4); transition: transform var(--dur-2) var(--ease-out); }
+/* the sign: a short plank nailed across the post, the word burnt in lantern light */
+.b-boot__word {
+  margin-top: var(--sp-3);
+  padding: var(--sp-2) var(--sp-4);
+  background: var(--plank);
+  clip-path: var(--notch);
+  box-shadow: inset 0 0 0 var(--px) rgba(21, 16, 13, 0.35);
+  font-family: var(--font-data);
+  font-size: var(--fs-data-lg);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-shadow: 0 var(--px) 0 var(--wood-dark);
+  transition: color var(--dur-1) var(--ease-out);
+}
+/* what it does, on a paper tag pinned under the sign */
+.b-boot__sub { margin-top: var(--px); padding: var(--px) var(--sp-3); background: var(--paper); color: var(--ink-soft); clip-path: var(--notch); font-size: var(--fs-sm); line-height: 1.5; }
+.b-boot:focus-visible { outline: none; }
+.b-boot:focus-visible .b-boot__word { outline: var(--px) solid var(--lantern); outline-offset: var(--px); clip-path: none; }
 .b-boot:focus-visible .b-lantern { transform: translateY(calc(var(--px) * -2)); }
 .b-boot:focus-visible .b-boot__word { color: var(--paper); }
 @media (hover: hover) {
@@ -1044,14 +1117,14 @@ html.is-map-full { overflow: hidden; }
 /* a phone's frame is smaller and its word has less room: the lantern at four
    times its pixels instead of six, the word at the bitmap face's smaller size */
 @media (max-width: 599px) {
-  .b-boot { padding: var(--sp-4) var(--sp-5); }
+  .b-boot { --arm: 4.5rem; --chain: 0.75rem; padding-bottom: var(--sp-6); }
   .b-boot .b-lantern { width: 3rem; height: 4.5rem; }
-  .b-boot__word { font-size: var(--fs-data); }
+  .b-boot__word { font-size: var(--fs-data); padding: var(--sp-2) var(--sp-3); }
 }
 /* the narrowest phones (320 px): the rail's heading wraps and the frame is
-   at its least, so the lantern drops its small line rather than run into the places */
+   at its least, so the lantern drops its tag rather than run into the places */
 @media (max-width: 359px) {
-  .b-boot { padding: var(--sp-3) var(--sp-4); }
+  .b-boot { padding-bottom: var(--sp-4); }
   .b-boot__sub { display: none; }
 }
 .b-boot__wait { font-family: var(--font-data); font-size: var(--fs-data); color: var(--paper); text-shadow: 0 var(--px) 0 var(--night); }
@@ -1288,10 +1361,7 @@ html.is-map-full { overflow: hidden; }
     position: relative;
     margin-inline: calc(var(--gutter) * -1);
     padding: calc(env(safe-area-inset-top, 0px) + var(--sp-2)) var(--gutter) var(--sp-2);
-    background:
-      repeating-linear-gradient(90deg, rgba(21, 16, 13, 0.18) 0 var(--px), transparent var(--px) 13px),
-      repeating-linear-gradient(90deg, transparent 0 37px, rgba(255, 240, 210, 0.04) 37px 39px),
-      linear-gradient(180deg, var(--wood-light) 0 var(--px), var(--wood) var(--px) calc(100% - var(--px) * 2), var(--wood-dark) calc(100% - var(--px) * 2));
+    background: var(--plank);
     box-shadow: inset 0 0 0 var(--px) rgba(21, 16, 13, 0.35);
   }
   .b-frame.is-full .b-hud__top::after, .b-frame:fullscreen .b-hud__top::after {
@@ -1344,10 +1414,7 @@ html.is-map-full { overflow: hidden; }
   gap: var(--sp-2) var(--sp-4);
   min-height: 3.25rem;
   padding: var(--sp-2) var(--gutter);
-  background:
-    repeating-linear-gradient(90deg, rgba(21, 16, 13, 0.18) 0 var(--px), transparent var(--px) 13px),
-    repeating-linear-gradient(90deg, transparent 0 37px, rgba(255, 240, 210, 0.04) 37px 39px),
-    linear-gradient(180deg, var(--wood-light) 0 var(--px), var(--wood) var(--px) calc(100% - var(--px) * 2), var(--wood-dark) calc(100% - var(--px) * 2));
+  background: var(--plank);
   box-shadow: inset 0 0 0 var(--px) rgba(21, 16, 13, 0.35);
 }
 /* a room's name is the largest thing in the room: everything inside stops a step below */

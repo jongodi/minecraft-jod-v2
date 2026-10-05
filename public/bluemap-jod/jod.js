@@ -20,7 +20,8 @@
    - puts the plank with the way back to JOÐ across the top of the full screen
      map (named for the base on a base map's viewer, /kort/<id>), and turns a
      place's lantern into its postcard;
-   - opens the map at night, the hour the site is set in;
+   - opens the map at night, the hour the site is set in, under the page's
+     own warm night rather than BlueMap's grey-blue one;
    - and, inside the home page's frame, answers the page: when the first view
      is on screen (so the still can hand over), when its menu is open, pausing
      while the frame is out of sight, night and day, flying to a place, and
@@ -44,6 +45,8 @@
   const MARGIN = 48;
   const NIGHT = 0.25;
   const NIGHT_AMBIENT = 0.18;
+  /* the page's night (--night in src/app/tokens.css), the sky the map takes at night */
+  const NIGHT_SKY = [0x15 / 255, 0x10 / 255, 0x0d / 255];
 
   const tell = (type, detail) => {
     if (embedded) window.parent.postMessage({ source: 'jod-map', type, ...detail }, location.origin);
@@ -207,16 +210,30 @@
 
     quality(app);
 
-    /* Past the edge of the rendered world BlueMap paints its void colour, black
-       unless the map says otherwise, which cuts a hard band under the horizon.
-       Left at black, it becomes the sky a shade down, so the world stands in
-       the evening air instead of on a black shelf. */
+    /* The sky. BlueMap draws it as the map's sky colour times the light (the
+       larger of the sun's strength squared and the ambient light), so at
+       night the colour it is given is the page's own night over that light:
+       the world then stands in the same warm dark as the strata over the
+       frame, where BlueMap's grey-blue night was the one cold colour on the
+       page. By day the map's own sky comes back, and between the two it
+       moves with the sun. map:poster takes its still through this too.
+       Past the edge of the rendered world BlueMap paints its void colour,
+       black unless the map says otherwise, which cuts a hard band under the
+       horizon; left at black, it follows the sky a shade down, so the world
+       stands in the evening air instead of on a black shelf. */
     const voidColor = viewer.data.uniforms.voidColor?.value;
     const skyColor = viewer.data.uniforms.skyColor?.value;
-    if (voidColor && skyColor && voidColor.r + voidColor.g + voidColor.b < 0.02) {
-      voidColor.setRGB(skyColor.r * 0.62, skyColor.g * 0.6, skyColor.b * 0.66);
-      viewer.redraw();
-    }
+    const daySky = skyColor ? [skyColor.r, skyColor.g, skyColor.b] : null;
+    const voidFollows = !!(voidColor && skyColor && voidColor.r + voidColor.g + voidColor.b < 0.02);
+    const paintSky = (sunValue) => {
+      if (!skyColor || !daySky) return;
+      const ambientNow = viewer.data.uniforms.ambientLight?.value ?? 0;
+      const nightLight = Math.max(NIGHT * NIGHT, ambientNow, 0.01);
+      const t = Math.min(1, Math.max(0, (1 - sunValue) / (1 - NIGHT)));
+      const at = (i) => daySky[i] + (Math.min(1, NIGHT_SKY[i] / nightLight) - daySky[i]) * t;
+      skyColor.setRGB(at(0), at(1), at(2));
+      if (voidFollows) voidColor.setRGB(skyColor.r * 0.62, skyColor.g * 0.6, skyColor.b * 0.66);
+    };
 
     /* A tile that arrives draws one frame. BlueMap draws at the screen's full
        rate for a whole second after every tile, which is over in a moment when
@@ -254,7 +271,7 @@
       jod.night = !!on;
       const from = sun.value;
       const to = on ? NIGHT : 1;
-      animate(instant ? 0 : 1400, (k) => { sun.value = from + (to - from) * k; viewer.redraw(); });
+      animate(instant ? 0 : 1400, (k) => { sun.value = from + (to - from) * k; paintSky(sun.value); viewer.redraw(); });
       tell('night', { on: jod.night });
     };
     /* The map opens at night, the hour the site is set in: the town's own
@@ -264,6 +281,8 @@
     const ambient = viewer.data.uniforms.ambientLight;
     if (ambient && ambient.value < NIGHT_AMBIENT) ambient.value = NIGHT_AMBIENT;
     jod.setNight(!params.has('dagur'), true);
+    paintSky(sun.value);
+    viewer.redraw();
 
     /* Fly to a place: the camera's target glides there and comes in close enough to see it. */
     jod.flyTo = (point, id, done) => {

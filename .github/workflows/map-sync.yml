@@ -106,7 +106,7 @@ jobs:
       - name: Publish the new copy
         id: publish
         run: |
-          git add public/bluemap src/lib/bluemap-snapshot.json src/lib/bluemap-viewer.json public/map-poster.webp src/lib/map-poster.json
+          git add public/bluemap src/lib/bluemap-snapshot.json src/lib/bluemap-viewer.json public/map-poster.webp public/map-lights-*.webp src/lib/map-poster.json
           if git diff --cached --quiet; then
             echo "Nothing new to publish."
             echo "changed=false" >> "$GITHUB_OUTPUT"

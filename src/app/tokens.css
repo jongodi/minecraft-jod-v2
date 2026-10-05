@@ -90,6 +90,16 @@
   --wood:       var(--tc-brown);
   --wood-light: #6B4A2E;
   --wood-dark:  #35221A;
+  /* a plank: its grain, a lighter board every so often, and a bevelled edge
+     (the bar, the full-screen map's plank, the signpost, the rooms' walls) */
+  --plank:
+    repeating-linear-gradient(90deg, rgba(21, 16, 13, 0.18) 0 var(--px), transparent var(--px) 13px),
+    repeating-linear-gradient(90deg, transparent 0 37px, rgba(255, 240, 210, 0.04) 37px 39px),
+    linear-gradient(180deg, var(--wood-light) 0 var(--px), var(--wood) var(--px) calc(100% - var(--px) * 2), var(--wood-dark) calc(100% - var(--px) * 2));
+  /* the same wood standing up: a post, its grain running down it */
+  --plank-up:
+    repeating-linear-gradient(180deg, rgba(21, 16, 13, 0.18) 0 var(--px), transparent var(--px) 11px),
+    linear-gradient(90deg, var(--wood-light) 0 var(--px), var(--wood) var(--px) calc(100% - var(--px) * 2), var(--wood-dark) calc(100% - var(--px) * 2));
 
   /* ── status ── */
   --online:  #8FB06A;
