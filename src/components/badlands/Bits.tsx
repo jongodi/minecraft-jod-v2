@@ -71,31 +71,49 @@ export function Sun() {
   );
 }
 
-/* The moon's lit share of its face in each of the game's eight phases, in
-   columns of its 10 by 10 body: waxing from the right, waning from the left,
-   as it is seen from the north. */
-const MOON_LIT = [0, 3, 5, 8, 10, 8, 5, 3] as const;
-/* the craters on its face, [x, y, w, h], drawn where the light reaches them */
+/* The moon's lit share of its face in each of the game's eight phases: the
+   rows lit in each of the ten columns of its 10 by 10 body, left to right,
+   as [first, last] runs. Waxing from the right, waning from the left, as it
+   is seen from the north. The terminator bows: a crescent is thickest across
+   its middle, and a gibbous moon's dark share is too, so neither reads as a
+   bar (a three-column bar with a crater in it read as an exclamation mark). */
+type MoonColumn = ReadonlyArray<readonly [number, number]>;
+const D: MoonColumn = [];
+const F: MoonColumn = [[1, 10]];
+const MID: MoonColumn = [[4, 7]];
+const TALL: MoonColumn = [[2, 9]];
+const ENDS: MoonColumn = [[1, 2], [9, 10]];
+const MOON_COLUMNS: ReadonlyArray<ReadonlyArray<MoonColumn>> = [
+  [D, D, D, D, D, D, D, D, D, D],
+  [D, D, D, D, D, D, MID, TALL, F, F],
+  [D, D, D, D, D, F, F, F, F, F],
+  [D, D, ENDS, F, F, F, F, F, F, F],
+  [F, F, F, F, F, F, F, F, F, F],
+  [F, F, F, F, F, F, F, ENDS, D, D],
+  [F, F, F, F, F, D, D, D, D, D],
+  [F, F, TALL, MID, D, D, D, D, D, D],
+];
+/* the craters on its face, [x, y, w, h] on the 12 grid, drawn where the light reaches all of them */
 const MOON_CRATERS: ReadonlyArray<readonly [number, number, number, number]> = [[3, 3, 2, 2], [7, 2, 1, 1], [6, 6, 2, 1], [8, 8, 2, 1], [2, 8, 1, 1], [4, 9, 1, 1]];
 
-/** The moon as the game draws it: a square, like the sun, with craters,
-    lit in one of eight phases (src/lib/moon.ts). As in the game, the unlit
-    share of its face is not drawn at all (a faint square there read as a
-    frame round a sliver), and a new moon is not drawn. The faint ring of
-    light is round the lit share only. */
+/** The moon as the game draws it: a square, like the sun, with craters, lit
+    in one of eight phases (src/lib/moon.ts). As in the game, the unlit share
+    of its face is not drawn, and a new moon is not drawn at all. */
 export function Moon({ phase, className }: { phase: number; className?: string }) {
-  const lit = MOON_LIT[phase] ?? 0;
-  if (lit === 0) return null;
-  const x0 = phase <= 4 ? 11 - lit : 1;
-  const x1 = x0 + lit;
+  const columns = MOON_COLUMNS[phase] ?? MOON_COLUMNS[0];
+  /* x, first row, last row */
+  const segments = columns.flatMap((runs, i) => runs.map(([a, b]) => [i + 1, a, b] as const));
+  if (segments.length === 0) return null;
+  const lit = (x: number, y: number) => segments.some(([sx, a, b]) => sx === x && y >= a && y <= b);
+  const craters = MOON_CRATERS.filter(([x, y, w, h]) => {
+    for (let dx = 0; dx < w; dx++) for (let dy = 0; dy < h; dy++) if (!lit(x + dx, y + dy)) return false;
+    return true;
+  });
   return (
     <span className={`b-moon${className ? ` ${className}` : ''}`} aria-hidden="true">
       <svg viewBox="0 0 12 12" shapeRendering="crispEdges">
-        <rect x={x0 - 1} y="0" width={lit + 2} height="12" fill="currentColor" opacity="0.16" />
-        <rect x={x0} y="1" width={lit} height="10" fill="currentColor" />
-        {MOON_CRATERS.filter(([x, , w]) => x >= x0 && x + w <= x1).map(([x, y, w, h]) => (
-          <rect key={`${x}-${y}`} className="b-moon__crater" x={x} y={y} width={w} height={h} />
-        ))}
+        {segments.map(([x, a, b]) => <rect key={`${x}-${a}`} x={x} y={a} width="1" height={b - a + 1} fill="currentColor" />)}
+        {craters.map(([x, y, w, h]) => <rect key={`${x}-${y}`} className="b-moon__crater" x={x} y={y} width={w} height={h} />)}
       </svg>
     </span>
   );
