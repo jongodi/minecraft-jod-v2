@@ -33,7 +33,7 @@
 /* Wide enough for the longest value the board posts, a stretch of game time
    like "1 d. 14 klst.", on one line beside the leader's head and again beside
    a name in the two rows under the rule; two posters still fit a phone. */
-.b-posters .b-poster { flex: 0 0 15rem; scroll-snap-align: start; }
+.b-posters .b-hang { flex: 0 0 15rem; scroll-snap-align: start; display: grid; }
 .b-poster { display: grid; align-content: start; justify-items: center; text-align: center; padding: var(--sp-5) var(--sp-3) var(--sp-3); container-type: inline-size; }
 .b-poster > * { min-width: 0; max-width: 100%; }
 /* the seal at the foot, in the poster's lower right corner */
@@ -96,17 +96,20 @@
 .b-paper .b-empty { color: var(--ink-faint); }
 
 /* ─── the shelf: crates behind the counter ────────────────────── */
-/* Every pack is a crate on the shelf, small and unlabelled. Point at one and
-   its label goes on the counter, on paper like every other notice. */
+/* A store: every pack is a crate on the shelves, its drawing on a paper tag
+   nailed to its front. Point at one and its label goes on the counter beside
+   the shelves, on paper like every other notice, a slip sized to one label.
+   On a phone the counter stands under the shelves. */
 .b-stock { display: grid; gap: var(--sp-5); }
+@media (min-width: 900px) { .b-stock { grid-template-columns: minmax(0, 1fr) minmax(15rem, 18rem); align-items: start; gap: var(--sp-6); } }
 /* The shelves are drawn as one board under every row, across the whole width,
    so a half-filled row still stands on a whole plank. That needs the row height
    to be known, so the crates are a fixed square and the rows step by --step. */
 .b-stock__grid {
-  --slot:  3.25rem;                /* one crate, square */
-  --plank: calc(var(--px) * 3);    /* the board */
-  --edge:  calc(var(--px) * 4);    /* its shadowed front edge, in the gap below */
-  --step:  calc(var(--slot) + var(--sp-2) + var(--plank) + var(--sp-5));
+  --slot:  4.75rem;                /* one crate, square: four to a row on a phone */
+  --board: calc(var(--px) * 4);    /* the shelf board */
+  --edge:  calc(var(--px) * 5);    /* its shadowed front edge, in the gap below */
+  --step:  calc(var(--slot) + var(--sp-2) + var(--board) + var(--sp-5));
   list-style: none;
   display: grid;
   grid-template-columns: repeat(auto-fill, var(--slot));
@@ -116,36 +119,41 @@
   padding-bottom: var(--edge);     /* room for the last shelf's front edge */
   background-image: linear-gradient(180deg,
     transparent      0                                                       calc(var(--slot) + var(--sp-2)),
-    var(--wood)      calc(var(--slot) + var(--sp-2))                         calc(var(--slot) + var(--sp-2) + var(--plank)),
-    var(--wood-dark) calc(var(--slot) + var(--sp-2) + var(--plank))          calc(var(--slot) + var(--sp-2) + var(--plank) + var(--edge)),
-    transparent      calc(var(--slot) + var(--sp-2) + var(--plank) + var(--edge)));
+    var(--wood-light) calc(var(--slot) + var(--sp-2))                        calc(var(--slot) + var(--sp-2) + var(--px)),
+    var(--wood)      calc(var(--slot) + var(--sp-2) + var(--px))             calc(var(--slot) + var(--sp-2) + var(--board)),
+    var(--wood-dark) calc(var(--slot) + var(--sp-2) + var(--board))          calc(var(--slot) + var(--sp-2) + var(--board) + var(--edge)),
+    transparent      calc(var(--slot) + var(--sp-2) + var(--board) + var(--edge)));
   background-size: 100% var(--step);
   background-repeat: repeat-y;
 }
-@media (min-width: 560px) { .b-stock__grid { --slot: 3.75rem; } }
-.b-stock__grid > li { padding-bottom: calc(var(--sp-2) + var(--plank)); }
+@media (min-width: 560px) { .b-stock__grid { --slot: 5.5rem; } }
+/* two shelves of seven beside the counter */
+@media (min-width: 900px) { .b-stock__grid { --slot: 6rem; } }
+.b-stock__grid > li { padding-bottom: calc(var(--sp-2) + var(--board)); }
 .b-stock__crate {
   position: relative;
   display: grid;
   place-items: center;
   width: 100%;
   aspect-ratio: 1;
-  background: var(--wood-light);
-  box-shadow: inset 0 0 0 calc(var(--px) * 2) var(--wood), inset 0 0 0 calc(var(--px) * 3) var(--wood-light), var(--bevel);
+  background:
+    /* the slats across the crate's face */
+    repeating-linear-gradient(180deg, transparent 0 calc(25% - var(--px)), rgba(21, 16, 13, 0.3) calc(25% - var(--px)) 25%),
+    var(--wood-light);
+  box-shadow: inset 0 0 0 calc(var(--px) * 3) var(--wood), inset 0 0 0 calc(var(--px) * 4) var(--wood-light), var(--bevel);
   transition: transform var(--dur-2) var(--ease-out), box-shadow var(--dur-3) var(--ease-out);
 }
-.b-stock__crate::before, .b-stock__crate::after { content: ''; position: absolute; left: 50%; top: 50%; width: 130%; height: calc(var(--px) * 2); margin: calc(var(--px) * -1) 0 0 -65%; background: var(--wood); opacity: 0.5; }
-.b-stock__crate::before { transform: rotate(45deg); }
-.b-stock__crate::after  { transform: rotate(-45deg); }
-.b-stock__label { position: relative; z-index: 1; display: grid; place-items: center; width: 62%; height: 62%; padding: var(--px); background: var(--paper); clip-path: var(--notch); }
+/* the tag, nailed to the front: the pack's drawing on paper, a pixel nail at its top */
+.b-stock__label { position: relative; z-index: 1; display: grid; place-items: center; width: 58%; aspect-ratio: 1; padding: calc(var(--px) * 3) calc(var(--px) * 2) calc(var(--px) * 2); background: var(--paper); clip-path: var(--notch); box-shadow: 0 var(--px) 0 rgba(21, 16, 13, 0.45); }
+.b-stock__label::before { content: ''; position: absolute; top: var(--px); left: calc(50% - var(--px)); width: calc(var(--px) * 2); height: calc(var(--px) * 2); background: var(--ink-faint); }
 .b-stock__label svg { width: 100%; height: 100%; display: block; }
-/* the crate being read lifts off the plank and takes a rim of lantern light;
+/* the crate being read lifts off the shelf and takes a rim of lantern light;
    the pressed one (pinned by a tap) keeps it. Touch drives .is-shown itself. */
 .b-stock__crate.is-shown {
-  transform: translateY(calc(var(--px) * -1));
-  box-shadow: inset 0 0 0 calc(var(--px) * 2) var(--wood), inset 0 0 0 calc(var(--px) * 3) var(--wood-light), var(--bevel), 0 0 0 var(--px) var(--lantern);
+  transform: translateY(calc(var(--px) * -2));
+  box-shadow: inset 0 0 0 calc(var(--px) * 3) var(--wood), inset 0 0 0 calc(var(--px) * 4) var(--wood-light), var(--bevel), 0 0 0 var(--px) var(--lantern);
 }
-.b-stock__crate[aria-pressed='true'] { box-shadow: inset 0 0 0 calc(var(--px) * 2) var(--wood), inset 0 0 0 calc(var(--px) * 3) var(--wood-light), var(--bevel-in), 0 0 0 var(--px) var(--lantern); }
+.b-stock__crate[aria-pressed='true'] { box-shadow: inset 0 0 0 calc(var(--px) * 3) var(--wood), inset 0 0 0 calc(var(--px) * 4) var(--wood-light), var(--bevel-in), 0 0 0 var(--px) var(--lantern); }
 @media (prefers-reduced-motion: reduce) { .b-stock__crate { transition: none; } }
 
 /* the counter: one label at a time, on paper like every other notice */
@@ -154,6 +162,9 @@
    landing a beat after the text, the way a shopkeeper puts a ticket down and
    then the sample beside it. */
 .b-counter { display: grid; min-height: 7rem; padding: var(--sp-4); }
+/* a slip the size of a label: beside the shelves on a wide screen, and never wider than a label under them */
+.b-stock > .b-hang { max-width: 34rem; }
+@media (min-width: 900px) { .b-stock > .b-hang { position: sticky; top: 0; } .b-counter { min-height: 9rem; } .b-counter__slip { align-items: flex-start; } }
 .b-counter__slip { display: flex; align-items: center; gap: var(--sp-4); animation: b-slip var(--dur-3) var(--ease-out) both; }
 .b-counter__glyph { flex-shrink: 0; display: grid; place-items: center; width: 3rem; height: 3rem; padding: var(--sp-1); background: var(--paper-2); box-shadow: inset 0 0 0 var(--px) rgba(30, 22, 17, 0.2); animation: b-land var(--dur-3) var(--ease-out) both; animation-delay: 60ms; }
 .b-counter__text { animation: b-slip var(--dur-3) var(--ease-out) both; }
@@ -187,8 +198,38 @@
 .b-stray__actions { display: flex; flex-wrap: wrap; gap: var(--sp-3); margin-top: var(--sp-3); }
 .b-page__night { margin-top: var(--sp-4); }
 .b-page__head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--sp-4) var(--sp-6); margin: var(--sp-4) 0 var(--sp-6); }
-.b-rollcall { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-5) var(--sp-3); }
-@media (min-width: 640px) { .b-rollcall { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp-6) var(--sp-5); } }
+/* The notice board: the eight posters hang on one long board of planks,
+   capped along its top and held up by a post at each end that runs down
+   past it into the ground, standing in front of the far ridge under the
+   stars. Each poster stands off the boards by its hard shadow (.b-hang). */
+.b-rollcall {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-5) var(--sp-3);
+  padding: var(--sp-5) var(--sp-3) var(--sp-6);
+  background: var(--plank);
+  background-size: 100% 2.75rem;
+  box-shadow: 0 calc(var(--px) * -4) 0 var(--wood-dark), inset 0 0 0 var(--px) rgba(21, 16, 13, 0.35), 0 calc(var(--px) * 3) 0 rgba(21, 16, 13, 0.45);
+}
+.b-rollcall::before, .b-rollcall::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: calc(var(--sp-4) * -1);
+  bottom: calc(var(--sp-8) * -1);
+  width: calc(var(--px) * 7);
+  background: var(--plank-up);
+}
+.b-rollcall::before { left: calc(var(--px) * -4); }
+.b-rollcall::after { right: calc(var(--px) * -4); }
+@media (min-width: 640px) {
+  .b-rollcall { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp-6) var(--sp-5); padding: var(--sp-6) var(--sp-5) var(--sp-7); }
+  .b-rollcall::before, .b-rollcall::after { width: calc(var(--px) * 9); }
+  .b-rollcall::before { left: calc(var(--px) * -6); }
+  .b-rollcall::after { right: calc(var(--px) * -6); }
+}
+.b-rollcall > .b-hang { display: grid; }
 .b-poster--crew { padding: var(--sp-6) var(--sp-3) var(--sp-4); text-decoration: none; }
 /* the torn edge cuts off a ring drawn outside the poster, so it is drawn inside, clear of the tears */
 .b-poster--crew:focus-visible { outline: calc(var(--px) * 2) solid var(--lantern-ink); outline-offset: calc(var(--px) * -6); }

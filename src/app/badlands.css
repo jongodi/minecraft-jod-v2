@@ -1398,7 +1398,8 @@ html.is-map-full { overflow: hidden; }
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   max-height: calc(100% - 5.5rem);
-  background: var(--dusk);
+  /* a room has walls: boards side by side, in the room's dark */
+  background: var(--wall);
   box-shadow: 0 calc(var(--px) * -2) 0 var(--wood-dark), 0 -14px 0 rgba(21, 16, 13, 0.25);
   transform: translateY(100%);
   visibility: hidden;
@@ -1427,6 +1428,11 @@ html.is-map-full { overflow: hidden; }
 .b-room__body { overflow-y: auto; overscroll-behavior: contain; padding-block: var(--sp-5) var(--sp-6); scrollbar-width: thin; scrollbar-color: var(--wood-light) transparent; }
 @media (max-width: 899px) { .b-room__body { padding-block: var(--sp-4) var(--sp-5); } }
 @media (max-width: 479px) { .b-room__note { display: none; } }
+
+/* Paper hung on a wall stands off it: a hard shadow a pixel or two under it,
+   the site's only kind. On a wrapper, because paper is cut to its notched or
+   torn shape and the cut would take the shadow with it. */
+.b-hang { filter: drop-shadow(0 calc(var(--px) * 2) 0 rgba(21, 16, 13, 0.55)); }
 
 /* ─── the album: the whole wall, opened over the world ────────── */
 .b-album { position: fixed; inset: 0; z-index: var(--z-drawer); overflow-y: auto; background: var(--scrim-deep); padding-block: calc(var(--sp-6) + env(safe-area-inset-top, 0px)) var(--sp-8); }
