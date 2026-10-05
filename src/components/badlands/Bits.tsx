@@ -71,6 +71,59 @@ export function Sun() {
   );
 }
 
+/* The moon's lit share of its face in each of the game's eight phases, in
+   columns of its 10 by 10 body: waxing from the right, waning from the left,
+   as it is seen from the north. */
+const MOON_LIT = [0, 3, 5, 8, 10, 8, 5, 3] as const;
+/* the craters on its face, [x, y, w, h], drawn where the light reaches them */
+const MOON_CRATERS: ReadonlyArray<readonly [number, number, number, number]> = [[3, 3, 2, 2], [7, 2, 1, 1], [6, 6, 2, 1], [8, 8, 2, 1], [2, 8, 1, 1], [4, 9, 1, 1]];
+
+/** The moon as the game draws it: a square, like the sun, with craters,
+    lit in one of eight phases (src/lib/moon.ts). As in the game, the unlit
+    share of its face is not drawn at all (a faint square there read as a
+    frame round a sliver), and a new moon is not drawn. The faint ring of
+    light is round the lit share only. */
+export function Moon({ phase, className }: { phase: number; className?: string }) {
+  const lit = MOON_LIT[phase] ?? 0;
+  if (lit === 0) return null;
+  const x0 = phase <= 4 ? 11 - lit : 1;
+  const x1 = x0 + lit;
+  return (
+    <span className={`b-moon${className ? ` ${className}` : ''}`} aria-hidden="true">
+      <svg viewBox="0 0 12 12" shapeRendering="crispEdges">
+        <rect x={x0 - 1} y="0" width={lit + 2} height="12" fill="currentColor" opacity="0.16" />
+        <rect x={x0} y="1" width={lit} height="10" fill="currentColor" />
+        {MOON_CRATERS.filter(([x, , w]) => x >= x0 && x + w <= x1).map(([x, y, w, h]) => (
+          <rect key={`${x}-${y}`} className="b-moon__crater" x={x} y={y} width={w} height={h} />
+        ))}
+      </svg>
+    </span>
+  );
+}
+
+/* The game's clouds: flat slabs on a grid, ragged at the ends. Each is rows
+   of [x, y, width] one cell tall; the last row is the underside, which the
+   sunset lights from below. */
+type CloudShape = { w: number; h: number; rows: ReadonlyArray<readonly [number, number, number]> };
+export const CLOUDS: Record<'a' | 'b' | 'c' | 'd', CloudShape> = {
+  a: { w: 30, h: 4, rows: [[10, 0, 8], [4, 1, 21], [0, 2, 30], [6, 3, 13]] },
+  b: { w: 24, h: 4, rows: [[6, 0, 9], [2, 1, 18], [0, 2, 24], [4, 3, 13]] },
+  c: { w: 16, h: 3, rows: [[3, 0, 7], [0, 1, 16], [2, 2, 10]] },
+  d: { w: 12, h: 3, rows: [[2, 0, 6], [0, 1, 12], [3, 2, 6]] },
+};
+
+/** One cloud, drawn at --cpx per cell (badlands.css). */
+export function Cloud({ shape, className }: { shape: keyof typeof CLOUDS; className?: string }) {
+  const { w, h, rows } = CLOUDS[shape];
+  return (
+    <svg className={className} viewBox={`0 0 ${w} ${h}`} style={{ ['--w' as string]: w, ['--h' as string]: h }} aria-hidden="true" shapeRendering="crispEdges">
+      {rows.map(([x, y, rw], i) => (
+        <rect key={y} className={i === rows.length - 1 ? 'b-cloud__under' : 'b-cloud__body'} x={x} y={y} width={rw} height="1" />
+      ))}
+    </svg>
+  );
+}
+
 const STAR_TILE: Array<[number, number, number]> = [
   [12, 18, 2], [58, 7, 1], [91, 40, 2], [140, 22, 1], [176, 66, 2], [33, 84, 1], [118, 96, 2], [64, 132, 1],
   [160, 150, 2], [21, 168, 1], [99, 176, 1], [189, 118, 1], [136, 184, 2], [76, 52, 1], [8, 120, 1], [172, 12, 1],

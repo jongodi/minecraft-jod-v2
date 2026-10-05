@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { NO_SEASON, YULE_LADS, seasonAt, seasonFromParam, type Season } from '@/lib/season';
+import { moonFromParam, moonPhase, type MoonPhase } from '@/lib/moon';
 
 /** The time of year (src/lib/season.ts). The home page is drawn with the
     server's own day (src/lib/home-data.ts) so the snow and the lanterns are
@@ -17,6 +18,17 @@ export function useSeason(initial: Season = NO_SEASON): Season {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return season;
+}
+
+/** Tonight's moon (src/lib/moon.ts), worked out in the browser once the page
+    is in it: null until then, so a page drawn on another night never shows
+    the server's moon. ?tungl=0 … 7 shows any phase. */
+export function useMoonPhase(): MoonPhase | null {
+  const [phase, setPhase] = useState<MoonPhase | null>(null);
+  useEffect(() => {
+    setPhase(moonFromParam(new URLSearchParams(window.location.search).get('tungl')) ?? moonPhase(new Date()));
+  }, []);
+  return phase;
 }
 
 /** The root element's classes for a season: the sky, the snow and the fire read them in CSS. */

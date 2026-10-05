@@ -35,6 +35,12 @@
 @keyframes b-mesa-far  { to { transform: translateY(56px); } }
 @keyframes b-mesa-mid  { to { transform: translateY(36px); } }
 @keyframes b-mesa-near { to { transform: translateY(16px); } }
+/* the afterglow holds while the top of the sky goes dark, then goes last */
+@keyframes b-glow-out  { 0%, 40% { opacity: 1; } 100% { opacity: 0; } }
+/* the clouds drift a sixth of a screen east over the evening, in steps of one cell of their own drawing */
+@keyframes b-clouds-drift { to { transform: translateX(120px); } }
+@keyframes b-clouds-day   { 0%, 30% { opacity: 1; } 70%, 100% { opacity: 0; } }
+@keyframes b-clouds-night { 0%, 35% { opacity: 0; } 85%, 100% { opacity: 1; } }
 @supports (animation-timeline: scroll()) {
   .b-sky__night, .b-sky__stars, .b-sky__sun, .b-mesa__band, .b-mesa .b-mesa__rock, .b-mesa .b-mesa__snow,
   .b-mesa__layer--far, .b-mesa__layer--mid, .b-mesa__layer--near {
@@ -54,10 +60,22 @@
   .b-mesa__layer--far  .b-mesa__rock { animation-name: b-rock-far; }
   .b-mesa__layer--mid  .b-mesa__rock { animation-name: b-rock-mid; }
   .b-mesa__layer--near .b-mesa__rock { animation-name: b-rock-near; }
+  .b-hero__glow, .b-sky__clouds, .b-clouds {
+    animation-timing-function: linear;
+    animation-fill-mode: both;
+    animation-timeline: scroll(root);
+    animation-range: 0 120svh;
+  }
+  .b-hero__glow    { animation-name: b-glow-out; }
+  .b-sky__clouds   { animation-name: b-clouds-drift; animation-timing-function: steps(20, jump-end); }
+  .b-clouds--day   { animation-name: b-clouds-day; }
+  .b-clouds--night { animation-name: b-clouds-night; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .b-sky__night, .b-sky__stars, .b-sky__sun, .b-mesa__layer, .b-mesa__band, .b-mesa__rock, .b-mesa__snow { animation: none !important; }
-  .b-sky__night, .b-sky__stars, .b-sky__sun, .b-mesa__layer, .b-mesa__band, .b-mesa__snow { --evening: 0.7; }
+  .b-sky__night, .b-sky__stars, .b-sky__sun, .b-mesa__layer, .b-mesa__band, .b-mesa__rock, .b-mesa__snow,
+  .b-hero__glow, .b-sky__clouds, .b-clouds, .b-hero__moon { animation: none !important; }
+  .b-sky__night, .b-sky__stars, .b-sky__sun, .b-mesa__layer, .b-mesa__band, .b-mesa__snow,
+  .b-hero__glow, .b-sky__clouds, .b-clouds, .b-hero__moon { --evening: 0.7; }
   .b-sky__sun { display: none; }
 }
 
@@ -120,6 +138,44 @@
    last-seen line, and a sun pinned to the sky at one height ran under them. */
 @media (max-width: 899px) { .b-sky__sun { display: none; } }
 .b-sky svg { display: block; shape-rendering: crispEdges; }
+
+/* The clouds: the game's flat slabs, far off, in the band of sky between the
+   words and the name and under the sun. They are in the fixed sky, so the
+   land rises over them as the page goes down into the valley. Lit from below
+   at sunset (the underside takes the horizon's gold), dark against the stars
+   at night: two copies of the same clouds, one fading out as the other comes,
+   so a scroll frame is two opacities and one transform. Never behind a line
+   of words: the places are chosen clear of the sentence, the address and the
+   lantern's plate at every width. */
+.b-sky__clouds {
+  position: absolute;
+  inset: 0;
+  --cpx: 6px;   /* one cell of a cloud */
+  transform: translateX(round(nearest, calc(var(--evening) * 120px), 6px));
+  will-change: transform;
+}
+.b-clouds { position: absolute; inset: 0; will-change: opacity; }
+.b-clouds--day   { opacity: clamp(0, calc((0.7 - var(--evening)) * 2.5), 1); }
+.b-clouds--night { opacity: clamp(0, calc((var(--evening) - 0.35) * 2), 1); }
+.b-cloud { position: absolute; width: calc(var(--w) * var(--cpx)); height: calc(var(--h) * var(--cpx)); }
+.b-clouds--day .b-cloud__body    { fill: var(--paper); fill-opacity: 0.5; }
+.b-clouds--day .b-cloud__under   { fill: var(--sky-sunset-horizon); fill-opacity: 0.7; }
+/* at night the game greys its clouds with the sky: a shade lighter than the dark round them, never a hole in the stars */
+.b-clouds--night .b-cloud__body  { fill: color-mix(in oklab, var(--tc-white), var(--night) 80%); fill-opacity: 0.9; }
+.b-clouds--night .b-cloud__under { fill: var(--dusk-2); fill-opacity: 0.9; }
+/* a wide screen: four, two in the open sky over the name, two under the sun */
+.b-cloud--1 { left: 3%;  top: 47%; }
+.b-cloud--2 { left: 36%; top: 52%; }
+.b-cloud--3 { left: 64%; top: 37%; }   /* clear of the sun's path as it sets */
+.b-cloud--4 { left: 89%; top: 45%; }
+/* a phone: two, left of the sun in the hero's open row, smaller */
+@media (max-width: 899px) {
+  .b-sky__clouds { --cpx: 4px; transform: translateX(round(nearest, calc(var(--evening) * 120px), 4px)); }
+  .b-cloud--1 { left: 4%;  top: 57%; }
+  .b-cloud--2 { left: 24%; top: 63%; }
+  .b-sky .b-cloud--3, .b-sky .b-cloud--4 { display: none; }   /* .b-sky svg would otherwise show them */
+  .b-sky__clouds { animation-timing-function: steps(30, jump-end); }   /* the drift in steps of a phone's smaller cell */
+}
 /* the white-hot middle of the game's square sun, tinted toward the sunlight round it */
 .b-sky .b-sun__core, .b-hero__sun .b-sun__core { fill: color-mix(in oklab, var(--sun), #FFF8EA 60%); }
 
@@ -629,7 +685,8 @@
      a new column, rather than laid over the ground that already holds the cell */
   .b-hero > *, .b-hero .b-hero__stage > *, .b-hero .b-hero__lead > * { grid-column: 1; }
   .b-hero .b-hero__mark { grid-row: 1; margin-inline: var(--gutter); padding-bottom: calc(var(--mesa-h) * var(--mark-sink)); }
-  .b-hero > .b-mesa { grid-row: 1 / 2; }   /* an absolute item's auto end line is the container's edge, so both lines are named */
+  .b-hero > .b-mesa, .b-hero > .b-hero__glow { grid-row: 1 / 2; }   /* an absolute item's auto end line is the container's edge, so both lines are named */
+  .b-hero .b-hero__moon { display: none; }   /* risen, it would stand under the bar */
   .b-hero::after { content: ''; grid-column: 1; grid-row: 2 / 4; z-index: 2; background: var(--dusk); }
   .b-hero .b-hero__sub { grid-row: 2; position: relative; z-index: 3; margin-inline: var(--gutter); padding-top: var(--sp-4); }
   .b-hero .b-hero__action { grid-row: 3; position: relative; z-index: 3; flex-direction: column; align-items: stretch; gap: var(--sp-3); margin-top: 0; padding: var(--sp-3) var(--gutter) var(--sp-5); }
@@ -680,6 +737,56 @@
 .b-hero__window--o   { left: 0.971em; }
 .b-hero__window--eth { left: 1.780em; width: 0.135em; }
 .b-hero__mark.is-home .b-hero__window { opacity: 1; }
+
+/* The afterglow: the last of the sunset, held on the horizon behind the
+   ridges while the night takes the top of the sky, then gone last. It rides
+   with the land, so the gold stays on the land's own horizon as the page
+   goes down; the night is a layer over the whole fixed sky, and alone it
+   turned the sky one flat maroon at every hour between. Drawn behind the far
+   ridge, so the ridges stand dark against it. At the top of the page it
+   matches the sky under it, so nothing is seen until the evening moves. */
+.b-hero__glow {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 40%;
+  background: linear-gradient(180deg, transparent, var(--sky-sunset-low) 55%, var(--sky-sunset-horizon));
+  opacity: clamp(0, calc((1 - var(--evening)) / 0.6), 1);
+  pointer-events: none;
+  will-change: opacity;
+}
+
+/* Tonight's moon (src/lib/moon.ts) comes up over the J as the sun sets on the
+   other side of the sky: a square like the sun, in the phase the real moon is
+   in, in the open sky between the address and the name. It rises the last
+   step into its place and comes out of the dusk in the first third of a
+   screen of scroll, while the hero is still there to be seen. Rising from
+   behind the letter itself, as it first did, it showed half risen as a
+   lump on the J's top bar. Placed and moved in ems against Alfa Slab One's
+   J (measured), so it holds at every size the name is set at. */
+.b-hero__moon {
+  position: absolute;
+  z-index: -2;
+  left: 0.36em;
+  top: -0.42em;
+  width: 0.18em;
+  height: 0.18em;
+  color: var(--star);
+  transform: translateY(calc((1 - min(1, var(--evening) / 0.25)) * 0.12em));
+  opacity: clamp(0, calc(var(--evening) * 4), 1);
+  pointer-events: none;
+}
+.b-moon { display: block; line-height: 0; }
+.b-moon svg { display: block; width: 100%; height: 100%; }
+.b-moon__crater { fill: color-mix(in oklab, var(--star), var(--ink-faint) 38%); }
+@keyframes b-moon-rise {
+  0%   { transform: translateY(0.12em); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+@supports (animation-timeline: scroll()) {
+  .b-hero__moon { animation: b-moon-rise linear both; animation-timeline: scroll(root); animation-range: 0 30svh; }
+}
+@media (prefers-reduced-motion: reduce) { .b-hero__moon { transform: none; opacity: 1; } }
 /* Every line of hero text wears the game's own text shadow: one hard pixel of
    night under it, which is how Minecraft keeps light text legible over any
    sky. On a wide screen the sub-line falls on the brightest band of the

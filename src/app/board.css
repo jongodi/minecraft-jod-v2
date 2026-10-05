@@ -176,6 +176,11 @@
 .b-nightsky { position: absolute; inset-inline: 0; top: 0; height: clamp(19rem, 14rem + 12vw, 26rem); z-index: 0; overflow: clip; pointer-events: none; background: linear-gradient(180deg, var(--sky-night-top), var(--night) 92%); --ground: 0px; }
 .b-nightsky__stars { position: absolute; inset: 0; width: 100%; height: 100%; color: var(--star); opacity: 0.55; }
 .b-nightsky .b-ridge { height: clamp(3.5rem, 8vw, 6rem); }
+/* tonight's moon, risen: high on the right, where the sun stood at the top of the evening */
+.b-nightsky__moon { position: absolute; right: max(var(--gutter), calc((100vw - var(--wrap)) / 2 + var(--gutter))); top: clamp(4.5rem, 3rem + 4vw, 6.5rem); width: 3rem; height: 3rem; color: var(--star); animation: b-moon-out var(--dur-3) var(--ease-out) both; }
+@keyframes b-moon-out { from { opacity: 0; } }
+@media (max-width: 759px) { .b-nightsky__moon { width: 2.25rem; height: 2.25rem; top: 5rem; } }
+@media (prefers-reduced-motion: reduce) { .b-nightsky__moon { animation: none; } }
 /* off the trail (404 and a page that broke): the words stand alone under a dark lantern */
 .b-stray { display: grid; align-content: center; justify-items: start; gap: var(--sp-4); min-height: 70svh; }
 .b-stray .b-lantern.b-stray__lantern { width: 3rem; height: 4.5rem; margin-bottom: var(--sp-2); }
