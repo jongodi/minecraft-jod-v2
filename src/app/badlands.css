@@ -705,14 +705,43 @@
    The frame opens as a still of the home area. The viewer is an iframe
    that exists only once the lantern has been pressed, so a visitor who
    never touches it never downloads it. */
-.b-world { position: relative; background: var(--dusk); scroll-margin-top: var(--bar); }
+.b-world { position: relative; background: var(--dusk); scroll-margin-top: var(--bar); view-timeline: --world block; }
+/* Down into the valley: the hero's dark ground runs on over the top of the
+   frame as a stepped ridge (Mesa.tsx, ValleyRidge), low under the world's
+   title and tools and rising in the open sky between them, so the turn from
+   the sunset to the world happens in the land. It stands --rise higher than
+   it rests and sinks to rest, in whole art pixels, while the world comes up
+   into view: coming over the ridge, more of the valley shows. The part above
+   the frame lies on the hero's own ground, the same colour, so nothing shows
+   there but more ground. Above the frame, under the HUD and the full screen. */
+.b-valley {
+  --valley: 4rem;
+  --rise: 1rem;
+  position: absolute;
+  inset-inline: 0;
+  top: calc(var(--rise) * -1);
+  height: calc(var(--valley) + var(--rise));
+  z-index: 2;
+  color: var(--dusk);
+  background: linear-gradient(var(--dusk), var(--dusk)) top / 100% var(--rise) no-repeat;
+  pointer-events: none;
+}
+.b-valley svg { position: absolute; inset-inline: 0; top: var(--rise); width: 100%; height: calc(var(--valley) * 34 / 32); display: block; shape-rendering: crispEdges; }
+@media (max-width: 899px) { .b-valley { --valley: 2.5rem; --rise: 0.5rem; } }
+@keyframes b-valley-sink { from { transform: translateY(var(--rise)); } to { transform: none; } }
+@supports (animation-timeline: view()) {
+  .b-valley { animation: b-valley-sink steps(8, jump-end) both; animation-timeline: --world; animation-range: entry 0% entry 70%; }
+}
+@media (prefers-reduced-motion: reduce) { .b-valley { animation: none; } }
 .b-frame {
   position: relative;
   height: calc(100svh - var(--bar));
   min-height: 34rem;
   isolation: isolate;
   background: var(--night);
+  /* no plank along the top: the ridge is the frame's top edge (.b-valley) */
   border-block: calc(var(--px) * 4) solid var(--wood);
+  border-top-width: 0;
   box-shadow: inset 0 0 0 var(--px) var(--wood-light), inset 0 0 0 calc(var(--px) * 2) var(--wood-dark);
   overflow: clip;
 }
