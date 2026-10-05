@@ -658,6 +658,29 @@
   overflow-wrap: normal;
   text-shadow: 0 var(--px) 0 var(--tc-brown), 0 calc(var(--px) * 3) 0 rgba(21, 16, 13, 0.35);
 }
+/* Someone's home: the counters of the O and the Ð are windows, dark (the sky
+   through them) until the server is up with somebody in it, then lit in the
+   sun's warm white with a cross of wood for the panes. Behind the letters, so
+   the strokes frame them; placed in ems against Alfa Slab One's own counters
+   (measured), so they hold at every size the name is set at. The near ridges
+   stand in front of their feet as they do in front of the letters. */
+.b-hero__window {
+  position: absolute;
+  z-index: -1;
+  top: 0.132em;
+  width: 0.144em;
+  height: 0.462em;
+  background:
+    linear-gradient(90deg, transparent calc(50% - 0.009em), var(--wood-dark) 0 calc(50% + 0.009em), transparent 0),
+    linear-gradient(180deg, transparent 43%, var(--wood-dark) 0 47%, transparent 0),
+    linear-gradient(180deg, color-mix(in oklab, var(--sun), var(--lantern) 45%), var(--sun) 80%);
+  opacity: 0;
+  transition: opacity var(--dur-3) var(--ease-out);
+  pointer-events: none;
+}
+.b-hero__window--o   { left: 0.971em; }
+.b-hero__window--eth { left: 1.780em; width: 0.135em; }
+.b-hero__mark.is-home .b-hero__window { opacity: 1; }
 /* Every line of hero text wears the game's own text shadow: one hard pixel of
    night under it, which is how Minecraft keeps light text legible over any
    sky. On a wide screen the sub-line falls on the brightest band of the
@@ -699,6 +722,33 @@
 .b-mesa__layer--ground { --depth: 0px; color: var(--dusk); }
 .b-mesa__band { opacity: calc(1 - var(--evening) * 0.7); }
 @media (max-width: 767px) { .b-mesa__layer--mid { display: none; } }
+/* The crew on the near ridge: the group stands on one plateau, found by its
+   place in the ridge's 480 by 120 drawing, which is scaled to cover the layer
+   from its foot and centred (xMidYMax slice): one unit is the larger of the
+   layer's width over 480 and its height over 120. A head is eight units, a
+   head block at the ridge's own scale; three units between them keep two
+   heads' targets 24 px apart on a phone. Beside the name on a wide screen,
+   on the tallest plateau at its feet on a phone. */
+.b-mesa { container-type: size; }
+.b-mesa__heads {
+  --u: max(100cqw / 480, 100cqh / 120);
+  --hx: 392; --hy: 26;
+  position: absolute;
+  left: calc(50% + (var(--hx) - 240) * var(--u));
+  bottom: calc(var(--hy) * var(--u));
+  display: flex;
+  align-items: flex-end;
+  gap: calc(var(--u) * 3);
+  pointer-events: auto;
+}
+@media (max-width: 899px) { .b-mesa__heads { --hx: 210; --hy: 34; } }
+.b-mesa__head { position: relative; display: block; }
+.b-mesa__head::before { content: ''; position: absolute; inset: -0.5rem calc(var(--u) * -1.5); }
+.b-mesa__head img { display: block; width: calc(var(--u) * 8); height: calc(var(--u) * 8); image-rendering: pixelated; box-shadow: 0 0 0 1px var(--night), 0 var(--px) 0 1px rgba(21, 16, 13, 0.45); }
+.b-mesa__head:focus-visible img { outline: var(--px) solid var(--lantern); outline-offset: var(--px); }
+@media (hover: hover) { .b-mesa__head:hover img { outline: var(--px) solid var(--paper); outline-offset: var(--px); } }
+.b-mesa__more { align-self: center; padding: 0 0.3rem; background: var(--night); color: var(--paper); font-weight: 600; font-size: var(--fs-sm); line-height: 1.4; }
+
 @media (prefers-reduced-motion: reduce) { .b-mesa__layer { transform: none; } }
 
 /* ─── the world: BlueMap fills the viewport under the mesas ───────

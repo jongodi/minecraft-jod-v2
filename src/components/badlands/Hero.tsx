@@ -10,8 +10,13 @@ import type { ServerState } from './hooks';
 import type { Season } from '@/lib/season';
 import type { PlayNightResponse } from '@/app/api/playnight/route';
 import { YuleLad } from './Season';
+import { CREW } from './data';
 
 function Hero({ server, season, nights }: { server: ServerState; season: Season; nights?: PlayNightResponse }) {
+  /* someone's home: the server is up and somebody is in it */
+  const home = server.online === true && server.players > 0;
+  const lower = server.list.map(n => n.toLowerCase());
+  const inside = server.online ? CREW.filter(n => lower.includes(n.toLowerCase())) : [];
   return (
     <section id="top" className="b-hero" aria-label="Sólsetur">
       {/* A title card over the land: the name stands at the foot of the sunset
@@ -21,7 +26,12 @@ function Hero({ server, season, nights }: { server: ServerState; season: Season;
           is above it, on the dark of the upper sky: one line of what this is,
           then the address and the server's lantern side by side. */}
       <div className="b-wrap b-hero__stage">
-        <h1 className="b-hero__mark">JOÐ</h1>
+        {/* the counters of the O and the Ð are windows, lit while someone is in (badlands.css) */}
+        <h1 className={`b-hero__mark${home ? ' is-home' : ''}`}>
+          JOÐ
+          <span className="b-hero__window b-hero__window--o" aria-hidden="true" />
+          <span className="b-hero__window b-hero__window--eth" aria-hidden="true" />
+        </h1>
         {/* a phone's sun: in the open sky between the words and the name, so no line above it ever crosses it (badlands.css) */}
         <div className="b-hero__sun" aria-hidden="true"><Sun /></div>
         <div className="b-hero__lead">
@@ -37,7 +47,7 @@ function Hero({ server, season, nights }: { server: ServerState; season: Season;
           </div>
         </div>
       </div>
-      <Mesa snow={season.snow} halloween={season.halloween} />
+      <Mesa snow={season.snow} halloween={season.halloween} heads={inside} />
       <YuleLad season={season} spot="mesa" />
     </section>
   );
