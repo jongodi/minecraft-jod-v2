@@ -21,9 +21,11 @@ const QuickDraw = dynamic(() => import('./QuickDraw'), { ssr: false });
    the fire used to download the panel's code and stylesheet. */
 
 /** The campfire: the last light. One band of ground at the foot of the page,
-    the fire burning in front of the same mesas the evening opened over. Tap the
-    fire and the duel comes out. Climbing back to the sunset rewinds the sky on
-    the way up, because the sky is scroll. */
+    the fire burning in the middle of it in a ring of stones, in front of the
+    same mesas the evening opened over, its light pooled across the ground and
+    on the foot of the rock. Tap the fire and the duel comes out. Climbing
+    back to the sunset rewinds the sky on the way up, because the sky is
+    scroll. */
 function Footer({ season: initial }: { season?: Season } = {}) {
   const [duel, setDuel] = useState(false);
   const season = useSeason(initial);
@@ -39,30 +41,35 @@ function Footer({ season: initial }: { season?: Season } = {}) {
 
   return (
     <footer id="campfire" className={`b-foot${seasonClass(season)}`}>
-      <Ridge snow={season.snow} />
-      <div className="b-wrap b-foot__inner">
-        <div className="b-foot__camp">
-          <button type="button" className="b-foot__fire b-tip" onClick={() => setDuel(true)} aria-haspopup="dialog" aria-label="Einvígi: prófaðu viðbragðstímann" data-tip="Einvígi">
-            <Campfire />
-          </button>
-          <YuleLad season={season} spot="fire" />
-        </div>
+      {/* the camp: the fire in the middle of the band, standing on the ground,
+          the way back up and the wind on the ground either side of it, the
+          ridge behind lit at its foot by the fire */}
+      <div className="b-foot__scene">
+        <Ridge snow={season.snow} warm />
+        <div className="b-wrap b-foot__inner">
+          <Link href="/#top" className="b-btn b-btn--small b-foot__up">
+            <ChevronIcon dir="up" className="b-foot__upchev" />
+            Aftur í sólsetrið
+          </Link>
 
-        <div className="b-foot__nav">
-          <AmbienceToggle className="b-foot__sound" />
-        </div>
+          <div className="b-foot__camp">
+            <button type="button" className="b-foot__fire b-tip" onClick={() => setDuel(true)} aria-haspopup="dialog" aria-label="Einvígi: prófaðu viðbragðstímann" data-tip="Einvígi">
+              <Campfire stones />
+            </button>
+            <YuleLad season={season} spot="fire" />
+          </div>
 
-        <Link href="/#top" className="b-btn b-btn--small b-foot__up">
-          <ChevronIcon dir="up" className="b-foot__upchev" />
-          Aftur í sólsetrið
-        </Link>
-
-        <div className="b-foot__credit">
-          <p>{SITE_NAME}, frá 2024 · {SERVER_IP}</p>
-          <p className="b-foot__small">Engin tengsl við Mojang eða Microsoft. <Link href="/admin" prefetch={false} className="b-foot__admin">Stjórnborð</Link></p>
+          <div className="b-foot__nav">
+            <AmbienceToggle className="b-foot__sound" />
+          </div>
         </div>
       </div>
       <div className="b-ground" aria-hidden="true" />
+      {/* the small print, on the dark earth under the ground */}
+      <div className="b-foot__credit">
+        <p>{SITE_NAME}, frá 2024 · {SERVER_IP}</p>
+        <p className="b-foot__small">Engin tengsl við Mojang eða Microsoft. <Link href="/admin" prefetch={false} className="b-foot__admin">Stjórnborð</Link></p>
+      </div>
 
       {duel && (
         <div className="b-duelbox" role="dialog" aria-modal="true" aria-label="Einvígi" {...backdrop}>

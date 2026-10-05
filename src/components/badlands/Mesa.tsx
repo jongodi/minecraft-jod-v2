@@ -150,12 +150,25 @@ function Layer({ d, mod, children, haze, lit, after }: { d: string; mod: string;
 /** The same far ridge, low and dark, for the foot of the page: the evening
     opened over these mesas, and the campfire burns in front of them once they
     are out of the light. Squashed to the band's height on purpose, so a whole
-    horizon fits in three centimetres of page. */
-export function Ridge({ snow = false }: { snow?: boolean }) {
+    horizon fits in three centimetres of page. `warm`: the fire in the middle
+    of the band lights the foot of the rock behind it. */
+export function Ridge({ snow = false, warm = false }: { snow?: boolean; warm?: boolean }) {
   return (
     <div className="b-ridge" aria-hidden="true">
       <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
         <path d={FAR_D} fill="currentColor" />
+        {warm && (
+          <>
+            <defs>
+              <radialGradient id="b-ridge-warm" gradientUnits="userSpaceOnUse" cx={W / 2} cy={H} r={W * 0.32}>
+                <stop offset="0" stopColor="var(--ember)" stopOpacity="0.5" />
+                <stop offset="0.55" stopColor="var(--ember)" stopOpacity="0.16" />
+                <stop offset="1" stopColor="var(--ember)" stopOpacity="0" />
+              </radialGradient>
+            </defs>
+            <path d={FAR_D} fill="url(#b-ridge-warm)" />
+          </>
+        )}
         {snow && <Snow plateaus={FAR} />}
       </svg>
     </div>

@@ -1876,58 +1876,59 @@ html.is-map-full { overflow: hidden; }
 .b-paper .b-note { color: var(--ink-faint); }
 
 /* ─── campfire: the footer ────────────────────────────────────── */
-/* One band of ground, no taller than it needs to be. The doors are in the bar
-   and the hotbar, so the footer carries only the way back up, the wind and
-   fire, and the small print, and gives the room to the fire, which stands on
-   the ground strip. On a phone the way up and the sound share one row, so
-   the fire is reached a row sooner. */
+/* One band of ground. The doors are in the bar and the hotbar, so the footer
+   carries the fire, the way back up and the wind, which stand on the ground,
+   and the small print, which is on the dark earth under it. The fire is the
+   scene and the duel's door, so it has the middle of the band, at eight
+   times its pixels in a ring of stones; the way up and the wind sit either
+   side of it on a wide screen, and share the row above it on a phone. */
 .b-foot { position: relative; --ground: calc(var(--px) * 14); padding-top: var(--sp-6); overflow: clip; }
+.b-foot__scene { position: relative; }
 .b-foot__inner {
   position: relative;
   z-index: 2;   /* the fire stands on the ground strip and its light falls across it */
   display: grid;
   grid-template-columns: auto auto;
-  grid-template-areas: 'up nav' 'credit credit' 'camp camp';
+  grid-template-areas: 'up nav' 'camp camp';
   justify-content: center;
   justify-items: center;
-  align-items: center;
-  text-align: center;
-  gap: var(--sp-4) var(--sp-3);
-  /* the floor: how high the text stands above the ground, so it clears the
-     ridge behind it and the fire has a horizon to burn in front of */
-  --floor: 3.25rem;
-  padding-bottom: var(--floor);
+  align-items: end;
+  gap: var(--sp-5) var(--sp-4);
 }
 @media (min-width: 720px) {
   .b-foot__inner {
-    grid-template-columns: auto minmax(0, 1fr) auto auto;
-    grid-template-areas: 'camp credit nav up';
-    justify-content: stretch;
-    align-items: end;
-    justify-items: start;
-    text-align: left;
-    column-gap: var(--sp-6);
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    grid-template-areas: 'up camp nav';
+    column-gap: var(--sp-7);
+    padding-top: var(--sp-5);
   }
+  .b-foot__up { justify-self: end; margin-bottom: var(--sp-3); }
+  .b-foot__nav { justify-self: start; margin-bottom: var(--sp-3); }
 }
 
-/* the fire, and its light pooled across the band */
-.b-foot__camp { grid-area: camp; position: relative; display: flex; justify-content: center; align-items: flex-end; margin-bottom: calc(var(--floor) * -1); }
+/* the fire, and its light pooled wide across the band */
+.b-foot__camp { grid-area: camp; position: relative; display: flex; justify-content: center; align-items: flex-end; }
 .b-foot__camp::before {
   content: '';
   position: absolute;
   left: 50%;
-  bottom: -1.5rem;
-  width: 26rem;
-  height: 9rem;
-  margin-left: -13rem;
-  background: radial-gradient(closest-side, rgba(224, 96, 42, 0.30), transparent);
+  bottom: -2.5rem;
+  width: 46rem;
+  height: 13rem;
+  margin-left: -23rem;
+  background: radial-gradient(closest-side, rgba(224, 96, 42, 0.30), rgba(224, 96, 42, 0.08) 60%, transparent);
   animation: b-flicker var(--dur-lantern) ease-in-out infinite;
   pointer-events: none;
 }
 .b-foot__fire { display: block; padding: 0; border: 0; background: none; cursor: pointer; }
+.b-foot__fire:focus-visible { outline: none; }
+.b-foot__fire:focus-visible .b-fire { outline: var(--px) solid var(--lantern); outline-offset: var(--px); }
 .b-foot__fire:focus-visible .b-fire { transform: translateY(calc(var(--px) * -1)); }
 @media (hover: hover) { .b-foot__fire:hover .b-fire { transform: translateY(calc(var(--px) * -1)); } }
 .b-fire { position: relative; display: block; width: 5.5rem; height: 5.5rem; margin-bottom: calc(var(--px) * -2); transition: transform var(--dur-2) var(--ease-out); }
+/* the footer's own fire: eight times its pixels, six on a phone, standing on the ground in its stones */
+.b-foot .b-fire { width: 8rem; height: 8rem; margin-bottom: 0; }
+@media (max-width: 719px) { .b-foot .b-fire { width: 6rem; height: 6rem; } }
 .b-fire svg { width: 100%; height: 100%; display: block; shape-rendering: crispEdges; overflow: visible; }
 .b-fire__frame { opacity: 0; animation: b-frames 900ms steps(1, end) infinite; }
 @keyframes b-frames { 0%, 33.33% { opacity: 1; } 33.34%, 100% { opacity: 0; } }
@@ -1937,7 +1938,7 @@ html.is-map-full { overflow: hidden; }
 .b-ridge {
   position: absolute;
   inset-inline: 0;
-  bottom: var(--ground);                 /* the ridge stands on the ground strip */
+  bottom: 0;                             /* the ridge stands on the ground strip, at the foot of the scene */
   height: clamp(3rem, 7vw, 5rem);
   color: color-mix(in oklab, var(--tc-brown), var(--night) 52%);
   pointer-events: none;
@@ -1953,12 +1954,11 @@ html.is-map-full { overflow: hidden; }
 
 /* the way back up the evening */
 .b-foot__up { grid-area: up; gap: var(--sp-2); }
-@media (min-width: 720px) { .b-foot__up { justify-self: end; } }
 .b-foot__upchev { width: 0.875rem; height: 0.875rem; flex-shrink: 0; transition: transform var(--dur-2) var(--ease-out); }
 .b-foot__up:focus-visible .b-foot__upchev { transform: translateY(calc(var(--px) * -1)); }
 @media (hover: hover) { .b-foot__up:hover .b-foot__upchev { transform: translateY(calc(var(--px) * -1)); } }
 
-.b-foot__credit { grid-area: credit; }
+.b-foot__credit { position: relative; z-index: 1; padding: var(--sp-4) var(--gutter) var(--sp-5); background: var(--night); text-align: center; }
 .b-foot__credit p { font-size: var(--fs-sm); color: var(--text-soft); line-height: 1.5; }
 .b-foot__credit .b-foot__small { font-size: var(--fs-sm); color: var(--text-faint); }
 /* the owner's way in: in the small print, lit and underlined, since its colour alone is too close to the words round it */
