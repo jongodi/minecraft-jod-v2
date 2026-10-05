@@ -7,7 +7,16 @@
    ═══════════════════════════════════════════════════════════════ */
 
 .w-page { display: grid; gap: clamp(1.5rem, 4vw, 2.5rem); }
-.w-page > .b-back { justify-self: start; }
+/* From 1024 px the wall is two columns: the member's poster on the left, the
+   same portrait poster the roll call hangs, only larger, so the poster pressed
+   is the poster arrived at; and everything they pinned in a column beside it,
+   where a wide poster used to leave two thirds of its paper empty. */
+@media (min-width: 1024px) {
+  .w-page { grid-template-columns: minmax(0, 22rem) minmax(0, 1fr); align-items: start; column-gap: clamp(2rem, 4vw, 3.5rem); }
+  .w-page > * { grid-column: 2; margin-inline: 0; max-width: none; }
+  .w-page > .w-poster { grid-column: 1; grid-row: 1 / span 6; }
+  .w-page .w-wall { max-width: none; }
+}
 .w-welcome { position: relative; max-width: 52rem; width: 100%; margin-inline: auto; padding: var(--sp-3) var(--sp-7) var(--sp-3) var(--sp-4); background: rgba(242, 166, 59, 0.12); border: var(--px) solid var(--lantern); color: var(--paper); font-size: var(--fs-md); line-height: 1.5; }
 .w-welcome > button:last-child:not(.w-welcome__act) { position: absolute; right: 0; top: 0; display: grid; place-items: center; width: var(--tap); height: 100%; min-height: var(--tap); color: var(--lantern); }
 .w-welcome > button:last-child:not(.w-welcome__act) svg { width: 0.875rem; height: 0.875rem; }
@@ -19,6 +28,31 @@
 /* ─── the poster ────────────────────────────────────────────── */
 .w-poster { max-width: 52rem; width: 100%; margin-inline: auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-5); padding: clamp(1.75rem, 4vw, 2.75rem) clamp(1.25rem, 4vw, 2.5rem); }
 @media (min-width: 720px) { .w-poster { grid-template-columns: 8.5rem minmax(0, 1fr); gap: var(--sp-6); align-items: start; } }
+/* in the wall's left column: a portrait poster, the roll call's own anatomy
+   (masthead, the face in its frame, the name, then the rest under it) */
+@media (min-width: 1024px) {
+  .w-poster { grid-template-columns: minmax(0, 1fr); gap: var(--sp-5); justify-items: center; }
+  .w-poster .w-poster__skin { width: 9.5rem; }
+  .w-poster__body { width: 100%; }
+  .w-poster .w-poster__top { flex-direction: column; align-items: center; text-align: center; }
+  .w-poster__top > div:first-child { display: grid; justify-items: center; }
+  .w-poster .b-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .w-poster__top > .b-inline { justify-content: center; }
+  .w-poster .w-poster__bio { margin-inline: auto; text-align: center; }
+  .w-page .w-wall__empty { text-align: left; }
+}
+/* On a phone the skin and the name share a row and the rest runs the paper's
+   full width under them, so the first pinned sheet starts on the first
+   screen instead of under a skin two thirds of the screen tall. */
+@media (max-width: 719px) {
+  .w-poster { grid-template-columns: 5.5rem minmax(0, 1fr); gap: var(--sp-4); }
+  .w-poster > * { grid-column: 1 / -1; }
+  .w-poster > .w-poster__skin { grid-column: 1; width: 5.5rem; }
+  .w-poster > .w-poster__body { display: contents; }
+  .w-poster .w-poster__top { grid-column: 2; align-self: center; }
+  .w-poster .w-poster__body > :not(.w-poster__top) { grid-column: 1 / -1; }
+  .w-poster .w-poster__bio, .w-poster .w-poster__biorow { margin-top: 0; }
+}
 /* the wall's masthead runs across both columns, over the skin and the name alike */
 .w-poster { container-type: inline-size; }
 .w-poster__mast { grid-column: 1 / -1; position: relative; text-align: center; }

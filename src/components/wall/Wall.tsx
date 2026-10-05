@@ -13,8 +13,9 @@ import { errorFrom } from '@/lib/crew-upload';
 import AddressBar from '@/components/badlands/AddressBar';
 import Footer from '@/components/badlands/Footer';
 import PlayerHead from '@/components/badlands/PlayerHead';
-import { ArrowIcon, CloseIcon, Star } from '@/components/badlands/Bits';
+import { CloseIcon, Star } from '@/components/badlands/Bits';
 import { PAGE_LINKS, STAT_TABS } from '@/components/badlands/data';
+import NightSky from '@/components/badlands/NightSky';
 import { useBackdropClose, useCrewSession, useDialogFocus, useScrollLock } from '@/components/badlands/hooks';
 import { photoProps, PHOTO_SIZES } from '@/components/badlands/photo';
 import Composer from './Composer';
@@ -341,8 +342,8 @@ export default function Wall({ initial, places, justSignedIn = false }: Props) {
   return (
     <div className="b">
       <AddressBar links={PAGE_LINKS} activeId="hopur" always />
+      <NightSky />
       <main id="efni" className="b-wrap b-page w-page">
-        <Link href="/crew" className="b-back"><ArrowIcon flip /> allur hópurinn</Link>
 
         {welcome && isOwner && (
           <p className="w-welcome" role="status">
