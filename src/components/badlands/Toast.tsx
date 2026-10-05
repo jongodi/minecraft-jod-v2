@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect, useState, useSyncExternalStore } from 'react';
-import { Lantern } from './Bits';
+import { Seal } from './Bits';
 
 /* A confirmation in the shape every Minecraft player knows: the advancement
    toast that drops in from the top of the screen when something was done.
    Here it is a slip of paper nailed under the plank, with a lit lantern on
-   it, for the address copied from the bar and a link copied. It says what
+   it, for the address copied from the bar and a link copied. Where the game
+   shows the item, the slip carries JOÐ's seal: what was copied is made good. It says what
    was done and to what, and nothing more. One at a time; a new one takes the
    place of the one showing. Screen readers hear it once, from a live region
    that is on the page before anything is written to it. The hero's own copy
@@ -54,7 +55,7 @@ export default function ToastHost() {
       {message && (
         <div key={message.id} className={`b-toast b-paper${shown ? '' : ' is-leaving'}`} onAnimationEnd={e => { if (!shown && e.target === e.currentTarget) setKept(null); }}>
           <span className="b-paper__nail" aria-hidden="true" />
-          <Lantern lit />
+          <Seal />
           <span className="b-toast__text">
             <b className="b-toast__title">{message.title}</b>
             {message.data && <span className="b-toast__data">{message.data}</span>}

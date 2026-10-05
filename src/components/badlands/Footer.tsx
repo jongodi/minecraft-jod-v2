@@ -2,7 +2,6 @@
 
 import { memo, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { Campfire, ChevronIcon } from './Bits';
 import { Ridge } from './Mesa';
@@ -15,15 +14,11 @@ import type { Season } from '@/lib/season';
 /* The duel lives behind the fire; nobody pays for it until they tap. */
 const QuickDraw = dynamic(() => import('./QuickDraw'), { ssr: false });
 
-/* The evening's own sections are in the bar (and the bar at the foot of a
-   phone), so the footer does not post them a second time. What is left is
-   what is off the page: the crew's rooms and the admin panel. */
-const LINKS = [
-  { href: '/crew',  label: 'Hópurinn',   prefetch: true },
-  /* not prefetched: every visitor who scrolled to the fire used to download
-     the admin panel's code and stylesheet, which then sat unused */
-  { href: '/admin', label: 'Stjórnborð', prefetch: false },
-];
+/* The evening's doors are in the bar (and the hotbar at the foot of a
+   phone), the crew's among them, so the footer does not post them a second
+   time. The admin panel is the owner's tool, not a door for visitors: it
+   rides in the small print. Not prefetched: every visitor who scrolled to
+   the fire used to download the panel's code and stylesheet. */
 
 /** The campfire: the last light. One band of ground at the foot of the page,
     the fire burning in front of the same mesas the evening opened over. Tap the
@@ -32,7 +27,6 @@ const LINKS = [
 function Footer({ season: initial }: { season?: Season } = {}) {
   const [duel, setDuel] = useState(false);
   const season = useSeason(initial);
-  const path = usePathname();
   useScrollLock(duel);
   const backdrop = useBackdropClose(() => setDuel(false));
 
@@ -54,10 +48,9 @@ function Footer({ season: initial }: { season?: Season } = {}) {
           <YuleLad season={season} spot="fire" />
         </div>
 
-        <nav className="b-foot__nav" aria-label="Fleiri síður">
-          {LINKS.map(l => <Link key={l.href} href={l.href} prefetch={l.prefetch ? undefined : false} className="b-foot__link" aria-current={path === l.href ? 'page' : undefined}>{l.label}</Link>)}
+        <div className="b-foot__nav">
           <AmbienceToggle className="b-foot__sound" />
-        </nav>
+        </div>
 
         <Link href="/#top" className="b-btn b-btn--small b-foot__up">
           <ChevronIcon dir="up" className="b-foot__upchev" />
@@ -66,7 +59,7 @@ function Footer({ season: initial }: { season?: Season } = {}) {
 
         <div className="b-foot__credit">
           <p>{SITE_NAME}, frá 2024 · {SERVER_IP}</p>
-          <p className="b-foot__small">Engin tengsl við Mojang eða Microsoft.</p>
+          <p className="b-foot__small">Engin tengsl við Mojang eða Microsoft. <Link href="/admin" prefetch={false} className="b-foot__admin">Stjórnborð</Link></p>
         </div>
       </div>
       <div className="b-ground" aria-hidden="true" />

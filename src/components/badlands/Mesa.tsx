@@ -1,3 +1,6 @@
+import Link from 'next/link';
+import PlayerHead from './PlayerHead';
+
 /* The badlands silhouettes behind the hero: three mesa layers and the ground.
    Each layer is a stepped outline built from plateaus so the edge reads as
    terracotta blocks. Depth (parallax) and colour by hour come from CSS:
@@ -71,7 +74,7 @@ const NEAR_D = outline(NEAR);
 /* Strata bands through the nearest mesa, clipped to its outline. */
 const BANDS = [[H - 30, 3, 'var(--tc-red)'], [H - 22, 2, 'var(--tc-yellow)'], [H - 15, 4, 'var(--tc-orange)'], [H - 8, 2, 'var(--tc-white)']] as const;
 
-function Layer({ d, mod, children }: { d: string; mod: string; children?: React.ReactNode }) {
+function Layer({ d, mod, children, after }: { d: string; mod: string; children?: React.ReactNode; after?: React.ReactNode }) {
   return (
     <div className={`b-mesa__layer b-mesa__layer--${mod}`}>
       <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMax slice" aria-hidden="true">
@@ -79,6 +82,7 @@ function Layer({ d, mod, children }: { d: string; mod: string; children?: React.
         <path className="b-mesa__rock" d={d} fill="currentColor" />
         {children}
       </svg>
+      {after}
     </div>
   );
 }
@@ -98,13 +102,38 @@ export function Ridge({ snow = false }: { snow?: boolean }) {
   );
 }
 
-/** The mesas; in winter with snow on them, at Hrekkjavaka with jack-o'-lanterns (src/lib/season.ts). */
-export default function Mesa({ snow = false, halloween = false }: { snow?: boolean; halloween?: boolean }) {
+/* How many heads a plateau holds before the rest are a count beside them. */
+const HEADS_SHOWN = 4;
+
+/** The crew who are in, standing on a plateau of the nearest ridge as their
+    heads, the way a head block stands on the ground: beside the name on a
+    wide screen, at its feet on a phone (badlands.css places the group on a
+    plateau by its coordinates in the ridge's own drawing). Each is a way to
+    that member's wall. Inside the near layer, so they move with it. */
+function Heads({ names }: { names: string[] }) {
+  if (names.length === 0) return null;
+  const shown = names.slice(0, HEADS_SHOWN);
+  const more = names.length - shown.length;
   return (
-    <div className="b-mesa" aria-hidden="true">
+    <div className="b-mesa__heads">
+      {shown.map(n => (
+        <Link key={n} href={`/crew/${n}`} className="b-mesa__head b-tip" data-tip={`${n} er inni`} aria-label={`${n} er inni. Veggurinn`}>
+          <PlayerHead name={n} size={24} alt="" />
+        </Link>
+      ))}
+      {more > 0 && <span className="b-mesa__more">+{more}</span>}
+    </div>
+  );
+}
+
+/** The mesas; in winter with snow on them, at Hrekkjavaka with jack-o'-lanterns
+    (src/lib/season.ts); with the heads of whoever is in on the nearest ridge. */
+export default function Mesa({ snow = false, halloween = false, heads = [] }: { snow?: boolean; halloween?: boolean; heads?: string[] }) {
+  return (
+    <div className="b-mesa">
       <Layer d={FAR_D} mod="far">{snow && <Snow plateaus={FAR} />}</Layer>
       <Layer d={MID_D} mod="mid">{snow && <Snow plateaus={MID} />}</Layer>
-      <Layer d={NEAR_D} mod="near">
+      <Layer d={NEAR_D} mod="near" after={<Heads names={heads} />}>
         <defs><clipPath id="b-mesa-near"><path d={NEAR_D} /></clipPath></defs>
         <g className="b-mesa__band" clipPath="url(#b-mesa-near)">
           {BANDS.map(([y, h, fill]) => <rect key={y} x="0" y={y} width={W} height={h} fill={fill} />)}
@@ -116,3 +145,38 @@ export default function Mesa({ snow = false, halloween = false }: { snow?: boole
     </div>
   );
 }
+
+/* The near ridge running on over the top of the world: [width, depth] steps
+   across 480 units, depth measured down from the top of a 32-unit band. Low
+   (three units) under the world's title on the left and its tools on the
+   right, so it never crosses them; it rises only in the middle, where the
+   frame's top is open sky, to a block-stepped peak. */
+const VALLEY: Plateau[] = [[192, 3], [19, 10], [19, 18], [24, 26], [15, 32], [14, 20], [24, 8], [173, 3]];
+function valleyOutline(steps: Plateau[], drop = 0): string {
+  let x = 0;
+  let d = 'M0 0';
+  for (const [w, h] of steps) { d += ` V${h + drop} H${x + w}`; x += w; }
+  return `${d} V0 Z`;
+}
+const VALLEY_D = valleyOutline(VALLEY);
+const VALLEY_RIM_D = valleyOutline(VALLEY, 1);
+const VALLEY_SHADOW_D = valleyOutline(VALLEY, 2);
+
+/** The badlands carried down over the top of the world's frame: the same
+    dark ground the hero ends on, stepping down into the map, so the page's
+    one big turn, from the sunset to the world, happens in the land instead of
+    at a ruled line. Its stepped edge is drawn the way the hero's ridges are lit:
+    a pixel of the rock's own brown along it, catching the town's light, and a
+    pixel of shadow under that, parting it from the map's night sky. */
+export function ValleyRidge() {
+  return (
+    <div className="b-valley" aria-hidden="true">
+      <svg viewBox="0 0 480 34" preserveAspectRatio="none">
+        <path d={VALLEY_SHADOW_D} fill="var(--night)" opacity="0.6" />
+        <path d={VALLEY_RIM_D} fill="var(--tc-brown)" />
+        <path d={VALLEY_D} fill="currentColor" />
+      </svg>
+    </div>
+  );
+}
+

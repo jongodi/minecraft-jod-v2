@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import PlayerHead from './PlayerHead';
+import { Seal } from './Bits';
 import Rail from './Rail';
 import { STAT_TABS, isLowerBetter, type StatKey } from './data';
 import type { StatsState } from './hooks';
@@ -57,12 +58,10 @@ export default function Wanted({ stats }: { stats: StatsState }) {
         </div>
       )}
 
+      {/* an empty board says nothing of its own: the room's one line under the
+          portraits says why there are no numbers, beside why nobody is in */}
       {posters.length === 0 ? (
-        <p className="b-empty" role="status">
-          {stats.failed ? 'náði ekki í tölurnar núna; reyndu aftur eftir smástund' :
-           stats.source === null ? 'sæki tölurnar…' :
-           'engar tölur enn; þær birtast þegar þjónninn hefur verið í gangi'}
-        </p>
+        stats.source === null && !stats.failed ? <p className="b-empty" role="status">sæki tölurnar…</p> : null
       ) : (
         <Rail className="b-posters" label="Eftirlýsingar" prevLabel="Fyrri spjöld" nextLabel="Næstu spjöld" count={posters.length}>
           {posters.map(({ meta, rows: [first, ...rest], week }) => (
@@ -106,6 +105,8 @@ export default function Wanted({ stats }: { stats: StatsState }) {
                   </Link>
                 </>
               )}
+              {/* the board's authority: the seal at the poster's foot */}
+              <Seal className="b-poster__seal" />
             </div>
           ))}
         </Rail>

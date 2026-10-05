@@ -100,7 +100,10 @@
 .b-sky { --mesa-h: clamp(9rem, 32svh, 20rem); --sun-size: clamp(4.5rem, 11vw, 10rem); --horizon: 100svh; }
 .b-sky__sun {
   position: absolute;
-  right: clamp(6%, 12vw, 18%);
+  /* on the wrap's right edge, the line the bar's address ends on: the hero's
+     three things stand on two edges, and on a wide screen the sun no longer
+     floats outside the page's frame */
+  right: calc(max(0px, (100vw - var(--wrap)) / 2) + var(--gutter));
   top: calc(var(--horizon) - var(--mesa-h) * 0.3 - var(--fs-hero) * 0.8 - var(--sun-size) - var(--sp-4));
   width: var(--sun-size);
   height: var(--sun-size);
@@ -123,7 +126,7 @@
 /* ─── page frame ──────────────────────────────────────────────── */
 .b { position: relative; isolation: isolate; color: var(--text); }
 /* room for the door bar at the foot of a phone */
-@media (max-width: 899px) { .b { padding-bottom: calc(var(--doorbar) + env(safe-area-inset-bottom, 0px)); } }
+@media (max-width: 759px) { .b { padding-bottom: calc(var(--doorbar) + env(safe-area-inset-bottom, 0px)); } }
 .b-wrap { position: relative; z-index: 1; width: 100%; max-width: var(--wrap); margin-inline: auto; padding-inline: var(--gutter); }
 .b-title { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-2xl); line-height: var(--lh-tight); color: var(--paper); letter-spacing: -0.02em; }
 .b-title--small { font-size: var(--fs-xl); }
@@ -259,6 +262,25 @@
   .b-copy.is-copied .b-copy__stamp { animation: none; transform: rotate(-8deg); opacity: 1; }
 }
 
+/* ─── the seal: Ð in red wax (Bits.tsx, Seal) ─────────────────────
+   48 px at the least, on the 16-unit grid in whole multiples (3 px a unit);
+   the Ð in the slab, pale wax raised out of the deep, with a pixel of shadow. */
+.b-seal {
+  --seal-deep: color-mix(in oklab, var(--tc-red), var(--night) 22%);
+  --seal-light: color-mix(in oklab, var(--tc-red), var(--paper) 30%);
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  flex-shrink: 0;
+  color: var(--tc-red);
+}
+.b-seal svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.b-seal__eth { position: relative; font-family: var(--font-display); font-size: 1.625rem; line-height: 1; color: color-mix(in oklab, var(--tc-red), var(--paper) 72%); text-shadow: 0 var(--px) 0 color-mix(in oklab, var(--tc-red), var(--night) 55%); transform: translate(calc(var(--px) * 0.5), calc(var(--px) * -0.5)); }
+.b-seal--lg { width: 4.5rem; height: 4.5rem; }
+.b-seal--lg .b-seal__eth { font-size: 2.5rem; }
+
 /* ─── the toast: the one confirmation ─────────────────────────────
    The advancement toast every Minecraft player knows, as this site would
    nail it up: a slip of paper that drops in from under the plank at the top
@@ -289,7 +311,7 @@
 @keyframes b-toast-out { to   { opacity: 0; transform: translateY(calc(var(--px) * -4)); } }
 @media (prefers-reduced-motion: reduce) { .b-toast { animation: none; } .b-toast.is-leaving { opacity: 0; } }
 .b-toast > .b-paper__nail { top: var(--sp-1); left: 50%; margin-left: calc(var(--px) * -1.5); }
-.b-toast .b-lantern { width: 1.5rem; height: 2.25rem; flex-shrink: 0; }
+.b-toast .b-seal { margin-block: calc(var(--sp-1) * -1); }
 .b-toast__text { display: grid; gap: var(--px); min-width: 0; }
 .b-toast__title { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-lg); line-height: 1.1; color: var(--ink); }
 .b-toast__data { font-family: var(--font-data); font-size: var(--fs-data); color: var(--lantern-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -390,24 +412,28 @@
 .b-bar.is-solid .b-door { color: var(--tc-white); }
 @media (hover: hover) { .b-bar.is-solid .b-door:hover { color: var(--paper); } }
 .b-bar.is-solid .b-door.is-here { color: var(--paper); border-bottom-color: var(--lantern); }
-/* the address: a paper tag with a nail through its corner */
-.b-bar.is-solid .b-bar__addr { position: relative; min-height: 2.25rem; padding-inline: var(--sp-4) var(--sp-3); background: var(--paper); color: var(--ink); clip-path: var(--notch); box-shadow: 0 var(--px) 0 var(--wood-dark); }
-.b-bar.is-solid .b-bar__addr::before { content: ''; position: absolute; left: var(--sp-2); top: 50%; width: calc(var(--px) * 2); height: calc(var(--px) * 2); margin-top: calc(var(--px) * -1); background: var(--ink); box-shadow: 1px 1px 0 rgba(30, 22, 17, 0.25); }
+/* the address: a paper tag nailed to the plank, the copy glyph where the nail was */
+.b-bar.is-solid .b-bar__tag { min-height: 2.25rem; padding-inline: var(--sp-2) var(--sp-3); background: var(--paper); color: var(--ink); clip-path: var(--notch); box-shadow: 0 var(--px) 0 var(--wood-dark); }
+.b-bar.is-solid .b-bar__tag svg { color: var(--ink-soft); }
 .b-bar.is-solid .b-bar__addr b { color: var(--tc-red); }
 @media (hover: hover) { .b-bar.is-solid .b-bar__addr:hover b { color: var(--ink); } }
 /* the paper tag is notched, which cuts off a ring drawn outside it */
-.b-bar.is-solid .b-bar__addr:focus-visible { outline: var(--px) solid var(--lantern-ink); outline-offset: calc(var(--px) * -2); }
+.b-bar.is-solid .b-bar__addr:focus-visible { outline: none; }
+.b-bar.is-solid .b-bar__addr:focus-visible .b-bar__tag { outline: var(--px) solid var(--lantern-ink); outline-offset: calc(var(--px) * -2); }
 @media (prefers-reduced-motion: reduce) { .b-bar { transition: none; } }
 .b-bar__inner { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); min-height: var(--bar); }
-.b-bar__mark { display: inline-flex; align-items: center; gap: var(--sp-2); font-family: var(--font-display); font-size: var(--fs-lg); color: var(--paper); text-decoration: none; transition: background var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease-out); }
+.b-bar__mark { display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2); min-width: var(--tap); min-height: var(--tap); font-family: var(--font-display); font-size: var(--fs-lg); color: var(--paper); text-decoration: none; transition: background var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease-out); }
 .b-bar__mark svg { width: 1.5rem; height: 1.5rem; shape-rendering: crispEdges; }
 @media (hover: hover) { .b-bar__mark:hover { color: var(--lantern); } }
-.b-bar__addr { display: inline-flex; align-items: center; gap: var(--sp-3); min-height: var(--tap); padding-inline: var(--sp-2); font-family: var(--font-data); font-size: var(--fs-data); color: var(--paper); border-radius: var(--radius); transition: background var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease-out); }
-.b-bar__addr { min-width: 0; }
-.b-bar__addr span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.b-bar__addr { display: inline-flex; align-items: center; min-width: 0; min-height: var(--tap); padding: 0; font-family: var(--font-data); font-size: var(--fs-data); color: var(--paper); transition: color var(--dur-2) var(--ease-out); }
+.b-bar__tag { display: inline-flex; align-items: center; gap: var(--sp-2); min-width: 0; padding-inline: var(--sp-2); }
+.b-bar__tag svg { flex-shrink: 0; width: 1rem; height: 1rem; color: var(--lantern); }
+.b-bar__ip { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.b-bar__addr b { margin-left: var(--sp-1); }
 .b-bar__addr b { font-family: var(--font-text); font-weight: 600; font-size: var(--fs-sm); color: var(--lantern); }
 @media (hover: hover) { .b-bar__addr:hover b { color: var(--paper); } }
-@media (max-width: 399px) { .b-bar__mark span { display: none; } }
+/* on the narrowest phones the mark is the strata J alone, a full tap wide, its icon kept on the gutter's line */
+@media (max-width: 399px) { .b-bar__mark span { display: none; } .b-bar__mark { margin-inline-start: calc((var(--tap) - 1.5rem) / -2); } }
 /* on a phone the tag is the address alone, and a tap still copies it: the verb would not fit beside it at the bitmap face's size */
 @media (max-width: 479px) { .b-bar__addr b { display: none; } }
 .b-bar__end { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; }
@@ -418,9 +444,11 @@
 .b-bar__me:focus-visible img { box-shadow: 0 0 0 var(--px) var(--paper); }
 @media (hover: hover) { .b-bar__me:hover img { box-shadow: 0 0 0 var(--px) var(--paper); } }
 
-/* three lanterns in the bar; one is lit, the door the visitor is behind */
-.b-doors { display: none; gap: var(--sp-6); }
-@media (min-width: 900px) { .b-doors { display: flex; } }
+/* three lanterns in the bar; one is lit, the door the visitor is behind.
+   From 760 px the bar has room for them; below, they are the hotbar's. */
+.b-doors { display: none; gap: var(--sp-5); }
+@media (min-width: 760px) { .b-doors { display: flex; } }
+@media (min-width: 1100px) { .b-doors { gap: var(--sp-6); } }
 .b-door {
   display: inline-flex;
   align-items: center;
@@ -440,39 +468,86 @@
 @media (hover: hover) { .b-door:hover { color: var(--lantern); } }
 .b-door.is-here { color: var(--lantern); border-bottom-color: var(--lantern); }
 
-/* the same three lanterns at the foot of a phone, in reach of a thumb */
-.b-doorbar {
+/* The server's lantern in the bar, on every page: the lantern and a word or a
+   count beside it, in the chat colours the hero's lantern uses. One width in
+   every state, so nothing beside it moves when the answer comes. */
+.b-bar__status { display: inline-flex; align-items: center; gap: var(--sp-2); min-height: var(--tap); padding-inline: var(--sp-1); color: var(--tc-white); text-decoration: none; text-shadow: 0 var(--px) 0 var(--night); }
+.b-bar__status .b-lantern { width: 1.1rem; height: 1.65rem; }
+.b-bar__state { min-width: 4.25rem; font-weight: 600; font-size: var(--fs-sm); white-space: nowrap; }
+.b-bar__status.is-on .b-bar__state { color: var(--online); }
+.b-bar__status.is-kindling .b-bar__state { color: var(--lantern); }
+.b-bar__status.is-off .b-bar__state { color: var(--tc-white); }
+@media (hover: hover) { .b-bar__status:hover .b-bar__state { text-decoration: underline var(--px); text-underline-offset: 0.35em; } }
+.b-bar__status:focus-visible .b-bar__state { text-decoration: underline var(--px); text-underline-offset: 0.35em; }
+/* The address: on a phone it is the offhand slot's, below; between 760 and
+   1100 px the doors take the room its letters need, so the tag is the glyph
+   and the verb (the address is still its name, and the toast shows it). */
+@media (max-width: 759px) { .b-bar__addr { display: none; } }
+@media (min-width: 760px) and (max-width: 1099px) {
+  .b-bar__ip { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+}
+@media (min-width: 760px) and (max-width: 899px) { .b-bar__mark span { display: none; } }
+
+/* ─── the hotbar: the doors at the foot of a phone ───────────────
+   The game's own inventory bar: three slots, sunk into a strip, the one in
+   hand framed in a light square one pixel larger than the slot, as the game
+   frames it. Set apart on the right, the offhand slot, which holds the
+   address. Solid: it is the floor of the screen, and the world's title under
+   it is not meant to show through. */
+.b-hotbar {
   position: fixed;
   inset-inline: 0;
   bottom: 0;
   z-index: var(--z-bar);
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  /* solid: it is the floor of the screen, and the world's title under it is not meant to show through */
+  grid-template-columns: minmax(0, 1fr) var(--offhand);
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-2) calc(var(--sp-2) + env(safe-area-inset-bottom, 0px));
   background: var(--night);
   box-shadow: 0 calc(var(--line) * -1) 0 rgba(209, 178, 161, 0.14);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
-@media (min-width: 900px) { .b-doorbar { display: none; } }
-.b-doorbar__item {
+@media (min-width: 760px) { .b-hotbar { display: none; } }
+.b-hotbar__slots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.b-slot {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: var(--sp-1);
-  min-height: var(--doorbar);
-  padding: var(--sp-2) var(--sp-1);
-  color: var(--text-faint);
-  font-family: var(--font-data);
-  font-size: var(--fs-data);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  min-height: var(--slot);
+  padding: var(--sp-1);
+  color: var(--tc-white);
   text-decoration: none;
+  /* sunk into the strip: shadow on the top and left, light on the bottom and right */
+  background: var(--dusk-2);
+  box-shadow: var(--bevel-in), 0 0 0 var(--px) var(--wood-dark);
 }
-.b-doorbar__item .b-lantern { width: 1.1rem; height: 1.65rem; }
-/* the narrowest phones: a long door name keeps its size and loses its air */
-@media (max-width: 359px) { .b-doorbar__item { letter-spacing: 0; } }
-/* the lit door carries a rule along its top edge, the phone's version of the bar's underline */
-.b-doorbar__item.is-here { color: var(--lantern); box-shadow: inset 0 var(--px) 0 var(--lantern); }
+.b-hotbar__slots .b-slot + .b-slot { margin-left: var(--px); }
+.b-slot .b-lantern { width: 1.1rem; height: 1.65rem; }
+.b-slot svg { flex-shrink: 0; }
+.b-slot--off > svg { width: 1.5rem; height: 1.5rem; color: var(--lantern); }
+/* the label: the kicker's face (Pixelify 600, capitals), since the bitmap
+   face at its 16 px grid needs 104 px for HEIMURINN and a slot on a 360 px
+   phone has 90 */
+.b-slot__label { font-weight: 600; font-size: var(--fs-sm); line-height: 1.2; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; }
+/* the slot in hand: a light frame over the slot's edge, notched, a pixel of
+   night round it so it reads on the strip, and the lantern lit inside */
+.b-slot.is-here { z-index: 1; color: var(--lantern); }
+.b-slot.is-here::after {
+  content: '';
+  position: absolute;
+  inset: calc(var(--px) * -2);
+  border: var(--px) solid var(--paper);
+  box-shadow: 0 0 0 var(--px) var(--night), inset 0 0 0 var(--px) var(--night);
+  clip-path: var(--notch);
+  pointer-events: none;
+}
+@media (hover: hover) { .b-slot:hover { color: var(--paper); } }
+.b-slot:focus-visible { outline: var(--px) solid var(--lantern); outline-offset: calc(var(--px) * -4); }
+.b-slot--off { color: var(--paper); }
+.b-slot--off:active { background: var(--lantern-deep); color: var(--night); }
+.b-slot--off:active > svg { color: var(--night); }
 
 /* ─── arrival: sunset over the mesa ───────────────────────────── */
 .b-hero {
@@ -490,10 +565,10 @@
 }
 @media (min-width: 900px) { .b-hero { --mark-sink: 0.3; } }
 .b-hero > .b-wrap { z-index: auto; }
-/* On a phone the door bar is fixed over the foot of the screen: the sunset
+/* On a phone the hotbar is fixed over the foot of the screen: the sunset
    ends where it begins, so the mesas stand on the bar instead of one plateau
    peeking out over it like a stray grey rule. */
-@media (max-width: 899px) { .b-hero { min-height: calc(100svh - var(--doorbar) - env(safe-area-inset-bottom, 0px)); } }
+@media (max-width: 759px) { .b-hero { min-height: calc(100svh - var(--doorbar) - env(safe-area-inset-bottom, 0px)); } }
 .b-hero__stage { display: grid; grid-template-rows: auto minmax(var(--sp-7), 1fr) auto; }
 .b-hero__sun { display: none; }
 /* The phone's sun sets too: pulled down a quarter faster than the page lifts
@@ -528,14 +603,64 @@
   }
 }
 @media (prefers-reduced-motion: reduce) { .b-hero__sun { display: none; } }
-/* A phone on its side has no height for a title card: the name at the foot
-   fell below the door bar, so the first screen had no name on it. There the
-   name comes first, as it did before the hero was staged, and the words
-   follow; the sun has no row to hang in. */
+/* A phone reads down: what this is, then who, then what to do. Held upright:
+   the sentence on the dark of the upper sky, the sun in the open row, the name
+   in the middle of the screen among the ridges, and under the ridges a band of
+   their own dark ground carrying the address and the server's lantern, just
+   above the hotbar, where the thumb is. The stage and the lead stand aside
+   (display: contents), so the hero's own grid places each of them; the mesas
+   take the name's row as their containing block, so they end where the ground
+   begins whatever height the lantern and a planned night give it; and the
+   ground is the hero's own ::after, a grid item laid across the rows below. */
+@media (max-width: 899px) {
+  .b-hero { padding-bottom: 0; }
+  .b-hero > .b-hero__stage, .b-hero .b-hero__lead { display: contents; }
+  .b-hero .b-hero__sub { position: relative; z-index: 3; margin-inline: var(--gutter); }
+  .b-hero .b-hero__mark { margin-inline: var(--gutter); padding-bottom: calc(var(--mesa-h) * var(--mark-sink)); }
+  .b-hero::after { content: ''; grid-column: 1; z-index: 2; background: var(--dusk); }
+  /* one column for everything: an item placed by row alone is moved aside, into
+     a new column, rather than laid over the ground that already holds the cell */
+  .b-hero > *, .b-hero .b-hero__stage > *, .b-hero .b-hero__lead > * { grid-column: 1; }
+  .b-hero .b-hero__action {
+    position: relative;
+    z-index: 3;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--sp-3);
+    margin-top: 0;
+    padding: var(--sp-4) var(--gutter) var(--sp-5);
+  }
+  .b-hero .b-hero__action .b-copy { display: grid; justify-items: start; margin-top: 0; }
+  /* on the ground the lantern's words have their own dark; the pool of night was for the sky */
+  .b-hero .b-hero__side { flex: none; }
+  .b-hero .b-hero__side::before { display: none; }
+  .b-hero .b-hero__action .b-status { width: 100%; min-height: 0; padding-block: 0; }
+}
+/* held upright: sentence, sun, name, ground */
+@media (max-width: 899px) and (min-height: 501px) {
+  .b-hero { grid-template-rows: auto minmax(var(--sp-7), 1fr) auto auto; }
+  .b-hero .b-hero__sub { grid-row: 1; }
+  .b-hero .b-hero__sun { grid-row: 2; margin-right: calc(var(--gutter) + 6%); }
+  .b-hero .b-hero__mark { grid-row: 3; }
+  .b-hero > .b-mesa { grid-row: 3 / 4; }   /* an absolute item's auto end line is the container's edge, so both lines are named */
+  .b-hero::after { grid-row: 4; }
+  .b-hero .b-hero__action { grid-row: 4; }
+}
+/* the button the width of the screen where a thumb reaches across it, no wider */
+@media (max-width: 599px) and (min-height: 501px) {
+  .b-hero .b-hero__action .b-copy { justify-items: stretch; }
+  .b-hero .b-hero__action .b-copy__btn { justify-content: center; }
+}
+/* On its side a phone has no height for a title card: the name comes first,
+   standing in the ridges, and the sentence and the action follow on the
+   ground under them; the sun has no row to hang in. */
 @media (max-width: 899px) and (max-height: 500px) {
-  .b-hero .b-hero__stage { grid-template-rows: auto auto minmax(var(--sp-7), 1fr); }
+  .b-hero { grid-template-rows: auto auto auto; }
   .b-hero .b-hero__mark { grid-row: 1; }
-  .b-hero .b-hero__lead { grid-row: 2; margin-top: var(--sp-4); }
+  .b-hero > .b-mesa { grid-row: 1 / 2; }
+  .b-hero::after { grid-row: 2 / 4; }
+  .b-hero .b-hero__sub { grid-row: 2; padding-top: var(--sp-4); }
+  .b-hero .b-hero__action { grid-row: 3; padding-top: var(--sp-3); }
   .b-hero .b-hero__sun { display: none; }
 }
 .b-hero__lead { grid-row: 1; position: relative; z-index: 3; }
@@ -552,11 +677,38 @@
   overflow-wrap: normal;
   text-shadow: 0 var(--px) 0 var(--tc-brown), 0 calc(var(--px) * 3) 0 rgba(21, 16, 13, 0.35);
 }
+/* Someone's home: the counters of the O and the Ð are windows, dark (the sky
+   through them) until the server is up with somebody in it, then lit in the
+   sun's warm white with a cross of wood for the panes. Behind the letters, so
+   the strokes frame them; placed in ems against Alfa Slab One's own counters
+   (measured), so they hold at every size the name is set at. The near ridges
+   stand in front of their feet as they do in front of the letters. */
+.b-hero__window {
+  position: absolute;
+  z-index: -1;
+  top: 0.132em;
+  width: 0.144em;
+  height: 0.462em;
+  background:
+    linear-gradient(90deg, transparent calc(50% - 0.009em), var(--wood-dark) 0 calc(50% + 0.009em), transparent 0),
+    linear-gradient(180deg, transparent 43%, var(--wood-dark) 0 47%, transparent 0),
+    linear-gradient(180deg, color-mix(in oklab, var(--sun), var(--lantern) 45%), var(--sun) 80%);
+  opacity: 0;
+  transition: opacity var(--dur-3) var(--ease-out);
+  pointer-events: none;
+}
+.b-hero__window--o   { left: 0.971em; }
+.b-hero__window--eth { left: 1.780em; width: 0.135em; }
+.b-hero__mark.is-home .b-hero__window { opacity: 1; }
 /* Every line of hero text wears the game's own text shadow: one hard pixel of
    night under it, which is how Minecraft keeps light text legible over any
    sky. On a wide screen the sub-line falls on the brightest band of the
    sunset, where paper alone read at under 4:1. */
 .b-hero__sub { font-size: var(--fs-lg); color: var(--paper); max-width: 34ch; line-height: 1.4; text-shadow: 0 var(--px) 0 var(--night); }
+/* On a wide screen the one line that says what this is takes the middle step
+   between the name and everything else: the bold cut at the title size, on the
+   dark of the upper sky. It was 20 px under a 350 px name, and read as a caption. */
+@media (min-width: 900px) { .b-hero__sub { font-size: var(--fs-xl); font-weight: 600; line-height: 1.25; max-width: 32ch; text-shadow: 0 var(--px) 0 var(--night), 0 calc(var(--px) * 2) 0 rgba(21, 16, 13, 0.35); } }
 /* the address and the server's lantern on one line: the two things a player needs, side by side;
    the address keeps level with the lantern however many lines hang under it */
 .b-hero__action { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--sp-4) var(--sp-7); margin-top: var(--sp-5); }
@@ -570,9 +722,9 @@
 .b-hero__side::before {
   content: '';
   position: absolute;
-  inset: -1.5rem -2.5rem;
+  inset: -2.5rem -3rem;
   z-index: -1;
-  background: radial-gradient(closest-side, var(--veil) 50%, rgba(21, 16, 13, 0.3) 78%, transparent);
+  background: radial-gradient(closest-side, var(--pane) 66%, rgba(21, 16, 13, 0.45) 86%, transparent);
   pointer-events: none;
 }
 
@@ -589,20 +741,76 @@
 .b-mesa__layer--ground { --depth: 0px; color: var(--dusk); }
 .b-mesa__band { opacity: calc(1 - var(--evening) * 0.7); }
 @media (max-width: 767px) { .b-mesa__layer--mid { display: none; } }
+/* The crew on the near ridge: the group stands on one plateau, found by its
+   place in the ridge's 480 by 120 drawing, which is scaled to cover the layer
+   from its foot and centred (xMidYMax slice): one unit is the larger of the
+   layer's width over 480 and its height over 120. A head is eight units, a
+   head block at the ridge's own scale; three units between them keep two
+   heads' targets 24 px apart on a phone. Beside the name on a wide screen,
+   on the tallest plateau at its feet on a phone. */
+.b-mesa { container-type: size; }
+.b-mesa__heads {
+  --u: max(100cqw / 480, 100cqh / 120);
+  --hx: 392; --hy: 26;
+  position: absolute;
+  left: calc(50% + (var(--hx) - 240) * var(--u));
+  bottom: calc(var(--hy) * var(--u));
+  display: flex;
+  align-items: flex-end;
+  gap: calc(var(--u) * 3);
+  pointer-events: auto;
+}
+@media (max-width: 899px) { .b-mesa__heads { --hx: 210; --hy: 34; } }
+.b-mesa__head { position: relative; display: block; }
+.b-mesa__head::before { content: ''; position: absolute; inset: -0.5rem calc(var(--u) * -1.5); }
+.b-mesa__head img { display: block; width: calc(var(--u) * 8); height: calc(var(--u) * 8); image-rendering: pixelated; box-shadow: 0 0 0 1px var(--night), 0 var(--px) 0 1px rgba(21, 16, 13, 0.45); }
+.b-mesa__head:focus-visible img { outline: var(--px) solid var(--lantern); outline-offset: var(--px); }
+@media (hover: hover) { .b-mesa__head:hover img { outline: var(--px) solid var(--paper); outline-offset: var(--px); } }
+.b-mesa__more { align-self: center; padding: 0 0.3rem; background: var(--night); color: var(--paper); font-weight: 600; font-size: var(--fs-sm); line-height: 1.4; }
+
 @media (prefers-reduced-motion: reduce) { .b-mesa__layer { transform: none; } }
 
 /* ─── the world: BlueMap fills the viewport under the mesas ───────
    The frame opens as a still of the home area. The viewer is an iframe
    that exists only once the lantern has been pressed, so a visitor who
    never touches it never downloads it. */
-.b-world { position: relative; background: var(--dusk); scroll-margin-top: var(--bar); }
+.b-world { position: relative; background: var(--dusk); scroll-margin-top: var(--bar); view-timeline: --world block; }
+/* Down into the valley: the hero's dark ground runs on over the top of the
+   frame as a stepped ridge (Mesa.tsx, ValleyRidge), low under the world's
+   title and tools and rising in the open sky between them, so the turn from
+   the sunset to the world happens in the land. It stands --rise higher than
+   it rests and sinks to rest, in whole art pixels, while the world comes up
+   into view: coming over the ridge, more of the valley shows. The part above
+   the frame lies on the hero's own ground, the same colour, so nothing shows
+   there but more ground. Above the frame, under the HUD and the full screen. */
+.b-valley {
+  --valley: 4rem;
+  --rise: 1rem;
+  position: absolute;
+  inset-inline: 0;
+  top: calc(var(--rise) * -1);
+  height: calc(var(--valley) + var(--rise));
+  z-index: 2;
+  color: var(--dusk);
+  background: linear-gradient(var(--dusk), var(--dusk)) top / 100% var(--rise) no-repeat;
+  pointer-events: none;
+}
+.b-valley svg { position: absolute; inset-inline: 0; top: var(--rise); width: 100%; height: calc(var(--valley) * 34 / 32); display: block; shape-rendering: crispEdges; }
+@media (max-width: 899px) { .b-valley { --valley: 2.5rem; --rise: 0.5rem; } }
+@keyframes b-valley-sink { from { transform: translateY(var(--rise)); } to { transform: none; } }
+@supports (animation-timeline: view()) {
+  .b-valley { animation: b-valley-sink steps(8, jump-end) both; animation-timeline: --world; animation-range: entry 0% entry 70%; }
+}
+@media (prefers-reduced-motion: reduce) { .b-valley { animation: none; } }
 .b-frame {
   position: relative;
   height: calc(100svh - var(--bar));
   min-height: 34rem;
   isolation: isolate;
   background: var(--night);
+  /* no plank along the top: the ridge is the frame's top edge (.b-valley) */
   border-block: calc(var(--px) * 4) solid var(--wood);
+  border-top-width: 0;
   box-shadow: inset 0 0 0 var(--px) var(--wood-light), inset 0 0 0 calc(var(--px) * 2) var(--wood-dark);
   overflow: clip;
 }
@@ -616,6 +824,31 @@
   filter: saturate(0.85);
   transition: opacity var(--dur-3) var(--ease-out);
 }
+/* The block break (BlockBreak.tsx): the still laid over the live map as a
+   grid of blocks, each cracking in three steps and then gone, in a sweep out
+   from the lantern. The real still and the map's own fade-in step aside at
+   once, since the blocks are the still now. Opacity only. */
+.b-frame.is-breaking .b-frame__poster { opacity: 0; transition: none; }
+.b-frame.is-breaking .b-frame__view { transition: none; }
+.b-break { position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: clip; }
+.b-break__block { position: absolute; background-repeat: no-repeat; animation: b-break-go 200ms steps(1, end) both; }
+.b-break__block::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  /* the game's crack, drawn on a block's own 16 by 16 grid */
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Cpath fill='%2315100D' fill-opacity='.78' d='M7 1h1v4H7zM8 5h1v2H8zM5 7h4v1H5zM4 8h1v2H4zM9 8h3v1H9zM12 9h1v3h-1zM3 10h1v1H3zM2 11h1v2H2zM8 8h1v4H8zM9 12h1v3H9zM12 3h1v2h-1zM11 5h1v2h-1zM5 3h1v2H5zM13 12h1v1h-1z'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+  image-rendering: pixelated;
+  opacity: 0;
+  animation: inherit;
+  animation-name: b-break-crack;
+  animation-timing-function: steps(3, end);
+}
+@keyframes b-break-go { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes b-break-crack { 0% { opacity: 0.35; } 100% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .b-break { display: none; } }
+/* the still comes after the page has loaded (World.tsx), so it fades up onto the frame's night rather than appearing */
+@starting-style { .b-frame__poster { opacity: 0; } }
 /* the dark that falls over the world while a room is open; a tap on it closes the room */
 .b-frame__dim { position: absolute; inset: 0; z-index: 5; background: var(--veil); opacity: 0; pointer-events: none; transition: opacity var(--dur-3) var(--ease-out); }
 .b-frame.is-room .b-frame__dim { opacity: 1; pointer-events: auto; cursor: pointer; }
@@ -692,6 +925,32 @@ html.is-map-full { overflow: hidden; }
 .b-hud__head:focus-visible { outline: none; }
 .b-hud__follow { color: var(--lantern); }
 .b-hud__tools { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--sp-2); }
+/* On a wide screen the tools are the same bevelled wooden keys as on a phone,
+   joined on one strip, with their words beside the drawn icon (there is room
+   for them): one control, one look, at every width. The pressed key sits in
+   with a rule of lantern along its foot; the icon is the lit part. */
+@media (min-width: 900px) {
+  .b-hud__tools { flex-wrap: nowrap; gap: 0; filter: drop-shadow(0 var(--px) 0 var(--veil)); }
+  .b-hud__tools > .b-btn {
+    min-height: var(--tap);
+    padding: 0 var(--sp-4);
+    border: 0;
+    background: linear-gradient(180deg, var(--wood-light) 0 var(--px), var(--wood) var(--px) calc(100% - var(--px) * 2), var(--wood-dark) calc(100% - var(--px) * 2));
+    color: var(--paper);
+    box-shadow: var(--bevel);
+  }
+  .b-hud__tools > .b-btn + .b-btn { border-left: var(--px) solid var(--wood-dark); }
+  .b-hud__tools > .b-btn .b-btn__icon { width: 1rem; height: 1rem; color: var(--lantern); }
+  .b-hud__tools > .b-btn.is-on { color: var(--lantern); box-shadow: var(--bevel-in), inset 0 -3px 0 var(--lantern); }
+  .b-hud__tools > .b-btn:focus-visible { background: var(--lantern); color: var(--night); }
+  .b-hud__tools > .b-btn:focus-visible .b-btn__icon { color: var(--night); }
+  .b-hud__tools > .b-btn:active { transform: none; background: var(--lantern-deep); color: var(--night); box-shadow: var(--bevel-in); }
+  @media (hover: hover) {
+    .b-hud__tools > .b-btn:hover { background: linear-gradient(180deg, var(--wood-light) 0 var(--px), var(--wood-light) var(--px) calc(100% - var(--px) * 2), var(--wood-dark) calc(100% - var(--px) * 2)); color: var(--lantern); }
+  }
+  /* the way out of the whole screen stands apart, as on a phone */
+  .b-hud__tools > .b-hud__close.b-btn { margin-left: var(--sp-2); border-left: 0; background: var(--veil); color: var(--lantern); box-shadow: none; clip-path: var(--notch); }
+}
 .b-hud__mid { display: grid; place-items: center; }
 .b-frame.is-drawn .b-hud__title .b-title, .b-frame.is-drawn .b-hud__meta { color: var(--ink); text-shadow: none; }
 .b-frame.is-drawn .b-hud__in img { box-shadow: 0 0 0 1px var(--ink); }
@@ -929,6 +1188,8 @@ html.is-map-full { overflow: hidden; }
 @media (max-width: 899px) {
   /* the whole screen between the two bars: the world is the phone's window */
   .b-frame { height: calc(100svh - var(--bar) - var(--doorbar) - env(safe-area-inset-bottom, 0px)); min-height: 30rem; }
+  /* a tablet's doors are in the bar, so its frame runs to the foot of the screen */
+  @media (min-width: 760px) { .b-frame { height: calc(100svh - var(--bar)); } }
   .b-hud { padding: var(--sp-3) var(--gutter); }
   /* the lantern in the middle already opens the viewer full screen on a phone */
   .b-hud__tools a { display: none; }
@@ -1040,7 +1301,8 @@ html.is-map-full { overflow: hidden; }
     linear-gradient(180deg, var(--wood-light) 0 var(--px), var(--wood) var(--px) calc(100% - var(--px) * 2), var(--wood-dark) calc(100% - var(--px) * 2));
   box-shadow: inset 0 0 0 var(--px) rgba(21, 16, 13, 0.35);
 }
-.b-room__title { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-lg); line-height: 1; color: var(--paper); text-shadow: 0 var(--px) 0 var(--wood-dark); white-space: nowrap; }
+/* a room's name is the largest thing in the room: everything inside stops a step below */
+.b-room__title { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-xl); line-height: 1; color: var(--paper); text-shadow: 0 var(--px) 0 var(--wood-dark); white-space: nowrap; }
 .b-room__note { flex: 1 1 auto; min-width: 0; font-size: var(--fs-sm); color: var(--tc-white); text-shadow: 0 var(--px) 0 var(--wood-dark); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .b-room__close { flex-shrink: 0; margin-left: auto; width: var(--tap); height: var(--tap); display: inline-grid; place-items: center; color: var(--lantern); font-family: var(--font-data); font-size: var(--fs-data); background: rgba(21, 16, 13, 0.35); clip-path: var(--notch); }
 .b-room__close svg { width: 1rem; height: 1rem; }
@@ -1105,13 +1367,10 @@ html.is-map-full { overflow: hidden; }
 .b-lb__close { position: absolute; top: max(var(--sp-3), env(safe-area-inset-top, 0px)); right: var(--sp-4); z-index: 1; background: var(--veil); }
 
 /* ─── the crew: portraits in the room ─────────────────────────── */
+/* the room's one line of state runs under the portraits, the width of a sentence */
 .b-crew__row { display: grid; gap: var(--sp-3); margin-bottom: var(--sp-5); }
-.b-crew__who { text-align: center; text-wrap: balance; }
-@media (min-width: 900px) {
-  .b-crew__row { grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: var(--sp-6); }
-  /* narrow enough that eight portraits beside it keep a column the longest name fits */
-  .b-crew__who { text-align: right; max-width: 14rem; }
-}
+.b-crew__who { text-align: center; text-wrap: balance; max-width: var(--measure); margin-inline: auto; }
+@media (min-width: 900px) { .b-crew__who { text-align: left; margin-inline: 0; } }
 .b-folk { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp-4) var(--sp-1); list-style: none; }
 @media (min-width: 480px) { .b-folk { gap: var(--sp-4) var(--sp-3); } }
 @media (min-width: 1100px) { .b-folk { grid-template-columns: repeat(8, minmax(0, 1fr)); max-width: 52rem; } }
@@ -1228,7 +1487,6 @@ html.is-map-full { overflow: hidden; }
 
 .b-btn,
 .b-door,
-.b-doorbar__item,
 .b-bar__addr,
 .b-copy__btn,
 .b-status__word,
@@ -1255,7 +1513,6 @@ html.is-map-full { overflow: hidden; }
 /* capitals in the bitmap face take a little air; nothing else is tracked */
 .b-btn,
 .b-door,
-.b-doorbar__item,
 .b-boot__word {
   letter-spacing: 0.04em;
 }
@@ -1314,7 +1571,7 @@ html.is-map-full { overflow: hidden; }
 .b-night__kicker { font-weight: 600; font-size: var(--fs-sm); letter-spacing: 0.04em; text-transform: uppercase; color: var(--tc-yellow); }
 .b-night--over .b-night__kicker { color: var(--tc-white); }
 .b-night__top { display: grid; gap: var(--sp-1); }
-.b-night__title { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-xl); line-height: 1.1; color: var(--paper); }
+.b-night__title { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-lg); line-height: 1.1; color: var(--paper); }
 .b-night q { quotes: '„' '“'; color: var(--paper); }
 /* an open night's times: campsites side by side on their own patches of ground, no boxes */
 .b-night__options { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: var(--sp-6) var(--sp-5); }
@@ -1434,3 +1691,188 @@ html.is-map-full { overflow: hidden; }
 .b-lad__note b { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-lg, 1.25rem); color: var(--tc-red); }
 .b-lad__note small { font-size: var(--fs-sm); color: var(--ink-faint); }
 @media (prefers-reduced-motion: reduce) { .b-lad__who { transition: none; } }
+
+/* ═══════════════════════════════════════════════════════════════
+   Paper, the campfire and the effects: drawn by the home page at once
+   (the toast is paper, the footer is the fire), so they ride with the
+   page's own sheet; the posters and the counter wait in board.css.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── a sheet of paper ────────────────────────────────────────── */
+.b-paper {
+  position: relative;
+  color: var(--ink);
+  background: var(--paper);
+  border: var(--px) solid var(--tc-brown);
+  clip-path: var(--notch);
+  overflow: hidden;
+}
+/* torn top and bottom, in whole pixels */
+.b-paper--torn {
+  border-top: 0;
+  border-bottom: 0;
+  clip-path: polygon(
+    0 4px, 4% 4px, 4% 0, 9% 0, 9% 6px, 15% 6px, 15% 2px, 22% 2px, 22% 6px, 30% 6px, 30% 0, 37% 0, 37% 4px, 45% 4px, 45% 8px, 53% 8px, 53% 2px, 60% 2px, 60% 6px, 68% 6px, 68% 0, 76% 0, 76% 4px, 84% 4px, 84% 8px, 91% 8px, 91% 2px, 96% 2px, 96% 6px, 100% 6px,
+    100% calc(100% - 4px), 95% calc(100% - 4px), 95% 100%, 88% 100%, 88% calc(100% - 8px), 80% calc(100% - 8px), 80% calc(100% - 2px), 72% calc(100% - 2px), 72% calc(100% - 6px), 64% calc(100% - 6px), 64% 100%, 56% 100%, 56% calc(100% - 4px), 48% calc(100% - 4px), 48% calc(100% - 8px), 40% calc(100% - 8px), 40% calc(100% - 2px), 32% calc(100% - 2px), 32% calc(100% - 6px), 24% calc(100% - 6px), 24% 100%, 16% 100%, 16% calc(100% - 4px), 8% calc(100% - 4px), 8% calc(100% - 8px), 0 calc(100% - 8px)
+  );
+}
+.b-paper::before {
+  /* weathering: two soft stains and a faint fibre grain */
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 40% at 90% 10%, rgba(77, 51, 35, 0.12), transparent 70%),
+    radial-gradient(50% 50% at 10% 100%, rgba(77, 51, 35, 0.10), transparent 70%),
+    repeating-linear-gradient(90deg, rgba(77, 51, 35, 0.025) 0 1px, transparent 1px 3px);
+}
+.b-paper > * { position: relative; }
+.b-paper__nail {
+  position: absolute;
+  top: var(--sp-3);
+  left: 50%;
+  width: calc(var(--px) * 3);
+  height: calc(var(--px) * 3);
+  margin-left: calc(var(--px) * -1.5);
+  background: var(--ink);
+  box-shadow: var(--px) var(--px) 0 rgba(30, 22, 17, 0.25);
+  z-index: 1;
+}
+.b-paper__nail--l { left: var(--sp-4); margin-left: 0; }
+.b-paper__nail--r { left: auto; right: var(--sp-4); margin-left: 0; }
+.b-paper__kicker { font-size: var(--fs-sm); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-faint); }
+.b-paper p { line-height: var(--lh-text); }
+.b-paper .b-link { color: var(--lantern-ink); }
+@media (hover: hover) { .b-paper .b-link:hover { color: var(--ink); } }
+.b-paper .b-btn { color: var(--lantern-ink); border-color: var(--lantern-ink); }
+.b-paper .b-btn:focus-visible { background: var(--lantern-ink); color: var(--paper); }
+@media (hover: hover) { .b-paper .b-btn:hover { background: var(--lantern-ink); color: var(--paper); } }
+/* the one lit button on a sheet is the lantern itself, with ink on it */
+.b-paper .b-btn--solid { background: var(--lantern); border-color: var(--lantern-ink); color: var(--ink); }
+@media (hover: hover) { .b-paper .b-btn--solid:hover { background: var(--ink); border-color: var(--ink); } }
+.b-paper .b-note { color: var(--ink-faint); }
+
+/* ─── campfire: the footer ────────────────────────────────────── */
+/* One band of ground, no taller than it needs to be. The doors are in the bar
+   and the hotbar, so the footer carries only the way back up, the wind and
+   fire, and the small print, and gives the room to the fire, which stands on
+   the ground strip. On a phone the way up and the sound share one row, so
+   the fire is reached a row sooner. */
+.b-foot { position: relative; --ground: calc(var(--px) * 14); padding-top: var(--sp-6); overflow: clip; }
+.b-foot__inner {
+  position: relative;
+  z-index: 2;   /* the fire stands on the ground strip and its light falls across it */
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-template-areas: 'up nav' 'credit credit' 'camp camp';
+  justify-content: center;
+  justify-items: center;
+  align-items: center;
+  text-align: center;
+  gap: var(--sp-4) var(--sp-3);
+  /* the floor: how high the text stands above the ground, so it clears the
+     ridge behind it and the fire has a horizon to burn in front of */
+  --floor: 3.25rem;
+  padding-bottom: var(--floor);
+}
+@media (min-width: 720px) {
+  .b-foot__inner {
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    grid-template-areas: 'camp credit nav up';
+    justify-content: stretch;
+    align-items: end;
+    justify-items: start;
+    text-align: left;
+    column-gap: var(--sp-6);
+  }
+}
+
+/* the fire, and its light pooled across the band */
+.b-foot__camp { grid-area: camp; position: relative; display: flex; justify-content: center; align-items: flex-end; margin-bottom: calc(var(--floor) * -1); }
+.b-foot__camp::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -1.5rem;
+  width: 26rem;
+  height: 9rem;
+  margin-left: -13rem;
+  background: radial-gradient(closest-side, rgba(224, 96, 42, 0.30), transparent);
+  animation: b-flicker var(--dur-lantern) ease-in-out infinite;
+  pointer-events: none;
+}
+.b-foot__fire { display: block; padding: 0; border: 0; background: none; cursor: pointer; }
+.b-foot__fire:focus-visible .b-fire { transform: translateY(calc(var(--px) * -1)); }
+@media (hover: hover) { .b-foot__fire:hover .b-fire { transform: translateY(calc(var(--px) * -1)); } }
+.b-fire { position: relative; display: block; width: 5.5rem; height: 5.5rem; margin-bottom: calc(var(--px) * -2); transition: transform var(--dur-2) var(--ease-out); }
+.b-fire svg { width: 100%; height: 100%; display: block; shape-rendering: crispEdges; overflow: visible; }
+.b-fire__frame { opacity: 0; animation: b-frames 900ms steps(1, end) infinite; }
+@keyframes b-frames { 0%, 33.33% { opacity: 1; } 33.34%, 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .b-fire__frame { animation: none; } .b-fire__frame:first-child { opacity: 1; } }
+
+/* the mesas the evening opened over, back as a silhouette behind the camp */
+.b-ridge {
+  position: absolute;
+  inset-inline: 0;
+  bottom: var(--ground);                 /* the ridge stands on the ground strip */
+  height: clamp(3rem, 7vw, 5rem);
+  color: color-mix(in oklab, var(--tc-brown), var(--night) 52%);
+  pointer-events: none;
+}
+.b-ridge svg { width: 100%; height: 100%; display: block; shape-rendering: crispEdges; }
+
+/* the wind-and-fire toggle */
+.b-foot__nav { grid-area: nav; display: flex; align-items: center; }
+.b-foot__sound { display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2); width: var(--tap); height: var(--tap); color: var(--lantern); }
+.b-foot__sound svg { width: 1.25rem; height: 1.25rem; shape-rendering: crispEdges; }
+@media (hover: hover) { .b-foot__sound:hover { background: rgba(242, 166, 59, 0.12); } }
+.b-foot__sound.is-on { background: var(--lantern); color: var(--night); }
+
+/* the way back up the evening */
+.b-foot__up { grid-area: up; gap: var(--sp-2); }
+@media (min-width: 720px) { .b-foot__up { justify-self: end; } }
+.b-foot__upchev { width: 0.875rem; height: 0.875rem; flex-shrink: 0; transition: transform var(--dur-2) var(--ease-out); }
+.b-foot__up:focus-visible .b-foot__upchev { transform: translateY(calc(var(--px) * -1)); }
+@media (hover: hover) { .b-foot__up:hover .b-foot__upchev { transform: translateY(calc(var(--px) * -1)); } }
+
+.b-foot__credit { grid-area: credit; }
+.b-foot__credit p { font-size: var(--fs-sm); color: var(--text-soft); line-height: 1.5; }
+.b-foot__credit .b-foot__small { font-size: var(--fs-sm); color: var(--text-faint); }
+/* the owner's way in: in the small print, lit and underlined, since its colour alone is too close to the words round it */
+.b-foot__admin { color: var(--lantern); text-decoration: underline var(--px); text-underline-offset: 0.3em; white-space: nowrap; }
+@media (hover: hover) { .b-foot__admin:hover { color: var(--paper); } }
+.b-foot__admin:focus-visible { color: var(--paper); }
+
+.b-ground {
+  position: relative;
+  z-index: 1;
+  height: var(--ground);
+  background:
+    linear-gradient(180deg, var(--tc-brown) 0 calc(var(--px) * 2), var(--dusk) calc(var(--px) * 2) calc(var(--px) * 6), var(--dusk-2) calc(var(--px) * 6) calc(var(--px) * 10), var(--night) calc(var(--px) * 10));
+  background-size: 100% 100%;
+}
+.b-ground::before { content: ''; display: block; height: var(--px); background: var(--tc-red); opacity: 0.5; }
+
+/* ─── effects ─────────────────────────────────────────────────── */
+.b-particles { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+/* One pre-rasterised disc of light, parked at the origin and moved by
+   transform. Painting the gradient at a moving position instead would
+   repaint the whole viewport on every pointer frame. */
+.b-light {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 520px;
+  height: 520px;
+  margin: -260px 0 0 -260px;
+  z-index: var(--z-light);
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(closest-side circle, rgba(242, 166, 59, 0.10), transparent 70%);
+  mix-blend-mode: screen;
+  will-change: transform;
+}
+.b-light.is-on { opacity: 1; }
+
+

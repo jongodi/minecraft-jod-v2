@@ -15,8 +15,13 @@ export const PHOTO_SIZES = {
   frame:     '(min-width: 1280px) 260px, (min-width: 720px) 24vw, 46vw',
   /* every fifth frame spans two of those columns */
   frameHero: '(min-width: 1280px) 520px, (min-width: 720px) 48vw, 92vw',
-  /* the still the world opens as: the whole viewport */
-  poster:   '100vw',
+  /* the still the world opens as. It covers a frame as tall as the screen
+     less the bars (badlands.css, .b-frame), so wherever the screen is
+     narrower than the still's 16:9 it is drawn at the frame's height and
+     overflows the width: on a phone held upright about 1.8 times the screen.
+     Asking for the screen's width there fetched a picture a third of the
+     size it is drawn at. */
+  poster:   '(max-aspect-ratio: 16/9) calc((100vh - 8rem) * 16 / 9), 100vw',
   /* the postcard of a chosen place: 22rem on desktop, the frame's width on phones */
   card:     '(min-width: 900px) 352px, calc(100vw - 2rem)',
   /* a place's thumbnail on the rail: 3.5rem */

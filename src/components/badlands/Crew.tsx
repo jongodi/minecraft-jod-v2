@@ -1,5 +1,6 @@
 'use client';
 
+import '@/app/board.css';
 import '@/app/wall.css';
 import { memo, useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -62,6 +63,9 @@ function Crew({ server }: { server: ServerState }) {
             );
           })}
         </ul>
+        {/* One line for the whole room's state: who is in, and if the board is
+            bare, why. Three notes in three places (beside the heads, under
+            the night, on the board) read as three things broken. */}
         <p className="b-note b-crew__who" aria-live="polite">
           {online === null ? 'athuga hver er inni' :
            online ? (inside === 0 ? 'þjónninn er opinn en enginn kominn inn enn' : `${inside} úr hópnum inni núna${guests ? `, gestir: ${guests}` : ''}`) :
@@ -70,6 +74,8 @@ function Crew({ server }: { server: ServerState }) {
            life === 'unknown' ? 'næ ekki sambandi við þjóninn í augnablikinu' :
            life === 'off' && lastOnline ? `slökkt á þjóninum, síðast kveikt ${sinceAt(lastOnline.at)}` :
            'slökkt á þjóninum, allir í pásu'}
+          {stats.failed ? '. Náði ekki í tölurnar úr leiknum núna.' :
+           stats.source !== null && stats.players.length === 0 ? '. Tölurnar birtast á spjöldunum þegar þjónninn hefur verið í gangi.' : ''}
         </p>
       </div>
 

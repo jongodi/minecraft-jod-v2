@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Lantern, Mark, Strata } from './Bits';
+import { usePathname } from 'next/navigation';
+import { CopyIcon, Lantern, Mark, Strata } from './Bits';
 import PlayerHead from './PlayerHead';
 import ToastHost from './Toast';
 import { SERVER_IP, type NavLink } from './data';
-import { useCopy, useCrewSession } from './hooks';
+import { useCopy, useCrewSession, useServerStatus, type ServerState } from './hooks';
+import type { ServerLife } from '@/lib/server-state';
 
 export interface Door extends NavLink { id: string }
 
@@ -18,19 +20,54 @@ interface Props {
   onDoor?: (id: string) => void;
   /** solid from the start: the other pages, which have no sunset to lie over */
   always?: boolean;
+  /** the status the page was drawn with on the server, so the bar's lantern is right at first paint */
+  status?: ServerState;
 }
 
 const SOLID_AFTER = 40; // px of scroll before the bar takes a surface
 
-/** The bar: the mark, the three doors as lanterns, and the address with its
-    copy action. On the home page it lies over the sunset and takes a surface
-    once the page has scrolled; elsewhere it is solid from the start. On phones
-    the doors move to a bar at the bottom, in reach of a thumb. A door's
-    lantern is lit while the visitor is behind it, and only ever one is. */
-export default function AddressBar({ links, activeId, onDoor, always = false }: Props) {
+/* The bar's lantern says the server's state in a word or two: the hero's
+   lantern says it in full. Chat colours: green in, gold on the way, the
+   lantern's own dark when out. */
+const SHORT: Record<ServerLife, string> = {
+  on: 'opið', off: 'slökkt', starting: 'vaknar', restarting: 'vaknar', stopping: 'slokknar', crashed: 'hrundi', unknown: '',
+};
+const LONG: Record<ServerLife, string> = {
+  on: 'Kveikt á þjóninum', off: 'Slökkt á þjóninum', starting: 'Þjónninn er að vakna', restarting: 'Þjónninn endurræsist',
+  stopping: 'Þjónninn er að slokkna', crashed: 'Þjónninn hrundi', unknown: 'Náði ekki sambandi við þjóninn',
+};
+
+/** The server's lantern, small, in the bar on every page: lit with the count
+    of who is in, kindling on the way up or down, dark when out. It opens the
+    crew's room, where the same people stand by name. */
+function BarLantern({ server, home }: { server: ServerState; home: boolean }) {
+  const { life, players } = server;
+  const online = server.online === true;
+  const burn = online ? 'is-on' : life === 'starting' || life === 'restarting' || life === 'stopping' ? 'is-kindling' : life ? 'is-off' : '';
+  const word = !life ? '' : online && players > 0 ? `${players} inni` : SHORT[life];
+  const name = !life ? 'Staða þjónsins' : `${LONG[life]}${online ? `, ${players === 0 ? 'enginn inni' : `${players} inni`}` : ''}`;
+  return (
+    <a href={home ? '#hopur' : '/#hopur'} className={`b-bar__status b-tip b-tip--below ${burn}`} data-tip={name}>
+      <Lantern lit={online} className={burn === 'is-kindling' ? 'is-kindling' : undefined} />
+      {/* the word that shows is the first of the name, so what a screen reader hears starts with what is seen */}
+      <span className="b-bar__state">{word}</span>
+      <span className="b-visually-hidden">{word ? ': ' : ''}{name}. Sjá hver er inni.</span>
+    </a>
+  );
+}
+
+/** The bar: the mark, the three doors as lanterns, the server's lantern and
+    the address with its copy action. On the home page it lies over the sunset
+    and takes a surface once the page has scrolled; elsewhere it is solid from
+    the start. On phones the doors move to a hotbar at the foot of the screen,
+    in reach of a thumb, with the address in the offhand slot beside it. A
+    door's lantern is lit while the visitor is behind it, and only ever one is. */
+export default function AddressBar({ links, activeId, onDoor, always = false, status }: Props) {
   const [solid, setSolid] = useState(always);
   const [, copy]          = useCopy(SERVER_IP);
   const { me } = useCrewSession();
+  const server = useServerStatus(status);
+  const path = usePathname();
 
   useEffect(() => {
     if (always) return;
@@ -45,16 +82,18 @@ export default function AddressBar({ links, activeId, onDoor, always = false }: 
   const door = (l: Door, cls: string) => {
     const here = l.id === activeId;
     const className = `${cls}${here ? ' is-here' : ''}`;
-    const inner = <><Lantern lit={here} />{l.label}</>;
+    /* the page itself, or the place on it the visitor is in (a room, a wall in the crew's) */
+    const current = !here ? undefined : l.href === path ? 'page' : 'location';
+    const inner = <><Lantern lit={here} /><span className={`${cls}__label`}>{l.label}</span></>;
     if (onDoor) {
       return (
-        <a key={l.id} href={l.href} className={className} aria-current={here ? 'location' : undefined}
+        <a key={l.id} href={l.href} className={className} aria-current={current}
            onClick={e => { e.preventDefault(); onDoor(l.id); }}>
           {inner}
         </a>
       );
     }
-    return <Link key={l.id} href={l.href} className={className} aria-current={here ? 'location' : undefined}>{inner}</Link>;
+    return <Link key={l.id} href={l.href} className={className} aria-current={current}>{inner}</Link>;
   };
 
   return (
@@ -72,11 +111,16 @@ export default function AddressBar({ links, activeId, onDoor, always = false }: 
                 <PlayerHead name={me} size={24} />
               </Link>
             )}
-            {/* named by what it shows: the address and the verb, with the verb's object spelled out for a screen reader; the toast says it was done */}
+            <BarLantern server={server} home={!!onDoor} />
+            {/* named by what it shows: the address and the verb, with the verb's object spelled out for a screen reader; the toast says it was done.
+                The button is a full tap tall; the paper tag drawn on it is the plank's own height, and a notched tag would clip a taller hit area. */}
             <button type="button" className="b-bar__addr" onClick={copy}>
-              <span className="b-visually-hidden">Afrita vistfang þjónsins: </span>
-              <span>{SERVER_IP}</span>
-              <b>afrita</b>
+              <span className="b-bar__tag">
+                <CopyIcon />
+                <span className="b-visually-hidden">Afrita vistfang þjónsins: </span>
+                <span className="b-bar__ip">{SERVER_IP}</span>
+                <b>afrita</b>
+              </span>
             </button>
           </div>
         </div>
@@ -85,11 +129,21 @@ export default function AddressBar({ links, activeId, onDoor, always = false }: 
       </header>
       <ToastHost />
 
-      {/* the same three doors at the foot of a phone on every page, so the
-          walls and a lost trail are never a page without the evening's doors */}
-      <nav className="b-doorbar" aria-label="Efnisyfirlit">
-        {links.map(l => door(l, 'b-doorbar__item'))}
-      </nav>
+      {/* The hotbar at the foot of a phone, on every page: the three doors as
+          its slots, the one the visitor is behind framed the way the game
+          frames the slot in hand, and set apart from them the offhand slot,
+          which holds the address. The offhand sits on the right, where the
+          game puts it for a left main hand, because a right thumb gets there
+          first. */}
+      <div className="b-hotbar">
+        <nav className="b-hotbar__slots" aria-label="Efnisyfirlit">
+          {links.map(l => door(l, 'b-slot'))}
+        </nav>
+        <button type="button" className="b-slot b-slot--off" onClick={copy}>
+          <CopyIcon />
+          <span className="b-slot__label">Afrita<span className="b-visually-hidden"> vistfang þjónsins, {SERVER_IP}</span></span>
+        </button>
+      </div>
     </>
   );
 }

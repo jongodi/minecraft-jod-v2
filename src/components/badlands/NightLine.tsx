@@ -34,7 +34,7 @@ export function Heads({ names, lit }: { names: string[]; lit?: (n: string) => bo
 /** One line under the server's lantern about the next fire; a tap opens the
     crew's room, where they all are. Drawn on the server with the page's own
     answer, so it is there at first paint and nothing under it moves. */
-export function NightLine({ initial }: { initial?: PlayNightResponse }) {
+export function NightLine({ initial, href = '#hopur' }: { initial?: PlayNightResponse; href?: string }) {
   const { state } = usePlayNight(initial);
   const night = state?.nights[0];
   /* on the day the line counts down on its own clock, so it keeps moving
@@ -64,7 +64,7 @@ export function NightLine({ initial }: { initial?: PlayNightResponse }) {
     text = `${WhenAt(chosen!.at)}${until ? `, ${until}` : ''} · ${yes.length} ${plural(yes.length, 'mætir', 'mæta')}`;
   }
   return (
-    <a href="#hopur" className={`b-nightline${night.phase === 'over' ? ' is-embers' : ''}`}>
+    <a href={href} className={`b-nightline${night.phase === 'over' ? ' is-embers' : ''}`}>
       <Fire count={night.phase === 'open' ? Math.max(...night.options.map(o => o.yes.length)) : yes.length} embers={night.phase === 'over'} />
       <span className="b-nightline__text">
         <span className="b-nightline__kicker">{night.phase === 'over' ? 'Síðasta spilakvöld' : 'Næsta spilakvöld'}{planned > 1 && ` · ${planned} á dagskrá`}</span>

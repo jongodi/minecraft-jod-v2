@@ -259,3 +259,29 @@ export function BulletHole({ x, y }: { x: number; y: number }) {
     </svg>
   );
 }
+
+/* A wax seal on the 16 by 16 grid: a blob of wax with a pixel or two run
+   over its edge, the raised disc pressed into it, and the light along its top
+   (only there: light at the left rim ran into the Ð's crossbar, and the Ð
+   read as a D). */
+const SEAL_WAX = 'M5 0h6v1h2v1h1v2h1v1h1v6h-1v2h-1v1h-1v1h-2v1H5v-1H3v-1H2v-1H1v-2H0V5h1V3h1V2h1V1h2zM15 7h1v2h-1zM7 15h2v1H7z';
+const SEAL_DISC = 'M6 2h4v1h2v1h1v2h1v4h-1v2h-1v1h-2v1H6v-1H4v-1H3v-2H2V6h1V4h1V3h2z';
+const SEAL_LIGHT = 'M6 2h4v1H6zM4 3h2v1H4zM10 3h2v1h-2z';
+
+/** The seal of the place: JOÐ's Ð pressed into red wax, the way a notice on
+    the frontier was made good. Set at 48 px or larger, where the Ð reads as
+    Ð (a pixel Ð closed into a D at 32 px and under). Three places carry it:
+    the foot of a wanted poster, the copy toast, and a member's poster. */
+export function Seal({ className }: { className?: string }) {
+  return (
+    <span className={`b-seal${className ? ` ${className}` : ''}`} aria-hidden="true">
+      <svg viewBox="0 0 16 16" shapeRendering="crispEdges">
+        <path d={SEAL_WAX} fill="currentColor" />
+        <path d={SEAL_DISC} fill="var(--seal-deep)" />
+        <path d={SEAL_LIGHT} fill="var(--seal-light)" />
+      </svg>
+      <span className="b-seal__eth">Ð</span>
+    </span>
+  );
+}
+

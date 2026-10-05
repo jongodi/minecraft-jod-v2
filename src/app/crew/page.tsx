@@ -11,7 +11,8 @@ import type { FeedEntry } from '@/app/api/crew/feed/route';
 import AddressBar from '@/components/badlands/AddressBar';
 import Footer from '@/components/badlands/Footer';
 import PlayerHead from '@/components/badlands/PlayerHead';
-import { ArrowIcon } from '@/components/badlands/Bits';
+import NightSky from '@/components/badlands/NightSky';
+import { NightLine } from '@/components/badlands/NightLine';
 import { CREW, PAGE_LINKS } from '@/components/badlands/data';
 import { photoProps, PHOTO_SIZES } from '@/components/badlands/photo';
 
@@ -43,15 +44,18 @@ export default function CrewPage() {
     <div className="b">
       {/* the walls are the crew's room continued, so its lantern burns here too */}
       <AddressBar links={PAGE_LINKS} activeId="hopur" always />
+      <NightSky />
       <main id="efni" className="b-wrap b-page">
-        <Link href="/" className="b-back"><ArrowIcon flip /> aftur á forsíðu</Link>
         {staleLink && (
           <p className="w-welcome" role="status">Þessi innskráningartengill er útrunninn eða þegar notaður. Biddu stjórnandann um nýjan.</p>
         )}
         <div className="b-page__head">
           <div>
-            <h1 className="b-title">Hópurinn</h1>
-            <p className="b-lede">Öll sem hafa aðgang. Hvert og eitt á sinn vegg: kynningu, tölur úr leiknum, miða og myndir.</p>
+            {/* named as the door that leads here, so the door pressed and the page landed on agree */}
+            <h1 className="b-title">Eftirlýst</h1>
+            <p className="b-lede">Hópurinn, öll sem hafa aðgang. Hvert og eitt á sinn vegg: kynningu, tölur úr leiknum, miða og myndir.</p>
+            {/* the next fire: the room on the home page holds it, one tap away */}
+            <div className="b-page__night"><NightLine href="/kvold#hopur" /></div>
           </div>
           {/* tabs as a keyboard expects them: one stop for Tab, the arrows go between them */}
           <div className="b-tabs" style={{ marginBottom: 0 }} role="tablist" aria-label="Hópurinn"

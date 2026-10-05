@@ -1,7 +1,7 @@
 'use client';
 
 import '@/app/badlands.css';
-import '@/app/board.css';
+/* board.css (the posters, the counter) comes with the rooms that hang them: Crew.tsx, Shelf.tsx */
 import { useCallback, useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import type { BaseLink } from '@/lib/base-links';
@@ -133,7 +133,7 @@ export default function BadlandsHome({ syncedOn, bases, initial }: { syncedOn: s
       {/* the effects start once the browser is idle, and not at all on a device without room for them */}
       {effects && <Particles heroId="top" fireId="campfire" snow={season.snow} fireworks={season.fireworks} />}
       {effects && <CursorLight />}
-      <AddressBar links={SECTIONS} activeId={active} onDoor={openDoor} />
+      <AddressBar links={SECTIONS} activeId={active} onDoor={openDoor} status={initial.status} />
       <main id="efni">
         <Hero server={server} season={season} nights={nights} />
         <World plates={plates} config={map} pinned={pinned} server={server} syncedOn={syncedOn} bases={bases} room={room} onCloseRoom={closeRoom} />
