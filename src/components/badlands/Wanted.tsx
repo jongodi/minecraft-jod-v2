@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import PlayerHead from './PlayerHead';
+import { Seal } from './Bits';
 import Rail from './Rail';
 import { STAT_TABS, isLowerBetter, type StatKey } from './data';
 import type { StatsState } from './hooks';
@@ -104,6 +105,8 @@ export default function Wanted({ stats }: { stats: StatsState }) {
                   </Link>
                 </>
               )}
+              {/* the board's authority: the seal at the poster's foot */}
+              <Seal className="b-poster__seal" />
             </div>
           ))}
         </Rail>

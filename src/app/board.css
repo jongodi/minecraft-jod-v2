@@ -36,6 +36,8 @@
 .b-posters .b-poster { flex: 0 0 15rem; scroll-snap-align: start; }
 .b-poster { display: grid; align-content: start; justify-items: center; text-align: center; padding: var(--sp-5) var(--sp-3) var(--sp-3); container-type: inline-size; }
 .b-poster > * { min-width: 0; max-width: 100%; }
+/* the seal at the foot, in the poster's lower right corner */
+.b-poster > .b-poster__seal { justify-self: end; margin-top: var(--sp-3); }
 /* The masthead: the one word every wanted poster leads with, in the sign
    painter's slab across the top, sized to the poster it is printed on, over
    a double rule the way a letterpress poster sets its heading off. */

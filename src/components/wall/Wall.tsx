@@ -13,7 +13,7 @@ import { errorFrom } from '@/lib/crew-upload';
 import AddressBar from '@/components/badlands/AddressBar';
 import Footer from '@/components/badlands/Footer';
 import PlayerHead from '@/components/badlands/PlayerHead';
-import { CloseIcon, Star } from '@/components/badlands/Bits';
+import { CloseIcon, Seal, Star } from '@/components/badlands/Bits';
 import { PAGE_LINKS, STAT_TABS } from '@/components/badlands/data';
 import NightSky from '@/components/badlands/NightSky';
 import { useBackdropClose, useCrewSession, useDialogFocus, useScrollLock } from '@/components/badlands/hooks';
@@ -436,6 +436,8 @@ export default function Wall({ initial, places, justSignedIn = false }: Props) {
               </>
             )}
           </div>
+          {/* the poster made good: JOÐ's seal in its corner */}
+          <Seal className="w-poster__seal" />
         </section>
 
         {wallError && <p className="b-err w-page__err" role="alert">{wallError}</p>}

@@ -56,6 +56,8 @@
 /* the wall's masthead runs across both columns, over the skin and the name alike */
 .w-poster { container-type: inline-size; }
 .w-poster__mast { grid-column: 1 / -1; position: relative; text-align: center; }
+/* the seal in the poster's lower right corner, under everything on it */
+.w-poster > .w-poster__seal { grid-column: 1 / -1; justify-self: end; margin-top: calc(var(--sp-3) * -1); }
 /* the print the member chose stands faded behind the paper, the paper's own
    weathering over it, so the poster still reads as paper and not as a photo */
 .w-poster__cover { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.22; filter: saturate(0.6) contrast(0.9); pointer-events: none; }

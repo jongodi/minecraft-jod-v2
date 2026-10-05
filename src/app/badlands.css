@@ -262,6 +262,25 @@
   .b-copy.is-copied .b-copy__stamp { animation: none; transform: rotate(-8deg); opacity: 1; }
 }
 
+/* ─── the seal: Ð in red wax (Bits.tsx, Seal) ─────────────────────
+   48 px at the least, on the 16-unit grid in whole multiples (3 px a unit);
+   the Ð in the slab, pale wax raised out of the deep, with a pixel of shadow. */
+.b-seal {
+  --seal-deep: color-mix(in oklab, var(--tc-red), var(--night) 22%);
+  --seal-light: color-mix(in oklab, var(--tc-red), var(--paper) 30%);
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  flex-shrink: 0;
+  color: var(--tc-red);
+}
+.b-seal svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.b-seal__eth { position: relative; font-family: var(--font-display); font-size: 1.625rem; line-height: 1; color: color-mix(in oklab, var(--tc-red), var(--paper) 72%); text-shadow: 0 var(--px) 0 color-mix(in oklab, var(--tc-red), var(--night) 55%); transform: translate(calc(var(--px) * 0.5), calc(var(--px) * -0.5)); }
+.b-seal--lg { width: 4.5rem; height: 4.5rem; }
+.b-seal--lg .b-seal__eth { font-size: 2.5rem; }
+
 /* ─── the toast: the one confirmation ─────────────────────────────
    The advancement toast every Minecraft player knows, as this site would
    nail it up: a slip of paper that drops in from under the plank at the top
@@ -292,7 +311,7 @@
 @keyframes b-toast-out { to   { opacity: 0; transform: translateY(calc(var(--px) * -4)); } }
 @media (prefers-reduced-motion: reduce) { .b-toast { animation: none; } .b-toast.is-leaving { opacity: 0; } }
 .b-toast > .b-paper__nail { top: var(--sp-1); left: 50%; margin-left: calc(var(--px) * -1.5); }
-.b-toast .b-lantern { width: 1.5rem; height: 2.25rem; flex-shrink: 0; }
+.b-toast .b-seal { margin-block: calc(var(--sp-1) * -1); }
 .b-toast__text { display: grid; gap: var(--px); min-width: 0; }
 .b-toast__title { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-lg); line-height: 1.1; color: var(--ink); }
 .b-toast__data { font-family: var(--font-data); font-size: var(--fs-data); color: var(--lantern-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -805,6 +824,29 @@
   filter: saturate(0.85);
   transition: opacity var(--dur-3) var(--ease-out);
 }
+/* The block break (BlockBreak.tsx): the still laid over the live map as a
+   grid of blocks, each cracking in three steps and then gone, in a sweep out
+   from the lantern. The real still and the map's own fade-in step aside at
+   once, since the blocks are the still now. Opacity only. */
+.b-frame.is-breaking .b-frame__poster { opacity: 0; transition: none; }
+.b-frame.is-breaking .b-frame__view { transition: none; }
+.b-break { position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: clip; }
+.b-break__block { position: absolute; background-repeat: no-repeat; animation: b-break-go 200ms steps(1, end) both; }
+.b-break__block::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  /* the game's crack, drawn on a block's own 16 by 16 grid */
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Cpath fill='%2315100D' fill-opacity='.78' d='M7 1h1v4H7zM8 5h1v2H8zM5 7h4v1H5zM4 8h1v2H4zM9 8h3v1H9zM12 9h1v3h-1zM3 10h1v1H3zM2 11h1v2H2zM8 8h1v4H8zM9 12h1v3H9zM12 3h1v2h-1zM11 5h1v2h-1zM5 3h1v2H5zM13 12h1v1h-1z'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+  image-rendering: pixelated;
+  opacity: 0;
+  animation: inherit;
+  animation-name: b-break-crack;
+  animation-timing-function: steps(3, end);
+}
+@keyframes b-break-go { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes b-break-crack { 0% { opacity: 0.35; } 100% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .b-break { display: none; } }
 /* the still comes after the page has loaded (World.tsx), so it fades up onto the frame's night rather than appearing */
 @starting-style { .b-frame__poster { opacity: 0; } }
 /* the dark that falls over the world while a room is open; a tap on it closes the room */

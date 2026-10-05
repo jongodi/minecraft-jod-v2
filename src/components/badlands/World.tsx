@@ -15,7 +15,7 @@ import PlayerHead from './PlayerHead';
 import Rail, { revealRailItem } from './Rail';
 import { CREW, MAP_POSTER, MAP_URL, SITE_NAME, handCase, titleCase, type Plate, type RoomId } from './data';
 import type { ServerState } from './hooks';
-import { useInert, useMediaQuery } from './hooks';
+import { useEffectsAllowed, useInert, useMediaQuery, useReducedMotionPref } from './hooks';
 import { photoProps, PHOTO_SIZES } from './photo';
 import { toast } from './Toast';
 
@@ -24,6 +24,8 @@ import { toast } from './Toast';
 const MapSheet = dynamic(() => import('./MapSheet'), { ssr: false });
 const Album    = dynamic(() => import('./Album'),    { ssr: false });
 const Crew     = dynamic(() => import('./Crew'),     { ssr: false });
+/* the still breaking away when the live map is drawn: fetched only once the map is asked for */
+const BlockBreak = dynamic(() => import('./BlockBreak'), { ssr: false });
 const Shelf    = dynamic(() => import('./Shelf'),    { ssr: false });
 
 /** What public/bluemap-jod/jod.js offers the page, once the viewer's map has loaded. */
@@ -303,6 +305,24 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
   const hidden = !inView || shut || album || drawn || still;
   useEffect(() => { if (viewer) jod()?.pause(hidden); }, [viewer, hidden, jod]);
 
+  /* When the live map has drawn its first view the still breaks away block
+     by block (BlockBreak.tsx) instead of fading, once, where effects run and
+     motion is welcome; a still not yet drawn, the painted map open over it,
+     reduced motion or a device that skips effects get the fade. */
+  const posterRef = useRef<HTMLImageElement>(null);
+  const effects = useEffectsAllowed();
+  const reduce = useReducedMotionPref();
+  const [breaking, setBreaking] = useState(false);
+  const broke = useRef(false);
+  useEffect(() => { if (live) import('./BlockBreak'); }, [live]);
+  useEffect(() => {
+    if (!ready || broke.current) return;
+    broke.current = true;
+    const img = posterRef.current;
+    if (effects && !reduce && !drawn && img?.complete && img.naturalWidth > 0) setBreaking(true);
+  }, [ready, effects, reduce, drawn]);
+  const endBreak = useCallback(() => setBreaking(false), []);
+
   /* The viewer says when its first view is drawn, which is usually well under
      a second. Should it not have said so in four (a slow texture download, or
      a viewer without JOÐ's script), it is shown anyway and fills in live. The
@@ -377,9 +397,9 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
   return (
     <section id="heimur" className="b-world" aria-labelledby="heimur-title">
       <ValleyRidge />
-      <div ref={frameRef} className={`b-frame${live ? ' is-live' : ''}${ready ? ' is-ready' : ''}${drawn ? ' is-drawn' : ''}${shut ? ' is-room' : ''}${full === 'overlay' ? ' is-full' : ''}${live && still ? ' is-still' : ''}${menu && ready ? ' is-menu' : ''}`}>
+      <div ref={frameRef} className={`b-frame${live ? ' is-live' : ''}${ready ? ' is-ready' : ''}${drawn ? ' is-drawn' : ''}${shut ? ' is-room' : ''}${full === 'overlay' ? ' is-full' : ''}${live && still ? ' is-still' : ''}${menu && ready ? ' is-menu' : ''}${breaking ? ' is-breaking' : ''}`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        {posterOn && <img {...photoProps(MAP_POSTER, PHOTO_SIZES.poster)} className="b-frame__poster" alt="Heimasvæðið á JOÐ séð úr lofti" width={1920} height={1080} decoding="async" fetchPriority="low" />}
+        {posterOn && <img ref={posterRef} {...photoProps(MAP_POSTER, PHOTO_SIZES.poster)} className="b-frame__poster" alt="Heimasvæðið á JOÐ séð úr lofti" width={1920} height={1080} decoding="async" fetchPriority="low" />}
         <div className="b-frame__shade" aria-hidden="true" />
 
         {/* The viewer lays itself out for the frame (jod-embed in public/bluemap-jod/jod.css)
@@ -392,6 +412,10 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
             className="b-frame__view"
             allow="fullscreen"
           />
+        )}
+
+        {breaking && frameRef.current && posterRef.current && (
+          <BlockBreak frame={frameRef.current} img={posterRef.current} onDone={endBreak} />
         )}
 
         {drawn && (
