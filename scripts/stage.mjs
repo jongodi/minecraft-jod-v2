@@ -71,6 +71,14 @@ export async function stage(page) {
     players: CREW.map(stat), source: 'cached', cachedAt: new Date(now - 3600_000).toISOString(),
     week: { from: '2026-09-28', to: '2026-10-05', players: CREW.map((n, i) => ({ username: n, playTimeHours: 2 + i * 1.5, deaths: i % 4, mobKills: 20 + i * 13, travelCm: (5 + i) * 100000, raidWins: i % 2, recordsPlayed: i % 3, damageRatio: 1 + i / 4 })) },
   } }));
+  /* STAGE_NIGHT=1: a night fixed for two days from now, four coming */
+  if (process.env.STAGE_NIGHT === '1') {
+    const at = new Date(now + 2 * 86400_000); at.setUTCHours(20, 0, 0, 0);
+    const night = { id: 'n1', by: 'stebbias', note: 'Byggjum brúna yfir gilið', phase: 'chosen', chosen: 'o1', chosenBy: 'stebbias',
+      options: [{ id: 'o1', at: at.toISOString(), yes: ['stebbias', 'joenana', 'AmmaGaur', 'eikibleiki'] }],
+      decidesAt: at.toISOString(), startedBy: null, came: [] };
+    await page.route('**/api/playnight', r => r.request().method() === 'GET' ? r.fulfill({ json: { nights: [night], me: null, max: 5 } }) : r.continue());
+  }
   await page.route(/^https:\/\/(minotar\.net|mc-heads\.net)\//, async r => {
     const url = new URL(r.request().url());
     const parts = url.pathname.split('/').filter(Boolean);

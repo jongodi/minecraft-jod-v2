@@ -100,7 +100,10 @@
 .b-sky { --mesa-h: clamp(9rem, 32svh, 20rem); --sun-size: clamp(4.5rem, 11vw, 10rem); --horizon: 100svh; }
 .b-sky__sun {
   position: absolute;
-  right: clamp(6%, 12vw, 18%);
+  /* on the wrap's right edge, the line the bar's address ends on: the hero's
+     three things stand on two edges, and on a wide screen the sun no longer
+     floats outside the page's frame */
+  right: calc(max(0px, (100vw - var(--wrap)) / 2) + var(--gutter));
   top: calc(var(--horizon) - var(--mesa-h) * 0.3 - var(--fs-hero) * 0.8 - var(--sun-size) - var(--sp-4));
   width: var(--sun-size);
   height: var(--sun-size);
@@ -581,14 +584,64 @@
   }
 }
 @media (prefers-reduced-motion: reduce) { .b-hero__sun { display: none; } }
-/* A phone on its side has no height for a title card: the name at the foot
-   fell below the door bar, so the first screen had no name on it. There the
-   name comes first, as it did before the hero was staged, and the words
-   follow; the sun has no row to hang in. */
+/* A phone reads down: what this is, then who, then what to do. Held upright:
+   the sentence on the dark of the upper sky, the sun in the open row, the name
+   in the middle of the screen among the ridges, and under the ridges a band of
+   their own dark ground carrying the address and the server's lantern, just
+   above the hotbar, where the thumb is. The stage and the lead stand aside
+   (display: contents), so the hero's own grid places each of them; the mesas
+   take the name's row as their containing block, so they end where the ground
+   begins whatever height the lantern and a planned night give it; and the
+   ground is the hero's own ::after, a grid item laid across the rows below. */
+@media (max-width: 899px) {
+  .b-hero { padding-bottom: 0; }
+  .b-hero > .b-hero__stage, .b-hero .b-hero__lead { display: contents; }
+  .b-hero .b-hero__sub { position: relative; z-index: 3; margin-inline: var(--gutter); }
+  .b-hero .b-hero__mark { margin-inline: var(--gutter); padding-bottom: calc(var(--mesa-h) * var(--mark-sink)); }
+  .b-hero::after { content: ''; grid-column: 1; z-index: 2; background: var(--dusk); }
+  /* one column for everything: an item placed by row alone is moved aside, into
+     a new column, rather than laid over the ground that already holds the cell */
+  .b-hero > *, .b-hero .b-hero__stage > *, .b-hero .b-hero__lead > * { grid-column: 1; }
+  .b-hero .b-hero__action {
+    position: relative;
+    z-index: 3;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--sp-3);
+    margin-top: 0;
+    padding: var(--sp-4) var(--gutter) var(--sp-5);
+  }
+  .b-hero .b-hero__action .b-copy { display: grid; justify-items: start; margin-top: 0; }
+  /* on the ground the lantern's words have their own dark; the pool of night was for the sky */
+  .b-hero .b-hero__side { flex: none; }
+  .b-hero .b-hero__side::before { display: none; }
+  .b-hero .b-hero__action .b-status { width: 100%; min-height: 0; padding-block: 0; }
+}
+/* held upright: sentence, sun, name, ground */
+@media (max-width: 899px) and (min-height: 501px) {
+  .b-hero { grid-template-rows: auto minmax(var(--sp-7), 1fr) auto auto; }
+  .b-hero .b-hero__sub { grid-row: 1; }
+  .b-hero .b-hero__sun { grid-row: 2; margin-right: calc(var(--gutter) + 6%); }
+  .b-hero .b-hero__mark { grid-row: 3; }
+  .b-hero > .b-mesa { grid-row: 3 / 4; }   /* an absolute item's auto end line is the container's edge, so both lines are named */
+  .b-hero::after { grid-row: 4; }
+  .b-hero .b-hero__action { grid-row: 4; }
+}
+/* the button the width of the screen where a thumb reaches across it, no wider */
+@media (max-width: 599px) and (min-height: 501px) {
+  .b-hero .b-hero__action .b-copy { justify-items: stretch; }
+  .b-hero .b-hero__action .b-copy__btn { justify-content: center; }
+}
+/* On its side a phone has no height for a title card: the name comes first,
+   standing in the ridges, and the sentence and the action follow on the
+   ground under them; the sun has no row to hang in. */
 @media (max-width: 899px) and (max-height: 500px) {
-  .b-hero .b-hero__stage { grid-template-rows: auto auto minmax(var(--sp-7), 1fr); }
+  .b-hero { grid-template-rows: auto auto auto; }
   .b-hero .b-hero__mark { grid-row: 1; }
-  .b-hero .b-hero__lead { grid-row: 2; margin-top: var(--sp-4); }
+  .b-hero > .b-mesa { grid-row: 1 / 2; }
+  .b-hero::after { grid-row: 2 / 4; }
+  .b-hero .b-hero__sub { grid-row: 2; padding-top: var(--sp-4); }
+  .b-hero .b-hero__action { grid-row: 3; padding-top: var(--sp-3); }
   .b-hero .b-hero__sun { display: none; }
 }
 .b-hero__lead { grid-row: 1; position: relative; z-index: 3; }
@@ -610,6 +663,10 @@
    sky. On a wide screen the sub-line falls on the brightest band of the
    sunset, where paper alone read at under 4:1. */
 .b-hero__sub { font-size: var(--fs-lg); color: var(--paper); max-width: 34ch; line-height: 1.4; text-shadow: 0 var(--px) 0 var(--night); }
+/* On a wide screen the one line that says what this is takes the middle step
+   between the name and everything else: the bold cut at the title size, on the
+   dark of the upper sky. It was 20 px under a 350 px name, and read as a caption. */
+@media (min-width: 900px) { .b-hero__sub { font-size: var(--fs-xl); font-weight: 600; line-height: 1.25; max-width: 32ch; text-shadow: 0 var(--px) 0 var(--night), 0 calc(var(--px) * 2) 0 rgba(21, 16, 13, 0.35); } }
 /* the address and the server's lantern on one line: the two things a player needs, side by side;
    the address keeps level with the lantern however many lines hang under it */
 .b-hero__action { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--sp-4) var(--sp-7); margin-top: var(--sp-5); }
@@ -623,9 +680,9 @@
 .b-hero__side::before {
   content: '';
   position: absolute;
-  inset: -1.5rem -2.5rem;
+  inset: -2.5rem -3rem;
   z-index: -1;
-  background: radial-gradient(closest-side, var(--veil) 50%, rgba(21, 16, 13, 0.3) 78%, transparent);
+  background: radial-gradient(closest-side, var(--pane) 66%, rgba(21, 16, 13, 0.45) 86%, transparent);
   pointer-events: none;
 }
 
