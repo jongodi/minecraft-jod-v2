@@ -158,6 +158,29 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
     if (room && !visited[room]) setVisited(v => ({ ...v, [room]: true }));
   }, [room, visited]);
 
+  /* The still is never on the first screen, but on a phone the frame starts
+     right under the hero, inside the distance a lazy image is fetched from,
+     so it came down with the page and shared the slow first seconds with the
+     hero's name. It is asked for once the page has loaded and the browser is
+     idle, or at once if the frame is already on screen (a link to a place or
+     a room lands there). Until then the frame is its own night. */
+  const [posterOn, setPosterOn] = useState(false);
+  useEffect(() => {
+    if (posterOn) return;
+    const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void };
+    let idle = 0;
+    const on = () => setPosterOn(true);
+    const afterLoad = () => { idle = w.requestIdleCallback ? w.requestIdleCallback(on, { timeout: 2000 }) : window.setTimeout(on, 200); };
+    if (document.readyState === 'complete') afterLoad(); else window.addEventListener('load', afterLoad, { once: true });
+    const seen = new IntersectionObserver(entries => { if (entries.some(e => e.isIntersecting)) on(); });
+    if (frameRef.current) seen.observe(frameRef.current);
+    return () => {
+      window.removeEventListener('load', afterLoad);
+      if (idle) (w.cancelIdleCallback ?? window.clearTimeout)(idle);
+      seen.disconnect();
+    };
+  }, [posterOn]);
+
   /* The rooms' code is fetched once the browser is truly idle, so a door
      opens at once later and the first seconds, when a slow phone is still
      drawing the hero, pay nothing for rooms nobody has opened. */
@@ -356,7 +379,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
       <ValleyRidge />
       <div ref={frameRef} className={`b-frame${live ? ' is-live' : ''}${ready ? ' is-ready' : ''}${drawn ? ' is-drawn' : ''}${shut ? ' is-room' : ''}${full === 'overlay' ? ' is-full' : ''}${live && still ? ' is-still' : ''}${menu && ready ? ' is-menu' : ''}`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img {...photoProps(MAP_POSTER, PHOTO_SIZES.poster)} className="b-frame__poster" alt="Heimasvæðið á JOÐ séð úr lofti" width={1920} height={1080} loading="lazy" decoding="async" fetchPriority="low" />
+        {posterOn && <img {...photoProps(MAP_POSTER, PHOTO_SIZES.poster)} className="b-frame__poster" alt="Heimasvæðið á JOÐ séð úr lofti" width={1920} height={1080} decoding="async" fetchPriority="low" />}
         <div className="b-frame__shade" aria-hidden="true" />
 
         {/* The viewer lays itself out for the frame (jod-embed in public/bluemap-jod/jod.css)

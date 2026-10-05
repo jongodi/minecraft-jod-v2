@@ -158,6 +158,12 @@ and the time spent in style, layout and script. Run it before and after
 anything that touches the sky, the parallax, the effects or the scroll
 handlers.
 
+### What the first paint waits for
+
+The home page's first paint waits for two stylesheets and nothing else: the layout's (fonts, tokens, globals) and `badlands.css`, which carries the paper, the campfire and the effects as well as the evening. `board.css` (the posters, the shelf's counter, the crew pages) is imported by the rooms that hang it (`Crew.tsx`, `Shelf.tsx`), so on the home page it arrives with their code, when a room is first opened or warmed while the page is idle, and the crew pages import it themselves. The world's still is asked for once the page has loaded and the browser is idle, or at once if the frame is already on screen: on a phone the frame starts right under the hero, inside the distance a lazy image is fetched from, and the still (the frame's full height, so up to the 1920 px file) came down with the hero's name.
+
+Lighthouse's simulated mobile LCP is not the name's paint. Its LCP model counts every request that starts before the observed LCP, the async, low-priority scripts included, where its FCP model counts only what blocks rendering; the name paints at first paint (about 0.17 s unthrottled), by when Next's runtime and the page's chunks have started, so the simulated LCP is the time to download all of them on its slow 4G link, 2.1 to 2.6 s, while its FCP is 1.1 s. Inlining the CSS was tried again with the smaller sheet and was worse (FCP 1.3 s, LCP 2.8 s). Fewer bytes of runtime, a React 19 / Next 16 upgrade, is the lever that remains.
+
 ### Photographs
 
 Screenshots ship at 1920px and the admin panel accepts up to 2560px, while the

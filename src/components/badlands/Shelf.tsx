@@ -1,5 +1,7 @@
 'use client';
 
+import '@/app/board.css';
+
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { DATAPACKS } from '@/data/datapacks';
 import type { PublicPack } from '@/lib/datapacks-store';

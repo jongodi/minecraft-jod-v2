@@ -805,6 +805,8 @@
   filter: saturate(0.85);
   transition: opacity var(--dur-3) var(--ease-out);
 }
+/* the still comes after the page has loaded (World.tsx), so it fades up onto the frame's night rather than appearing */
+@starting-style { .b-frame__poster { opacity: 0; } }
 /* the dark that falls over the world while a room is open; a tap on it closes the room */
 .b-frame__dim { position: absolute; inset: 0; z-index: 5; background: var(--veil); opacity: 0; pointer-events: none; transition: opacity var(--dur-3) var(--ease-out); }
 .b-frame.is-room .b-frame__dim { opacity: 1; pointer-events: auto; cursor: pointer; }
@@ -1647,3 +1649,188 @@ html.is-map-full { overflow: hidden; }
 .b-lad__note b { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-lg, 1.25rem); color: var(--tc-red); }
 .b-lad__note small { font-size: var(--fs-sm); color: var(--ink-faint); }
 @media (prefers-reduced-motion: reduce) { .b-lad__who { transition: none; } }
+
+/* ═══════════════════════════════════════════════════════════════
+   Paper, the campfire and the effects: drawn by the home page at once
+   (the toast is paper, the footer is the fire), so they ride with the
+   page's own sheet; the posters and the counter wait in board.css.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── a sheet of paper ────────────────────────────────────────── */
+.b-paper {
+  position: relative;
+  color: var(--ink);
+  background: var(--paper);
+  border: var(--px) solid var(--tc-brown);
+  clip-path: var(--notch);
+  overflow: hidden;
+}
+/* torn top and bottom, in whole pixels */
+.b-paper--torn {
+  border-top: 0;
+  border-bottom: 0;
+  clip-path: polygon(
+    0 4px, 4% 4px, 4% 0, 9% 0, 9% 6px, 15% 6px, 15% 2px, 22% 2px, 22% 6px, 30% 6px, 30% 0, 37% 0, 37% 4px, 45% 4px, 45% 8px, 53% 8px, 53% 2px, 60% 2px, 60% 6px, 68% 6px, 68% 0, 76% 0, 76% 4px, 84% 4px, 84% 8px, 91% 8px, 91% 2px, 96% 2px, 96% 6px, 100% 6px,
+    100% calc(100% - 4px), 95% calc(100% - 4px), 95% 100%, 88% 100%, 88% calc(100% - 8px), 80% calc(100% - 8px), 80% calc(100% - 2px), 72% calc(100% - 2px), 72% calc(100% - 6px), 64% calc(100% - 6px), 64% 100%, 56% 100%, 56% calc(100% - 4px), 48% calc(100% - 4px), 48% calc(100% - 8px), 40% calc(100% - 8px), 40% calc(100% - 2px), 32% calc(100% - 2px), 32% calc(100% - 6px), 24% calc(100% - 6px), 24% 100%, 16% 100%, 16% calc(100% - 4px), 8% calc(100% - 4px), 8% calc(100% - 8px), 0 calc(100% - 8px)
+  );
+}
+.b-paper::before {
+  /* weathering: two soft stains and a faint fibre grain */
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 40% at 90% 10%, rgba(77, 51, 35, 0.12), transparent 70%),
+    radial-gradient(50% 50% at 10% 100%, rgba(77, 51, 35, 0.10), transparent 70%),
+    repeating-linear-gradient(90deg, rgba(77, 51, 35, 0.025) 0 1px, transparent 1px 3px);
+}
+.b-paper > * { position: relative; }
+.b-paper__nail {
+  position: absolute;
+  top: var(--sp-3);
+  left: 50%;
+  width: calc(var(--px) * 3);
+  height: calc(var(--px) * 3);
+  margin-left: calc(var(--px) * -1.5);
+  background: var(--ink);
+  box-shadow: var(--px) var(--px) 0 rgba(30, 22, 17, 0.25);
+  z-index: 1;
+}
+.b-paper__nail--l { left: var(--sp-4); margin-left: 0; }
+.b-paper__nail--r { left: auto; right: var(--sp-4); margin-left: 0; }
+.b-paper__kicker { font-size: var(--fs-sm); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-faint); }
+.b-paper p { line-height: var(--lh-text); }
+.b-paper .b-link { color: var(--lantern-ink); }
+@media (hover: hover) { .b-paper .b-link:hover { color: var(--ink); } }
+.b-paper .b-btn { color: var(--lantern-ink); border-color: var(--lantern-ink); }
+.b-paper .b-btn:focus-visible { background: var(--lantern-ink); color: var(--paper); }
+@media (hover: hover) { .b-paper .b-btn:hover { background: var(--lantern-ink); color: var(--paper); } }
+/* the one lit button on a sheet is the lantern itself, with ink on it */
+.b-paper .b-btn--solid { background: var(--lantern); border-color: var(--lantern-ink); color: var(--ink); }
+@media (hover: hover) { .b-paper .b-btn--solid:hover { background: var(--ink); border-color: var(--ink); } }
+.b-paper .b-note { color: var(--ink-faint); }
+
+/* ─── campfire: the footer ────────────────────────────────────── */
+/* One band of ground, no taller than it needs to be. The doors are in the bar
+   and the hotbar, so the footer carries only the way back up, the wind and
+   fire, and the small print, and gives the room to the fire, which stands on
+   the ground strip. On a phone the way up and the sound share one row, so
+   the fire is reached a row sooner. */
+.b-foot { position: relative; --ground: calc(var(--px) * 14); padding-top: var(--sp-6); overflow: clip; }
+.b-foot__inner {
+  position: relative;
+  z-index: 2;   /* the fire stands on the ground strip and its light falls across it */
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-template-areas: 'up nav' 'credit credit' 'camp camp';
+  justify-content: center;
+  justify-items: center;
+  align-items: center;
+  text-align: center;
+  gap: var(--sp-4) var(--sp-3);
+  /* the floor: how high the text stands above the ground, so it clears the
+     ridge behind it and the fire has a horizon to burn in front of */
+  --floor: 3.25rem;
+  padding-bottom: var(--floor);
+}
+@media (min-width: 720px) {
+  .b-foot__inner {
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    grid-template-areas: 'camp credit nav up';
+    justify-content: stretch;
+    align-items: end;
+    justify-items: start;
+    text-align: left;
+    column-gap: var(--sp-6);
+  }
+}
+
+/* the fire, and its light pooled across the band */
+.b-foot__camp { grid-area: camp; position: relative; display: flex; justify-content: center; align-items: flex-end; margin-bottom: calc(var(--floor) * -1); }
+.b-foot__camp::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -1.5rem;
+  width: 26rem;
+  height: 9rem;
+  margin-left: -13rem;
+  background: radial-gradient(closest-side, rgba(224, 96, 42, 0.30), transparent);
+  animation: b-flicker var(--dur-lantern) ease-in-out infinite;
+  pointer-events: none;
+}
+.b-foot__fire { display: block; padding: 0; border: 0; background: none; cursor: pointer; }
+.b-foot__fire:focus-visible .b-fire { transform: translateY(calc(var(--px) * -1)); }
+@media (hover: hover) { .b-foot__fire:hover .b-fire { transform: translateY(calc(var(--px) * -1)); } }
+.b-fire { position: relative; display: block; width: 5.5rem; height: 5.5rem; margin-bottom: calc(var(--px) * -2); transition: transform var(--dur-2) var(--ease-out); }
+.b-fire svg { width: 100%; height: 100%; display: block; shape-rendering: crispEdges; overflow: visible; }
+.b-fire__frame { opacity: 0; animation: b-frames 900ms steps(1, end) infinite; }
+@keyframes b-frames { 0%, 33.33% { opacity: 1; } 33.34%, 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .b-fire__frame { animation: none; } .b-fire__frame:first-child { opacity: 1; } }
+
+/* the mesas the evening opened over, back as a silhouette behind the camp */
+.b-ridge {
+  position: absolute;
+  inset-inline: 0;
+  bottom: var(--ground);                 /* the ridge stands on the ground strip */
+  height: clamp(3rem, 7vw, 5rem);
+  color: color-mix(in oklab, var(--tc-brown), var(--night) 52%);
+  pointer-events: none;
+}
+.b-ridge svg { width: 100%; height: 100%; display: block; shape-rendering: crispEdges; }
+
+/* the wind-and-fire toggle */
+.b-foot__nav { grid-area: nav; display: flex; align-items: center; }
+.b-foot__sound { display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2); width: var(--tap); height: var(--tap); color: var(--lantern); }
+.b-foot__sound svg { width: 1.25rem; height: 1.25rem; shape-rendering: crispEdges; }
+@media (hover: hover) { .b-foot__sound:hover { background: rgba(242, 166, 59, 0.12); } }
+.b-foot__sound.is-on { background: var(--lantern); color: var(--night); }
+
+/* the way back up the evening */
+.b-foot__up { grid-area: up; gap: var(--sp-2); }
+@media (min-width: 720px) { .b-foot__up { justify-self: end; } }
+.b-foot__upchev { width: 0.875rem; height: 0.875rem; flex-shrink: 0; transition: transform var(--dur-2) var(--ease-out); }
+.b-foot__up:focus-visible .b-foot__upchev { transform: translateY(calc(var(--px) * -1)); }
+@media (hover: hover) { .b-foot__up:hover .b-foot__upchev { transform: translateY(calc(var(--px) * -1)); } }
+
+.b-foot__credit { grid-area: credit; }
+.b-foot__credit p { font-size: var(--fs-sm); color: var(--text-soft); line-height: 1.5; }
+.b-foot__credit .b-foot__small { font-size: var(--fs-sm); color: var(--text-faint); }
+/* the owner's way in: in the small print, lit and underlined, since its colour alone is too close to the words round it */
+.b-foot__admin { color: var(--lantern); text-decoration: underline var(--px); text-underline-offset: 0.3em; white-space: nowrap; }
+@media (hover: hover) { .b-foot__admin:hover { color: var(--paper); } }
+.b-foot__admin:focus-visible { color: var(--paper); }
+
+.b-ground {
+  position: relative;
+  z-index: 1;
+  height: var(--ground);
+  background:
+    linear-gradient(180deg, var(--tc-brown) 0 calc(var(--px) * 2), var(--dusk) calc(var(--px) * 2) calc(var(--px) * 6), var(--dusk-2) calc(var(--px) * 6) calc(var(--px) * 10), var(--night) calc(var(--px) * 10));
+  background-size: 100% 100%;
+}
+.b-ground::before { content: ''; display: block; height: var(--px); background: var(--tc-red); opacity: 0.5; }
+
+/* ─── effects ─────────────────────────────────────────────────── */
+.b-particles { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+/* One pre-rasterised disc of light, parked at the origin and moved by
+   transform. Painting the gradient at a moving position instead would
+   repaint the whole viewport on every pointer frame. */
+.b-light {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 520px;
+  height: 520px;
+  margin: -260px 0 0 -260px;
+  z-index: var(--z-light);
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(closest-side circle, rgba(242, 166, 59, 0.10), transparent 70%);
+  mix-blend-mode: screen;
+  will-change: transform;
+}
+.b-light.is-on { opacity: 1; }
+
+

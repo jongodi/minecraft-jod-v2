@@ -1,5 +1,6 @@
 'use client';
 
+import '@/app/board.css';
 import '@/app/wall.css';
 import { memo, useEffect, useState } from 'react';
 import Link from 'next/link';
