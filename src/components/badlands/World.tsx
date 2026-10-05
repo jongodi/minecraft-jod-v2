@@ -7,7 +7,7 @@ import type { MapConfig, WorldPoint } from '@/lib/map-types';
 import type { PlacePrints } from '@/lib/crew-places';
 import { baseUrl, mapAt, type BaseLink, type MapBounds } from '@/lib/base-links';
 import viewerFiles from '@/lib/bluemap-viewer.json';
-import { CloseIcon, FoldedMapIcon, Lantern, MoonIcon, PictureIcon, Sun } from './Bits';
+import { BackIcon, CloseIcon, FoldedMapIcon, Lantern, MoonIcon, PictureIcon, Sun } from './Bits';
 import { plural } from '@/lib/format';
 import Drawer from './Drawer';
 import PlayerHead from './PlayerHead';
@@ -437,14 +437,24 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
 
         <div className="b-hud">
           <div ref={hudTop} className="b-hud__top">
+            {/* The way out comes first: on a phone it is the back key at the
+                left end of the plank, where the base maps' viewers keep theirs;
+                on a wide screen it stands after the tools (badlands.css). */}
+            {full && (
+              <button type="button" className="b-btn b-btn--small b-btn--ghost b-hud__back is-on" aria-label="Loka heilum skjá" onClick={closeFull}>
+                <BackIcon className="b-hud__backicon" />
+                <CloseIcon className="b-btn__icon b-hud__closeicon" /><span className="b-hud__word" aria-hidden="true">Loka</span>
+              </button>
+            )}
             <div className="b-hud__title">
               <h2 id="heimur-title" className="b-title">Heimurinn</h2>
               <p className="b-hud__meta">
-                {syncedOn ? `eins og hann var ${syncedOn}` : 'heimasvæðið í þrívídd'}
+                {/* on a phone's plank the date stands alone; the words before it are still read out */}
+                {syncedOn ? <span><span className="b-hud__lead">eins og hann var </span>{syncedOn}</span> : 'heimasvæðið í þrívídd'}
                 {inside.length > 0 && (
                   <span className="b-hud__in" aria-label={`inni núna: ${inside.join(', ')}`}>
                     <span className="b-hud__dot" aria-hidden="true" />
-                    inni núna
+                    <span className="b-hud__inword">inni núna</span>
                     {inside.map(n => canFollow ? (
                       <button key={n} type="button" className={`b-hud__head b-tip b-tip--below${following?.toLowerCase() === n.toLowerCase() ? ' is-on' : ''}`}
                         aria-pressed={following?.toLowerCase() === n.toLowerCase()}
@@ -460,9 +470,10 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
                 )}
               </p>
             </div>
-            {/* On a phone the tools are keys on one short row, each a drawn icon with
-                its word kept for screen readers, so they never wrap down into the
-                world among the places' name tags (badlands.css, the HUD on a phone). */}
+            {/* On a phone the tools are slots sunk into one strip, as the hotbar's,
+                each a drawn icon with its word kept for screen readers, so they
+                never wrap down into the world among the places' name tags
+                (badlands.css, the HUD on a phone). */}
             <div ref={tools} className="b-hud__tools">
               {viewer && !drawn && !still && (
                 <button type="button" className={`b-btn b-btn--small b-btn--ghost b-hud__tool b-tip b-tip--below${night ? ' is-on' : ''}`} aria-pressed={night}
@@ -479,11 +490,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
                 onClick={() => { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); setAlbum(true); }}>
                 <PictureIcon className="b-btn__icon" /><span className="b-hud__word">Myndir<span className="b-hud__sep"> · </span></span><span className="b-hud__count">{plates.length}</span>
               </button>
-              {full ? (
-                <button type="button" className="b-btn b-btn--small b-btn--ghost b-hud__tool b-hud__close is-on" aria-label="Loka heilum skjá" onClick={closeFull}>
-                  <CloseIcon className="b-btn__icon" /><span className="b-hud__word" aria-hidden="true">Loka</span>
-                </button>
-              ) : (
+              {!full && (
                 // eslint-disable-next-line @next/next/no-html-link-for-pages -- BlueMap's own app, not a Next page
                 <a href={MAP_URL} className="b-btn b-btn--small b-btn--ghost" onPointerEnter={warmViewer} onFocus={warmViewer}
                   onClick={e => { if (plainClick(e)) { e.preventDefault(); setDrawn(false); openFull(); } }}>Heill skjár</a>

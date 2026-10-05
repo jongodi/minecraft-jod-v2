@@ -223,6 +223,16 @@ export function ArrowIcon({ flip }: { flip?: boolean }) {
   );
 }
 
+/** The way back: a pixel arrow pointing left, its head a stepped triangle
+    and its shaft two units thick, as the game draws an arrow in a menu. */
+export function BackIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" aria-hidden="true" fill="currentColor" shapeRendering="crispEdges">
+      <path d="M2 7h1V6h1V5h1V4h1V3h1v4h7v2H7v4H6v-1H5v-1H4v-1H3v-1H2z" />
+    </svg>
+  );
+}
+
 /** A pixel cross, the way out of anything that opens over the page. The
     system's own ✕ is not in any of the three faces, so it would be drawn
     smooth in a fallback font; this one is on the grid. */
