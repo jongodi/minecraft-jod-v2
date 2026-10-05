@@ -145,38 +145,3 @@ export default function Mesa({ snow = false, halloween = false, heads = [] }: { 
     </div>
   );
 }
-
-/* The near ridge running on over the top of the world: [width, depth] steps
-   across 480 units, depth measured down from the top of a 32-unit band. Low
-   (three units) under the world's title on the left and its tools on the
-   right, so it never crosses them; it rises only in the middle, where the
-   frame's top is open sky, to a block-stepped peak. */
-const VALLEY: Plateau[] = [[192, 3], [19, 10], [19, 18], [24, 26], [15, 32], [14, 20], [24, 8], [173, 3]];
-function valleyOutline(steps: Plateau[], drop = 0): string {
-  let x = 0;
-  let d = 'M0 0';
-  for (const [w, h] of steps) { d += ` V${h + drop} H${x + w}`; x += w; }
-  return `${d} V0 Z`;
-}
-const VALLEY_D = valleyOutline(VALLEY);
-const VALLEY_RIM_D = valleyOutline(VALLEY, 1);
-const VALLEY_SHADOW_D = valleyOutline(VALLEY, 2);
-
-/** The badlands carried down over the top of the world's frame: the same
-    dark ground the hero ends on, stepping down into the map, so the page's
-    one big turn, from the sunset to the world, happens in the land instead of
-    at a ruled line. Its stepped edge is drawn the way the hero's ridges are lit:
-    a pixel of the rock's own brown along it, catching the town's light, and a
-    pixel of shadow under that, parting it from the map's night sky. */
-export function ValleyRidge() {
-  return (
-    <div className="b-valley" aria-hidden="true">
-      <svg viewBox="0 0 480 34" preserveAspectRatio="none">
-        <path d={VALLEY_SHADOW_D} fill="var(--night)" opacity="0.6" />
-        <path d={VALLEY_RIM_D} fill="var(--tc-brown)" />
-        <path d={VALLEY_D} fill="currentColor" />
-      </svg>
-    </div>
-  );
-}
-

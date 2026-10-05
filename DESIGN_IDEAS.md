@@ -567,3 +567,30 @@ Measured on the background under each hero line with the text hidden (5th percen
 4. **The seal on what leaves the site**: the link-preview cards (`/crew/[username]/opengraph-image`, `/kvold/card`) and the foot of the letters, at 48 px or more.
 5. **Number keys for the doors on desktop**, 1 to 3 as in the game's hotbar, announced in the doors' tooltips.
 6. **The wall's poster held in view on tall screens** (sticky where the poster fits the viewport), so a long wall keeps its owner beside it.
+
+---
+
+## Part 4. After living with it
+
+Two changes asked for once the pass was live:
+
+- **The phone's hero is the full-screen title card again.** Held upright, the sunset and JOÐ fill the screen down to the hotbar, with the sentence, the address and the lantern on the dark of the upper sky, as before the pass; the band of dark ground under the ridges is gone there. The windows and the heads on the ridge stay. A phone on its side keeps the ground band, since there the sentence would otherwise sit on the brightest band of the sky at 2:1. The offhand slot left the hotbar: the three doors share its width, and on a phone the address is the hero's own button.
+- **The 3D map's frame is as it was before the pass.** The ridge over its top, the block break and the delayed, fading still are gone; the frame has its top plank and the desktop tools their old buttons back. Two things stay: the still keeps the size it is drawn at on a phone (the blur fix from pass 0), and it is drawn from the browser's first render rather than the page's markup, so it does not share the hero's first seconds; it is requested about 0.2 s into the load and is in place long before the frame is scrolled to, with no fade.
+
+Measured after: Lighthouse mobile on `/` 98 / 99 / 96 (LCP 2.1 / 2.1 / 2.6 s, CLS 0), Accessibility, Best Practices and SEO 100; every hero line 4.8:1 or better at 360, 390 and 768 with a night planned; no horizontal scroll at 360 to 1920.
+
+A last sweep before pushing found four small things, all fixed:
+
+- **The bar's server lantern waits for the bar to take its surface.** Over the sunset at the top of the home page it said what the hero's own lantern says a few lines lower, in a smaller voice; it now shows once the page has scrolled and the bar is solid, and on every other page from the start.
+- **A phone on its side gets a shorter hotbar.** At 740 × 360 the three slots took a fifth of the height; the label now sits beside the lantern and the bar is 3.25rem, so the hero's sentence keeps two lines above it.
+- **The 404's crew link says "Eftirlýst"**, the name of the room it opens, not the old "Hópurinn".
+- The large wax seal style, which nothing used any more, is gone from the stylesheet.
+
+A review of the whole diff found six more, all fixed and measured:
+
+- **Phones can copy the address on every page again.** With the offhand slot gone, the hero's button was the only copy action on a phone, and only the home page has a hero. Off the home page the bar's tag is back on phones as the copy glyph and *afrita*, the same tag tablets get; the whole address beside the lantern would have been cut to half its letters at 360 px.
+- **"afrita" stays whole from 760 to 775 px with a member signed in.** The member's head used to squeeze the tag until the notch cut the last letter; the tag no longer gives way, and the doors close up below 900 px.
+- **No blank space under a wall.** From 1024 px the poster spans the rows beside it, and the rows nothing filled each kept a gap: up to 200 px under a busy wall. The rows have no gap now and each thing in the right column keeps its own distance.
+- **The name is whole on a phone on its side from 768 px.** The middle ridges grow with the width and stood over the lower half of JOÐ there; in that layout the far and near ridges frame it alone.
+- **The selected hotbar slot's frame**: a ring of night outside it was clipped by its own notch and never drawn; it is gone, and the comment says what is drawn.
+- Dead rules and stale comments (the back link's styles, a phone rule that could not apply, the toast's lantern), and `npm run shots` loads the staging module (and with it `sharp`) only when `STAGE=1`.

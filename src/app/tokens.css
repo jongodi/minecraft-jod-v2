@@ -139,7 +139,6 @@
   --bar:    3.5rem;     /* the bar at the top */
   --doorbar: 4.5rem;    /* the hotbar at the foot of a phone, with its strip */
   --slot:    3.5rem;    /* one of its slots */
-  --offhand: 4.25rem;   /* the offhand slot, set apart beside them */
   --tap:    2.75rem;    /* minimum tap target */
 
   /* ── shape ── */
@@ -170,3 +169,5 @@
   --z-modal: 70;
 }
 @media (min-width: 900px) { :root { --fs-hero: clamp(12rem, min(23vw, 40svh), 24rem); } }
+/* on a phone on its side the hotbar's slots lay their lantern beside the name, a tap tall (badlands.css) */
+@media (max-height: 500px) { :root { --doorbar: 3.25rem; } }

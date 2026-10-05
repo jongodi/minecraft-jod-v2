@@ -60,8 +60,9 @@ function BarLantern({ server, home }: { server: ServerState; home: boolean }) {
     the address with its copy action. On the home page it lies over the sunset
     and takes a surface once the page has scrolled; elsewhere it is solid from
     the start. On phones the doors move to a hotbar at the foot of the screen,
-    in reach of a thumb, with the address in the offhand slot beside it. A
-    door's lantern is lit while the visitor is behind it, and only ever one is. */
+    in reach of a thumb; on the home page the address is then the hero's own
+    button, and on every other page it stays on the plank. A door's lantern is
+    lit while the visitor is behind it, and only ever one is. */
 export default function AddressBar({ links, activeId, onDoor, always = false, status }: Props) {
   const [solid, setSolid] = useState(always);
   const [, copy]          = useCopy(SERVER_IP);
@@ -98,7 +99,7 @@ export default function AddressBar({ links, activeId, onDoor, always = false, st
 
   return (
     <>
-      <header className={`b-bar${solid ? ' is-solid' : ''}`}>
+      <header className={`b-bar${onDoor ? ' b-bar--home' : ''}${solid ? ' is-solid' : ''}`}>
         <div className="b-wrap b-bar__inner">
           <Link href="/" className="b-bar__mark" aria-label="JOÐ, forsíða"><Mark /><span>JOÐ</span></Link>
           <nav className="b-doors" aria-label="Efnisyfirlit">
@@ -131,19 +132,10 @@ export default function AddressBar({ links, activeId, onDoor, always = false, st
 
       {/* The hotbar at the foot of a phone, on every page: the three doors as
           its slots, the one the visitor is behind framed the way the game
-          frames the slot in hand, and set apart from them the offhand slot,
-          which holds the address. The offhand sits on the right, where the
-          game puts it for a left main hand, because a right thumb gets there
-          first. */}
-      <div className="b-hotbar">
-        <nav className="b-hotbar__slots" aria-label="Efnisyfirlit">
-          {links.map(l => door(l, 'b-slot'))}
-        </nav>
-        <button type="button" className="b-slot b-slot--off" onClick={copy}>
-          <CopyIcon />
-          <span className="b-slot__label">Afrita<span className="b-visually-hidden"> vistfang þjónsins, {SERVER_IP}</span></span>
-        </button>
-      </div>
+          frames the slot in hand. */}
+      <nav className="b-hotbar" aria-label="Efnisyfirlit">
+        {links.map(l => door(l, 'b-slot'))}
+      </nav>
     </>
   );
 }
