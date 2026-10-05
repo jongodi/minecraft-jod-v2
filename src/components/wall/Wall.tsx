@@ -363,12 +363,15 @@ export default function Wall({ initial, places, justSignedIn = false }: Props) {
             <img className="w-poster__cover" {...photoProps(cover.filename, PHOTO_SIZES.cover)} alt="" aria-hidden="true" decoding="async" />
           )}
           <span className="b-paper__nail" aria-hidden="true" />
+          {/* the word every wanted poster leads with, across the top: the room's posters and the roll call carry the same */}
+          <span className="b-poster__mast w-poster__mast" aria-hidden="true">Eftirlýst</span>
           {/* the largest thing on the wall's first screen: fetched first, not when it scrolls near */}
           <div className="w-poster__skin"><PlayerHead name={username} size={96} full priority /></div>
           <div className="w-poster__body">
             <div className="w-poster__top">
               <div>
-                <div className="b-paper__kicker">Eftirlýst, JOÐ-félagi</div>
+                {/* the masthead says Eftirlýst; the kicker says what of */}
+                <div className="b-paper__kicker">JOÐ-félagi</div>
                 <h1 className="w-poster__name">{username}</h1>
                 {stats && stats.playTimeHours > 0 && (
                   <div className="w-poster__bounty"><span className="b-poster__reward">Verðlaun</span> <span className="b-poster__val">{STAT_TABS[0].unit(stats.playTimeHours)}</span></div>

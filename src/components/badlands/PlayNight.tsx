@@ -78,7 +78,7 @@ export function NightBoard({ server }: { server: ServerState }) {
     if (lighting && me) return lightFire;
     return (
       <section className="b-night b-night--none" aria-label="Næsta spilakvöld">
-        <Fire count={0} embers />
+        <div className="b-night__camp"><Fire count={0} embers /></div>
         <div className="b-night__body">
           <h3 className="b-night__title">Næsta spilakvöld</h3>
           <p className="b-note">{me ? 'Ekkert bál logar. Kveiktu eitt og sjáðu hver kemur.' : 'Ekkert kvöld á dagskrá.'}</p>
@@ -151,10 +151,10 @@ function NightFire({ night, kicker, me, server, busy, err, picked, onRun, onShar
             const on = mine.includes(o.id);
             return (
               <li key={o.id} className={`b-night__option${on ? ' is-on' : ''}`}>
-                <Fire count={o.yes.length} />
+                {/* each time is a campsite of its own: its fire, and who can come gathered by it */}
+                <div className="b-night__camp"><Fire count={o.yes.length} /><Heads names={o.yes} /></div>
                 <span className="b-night__when">{WhenAt(o.at)}</span>
                 <span className="b-note">{o.yes.length ? `${o.yes.length} ${plural(o.yes.length, 'getur', 'geta')}` : 'enginn enn'}</span>
-                <Heads names={o.yes} />
                 {me && (
                   <span className="b-inline">
                     <button type="button" className={`b-btn b-btn--small${on ? ' b-btn--solid' : ''}`} aria-pressed={on} disabled={busy} onClick={() => toggle(o.id)}>Ég get{on && <CheckIcon className="b-btn__icon" />}</button>
@@ -167,7 +167,11 @@ function NightFire({ night, kicker, me, server, busy, err, picked, onRun, onShar
         </ul>
       ) : (
         <div className="b-night__one">
-          <Fire count={chosen!.yes.length} embers={night.phase === 'over'} big />
+          {/* the crew at the fire: the fire on its ground, and the heads of who is coming (or came) gathered by it */}
+          <div className="b-night__camp">
+            <Fire count={chosen!.yes.length} embers={night.phase === 'over'} big />
+            <Heads names={night.phase === 'over' ? night.came : chosen!.yes} lit={night.phase === 'live' ? came : undefined} />
+          </div>
           <div className="b-night__body">
             {night.phase === 'over' ? (
               <p className="b-night__count">{night.came.length} {plural(night.came.length, 'mætti', 'mættu')}</p>
@@ -176,7 +180,6 @@ function NightFire({ night, kicker, me, server, busy, err, picked, onRun, onShar
             ) : (
               <p className="b-night__count">{chosen!.yes.length} {plural(chosen!.yes.length, 'mætir', 'mæta')}</p>
             )}
-            <Heads names={night.phase === 'over' ? night.came : chosen!.yes} lit={night.phase === 'live' ? came : undefined} />
             {night.startedBy && night.phase !== 'over' && <p className="b-note">{night.startedBy} kveikti á þjóninum.</p>}
           </div>
         </div>

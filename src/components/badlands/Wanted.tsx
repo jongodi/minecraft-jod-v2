@@ -19,10 +19,11 @@ const WEEK_OF: Partial<Record<StatKey, keyof WeekPlayer>> = {
 };
 
 /** The wanted board: one poster per charge, the top three on each, on one
-    rail across the room. The poster names the outlaw first, the charge under
-    it; the leader with head, name and value in full, second and third as two
-    lines under the rule. Values are pixel type: they come straight from the
-    server's stat files. */
+    rail across the room. Each is laid out the way a wanted poster is: the
+    word itself across the top, the outlaw's face large in a frame, the name
+    under it, the alias the charge earns them, the charge, and the bounty;
+    second and third as two lines under the rule. Values are pixel type: they
+    come straight from the server's stat files. */
 export default function Wanted({ stats }: { stats: StatsState }) {
   /* written out in Icelandic (night.ts), not left to the browser's locale data, which falls back to English */
   const when = stats.cachedAt ? sinceAt(stats.cachedAt) : null;
@@ -68,14 +69,14 @@ export default function Wanted({ stats }: { stats: StatsState }) {
             <div key={meta.id} className="b-paper b-paper--torn b-poster" data-rail-item={meta.id}>
               <span className="b-paper__nail b-paper__nail--l" aria-hidden="true" />
               <span className="b-paper__nail b-paper__nail--r" aria-hidden="true" />
-              <span className="b-poster__kicker">Eftirlýst</span>
-              <span className="b-poster__stat">{meta.nick}</span>
-              <span className="b-poster__charge">{meta.label}</span>
+              <span className="b-poster__mast">Eftirlýst</span>
               <Link href={`/crew/${first.name}`} className="b-poster__lead">
                 <span className="b-poster__img"><PlayerHead name={first.name} size={96} /></span>
                 <span className="b-poster__name">{first.name}</span>
-                <span className="b-poster__val">{meta.unit(first.val)}</span>
               </Link>
+              <span className="b-poster__alias">„{meta.nick}“</span>
+              <span className="b-poster__charge">{meta.label}</span>
+              <span className="b-poster__bounty"><span className="b-poster__reward">Verðlaun</span> <span className="b-poster__val">{meta.unit(first.val)}</span></span>
               {rest.length > 0 && (
                 <>
                   <span className="b-poster__rule" aria-hidden="true" />
