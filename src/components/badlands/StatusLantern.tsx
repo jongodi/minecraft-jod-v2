@@ -36,8 +36,9 @@ const launcherVersion = (v: string) => v.replace(/\s*\([^)]*\)\s*$/, '');
     and from any other page as /#hopur. */
 export default function StatusLantern({ server }: { server: ServerState }) {
   const { online, life, players, list, version, lastOnline, checkedAt } = server;
+  /* '' until the page has hydrated (useAgo), so the first render matches the markup however old the cached page is */
   const ago = useAgo(checkedAt);
-  const stale = checkedAt !== null && Date.now() - checkedAt >= STALE_MS;
+  const stale = ago !== '' && checkedAt !== null && Date.now() - checkedAt >= STALE_MS;
   const said = life ? SAID[life] : null;
   const word = said?.word ?? 'Athuga stöðuna';
   const burn = said?.burn ?? null;

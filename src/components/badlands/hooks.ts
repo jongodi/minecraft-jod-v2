@@ -222,14 +222,21 @@ export function useScrollSpy(ids: string[]): string | null {
   return active;
 }
 
-/** Seconds since a timestamp, re-rendered every few seconds. */
+/** Seconds since a timestamp, re-rendered every few seconds. Empty until the
+    page has hydrated: the server drew the page with its own clock, and the
+    home page is a cached copy that can be served minutes after it was made,
+    so the browser's first render would say a moment the markup never had.
+    A stale answer then added a line the server had not drawn, and React
+    threw the whole hero away and drew it again (error #418) on most first
+    visits to a quiet site. */
 export function useAgo(ts: number | null): string {
-  const [, tick] = useState(0);
+  const [ticks, tick] = useState(0);
   useEffect(() => {
+    tick(1);
     const id = setInterval(() => tick(t => t + 1), 5000);
     return () => clearInterval(id);
   }, []);
-  if (!ts) return '';
+  if (!ts || ticks === 0) return '';
   const s = Math.max(0, Math.round((Date.now() - ts) / 1000));
   if (s < 10) return 'rétt í þessu';
   if (s < 60) return `fyrir ${s} sek.`;
