@@ -789,3 +789,11 @@ The plate (Part 4) kept the words legible but was UI laid over a world; the sign
 ### Measured
 
 Typecheck, lint, 243 tests, a clean build. Lighthouse mobile on `/`: 96 (one cold run at 89 with the sandbox's TBT, as every first run here), LCP 2.6 s, CLS 0. `StatusLantern.tsx` and `CopyAddress.tsx` are gone; `ServerRow.tsx` replaces both. README and DESIGN.md describe the row.
+
+---
+
+## Part 9. The world's HUD, the same way
+
+Approved with the row: the world's tools on a wide screen were the last worded web buttons over the world (*Teiknað kort*, *Myndir · 11*, *Heill skjár*, *Nótt* once the viewer runs, *Loka* in the whole screen). They are the hotbar's own slots at every width now, as the phone's had been since Part 3: 44 px squares sunk side by side into one strip of night with its rim and hard shadow, each a drawn icon at the art's pixel (the folded map, the picture with how many hang on the wall written low on its right as the game writes a stack's count, the whole screen's four corners, the moon, a cross for the way out), the one in hand framed in a light square a pixel larger than the slot with a pixel of night inside. Each slot's name is on a paper slip under the pointer and for a keyboard, and the word itself is kept for screen readers. The phone keeps its plank, its back key and its grid; only what was the phone's alone stays in its block.
+
+`hud-slots-1440.webp`, `hud-slot-hover-1440.webp`, `hud-slots-drawn-1440.webp` (the painted map in hand). Typecheck, lint, 243 tests, a clean build; the stylesheet is smaller than before, since one set of slot rules now serves every width. Recorded in the canon with the row.
