@@ -88,8 +88,10 @@
 .w-poster__built .b-paper__kicker { margin-right: var(--sp-1); }
 
 /* ─── the pin slot ──────────────────────────────────────────── */
-/* An empty frame on the wall, dashed until something lands in it. When a
-   picture is dragged over the page the whole slot lights up. */
+/* A blank board on the owner's bench, the same oak the signs are cut from, so
+   what is written on it is what goes up. Its rim is dashed until something
+   lands on it; it has no chains yet. When a picture is dragged over the page
+   the whole board lights up. */
 .w-pin {
   position: relative;
   max-width: 52rem;
@@ -97,35 +99,28 @@
   margin-inline: auto;
   display: grid;
   gap: var(--sp-3);
-  padding: var(--sp-5) var(--sp-4) var(--sp-4);
-  background: var(--paper);
+  padding: var(--sp-4);
+  background: var(--sign-grain), var(--sign);
   color: var(--ink);
-  border: var(--px) dashed var(--ink-faint);
-  clip-path: var(--notch);
+  border: var(--px) dashed var(--sign-rim);
   transition: border-color var(--dur-1) var(--ease-out), box-shadow var(--dur-2) var(--ease-out);
 }
-.w-pin.has-prints { border-style: solid; border-color: var(--tc-brown); }
-.w-pin.is-over { border-color: var(--lantern-deep); border-style: solid; box-shadow: 0 0 0 calc(var(--px) * 2) var(--lantern-glow); }
-.w-pin > .b-paper__nail { top: var(--sp-2); }
-.w-pin__text { width: 100%; min-height: 3.5rem; padding: var(--sp-2) var(--sp-1); background: transparent; border: 0; border-bottom: var(--line) solid rgba(30, 22, 17, 0.2); color: var(--ink); font-family: var(--font-text); font-size: var(--fs-md); line-height: 1.5; resize: vertical; outline: none; }
-.w-pin__text::placeholder { color: var(--ink-faint); }
-.w-pin__text:focus { border-bottom-color: var(--lantern-ink); }
+.w-pin.has-prints { border-style: solid; border-color: var(--wood-dark); box-shadow: var(--bevel); }
+.w-pin.is-over { border-color: var(--lantern); border-style: solid; box-shadow: 0 0 0 calc(var(--px) * 2) var(--lantern-glow); }
+.w-pin__text { width: 100%; min-height: 3.5rem; padding: var(--sp-2) var(--sp-1); background: transparent; border: 0; border-bottom: var(--px) solid rgba(77, 51, 35, 0.35); color: var(--ink); font-family: var(--font-text); font-size: var(--fs-md); line-height: 1.5; resize: vertical; outline: none; }
+.w-pin__text::placeholder, .w-draft__cap::placeholder { color: var(--sign-soft); }
+.w-pin__text:focus { border-bottom-color: var(--sign-lantern); }
 .w-pin__row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-3); }
-.w-pin__note { flex: 1 1 12rem; min-width: 0; font-size: var(--fs-sm); color: var(--ink-faint); }
+.w-pin__note { flex: 1 1 12rem; min-width: 0; font-size: var(--fs-sm); color: var(--sign-soft); }
 .w-pin__go { margin-left: auto; }
 .w-pin__place { display: inline-flex; }
-.w-pin__select { min-height: 2.25rem; padding: var(--sp-1) var(--sp-3); background: var(--paper-2); border: var(--line) solid var(--ink-faint); color: var(--ink); font-size: var(--fs-sm); }
-.w-pin__select:focus { outline: none; border-color: var(--lantern-ink); box-shadow: 0 0 0 var(--px) var(--lantern-glow); }
-.w-pin .b-btn { color: var(--lantern-ink); border-color: var(--lantern-ink); }
-.w-pin .b-btn:focus-visible { background: var(--lantern-ink); color: var(--paper); }
-@media (hover: hover) { .w-pin .b-btn:hover { background: var(--lantern-ink); color: var(--paper); } }
-.w-pin .b-btn--solid { background: var(--lantern); border-color: var(--lantern-ink); color: var(--ink); }
-@media (hover: hover) { .w-pin .b-btn--solid:hover { background: var(--ink); border-color: var(--ink); } }
+.w-pin__select { min-height: 2.25rem; padding: var(--sp-1) var(--sp-3); background: var(--paper); border: var(--line) solid var(--sign-rim); color: var(--ink); font-size: var(--fs-sm); }
+.w-pin__select:focus { outline: none; border-color: var(--sign-lantern); box-shadow: 0 0 0 var(--px) var(--lantern-glow); }
 
 /* the prints on their way up: a thumbnail, a caption line, a progress bar */
 .w-pin__prints { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); gap: var(--sp-3); }
 .w-draft { display: grid; align-content: start; gap: var(--sp-1); }
-.w-draft__pic { position: relative; aspect-ratio: 16 / 10; overflow: hidden; background: var(--paper-2); box-shadow: 0 0 0 var(--px) var(--tc-brown); }
+.w-draft__pic { position: relative; aspect-ratio: 16 / 10; overflow: hidden; background: var(--sign-2); box-shadow: 0 0 0 var(--px) var(--wood-dark); }
 .w-draft__pic img { width: 100%; height: 100%; object-fit: cover; opacity: 0.6; transition: opacity var(--dur-2) var(--ease-out); }
 .w-draft.is-done .w-draft__pic img { opacity: 1; }
 .w-draft.is-error .w-draft__pic img { opacity: 0.3; filter: sepia(1); }
@@ -137,99 +132,192 @@
 .w-draft__x::before { content: ''; position: absolute; inset: -0.5rem; }
 .w-draft__x:focus-visible { background: var(--tc-red); }
 @media (hover: hover) { .w-draft__x:hover { background: var(--tc-red); } }
-.w-draft__cap { width: 100%; padding: var(--sp-1) var(--sp-2); background: transparent; border: 0; border-bottom: var(--line) solid rgba(30, 22, 17, 0.2); color: var(--ink); font-family: var(--font-text); font-size: var(--fs-sm); outline: none; }
-.w-draft__cap::placeholder { color: var(--ink-faint); }
-.w-draft__cap:focus { border-bottom-color: var(--lantern-ink); }
-.w-draft__meta { font-size: var(--fs-sm); color: var(--ink-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.w-draft__cap { width: 100%; padding: var(--sp-1) var(--sp-2); background: transparent; border: 0; border-bottom: var(--px) solid rgba(77, 51, 35, 0.35); color: var(--ink); font-family: var(--font-text); font-size: var(--fs-sm); outline: none; }
+.w-draft__cap:focus { border-bottom-color: var(--sign-lantern); }
+.w-draft__meta { font-size: var(--fs-sm); color: var(--sign-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* a failed print says why in full, and how to send it again */
-.w-draft.is-error .w-draft__meta { white-space: normal; color: var(--tc-red); }
+.w-draft.is-error .w-draft__meta { white-space: normal; color: var(--sign-err); }
 .w-draft__retry { padding: 0; border: 0; background: none; font: inherit; letter-spacing: inherit; text-transform: inherit; cursor: pointer; }
-.w-draft.is-error .w-draft__meta { color: var(--tc-red); white-space: normal; }
+
+/* ─── a sign ────────────────────────────────────────────────── */
+/* What the crew put up hangs the way a hanging sign does in the game: an oak
+   board on two iron chains from a bar of darker wood, the words burnt dark
+   into its grain. The poster beside it is paper because it was printed; a
+   post was written by hand and hung. The bar and the chains stand above the
+   board, in the room its top margin keeps for them, so a sign is whole on its
+   own: on the wall, on the board on /crew and on the room's strip alike. */
+.w-sign, .w-pin {
+  /* the grain: a tile of short streaks, darker and paler, drawn on the pixel
+     grid the way a plank's texture is in the game, faint enough that the
+     words never lose to it */
+  --sign-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 24' shape-rendering='crispEdges'%3E%3Cpath fill='%234D3323' fill-opacity='.09' d='M0 2h9v1H0zM14 2h6v1H14zM22 7h10v1H22zM3 11h7v1H3zM17 14h12v1H17zM6 19h8v1H6zM25 21h7v1H25zM30 16h2v1H30z'/%3E%3Cpath fill='%23FFF0D2' fill-opacity='.16' d='M10 5h8v1H10zM0 8h4v1H0zM27 11h5v1H27zM11 17h5v1H11zM1 23h6v1H1zM19 23h4v1H19z'/%3E%3C/svg%3E") 0 0 / calc(var(--px) * 32) calc(var(--px) * 24);
+}
+.w-sign {
+  --hang: 2.75rem;                          /* the bar and the chains over the board */
+  --bar-h: calc(var(--px) * 5);
+  --bar-out: calc(var(--px) * 4);           /* how far the bar reaches past the inside of the rim */
+  --chain-x: clamp(1.25rem, 12%, 5rem);     /* where the chains meet the board, from each side */
+  /* one link face on and the next edge on, 4 by 10 pixels, in --iron and --iron-light */
+  --chain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 10' shape-rendering='crispEdges'%3E%3Cpath fill='%235E544C' d='M1 6h2v4H1z'/%3E%3Cpath fill='%23AFA191' d='M1 6h1v4H1z'/%3E%3Cpath fill='%235E544C' fill-rule='evenodd' d='M0 0h4v6H0zM1 1v4h2V1z'/%3E%3Cpath fill='%23AFA191' d='M0 1h1v4H0zM1 0h2v1H1z'/%3E%3C/svg%3E");
+  position: relative;
+  margin-top: var(--hang);
+  color: var(--ink);
+  background: var(--sign-grain), var(--sign);
+  /* the board's edge: dark wood outside, a lighter bead inside it, lit from
+     above like every block on the site, and a hard shadow on the night behind */
+  border: var(--px) solid var(--wood-dark);
+  box-shadow: inset 0 0 0 var(--px) var(--sign-rim), inset 0 calc(var(--px) * 2) 0 rgba(255, 240, 210, 0.22), inset 0 calc(var(--px) * -2) 0 rgba(77, 51, 35, 0.25), 0 calc(var(--px) * 2) 0 rgba(21, 16, 13, 0.5);
+}
+.w-sign::before, .w-sign::after { content: ''; position: absolute; pointer-events: none; }
+/* the bar: the plank the bar at the top of the page is cut from, a shade
+   lighter so it reads on the night */
+.w-sign::before {
+  left: calc(var(--bar-out) * -1);
+  right: calc(var(--bar-out) * -1);
+  top: calc(var(--hang) * -1 - var(--px));
+  height: var(--bar-h);
+  background: linear-gradient(180deg, rgba(255, 240, 210, 0.3) 0 var(--px), transparent var(--px)), linear-gradient(180deg, var(--wood-light) calc(100% - var(--px)), var(--wood-dark) calc(100% - var(--px)));
+  box-shadow: 0 var(--px) 0 rgba(21, 16, 13, 0.5);
+}
+/* the chains, counted up from the board so a link always meets the wood whole */
+.w-sign::after {
+  left: var(--chain-x);
+  right: var(--chain-x);
+  top: calc(var(--hang) * -1 - var(--px) + var(--bar-h));
+  height: calc(var(--hang) + var(--px) - var(--bar-h));
+  background: var(--chain) left bottom / calc(var(--px) * 4) calc(var(--px) * 10) repeat-y, var(--chain) right bottom / calc(var(--px) * 4) calc(var(--px) * 10) repeat-y;
+}
+/* A sign just put up swings on its chains and settles: the one thing on the
+   wall that moves, because something on it has changed. The board turns about
+   the middle of the bar, and the bar turns back by as much about the same
+   point, so it holds still while the board swings under it. */
+.w-sign.is-fresh { --swing: 1500ms; transform-origin: 50% calc(var(--hang) * -1); animation: w-swing var(--swing) var(--ease-out) both; }
+.w-sign.is-fresh::before { transform-origin: 50% 0; animation: w-swing-back var(--swing) var(--ease-out) both; }
+@keyframes w-swing {
+  0%   { transform: rotate(-4deg); }
+  16%  { transform: rotate(2.8deg); }
+  38%  { transform: rotate(-1.6deg); }
+  60%  { transform: rotate(0.8deg); }
+  80%  { transform: rotate(-0.3deg); }
+  100% { transform: none; }
+}
+@keyframes w-swing-back {
+  0%   { transform: rotate(4deg); }
+  16%  { transform: rotate(-2.8deg); }
+  38%  { transform: rotate(1.6deg); }
+  60%  { transform: rotate(-0.8deg); }
+  80%  { transform: rotate(0.3deg); }
+  100% { transform: none; }
+}
+@media (prefers-reduced-motion: reduce) { .w-sign.is-fresh, .w-sign.is-fresh::before { animation: none; } }
+
+/* everything written on a board takes the board's own inks */
+.w-sign .b-btn, .w-pin .b-btn { color: var(--sign-lantern); border-color: var(--sign-lantern); }
+.w-sign .b-btn:focus-visible, .w-pin .b-btn:focus-visible { background: var(--sign-lantern); color: var(--sign); }
+@media (hover: hover) { .w-sign .b-btn:hover, .w-pin .b-btn:hover { background: var(--sign-lantern); color: var(--sign); } }
+.w-sign .b-btn--solid, .w-pin .b-btn--solid { background: var(--lantern); border-color: var(--sign-lantern); color: var(--ink); }
+@media (hover: hover) { .w-sign .b-btn--solid:hover, .w-pin .b-btn--solid:hover { background: var(--ink); border-color: var(--ink); color: var(--paper); } }
+.w-sign .b-err, .w-pin .b-err { color: var(--sign-err); }
+.w-sign .b-textarea { border-color: var(--sign-rim); }
+.w-sign .b-textarea:focus { border-color: var(--sign-lantern); }
 
 /* ─── the wall ──────────────────────────────────────────────── */
 .w-wall { max-width: 52rem; width: 100%; margin-inline: auto; display: grid; gap: clamp(1.25rem, 3vw, 2rem); }
 .w-wall__empty { text-align: center; }
-.w-print { padding: var(--sp-5) var(--sp-4) var(--sp-4); display: grid; gap: var(--sp-3); scroll-margin-top: calc(var(--bar) + var(--sp-4)); }
-.w-print--note { padding-top: var(--sp-6); }
+.w-print { padding: var(--sp-4); display: grid; gap: var(--sp-3); scroll-margin-top: calc(var(--bar) + var(--sp-4) + var(--hang)); }
+/* a few words and nothing else are lettered the way a sign is: larger, on the
+   middle of the board */
+.w-print--word { padding-top: var(--sp-5); }
+.w-print--word .w-print__note { justify-self: center; text-align: center; font-size: var(--fs-lg); line-height: 1.45; text-wrap: balance; }
 .w-print__pics { display: grid; gap: var(--sp-3); }
 .w-print__pics.is-many { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 @media (min-width: 640px) { .w-print__pics.is-many { grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); } }
-.w-print__pic { display: grid; gap: var(--sp-2); min-width: 0; }
-.w-print__btn { display: block; width: 100%; padding: 0; background: var(--paper-2); box-shadow: 0 0 0 var(--px) var(--tc-brown); transition: box-shadow var(--dur-2) var(--ease-out); }
+.w-print__pic { display: grid; align-content: start; gap: var(--sp-2); min-width: 0; }
+/* a picture is set into the board in a frame of the dark wood */
+.w-print__btn { display: block; width: 100%; padding: 0; background: var(--sign-2); box-shadow: 0 0 0 var(--px) var(--wood-dark); transition: box-shadow var(--dur-2) var(--ease-out); }
 .w-print__btn img { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; display: block; }
-.w-print__pics:not(.is-many) .w-print__btn img { aspect-ratio: auto; max-height: 34rem; object-fit: contain; background: var(--paper-2); }
-.w-print__btn:focus-visible { box-shadow: 0 0 0 var(--px) var(--tc-brown), 0 0 0 calc(var(--px) * 2) var(--lantern-ink); }
-@media (hover: hover) { .w-print__btn:hover { box-shadow: 0 0 0 var(--px) var(--tc-brown), 0 0 0 calc(var(--px) * 2) var(--lantern-ink); } }
-.w-print__cap { display: grid; gap: var(--px); padding-inline: var(--sp-1); font-size: var(--fs-sm); line-height: 1.5; color: var(--ink-soft); }
-.w-print__cap small { font-size: var(--fs-sm); color: var(--ink-faint); }
+.w-print__pics:not(.is-many) .w-print__btn img { aspect-ratio: auto; max-height: 34rem; object-fit: contain; background: var(--sign-2); }
+.w-print__btn:focus-visible { box-shadow: 0 0 0 var(--px) var(--wood-dark), 0 0 0 calc(var(--px) * 2) var(--sign-lantern); }
+@media (hover: hover) { .w-print__btn:hover { box-shadow: 0 0 0 var(--px) var(--wood-dark), 0 0 0 calc(var(--px) * 2) var(--sign-lantern); } }
+.w-print__cap { display: grid; gap: var(--px); padding-inline: var(--sp-1); font-size: var(--fs-sm); line-height: 1.5; color: var(--ink); }
+.w-print__cap small { font-size: var(--fs-sm); color: var(--sign-soft); }
 .w-print__note { max-width: 62ch; padding-inline: var(--sp-1); line-height: 1.55; color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; }
-.w-print__meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-4); padding-inline: var(--sp-1); font-size: var(--fs-sm); color: var(--ink-faint); }
-.w-print__place { color: var(--lantern-ink); text-decoration: none; }
+.w-print__meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-4); padding-inline: var(--sp-1); font-size: var(--fs-sm); color: var(--sign-soft); }
+.w-print__place { color: var(--sign-lantern); text-decoration: none; }
 /* a pixel pin before the place's name, in whatever colour the link is: a mask, so the hover's ink applies to it too */
 .w-print__place::before { content: ''; display: inline-block; width: 0.75rem; height: 0.75rem; margin-right: 0.3em; vertical-align: -0.1em; background: currentColor; -webkit-mask: var(--w-pin) center / contain no-repeat; mask: var(--w-pin) center / contain no-repeat; }
 .w-print__place { --w-pin: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Cpath d='M5 1h6v2h2v5h-2v2h-2v2H9v3H7v-3H6v-2H5V8H3V3h2zm2 3v3h2V4z'/%3E%3C/svg%3E"); }
 @media (hover: hover) { .w-print__place:hover { color: var(--ink); text-decoration: underline; } }
 .w-print__actions { display: flex; gap: var(--sp-3); margin-left: auto; }
-.w-print__actions button { font-family: var(--font-data); font-size: var(--fs-data); letter-spacing: 0.04em; text-transform: uppercase; color: var(--lantern-ink); min-height: 2rem; }
+.w-print__actions button { font-family: var(--font-data); font-size: var(--fs-data); letter-spacing: 0.04em; text-transform: uppercase; color: var(--sign-lantern); min-height: 2rem; }
 @media (hover: hover) { .w-print__actions button:hover { color: var(--ink); } }
-/* the lantern under a print: dark until someone lights it, lit with a count */
-.w-lantern { display: inline-flex; align-items: center; gap: var(--sp-1); min-height: 2rem; padding-inline: var(--sp-1); color: var(--ink-faint); font-family: var(--font-data); font-size: var(--fs-data); }
-.w-lantern .b-lantern { width: 1rem; height: 1.5rem; color: var(--ink-faint); }
-.w-lantern .b-lantern .b-lantern__glass { fill: var(--paper-2); }
-.w-lantern .b-lantern.is-lit { color: var(--tc-brown); }
+/* the lantern under a sign: dark until someone lights it, lit with a count */
+.w-lantern { display: inline-flex; align-items: center; gap: var(--sp-1); min-height: 2rem; padding-inline: var(--sp-1); color: var(--sign-soft); font-family: var(--font-data); font-size: var(--fs-data); }
+.w-lantern .b-lantern { width: 1rem; height: 1.5rem; color: var(--sign-soft); }
+.w-lantern .b-lantern .b-lantern__glass { fill: var(--sign-2); }
+.w-lantern .b-lantern.is-lit { color: var(--wood-dark); }
 .w-lantern .b-lantern.is-lit .b-lantern__glass { fill: var(--lantern); }
-.w-lantern.is-lit { color: var(--lantern-ink); }
+.w-lantern.is-lit { color: var(--sign-lantern); }
 @media (hover: hover) { .w-lantern:not([disabled]):hover { color: var(--ink); } }
+/* The board no longer clips what stands outside it, so the lantern's tag shows
+   whole. It hangs from the line it sits in rather than from the lantern, and
+   wraps inside the board's width, so wherever the lantern falls on a phone
+   the tag stays on the screen rather than widening the page while hidden. */
+.w-print__meta { position: relative; }
+.w-print__meta .w-lantern { position: static; --tip-x: 0px; }
+.w-print__meta .w-lantern::after { left: var(--sp-1); white-space: normal; max-width: calc(100% - var(--sp-2)); }
 .w-lantern[disabled] { cursor: default; }
 
-/* editing a print in place */
+/* editing a sign in place */
 .w-print__editor { display: grid; gap: var(--sp-2); }
 .w-print__editrow { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--sp-2) var(--sp-3); }
 .w-print__edit-pic { display: grid; gap: var(--sp-1); }
 .w-print__pic-tools { display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-3); }
-.w-tool { min-height: 2rem; padding-inline: var(--sp-1); font-family: var(--font-data); font-size: var(--fs-data); letter-spacing: 0.04em; text-transform: uppercase; color: var(--lantern-ink); }
+.w-tool { min-height: 2rem; padding-inline: var(--sp-1); font-family: var(--font-data); font-size: var(--fs-data); letter-spacing: 0.04em; text-transform: uppercase; color: var(--sign-lantern); }
 @media (hover: hover) { .w-tool:hover { color: var(--ink); } }
 .w-tool.is-on { color: var(--ink); }
 /* the print on the poster carries a pixel star, in red ink */
-.w-tool.is-on::before { content: ''; display: inline-block; width: 0.7rem; height: 0.7rem; margin-right: 0.3em; vertical-align: -0.05em; background: var(--tc-red); -webkit-mask: var(--w-star) center / contain no-repeat; mask: var(--w-star) center / contain no-repeat; }
+.w-tool.is-on::before { content: ''; display: inline-block; width: 0.7rem; height: 0.7rem; margin-right: 0.3em; vertical-align: -0.05em; background: var(--sign-err); -webkit-mask: var(--w-star) center / contain no-repeat; mask: var(--w-star) center / contain no-repeat; }
 .w-tool { --w-star: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Cpath d='M7 1h2v4h4v2h-2v2h2v2h-2v2h-2v2H7v-2H5v-2H3V9h2V7H3V5h4V1z'/%3E%3C/svg%3E"); }
 
-/* replies: a line each, under the print */
-.w-replies { display: grid; gap: var(--sp-2); margin-top: var(--sp-1); padding-top: var(--sp-3); border-top: var(--line) solid rgba(30, 22, 17, 0.15); }
+/* replies: a line each, under a seam in the board, as if a plank were added for them */
+.w-replies { display: grid; gap: var(--sp-2); margin-top: var(--sp-1); margin-inline: calc(var(--sp-4) * -1); padding: var(--sp-3) var(--sp-4) 0; border-top: var(--px) solid rgba(77, 51, 35, 0.45); box-shadow: inset 0 var(--px) 0 rgba(255, 240, 210, 0.3); }
 .w-reply, .w-reply__form { display: grid; grid-template-columns: 1.5rem minmax(0, 1fr); gap: var(--sp-3); align-items: start; }
 .w-reply__form { grid-template-columns: 1.5rem minmax(0, 1fr) auto; align-items: center; }
-.w-reply__head { width: 1.5rem; height: 1.5rem; box-shadow: 0 0 0 1px var(--tc-brown); }
+.w-reply__head { width: 1.5rem; height: 1.5rem; box-shadow: 0 0 0 1px var(--wood-dark); }
 .w-reply__head img { width: 100%; height: 100%; image-rendering: pixelated; }
 .w-reply__body { display: grid; gap: var(--px); min-width: 0; }
 .w-reply__who { font-weight: 600; font-size: var(--fs-sm); color: var(--ink); text-decoration: none; }
-@media (hover: hover) { .w-reply__who:hover { color: var(--lantern-ink); } }
-.w-reply__text { font-size: var(--fs-sm); line-height: 1.5; color: var(--ink-soft); white-space: pre-wrap; overflow-wrap: anywhere; }
-.w-reply__when { display: flex; gap: var(--sp-3); font-size: var(--fs-sm); color: var(--ink-faint); }
-.w-reply__when button { position: relative; font-family: var(--font-data); font-size: var(--fs-data); letter-spacing: 0.04em; text-transform: uppercase; color: var(--lantern-ink); }
+@media (hover: hover) { .w-reply__who:hover { color: var(--sign-lantern); } }
+.w-reply__text { font-size: var(--fs-sm); line-height: 1.5; color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; }
+.w-reply__when { display: flex; gap: var(--sp-3); font-size: var(--fs-sm); color: var(--sign-soft); }
+.w-reply__when button { position: relative; font-family: var(--font-data); font-size: var(--fs-data); letter-spacing: 0.04em; text-transform: uppercase; color: var(--sign-lantern); }
 /* a word-sized control on a phone: its reach is a thumb's, not the word's */
 .w-reply__when button::before { content: ''; position: absolute; inset: -0.6rem -0.4rem; }
 @media (hover: hover) { .w-reply__when button:hover { color: var(--ink); } }
-.w-reply__input { min-height: 2.25rem; padding: var(--sp-1) var(--sp-2); background: transparent; border: 0; border-bottom: var(--line) solid rgba(30, 22, 17, 0.2); color: var(--ink); font-family: var(--font-text); font-size: var(--fs-sm); outline: none; }
-.w-reply__input::placeholder { color: var(--ink-faint); }
-.w-reply__input:focus { border-bottom-color: var(--lantern-ink); }
+.w-reply__input { min-height: 2.25rem; padding: var(--sp-1) var(--sp-2); background: transparent; border: 0; border-bottom: var(--px) solid rgba(77, 51, 35, 0.35); color: var(--ink); font-family: var(--font-text); font-size: var(--fs-sm); outline: none; }
+.w-reply__input::placeholder { color: var(--sign-soft); }
+.w-reply__input:focus { border-bottom-color: var(--sign-lantern); }
 
-/* ─── the roll call and the strip: prints away from the wall ─── */
-/* a print on the notice strip in the room, and in the feed on /crew */
+/* ─── the roll call and the strip: signs away from the wall ─── */
+/* a small sign on the room's strip and on the board on /crew, on shorter chains */
 .w-strip { list-style: none; }
-.w-note-card { flex: 0 0 11rem; scroll-snap-align: start; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; align-content: start; gap: var(--sp-2); padding: var(--sp-3); color: var(--ink); text-decoration: none; }
+.w-note-card { --hang: 1.75rem; --bar-h: calc(var(--px) * 4); --bar-out: calc(var(--px) * 2); --chain-x: 18%; flex: 0 0 11rem; scroll-snap-align: start; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; align-content: start; gap: var(--sp-2); padding: var(--sp-3); color: var(--ink); text-decoration: none; }
 .w-note-card > :first-child:not(.w-note-card__pic) { grid-row: 2; }
 .w-note-card__who { grid-row: 3; align-self: end; }
-.w-note-card__pic { aspect-ratio: 16 / 10; overflow: hidden; background: var(--paper-2); box-shadow: 0 0 0 var(--px) var(--tc-brown); }
+.w-note-card__pic { aspect-ratio: 16 / 10; overflow: hidden; background: var(--sign-2); box-shadow: 0 0 0 var(--px) var(--wood-dark); }
 .w-note-card__pic img { width: 100%; height: 100%; object-fit: cover; }
 .w-note-card__text { font-size: var(--fs-sm); line-height: 1.45; color: var(--ink); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow-wrap: anywhere; }
-.w-note-card__who { display: flex; align-items: center; gap: var(--sp-2); font-size: var(--fs-sm); color: var(--ink-faint); min-width: 0; }
-.w-note-card__who img { width: 1rem; height: 1rem; image-rendering: pixelated; box-shadow: 0 0 0 1px var(--tc-brown); flex-shrink: 0; }
+/* words alone are lettered across the middle of the board, as on the wall */
+.w-note-card > .w-note-card__text:first-child { align-self: center; text-align: center; text-wrap: balance; }
+.w-note-card__who { display: flex; align-items: center; gap: var(--sp-2); font-size: var(--fs-sm); color: var(--sign-soft); min-width: 0; }
+.w-note-card__who img { width: 1rem; height: 1rem; image-rendering: pixelated; box-shadow: 0 0 0 1px var(--wood-dark); flex-shrink: 0; }
 .w-note-card__who b { font-weight: 600; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .w-note-card__who > span { white-space: nowrap; }
 .w-note-card__who { flex-wrap: wrap; row-gap: var(--px); }
-/* drawn inside: the sheet's notched edge cuts off anything outside it */
-.w-note-card:focus-visible { outline: var(--px) solid var(--lantern-ink); outline-offset: calc(var(--px) * -3); }
-@media (hover: hover) { .w-note-card:hover { outline: var(--px) solid var(--lantern-ink); outline-offset: calc(var(--px) * -3); } }
+/* the sign is a link on the night: lantern light round its board */
+.w-note-card:focus-visible { outline: var(--px) solid var(--lantern); outline-offset: var(--px); }
+@media (hover: hover) { .w-note-card:hover { outline: var(--px) solid var(--lantern); outline-offset: var(--px); } }
 
 /* the word-sized actions on a print are a thumb's height where there is a thumb */
 @media (pointer: coarse) { .w-print__actions button, .w-tool, .w-lantern, .w-reply__when button { min-height: var(--tap); } }
@@ -242,13 +330,14 @@
 .b-poster__cover { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.18; filter: saturate(0.6); pointer-events: none; }
 @media (hover: hover) { .b-poster--crew:hover .b-poster__cover { opacity: 0.28; } }
 /* the board on /crew: every wall's newest things, as cards */
-.w-board { list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3); }
+.w-board { list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-4) var(--sp-3); }
 @media (min-width: 640px) { .w-board { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-4); } }
 @media (min-width: 900px) { .w-board { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-.w-board .w-note-card { flex: none; height: 100%; }
+.w-board .w-note-card { flex: none; height: calc(100% - var(--hang)); }
 /* the notice strip in the room */
 .w-strip__head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--sp-2) var(--sp-4); margin-bottom: var(--sp-3); }
 .w-strip__title { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-lg); color: var(--paper); }
-.w-strip .b-rail { gap: var(--sp-3); padding: 4px 3px; align-items: stretch; }
+/* the rail keeps the bars' overhang and the boards' shadow inside what it scrolls */
+.w-strip .b-rail { gap: var(--sp-3); padding: 2px 3px 6px; align-items: stretch; }
 .w-strip { margin-bottom: var(--sp-6); }
 .w-page__err { max-width: 52rem; margin-inline: auto; }

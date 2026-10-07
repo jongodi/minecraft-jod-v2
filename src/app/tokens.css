@@ -91,6 +91,19 @@
   --wood-light: #6B4A2E;
   --wood-dark:  #35221A;
 
+  /* ── a sign: what the crew put up, an oak board hung on iron chains. The
+     board is paler than the frames so the words burnt into it read; every
+     colour written on it is checked against it ── */
+  --sign:         #C9A872;
+  --sign-2:       #B99760;   /* the grain, and the board behind a picture still loading */
+  --sign-rim:     var(--wood-light);
+  --sign-soft:    var(--tc-brown);   /* small print on the board, 5.1:1 */
+  /* the lantern's light burnt into the wood: what can be pressed on a board, 4.9:1 */
+  --sign-lantern: #563409;
+  --sign-err:     #6E2A1E;           /* 4.6:1 */
+  --iron:         #5E544C;           /* the chains; drawn into the chain's tile in wall.css */
+  --iron-light:   #AFA191;   /* the chains catch the light; dark iron vanished on the night */
+
   /* ── status ── */
   --online:  #8FB06A;
   --offline: var(--tc-red);

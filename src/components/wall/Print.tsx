@@ -23,6 +23,8 @@ interface Props {
   me:           string | null | undefined;
   isOwner:      boolean;
   coverPhotoId: string | null;
+  /** just put up from this page: it swings on its chains and settles */
+  fresh?:       boolean;
   /** change this entry as it is now in the wall's state, not as it was when the request began */
   onChange:     (id: string, update: (entry: CrewEntry) => CrewEntry) => void;
   onRemove:     (id: string) => void;
@@ -32,7 +34,10 @@ interface Props {
 
 interface EditState { text: string; placeId: number | null; photos: CrewPhoto[] }
 
-export default function Print({ username, entry, places, me, isOwner, coverPhotoId, onChange, onRemove, onCover, onOpen }: Props) {
+/* the longest note still lettered across a sign rather than written on it */
+const WORD_MAX = 90;
+
+export default function Print({ username, entry, places, me, isOwner, coverPhotoId, fresh = false, onChange, onRemove, onCover, onOpen }: Props) {
   const [edit, setEdit]       = useState<EditState | null>(null);
   const [saving, setSaving]   = useState(false);
   const [error, setError]     = useState('');
@@ -113,9 +118,11 @@ export default function Print({ username, entry, places, me, isOwner, coverPhoto
   const photos = edit ? edit.photos : entry.photos;
   const many = photos.length > 1;
 
+  /* a few words and nothing else are lettered like a sign: larger, centred */
+  const word = !edit && photos.length === 0 && entry.text.length <= WORD_MAX && !entry.text.includes('\n');
+
   return (
-    <article id={entry.id} className={`b-paper w-print${photos.length ? '' : ' w-print--note'}${edit ? ' is-editing' : ''}`} aria-label={entry.text ? entry.text.slice(0, 60) : `Mynd frá ${date(entry.createdAt)}`}>
-      <span className="b-paper__nail" aria-hidden="true" />
+    <article id={entry.id} className={`w-sign w-print${word ? ' w-print--word' : ''}${fresh ? ' is-fresh' : ''}${edit ? ' is-editing' : ''}`} aria-label={entry.text ? entry.text.slice(0, 60) : `Mynd frá ${date(entry.createdAt)}`}>
 
       {photos.length > 0 && (
         <div className={`w-print__pics${many ? ' is-many' : ''}`}>

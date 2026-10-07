@@ -119,7 +119,7 @@ export default function CrewPage() {
             <ul className="w-board">
               {feed.map(e => (
                 <li key={e.id}>
-                  <Link href={`/crew/${e.username}#${e.id}`} className="b-paper w-note-card">
+                  <Link href={`/crew/${e.username}#${e.id}`} className="w-sign w-note-card">
                     {e.photos[0] && (
                       <span className="w-note-card__pic">
                         {/* eslint-disable-next-line @next/next/no-img-element */}

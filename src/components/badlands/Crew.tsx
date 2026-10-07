@@ -91,7 +91,7 @@ function Crew({ server }: { server: ServerState }) {
           </div>
           <Rail label="Nýjast af veggjunum" prevLabel="Fyrri" nextLabel="Næstu" count={strip.length}>
             {strip.map(e => (
-              <Link key={e.id} href={`/crew/${e.username}#${e.id}`} className="b-paper w-note-card" data-rail-item={e.id}>
+              <Link key={e.id} href={`/crew/${e.username}#${e.id}`} className="w-sign w-note-card" data-rail-item={e.id}>
                 {e.photos[0] && (
                   <span className="w-note-card__pic">
                     {/* eslint-disable-next-line @next/next/no-img-element */}

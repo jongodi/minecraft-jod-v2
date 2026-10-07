@@ -277,6 +277,8 @@ export default function Wall({ initial, places, justSignedIn = false }: Props) {
   const [lightbox,    setLightbox]    = useState<number | null>(null);
   const [origin,      setOrigin]      = useState<DOMRect | null>(null);
   const [welcome,     setWelcome]     = useState(justSignedIn);
+  /* the sign put up from this page, which swings in on its chains */
+  const [fresh,       setFresh]       = useState<string | null>(null);
 
   const username = profile.username;
 
@@ -326,7 +328,7 @@ export default function Wall({ initial, places, justSignedIn = false }: Props) {
     finally { setBioSaving(false); }
   }
 
-  const onPinned  = useCallback((entry: CrewEntry) => setProfile(p => ({ ...p, entries: [entry, ...p.entries] })), []);
+  const onPinned  = useCallback((entry: CrewEntry) => { setFresh(entry.id); setProfile(p => ({ ...p, entries: [entry, ...p.entries] })); }, []);
   const onChange  = useCallback((id: string, update: (entry: CrewEntry) => CrewEntry) => setProfile(p => ({ ...p, entries: p.entries.map(e => (e.id === id ? update(e) : e)) })), []);
   const onRemove  = useCallback((id: string) => setProfile(p => ({ ...p, entries: p.entries.filter(e => e.id !== id) })), []);
   const onCover   = useCallback((photoId: string | null) => {
@@ -451,7 +453,7 @@ export default function Wall({ initial, places, justSignedIn = false }: Props) {
           ) : (
             profile.entries.map(entry => (
               <Print key={entry.id} username={username} entry={entry} places={places} me={me} isOwner={isOwner}
-                coverPhotoId={profile.coverPhotoId} onChange={onChange} onRemove={onRemove} onCover={onCover} onOpen={onOpen} />
+                coverPhotoId={profile.coverPhotoId} fresh={entry.id === fresh} onChange={onChange} onRemove={onRemove} onCover={onCover} onOpen={onOpen} />
             ))
           )}
         </section>
