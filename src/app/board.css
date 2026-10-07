@@ -92,6 +92,17 @@
 .b-poster__weekhead { width: 100%; margin-top: var(--sp-2); font-weight: 600; font-size: var(--fs-sm); letter-spacing: 0.04em; text-transform: uppercase; color: var(--tc-red); text-align: left; }
 .b-poster__row--week { grid-template-columns: 1rem minmax(0, 1fr); }
 .b-poster__row--week .b-poster__who, .b-poster__row--week .b-poster__num { grid-column: 2; }
+/* a poster before its numbers have come: the paper, the masthead, an empty
+   frame and the lines where the name, the alias, the charge and the bounty
+   will print, in the paper's own shade; the seal waits faded */
+.b-posters--blank .b-rail { overflow: hidden; }
+.b-poster--blank .b-poster__face { display: block; width: 100%; aspect-ratio: 1; background: var(--paper-2); }
+.b-poster__blank { display: block; height: 0.875rem; background: var(--paper-2); }
+.b-poster__blank--name { width: 55%; height: 1.1rem; margin-top: var(--sp-2); }
+.b-poster__blank--alias { width: 45%; margin-top: var(--sp-2); }
+.b-poster__blank--charge { width: 65%; margin-top: var(--sp-1); }
+.b-poster__blank--val { width: 50%; margin-top: var(--sp-2); }
+.b-poster--blank .b-poster__seal { opacity: 0.35; }
 .b-empty { padding: var(--sp-4) 0; font-size: var(--fs-md); color: var(--text-faint); }
 .b-paper .b-empty { color: var(--ink-faint); }
 

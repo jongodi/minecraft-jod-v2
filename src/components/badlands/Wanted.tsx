@@ -61,7 +61,28 @@ export default function Wanted({ stats }: { stats: StatsState }) {
       {/* an empty board says nothing of its own: the room's one line under the
           portraits says why there are no numbers, beside why nobody is in */}
       {posters.length === 0 ? (
-        stats.source === null && !stats.failed ? <p className="b-empty" role="status">sæki tölurnar…</p> : null
+        stats.source === null && !stats.failed ? (
+          /* while the numbers come: three blank posters on the rail, the shape
+             first and the detail after, as the game draws a chunk */
+          <div className="b-posters b-posters--blank" role="status" aria-label="sæki tölurnar">
+            <div className="b-rail at-start at-end" aria-hidden="true">
+              {[0, 1, 2].map(i => (
+                <div key={i} className="b-hang">
+                  <div className="b-paper b-paper--torn b-poster b-poster--blank">
+                    <span className="b-paper__nail b-paper__nail--l" />
+                    <span className="b-paper__nail b-paper__nail--r" />
+                    <span className="b-poster__mast">Eftirlýst</span>
+                    <span className="b-poster__lead"><span className="b-poster__img"><span className="b-poster__face" /></span><span className="b-poster__blank b-poster__blank--name" /></span>
+                    <span className="b-poster__blank b-poster__blank--alias" />
+                    <span className="b-poster__blank b-poster__blank--charge" />
+                    <span className="b-poster__blank b-poster__blank--val" />
+                    <Seal className="b-poster__seal" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null
       ) : (
         <Rail className="b-posters" label="Eftirlýsingar" prevLabel="Fyrri spjöld" nextLabel="Næstu spjöld" count={posters.length}>
           {posters.map(({ meta, rows: [first, ...rest], week }) => (
