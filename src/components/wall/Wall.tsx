@@ -248,7 +248,10 @@ export default function Wall({ initial, places, justSignedIn = false }: Props) {
         </section>
 
         {wallError && <p className="b-err w-page__err" role="alert">{wallError}</p>}
-        {isOwner && <Composer username={username} places={places} onPinned={onPinned} />}
+
+        {/* the wall itself: a board of planks the pin slot and every print hang on (wall.css) */}
+        <div className="b-planks w-boards">
+        {isOwner && <div className="b-hang"><Composer username={username} places={places} onPinned={onPinned} /></div>}
 
         <section className="w-wall" aria-label="Veggurinn">
           {profile.entries.length === 0 ? (
@@ -262,11 +265,14 @@ export default function Wall({ initial, places, justSignedIn = false }: Props) {
             </div>
           ) : (
             profile.entries.map(entry => (
-              <Print key={entry.id} username={username} entry={entry} places={places} me={me} isOwner={isOwner}
-                coverPhotoId={profile.coverPhotoId} onChange={onChange} onRemove={onRemove} onCover={onCover} onOpen={onOpen} />
+              <div key={entry.id} className="b-hang">
+                <Print username={username} entry={entry} places={places} me={me} isOwner={isOwner}
+                  coverPhotoId={profile.coverPhotoId} onChange={onChange} onRemove={onRemove} onCover={onCover} onOpen={onOpen} />
+              </div>
             ))
           )}
         </section>
+        </div>
       </main>
       <Footer />
 

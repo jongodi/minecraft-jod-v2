@@ -79,7 +79,7 @@ export default function CrewPage() {
           {crew === 'error' ? <p className="b-empty" role="alert">Náði ekki í félagalistann. Reyndu aftur eftir smástund.</p> :
           /* the eight are known before the list comes, so their posters stand at
              once and only the lines about each wall fill in */
-          <div className="b-rollcall" aria-busy={crew === null}>
+          <div className="b-planks b-rollcall" aria-busy={crew === null}>
             {(crew ?? CREW.map(blankPoster)).map(m => (
               <div key={m.username} className="b-hang">
                 <Link href={`/crew/${m.username}`} className={`b-paper b-paper--torn b-poster b-poster--crew${m.cover ? ' has-cover' : ''}`}>
@@ -116,9 +116,9 @@ export default function CrewPage() {
           ) : feed.length === 0 ? (
             <p className="b-empty">Ekkert á töflunni enn. Félagar festa miða og myndir upp á eigin vegg.</p>
           ) : (
-            <ul className="w-board">
+            <ul className="b-planks w-board" aria-label="Það nýjasta af veggjunum, á sömu plönkum og spjöldin">
               {feed.map(e => (
-                <li key={e.id}>
+                <li key={e.id} className="b-hang">
                   <Link href={`/crew/${e.username}#${e.id}`} className="b-paper w-note-card">
                     {e.photos[0] && (
                       <span className="w-note-card__pic">

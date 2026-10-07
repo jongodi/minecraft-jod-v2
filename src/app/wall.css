@@ -19,7 +19,7 @@
   .w-page > * { grid-column: 2; margin-inline: 0; max-width: none; }
   .w-page > :not(.w-poster) ~ :not(.w-poster) { margin-top: var(--w-gap); }
   .w-page > .w-poster { grid-column: 1; grid-row: 1 / span 6; }
-  .w-page .w-wall { max-width: none; }
+  .w-page .w-wall, .w-page .w-pin { max-width: none; }
 }
 .w-welcome { position: relative; max-width: 52rem; width: 100%; margin-inline: auto; padding: var(--sp-3) var(--sp-7) var(--sp-3) var(--sp-4); background: rgba(242, 166, 59, 0.12); border: var(--px) solid var(--lantern); color: var(--paper); font-size: var(--fs-md); line-height: 1.5; }
 .w-welcome > button:last-child:not(.w-welcome__act) { position: absolute; right: 0; top: 0; display: grid; place-items: center; width: var(--tap); height: 100%; min-height: var(--tap); color: var(--lantern); }
@@ -147,7 +147,13 @@
 .w-draft.is-error .w-draft__meta { color: var(--tc-red); white-space: normal; }
 
 /* ─── the wall ──────────────────────────────────────────────── */
+/* The wall is a board of planks (.b-planks, board.css): the pin slot and
+   every print hang on it, each standing off the boards by its shadow. The
+   poster stands beside it in the night, as the one pressed on the roll
+   call; the board is the member's own, the posters' board continued. */
+.w-boards { display: grid; gap: var(--w-gap); align-content: start; }
 .w-wall { max-width: 52rem; width: 100%; margin-inline: auto; display: grid; gap: clamp(1.25rem, 3vw, 2rem); }
+.w-wall > .b-hang { display: grid; }
 /* Nothing pinned yet: a torn slip nailed where the first thing will hang,
    rather than one faint line in the dark. The owner's says what to do and
    where; a visitor's says whose wall is bare. */

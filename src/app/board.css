@@ -202,21 +202,20 @@
 .b-stray__actions { display: flex; flex-wrap: wrap; gap: var(--sp-3); margin-top: var(--sp-3); }
 .b-page__night { margin-top: var(--sp-4); }
 .b-page__head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--sp-4) var(--sp-6); margin: var(--sp-4) 0 var(--sp-6); }
-/* The notice board: the eight posters hang on one long board of planks,
-   capped along its top and held up by a post at each end that runs down
-   past it into the ground, standing in front of the far ridge under the
-   stars. Each poster stands off the boards by its hard shadow (.b-hang). */
-.b-rollcall {
+/* A board of planks: one long board, capped along its top and held up by a
+   post at each end that runs down past it into the ground, standing in
+   front of the far ridge under the stars. Whatever hangs on it stands off
+   the boards by its hard shadow (.b-hang). The roll call's posters hang on
+   one, the newest things from every wall on another (the crew page's
+   board), and a member's own prints on theirs (wall.css). */
+.b-planks {
   position: relative;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--sp-5) var(--sp-3);
   padding: var(--sp-5) var(--sp-3) var(--sp-6);
   background: var(--plank);
   background-size: 100% 2.75rem;
   box-shadow: 0 calc(var(--px) * -4) 0 var(--wood-dark), inset 0 0 0 var(--px) rgba(21, 16, 13, 0.35), 0 calc(var(--px) * 3) 0 rgba(21, 16, 13, 0.45);
 }
-.b-rollcall::before, .b-rollcall::after {
+.b-planks::before, .b-planks::after {
   content: '';
   position: absolute;
   z-index: -1;
@@ -225,14 +224,17 @@
   width: calc(var(--px) * 7);
   background: var(--plank-up);
 }
-.b-rollcall::before { left: calc(var(--px) * -4); }
-.b-rollcall::after { right: calc(var(--px) * -4); }
+.b-planks::before { left: calc(var(--px) * -4); }
+.b-planks::after { right: calc(var(--px) * -4); }
 @media (min-width: 640px) {
-  .b-rollcall { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp-6) var(--sp-5); padding: var(--sp-6) var(--sp-5) var(--sp-7); }
-  .b-rollcall::before, .b-rollcall::after { width: calc(var(--px) * 9); }
-  .b-rollcall::before { left: calc(var(--px) * -6); }
-  .b-rollcall::after { right: calc(var(--px) * -6); }
+  .b-planks { padding: var(--sp-6) var(--sp-5) var(--sp-7); }
+  .b-planks::before, .b-planks::after { width: calc(var(--px) * 9); }
+  .b-planks::before { left: calc(var(--px) * -6); }
+  .b-planks::after { right: calc(var(--px) * -6); }
 }
+/* the notice board: the eight posters, two to a row on a phone, four from 640 px */
+.b-rollcall { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-5) var(--sp-3); }
+@media (min-width: 640px) { .b-rollcall { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp-6) var(--sp-5); } }
 .b-rollcall > .b-hang { display: grid; }
 .b-poster--crew { padding: var(--sp-6) var(--sp-3) var(--sp-4); text-decoration: none; }
 /* the torn edge cuts off a ring drawn outside the poster, so it is drawn inside, clear of the tears */
