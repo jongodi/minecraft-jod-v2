@@ -761,3 +761,31 @@ The first and fourth proposals were approved on the same day and built:
 - **Blank posters while the numbers come.** Three torn posters on the room's rail with the masthead, an empty frame and the lines where the name, the alias, the charge and the bounty will print, the seal waiting faded. `room-loading-1440.webp`.
 
 Lighthouse mobile on `/` after, two runs: 97 and 97, LCP 2.4 and 2.5 s, TBT 140 and 80 ms, CLS 0, within the 95 the canon asks for. Typecheck, lint, 243 tests and a clean build. The approval is recorded in the canon's verdict log.
+
+---
+
+## Part 8. The hero, reworked: the server as the game shows a server
+
+The owner's verdict on Part 7's signpost, the same day: "Slökkt á þjóninum" is information, so it is never a link, and it does not belong in the header; the lantern with the sign and the texts looked off beside the address button; the hero should be reworked and look designed, with a new layout. Both rules are in the canon now.
+
+### The idea
+
+Every player reads one shape before joining any server: the row on the game's multiplayer screen. An icon, the server's name, its message of the day, and at the right the player count and the connection's bars. The hero now says everything it has to say in exactly that shape, and nothing else, above the name cut from the strata:
+
+- **The icon** is the mark, at 64 px, two screen pixels to each of its 32, as the game draws a server's icon.
+- **The name** is the address, lit, with the copy glyph before it. Pressing the row copies it, as the game's row is what you press to join; the stamp lands on the icon's corner.
+- **The message of the day** is the one sentence about the world, which used to stand alone over the sky.
+- **The count and the bars** at the right: `3/20` and five rising bars, green when the server answers, red when it is out, amber and filling one by one while it wakes, as the game's bars do while it pings.
+- **The state in words** is a line under the row, read and never pressed: the word in the bitmap face in the chat's colours, the heads of who is in, the version; when the server is out, when it last burned and who was in then, faded brown. A night planned is the line under that.
+
+The row is dark as the game's rows are, with the game's thin light line round the one chosen under the pointer. The lantern is gone from the hero and from the bar; the lanterns that remain are the doors', the world's signpost, the riders' in hand and the name's lit windows, all of them things in the world or things that can be pressed. On a narrow phone the count and the bars drop under the message so the address stays one word, and the bitmap face gives up its tracking under 400 px.
+
+`hero-row-1440.webp`, `hero-row-off-1440.webp`, `hero-row-waking-1440.webp`, `hero-row-copied-1440.webp`, `hero-row-390.webp`, `hero-row-off-390.webp`; the bar without the lantern in `bar-no-lantern-1440.webp`.
+
+### Why this and not another plate
+
+The plate (Part 4) kept the words legible but was UI laid over a world; the signpost (Part 7) was world but three pieces where there was one, beside a button that was a fourth. The server row is one object, it is the game's own UI (canon 7), it carries the address, the sentence and the state together so the hero has one thing to look at (canon 2), and the data on it stays crisp (canon 5). The swap test holds: no other project would show a server row.
+
+### Measured
+
+Typecheck, lint, 243 tests, a clean build. Lighthouse mobile on `/`: 96 (one cold run at 89 with the sandbox's TBT, as every first run here), LCP 2.6 s, CLS 0. `StatusLantern.tsx` and `CopyAddress.tsx` are gone; `ServerRow.tsx` replaces both. README and DESIGN.md describe the row.
