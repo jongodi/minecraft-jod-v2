@@ -661,7 +661,7 @@ The phone, the figure this repo has always held to, is level. The desktop gap is
 
 ## Part 6. An improve pass: what was there, made right
 
-Run on 7 October 2026 against a production build of `32ffe69`, in headless Chromium, with the staged data (`STAGE=1`). The brief was the layout, the design and the structure, more immersive and more itself, no new features. Three passes had already built the evening; this one read the whole site as a visitor and as a maintainer and fixed what it found, in nine commits on `claude/website-design-overhaul-p2npcp`. Every pass: `tsc`, `next lint`, the unit tests (240 before, 243 after), screenshots at 390 and 1440, Lighthouse, the scroll probe, and a production build.
+Run on 7 October 2026 against a production build of `32ffe69`, in headless Chromium, with the staged data (`STAGE=1`). The brief was the layout, the design and the structure, more immersive and more itself, no new features. Three passes had already built the evening; this one read the whole site as a visitor and as a maintainer and fixed what it found, in ten commits on `claude/website-design-overhaul-p2npcp`. Every pass: `tsc`, `next lint`, the unit tests (240 before, 243 after), screenshots at 390 and 1440, Lighthouse, the scroll probe, and a production build.
 
 ### Fixed
 
@@ -675,6 +675,8 @@ Run on 7 October 2026 against a production build of `32ffe69`, in headless Chrom
 **Layout.** The empty play-night block in the crew's room pushed its one button to the far edge of the room; the embers, the words and the way to light a fire are one group now, the button under the words, on every width. Over the sunset the bar said the address a second time, small, at the top right of the first screen, right above the hero's own button; it now waits for the plank, as the bar's lantern already did, and keeps its width so nothing beside it moves.
 
 **Visuals.** A wall with nothing pinned was one faint line in a thousand pixels of dark beside the poster on a wide screen; it is a torn slip nailed where the first thing will hang, with a kicker in red ink, the owner's telling them what to do and where, a visitor's saying whose wall is bare. The 404 and the error page stood on a bare black page beside pages that hang under the night sky and the far ridge; they stand under the same night now, the dark lantern hanging in the sky and the words on the ground under the ridge. The shelf counter's empty glyph was a hatched square that read as a missing picture; the slip carries the Ð seal until a crate is pointed at.
+
+**The boards.** The roll call hung its posters on a board of planks while a member's own prints hung on the bare night and the crew page's "Á töflunni" cards lay in a plain grid under the stars. The board is now one thing (`.b-planks`, board.css: the planks, the cap, the two posts into the ground) and three things hang on it: the roll call's posters as before, the crew page's board of the newest cards, and on a member's wall the pin slot and every print, each standing off the boards by its hard shadow. The poster stands beside the member's board in the night, the one pressed on the roll call; the board is theirs, the posters' board continued, and the empty wall's note hangs on it. `wall-boards-1440.webp`, `wall-boards-390.webp` and `crew-board-1440.webp` in `docs/improve/` show the three (staged wall; the heads on the crew board are the sandbox's fallbacks).
 
 **Logic.** `Wall.tsx` mixed the wall with its three dialogs (sign in, password, name and email), 470 lines of two concerns; the dialogs are `WallDialogs.tsx` (204 lines) and the wall keeps what hangs on it (282). No behaviour changed.
 
@@ -697,7 +699,6 @@ Accessibility, Best Practices and SEO are 100 / 100 / 100 before and after (Best
 
 ### Not done
 
-- **Boards behind a member's wall.** The roll call hangs its posters on a notice board of planks; a member's prints hang on the bare night. A wall of boards behind the right column would make the page's name true, but it changes every print's surroundings (replies, the editor, the pin slot) and wants a look at real walls with real prints first.
 - **The world's HUD on a wide screen** keeps three worded buttons; the phone's drawn slots read better. Left as the design doc decided it.
 
 ### Feature ideas noticed
@@ -708,6 +709,6 @@ Accessibility, Best Practices and SEO are 100 / 100 / 100 before and after (Best
 
 ### Next pass
 
-1. Boards behind a member's wall, measured against real walls (see Not done).
-2. Take a new still with the map sync, as Part 5 asked; its lights come off the still and the recolour was by hand.
-3. The crew page's "Á töflunni" tab at 1440 is a plain grid of cards under the stars; it could hang on the same board the posters do.
+1. Take a new still with the map sync, as Part 5 asked; its lights come off the still and the recolour was by hand.
+2. Look at the member's board with real walls: a wall of thirty prints is a long board, and the posts run its whole length; a cap or a second board every so often may read better.
+3. The editor's and the replies' controls on a print were drawn for paper on the night; check their contrast and spacing on the board's wood where they stand off the paper.
