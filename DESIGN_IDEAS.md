@@ -707,8 +707,11 @@ Accessibility, Best Practices and SEO are 100 / 100 / 100 before and after (Best
 - **A shooting star** in the hero's night sky now and then, where the stars already are.
 - The **wall's note for the owner could offer the pin slot itself** (focus it on press), one step past an empty state.
 
+### Checked after
+
+A staged wall of twelve prints (notes, single photos, pairs, replies), as a visitor and signed in as its owner (a local `CREW_TOKEN_` in `.env.local`), at 1440 and 390: the board runs the wall's whole length with its posts and reads as one wall, so no cap or break was added; the pin slot, the welcome line, the editor and the replies all stand on paper, nothing of theirs on the wood, so nothing there needed a change. Two small things came out of it: a print's date was still held back until the page had hydrated (a raw `2026-10-05` for a frame, then the written date), which the hand-written date no longer needs, and the wall's stats note carried its margin inline; both fixed.
+
 ### Next pass
 
-1. Take a new still with the map sync, as Part 5 asked; its lights come off the still and the recolour was by hand.
-2. Look at the member's board with real walls: a wall of thirty prints is a long board, and the posts run its whole length; a cap or a second board every so often may read better.
-3. The editor's and the replies' controls on a print were drawn for paper on the night; check their contrast and spacing on the board's wood where they stand off the paper.
+1. Take a new still with the map sync, as Part 5 asked; its lights come off the still and the recolour was by hand. The sandbox cannot reach the Blob store or the live site, so it waits for the owner's machine.
+2. Live with the boards and the kindling lanterns for a week before touching them again; the next pass should start from what the crew says, not from another audit.
