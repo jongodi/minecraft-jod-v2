@@ -154,7 +154,7 @@ export default function Wall({ initial, places, justSignedIn = false }: Props) {
 
         {welcome && isOwner && (
           <p className="w-welcome" role="status">
-            Velkomin á vegginn þinn, {username}. Þetta tæki man eftir þér í eitt ár.
+            Þetta er veggurinn þinn, {username}. Þetta tæki man eftir þér í eitt ár.
             {!hasPassword && <> <button type="button" className="b-link w-welcome__act" onClick={() => setShowPw(true)}>Veldu þér lykilorð</button> til að komast líka inn á öðrum tækjum.</>}
             <button type="button" onClick={() => setWelcome(false)} aria-label="Loka"><CloseIcon /></button>
           </p>
