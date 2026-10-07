@@ -1995,7 +1995,36 @@ html.is-map-full { overflow: hidden; }
   animation: b-flicker var(--dur-lantern) ease-in-out infinite;
   pointer-events: none;
 }
-.b-foot__fire { display: block; padding: 0; border: 0; background: none; cursor: pointer; }
+/* The fire and the duel's sign in one row, the sign a short plank on a post
+   planted in the ground beside the stones, the word in lantern light since
+   the fire can be pressed. It used to be a tag that showed under a pointer,
+   which a thumb never has. The fire keeps the middle of the band: a blank
+   sign of the same width stands on its other side, unseen. */
+.b-foot__fire { display: flex; align-items: flex-end; gap: var(--sp-2); padding: 0; border: 0; background: none; cursor: pointer; }
+.b-foot__fire::before { content: 'Einvígi'; visibility: hidden; }
+.b-foot__fire::before, .b-foot__sign { padding: var(--px) var(--sp-2); font-family: var(--font-data); font-size: var(--fs-data); letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; }
+.b-foot__fire::before { margin-bottom: calc(var(--px) * 17); }
+.b-foot__sign {
+  position: relative;
+  margin-bottom: calc(var(--px) * 17);
+  background: var(--plank);
+  clip-path: var(--notch);
+  box-shadow: inset 0 0 0 var(--px) rgba(21, 16, 13, 0.35);
+  color: var(--lantern);
+  text-shadow: 0 var(--px) 0 var(--wood-dark);
+  transition: color var(--dur-1) var(--ease-out);
+}
+.b-foot__sign::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: calc(50% - var(--px) * 1.5);
+  width: calc(var(--px) * 3);
+  height: calc(var(--px) * 17);   /* down to the ground the stones stand on */
+  background: var(--plank-up);
+}
+.b-foot__fire:focus-visible .b-foot__sign { color: var(--paper); }
+@media (hover: hover) { .b-foot__fire:hover .b-foot__sign { color: var(--paper); } }
 .b-foot__fire:focus-visible { outline: none; }
 .b-foot__fire:focus-visible .b-fire { outline: var(--px) solid var(--lantern); outline-offset: var(--px); }
 .b-foot__fire:focus-visible .b-fire { transform: translateY(calc(var(--px) * -1)); }

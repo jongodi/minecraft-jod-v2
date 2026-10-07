@@ -53,8 +53,10 @@ function Footer({ season: initial }: { season?: Season } = {}) {
           </Link>
 
           <div className="b-foot__camp">
-            <button type="button" className="b-foot__fire b-tip" onClick={() => setDuel(true)} aria-haspopup="dialog" aria-label="Einvígi: prófaðu viðbragðstímann" data-tip="Einvígi">
+            {/* the way into the duel: a short sign planted in the ground by the fire, so a thumb finds it without a pointer's tag */}
+            <button type="button" className="b-foot__fire" onClick={() => setDuel(true)} aria-haspopup="dialog" aria-label="Einvígi: prófaðu viðbragðstímann">
               <Campfire stones />
+              <span className="b-foot__sign" aria-hidden="true">Einvígi</span>
             </button>
             <YuleLad season={season} spot="fire" />
           </div>
