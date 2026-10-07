@@ -715,3 +715,40 @@ A staged wall of twelve prints (notes, single photos, pairs, replies), as a visi
 
 1. Take a new still with the map sync, as Part 5 asked; its lights come off the still and the recolour was by hand. The sandbox cannot reach the Blob store or the live site, so it waits for the owner's machine.
 2. Live with the boards and the kindling lanterns for a week before touching them again; the next pass should start from what the crew says, not from another audit.
+
+---
+
+## Part 7. A deeper look at the layout and the design, against the canon
+
+Asked for on 7 October 2026, after Part 6: a deeper review of the layout, the design and the structure, more immersive and more itself, with changes made where they were clear and the rest proposed. Read against `smekkur`, the owner's design canon, whose JOÐcraft section says: keep the sunset hero, the map is the focal point, at most three doors, less content-heavy and more immersive, visual moments from Minecraft's own UI, Lighthouse 95 or better. The screens Part 6 had not opened were opened this time: the painted map, a postcard, the album, the lightbox, the duel and the room's posters, at 1440 and 390.
+
+### The check
+
+1. **Intent and the swap test.** Every prominent choice on the page names its reason: the strata, the lanterns for what can be pressed, the paper for what was posted, the hotbar, the rooms rising over the world. Nothing here would survive a palette swap into another project. Passes.
+2. **Accent discipline.** Amber is on what can be pressed and nowhere else; green says the server is on; red is the posters' ink. Passes.
+3. **Type as structure.** The name cut from the strata anchors the hero; the slab, the text face and the bitmap face each have a job. Passes.
+4. **The project's world.** Navigation (doors, a hotbar), motifs (lanterns, planks, paper, crates, posters), motion (stepped, pixel-snapped) all come from the game and the evening. Passes.
+5. **Rejected list.** No pulsing status dot (the lanterns flicker because they are lanterns; the dot by "inni núna" is still). No glow borders, no gradient blobs, no sidebar layout, no spinners. No em or en dashes in the copy. One hit: the wall greeted its owner with "Velkomin á vegginn þinn", the marketing opener the canon turns away. Fixed: "Þetta er veggurinn þinn".
+6. **Data first.** The lantern's words, the counts and the posters' numbers are the crispest things on their surfaces. Passes.
+7. **Phone, no hover.** One hit: the way into the duel was a paper tag that showed only under a pointer, so on a phone the fire was a picture. Fixed, below.
+8. **One thing that reads wrong on its own terms.** The painted map's sea was two blues in a strict checkerboard: the universal mark for "transparent, nothing drawn here" in every drawing tool, laid under the one hand-drawn thing on the site. Fixed, below.
+
+### Built
+
+- **The duel's sign.** A short plank on a post planted in the ground beside the fire's stones, "Einvígi" in lantern light, so a thumb finds the duel without a pointer's tag. A blank twin of the sign stands unseen on the fire's other side, so the fire keeps the middle of the band. `compare-1440-campfire.webp`, `campfire-sign-390.webp`.
+- **The sea on the painted map** is drawn as the game's map item draws water: flat, with darker blocks one in three, staggered down the rows. `compare-1440-sea.webp`.
+- **The wall's first line** for a newly signed-in owner says whose wall it is, without the welcome.
+
+### Proposed, not built
+
+Each of these touches something the canon protects or a decision the owner made after living with a pass, so they are put here with their reasons rather than shipped.
+
+1. **The hero's lantern as a signpost.** The one surface on the first screen that still reads as UI is the plate behind the server's lantern: a dark box on the sunset. The world below already has the idiom for words over a bright scene: a lantern on a post, a sign of plank, a tag of paper. The hero's lantern could hang from the same kind of post, its state burnt into a sign and its count and version on paper tags. `mock-hero-signpost-1440.webp` and `mock-hero-signpost-390.webp` show it beside the plate, mocked in CSS over the live page. For: the first screen would have nothing on it that is not from the world, and the hero and the world would share one vocabulary. Against: three pieces where there was one; the plate was chosen in Part 4 for exactly its calm, and the hero is protected. My call: the plate stays unless the owner wants the first screen to carry more of the world; the mock is here so the choice can be made from a picture. Principle: the project's world supplies the vocabulary (canon 7), weighed against restraint (canon 2).
+2. **The world's tools on a wide screen as slots.** The phone's drawn slots read better than worded buttons and were kept; the desktop frame's buttons came back by the owner's own decision in Part 4. Left exactly as decided. If the frame is ever reopened, the slots with their words under them on hover is the version to try.
+3. **The posters as the room's first thing.** The crew's room is named for its wanted board and opens on the portraits and the fire; the board is a scroll away. The order was chosen on purpose (the next night is the most pressing thing in the room) and it holds, but if the room ever feels like two rooms, the posters could take the plank's own row as a rail of thumbnails, with the fire under them.
+4. **Loading as blank posters.** The room says "sæki tölurnar…" in a line while the stats come; the roll call already shows blank posters with the names on them and fills them in. The room could do the same with three blank posters on the rail, which is what the game does when a chunk has not loaded: the shape first, the detail after. Small, worth doing when the stats route is next touched.
+5. **The album as a plank wall.** The frames hang on the dark of the scrim; everything else that hangs now hangs on planks. The album is the one place a board was left off on purpose, so the pictures are the only light in it; that reason still stands, so it stays.
+
+### Measured
+
+Typecheck, lint, 243 tests and a clean production build. The three changes are a pattern in an SVG, a line of copy and one sign; First Load JS and the stylesheets are within 100 bytes of Part 6. No horizontal overflow at 390 or 1440, and the console is clean.
