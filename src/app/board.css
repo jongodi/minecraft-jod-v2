@@ -194,8 +194,11 @@
 @media (max-width: 759px) { .b-nightsky__moon { width: 2.25rem; height: 2.25rem; top: 5rem; } }
 @media (prefers-reduced-motion: reduce) { .b-nightsky__moon { animation: none; } }
 /* off the trail (404 and a page that broke): the words stand alone under a dark lantern */
-.b-stray { display: grid; align-content: center; justify-items: start; gap: var(--sp-4); min-height: 70svh; }
-.b-stray .b-lantern.b-stray__lantern { width: 3rem; height: 4.5rem; margin-bottom: var(--sp-2); }
+/* The dark lantern hangs in the night sky (NightSky.tsx, the same one the
+   crew's pages stand under), and the words stand on the ground under the
+   ridge: the sky's height less the ridge's, less the lantern. */
+.b-stray { --sky: clamp(19rem, 14rem + 12vw, 26rem); --ridge: clamp(3.5rem, 8vw, 6rem); display: grid; align-content: start; justify-items: start; gap: var(--sp-4); min-height: 70svh; padding-top: calc(var(--sky) - var(--ridge) - 4.5rem - var(--sp-5)); }
+.b-stray .b-lantern.b-stray__lantern { width: 3rem; height: 4.5rem; margin-bottom: calc(var(--ridge) + var(--sp-2)); }
 .b-stray__actions { display: flex; flex-wrap: wrap; gap: var(--sp-3); margin-top: var(--sp-3); }
 .b-page__night { margin-top: var(--sp-4); }
 .b-page__head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--sp-4) var(--sp-6); margin: var(--sp-4) 0 var(--sp-6); }
