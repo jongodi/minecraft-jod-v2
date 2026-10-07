@@ -232,7 +232,8 @@
 @media (max-width: 399px) { .b-btn { white-space: normal; text-align: center; } }
 .b-btn:focus-visible { background: var(--lantern); color: var(--night); }
 @media (hover: hover) { .b-btn:hover { background: var(--lantern); color: var(--night); } }
-.b-btn:active { transform: translateY(1px); }
+/* pressed: the button sinks one pixel of the art, as a block does under a hand */
+.b-btn:active { transform: translateY(var(--px)); }
 .b-btn[disabled] { opacity: 0.45; cursor: default; }
 .b-btn--solid { background: var(--lantern); color: var(--night); box-shadow: var(--bevel); }
 .b-btn--solid:active { box-shadow: var(--bevel-in); }
@@ -289,7 +290,7 @@
 }
 .b-copy__btn:focus-visible { background: var(--lantern); color: var(--night); box-shadow: var(--bevel); }
 @media (hover: hover) { .b-copy__btn:hover { background: var(--lantern); color: var(--night); box-shadow: var(--bevel); } }
-.b-copy__btn:active { transform: translateY(1px); }
+.b-copy__btn:active { transform: translateY(var(--px)); }
 .b-copy__btn svg { width: 1rem; height: 1rem; shape-rendering: crispEdges; flex-shrink: 0; }
 .b-copy__addr { white-space: nowrap; }
 @media (min-width: 480px) { .b-copy__btn { font-size: var(--fs-data-lg); } }
@@ -377,7 +378,7 @@
 /* ─── the lantern (also the status readout) ───────────────────── */
 .b-lantern { position: relative; display: inline-block; width: 1.5rem; height: 2.25rem; color: var(--text-faint); }
 .b-lantern svg { width: 100%; height: 100%; shape-rendering: crispEdges; display: block; }
-.b-lantern__glass { fill: var(--dusk); }
+.b-lantern__glass { fill: var(--dusk); transition: fill var(--dur-1) var(--ease-out); }
 .b-lantern__flame { fill: transparent; }
 .b-lantern.is-lit { color: var(--tc-white); }
 .b-lantern.is-lit .b-lantern__glass { fill: var(--lantern); }
@@ -520,6 +521,16 @@
 .b-door .b-lantern { width: 1.1rem; height: 1.65rem; }
 @media (hover: hover) { .b-door:hover { color: var(--lantern); } }
 .b-door.is-here { color: var(--lantern); border-bottom-color: var(--lantern); }
+/* A lantern reached for answers the hand: the glass of a dark door's lantern
+   takes the deeper amber and a small flame shows, short of lit, since one
+   door is lit at a time, the one the visitor is behind. For the pointer that
+   hovers and for the keyboard; a thumb has the slot's frame. */
+@media (hover: hover) {
+  .b-door:not(.is-here):hover .b-lantern__glass, .b-slot:not(.is-here):hover .b-lantern__glass { fill: var(--lantern-deep); }
+  .b-door:not(.is-here):hover .b-lantern__flame, .b-slot:not(.is-here):hover .b-lantern__flame { fill: var(--sun); }
+}
+.b-door:not(.is-here):focus-visible .b-lantern__glass, .b-slot:not(.is-here):focus-visible .b-lantern__glass { fill: var(--lantern-deep); }
+.b-door:not(.is-here):focus-visible .b-lantern__flame, .b-slot:not(.is-here):focus-visible .b-lantern__flame { fill: var(--sun); }
 
 /* The server's lantern in the bar, on every page: the lantern and a word or a
    count beside it, in the chat colours the hero's lantern uses. One width in
