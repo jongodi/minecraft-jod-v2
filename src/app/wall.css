@@ -75,7 +75,26 @@
 .w-poster__skin img { width: 100%; aspect-ratio: 1 / 2; image-rendering: pixelated; object-fit: contain; object-position: center bottom; background: var(--paper-2); }
 .w-poster__body { min-width: 0; }
 .w-poster__top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: var(--sp-3) var(--sp-5); }
-.w-poster__name { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-2xl); line-height: 1; overflow-wrap: anywhere; color: var(--ink); }
+/* The name is the poster's loudest line and is never broken: it is set as
+   large as the slab allows, and no larger than its column takes it whole.
+   --name-em is its width in the slab (name-width.ts); --name-room is the
+   column it stands in, measured on the poster (a size container). A name
+   nobody could play under would still not break: at the floor it ends in an
+   ellipsis instead. */
+.w-poster { --name-room: calc(100cqi - 6.5rem); }              /* beside a phone's skin: 5.5rem and the gap */
+@media (min-width: 720px) { .w-poster { --name-room: calc(100cqi - 10.5rem); } }   /* beside the skin's column: 8.5rem and the gap */
+@media (min-width: 1024px) { .w-poster { --name-room: 100cqi; } }                   /* the portrait poster: the whole width */
+.w-poster__name {
+  max-width: 100%;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(var(--fs-md), calc(var(--name-room) / var(--name-em, 6)), var(--fs-2xl));
+  line-height: 1;
+  white-space: nowrap;
+  overflow-x: clip;          /* sideways only: a g or a j still hangs below a line one em tall */
+  text-overflow: ellipsis;
+  color: var(--ink);
+}
 .w-poster__bounty { margin-top: var(--sp-2); display: flex; align-items: baseline; gap: var(--sp-2); }
 .w-poster__bounty .b-poster__reward { margin-top: 0; }
 .w-poster__bounty .b-poster__val { margin-top: 0; font-size: var(--fs-data); }

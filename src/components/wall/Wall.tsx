@@ -2,11 +2,12 @@
 
 // A member's wall: their wanted poster at the top, the pin slot under it
 // when it is their own, and everything they have pinned, newest first.
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import type { CrewProfile, CrewEntry } from '@/lib/crew-types';
 import type { SignWood } from '@/lib/sign-wood';
+import { nameEm } from '@/lib/name-width';
 import { LIMITS, allPhotos, coverPhoto, sameUser } from '@/lib/crew-types';
 import type { PlayerStat, StatsResponse } from '@/app/api/stats/route';
 import { formatDate } from '@/lib/format';
@@ -404,7 +405,7 @@ export default function Wall({ initial, places, initialStats = null, justSignedI
               <div>
                 {/* the masthead says Eftirlýst; the kicker says what of */}
                 <div className="b-paper__kicker">JOÐ-félagi</div>
-                <h1 className="w-poster__name">{username}</h1>
+                <h1 className="w-poster__name" style={{ '--name-em': nameEm(username) } as CSSProperties}>{username}</h1>
                 {stats && stats.playTimeHours > 0 && (
                   <div className="w-poster__bounty"><span className="b-poster__reward">Verðlaun</span> <span className="b-poster__val">{STAT_TABS[0].unit(stats.playTimeHours)}</span></div>
                 )}
