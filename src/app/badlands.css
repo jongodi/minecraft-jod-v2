@@ -481,7 +481,12 @@
 .b-bar__mark { display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2); min-width: var(--tap); min-height: var(--tap); font-family: var(--font-display); font-size: var(--fs-lg); color: var(--paper); text-decoration: none; transition: background var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease-out); }
 .b-bar__mark svg { width: 1.5rem; height: 1.5rem; shape-rendering: crispEdges; }
 @media (hover: hover) { .b-bar__mark:hover { color: var(--lantern); } }
-.b-bar__addr { display: inline-flex; align-items: center; min-width: 0; min-height: var(--tap); padding: 0; font-family: var(--font-data); font-size: var(--fs-data); color: var(--paper); transition: color var(--dur-2) var(--ease-out); }
+.b-bar__addr { display: inline-flex; align-items: center; min-width: 0; min-height: var(--tap); padding: 0; font-family: var(--font-data); font-size: var(--fs-data); color: var(--paper); transition: color var(--dur-2) var(--ease-out), opacity var(--dur-2) var(--ease-out), visibility var(--dur-2); }
+/* Over the sunset the hero's own button says the address, large, a few lines
+   under the bar; the bar's tag said it again in a smaller voice at the top
+   right of the first screen. It waits for the plank, as the bar's lantern
+   does, and keeps its width meanwhile so nothing beside it moves. */
+.b-bar--home:not(.is-solid) .b-bar__addr { visibility: hidden; opacity: 0; }
 .b-bar__tag { display: inline-flex; align-items: center; gap: var(--sp-2); min-width: 0; padding-inline: var(--sp-2); }
 .b-bar__tag svg { flex-shrink: 0; width: 1rem; height: 1rem; color: var(--lantern); }
 .b-bar__ip { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
