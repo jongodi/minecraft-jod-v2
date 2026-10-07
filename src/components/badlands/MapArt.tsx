@@ -50,10 +50,14 @@ export interface MapArtProps {
 export function MapDefs() {
   return (
     <defs>
-      <pattern id="jWater" width="40" height="40" patternUnits="userSpaceOnUse">
-        <rect width="40" height="40" fill="var(--map-water)" />
+      {/* the sea as the game's map item draws it: flat, with a scatter of darker
+          blocks one in three, staggered down the rows; two tones in a strict
+          checkerboard read as a drawing tool's "nothing here" */}
+      <pattern id="jWater" width="60" height="60" patternUnits="userSpaceOnUse">
+        <rect width="60" height="60" fill="var(--map-water)" />
         <rect x="0" y="0" width="20" height="20" fill="var(--map-water-2)" />
-        <rect x="20" y="20" width="20" height="20" fill="var(--map-water-2)" />
+        <rect x="40" y="20" width="20" height="20" fill="var(--map-water-2)" />
+        <rect x="20" y="40" width="20" height="20" fill="var(--map-water-2)" />
       </pattern>
       <pattern id="jLandTex" width="60" height="60" patternUnits="userSpaceOnUse">
         <rect x="20" y="0" width="20" height="20" fill="var(--map-land-2)" />
