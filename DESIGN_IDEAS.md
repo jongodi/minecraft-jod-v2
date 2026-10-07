@@ -752,3 +752,12 @@ Each of these touches something the canon protects or a decision the owner made 
 ### Measured
 
 Typecheck, lint, 243 tests and a clean production build. The three changes are a pattern in an SVG, a line of copy and one sign; First Load JS and the stylesheets are within 100 bytes of Part 6. No horizontal overflow at 390 or 1440, and the console is clean.
+
+### Built after the owner's approval
+
+The first and fourth proposals were approved on the same day and built:
+
+- **The hero's lantern as a signpost.** The lantern hangs by a chain from the arm of a post planted in the title card, with a foot block of the ground; the server's state is a word burnt into a plank sign, and the count, the heads of who is in, the version and a night planned are paper tags under it. Every line still reads off wood or paper wherever on the sky it falls, which is what the plate was for. The post stands a little above the arm and runs down past the last tag, so it grows with a night planned and is short when the lantern is dark. On a phone held upright the post stands at the gutter's edge with a smaller lantern; on its side the words keep the ground band and there is no post. `hero-signpost-1440.webp`, `hero-signpost-390.webp`, and the dark lantern in `hero-signpost-dark-1440.webp`; the plate it replaced is the left half of `mock-hero-signpost-1440.webp`.
+- **Blank posters while the numbers come.** Three torn posters on the room's rail with the masthead, an empty frame and the lines where the name, the alias, the charge and the bounty will print, the seal waiting faded. `room-loading-1440.webp`.
+
+Lighthouse mobile on `/` after, two runs: 97 and 97, LCP 2.4 and 2.5 s, TBT 140 and 80 ms, CLS 0, within the 95 the canon asks for. Typecheck, lint, 243 tests and a clean build. The approval is recorded in the canon's verdict log.
