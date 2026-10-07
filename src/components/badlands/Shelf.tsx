@@ -6,6 +6,7 @@ import { Fragment, memo, useEffect, useMemo, useRef, useState } from 'react';
 import { DATAPACKS } from '@/data/datapacks';
 import type { PublicPack } from '@/lib/datapacks-store';
 import PixelGlyph from './PixelGlyph';
+import { Seal } from './Bits';
 import { glyphFor } from './packGlyphs';
 import { plural } from '@/lib/format';
 import { useReducedMotionPref } from './hooks';
@@ -103,7 +104,9 @@ function Shelf({ version }: { version: string | null }) {
           <div className="b-hang">
           <div ref={counter} className={`b-counter b-paper${shown ? ' is-reading' : ''}`}>
             <div className="b-counter__slip" key={shown?.id ?? 'none'}>
-              <span className="b-counter__glyph">{shown && <PixelGlyph rows={glyphFor(shown)} />}</span>
+              {shown
+                ? <span className="b-counter__glyph"><PixelGlyph rows={glyphFor(shown)} /></span>
+                : <Seal className="b-counter__glyph b-counter__glyph--seal" />}
               {shown ? (
                 <span className="b-counter__text">
                   <span className="b-counter__name">{shown.name}</span>

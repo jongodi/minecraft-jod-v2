@@ -171,7 +171,8 @@
 @keyframes b-slip { from { opacity: 0; transform: translateX(calc(var(--px) * -6)); } to { opacity: 1; transform: none; } }
 @keyframes b-land { from { opacity: 0; transform: translateY(calc(var(--px) * -4)); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .b-counter__slip, .b-counter__glyph, .b-counter__text { animation: none; } }
-.b-counter__glyph:empty { background: repeating-linear-gradient(45deg, var(--paper-2) 0 4px, var(--paper) 4px 8px); }
+/* nothing picked: the store's own seal where a glyph would stand, as a slip is stamped before it is written on */
+.b-counter__glyph--seal { padding: 0; background: none; box-shadow: none; }
 .b-counter__glyph svg { width: 100%; height: 100%; display: block; }
 .b-counter__text { display: grid; gap: var(--px); min-width: 0; }
 .b-counter__name { font-weight: 600; font-size: var(--fs-md); line-height: 1.3; color: var(--ink); }
