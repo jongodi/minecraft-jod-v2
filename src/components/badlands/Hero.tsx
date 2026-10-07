@@ -3,8 +3,7 @@
 import { memo } from 'react';
 import Mesa from './Mesa';
 import { Moon, Sun } from './Bits';
-import CopyAddress from './CopyAddress';
-import StatusLantern from './StatusLantern';
+import ServerRow from './ServerRow';
 import { NightLine } from './NightLine';
 import type { ServerState } from './hooks';
 import type { Season } from '@/lib/season';
@@ -27,8 +26,7 @@ function Hero({ server, season, nights }: { server: ServerState; season: Season;
           among the mesas, the far ridge behind its letters and the near ones
           in front of their feet, and rises out of them as the evening falls
           (the ridges sink with the scroll; badlands.css). What a player needs
-          is above it, on the dark of the upper sky: one line of what this is,
-          then the address and the server's lantern side by side. */}
+          is above it, on the dark of the upper sky: the server's row. */}
       <div className="b-wrap b-hero__stage">
         {/* the counters of the O and the Ð are windows, lit while someone is in (badlands.css) */}
         <h1 className={`b-hero__mark${home ? ' is-home' : ''}`}>
@@ -41,20 +39,14 @@ function Hero({ server, season, nights }: { server: ServerState; season: Season;
         {/* a phone's sun: in the open sky between the words and the name, so no line above it ever crosses it (badlands.css) */}
         <div className="b-hero__sun" aria-hidden="true"><Sun /></div>
         <div className="b-hero__lead">
-          {/* one line says what this is and who it is for; the resource pack is the shelf's to mention */}
-          <p className="b-hero__sub">Minecraft-heimur átta vina, frá sumrinu 2024. Aðgangur með boði.</p>
-          <div className="b-hero__action">
-            <CopyAddress />
-            {/* The server's lantern as a signpost planted in the title card: the
-                lantern hangs by a chain from the arm of a post, its state on a
-                plank sign and its count and version on paper tags, the same
-                idiom the world's own lantern uses (badlands.css). */}
-            <div className="b-hero__side">
-              <span className="b-hero__post" aria-hidden="true" />
-              <StatusLantern server={server} />
-              <NightLine initial={nights} />
-              <YuleLad season={season} spot="hero" />
-            </div>
+          {/* What a player needs, in the shape the game shows a server: the row
+              from the multiplayer screen, with the address to copy, the sentence
+              as its message of the day, the count and the bars; the state in
+              words under it. Then the next play night. */}
+          <ServerRow server={server} />
+          <div className="b-hero__under">
+            <NightLine initial={nights} />
+            <YuleLad season={season} spot="hero" />
           </div>
         </div>
       </div>

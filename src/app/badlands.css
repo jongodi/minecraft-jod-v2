@@ -269,40 +269,68 @@
 /* a pixel icon inside a label button: one text line tall, on the grid */
 .b-btn__icon { width: 0.75rem; height: 0.75rem; flex-shrink: 0; }
 
-/* ─── the copy action: the pixel address on a button, and a stamp ─ */
-.b-copy { position: relative; display: inline-grid; justify-items: start; }
-.b-copy__btn {
+/* ─── the server row: the game's own multiplayer entry ──────────────
+   In the game's server list every server is one row: its icon, its name,
+   its message of the day, and at the right the player count and the
+   connection's bars. Every player reads that row before joining, so the
+   hero says what it has to say in exactly that shape: the mark as the
+   icon, the address as the name (the one thing to press: pressing the row
+   copies it, as the game's row is what you press to join), the sentence as
+   the message, the count and the bars at the right. Dark as the game's rows
+   are, with the game's thin light line round the one chosen. The state in
+   words is a line under it, read and never pressed. */
+.b-hero__server { display: grid; justify-items: start; gap: var(--sp-3); width: min(100%, 39rem); }
+.b-row { position: relative; display: grid; width: 100%; }
+.b-row__btn {
   position: relative;
-  display: inline-flex;
-  align-items: center;
+  display: grid;
+  grid-template-columns: 4rem minmax(0, 1fr) auto;
+  align-items: start;
   gap: var(--sp-3);
-  min-height: var(--tap);
-  padding: var(--sp-2) var(--sp-4);
-  border: var(--px) solid var(--lantern);
-  border-radius: var(--radius);
-  background: var(--veil);
-  color: var(--lantern);
-  font-family: var(--font-data);
-  font-size: var(--fs-data);
-  line-height: 1;
+  width: 100%;
+  padding: var(--sp-2);
   text-align: left;
-  transition: background var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
+  color: var(--paper);
+  background: var(--pane);
+  clip-path: var(--notch);
+  box-shadow: inset 0 0 0 var(--px) rgba(232, 220, 196, 0.18);
+  transition: box-shadow var(--dur-1) var(--ease-out);
 }
-.b-copy__btn:focus-visible { background: var(--lantern); color: var(--night); box-shadow: var(--bevel); }
-@media (hover: hover) { .b-copy__btn:hover { background: var(--lantern); color: var(--night); box-shadow: var(--bevel); } }
-.b-copy__btn:active { transform: translateY(var(--px)); }
-.b-copy__btn svg { width: 1rem; height: 1rem; shape-rendering: crispEdges; flex-shrink: 0; }
-.b-copy__addr { white-space: nowrap; }
-@media (min-width: 480px) { .b-copy__btn { font-size: var(--fs-data-lg); } }
-/* the answer to a press: a rubber stamp struck across the button's corner, in
+.b-row__btn:focus-visible { outline: none; box-shadow: inset 0 0 0 var(--px) var(--paper), inset 0 0 0 calc(var(--px) * 2) var(--night); }
+@media (hover: hover) { .b-row__btn:hover { box-shadow: inset 0 0 0 var(--px) var(--paper), inset 0 0 0 calc(var(--px) * 2) var(--night); } }
+.b-row__btn:active { transform: translateY(var(--px)); }
+/* the icon: the mark at 64 px, two screen pixels to each of its 32, as the game draws a server's icon */
+.b-row__icon { display: block; width: 4rem; height: 4rem; }
+.b-row__icon svg { width: 100%; height: 100%; display: block; }
+.b-row__text { display: grid; gap: var(--sp-1); min-width: 0; padding-top: var(--px); }
+/* the name line is the address, lit, since it is what the press does; the copy glyph says how */
+.b-row__name { display: inline-flex; align-items: center; gap: var(--sp-2); font-family: var(--font-data); font-size: var(--fs-data); line-height: 1.25; letter-spacing: 0.04em; color: var(--lantern); overflow-wrap: anywhere; }
+.b-row__name svg { width: 0.875rem; height: 0.875rem; flex-shrink: 0; shape-rendering: crispEdges; }
+@media (hover: hover) { .b-row__btn:hover .b-row__name { color: var(--paper); } }
+.b-row__btn:focus-visible .b-row__name { color: var(--paper); }
+.b-row__motd { font-size: var(--fs-sm); line-height: 1.45; color: var(--tc-white); }
+.b-row__ping { display: grid; justify-items: end; align-content: start; gap: var(--sp-1); padding-top: var(--px); }
+.b-row__count { font-family: var(--font-data); font-size: var(--fs-data); line-height: 1.25; color: var(--paper); white-space: nowrap; }
+/* the connection's bars: green when the server answers, red when it is out, amber and filling one by one while it wakes, as the game's do while it pings */
+.b-row__bars { display: block; width: 1.25rem; height: 1rem; shape-rendering: crispEdges; color: var(--text-faint); }
+.is-on .b-row__bars { color: var(--online); }
+.is-off .b-row__bars { color: var(--tc-red); }
+.is-kindling .b-row__bars { color: var(--lantern); }
+.is-kindling .b-row__bar { opacity: 0.3; animation: b-ping 1.5s steps(1, end) infinite; }
+.is-kindling .b-row__bar:nth-child(2) { animation-delay: 0.3s; }
+.is-kindling .b-row__bar:nth-child(3) { animation-delay: 0.6s; }
+.is-kindling .b-row__bar:nth-child(4) { animation-delay: 0.9s; }
+.is-kindling .b-row__bar:nth-child(5) { animation-delay: 1.2s; }
+@keyframes b-ping { 0%, 19% { opacity: 1; } 20%, 100% { opacity: 0.3; } }
+@media (prefers-reduced-motion: reduce) { .is-kindling .b-row__bar { animation: none; opacity: 1; } }
+/* the answer to a press: a rubber stamp struck across the row's corner, in
    the red of the strata on paper, the way a notice is marked done */
-.b-copy__stamp {
+.b-row__stamp {
   position: absolute;
-  right: -0.6rem;
+  left: 1.25rem;
   top: -0.9rem;
   padding: 0.15rem 0.5rem;
   border: var(--px) solid var(--tc-red);
-  border-radius: var(--radius);
   color: var(--tc-red);
   background: var(--paper);
   font-family: var(--font-display);
@@ -313,15 +341,28 @@
   opacity: 0;
   pointer-events: none;
 }
-.b-copy.is-copied .b-copy__stamp { animation: b-stamp var(--dur-3) var(--ease-out) forwards; }
+.b-row.is-copied .b-row__stamp { animation: b-stamp var(--dur-3) var(--ease-out) forwards; }
 @keyframes b-stamp {
   0%   { transform: rotate(-8deg) scale(1.8); opacity: 0; }
   60%  { transform: rotate(-8deg) scale(0.96); opacity: 1; }
   100% { transform: rotate(-8deg) scale(1); opacity: 1; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .b-copy.is-copied .b-copy__stamp { animation: none; transform: rotate(-8deg); opacity: 1; }
+  .b-row.is-copied .b-row__stamp { animation: none; transform: rotate(-8deg); opacity: 1; }
 }
+/* the state in words under the row, on the dark of the upper sky with the
+   game's hard pixel shadow: the word in the bitmap face in the chat's
+   colours, then who is in, then the version. Read, never pressed. */
+.b-hero__state { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-1) var(--sp-2); font-size: var(--fs-sm); line-height: 1.5; color: var(--tc-white); text-shadow: 0 var(--px) 0 var(--night); }
+.b-hero__word { font-family: var(--font-data); font-size: var(--fs-data); color: var(--paper); }
+.is-on .b-hero__word { color: var(--online); }
+.is-kindling .b-hero__word { color: var(--lantern); }
+.is-off .b-hero__word { color: var(--tc-white); }
+.b-hero__sep { color: var(--text-faint); }
+.b-hero__heads { display: inline-flex; gap: var(--px); margin-inline-start: var(--sp-1); vertical-align: -0.2em; }
+.b-hero__heads img { width: 1rem; height: 1rem; image-rendering: pixelated; box-shadow: 0 0 0 1px var(--night); }
+/* who was in when the server last burned: faded the way an old tintype fades, brown, never grey */
+.b-hero__heads--then img { filter: sepia(0.7) brightness(0.7); }
 
 /* ─── the seal: Ð in red wax (Bits.tsx, Seal) ─────────────────────
    48 px at the least, on the 16-unit grid in whole multiples (3 px a unit);
@@ -408,40 +449,6 @@
   pointer-events: none;
 }
 @keyframes b-kindle { from { opacity: 1; } to { opacity: 0.3; } }
-
-/* The server's lantern hangs in the sky beside the address, with no panel
-   round it: its words wear the game's hard pixel shadow, as every line of the
-   hero does, over the dark of the upper sky. One width and one height for
-   every state the server can be in, so nothing beside it moves when the word
-   changes. A press opens the crew's room; the word underlines to say so. */
-.b-status {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
-  gap: var(--sp-3) var(--sp-4);
-  padding-block: var(--sp-2);
-  color: var(--text-soft);
-  text-decoration: none;
-  text-shadow: 0 var(--px) 0 var(--night);
-  width: min(22rem, 100%);
-  min-height: 5.5rem;
-  align-content: center;
-}
-.b-status:focus-visible .b-status__word { text-decoration: underline var(--px); text-underline-offset: 0.35em; }
-@media (hover: hover) { .b-status:hover .b-status__word { text-decoration: underline var(--px); text-underline-offset: 0.35em; } }
-.b-status .b-lantern { width: 2.75rem; height: 4.1rem; }
-.b-status__text { display: grid; gap: var(--px); min-width: 0; }
-.b-status__word { font-family: var(--font-data); font-size: var(--fs-data); color: var(--paper); line-height: 1.3; }
-.b-status.is-on .b-status__word { color: var(--online); }
-.b-status.is-off .b-status__word { color: var(--tc-white); }
-.b-status.is-kindling .b-status__word { color: var(--lantern); }
-.b-status__row { font-size: var(--fs-sm); color: var(--tc-white); line-height: 1.5; }
-.b-status__row b { font-family: var(--font-data); font-weight: 400; font-size: var(--fs-data); color: var(--paper); }
-.b-status__meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-3); margin-top: var(--sp-1); color: var(--tc-white); }
-.b-status__heads { display: inline-flex; gap: var(--px); }
-.b-status__heads img { width: 1rem; height: 1rem; image-rendering: pixelated; box-shadow: 0 0 0 1px var(--night); }
-/* who was in when the lantern last burned: faded the way an old tintype fades, brown, never grey */
-.b-status__heads--then img { filter: sepia(0.7) brightness(0.7); }
 
 /* ─── the bar: the mark, three doors, the address ─────────────── */
 .b-bar {
@@ -537,34 +544,13 @@
 .b-door:not(.is-here):focus-visible .b-lantern__glass, .b-slot:not(.is-here):focus-visible .b-lantern__glass { fill: var(--lantern-deep); }
 .b-door:not(.is-here):focus-visible .b-lantern__flame, .b-slot:not(.is-here):focus-visible .b-lantern__flame { fill: var(--sun); }
 
-/* The server's lantern in the bar, on every page: the lantern and a word or a
-   count beside it, in the chat colours the hero's lantern uses. One width in
-   every state, so nothing beside it moves when the answer comes. */
-.b-bar__status { display: inline-flex; align-items: center; gap: var(--sp-2); min-height: var(--tap); padding-inline: var(--sp-1); color: var(--tc-white); text-decoration: none; text-shadow: 0 var(--px) 0 var(--night); }
-/* Over the sunset the hero's own lantern says the same thing, larger and right
-   below it, so the bar's waits until the bar takes its surface; it keeps its
-   width meanwhile, so nothing beside it moves when it comes. Every other page's
-   bar is solid from the start. */
-.b-bar:not(.is-solid) .b-bar__status { visibility: hidden; opacity: 0; }
-.b-bar__status { transition: opacity var(--dur-2) var(--ease-out), visibility var(--dur-2); }
-.b-bar__status .b-lantern { width: 1.1rem; height: 1.65rem; }
-.b-bar__state { min-width: 4.25rem; font-weight: 600; font-size: var(--fs-sm); white-space: nowrap; }
-.b-bar__status.is-on .b-bar__state { color: var(--online); }
-.b-bar__status.is-kindling .b-bar__state { color: var(--lantern); }
-.b-bar__status.is-off .b-bar__state { color: var(--tc-white); }
-@media (hover: hover) { .b-bar__status:hover .b-bar__state { text-decoration: underline var(--px); text-underline-offset: 0.35em; } }
-.b-bar__status:focus-visible .b-bar__state { text-decoration: underline var(--px); text-underline-offset: 0.35em; }
-/* The address: on a phone on the home page it is the hero's own button, a
+/* The address: on a phone on the home page it is the hero's own row, a
    thumb's reach below; on every other page the plank keeps it. Under 1100 px
-   the doors or the server's lantern take the room its letters need, so the
+   the doors take the room its letters need, so the
    tag is the glyph and the verb (the address is still its name, and the toast
    shows it), and it does not give way to a signed-in member's head: from
    760 px the doors close up instead. */
-@media (max-width: 759px) {
-  .b-bar--home .b-bar__addr { display: none; }
-  /* the server's lantern is then the last thing on the plank */
-  .b-bar--home .b-bar__status::after { left: auto; right: 0; --tip-x: 0%; }
-}
+@media (max-width: 759px) { .b-bar--home .b-bar__addr { display: none; } }
 .b-bar__addr { flex-shrink: 0; }
 @media (min-width: 760px) and (max-width: 899px) { .b-doors { gap: var(--sp-4); } }
 @media (max-width: 1099px) {
@@ -705,13 +691,8 @@
   .b-hero > .b-mesa, .b-hero > .b-hero__glow { grid-row: 1 / 2; }   /* an absolute item's auto end line is the container's edge, so both lines are named */
   .b-hero .b-hero__moon { display: none; }   /* risen, it would stand under the bar */
   .b-hero::after { content: ''; grid-column: 1; grid-row: 2 / 4; z-index: 2; background: var(--dusk); }
-  .b-hero .b-hero__sub { grid-row: 2; position: relative; z-index: 3; margin-inline: var(--gutter); padding-top: var(--sp-4); }
-  .b-hero .b-hero__action { grid-row: 3; position: relative; z-index: 3; flex-direction: column; align-items: stretch; gap: var(--sp-3); margin-top: 0; padding: var(--sp-3) var(--gutter) var(--sp-5); }
-  .b-hero .b-hero__action .b-copy { display: grid; justify-items: start; margin-top: 0; }
-  /* on the ground the lantern's words have their own dark; the plate is for the sky */
-  .b-hero .b-hero__side { flex: none; padding: 0; }
-  .b-hero .b-hero__post, .b-hero .b-hero__side::after { display: none; }
-  .b-hero .b-hero__action .b-status { width: 100%; min-height: 0; padding-block: 0; }
+  .b-hero .b-hero__server { grid-row: 2; position: relative; z-index: 3; width: auto; margin-inline: var(--gutter); padding-top: var(--sp-4); }
+  .b-hero .b-hero__under { grid-row: 3; position: relative; z-index: 3; margin: 0 var(--gutter); padding-bottom: var(--sp-5); }
   .b-hero .b-hero__sun { display: none; }
   /* the middle ridges grow with the width, and from 768 px they would stand
      over the lower half of the name; the far and near ones frame it alone */
@@ -815,116 +796,22 @@
   .b-hero__moon { animation: b-moon-rise linear both; animation-timeline: scroll(root); animation-range: 0 30svh; }
 }
 @media (prefers-reduced-motion: reduce) { .b-hero__moon { transform: none; opacity: 1; } }
-/* Every line of hero text wears the game's own text shadow: one hard pixel of
-   night under it, which is how Minecraft keeps light text legible over any
-   sky. On a wide screen the sub-line falls on the brightest band of the
-   sunset, where paper alone read at under 4:1. */
-.b-hero__sub { font-size: var(--fs-lg); color: var(--paper); max-width: 34ch; line-height: 1.4; text-shadow: 0 var(--px) 0 var(--night); }
-/* On a wide screen the one line that says what this is takes the middle step
-   between the name and everything else: the bold cut at the title size, on the
-   dark of the upper sky. It was 20 px under a 350 px name, and read as a caption. */
-@media (min-width: 900px) { .b-hero__sub { font-size: var(--fs-xl); font-weight: 600; line-height: 1.25; max-width: 32ch; text-shadow: 0 var(--px) 0 var(--night), 0 calc(var(--px) * 2) 0 rgba(21, 16, 13, 0.35); } }
-/* the address and the server's lantern on one line: the two things a player
-   needs, side by side, the button and the plate hanging from one top line
-   however many lines hang under the lantern */
-.b-hero__action { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--sp-4) var(--sp-5); margin-top: var(--sp-5); }
-/* The server's lantern as a signpost planted in the title card. It used to
-   stand on a plate, the hard band of shadow the game lays its chat on, which
-   kept its small words legible over the sunset but was the one thing on the
-   first screen that was UI rather than world. Now the words wear what the
-   world's own lantern wears (.b-boot): the lantern hangs by a chain from the
-   arm of a post, the state is a word on a plank sign, and the count, the
-   version and a night planned are paper tags, so every line reads off wood
-   or paper wherever on the sky it falls. One width in every state the server
-   can be in, so nothing rewraps when the word changes. Drawn at whole
-   multiples of the art's pixel. */
-.b-hero__side {
-  --post: calc(var(--px) * 6);        /* the post's width */
-  --arm-h: calc(var(--px) * 4);       /* the arm along the top */
-  --chain: 1rem;                      /* from the arm to the lantern's handle */
-  --lantern-w: 2.75rem;               /* the lantern's width (its CSS size in .b-status) */
-  --reach: calc(var(--post) + var(--sp-4) + var(--lantern-w) / 2);   /* from the post's left edge to the chain */
-  position: relative;
-  isolation: isolate;
-  display: grid;
-  gap: var(--sp-2);
-  justify-items: start;
-  flex: 0 1 22.5rem;
-  min-width: 0;
-  padding: calc(var(--arm-h) + var(--chain)) 0 0 calc(var(--post) + var(--sp-4));
+/* under the row: the next play night, on the dark of the upper sky */
+.b-hero__under { display: grid; justify-items: start; gap: var(--sp-3); margin-top: var(--sp-3); }
+.b-hero__under:empty { display: none; }
+/* held upright, a phone gives the row its whole width */
+@media (max-width: 899px) and (min-height: 501px) { .b-hero__server { width: 100%; } }
+/* on a narrow phone the address needs the row's whole width to stay one
+   word, so the count and the bars drop under the message, at the right,
+   and the icon stands beside both lines */
+@media (max-width: 479px) {
+  .b-row__btn { grid-template-columns: 4rem minmax(0, 1fr); gap: var(--sp-1) var(--sp-2); }
+  .b-row__icon { grid-row: 1 / 3; }
+  .b-row__text { grid-column: 2; }
+  .b-row__ping { grid-column: 2; grid-row: 2; display: flex; align-items: center; justify-self: end; gap: var(--sp-2); padding-top: 0; }
 }
-/* the post, standing a little above the arm and down past the last tag, with its foot block */
-.b-hero__post {
-  position: absolute;
-  z-index: -1;
-  left: 0;
-  top: calc(var(--sp-3) * -1);
-  bottom: calc(var(--sp-5) * -1);
-  width: var(--post);
-  background: var(--plank-up);
-  box-shadow: calc(var(--px) * 2) 0 0 rgba(21, 16, 13, 0.45);
-}
-.b-hero__post::before {
-  /* the arm, out over the lantern */
-  content: '';
-  position: absolute;
-  top: var(--sp-3);
-  left: 0;
-  width: calc(var(--reach) + var(--px) * 2);
-  height: var(--arm-h);
-  background: var(--plank);
-  box-shadow: 0 var(--px) 0 rgba(21, 16, 13, 0.45);
-}
-.b-hero__post::after {
-  /* the chain: links of iron, a pixel each with a pixel between */
-  content: '';
-  position: absolute;
-  top: calc(var(--sp-3) + var(--arm-h));
-  left: calc(var(--reach) - var(--px) / 2);
-  width: var(--px);
-  height: var(--chain);
-  background: repeating-linear-gradient(180deg, var(--ink-faint) 0 var(--px), transparent var(--px) calc(var(--px) * 2));
-}
-.b-hero__side::after {
-  /* the foot: a block of the ground the post is planted in */
-  content: '';
-  position: absolute;
-  z-index: -1;
-  left: calc(var(--px) * -3);
-  bottom: calc(var(--sp-5) * -1 - var(--px) * 3);
-  width: calc(var(--px) * 12);
-  height: calc(var(--px) * 3);
-  background: var(--wood-dark);
-  box-shadow: inset 0 var(--px) 0 var(--tc-brown);
-}
-/* the lantern hangs from the chain: its handle at the top of the words */
-.b-hero__side .b-status { min-height: 0; padding-block: 0; align-items: start; gap: var(--sp-1) var(--sp-4); }
-.b-hero__side .b-status__text { gap: var(--sp-1); justify-items: start; }
-/* the state, burnt into a plank sign */
-.b-hero__side .b-status__word { padding: var(--sp-1) var(--sp-3); background: var(--plank); clip-path: var(--notch); box-shadow: inset 0 0 0 var(--px) rgba(21, 16, 13, 0.35); text-shadow: 0 var(--px) 0 var(--wood-dark); }
-/* the count, the version and who is in, on paper tags */
-.b-hero__side .b-status__row { padding: var(--px) var(--sp-2); background: var(--paper); color: var(--ink-soft); clip-path: var(--notch); text-shadow: none; }
-.b-hero__side .b-status__row b { color: var(--ink); }
-.b-hero__side .b-status__meta { margin-top: 0; color: var(--ink-soft); }
-.b-hero__side .b-status__heads img { box-shadow: 0 0 0 1px var(--ink-soft); }
-.b-hero__side .b-status__heads--then img { filter: sepia(0.5) brightness(0.9); }
-/* a night planned is one more tag under the lantern's, with its fire on it */
-.b-hero__side .b-nightline { gap: var(--sp-3); width: auto; max-width: 100%; margin-top: var(--sp-1); padding: var(--sp-2) var(--sp-3) var(--sp-2) var(--sp-2); background: var(--paper); color: var(--ink-soft); clip-path: var(--notch); text-shadow: none; }
-.b-hero__side .b-nightline .b-night__fire { width: 2rem; height: 2rem; }
-.b-hero__side .b-nightline__kicker { color: var(--lantern-ink); }
-.b-hero__side .b-nightline.is-embers .b-nightline__kicker { color: var(--ink-faint); }
-.b-hero__side .b-nightline .b-night__head img { box-shadow: 0 0 0 1px var(--ink-soft); }
-/* Held upright, a phone stacks them: the address and the lantern are one
-   column, one width, the button over the plate. */
-@media (max-width: 899px) and (min-height: 501px) {
-  .b-hero__action { flex-direction: column; align-items: stretch; gap: var(--sp-3); max-width: 26rem; }
-  .b-hero__action .b-copy { display: grid; }
-  .b-hero__action .b-copy__btn { width: 100%; }
-  .b-hero__side { --lantern-w: 2.25rem; flex: none; }
-  .b-hero__side .b-status { width: 100%; min-height: 0; gap: var(--sp-1) var(--sp-3); }
-  .b-hero__side .b-status .b-lantern { width: 2.25rem; height: 3.35rem; }
-  .b-hero__side .b-nightline .b-night__fire { width: 2rem; height: 2rem; }
-}
+/* the narrowest phones: the address keeps to one word when the bitmap face gives up its tracking */
+@media (max-width: 399px) { .b-row__name { letter-spacing: 0; } }
 
 .b-mesa { position: absolute; inset-inline: 0; bottom: 0; height: var(--mesa-h, clamp(9rem, 32svh, 20rem)); pointer-events: none; }
 /* the far ridge stands behind the name, the middle and near ones in front of its feet */
@@ -1751,9 +1638,9 @@ html.is-map-full { overflow: hidden; }
 .b-btn,
 .b-door,
 .b-bar__addr,
-.b-copy__btn,
-.b-status__word,
-.b-status__row b,
+.b-row__name,
+.b-row__count,
+.b-hero__word,
 .b-boot__word,
 .b-boot__wait,
 .b-lb__count,

@@ -7,8 +7,7 @@ import { CopyIcon, Lantern, Mark, Strata } from './Bits';
 import PlayerHead from './PlayerHead';
 import ToastHost from './Toast';
 import { SERVER_IP, type NavLink } from './data';
-import { useCopy, useCrewSession, useServerStatus, type ServerState } from './hooks';
-import type { ServerLife } from '@/lib/server-state';
+import { useCopy, useCrewSession } from './hooks';
 
 export interface Door extends NavLink { id: string }
 
@@ -20,54 +19,21 @@ interface Props {
   onDoor?: (id: string) => void;
   /** solid from the start: the other pages, which have no sunset to lie over */
   always?: boolean;
-  /** the status the page was drawn with on the server, so the bar's lantern is right at first paint */
-  status?: ServerState;
 }
 
 const SOLID_AFTER = 40; // px of scroll before the bar takes a surface
 
-/* The bar's lantern says the server's state in a word or two: the hero's
-   lantern says it in full. Chat colours: green in, gold on the way, the
-   lantern's own dark when out. */
-const SHORT: Record<ServerLife, string> = {
-  on: 'opið', off: 'slökkt', starting: 'vaknar', restarting: 'vaknar', stopping: 'slokknar', crashed: 'hrundi', unknown: '',
-};
-const LONG: Record<ServerLife, string> = {
-  on: 'Kveikt á þjóninum', off: 'Slökkt á þjóninum', starting: 'Þjónninn er að vakna', restarting: 'Þjónninn endurræsist',
-  stopping: 'Þjónninn er að slokkna', crashed: 'Þjónninn hrundi', unknown: 'Náði ekki sambandi við þjóninn',
-};
-
-/** The server's lantern, small, in the bar on every page: lit with the count
-    of who is in, kindling on the way up or down, dark when out. It opens the
-    crew's room, where the same people stand by name. */
-function BarLantern({ server, home }: { server: ServerState; home: boolean }) {
-  const { life, players } = server;
-  const online = server.online === true;
-  const burn = online ? 'is-on' : life === 'starting' || life === 'restarting' || life === 'stopping' ? 'is-kindling' : life ? 'is-off' : '';
-  const word = !life ? '' : online && players > 0 ? `${players} inni` : SHORT[life];
-  const name = !life ? 'Staða þjónsins' : `${LONG[life]}${online ? `, ${players === 0 ? 'enginn inni' : `${players} inni`}` : ''}`;
-  return (
-    <a href={home ? '#hopur' : '/#hopur'} className={`b-bar__status b-tip b-tip--below ${burn}`} data-tip={name}>
-      <Lantern lit={online} className={burn === 'is-kindling' ? 'is-kindling' : undefined} />
-      {/* the word that shows is the first of the name, so what a screen reader hears starts with what is seen */}
-      <span className="b-bar__state">{word}</span>
-      <span className="b-visually-hidden">{word ? ': ' : ''}{name}. Sjá hver er inni.</span>
-    </a>
-  );
-}
-
-/** The bar: the mark, the three doors as lanterns, the server's lantern and
-    the address with its copy action. On the home page it lies over the sunset
+/** The bar: the mark, the three doors as lanterns and the address with its
+    copy action. The server's state is the hero's to say, never the bar's. On the home page it lies over the sunset
     and takes a surface once the page has scrolled; elsewhere it is solid from
     the start. On phones the doors move to a hotbar at the foot of the screen,
     in reach of a thumb; on the home page the address is then the hero's own
     button, and on every other page it stays on the plank. A door's lantern is
     lit while the visitor is behind it, and only ever one is. */
-export default function AddressBar({ links, activeId, onDoor, always = false, status }: Props) {
+export default function AddressBar({ links, activeId, onDoor, always = false }: Props) {
   const [solid, setSolid] = useState(always);
   const [, copy]          = useCopy(SERVER_IP);
   const { me } = useCrewSession();
-  const server = useServerStatus(status);
   const path = usePathname();
 
   useEffect(() => {
@@ -112,7 +78,6 @@ export default function AddressBar({ links, activeId, onDoor, always = false, st
                 <PlayerHead name={me} size={24} />
               </Link>
             )}
-            <BarLantern server={server} home={!!onDoor} />
             {/* named by what it shows: the address and the verb, with the verb's object spelled out for a screen reader; the toast says it was done.
                 The button is a full tap tall; the paper tag drawn on it is the plank's own height, and a notched tag would clip a taller hit area. */}
             <button type="button" className="b-bar__addr" onClick={copy}>
