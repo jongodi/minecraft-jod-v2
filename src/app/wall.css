@@ -85,6 +85,8 @@
 .w-poster__bio--edit:focus-visible { border-color: var(--lantern-ink); color: var(--ink); }
 @media (hover: hover) { .w-poster__bio--edit:hover { border-color: var(--lantern-ink); color: var(--ink); } }
 .w-poster__built { margin-top: var(--sp-3); font-size: var(--fs-sm); color: var(--ink-soft); line-height: 1.6; }
+/* when the numbers are from the last time the server was on */
+.w-poster__stale { margin-top: var(--sp-3); }
 .w-poster__built .b-paper__kicker { margin-right: var(--sp-1); }
 
 /* ─── the pin slot ──────────────────────────────────────────── */

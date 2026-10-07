@@ -40,9 +40,10 @@ export default function Print({ username, entry, places, me, isOwner, coverPhoto
   const [replying, setReplying] = useState(false);
   const [busyLantern, setBusyLantern] = useState(false);
   const mounted = useMounted();
-  /* the server has no idea what the browser's locale draws; until mounted the plain date stands in */
+  /* how long ago depends on the browser's clock, so until mounted the plain
+     date stands in; the written date is the same on the server and here */
   const age  = (iso: string) => (mounted ? formatAge(iso) : iso.slice(0, 10));
-  const date = (iso: string) => (mounted ? formatDate(iso) : iso.slice(0, 10));
+  const date = formatDate;
 
   const place = entry.placeId !== null ? places.find(p => p.id === entry.placeId) ?? null : null;
   const lit = !!me && entry.lanterns.some(n => sameUser(n, me));

@@ -238,7 +238,7 @@ export default function Wall({ initial, places, justSignedIn = false }: Props) {
                   </ul>
                 )}
                 {statsMeta?.source === 'cached' && statsMeta.cachedAt && (
-                  <p className="b-note" style={{ marginTop: '0.75rem' }}>slökkt á þjóninum, þessar tölur eru frá {formatDate(statsMeta.cachedAt)}</p>
+                  <p className="b-note w-poster__stale">slökkt á þjóninum, þessar tölur eru frá {formatDate(statsMeta.cachedAt)}</p>
                 )}
               </>
             )}
