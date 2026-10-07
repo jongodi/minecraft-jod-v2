@@ -7,7 +7,7 @@ import type { MapConfig, WorldPoint } from '@/lib/map-types';
 import type { PlacePrints } from '@/lib/crew-places';
 import { baseUrl, mapAt, type BaseLink, type MapBounds } from '@/lib/base-links';
 import viewerFiles from '@/lib/bluemap-viewer.json';
-import { BackIcon, CloseIcon, FoldedMapIcon, Lantern, MoonIcon, PictureIcon, Sun } from './Bits';
+import { BackIcon, CloseIcon, FoldedMapIcon, Lantern, MoonIcon, PictureIcon, Sun, ZoomIcon } from './Bits';
 import { plural } from '@/lib/format';
 import Drawer from './Drawer';
 import PlayerHead from './PlayerHead';
@@ -441,7 +441,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
                 left end of the plank, where the base maps' viewers keep theirs;
                 on a wide screen it stands after the tools (badlands.css). */}
             {full && (
-              <button type="button" className="b-btn b-btn--small b-btn--ghost b-hud__back is-on" aria-label="Loka heilum skjá" onClick={closeFull}>
+              <button type="button" className="b-btn b-btn--small b-btn--ghost b-hud__back b-tip b-tip--below is-on" aria-label="Loka heilum skjá" data-tip="Loka heilum skjá" onClick={closeFull}>
                 <BackIcon className="b-hud__backicon" />
                 <CloseIcon className="b-btn__icon b-hud__closeicon" /><span className="b-hud__word" aria-hidden="true">Loka</span>
               </button>
@@ -470,30 +470,32 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
                 )}
               </p>
             </div>
-            {/* On a phone the tools are slots sunk into one strip, as the hotbar's,
-                each a drawn icon with its word kept for screen readers, so they
-                never wrap down into the world among the places' name tags
-                (badlands.css, the HUD on a phone). */}
+            {/* The tools are the hotbar's own slots at every width: sunk side by
+                side into one strip of night, each a drawn icon, the one in hand
+                framed in light, its name on a slip under the pointer and for a
+                keyboard, the word itself kept for screen readers (badlands.css). */}
             <div ref={tools} className="b-hud__tools">
               {viewer && !drawn && !still && (
                 <button type="button" className={`b-btn b-btn--small b-btn--ghost b-hud__tool b-tip b-tip--below${night ? ' is-on' : ''}`} aria-pressed={night}
-                  data-tip="Sólin sest og ljósin í bænum loga" onClick={() => jod()?.setNight(!night)}>
+                  data-tip="Nótt" onClick={() => jod()?.setNight(!night)}>
                   <MoonIcon className="b-btn__icon" /><span className="b-hud__word">Nótt</span>
                 </button>
               )}
-              <button type="button" className={`b-btn b-btn--small b-btn--ghost b-hud__tool${drawn ? ' is-on' : ''}`} aria-pressed={drawn}
-                onClick={() => setDrawn(v => !v)}>
+              <button type="button" className={`b-btn b-btn--small b-btn--ghost b-hud__tool b-tip b-tip--below${drawn ? ' is-on' : ''}`} aria-pressed={drawn}
+                data-tip="Teiknað kort" onClick={() => setDrawn(v => !v)}>
                 <FoldedMapIcon className="b-btn__icon" /><span className="b-hud__word">Teiknað kort</span>
               </button>
               {/* the album hangs over the page, outside the frame the browser's full screen shows */}
-              <button type="button" className="b-btn b-btn--small b-btn--ghost b-hud__tool"
+              <button type="button" className="b-btn b-btn--small b-btn--ghost b-hud__tool b-tip b-tip--below" data-tip="Myndir"
                 onClick={() => { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); setAlbum(true); }}>
                 <PictureIcon className="b-btn__icon" /><span className="b-hud__word">Myndir<span className="b-hud__sep"> · </span></span><span className="b-hud__count">{plates.length}</span>
               </button>
               {!full && (
                 // eslint-disable-next-line @next/next/no-html-link-for-pages -- BlueMap's own app, not a Next page
-                <a href={MAP_URL} className="b-btn b-btn--small b-btn--ghost" onPointerEnter={warmViewer} onFocus={warmViewer}
-                  onClick={e => { if (plainClick(e)) { e.preventDefault(); setDrawn(false); openFull(); } }}>Heill skjár</a>
+                <a href={MAP_URL} className="b-btn b-btn--small b-btn--ghost b-hud__tool b-tip b-tip--below" data-tip="Heill skjár" onPointerEnter={warmViewer} onFocus={warmViewer}
+                  onClick={e => { if (plainClick(e)) { e.preventDefault(); setDrawn(false); openFull(); } }}>
+                  <ZoomIcon kind="fit" className="b-btn__icon" /><span className="b-hud__word">Heill skjár</span>
+                </a>
               )}
             </div>
           </div>

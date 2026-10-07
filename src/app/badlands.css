@@ -989,10 +989,64 @@ html.is-map-full { overflow: hidden; }
 @media (hover: hover) { .b-hud__head:hover img { box-shadow: 0 0 0 1px var(--night), 0 0 0 calc(1px + var(--px)) var(--lantern); } }
 .b-hud__head:focus-visible { outline: none; }
 .b-hud__follow { color: var(--lantern); }
-.b-hud__tools { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--sp-2); }
+/* The tools: the hotbar's own slots, at every width. Sunk side by side into
+   one strip of night with its rim and the hard shadow it throws on the world,
+   each a drawn icon (a 16-unit icon at 32 px, the art's pixel at the site's
+   --px, every block whole, filling its slot as an item does), its word kept
+   for screen readers and shown on a slip under the pointer. Worded buttons
+   over the world read as web, and as more name tags among the places'; the
+   hotbar under a thumb and at the foot of a phone already taught what a slot
+   is. The one in hand is framed as the hotbar frames it: a light square a
+   pixel larger than the slot with a pixel of night inside, its icon lit. */
+.b-hud__tools {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: var(--px);
+  padding: var(--px);
+  background: var(--night);
+  box-shadow: 0 0 0 var(--px) var(--wood-dark), 0 calc(var(--px) * 3) 0 var(--veil);
+}
+.b-hud__tool.b-btn,
+.b-hud__back.b-btn {
+  position: relative;
+  width: var(--tap);
+  height: var(--tap);
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: var(--dusk-2);
+  color: var(--tc-white);
+  box-shadow: var(--bevel-in);
+}
+.b-hud__tool .b-btn__icon, .b-hud__back .b-btn__icon { width: 2rem; height: 2rem; }
+.b-hud__word { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.b-hud__tool.b-btn.is-on { z-index: 1; background: var(--dusk-2); color: var(--lantern); }
+.b-hud__tool.b-btn.is-on::before {
+  content: '';
+  position: absolute;
+  inset: calc(var(--px) * -2);
+  border: var(--px) solid var(--paper);
+  box-shadow: inset 0 0 0 var(--px) var(--night);
+  clip-path: var(--notch);
+  pointer-events: none;
+}
+.b-hud__tool.b-btn:focus-visible,
+.b-hud__back.b-btn:focus-visible { background: var(--lantern); color: var(--night); }
+@media (hover: hover) {
+  .b-hud__tool.b-btn:hover,
+  .b-hud__back.b-btn:hover { background: var(--lantern); color: var(--night); }
+}
+.b-hud__tool.b-btn:active,
+.b-hud__back.b-btn:active { transform: none; background: var(--lantern-deep); color: var(--night); }
+/* how many pictures hang on the wall: the stack's count, where the game
+   writes it on a slot, low on the right over the item, light with its hard shadow */
+.b-hud__count { position: absolute; right: var(--px); bottom: calc(var(--px) * -1); color: var(--paper); font-family: var(--font-data); font-size: var(--fs-data); line-height: 1; letter-spacing: 0; text-shadow: var(--px) var(--px) 0 var(--night); pointer-events: none; }
+/* the way out of the whole screen is a slot in lantern light: after the tools on a wide screen, the back key on a phone's plank */
+.b-hud__back.b-btn { color: var(--lantern); }
 /* The way out of the whole screen is first in the HUD, the back key at the
    left end of a phone's plank; on a wide screen it stands after the tools,
-   a lit Loka, and the title takes the room between. */
+   a lit slot with a cross in it, and the title takes the room between. */
 .b-hud__title { margin-right: auto; }
 .b-hud__back { order: 1; }
 .b-hud__backicon { display: none; }
@@ -1294,72 +1348,18 @@ html.is-map-full { overflow: hidden; }
   /* the lantern in the middle already opens the viewer full screen on a phone */
   .b-hud__tools a { display: none; }
 
-  /* The HUD on a phone: the title and the tools share one row, and the date
-     and who is in run under both, the whole width. Worded buttons wrapped
-     into a staircase down the world, where they read as more name tags among
-     the places'; here the tools are the hotbar's own slots, sunk side by side
-     into one strip of night, each a drawn icon with its word kept for screen
-     readers. Wood keys on the plank's wood ran together into one brown block
-     with a dark hole beside it; a slot reads as a slot on the plank and on the
-     world alike, and the hotbar under a thumb already taught what one is. */
+  /* The HUD on a phone: the title and the tools' strip share one row, and the
+     date and who is in run under both, the whole width. */
   .b-hud__top { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--sp-2) var(--sp-3); }
   .b-hud__title { display: contents; }
   .b-hud__title .b-title { grid-area: 1 / 1; min-width: 0; font-size: min(var(--fs-xl), 1.625rem); }
   .b-hud__meta { grid-area: 2 / 1 / 3 / -1; }
-  .b-hud__tools {
-    grid-area: 1 / 2;
-    flex-wrap: nowrap;
-    gap: var(--px);
-    padding: var(--px);
-    background: var(--night);
-    /* its rim, and the hard shadow it throws on the world */
-    box-shadow: 0 0 0 var(--px) var(--wood-dark), 0 calc(var(--px) * 3) 0 var(--veil);
-  }
-  .b-hud__tool.b-btn,
-  .b-hud__back.b-btn {
-    position: relative;
-    width: var(--tap);
-    height: var(--tap);
-    min-height: 0;
-    padding: 0;
-    border: 0;
-    border-radius: 0;
-    background: var(--dusk-2);
-    color: var(--tc-white);
-    box-shadow: var(--bevel-in);
-  }
-  /* a 16-unit icon at 32 px, the art's pixel at the site's --px, every block whole, filling its slot as an item does */
-  .b-hud__tool .b-btn__icon { width: 2rem; height: 2rem; }
-  .b-hud__word { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-  /* pressed: the slot in hand, framed as the hotbar frames it, a light square
-     a pixel larger than the slot with a pixel of night inside, its icon lit */
-  .b-hud__tool.b-btn.is-on { z-index: 1; background: var(--dusk-2); color: var(--lantern); }
-  .b-hud__tool.b-btn.is-on::before {
-    content: '';
-    position: absolute;
-    inset: calc(var(--px) * -2);
-    border: var(--px) solid var(--paper);
-    box-shadow: inset 0 0 0 var(--px) var(--night);
-    clip-path: var(--notch);
-    pointer-events: none;
-  }
-  .b-hud__tool.b-btn:focus-visible,
-  .b-hud__back.b-btn:focus-visible { background: var(--lantern); color: var(--night); }
-  @media (hover: hover) {
-    .b-hud__tool.b-btn:hover,
-    .b-hud__back.b-btn:hover { background: var(--lantern); color: var(--night); }
-  }
-  .b-hud__tool.b-btn:active,
-  .b-hud__back.b-btn:active { transform: none; background: var(--lantern-deep); color: var(--night); }
-  /* how many pictures hang on the wall: the stack's count, where the game
-     writes it on a slot, low on the right over the item, light with its hard shadow */
-  .b-hud__count { position: absolute; right: var(--px); bottom: calc(var(--px) * -1); color: var(--paper); font-family: var(--font-data); font-size: var(--fs-data); line-height: 1; letter-spacing: 0; text-shadow: var(--px) var(--px) 0 var(--night); pointer-events: none; }
+  .b-hud__tools { grid-area: 1 / 2; }
 
   /* The way out, on the whole screen: the back key at the left end of the
-     plank, as the base maps' viewers keep theirs, a slot like the tools' with
-     the lantern's arrow in it. It goes back to the page, as the phone's own
-     back does. */
-  .b-hud__back.b-btn { grid-area: 1 / 1 / 3 / 2; color: var(--lantern); box-shadow: var(--bevel-in), 0 0 0 var(--px) var(--night), 0 0 0 calc(var(--px) * 2) var(--wood-dark); }
+     plank, as the base maps' viewers keep theirs, with the lantern's arrow in
+     it. It goes back to the page, as the phone's own back does. */
+  .b-hud__back.b-btn { grid-area: 1 / 1 / 3 / 2; box-shadow: var(--bevel-in), 0 0 0 var(--px) var(--night), 0 0 0 calc(var(--px) * 2) var(--wood-dark); }
   .b-hud__closeicon { display: none; }
   .b-hud__backicon { display: block; width: 2rem; height: 2rem; }
 

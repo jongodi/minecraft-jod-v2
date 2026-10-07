@@ -310,9 +310,9 @@ export function ChevronIcon({ dir, className }: { dir: 'left' | 'right' | 'down'
 }
 
 /** Zoom in, zoom out and the whole map, for the painted sheet. */
-export function ZoomIcon({ kind }: { kind: 'in' | 'out' | 'fit' }) {
+export function ZoomIcon({ kind, className }: { kind: 'in' | 'out' | 'fit'; className?: string }) {
   return (
-    <svg viewBox="0 0 16 16" aria-hidden="true" fill="currentColor" shapeRendering="crispEdges">
+    <svg className={className} viewBox="0 0 16 16" aria-hidden="true" fill="currentColor" shapeRendering="crispEdges">
       {kind === 'in'  && <path d="M7 3h2v4h4v2H9v4H7V9H3V7h4z" />}
       {kind === 'out' && <path d="M3 7h10v2H3z" />}
       {kind === 'fit' && <path d="M2 2h5v2H4v3H2zm7 0h5v5h-2V4H9zM2 9h2v3h3v2H2zm10 0h2v5H9v-2h3z" />}
