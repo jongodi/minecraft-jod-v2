@@ -710,7 +710,7 @@
   .b-hero .b-hero__action .b-copy { display: grid; justify-items: start; margin-top: 0; }
   /* on the ground the lantern's words have their own dark; the plate is for the sky */
   .b-hero .b-hero__side { flex: none; padding: 0; }
-  .b-hero .b-hero__side::before { display: none; }
+  .b-hero .b-hero__post, .b-hero .b-hero__side::after { display: none; }
   .b-hero .b-hero__action .b-status { width: 100%; min-height: 0; padding-block: 0; }
   .b-hero .b-hero__sun { display: none; }
   /* the middle ridges grow with the width, and from 768 px they would stand
@@ -828,35 +828,102 @@
    needs, side by side, the button and the plate hanging from one top line
    however many lines hang under the lantern */
 .b-hero__action { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--sp-4) var(--sp-5); margin-top: var(--sp-5); }
-/* The server's lantern and its words on a plate: the hard band of shadow the
-   game lays its chat on, so a line reads over any sky. Square cut, with the
-   notched pixel corners every tag on the site has: no soft edge, which no
-   surface in a pixel world has. Without it the small words lay straight on
-   the sunset and read at 2:1 to 4:1, worst on a phone, where they fall on
-   the bright middle of the sky. One width in every state the server can be
-   in, so the line never rewraps when the word changes. The plate is drawn
-   behind the words rather than clipping them, so a tag pointed at inside it
-   is not cut off. */
-.b-hero__side { position: relative; isolation: isolate; display: grid; gap: var(--sp-2); justify-items: start; flex: 0 1 22.5rem; min-width: 0; padding: var(--sp-3) var(--sp-5) var(--sp-3) var(--sp-4); }
-.b-hero__side::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--plate); clip-path: var(--notch); pointer-events: none; }
-/* the plate takes the words' own height, so the lantern's word sits level
-   with the address beside it however many lines hang under it */
-.b-hero__side .b-status { min-height: 0; padding-block: 0; }
-/* a night planned is a second entry on the same plate, under a hairline: its
-   fire stands in the lantern's column and its words start where the lantern's do */
-.b-hero__side .b-nightline { gap: var(--sp-4); width: 100%; max-width: none; margin-top: var(--sp-1); padding-top: var(--sp-3); border-top: var(--line) solid rgba(209, 178, 161, 0.14); }
-.b-hero__side .b-nightline .b-night__fire { width: 2.75rem; height: 2.75rem; }
+/* The server's lantern as a signpost planted in the title card. It used to
+   stand on a plate, the hard band of shadow the game lays its chat on, which
+   kept its small words legible over the sunset but was the one thing on the
+   first screen that was UI rather than world. Now the words wear what the
+   world's own lantern wears (.b-boot): the lantern hangs by a chain from the
+   arm of a post, the state is a word on a plank sign, and the count, the
+   version and a night planned are paper tags, so every line reads off wood
+   or paper wherever on the sky it falls. One width in every state the server
+   can be in, so nothing rewraps when the word changes. Drawn at whole
+   multiples of the art's pixel. */
+.b-hero__side {
+  --post: calc(var(--px) * 6);        /* the post's width */
+  --arm-h: calc(var(--px) * 4);       /* the arm along the top */
+  --chain: 1rem;                      /* from the arm to the lantern's handle */
+  --lantern-w: 2.75rem;               /* the lantern's width (its CSS size in .b-status) */
+  --reach: calc(var(--post) + var(--sp-4) + var(--lantern-w) / 2);   /* from the post's left edge to the chain */
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  gap: var(--sp-2);
+  justify-items: start;
+  flex: 0 1 22.5rem;
+  min-width: 0;
+  padding: calc(var(--arm-h) + var(--chain)) 0 0 calc(var(--post) + var(--sp-4));
+}
+/* the post, standing a little above the arm and down past the last tag, with its foot block */
+.b-hero__post {
+  position: absolute;
+  z-index: -1;
+  left: 0;
+  top: calc(var(--sp-3) * -1);
+  bottom: calc(var(--sp-5) * -1);
+  width: var(--post);
+  background: var(--plank-up);
+  box-shadow: calc(var(--px) * 2) 0 0 rgba(21, 16, 13, 0.45);
+}
+.b-hero__post::before {
+  /* the arm, out over the lantern */
+  content: '';
+  position: absolute;
+  top: var(--sp-3);
+  left: 0;
+  width: calc(var(--reach) + var(--px) * 2);
+  height: var(--arm-h);
+  background: var(--plank);
+  box-shadow: 0 var(--px) 0 rgba(21, 16, 13, 0.45);
+}
+.b-hero__post::after {
+  /* the chain: links of iron, a pixel each with a pixel between */
+  content: '';
+  position: absolute;
+  top: calc(var(--sp-3) + var(--arm-h));
+  left: calc(var(--reach) - var(--px) / 2);
+  width: var(--px);
+  height: var(--chain);
+  background: repeating-linear-gradient(180deg, var(--ink-faint) 0 var(--px), transparent var(--px) calc(var(--px) * 2));
+}
+.b-hero__side::after {
+  /* the foot: a block of the ground the post is planted in */
+  content: '';
+  position: absolute;
+  z-index: -1;
+  left: calc(var(--px) * -3);
+  bottom: calc(var(--sp-5) * -1 - var(--px) * 3);
+  width: calc(var(--px) * 12);
+  height: calc(var(--px) * 3);
+  background: var(--wood-dark);
+  box-shadow: inset 0 var(--px) 0 var(--tc-brown);
+}
+/* the lantern hangs from the chain: its handle at the top of the words */
+.b-hero__side .b-status { min-height: 0; padding-block: 0; align-items: start; gap: var(--sp-1) var(--sp-4); }
+.b-hero__side .b-status__text { gap: var(--sp-1); justify-items: start; }
+/* the state, burnt into a plank sign */
+.b-hero__side .b-status__word { padding: var(--sp-1) var(--sp-3); background: var(--plank); clip-path: var(--notch); box-shadow: inset 0 0 0 var(--px) rgba(21, 16, 13, 0.35); text-shadow: 0 var(--px) 0 var(--wood-dark); }
+/* the count, the version and who is in, on paper tags */
+.b-hero__side .b-status__row { padding: var(--px) var(--sp-2); background: var(--paper); color: var(--ink-soft); clip-path: var(--notch); text-shadow: none; }
+.b-hero__side .b-status__row b { color: var(--ink); }
+.b-hero__side .b-status__meta { margin-top: 0; color: var(--ink-soft); }
+.b-hero__side .b-status__heads img { box-shadow: 0 0 0 1px var(--ink-soft); }
+.b-hero__side .b-status__heads--then img { filter: sepia(0.5) brightness(0.9); }
+/* a night planned is one more tag under the lantern's, with its fire on it */
+.b-hero__side .b-nightline { gap: var(--sp-3); width: auto; max-width: 100%; margin-top: var(--sp-1); padding: var(--sp-2) var(--sp-3) var(--sp-2) var(--sp-2); background: var(--paper); color: var(--ink-soft); clip-path: var(--notch); text-shadow: none; }
+.b-hero__side .b-nightline .b-night__fire { width: 2rem; height: 2rem; }
+.b-hero__side .b-nightline__kicker { color: var(--lantern-ink); }
+.b-hero__side .b-nightline.is-embers .b-nightline__kicker { color: var(--ink-faint); }
+.b-hero__side .b-nightline .b-night__head img { box-shadow: 0 0 0 1px var(--ink-soft); }
 /* Held upright, a phone stacks them: the address and the lantern are one
    column, one width, the button over the plate. */
 @media (max-width: 899px) and (min-height: 501px) {
   .b-hero__action { flex-direction: column; align-items: stretch; gap: var(--sp-3); max-width: 26rem; }
   .b-hero__action .b-copy { display: grid; }
   .b-hero__action .b-copy__btn { width: 100%; }
-  .b-hero__side { flex: none; padding-inline: var(--sp-4); }
-  .b-hero__side .b-status { width: 100%; min-height: 0; gap: var(--sp-3); }
+  .b-hero__side { --lantern-w: 2.25rem; flex: none; }
+  .b-hero__side .b-status { width: 100%; min-height: 0; gap: var(--sp-1) var(--sp-3); }
   .b-hero__side .b-status .b-lantern { width: 2.25rem; height: 3.35rem; }
-  .b-hero__side .b-nightline { gap: var(--sp-3); }
-  .b-hero__side .b-nightline .b-night__fire { width: 2.25rem; height: 2.25rem; }
+  .b-hero__side .b-nightline .b-night__fire { width: 2rem; height: 2rem; }
 }
 
 .b-mesa { position: absolute; inset-inline: 0; bottom: 0; height: var(--mesa-h, clamp(9rem, 32svh, 20rem)); pointer-events: none; }

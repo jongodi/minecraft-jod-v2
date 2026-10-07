@@ -45,7 +45,12 @@ function Hero({ server, season, nights }: { server: ServerState; season: Season;
           <p className="b-hero__sub">Minecraft-heimur átta vina, frá sumrinu 2024. Aðgangur með boði.</p>
           <div className="b-hero__action">
             <CopyAddress />
+            {/* The server's lantern as a signpost planted in the title card: the
+                lantern hangs by a chain from the arm of a post, its state on a
+                plank sign and its count and version on paper tags, the same
+                idiom the world's own lantern uses (badlands.css). */}
             <div className="b-hero__side">
+              <span className="b-hero__post" aria-hidden="true" />
               <StatusLantern server={server} />
               <NightLine initial={nights} />
               <YuleLad season={season} spot="hero" />
