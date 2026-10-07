@@ -71,6 +71,77 @@ export function Sun() {
   );
 }
 
+/* The moon's lit share of its face in each of the game's eight phases: the
+   rows lit in each of the ten columns of its 10 by 10 body, left to right,
+   as [first, last] runs. Waxing from the right, waning from the left, as it
+   is seen from the north. The terminator bows: a crescent is thickest across
+   its middle, and a gibbous moon's dark share is too, so neither reads as a
+   bar (a three-column bar with a crater in it read as an exclamation mark). */
+type MoonColumn = ReadonlyArray<readonly [number, number]>;
+const D: MoonColumn = [];
+const F: MoonColumn = [[1, 10]];
+const MID: MoonColumn = [[4, 7]];
+const TALL: MoonColumn = [[2, 9]];
+const ENDS: MoonColumn = [[1, 2], [9, 10]];
+const MOON_COLUMNS: ReadonlyArray<ReadonlyArray<MoonColumn>> = [
+  [D, D, D, D, D, D, D, D, D, D],
+  [D, D, D, D, D, D, MID, TALL, F, F],
+  [D, D, D, D, D, F, F, F, F, F],
+  [D, D, ENDS, F, F, F, F, F, F, F],
+  [F, F, F, F, F, F, F, F, F, F],
+  [F, F, F, F, F, F, F, ENDS, D, D],
+  [F, F, F, F, F, D, D, D, D, D],
+  [F, F, TALL, MID, D, D, D, D, D, D],
+];
+/* the craters on its face, [x, y, w, h] on the 12 grid, drawn where the light reaches all of them */
+const MOON_CRATERS: ReadonlyArray<readonly [number, number, number, number]> = [[3, 3, 2, 2], [7, 2, 1, 1], [6, 6, 2, 1], [8, 8, 2, 1], [2, 8, 1, 1], [4, 9, 1, 1]];
+
+/** The moon as the game draws it: a square, like the sun, with craters, lit
+    in one of eight phases (src/lib/moon.ts). As in the game, the unlit share
+    of its face is not drawn, and a new moon is not drawn at all. */
+export function Moon({ phase, className }: { phase: number; className?: string }) {
+  const columns = MOON_COLUMNS[phase] ?? MOON_COLUMNS[0];
+  /* x, first row, last row */
+  const segments = columns.flatMap((runs, i) => runs.map(([a, b]) => [i + 1, a, b] as const));
+  if (segments.length === 0) return null;
+  const lit = (x: number, y: number) => segments.some(([sx, a, b]) => sx === x && y >= a && y <= b);
+  const craters = MOON_CRATERS.filter(([x, y, w, h]) => {
+    for (let dx = 0; dx < w; dx++) for (let dy = 0; dy < h; dy++) if (!lit(x + dx, y + dy)) return false;
+    return true;
+  });
+  return (
+    <span className={`b-moon${className ? ` ${className}` : ''}`} aria-hidden="true">
+      <svg viewBox="0 0 12 12" shapeRendering="crispEdges">
+        {segments.map(([x, a, b]) => <rect key={`${x}-${a}`} x={x} y={a} width="1" height={b - a + 1} fill="currentColor" />)}
+        {craters.map(([x, y, w, h]) => <rect key={`${x}-${y}`} className="b-moon__crater" x={x} y={y} width={w} height={h} />)}
+      </svg>
+    </span>
+  );
+}
+
+/* The game's clouds: flat slabs on a grid, ragged at the ends. Each is rows
+   of [x, y, width] one cell tall; the last row is the underside, which the
+   sunset lights from below. */
+type CloudShape = { w: number; h: number; rows: ReadonlyArray<readonly [number, number, number]> };
+export const CLOUDS: Record<'a' | 'b' | 'c' | 'd', CloudShape> = {
+  a: { w: 30, h: 4, rows: [[10, 0, 8], [4, 1, 21], [0, 2, 30], [6, 3, 13]] },
+  b: { w: 24, h: 4, rows: [[6, 0, 9], [2, 1, 18], [0, 2, 24], [4, 3, 13]] },
+  c: { w: 16, h: 3, rows: [[3, 0, 7], [0, 1, 16], [2, 2, 10]] },
+  d: { w: 12, h: 3, rows: [[2, 0, 6], [0, 1, 12], [3, 2, 6]] },
+};
+
+/** One cloud, drawn at --cpx per cell (badlands.css). */
+export function Cloud({ shape, className }: { shape: keyof typeof CLOUDS; className?: string }) {
+  const { w, h, rows } = CLOUDS[shape];
+  return (
+    <svg className={className} viewBox={`0 0 ${w} ${h}`} style={{ ['--w' as string]: w, ['--h' as string]: h }} aria-hidden="true" shapeRendering="crispEdges">
+      {rows.map(([x, y, rw], i) => (
+        <rect key={y} className={i === rows.length - 1 ? 'b-cloud__under' : 'b-cloud__body'} x={x} y={y} width={rw} height="1" />
+      ))}
+    </svg>
+  );
+}
+
 const STAR_TILE: Array<[number, number, number]> = [
   [12, 18, 2], [58, 7, 1], [91, 40, 2], [140, 22, 1], [176, 66, 2], [33, 84, 1], [118, 96, 2], [64, 132, 1],
   [160, 150, 2], [21, 168, 1], [99, 176, 1], [189, 118, 1], [136, 184, 2], [76, 52, 1], [8, 120, 1], [172, 12, 1],
@@ -97,9 +168,14 @@ const FLAMES: ReadonlyArray<ReadonlyArray<[number, number, number, number, strin
   [[6, 3, 2, 2, 'var(--sun)'], [5, 5, 5, 1, 'var(--sun)'], [5, 6, 6, 2, 'var(--ember)'], [3, 8, 10, 3, 'var(--ember)'], [6, 6, 3, 4, 'var(--sun)']],
 ];
 
-/** The campfire in the footer: a three-frame pixel flame on two logs. A play
-    night's fire is the same one; burnt down, only embers glow on the logs. */
-export function Campfire({ embers = false, className }: { embers?: boolean; className?: string } = {}) {
+/* The stones round the footer's fire, [x, y, w, h]: two at its sides, a row in
+   front, each with a pixel of light on its top where the fire catches it. */
+const STONES: ReadonlyArray<readonly [number, number, number, number]> = [[0, 12, 1, 3], [15, 12, 1, 3], [1, 14, 2, 2], [4, 15, 2, 1], [7, 14, 3, 2], [11, 15, 2, 1], [13, 14, 2, 2]];
+
+/** The campfire in the footer: a three-frame pixel flame on two logs, in a
+    ring of stones there. A play night's fire is the same one, without the
+    stones; burnt down, only embers glow on the logs. */
+export function Campfire({ embers = false, stones = false, className }: { embers?: boolean; stones?: boolean; className?: string } = {}) {
   return (
     <span className={`b-fire${className ? ` ${className}` : ''}`} aria-hidden="true">
       <svg viewBox="0 0 16 16">
@@ -118,6 +194,12 @@ export function Campfire({ embers = false, className }: { embers?: boolean; clas
         <rect x="1" y="13" width="14" height="1" fill="var(--wood)" />
         <rect x="3" y="12" width="3" height="1" fill="var(--tc-red)" />
         <rect x="10" y="12" width="3" height="1" fill="var(--tc-red)" />
+        {stones && STONES.map(([x, y, w, h]) => (
+          <g key={`${x}-${y}`}>
+            <rect x={x} y={y} width={w} height={h} fill="var(--ink-faint)" />
+            <rect x={x} y={y} width={w} height="1" fill="var(--text-faint)" />
+          </g>
+        ))}
       </svg>
     </span>
   );
@@ -137,6 +219,16 @@ export function ArrowIcon({ flip }: { flip?: boolean }) {
   return (
     <svg viewBox="0 0 16 16" aria-hidden="true" fill="currentColor" style={flip ? { transform: 'scaleX(-1)' } : undefined} shapeRendering="crispEdges">
       <path d="M2 7h8V5h2v2h2v2h-2v2h-2V9H2V7z" />
+    </svg>
+  );
+}
+
+/** The way back: a pixel arrow pointing left, its head a stepped triangle
+    and its shaft two units thick, as the game draws an arrow in a menu. */
+export function BackIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" aria-hidden="true" fill="currentColor" shapeRendering="crispEdges">
+      <path d="M2 7h1V6h1V5h1V4h1V3h1v4h7v2H7v4H6v-1H5v-1H4v-1H3v-1H2z" />
     </svg>
   );
 }

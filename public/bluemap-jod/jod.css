@@ -491,6 +491,30 @@ html.jod-embed #map-container::after { background: radial-gradient(ellipse 80% 7
   html.jod-embed .control-bar .controls-switch.thin-hide { display: flex; }
   html.jod-embed .control-bar .svg-button[title]:not(.menu-button):not(.compass):not(.controls-switch .svg-button) { display: none; }
   html.jod-embed #zoom-buttons { display: none; }
+  /* The same strip as the HUD's tools across the top (badlands.css): slots
+     sunk side by side into a band of night, as the site's hotbar, the view
+     you are in framed in light as the slot in hand. */
+  html.jod-embed .control-bar {
+    gap: var(--jod-px);
+    padding: var(--jod-px);
+    background: var(--jod-night);
+    box-shadow: 0 0 0 var(--jod-px) var(--jod-wood-dark), 0 calc(var(--jod-px) * 3) 0 rgba(21, 16, 13, 0.6);
+    filter: none;
+  }
+  html.jod-embed .control-bar > :not(:first-child) { border-left: 0; }
+  html.jod-embed .control-bar .controls-switch { gap: var(--jod-px); }
+  html.jod-embed .control-bar .svg-button { background: var(--jod-dusk-2); box-shadow: var(--jod-bevel-in); }
+  html.jod-embed .control-bar .svg-button svg { fill: var(--jod-white); }
+  html.jod-embed .control-bar .compass svg .south { fill: var(--jod-white); }
+  html.jod-embed .control-bar .svg-button.active { position: relative; z-index: 1; box-shadow: inset 0 0 0 var(--jod-px) var(--jod-night), 0 0 0 var(--jod-px) var(--jod-paper); }
+  html.jod-embed .control-bar .svg-button.active svg { fill: var(--jod-lantern); }
+  html.jod-embed .control-bar .svg-button:active { background: var(--jod-lantern-deep); }
+  html.jod-embed .control-bar .svg-button:active svg { fill: var(--jod-night); }
+}
+@media (max-width: 899px) and (hover: hover) {
+  html.jod-embed .control-bar .svg-button:hover { background: var(--jod-lantern); }
+  html.jod-embed .control-bar .svg-button:hover svg,
+  html.jod-embed .control-bar .svg-button:hover svg .south { fill: var(--jod-night); }
 }
 
 @media (prefers-reduced-motion: reduce) {

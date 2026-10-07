@@ -57,6 +57,11 @@ export const MAP_URL = `/bluemap/index.html#${MAP_START_VIEW}`;
 /* The map's still, by the version map:poster wrote: the image optimiser keeps
    an address's images for a year, so a new still needs a new address. */
 export const MAP_POSTER = `/map-poster.webp?v=${posterFile.version}`;
+/* The town's lights, taken off the same still by scripts/map-lights.mjs: three
+   layers that come on one after another as the world scrolls into view.
+   None until a still has had its lights taken. */
+const lightsOf = (posterFile as { lights?: string }).lights;
+export const MAP_LIGHTS: string[] = lightsOf ? [1, 2, 3].map(n => `/map-lights-${n}.webp?v=${lightsOf}`) : [];
 
 export interface Plate { id: string; src: string; title: string; sub: string }
 

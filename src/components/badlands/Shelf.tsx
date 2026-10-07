@@ -2,7 +2,7 @@
 
 import '@/app/board.css';
 
-import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, memo, useEffect, useMemo, useRef, useState } from 'react';
 import { DATAPACKS } from '@/data/datapacks';
 import type { PublicPack } from '@/lib/datapacks-store';
 import PixelGlyph from './PixelGlyph';
@@ -100,6 +100,7 @@ function Shelf({ version }: { version: string | null }) {
 
           {/* The counter stays put; only the slip on it changes. Keyed on the pack,
               so each new label slides across the paper as the last one lifts. */}
+          <div className="b-hang">
           <div ref={counter} className={`b-counter b-paper${shown ? ' is-reading' : ''}`}>
             <div className="b-counter__slip" key={shown?.id ?? 'none'}>
               <span className="b-counter__glyph">{shown && <PixelGlyph rows={glyphFor(shown)} />}</span>
@@ -112,11 +113,13 @@ function Shelf({ version }: { version: string | null }) {
               ) : (
                 <span className="b-counter__text">
                   <span className="b-counter__name">{packs.length} {plural(packs.length, 'kassi', 'kassar')} á hillunni</span>
-                  <span className="b-counter__meta">{tally.map(([c, n]) => `${categoryName(c)} ${n}`).join(' · ')}</span>
+                  {/* each kind and its count kept together, the dot at the end of a line rather than the start of the next */}
+                  <span className="b-counter__meta">{tally.map(([c, n], i) => <Fragment key={c}>{i > 0 && ' '}<span className="b-nowrap">{categoryName(c)} {n}{i < tally.length - 1 && ' ·'}</span></Fragment>)}</span>
                   <span className="b-counter__desc">Bentu á kassa til að lesa miðann.</span>
                 </span>
               )}
             </div>
+          </div>
           </div>
         </div>
         )}

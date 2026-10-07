@@ -8,7 +8,7 @@
    of every element on the page on every scroll frame. */
 
 const HERO_SCROLL = 1.2; // viewport heights over which the sun sets; matches animation-range in badlands.css
-const TARGETS = '.b-sky__night, .b-sky__stars, .b-sky__sun, .b-hero__sun, .b-mesa__layer, .b-mesa__band, .b-mesa__snow';
+const TARGETS = '.b-sky__night, .b-sky__stars, .b-sky__sun, .b-hero__sun, .b-mesa__layer, .b-mesa__shade, .b-hero__glow, .b-hero__moon, .b-clouds, .b-mesa__haze';
 
 export function startEveningFallback(): () => void {
   if (typeof window === 'undefined') return () => {};

@@ -2,14 +2,14 @@
 
 import { memo } from 'react';
 import Mesa from './Mesa';
-import { Sun } from './Bits';
+import { Moon, Sun } from './Bits';
 import CopyAddress from './CopyAddress';
 import StatusLantern from './StatusLantern';
 import { NightLine } from './NightLine';
 import type { ServerState } from './hooks';
 import type { Season } from '@/lib/season';
 import type { PlayNightResponse } from '@/app/api/playnight/route';
-import { YuleLad } from './Season';
+import { YuleLad, useMoonPhase } from './Season';
 import { CREW } from './data';
 
 function Hero({ server, season, nights }: { server: ServerState; season: Season; nights?: PlayNightResponse }) {
@@ -17,8 +17,12 @@ function Hero({ server, season, nights }: { server: ServerState; season: Season;
   const home = server.online === true && server.players > 0;
   const lower = server.list.map(n => n.toLowerCase());
   const inside = server.online ? CREW.filter(n => lower.includes(n.toLowerCase())) : [];
+  const moon = useMoonPhase();
   return (
     <section id="top" className="b-hero" aria-label="Sólsetur">
+      {/* the afterglow: the last of the sunset held on the horizon behind the
+          ridges, after the night has taken the top of the sky (badlands.css) */}
+      <div className="b-hero__glow" aria-hidden="true" />
       {/* A title card over the land: the name stands at the foot of the sunset
           among the mesas, the far ridge behind its letters and the near ones
           in front of their feet, and rises out of them as the evening falls
@@ -31,6 +35,8 @@ function Hero({ server, season, nights }: { server: ServerState; season: Season;
           JOÐ
           <span className="b-hero__window b-hero__window--o" aria-hidden="true" />
           <span className="b-hero__window b-hero__window--eth" aria-hidden="true" />
+          {/* tonight's moon, rising from behind the J as the sun sets on the other side */}
+          {moon !== null && <Moon phase={moon} className="b-hero__moon" />}
         </h1>
         {/* a phone's sun: in the open sky between the words and the name, so no line above it ever crosses it (badlands.css) */}
         <div className="b-hero__sun" aria-hidden="true"><Sun /></div>

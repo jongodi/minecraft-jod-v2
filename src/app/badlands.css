@@ -28,18 +28,25 @@
 @keyframes b-night-in  { 0% { opacity: 0; } 85%, 100% { opacity: 1; } }
 @keyframes b-stars-out { 0%, 45% { opacity: 0; } 100% { opacity: 0.99; } }
 @keyframes b-sun-set   { 0% { transform: translateY(0); opacity: 1; } 37.5% { opacity: 1; } 75% { opacity: 0; } 100% { transform: translateY(75svh); opacity: 0; } }
-@keyframes b-band-dim  { to { opacity: 0.3; } }
-/* the rock darkens into the night behind it; the near ridge keeps the most of its colour */
-@keyframes b-rock-far  { from { fill: var(--tc-red); }    to { fill: color-mix(in oklab, var(--tc-red), var(--sky-night-low) 65%); } }
-@keyframes b-rock-mid  { from { fill: var(--tc-orange); } to { fill: color-mix(in oklab, var(--tc-orange), var(--night) 70%); } }
-@keyframes b-rock-near { from { fill: var(--tc-brown); }  to { fill: color-mix(in oklab, var(--tc-brown), var(--night) 60%); } }
-@keyframes b-snow-dim  { from { fill: #EEEAE2; }          to { fill: color-mix(in oklab, #EEEAE2, var(--night) 40%); } }
+/* the night falls on each ridge as a layer of dark over its rock: the far
+   ridge goes furthest into the night sky's own colour, the near one keeps
+   the most of its clay. One opacity each, on the compositor. */
+@keyframes b-shade-far  { to { opacity: 0.65; } }
+@keyframes b-shade-mid  { to { opacity: 0.7; } }
+@keyframes b-shade-near { to { opacity: 0.6; } }
 /* the parallax: each layer sinks by its depth, in whole pixels, so the pixel art never lands between two */
 @keyframes b-mesa-far  { to { transform: translateY(56px); } }
 @keyframes b-mesa-mid  { to { transform: translateY(36px); } }
 @keyframes b-mesa-near { to { transform: translateY(16px); } }
+/* the afterglow holds while the top of the sky goes dark, then goes last */
+@keyframes b-glow-out  { 0%, 40% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes b-haze-out  { 0%, 30% { opacity: 1; } 85%, 100% { opacity: 0; } }
+/* the clouds drift a sixth of a screen east over the evening, in steps of one cell of their own drawing */
+@keyframes b-clouds-drift { from { transform: translateX(0); } to { transform: translateX(120px); } }
+@keyframes b-clouds-day   { 0%, 30% { opacity: 1; } 70%, 100% { opacity: 0; } }
+@keyframes b-clouds-night { 0%, 35% { opacity: 0; } 85%, 100% { opacity: 1; } }
 @supports (animation-timeline: scroll()) {
-  .b-sky__night, .b-sky__stars, .b-sky__sun, .b-mesa__band, .b-mesa .b-mesa__rock, .b-mesa .b-mesa__snow,
+  .b-sky__night, .b-sky__stars, .b-sky__sun, .b-mesa__shade,
   .b-mesa__layer--far, .b-mesa__layer--mid, .b-mesa__layer--near {
     animation-timing-function: linear;
     animation-fill-mode: both;
@@ -49,18 +56,30 @@
   .b-sky__night { animation-name: b-night-in; }
   .b-sky__stars { animation-name: b-stars-out; }
   .b-sky__sun   { animation-name: b-sun-set; }
-  .b-mesa__band { animation-name: b-band-dim; }
-  .b-mesa .b-mesa__snow { animation-name: b-snow-dim; }   /* the ridge at the campfire keeps its own fixed shade */
   .b-mesa__layer--far  { animation-name: b-mesa-far;  animation-timing-function: steps(56, jump-end); }
   .b-mesa__layer--mid  { animation-name: b-mesa-mid;  animation-timing-function: steps(36, jump-end); }
   .b-mesa__layer--near { animation-name: b-mesa-near; animation-timing-function: steps(16, jump-end); }
-  .b-mesa__layer--far  .b-mesa__rock { animation-name: b-rock-far; }
-  .b-mesa__layer--mid  .b-mesa__rock { animation-name: b-rock-mid; }
-  .b-mesa__layer--near .b-mesa__rock { animation-name: b-rock-near; }
+  .b-mesa__layer--far  .b-mesa__shade { animation-name: b-shade-far; }
+  .b-mesa__layer--mid  .b-mesa__shade { animation-name: b-shade-mid; }
+  .b-mesa__layer--near .b-mesa__shade { animation-name: b-shade-near; }
+  .b-hero__glow, .b-clouds, .b-mesa__haze {
+    animation-timing-function: linear;
+    animation-fill-mode: both;
+    animation-timeline: scroll(root);
+    animation-range: 0 120svh;
+  }
+  .b-hero__glow    { animation-name: b-glow-out; }
+  .b-mesa__haze    { animation-name: b-haze-out; }
+  /* each set drifts and fades on its own: two layers, not a third round them */
+  .b-clouds        { animation-timing-function: steps(20, jump-end), linear; }
+  .b-clouds--day   { animation-name: b-clouds-drift, b-clouds-day; }
+  .b-clouds--night { animation-name: b-clouds-drift, b-clouds-night; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .b-sky__night, .b-sky__stars, .b-sky__sun, .b-mesa__layer, .b-mesa__band, .b-mesa__rock, .b-mesa__snow { animation: none !important; }
-  .b-sky__night, .b-sky__stars, .b-sky__sun, .b-mesa__layer, .b-mesa__band, .b-mesa__snow { --evening: 0.7; }
+  .b-sky__night, .b-sky__stars, .b-sky__sun, .b-mesa__layer, .b-mesa__shade,
+  .b-hero__glow, .b-clouds, .b-hero__moon, .b-mesa__haze { animation: none !important; }
+  .b-sky__night, .b-sky__stars, .b-sky__sun, .b-mesa__layer, .b-mesa__shade,
+  .b-hero__glow, .b-clouds, .b-hero__moon, .b-mesa__haze { --evening: 0.7; }
   .b-sky__sun { display: none; }
 }
 
@@ -123,6 +142,47 @@
    last-seen line, and a sun pinned to the sky at one height ran under them. */
 @media (max-width: 899px) { .b-sky__sun { display: none; } }
 .b-sky svg { display: block; shape-rendering: crispEdges; }
+
+/* The clouds: the game's flat slabs, far off, in the band of sky between the
+   words and the name and under the sun. They are in the fixed sky, so the
+   land rises over them as the page goes down into the valley. Lit from below
+   at sunset (the underside takes the horizon's gold), dark against the stars
+   at night: two copies of the same clouds, one fading out as the other comes,
+   so a scroll frame is two opacities and one transform. Never behind a line
+   of words: the places are chosen clear of the sentence, the address and the
+   lantern's plate at every width. */
+/* The band of sky they hang in, a third of the screen deep: each set of
+   clouds is a layer of its own the size of the band, not of the screen, since
+   the sky is behind the whole page and is composited on every scroll frame. */
+.b-sky__clouds { position: absolute; inset-inline: 0; top: 33%; height: 36%; --cpx: 6px; overflow: clip; }   /* a cloud drifting past the edge of the screen goes out of the sky, not off the page */
+.b-clouds {
+  position: absolute;
+  inset: 0;
+  transform: translateX(round(nearest, calc(var(--evening) * 120px), var(--cpx)));
+  will-change: transform, opacity;
+}
+.b-clouds--day   { opacity: clamp(0, calc((0.7 - var(--evening)) * 2.5), 1); }
+.b-clouds--night { opacity: clamp(0, calc((var(--evening) - 0.35) * 2), 1); }
+.b-cloud { position: absolute; width: calc(var(--w) * var(--cpx)); height: calc(var(--h) * var(--cpx)); }
+.b-clouds--day .b-cloud__body    { fill: var(--paper); fill-opacity: 0.5; }
+.b-clouds--day .b-cloud__under   { fill: var(--sky-sunset-horizon); fill-opacity: 0.7; }
+/* at night the game greys its clouds with the sky: a shade lighter than the dark round them, never a hole in the stars */
+.b-clouds--night .b-cloud__body  { fill: color-mix(in oklab, var(--tc-white), var(--night) 80%); fill-opacity: 0.9; }
+.b-clouds--night .b-cloud__under { fill: var(--dusk-2); fill-opacity: 0.9; }
+/* a wide screen: four, two in the open sky over the name, two under the sun
+   (places in the band: 47 %, 52 %, 37 % and 45 % of the screen's height) */
+.b-cloud--1 { left: 3%;  top: 38.9%; }
+.b-cloud--2 { left: 36%; top: 52.8%; }
+.b-cloud--3 { left: 64%; top: 11.1%; }   /* clear of the sun's path as it sets */
+.b-cloud--4 { left: 89%; top: 33.3%; }
+/* a phone: two, left of the sun in the hero's open row, smaller (57 % and 63 % of the screen) */
+@media (max-width: 899px) {
+  .b-sky__clouds { --cpx: 4px; }
+  .b-cloud--1 { left: 4%;  top: 66.7%; }
+  .b-cloud--2 { left: 24%; top: 83.3%; }
+  .b-sky .b-cloud--3, .b-sky .b-cloud--4 { display: none; }   /* .b-sky svg would otherwise show them */
+  .b-clouds { animation-timing-function: steps(30, jump-end), linear; }   /* the drift in steps of a phone's smaller cell */
+}
 /* the white-hot middle of the game's square sun, tinted toward the sunlight round it */
 .b-sky .b-sun__core, .b-hero__sun .b-sun__core { fill: color-mix(in oklab, var(--sun), #FFF8EA 60%); }
 
@@ -399,10 +459,7 @@
    same slice of strata the hours are divided by along its foot, the address on
    a paper tag nailed to it. */
 .b-bar.is-solid {
-  background:
-    repeating-linear-gradient(90deg, rgba(21, 16, 13, 0.18) 0 var(--px), transparent var(--px) 13px),
-    repeating-linear-gradient(90deg, transparent 0 37px, rgba(255, 240, 210, 0.04) 37px 39px),
-    linear-gradient(180deg, var(--wood-light) 0 var(--px), var(--wood) var(--px) calc(100% - var(--px) * 2), var(--wood-dark) calc(100% - var(--px) * 2));
+  background: var(--plank);
   box-shadow: inset 0 0 0 var(--px) rgba(21, 16, 13, 0.35);
 }
 .b-bar__strata { pointer-events: none; opacity: 0; transition: opacity var(--dur-3) var(--ease-out); }
@@ -632,7 +689,8 @@
      a new column, rather than laid over the ground that already holds the cell */
   .b-hero > *, .b-hero .b-hero__stage > *, .b-hero .b-hero__lead > * { grid-column: 1; }
   .b-hero .b-hero__mark { grid-row: 1; margin-inline: var(--gutter); padding-bottom: calc(var(--mesa-h) * var(--mark-sink)); }
-  .b-hero > .b-mesa { grid-row: 1 / 2; }   /* an absolute item's auto end line is the container's edge, so both lines are named */
+  .b-hero > .b-mesa, .b-hero > .b-hero__glow { grid-row: 1 / 2; }   /* an absolute item's auto end line is the container's edge, so both lines are named */
+  .b-hero .b-hero__moon { display: none; }   /* risen, it would stand under the bar */
   .b-hero::after { content: ''; grid-column: 1; grid-row: 2 / 4; z-index: 2; background: var(--dusk); }
   .b-hero .b-hero__sub { grid-row: 2; position: relative; z-index: 3; margin-inline: var(--gutter); padding-top: var(--sp-4); }
   .b-hero .b-hero__action { grid-row: 3; position: relative; z-index: 3; flex-direction: column; align-items: stretch; gap: var(--sp-3); margin-top: 0; padding: var(--sp-3) var(--gutter) var(--sp-5); }
@@ -658,7 +716,18 @@
   letter-spacing: -0.02em;
   color: var(--paper);
   overflow-wrap: normal;
-  text-shadow: 0 var(--px) 0 var(--tc-brown), 0 calc(var(--px) * 3) 0 rgba(21, 16, 13, 0.35);
+  /* Cut from the strata: under every edge that faces down, the five clays of
+     the badlands in order, the way a block of the mesa shows them where it is
+     cut, then a hard shadow on the sky. Each band is a whole pixel count (a
+     seventy-seventh of the size: four pixels on a desktop, two on a phone). */
+  --cut: max(1px, round(nearest, 0.013em, 1px));
+  text-shadow:
+    0 var(--cut) 0 var(--tc-white),
+    0 calc(var(--cut) * 2) 0 var(--tc-yellow),
+    0 calc(var(--cut) * 3) 0 var(--tc-orange),
+    0 calc(var(--cut) * 4) 0 var(--tc-red),
+    0 calc(var(--cut) * 5) 0 var(--tc-brown),
+    0 calc(var(--cut) * 5 + var(--px) * 2) 0 rgba(21, 16, 13, 0.35);
 }
 /* Someone's home: the counters of the O and the Ð are windows, dark (the sky
    through them) until the server is up with somebody in it, then lit in the
@@ -683,6 +752,56 @@
 .b-hero__window--o   { left: 0.971em; }
 .b-hero__window--eth { left: 1.780em; width: 0.135em; }
 .b-hero__mark.is-home .b-hero__window { opacity: 1; }
+
+/* The afterglow: the last of the sunset, held on the horizon behind the
+   ridges while the night takes the top of the sky, then gone last. It rides
+   with the land, so the gold stays on the land's own horizon as the page
+   goes down; the night is a layer over the whole fixed sky, and alone it
+   turned the sky one flat maroon at every hour between. Drawn behind the far
+   ridge, so the ridges stand dark against it. At the top of the page it
+   matches the sky under it, so nothing is seen until the evening moves. */
+.b-hero__glow {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 40%;
+  background: linear-gradient(180deg, transparent, var(--sky-sunset-low) 55%, var(--sky-sunset-horizon));
+  opacity: clamp(0, calc((1 - var(--evening)) / 0.6), 1);
+  pointer-events: none;
+  will-change: opacity;
+}
+
+/* Tonight's moon (src/lib/moon.ts) comes up over the J as the sun sets on the
+   other side of the sky: a square like the sun, in the phase the real moon is
+   in, in the open sky between the address and the name. It rises the last
+   step into its place and comes out of the dusk in the first third of a
+   screen of scroll, while the hero is still there to be seen. Rising from
+   behind the letter itself, as it first did, it showed half risen as a
+   lump on the J's top bar. Placed and moved in ems against Alfa Slab One's
+   J (measured), so it holds at every size the name is set at. */
+.b-hero__moon {
+  position: absolute;
+  z-index: -2;
+  left: 0.36em;
+  top: -0.42em;
+  width: 0.18em;
+  height: 0.18em;
+  color: var(--star);
+  transform: translateY(calc((1 - min(1, var(--evening) / 0.25)) * 0.12em));
+  opacity: clamp(0, calc(var(--evening) * 4), 1);
+  pointer-events: none;
+}
+.b-moon { display: block; line-height: 0; }
+.b-moon svg { display: block; width: 100%; height: 100%; }
+.b-moon__crater { fill: color-mix(in oklab, var(--star), var(--ink-faint) 38%); }
+@keyframes b-moon-rise {
+  0%   { transform: translateY(0.12em); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+@supports (animation-timeline: scroll()) {
+  .b-hero__moon { animation: b-moon-rise linear both; animation-timeline: scroll(root); animation-range: 0 30svh; }
+}
+@media (prefers-reduced-motion: reduce) { .b-hero__moon { transform: none; opacity: 1; } }
 /* Every line of hero text wears the game's own text shadow: one hard pixel of
    night under it, which is how Minecraft keeps light text legible over any
    sky. On a wide screen the sub-line falls on the brightest band of the
@@ -730,27 +849,32 @@
 .b-mesa { position: absolute; inset-inline: 0; bottom: 0; height: var(--mesa-h, clamp(9rem, 32svh, 20rem)); pointer-events: none; }
 /* the far ridge stands behind the name, the middle and near ones in front of its feet */
 .b-hero .b-mesa__layer--mid, .b-hero .b-mesa__layer--near, .b-hero .b-mesa__layer--ground { z-index: 2; }
-/* No will-change here: the rock's colour changes with the hour too, so the
-   layer has to be repainted either way and promoting it only costs texture memory. */
+/* Each layer is drawn once in its sunset colours and never repainted: the
+   hour is its night layer's opacity (.b-mesa__shade), the depth its own
+   transform. */
 .b-mesa__layer { position: absolute; inset: 0; transform: translateY(round(nearest, calc(var(--evening) * var(--depth)), 1px)); }
 .b-mesa__layer svg { width: 100%; height: 100%; display: block; shape-rendering: crispEdges; }
-.b-mesa__layer--far  { --depth: 56px; color: color-mix(in oklab, var(--tc-red), var(--sky-night-low) calc(var(--evening) * 65%)); }
-.b-mesa__layer--mid  { --depth: 36px; color: color-mix(in oklab, var(--tc-orange), var(--night) calc(var(--evening) * 70%)); }
-.b-mesa__layer--near { --depth: 16px; color: color-mix(in oklab, var(--tc-brown), var(--night) calc(var(--evening) * 60%)); }
+/* the far ridge stands in the sunset's own air, a third of the way to the horizon's colour, so it recedes */
+.b-mesa__layer--far  { --depth: 56px; --shade: 0.65; color: color-mix(in oklab, var(--tc-red), var(--sky-sunset-low) 33%); }
+.b-mesa__layer--mid  { --depth: 36px; --shade: 0.7;  color: var(--tc-orange); }
+.b-mesa__layer--near { --depth: 16px; --shade: 0.6;  color: var(--tc-brown); }
 .b-mesa__layer--ground { --depth: 0px; color: var(--dusk); }
-.b-mesa__band { opacity: calc(1 - var(--evening) * 0.7); }
+.b-mesa__shade, .b-mesa__haze, .b-mesa__over { position: absolute; inset: 0; width: 100%; height: 100%; display: block; shape-rendering: crispEdges; }
+.b-mesa__shade { fill: var(--night); opacity: calc(var(--evening) * var(--shade, 0.6)); will-change: opacity; }
+.b-mesa__layer--far .b-mesa__shade { fill: var(--sky-night-low); }
+.b-mesa__haze { fill: var(--sky-sunset-horizon); opacity: clamp(0, calc((0.85 - var(--evening)) * 1.8), 1); will-change: opacity; }
 @media (max-width: 767px) { .b-mesa__layer--mid { display: none; } }
 /* The crew on the near ridge: the group stands on one plateau, found by its
    place in the ridge's 480 by 120 drawing, which is scaled to cover the layer
    from its foot and centred (xMidYMax slice): one unit is the larger of the
-   layer's width over 480 and its height over 120. A head is eight units, a
-   head block at the ridge's own scale; three units between them keep two
-   heads' targets 24 px apart on a phone. Beside the name on a wide screen,
-   on the tallest plateau at its feet on a phone. */
+   layer's width over 480 and its height over 120. A figure is twelve units
+   wide and twice that tall, the whole skin at the land's scale, three units
+   apart, its lantern hung from the hand on the far side. Beside the name on
+   a wide screen, on the tallest plateau at its feet on a phone. */
 .b-mesa { container-type: size; }
-.b-mesa__heads {
+.b-mesa__riders {
   --u: max(100cqw / 480, 100cqh / 120);
-  --hx: 392; --hy: 26;
+  --hx: 391; --hy: 26;
   position: absolute;
   left: calc(50% + (var(--hx) - 240) * var(--u));
   bottom: calc(var(--hy) * var(--u));
@@ -759,12 +883,22 @@
   gap: calc(var(--u) * 3);
   pointer-events: auto;
 }
-@media (max-width: 899px) { .b-mesa__heads { --hx: 210; --hy: 34; } }
-.b-mesa__head { position: relative; display: block; }
-.b-mesa__head::before { content: ''; position: absolute; inset: -0.5rem calc(var(--u) * -1.5); }
-.b-mesa__head img { display: block; width: calc(var(--u) * 8); height: calc(var(--u) * 8); image-rendering: pixelated; box-shadow: 0 0 0 1px var(--night), 0 var(--px) 0 1px rgba(21, 16, 13, 0.45); }
-.b-mesa__head:focus-visible img { outline: var(--px) solid var(--lantern); outline-offset: var(--px); }
-@media (hover: hover) { .b-mesa__head:hover img { outline: var(--px) solid var(--paper); outline-offset: var(--px); } }
+.b-mesa__more--phone { display: none; }
+@media (max-width: 899px) {
+  .b-mesa__riders { --hx: 210; --hy: 34; }
+  .b-mesa__rider:nth-child(n + 3), .b-mesa__more--wide { display: none; }
+  .b-mesa__more--phone { display: block; }
+}
+.b-mesa__rider { position: relative; display: block; width: calc(var(--u) * 12); line-height: 0; }
+/* a tap target larger than a narrow figure */
+.b-mesa__rider::before { content: ''; position: absolute; inset: -0.5rem calc(var(--u) * -1); }
+.b-mesa__rider img { display: block; width: 100%; height: auto; aspect-ratio: 1 / 2; image-rendering: pixelated; }
+/* the lantern in hand: hung from the bottom of the arm on the far side, its light thrown round the figure */
+.b-mesa__held { position: absolute; left: 82%; top: 60%; width: calc(var(--u) * 3.5); height: calc(var(--u) * 5.25); }
+/* pointed at or focused: a pixel outline round the figure itself, not a box round the picture */
+.b-mesa__rider:focus-visible { outline: none; }
+.b-mesa__rider:focus-visible img { filter: drop-shadow(var(--px) 0 0 var(--lantern)) drop-shadow(calc(var(--px) * -1) 0 0 var(--lantern)) drop-shadow(0 var(--px) 0 var(--lantern)) drop-shadow(0 calc(var(--px) * -1) 0 var(--lantern)); }
+@media (hover: hover) { .b-mesa__rider:hover img { filter: drop-shadow(var(--px) 0 0 var(--paper)) drop-shadow(calc(var(--px) * -1) 0 0 var(--paper)) drop-shadow(0 var(--px) 0 var(--paper)) drop-shadow(0 calc(var(--px) * -1) 0 var(--paper)); } }
 .b-mesa__more { align-self: center; padding: 0 0.3rem; background: var(--night); color: var(--paper); font-weight: 600; font-size: var(--fs-sm); line-height: 1.4; }
 
 @media (prefers-reduced-motion: reduce) { .b-mesa__layer { transform: none; } }
@@ -811,6 +945,25 @@
 .b-frame.is-ready .b-frame__poster { opacity: 0; }
 .b-frame.is-ready .b-frame__shade { background: linear-gradient(180deg, var(--veil) 0%, transparent 18%, transparent 100%); }
 .b-frame__sheet { position: absolute; inset: 0; z-index: 2; background: var(--map-water); }
+/* The town's lights coming on (World.tsx, scripts/map-lights.mjs): the still
+   arrives in the dusk, a layer of night over it, and when the world is most
+   of the way into view the night lifts and three layers of lamplight taken
+   off the still come on one after another, so the lanterns in the streets
+   light by groups; climbing back up to the sunset puts them out. A state,
+   like the name's windows: a short transition, so the layers are the
+   compositor's only while they change (held as a scroll animation, they were
+   composited on every frame of the scroll). Under reduced motion they change
+   in place; on a device that skips the effects, and once the live map is up,
+   there is no dusk and no layer of lights at all. */
+.b-frame__town { position: absolute; inset: 0; pointer-events: none; }
+.b-frame__dusk { position: absolute; inset: 0; background: var(--night); opacity: 0.5; transition: opacity 1200ms var(--ease-out); }
+.b-frame__lights { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 45%; opacity: 0; transition: opacity 500ms var(--ease-out); }
+.b-frame__town.is-lit .b-frame__dusk { opacity: 0; }
+.b-frame__town.is-lit .b-frame__lights { opacity: 1; }
+.b-frame__town.is-lit .b-frame__lights--2 { transition-delay: 300ms; }
+.b-frame__town.is-lit .b-frame__lights--3 { transition-delay: 600ms; }
+.b-frame.is-ready .b-frame__town, .b-frame.is-drawn .b-frame__town { visibility: hidden; }
+@media (prefers-reduced-motion: reduce) { .b-frame__dusk, .b-frame__lights { transition: none; } }
 .b-frame.is-drawn .b-frame__poster, .b-frame.is-drawn .b-frame__shade, .b-frame.is-drawn .b-frame__view { visibility: hidden; }
 /* While the viewer loads, the still takes on the live map's light (the layer
    over it lifts, above), so the hand-over, once the first tiles are drawn, is
@@ -870,40 +1023,99 @@ html.is-map-full { overflow: hidden; }
 .b-hud__head:focus-visible { outline: none; }
 .b-hud__follow { color: var(--lantern); }
 .b-hud__tools { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--sp-2); }
+/* The way out of the whole screen is first in the HUD, the back key at the
+   left end of a phone's plank; on a wide screen it stands after the tools,
+   a lit Loka, and the title takes the room between. */
+.b-hud__title { margin-right: auto; }
+.b-hud__back { order: 1; }
+.b-hud__backicon { display: none; }
 .b-hud__mid { display: grid; place-items: center; }
 .b-frame.is-drawn .b-hud__title .b-title, .b-frame.is-drawn .b-hud__meta { color: var(--ink); text-shadow: none; }
 .b-frame.is-drawn .b-hud__in img { box-shadow: 0 0 0 1px var(--ink); }
 
-/* The lantern that boots the viewer: the lantern itself is the control, no
-   panel round it. It hangs in a pool of night that falls over the map around
-   it, which is what keeps its words legible over a busy still, and is drawn
-   at a whole multiple of its 12 by 18 pixels so every pixel stays square.
-   Pointed at, it lifts a step and its word warms to paper. */
+/* The way into the 3D map: a lantern hung from the arm of a fence post
+   planted in the world, a sign nailed to the post under it, and a paper tag
+   under the sign. The lantern is the control and lifts a step when pointed
+   at; the sign's word warms to paper. The words are read off the wood and
+   the paper, so nothing soft has to be laid over the still to keep them
+   legible: the soft pool of night it used to hang in was the one blurred
+   edge on a page of hard pixels. The post stands left of the lantern, its
+   arm reaching over to the chain; drawn at whole multiples of the art's pixel. */
 .b-boot {
+  --arm: 6.5rem;     /* from the post to the lantern */
+  --chain: 1.25rem;
   pointer-events: auto;
   position: relative;
   isolation: isolate;
   display: grid;
   justify-items: center;
-  gap: var(--sp-2);
-  padding: var(--sp-5) var(--sp-7);
+  padding: 0 var(--sp-4) var(--sp-7);
   color: var(--lantern);
   text-align: center;
   text-decoration: none;
-  text-shadow: 0 var(--px) 0 var(--night);
 }
-.b-boot::before {
+/* the post, its arm along the top, and the chain the lantern hangs by */
+.b-boot__post {
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  bottom: 0;
+  left: calc(50% - var(--arm) - var(--px) * 3);
+  width: calc(var(--px) * 6);
+  background: var(--plank-up);
+  box-shadow: calc(var(--px) * 2) 0 0 rgba(21, 16, 13, 0.45);
+}
+.b-boot__post::before {
   content: '';
   position: absolute;
-  inset: -45% -25%;
-  z-index: -1;
-  background: radial-gradient(closest-side, var(--pane) 35%, var(--veil) 62%, transparent);
-  pointer-events: none;
+  top: 0;
+  left: 0;
+  width: calc(var(--arm) + var(--px) * 7);
+  height: calc(var(--px) * 4);
+  background: var(--plank);
+  box-shadow: 0 var(--px) 0 rgba(21, 16, 13, 0.45);
 }
-.b-boot .b-lantern { width: 4.5rem; height: 6.75rem; margin-bottom: var(--sp-1); transition: transform var(--dur-2) var(--ease-out); }
-.b-boot__word { font-family: var(--font-data); font-size: var(--fs-data-lg); letter-spacing: 0.04em; text-transform: uppercase; transition: color var(--dur-1) var(--ease-out); }
-.b-boot__sub { font-size: var(--fs-sm); color: var(--tc-white); }
-.b-boot:focus-visible { outline: var(--px) solid var(--lantern); outline-offset: calc(var(--sp-1) * -1); }
+/* its foot, a block of the ground it is planted in */
+.b-boot::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  bottom: 0;
+  left: calc(50% - var(--arm) - var(--px) * 6);
+  width: calc(var(--px) * 12);
+  height: calc(var(--px) * 3);
+  background: var(--wood-dark);
+  box-shadow: inset 0 var(--px) 0 var(--tc-brown);
+}
+.b-boot__post::after {
+  content: '';
+  position: absolute;
+  top: calc(var(--px) * 4);
+  left: calc(var(--arm) + var(--px) * 2);
+  width: var(--px);
+  height: var(--chain);
+  /* links of iron, a pixel each with a pixel between */
+  background: repeating-linear-gradient(180deg, var(--ink-faint) 0 var(--px), transparent var(--px) calc(var(--px) * 2));
+}
+.b-boot .b-lantern { width: 4.5rem; height: 6.75rem; margin-top: calc(var(--chain) + var(--px) * 4); transition: transform var(--dur-2) var(--ease-out); }
+/* the sign: a short plank nailed across the post, the word burnt in lantern light */
+.b-boot__word {
+  margin-top: var(--sp-3);
+  padding: var(--sp-2) var(--sp-4);
+  background: var(--plank);
+  clip-path: var(--notch);
+  box-shadow: inset 0 0 0 var(--px) rgba(21, 16, 13, 0.35);
+  font-family: var(--font-data);
+  font-size: var(--fs-data-lg);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-shadow: 0 var(--px) 0 var(--wood-dark);
+  transition: color var(--dur-1) var(--ease-out);
+}
+/* what it does, on a paper tag pinned under the sign */
+.b-boot__sub { margin-top: var(--px); padding: var(--px) var(--sp-3); background: var(--paper); color: var(--ink-soft); clip-path: var(--notch); font-size: var(--fs-sm); line-height: 1.5; }
+.b-boot:focus-visible { outline: none; }
+.b-boot:focus-visible .b-boot__word { outline: var(--px) solid var(--lantern); outline-offset: var(--px); clip-path: none; }
 .b-boot:focus-visible .b-lantern { transform: translateY(calc(var(--px) * -2)); }
 .b-boot:focus-visible .b-boot__word { color: var(--paper); }
 @media (hover: hover) {
@@ -914,14 +1126,14 @@ html.is-map-full { overflow: hidden; }
 /* a phone's frame is smaller and its word has less room: the lantern at four
    times its pixels instead of six, the word at the bitmap face's smaller size */
 @media (max-width: 599px) {
-  .b-boot { padding: var(--sp-4) var(--sp-5); }
+  .b-boot { --arm: 4.5rem; --chain: 0.75rem; padding-bottom: var(--sp-6); }
   .b-boot .b-lantern { width: 3rem; height: 4.5rem; }
-  .b-boot__word { font-size: var(--fs-data); }
+  .b-boot__word { font-size: var(--fs-data); padding: var(--sp-2) var(--sp-3); }
 }
 /* the narrowest phones (320 px): the rail's heading wraps and the frame is
-   at its least, so the lantern drops its small line rather than run into the places */
+   at its least, so the lantern drops its tag rather than run into the places */
 @media (max-width: 359px) {
-  .b-boot { padding: var(--sp-3) var(--sp-4); }
+  .b-boot { padding-bottom: var(--sp-4); }
   .b-boot__sub { display: none; }
 }
 .b-boot__wait { font-family: var(--font-data); font-size: var(--fs-data); color: var(--paper); text-shadow: 0 var(--px) 0 var(--night); }
@@ -977,7 +1189,9 @@ html.is-map-full { overflow: hidden; }
 .b-places { position: absolute; inset-inline: 0; bottom: 0; z-index: 3; display: grid; gap: var(--sp-2); padding: var(--sp-6) var(--gutter) var(--sp-4); pointer-events: none; }
 .b-places > * { pointer-events: auto; }
 @media (max-width: 899px) { .b-places { padding-bottom: var(--sp-3); } }
-.b-places__head { font-size: var(--fs-sm); color: var(--paper); text-shadow: 0 var(--px) 0 var(--night); }
+/* on a plate, the hard band of shadow the game lays its chat on: the live map
+   under it is as bright as its sky, and the still's dark foot is gone with the still */
+.b-places__head { justify-self: start; padding: var(--px) var(--sp-2); background: var(--plate); clip-path: var(--notch); font-size: var(--fs-sm); color: var(--paper); text-shadow: 0 var(--px) 0 var(--night); }
 /* min-width: a grid item would otherwise grow to fit every chip instead of scrolling */
 .b-railwrap { position: relative; min-width: 0; }
 .b-rail {
@@ -1116,15 +1330,26 @@ html.is-map-full { overflow: hidden; }
   /* The HUD on a phone: the title and the tools share one row, and the date
      and who is in run under both, the whole width. Worded buttons wrapped
      into a staircase down the world, where they read as more name tags among
-     the places'; here the tools are keys, the same bevelled wood as the
-     viewer's own at the foot of the frame, each a drawn icon with its word
-     kept for screen readers. */
+     the places'; here the tools are the hotbar's own slots, sunk side by side
+     into one strip of night, each a drawn icon with its word kept for screen
+     readers. Wood keys on the plank's wood ran together into one brown block
+     with a dark hole beside it; a slot reads as a slot on the plank and on the
+     world alike, and the hotbar under a thumb already taught what one is. */
   .b-hud__top { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--sp-2) var(--sp-3); }
   .b-hud__title { display: contents; }
   .b-hud__title .b-title { grid-area: 1 / 1; min-width: 0; font-size: min(var(--fs-xl), 1.625rem); }
   .b-hud__meta { grid-area: 2 / 1 / 3 / -1; }
-  .b-hud__tools { grid-area: 1 / 2; flex-wrap: nowrap; gap: 0; filter: drop-shadow(0 var(--px) 0 var(--veil)); }
-  .b-hud__tool.b-btn {
+  .b-hud__tools {
+    grid-area: 1 / 2;
+    flex-wrap: nowrap;
+    gap: var(--px);
+    padding: var(--px);
+    background: var(--night);
+    /* its rim, and the hard shadow it throws on the world */
+    box-shadow: 0 0 0 var(--px) var(--wood-dark), 0 calc(var(--px) * 3) 0 var(--veil);
+  }
+  .b-hud__tool.b-btn,
+  .b-hud__back.b-btn {
     position: relative;
     width: var(--tap);
     height: var(--tap);
@@ -1132,37 +1357,60 @@ html.is-map-full { overflow: hidden; }
     padding: 0;
     border: 0;
     border-radius: 0;
-    background: linear-gradient(180deg, var(--wood-light) 0 var(--px), var(--wood) var(--px) calc(100% - var(--px) * 2), var(--wood-dark) calc(100% - var(--px) * 2));
-    color: var(--paper);
-    box-shadow: var(--bevel);
+    background: var(--dusk-2);
+    color: var(--tc-white);
+    box-shadow: var(--bevel-in);
   }
-  .b-hud__tool + .b-hud__tool { border-left: var(--px) solid var(--wood-dark); }
-  .b-hud__tool .b-btn__icon { width: 1.25rem; height: 1.25rem; }
+  /* a 16-unit icon at 32 px, the art's pixel at the site's --px, every block whole, filling its slot as an item does */
+  .b-hud__tool .b-btn__icon { width: 2rem; height: 2rem; }
   .b-hud__word { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-  /* pressed: the key sits in, its icon lit, a rule of lantern along its foot, as the viewer's */
-  .b-hud__tool.b-btn.is-on { color: var(--lantern); box-shadow: var(--bevel-in), inset 0 -3px 0 var(--lantern); }
-  .b-hud__tool.b-btn:focus-visible { background: var(--lantern); color: var(--night); }
-  .b-hud__tool.b-btn:active { transform: none; background: var(--lantern-deep); color: var(--night); box-shadow: var(--bevel-in); }
-  /* how many pictures hang on the wall: a tag pinned to the key's corner */
-  .b-hud__count { position: absolute; top: calc(var(--px) * -2); right: calc(var(--px) * -2); padding: 0 0.25rem; background: var(--lantern); color: var(--night); font-family: var(--font-data); font-size: var(--fs-chip); line-height: 1.6; letter-spacing: 0; }
-  /* the way out stands apart, the same dark nailed-in square that closes a room */
-  .b-hud__tool.b-hud__close.b-btn { margin-left: var(--sp-2); border-left: 0; background: var(--veil); color: var(--lantern); box-shadow: none; clip-path: var(--notch); }
-  .b-hud__tool.b-hud__close.b-btn .b-btn__icon { width: 1rem; height: 1rem; }
-  .b-hud__tool.b-hud__close.b-btn:focus-visible { background: var(--lantern); color: var(--night); }
+  /* pressed: the slot in hand, framed as the hotbar frames it, a light square
+     a pixel larger than the slot with a pixel of night inside, its icon lit */
+  .b-hud__tool.b-btn.is-on { z-index: 1; background: var(--dusk-2); color: var(--lantern); }
+  .b-hud__tool.b-btn.is-on::before {
+    content: '';
+    position: absolute;
+    inset: calc(var(--px) * -2);
+    border: var(--px) solid var(--paper);
+    box-shadow: inset 0 0 0 var(--px) var(--night);
+    clip-path: var(--notch);
+    pointer-events: none;
+  }
+  .b-hud__tool.b-btn:focus-visible,
+  .b-hud__back.b-btn:focus-visible { background: var(--lantern); color: var(--night); }
+  @media (hover: hover) {
+    .b-hud__tool.b-btn:hover,
+    .b-hud__back.b-btn:hover { background: var(--lantern); color: var(--night); }
+  }
+  .b-hud__tool.b-btn:active,
+  .b-hud__back.b-btn:active { transform: none; background: var(--lantern-deep); color: var(--night); }
+  /* how many pictures hang on the wall: the stack's count, where the game
+     writes it on a slot, low on the right over the item, light with its hard shadow */
+  .b-hud__count { position: absolute; right: var(--px); bottom: calc(var(--px) * -1); color: var(--paper); font-family: var(--font-data); font-size: var(--fs-data); line-height: 1; letter-spacing: 0; text-shadow: var(--px) var(--px) 0 var(--night); pointer-events: none; }
 
-  /* The whole screen: the title and the tools are hung on a plank across the
-     top, as the rooms' and the bar's, so the world's name tags pass under a
-     solid edge instead of between floating buttons. */
+  /* The way out, on the whole screen: the back key at the left end of the
+     plank, as the base maps' viewers keep theirs, a slot like the tools' with
+     the lantern's arrow in it. It goes back to the page, as the phone's own
+     back does. */
+  .b-hud__back.b-btn { grid-area: 1 / 1 / 3 / 2; color: var(--lantern); box-shadow: var(--bevel-in), 0 0 0 var(--px) var(--night), 0 0 0 calc(var(--px) * 2) var(--wood-dark); }
+  .b-hud__closeicon { display: none; }
+  .b-hud__backicon { display: block; width: 2rem; height: 2rem; }
+
+  /* The whole screen: one plank across the top, as the rooms' and the bar's,
+     so the world's name tags pass under a solid edge instead of between
+     floating buttons. The back key at its left end, the title and the date
+     stacked beside it, the tools' strip at its right: one row, a slot tall.
+     It comes down as the world opens, and the places rise to meet it. */
   .b-frame.is-full .b-hud, .b-frame:fullscreen .b-hud { padding-top: 0; }
   .b-frame.is-full .b-hud__top, .b-frame:fullscreen .b-hud__top {
     position: relative;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 0 var(--sp-3);
     margin-inline: calc(var(--gutter) * -1);
-    padding: calc(env(safe-area-inset-top, 0px) + var(--sp-2)) var(--gutter) var(--sp-2);
-    background:
-      repeating-linear-gradient(90deg, rgba(21, 16, 13, 0.18) 0 var(--px), transparent var(--px) 13px),
-      repeating-linear-gradient(90deg, transparent 0 37px, rgba(255, 240, 210, 0.04) 37px 39px),
-      linear-gradient(180deg, var(--wood-light) 0 var(--px), var(--wood) var(--px) calc(100% - var(--px) * 2), var(--wood-dark) calc(100% - var(--px) * 2));
+    padding: calc(env(safe-area-inset-top, 0px) + var(--sp-2)) var(--sp-3) var(--sp-2);
+    background: var(--plank);
     box-shadow: inset 0 0 0 var(--px) rgba(21, 16, 13, 0.35);
+    animation: b-plank-in var(--dur-3) var(--ease-out);
   }
   .b-frame.is-full .b-hud__top::after, .b-frame:fullscreen .b-hud__top::after {
     content: '';
@@ -1172,18 +1420,31 @@ html.is-map-full { overflow: hidden; }
     background: linear-gradient(180deg, var(--tc-red) 0 25%, var(--tc-orange) 25% 50%, var(--tc-yellow) 50% 75%, var(--tc-white) 75%);
     filter: drop-shadow(0 3px 0 rgba(21, 16, 13, 0.4));
   }
-  .b-frame.is-full .b-hud__title .b-title, .b-frame:fullscreen .b-hud__title .b-title { font-size: var(--fs-lg); text-shadow: 0 var(--px) 0 var(--wood-dark); }
-  .b-frame.is-full .b-hud__meta, .b-frame:fullscreen .b-hud__meta { text-shadow: 0 1px 0 var(--wood-dark); }
-  .b-frame.is-full .b-hud__tools, .b-frame:fullscreen .b-hud__tools { filter: none; }
+  .b-frame.is-full .b-hud__title .b-title, .b-frame:fullscreen .b-hud__title .b-title { grid-area: 1 / 2; align-self: end; font-size: var(--fs-lg); line-height: 1.1; text-shadow: 0 var(--px) 0 var(--wood-dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .b-frame.is-full .b-hud__meta, .b-frame:fullscreen .b-hud__meta { grid-area: 2 / 2 / 3 / 3; align-self: start; gap: 0 var(--sp-2); line-height: 1.35; text-shadow: 0 1px 0 var(--wood-dark); }
+  /* set into the plank, the strip throws no shadow */
+  .b-frame.is-full .b-hud__tools, .b-frame:fullscreen .b-hud__tools { grid-area: 1 / 3 / 3 / 4; box-shadow: 0 0 0 var(--px) var(--wood-dark); }
+  /* the date stands alone beside the title, and who is in is the dot and
+     their heads; the words before each are kept for screen readers */
+  .b-frame.is-full .b-hud__lead, .b-frame:fullscreen .b-hud__lead,
+  .b-frame.is-full .b-hud__inword, .b-frame:fullscreen .b-hud__inword { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .b-frame.is-full .b-hud__in, .b-frame:fullscreen .b-hud__in { gap: var(--sp-1); }
   /* on the plank the painted map's ink would be lost in the wood */
   .b-frame.is-full.is-drawn .b-hud__title .b-title, .b-frame.is-drawn:fullscreen .b-hud__title .b-title { color: var(--paper); }
   .b-frame.is-full.is-drawn .b-hud__meta, .b-frame.is-drawn:fullscreen .b-hud__meta { color: var(--tc-white); }
   .b-frame.is-full.is-drawn .b-hud__in img, .b-frame.is-drawn:fullscreen .b-hud__in img { box-shadow: 0 0 0 1px var(--night); }
+  .b-frame.is-full .b-places, .b-frame:fullscreen .b-places { animation: b-rail-in var(--dur-3) var(--ease-out) 120ms backwards; }
 }
-/* the narrowest phones: the keys give up a little so the title keeps its word */
+@keyframes b-plank-in { from { transform: translateY(calc(-100% - 0.5rem)); } }
+@keyframes b-rail-in  { from { opacity: 0; transform: translateY(var(--sp-5)); } }
+@media (prefers-reduced-motion: reduce) {
+  .b-frame.is-full .b-hud__top, .b-frame:fullscreen .b-hud__top,
+  .b-frame.is-full .b-places, .b-frame:fullscreen .b-places { animation: none; }
+}
+/* the narrowest phones: the slots give up a little so the title keeps its word */
 @media (max-width: 359px) {
-  .b-hud__tool.b-btn { width: 2.5rem; height: 2.5rem; }
-  .b-hud__tool.b-hud__close.b-btn { margin-left: var(--sp-1); }
+  .b-hud__tool.b-btn, .b-hud__back.b-btn { width: 2.5rem; height: 2.5rem; }
+  .b-frame.is-full .b-hud__top, .b-frame:fullscreen .b-hud__top { column-gap: var(--sp-2); }
 }
 
 /* ─── the rooms: the crew and the shelf, opened over the world ──
@@ -1198,7 +1459,8 @@ html.is-map-full { overflow: hidden; }
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   max-height: calc(100% - 5.5rem);
-  background: var(--dusk);
+  /* a room has walls: boards side by side, in the room's dark */
+  background: var(--wall);
   box-shadow: 0 calc(var(--px) * -2) 0 var(--wood-dark), 0 -14px 0 rgba(21, 16, 13, 0.25);
   transform: translateY(100%);
   visibility: hidden;
@@ -1214,10 +1476,7 @@ html.is-map-full { overflow: hidden; }
   gap: var(--sp-2) var(--sp-4);
   min-height: 3.25rem;
   padding: var(--sp-2) var(--gutter);
-  background:
-    repeating-linear-gradient(90deg, rgba(21, 16, 13, 0.18) 0 var(--px), transparent var(--px) 13px),
-    repeating-linear-gradient(90deg, transparent 0 37px, rgba(255, 240, 210, 0.04) 37px 39px),
-    linear-gradient(180deg, var(--wood-light) 0 var(--px), var(--wood) var(--px) calc(100% - var(--px) * 2), var(--wood-dark) calc(100% - var(--px) * 2));
+  background: var(--plank);
   box-shadow: inset 0 0 0 var(--px) rgba(21, 16, 13, 0.35);
 }
 /* a room's name is the largest thing in the room: everything inside stops a step below */
@@ -1230,6 +1489,11 @@ html.is-map-full { overflow: hidden; }
 .b-room__body { overflow-y: auto; overscroll-behavior: contain; padding-block: var(--sp-5) var(--sp-6); scrollbar-width: thin; scrollbar-color: var(--wood-light) transparent; }
 @media (max-width: 899px) { .b-room__body { padding-block: var(--sp-4) var(--sp-5); } }
 @media (max-width: 479px) { .b-room__note { display: none; } }
+
+/* Paper hung on a wall stands off it: a hard shadow a pixel or two under it,
+   the site's only kind. On a wrapper, because paper is cut to its notched or
+   torn shape and the cut would take the shadow with it. */
+.b-hang { filter: drop-shadow(0 calc(var(--px) * 2) 0 rgba(21, 16, 13, 0.55)); }
 
 /* ─── the album: the whole wall, opened over the world ────────── */
 .b-album { position: fixed; inset: 0; z-index: var(--z-drawer); overflow-y: auto; background: var(--scrim-deep); padding-block: calc(var(--sp-6) + env(safe-area-inset-top, 0px)) var(--sp-8); }
@@ -1588,7 +1852,7 @@ html.is-map-full { overflow: hidden; }
 
 /* Snow on the mesas and the ridge, dimming with the evening as the rock does.
    --evening does not inherit, so the fallbacks set it on the snow itself. */
-.b-mesa__snow { fill: color-mix(in oklab, #EEEAE2, var(--night) calc(var(--evening) * 40%)); }
+.b-mesa__snow { fill: #EEEAE2; }   /* in the hero the night layer darkens it with the rock */
 .b-ridge .b-mesa__snow { fill: color-mix(in oklab, #EEEAE2, var(--night) 45%); }
 .b-foot.is-snow .b-ground::before { height: calc(var(--px) * 2); background: #D9D4CA; opacity: 0.9; }
 
@@ -1673,58 +1937,59 @@ html.is-map-full { overflow: hidden; }
 .b-paper .b-note { color: var(--ink-faint); }
 
 /* ─── campfire: the footer ────────────────────────────────────── */
-/* One band of ground, no taller than it needs to be. The doors are in the bar
-   and the hotbar, so the footer carries only the way back up, the wind and
-   fire, and the small print, and gives the room to the fire, which stands on
-   the ground strip. On a phone the way up and the sound share one row, so
-   the fire is reached a row sooner. */
+/* One band of ground. The doors are in the bar and the hotbar, so the footer
+   carries the fire, the way back up and the wind, which stand on the ground,
+   and the small print, which is on the dark earth under it. The fire is the
+   scene and the duel's door, so it has the middle of the band, at eight
+   times its pixels in a ring of stones; the way up and the wind sit either
+   side of it on a wide screen, and share the row above it on a phone. */
 .b-foot { position: relative; --ground: calc(var(--px) * 14); padding-top: var(--sp-6); overflow: clip; }
+.b-foot__scene { position: relative; }
 .b-foot__inner {
   position: relative;
   z-index: 2;   /* the fire stands on the ground strip and its light falls across it */
   display: grid;
   grid-template-columns: auto auto;
-  grid-template-areas: 'up nav' 'credit credit' 'camp camp';
+  grid-template-areas: 'up nav' 'camp camp';
   justify-content: center;
   justify-items: center;
-  align-items: center;
-  text-align: center;
-  gap: var(--sp-4) var(--sp-3);
-  /* the floor: how high the text stands above the ground, so it clears the
-     ridge behind it and the fire has a horizon to burn in front of */
-  --floor: 3.25rem;
-  padding-bottom: var(--floor);
+  align-items: end;
+  gap: var(--sp-5) var(--sp-4);
 }
 @media (min-width: 720px) {
   .b-foot__inner {
-    grid-template-columns: auto minmax(0, 1fr) auto auto;
-    grid-template-areas: 'camp credit nav up';
-    justify-content: stretch;
-    align-items: end;
-    justify-items: start;
-    text-align: left;
-    column-gap: var(--sp-6);
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    grid-template-areas: 'up camp nav';
+    column-gap: var(--sp-7);
+    padding-top: var(--sp-5);
   }
+  .b-foot__up { justify-self: end; margin-bottom: var(--sp-3); }
+  .b-foot__nav { justify-self: start; margin-bottom: var(--sp-3); }
 }
 
-/* the fire, and its light pooled across the band */
-.b-foot__camp { grid-area: camp; position: relative; display: flex; justify-content: center; align-items: flex-end; margin-bottom: calc(var(--floor) * -1); }
+/* the fire, and its light pooled wide across the band */
+.b-foot__camp { grid-area: camp; position: relative; display: flex; justify-content: center; align-items: flex-end; }
 .b-foot__camp::before {
   content: '';
   position: absolute;
   left: 50%;
-  bottom: -1.5rem;
-  width: 26rem;
-  height: 9rem;
-  margin-left: -13rem;
-  background: radial-gradient(closest-side, rgba(224, 96, 42, 0.30), transparent);
+  bottom: -2.5rem;
+  width: 46rem;
+  height: 13rem;
+  margin-left: -23rem;
+  background: radial-gradient(closest-side, rgba(224, 96, 42, 0.30), rgba(224, 96, 42, 0.08) 60%, transparent);
   animation: b-flicker var(--dur-lantern) ease-in-out infinite;
   pointer-events: none;
 }
 .b-foot__fire { display: block; padding: 0; border: 0; background: none; cursor: pointer; }
+.b-foot__fire:focus-visible { outline: none; }
+.b-foot__fire:focus-visible .b-fire { outline: var(--px) solid var(--lantern); outline-offset: var(--px); }
 .b-foot__fire:focus-visible .b-fire { transform: translateY(calc(var(--px) * -1)); }
 @media (hover: hover) { .b-foot__fire:hover .b-fire { transform: translateY(calc(var(--px) * -1)); } }
 .b-fire { position: relative; display: block; width: 5.5rem; height: 5.5rem; margin-bottom: calc(var(--px) * -2); transition: transform var(--dur-2) var(--ease-out); }
+/* the footer's own fire: eight times its pixels, six on a phone, standing on the ground in its stones */
+.b-foot .b-fire { width: 8rem; height: 8rem; margin-bottom: 0; }
+@media (max-width: 719px) { .b-foot .b-fire { width: 6rem; height: 6rem; } }
 .b-fire svg { width: 100%; height: 100%; display: block; shape-rendering: crispEdges; overflow: visible; }
 .b-fire__frame { opacity: 0; animation: b-frames 900ms steps(1, end) infinite; }
 @keyframes b-frames { 0%, 33.33% { opacity: 1; } 33.34%, 100% { opacity: 0; } }
@@ -1734,7 +1999,7 @@ html.is-map-full { overflow: hidden; }
 .b-ridge {
   position: absolute;
   inset-inline: 0;
-  bottom: var(--ground);                 /* the ridge stands on the ground strip */
+  bottom: 0;                             /* the ridge stands on the ground strip, at the foot of the scene */
   height: clamp(3rem, 7vw, 5rem);
   color: color-mix(in oklab, var(--tc-brown), var(--night) 52%);
   pointer-events: none;
@@ -1750,12 +2015,11 @@ html.is-map-full { overflow: hidden; }
 
 /* the way back up the evening */
 .b-foot__up { grid-area: up; gap: var(--sp-2); }
-@media (min-width: 720px) { .b-foot__up { justify-self: end; } }
 .b-foot__upchev { width: 0.875rem; height: 0.875rem; flex-shrink: 0; transition: transform var(--dur-2) var(--ease-out); }
 .b-foot__up:focus-visible .b-foot__upchev { transform: translateY(calc(var(--px) * -1)); }
 @media (hover: hover) { .b-foot__up:hover .b-foot__upchev { transform: translateY(calc(var(--px) * -1)); } }
 
-.b-foot__credit { grid-area: credit; }
+.b-foot__credit { position: relative; z-index: 1; padding: var(--sp-4) var(--gutter) var(--sp-5); background: var(--night); text-align: center; }
 .b-foot__credit p { font-size: var(--fs-sm); color: var(--text-soft); line-height: 1.5; }
 .b-foot__credit .b-foot__small { font-size: var(--fs-sm); color: var(--text-faint); }
 /* the owner's way in: in the small print, lit and underlined, since its colour alone is too close to the words round it */

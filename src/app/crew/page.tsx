@@ -82,7 +82,7 @@ export default function CrewPage() {
              once and only the lines about each wall fill in */
           <div className="b-rollcall" aria-busy={crew === null}>
             {(crew ?? CREW.map(blankPoster)).map(m => (
-              <div key={m.username}>
+              <div key={m.username} className="b-hang">
                 <Link href={`/crew/${m.username}`} className={`b-paper b-paper--torn b-poster b-poster--crew${m.cover ? ' has-cover' : ''}`}>
                   {m.cover && (
                     // eslint-disable-next-line @next/next/no-img-element
