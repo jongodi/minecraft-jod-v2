@@ -656,3 +656,58 @@ The phone, the figure this repo has always held to, is level. The desktop gap is
 2. **Find the intermittent hydration mismatch (React #418)** that shows on some loads at 360 px on `main` and here alike; something rendered on the server with the time in it, probably.
 3. **Measure the riders with real skins.** minotar's body render was staged here; check the figures' scale with the real ones, and whether the armour layer reads at 12 units wide.
 
+
+---
+
+## Part 6. An improve pass: what was there, made right
+
+Run on 7 October 2026 against a production build of `32ffe69`, in headless Chromium, with the staged data (`STAGE=1`). The brief was the layout, the design and the structure, more immersive and more itself, no new features. Three passes had already built the evening; this one read the whole site as a visitor and as a maintainer and fixed what it found, in nine commits on `claude/website-design-overhaul-p2npcp`. Every pass: `tsc`, `next lint`, the unit tests (240 before, 243 after), screenshots at 390 and 1440, Lighthouse, the scroll probe, and a production build.
+
+### Fixed
+
+- **Dates in English.** `formatDate` left the day to the browser's locale data, and a browser without Icelandic wrote "Oct 7, 2026" on the wall, the lightbox and the composer. The headless Chromium the screenshots come from carries no Icelandic at all (`Intl.DateTimeFormat.supportedLocalesOf(['is'])` is empty there), which is how the English date got into Part 5's screenshots unnoticed. The numbers (`formatNumber`) and the play nights' days (`night.ts`) were already written out by hand for this reason; the dates now are too, in UTC, which is Iceland's clock the year round, and the month list lives in one place. Three tests cover it.
+- **Two names for one page.** The roll call's tab title said "Hópurinn" while its door, its heading and the home page's room all say "Eftirlýst".
+
+### Improved
+
+**Design system.** A pressed button sinks by `--px`, one pixel of the art, where it sank one screen pixel. A lantern reached for answers the hand: the glass of a dark door's lantern (the bar's doors, the hotbar's slots) takes the deeper amber and a small flame shows under the pointer and on focus, short of lit, so the rule that one door is lit at a time still holds.
+
+**Layout.** The empty play-night block in the crew's room pushed its one button to the far edge of the room; the embers, the words and the way to light a fire are one group now, the button under the words, on every width. Over the sunset the bar said the address a second time, small, at the top right of the first screen, right above the hero's own button; it now waits for the plank, as the bar's lantern already did, and keeps its width so nothing beside it moves.
+
+**Visuals.** A wall with nothing pinned was one faint line in a thousand pixels of dark beside the poster on a wide screen; it is a torn slip nailed where the first thing will hang, with a kicker in red ink, the owner's telling them what to do and where, a visitor's saying whose wall is bare. The 404 and the error page stood on a bare black page beside pages that hang under the night sky and the far ridge; they stand under the same night now, the dark lantern hanging in the sky and the words on the ground under the ridge. The shelf counter's empty glyph was a hatched square that read as a missing picture; the slip carries the Ð seal until a crate is pointed at.
+
+**Logic.** `Wall.tsx` mixed the wall with its three dialogs (sign in, password, name and email), 470 lines of two concerns; the dialogs are `WallDialogs.tsx` (204 lines) and the wall keeps what hangs on it (282). No behaviour changed.
+
+### Measured
+
+Lighthouse 12, mobile preset, `/` twice before and twice after, `/crew` once each:
+
+| | Perf | LCP | TBT | CLS |
+|---|---|---|---|---|
+| `/` before | 89 / 97 | 2.6 s | 340 / 80 ms | 0 |
+| `/` after | 96 / 98 | 2.6 / 2.3 s | 90 / 100 ms | 0 |
+| `/crew` before | 90 | 3.2 s | 200 ms | 0.006 |
+| `/crew` after | 92 | 3.2 s | 90 ms | 0.006 |
+
+Accessibility, Best Practices and SEO are 100 / 100 / 100 before and after (Best Practices 96 on `/crew` both times, the sandbox blocking the head images). The spread is the sandbox's; the changes touch no load path. CSS gzipped: the page sheet 15.3 → 15.4 kB, the board's 3.8 → 3.8 kB, the wall's 3.3 → 3.3 kB; First Load JS unchanged (`/` 140 kB, `/crew` 133 kB, a wall 154 kB). Scroll probe, phone 390 × 844 at 4× CPU: mean 17.0 ms, p95 20.4 ms, 6 long frames of 855, level with Part 5. `scrollWidth` equals the viewport on every page at 390 and 1440, and the console is clean on both apart from the 404 page's own status. The keyboard walks the home page in order: the skip link, the mark, the three doors, the address, the lantern, the world's tools, the signpost, the places; Enter on a door opens its room and Escape closes it.
+
+### Before and after
+
+`docs/improve/`: `compare-1440-wall-empty.webp` and `compare-390-wall-empty.webp` (the pinned note), `compare-1440-wall-prints.webp` (the dates, with a staged wall), `compare-1440-404.webp` (the night), `compare-1440-hopur.webp` (the play-night block), `compare-1440-hillan.webp` (the counter's seal), `compare-1440-hero.webp` (the bar over the sunset). Left is before, right is after.
+
+### Not done
+
+- **Boards behind a member's wall.** The roll call hangs its posters on a notice board of planks; a member's prints hang on the bare night. A wall of boards behind the right column would make the page's name true, but it changes every print's surroundings (replies, the editor, the pin slot) and wants a look at real walls with real prints first.
+- **The world's HUD on a wide screen** keeps three worded buttons; the phone's drawn slots read better. Left as the design doc decided it.
+
+### Feature ideas noticed
+
+- A **sound when a door opens** or a slot is picked, under the ambience toggle's own switch.
+- **A shooting star** in the hero's night sky now and then, where the stars already are.
+- The **wall's note for the owner could offer the pin slot itself** (focus it on press), one step past an empty state.
+
+### Next pass
+
+1. Boards behind a member's wall, measured against real walls (see Not done).
+2. Take a new still with the map sync, as Part 5 asked; its lights come off the still and the recolour was by hand.
+3. The crew page's "Á töflunni" tab at 1440 is a plain grid of cards under the stars; it could hang on the same board the posters do.
