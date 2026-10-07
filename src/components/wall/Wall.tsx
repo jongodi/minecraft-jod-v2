@@ -2,10 +2,12 @@
 
 // A member's wall: their wanted poster at the top, the pin slot under it
 // when it is their own, and everything they have pinned, newest first.
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import type { CrewProfile, CrewEntry } from '@/lib/crew-types';
+import type { SignWood } from '@/lib/sign-wood';
+import { nameEm } from '@/lib/name-width';
 import { LIMITS, allPhotos, coverPhoto, sameUser } from '@/lib/crew-types';
 import type { PlayerStat, StatsResponse } from '@/app/api/stats/route';
 import { formatDate } from '@/lib/format';
@@ -29,7 +31,7 @@ const WallLightbox = dynamic(() => import('./WallLightbox'), { ssr: false });
 const LIMITS_PW = 6;
 
 /** A place on the map, as the wall needs it: to pin things at and to list what the member built. */
-export interface WallPlace { id: number; label: string; sublabel: string; builders: string[] }
+export interface WallPlace { id: number; label: string; sublabel: string; builders: string[]; wood: SignWood }
 
 // ─── Badges: the highest earned tier per category ─────────────────────────────
 
@@ -254,11 +256,13 @@ function ContactModal({ username, onClose }: { username: string; onClose: () => 
 interface Props {
   initial: CrewProfile;
   places:  WallPlace[];
+  /** the member's numbers from the last snapshot, so the poster is drawn whole before the live ones come */
+  initialStats?: PlayerStat | null;
   /** true when the page was opened from a sign-in link */
   justSignedIn?: boolean;
 }
 
-export default function Wall({ initial, places, justSignedIn = false }: Props) {
+export default function Wall({ initial, places, initialStats = null, justSignedIn = false }: Props) {
   const [profile, setProfile] = useState<CrewProfile>(initial);
   const { me, hasPassword, refresh, signOut } = useCrewSession();
   const isOwner = sameUser(me, profile.username);
@@ -272,11 +276,13 @@ export default function Wall({ initial, places, justSignedIn = false }: Props) {
   const [bioSaving,   setBioSaving]   = useState(false);
   /* a change made from an entry (the cover print) that did not go through */
   const [wallError,   setWallError]   = useState('');
-  const [stats,       setStats]       = useState<PlayerStat | null>(null);
+  const [stats,       setStats]       = useState<PlayerStat | null>(initialStats);
   const [statsMeta,   setStatsMeta]   = useState<{ source: string; cachedAt: string | null } | null>(null);
   const [lightbox,    setLightbox]    = useState<number | null>(null);
   const [origin,      setOrigin]      = useState<DOMRect | null>(null);
   const [welcome,     setWelcome]     = useState(justSignedIn);
+  /* the sign put up from this page, which swings in on its chains */
+  const [fresh,       setFresh]       = useState<string | null>(null);
 
   const username = profile.username;
 
@@ -284,7 +290,8 @@ export default function Wall({ initial, places, justSignedIn = false }: Props) {
     fetch('/api/stats')
       .then(r => r.json())
       .then((data: StatsResponse) => {
-        setStats(data.players.find(p => sameUser(p.username, username)) ?? null);
+        /* an answer with nothing for them keeps the snapshot the page was drawn with */
+        setStats(s => data.players.find(p => sameUser(p.username, username)) ?? s);
         setStatsMeta({ source: data.source, cachedAt: data.cachedAt });
       })
       .catch(() => {});
@@ -295,6 +302,31 @@ export default function Wall({ initial, places, justSignedIn = false }: Props) {
     if (me === undefined) return;
     fetch(`/api/crew/${username}`, { cache: 'no-store' }).then(r => (r.ok ? r.json() : null)).then((p: CrewProfile | null) => { if (p) { setProfile(p); setBioText(p.bio); } }).catch(() => {});
   }, [me, username]);
+
+  /* From 1024 px the poster rides down the wall beside the signs instead of
+     leaving an empty column under it. It sticks under the bar while it fits
+     the screen; a poster taller than the screen scrolls with the page until its
+     foot is in view and holds there, so no part of it is ever out of reach. */
+  const posterRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const poster = posterRef.current;
+    if (!poster) return;
+    let frame = 0;
+    const place = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+        const top = rem * 5.5;        /* the bar, its strata and a step of night */
+        const foot = rem * 1.5;
+        poster.style.setProperty('--poster-top', `${Math.min(top, window.innerHeight - poster.offsetHeight - foot)}px`);
+      });
+    };
+    place();
+    const watch = new ResizeObserver(place);
+    watch.observe(poster);
+    window.addEventListener('resize', place);
+    return () => { cancelAnimationFrame(frame); watch.disconnect(); window.removeEventListener('resize', place); };
+  }, []);
 
   const prints = useMemo(() => allPhotos(profile), [profile]);
   /* a wall with prints fetches the lightbox's code once the page is idle, so the first print opens at once */
@@ -326,7 +358,7 @@ export default function Wall({ initial, places, justSignedIn = false }: Props) {
     finally { setBioSaving(false); }
   }
 
-  const onPinned  = useCallback((entry: CrewEntry) => setProfile(p => ({ ...p, entries: [entry, ...p.entries] })), []);
+  const onPinned  = useCallback((entry: CrewEntry) => { setFresh(entry.id); setProfile(p => ({ ...p, entries: [entry, ...p.entries] })); }, []);
   const onChange  = useCallback((id: string, update: (entry: CrewEntry) => CrewEntry) => setProfile(p => ({ ...p, entries: p.entries.map(e => (e.id === id ? update(e) : e)) })), []);
   const onRemove  = useCallback((id: string) => setProfile(p => ({ ...p, entries: p.entries.filter(e => e.id !== id) })), []);
   const onCover   = useCallback((photoId: string | null) => {
@@ -358,7 +390,7 @@ export default function Wall({ initial, places, justSignedIn = false }: Props) {
           </p>
         )}
 
-        <section className={`b-paper w-poster${cover ? ' has-cover' : ''}`} aria-label={`Eftirlýsingaspjald: ${username}`}>
+        <section ref={posterRef} className={`b-paper w-poster${cover ? ' has-cover' : ''}`} aria-label={`Eftirlýsingaspjald: ${username}`}>
           {cover && (
             // eslint-disable-next-line @next/next/no-img-element
             <img className="w-poster__cover" {...photoProps(cover.filename, PHOTO_SIZES.cover)} alt="" aria-hidden="true" decoding="async" />
@@ -373,7 +405,7 @@ export default function Wall({ initial, places, justSignedIn = false }: Props) {
               <div>
                 {/* the masthead says Eftirlýst; the kicker says what of */}
                 <div className="b-paper__kicker">JOÐ-félagi</div>
-                <h1 className="w-poster__name">{username}</h1>
+                <h1 className="w-poster__name" style={{ '--name-em': nameEm(username) } as CSSProperties}>{username}</h1>
                 {stats && stats.playTimeHours > 0 && (
                   <div className="w-poster__bounty"><span className="b-poster__reward">Verðlaun</span> <span className="b-poster__val">{STAT_TABS[0].unit(stats.playTimeHours)}</span></div>
                 )}
@@ -387,6 +419,9 @@ export default function Wall({ initial, places, justSignedIn = false }: Props) {
                   </>
                 ) : me === null ? (
                   <button className="b-btn b-btn--small" onClick={() => setShowLogin(true)}>Þetta er ég</button>
+                ) : me === undefined ? (
+                  /* held open while the session is asked, as a visitor's button most often is, so the poster's words don't drop under it a moment in */
+                  <span className="b-btn b-btn--small" aria-hidden="true" style={{ visibility: 'hidden' }}>Þetta er ég</span>
                 ) : null}
               </div>
             </div>
@@ -451,7 +486,7 @@ export default function Wall({ initial, places, justSignedIn = false }: Props) {
           ) : (
             profile.entries.map(entry => (
               <Print key={entry.id} username={username} entry={entry} places={places} me={me} isOwner={isOwner}
-                coverPhotoId={profile.coverPhotoId} onChange={onChange} onRemove={onRemove} onCover={onCover} onOpen={onOpen} />
+                coverPhotoId={profile.coverPhotoId} fresh={entry.id === fresh} onChange={onChange} onRemove={onRemove} onCover={onCover} onOpen={onOpen} />
             ))
           )}
         </section>

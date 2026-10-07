@@ -108,6 +108,21 @@
     repeating-linear-gradient(180deg, rgba(21, 16, 13, 0.18) 0 var(--px), transparent var(--px) 11px),
     linear-gradient(90deg, var(--wood-light) 0 var(--px), var(--wood) var(--px) calc(100% - var(--px) * 2), var(--wood-dark) calc(100% - var(--px) * 2));
 
+  /* ── a sign: what the crew put up, an oak board hung on iron chains. The
+     board is paler than the frames so the words burnt into it read; every
+     colour written on it is checked against it ── */
+  --sign:         #C9A872;
+  --sign-2:       #B99760;   /* the grain, and the board behind a picture still loading */
+  --sign-rim:     var(--wood-light);
+  --sign-ink:     var(--ink);        /* the words, 7.9:1 */
+  --sign-soft:    var(--tc-brown);   /* small print on the board, 5.1:1 */
+  --sign-line:    rgba(77, 51, 35, 0.4);   /* a seam, a ruled line to write on */
+  /* the lantern's light burnt into the wood: what can be pressed on a board, 4.9:1 */
+  --sign-lantern: #563409;
+  --sign-err:     #6E2A1E;           /* 4.6:1 */
+  --iron:         #5E544C;           /* the chains; drawn into the chain's tile in wall.css */
+  --iron-light:   #AFA191;   /* the chains catch the light; dark iron vanished on the night */
+
   /* ── status ── */
   --online:  #8FB06A;
   --offline: var(--tc-red);

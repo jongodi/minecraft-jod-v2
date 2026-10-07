@@ -165,7 +165,6 @@ export default function Composer({ username, places, onPinned }: Props) {
 
   return (
     <form ref={slot} className={`w-pin${over ? ' is-over' : ''}${drafts.length ? ' has-prints' : ''}`} onSubmit={pin} aria-label="Festa eitthvað upp">
-      <span className="b-paper__nail" aria-hidden="true" />
       <textarea
         className="w-pin__text"
         value={text}

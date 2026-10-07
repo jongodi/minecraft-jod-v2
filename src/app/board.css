@@ -198,6 +198,10 @@
 .b-stray__actions { display: flex; flex-wrap: wrap; gap: var(--sp-3); margin-top: var(--sp-3); }
 .b-page__night { margin-top: var(--sp-4); }
 .b-page__head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--sp-4) var(--sp-6); margin: var(--sp-4) 0 var(--sp-6); }
+/* The tabs take their own line under the title and the lede at every width.
+   Beside the lede they fitted in the stand-in face and not in the pixel face,
+   so they jumped under it as the font came in: a third of the screen moved. */
+.b-page__head > .b-tabs { flex-basis: 100%; }
 /* The notice board: the eight posters hang on one long board of planks,
    capped along its top and held up by a post at each end that runs down
    past it into the ground, standing in front of the far ridge under the

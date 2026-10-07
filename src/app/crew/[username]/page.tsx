@@ -5,6 +5,10 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { readProfile, isCrewUsername, canonicalUsername, allPhotos } from '@/lib/crew';
 import { readMap } from '@/lib/map';
+import { woodOf } from '@/lib/map-types';
+import { getCachedStats } from '@/lib/stats';
+import { readNoShows } from '@/lib/play-night';
+import { sameUser } from '@/lib/crew-types';
 import Wall, { type WallPlace } from '@/components/wall/Wall';
 import { SITE_NAME } from '@/components/badlands/data';
 
@@ -30,7 +34,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function CrewWallPage({ params, searchParams }: Props) {
   const { username } = await params;
   if (!isCrewUsername(username)) notFound();
-  const [profile, map, query] = await Promise.all([readProfile(canonicalUsername(username)), readMap().catch(() => null), searchParams]);
-  const places: WallPlace[] = (map?.locations ?? []).map(l => ({ id: l.id, label: l.label, sublabel: l.sublabel, builders: l.builders ?? [] }));
-  return <Wall initial={profile} places={places} justSignedIn={query.innskrad === '1'} />;
+  const [profile, map, query, snapshot] = await Promise.all([
+    readProfile(canonicalUsername(username)), readMap().catch(() => null), searchParams, getCachedStats().catch(() => null),
+  ]);
+  /* The poster is drawn with the last snapshot's numbers, which is one quick
+     read, so it stands at its full height at once; the wall then asks for the
+     live ones. Drawn without them, it grew by its whole table of charges a
+     second in and pushed every sign under it off a phone's screen. */
+  const mine = snapshot?.players.find(p => sameUser(p.username, profile.username));
+  /* their best draw is on the wall already read; only the no-show tally is one more read */
+  const noShows = mine ? await readNoShows().then(t => Object.entries(t).find(([u]) => sameUser(u, profile.username))?.[1] ?? 0).catch(() => 0) : 0;
+  const stats = mine ? { ...mine, drawMs: profile.bestDrawMs ?? 0, noShows } : null;
+  const places: WallPlace[] = (map?.locations ?? []).map(l => ({ id: l.id, label: l.label, sublabel: l.sublabel, builders: l.builders ?? [], wood: woodOf(l) }));
+  return <Wall initial={profile} places={places} initialStats={stats} justSignedIn={query.innskrad === '1'} />;
 }

@@ -15,6 +15,7 @@ import NightSky from '@/components/badlands/NightSky';
 import { NightLine } from '@/components/badlands/NightLine';
 import { CREW, PAGE_LINKS } from '@/components/badlands/data';
 import { photoProps, PHOTO_SIZES } from '@/components/badlands/photo';
+import { woodClass } from '@/lib/sign-wood';
 
 /* a member's poster before the list has come: the name, nothing about the wall yet */
 const blankPoster = (username: string): CrewSummary => ({ username, bio: '', entryCount: 0, photoCount: 0, lastEntry: null, cover: null, bestDrawMs: null });
@@ -119,7 +120,7 @@ export default function CrewPage() {
             <ul className="w-board">
               {feed.map(e => (
                 <li key={e.id}>
-                  <Link href={`/crew/${e.username}#${e.id}`} className="b-paper w-note-card">
+                  <Link href={`/crew/${e.username}#${e.id}`} className={`w-sign${woodClass(e.wood)} w-note-card`}>
                     {e.photos[0] && (
                       <span className="w-note-card__pic">
                         {/* eslint-disable-next-line @next/next/no-img-element */}

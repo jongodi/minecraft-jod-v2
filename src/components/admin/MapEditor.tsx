@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { plural } from '@/lib/format';
-import { parseWorldPoint, withCurrentLinks, type MapConfig, type MapLocation, type MapPath, type MapZone, type WorldPoint } from '@/lib/map-types';
+import { parseWorldPoint, withCurrentLinks, woodOf, type MapConfig, type MapLocation, type MapPath, type MapZone, type WorldPoint } from '@/lib/map-types';
 import { CREW_USERNAMES } from '@/lib/crew-types';
 import { mapLabel } from '@/lib/icelandic';
+import { SIGN_WOODS, WOOD_LABELS, type SignWood } from '@/lib/sign-wood';
 import {
   DEFAULT_TERRAIN, MATERIALS, TERRAIN_CELL, TERRAIN_COLS, TERRAIN_ROWS,
   fill as floodFill, normalizeTerrain, paint as paintBrush, terrainCounts,
@@ -548,6 +549,11 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
               <Field label="Tegund">
                 <select className="a-select" value={selPin.type} onChange={e => updatePin(selPin.id, { type: e.target.value as MapLocation['type'] })}>
                   {(['surface', 'underground', 'island', 'aerial'] as const).map(t => <option key={t} value={t}>{mapLabel(t)}</option>)}
+                </select>
+              </Field>
+              <Field label="Viður á skiltum">
+                <select className="a-select" value={woodOf(selPin)} onChange={e => updatePin(selPin.id, { wood: e.target.value as SignWood })}>
+                  {SIGN_WOODS.map(w => <option key={w} value={w}>{WOOD_LABELS[w]}</option>)}
                 </select>
               </Field>
               <div className="a-field">

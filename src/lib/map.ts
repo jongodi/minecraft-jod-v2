@@ -13,6 +13,7 @@ import {
 } from '@/lib/map-types';
 import { normalizeTerrain } from './terrain';
 import { canonicalUsername, isCrewUsername } from './crew-types';
+import { isSignWood } from './sign-wood';
 
 export type { MapConfig, MapLocation, MapZone, MapPath };
 export { DEFAULT_LOCATIONS, DEFAULT_ZONES, DEFAULT_PATHS };
@@ -204,6 +205,7 @@ export function sanitizeMapConfig(body: unknown): { error: string } | { config: 
     locations.push({
       id: Math.floor(l.id), label: str(l.label), sublabel: str(l.sublabel),
       x: Math.round(l.x), y: Math.round(l.y), type, photoId, builders, world: worldPoint(l.world),
+      ...(isSignWood(l.wood) ? { wood: l.wood } : {}),
     });
   }
 

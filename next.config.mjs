@@ -93,6 +93,13 @@ const nextConfig = {
     qualities: [75, 82],
     /* Photos are immutable once uploaded: the admin panel writes a new name. */
     minimumCacheTTL: 31536000,
+    /* Local pictures carry no query, except the map's still, whose ?v= is the
+       sync that took it (data.ts) so a new still is never served from cache.
+       Next 16 refuses a query on a local picture that is not allowed here. */
+    localPatterns: [
+      { pathname: '/map-poster.webp' },
+      { pathname: '/**', search: '' },
+    ],
     remotePatterns: [
       { protocol: 'https', hostname: 'blob.vercel-storage.com' },
       { protocol: 'https', hostname: '*.blob.vercel-storage.com' },
