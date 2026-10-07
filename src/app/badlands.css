@@ -1739,7 +1739,9 @@ html.is-map-full { overflow: hidden; }
    words above it. Only the form for lighting one keeps an edge (below). A
    night opened from its own link (/kvold/<id>) is lit up for a moment. */
 .b-night { display: grid; gap: var(--sp-4); margin-block: var(--sp-7); }
-.b-night--none { grid-template-columns: auto minmax(0, 1fr) auto; align-items: end; column-gap: var(--sp-5); }
+/* no fire yet: the embers, the words beside them, and the way to light one under the words, one group */
+.b-night--none { grid-template-columns: auto minmax(0, 1fr); align-items: end; column-gap: var(--sp-5); }
+.b-night--none > .b-btn { grid-column: 2; justify-self: start; }
 .b-night.is-picked { padding: var(--sp-4); margin-inline: calc(var(--sp-4) * -1); background: var(--veil); box-shadow: 0 0 0 var(--px) var(--lantern-glow); }
 /* a night under way says so in the green the server's lantern uses for on; amber is only for what can be pressed */
 .b-night--live .b-night__kicker { color: var(--online); }
@@ -1847,7 +1849,6 @@ html.is-map-full { overflow: hidden; }
   .b-cal { flex-basis: 100%; margin-right: 0; padding: var(--sp-2); }
   .b-night__row .b-night__select { max-width: none; }
 }
-@media (max-width: 599px) { .b-night--none { grid-template-columns: auto minmax(0, 1fr); } .b-night--none > .b-btn { grid-column: 1 / -1; justify-self: start; } }
 
 /* ═══════════════════════════════════════════════════════════════
    The time of year (src/lib/season.ts; ?arstid= shows one on any day).
