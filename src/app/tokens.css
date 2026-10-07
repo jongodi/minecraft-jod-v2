@@ -97,7 +97,9 @@
   --sign:         #C9A872;
   --sign-2:       #B99760;   /* the grain, and the board behind a picture still loading */
   --sign-rim:     var(--wood-light);
+  --sign-ink:     var(--ink);        /* the words, 7.9:1 */
   --sign-soft:    var(--tc-brown);   /* small print on the board, 5.1:1 */
+  --sign-line:    rgba(77, 51, 35, 0.4);   /* a seam, a ruled line to write on */
   /* the lantern's light burnt into the wood: what can be pressed on a board, 4.9:1 */
   --sign-lantern: #563409;
   --sign-err:     #6E2A1E;           /* 4.6:1 */

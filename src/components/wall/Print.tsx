@@ -4,7 +4,7 @@
 // can rewrite it, recaption or take down its pictures, move it to a place,
 // or make one of its prints the poster's backdrop. Anyone signed in can
 // light a lantern under it or leave a line.
-import { useState, type FormEvent, type MouseEvent } from 'react';
+import { useState, type CSSProperties, type FormEvent, type MouseEvent } from 'react';
 import Link from 'next/link';
 import type { CrewEntry, CrewPhoto } from '@/lib/crew-types';
 import { LIMITS, sameUser } from '@/lib/crew-types';
@@ -14,6 +14,7 @@ import { useMounted } from '@/components/badlands/hooks';
 import PlayerHead from '@/components/badlands/PlayerHead';
 import { photoProps, PHOTO_SIZES } from '@/components/badlands/photo';
 import { errorFrom } from '@/lib/crew-upload';
+import { woodClass } from '@/lib/sign-wood';
 import type { WallPlace } from './Wall';
 
 interface Props {
@@ -44,6 +45,8 @@ export default function Print({ username, entry, places, me, isOwner, coverPhoto
   const [reply, setReply]     = useState('');
   const [replying, setReplying] = useState(false);
   const [busyLantern, setBusyLantern] = useState(false);
+  /* the light a lantern just lit throws across the board: where it stands, and a count so a second lighting starts it again */
+  const [light, setLight] = useState<{ x: number; y: number; n: number } | null>(null);
   const mounted = useMounted();
   /* the server has no idea what the browser's locale draws; until mounted the plain date stands in */
   const age  = (iso: string) => (mounted ? formatAge(iso) : iso.slice(0, 10));
@@ -78,8 +81,14 @@ export default function Print({ username, entry, places, me, isOwner, coverPhoto
     } catch { setError(OFFLINE); }
   }
 
-  async function toggleLantern() {
+  async function toggleLantern(e: MouseEvent<HTMLButtonElement>) {
     if (!me || busyLantern) return;
+    /* lighting it, not putting it out: the board takes the light at once, from the lantern */
+    if (!lit) {
+      const board = e.currentTarget.closest('article')?.getBoundingClientRect();
+      const lamp = e.currentTarget.querySelector('svg')?.getBoundingClientRect() ?? e.currentTarget.getBoundingClientRect();
+      if (board) setLight(l => ({ x: lamp.left + lamp.width / 2 - board.left, y: lamp.top + lamp.height / 2 - board.top, n: (l?.n ?? 0) + 1 }));
+    }
     setBusyLantern(true); setError('');
     try {
       const res = await api('/lantern', { method: 'POST' });
@@ -122,7 +131,7 @@ export default function Print({ username, entry, places, me, isOwner, coverPhoto
   const word = !edit && photos.length === 0 && entry.text.length <= WORD_MAX && !entry.text.includes('\n');
 
   return (
-    <article id={entry.id} className={`w-sign w-print${word ? ' w-print--word' : ''}${fresh ? ' is-fresh' : ''}${edit ? ' is-editing' : ''}`} aria-label={entry.text ? entry.text.slice(0, 60) : `Mynd frá ${date(entry.createdAt)}`}>
+    <article id={entry.id} className={`w-sign${woodClass(place?.wood)} w-print${word ? ' w-print--word' : ''}${fresh ? ' is-fresh' : ''}${edit ? ' is-editing' : ''}`} aria-label={entry.text ? entry.text.slice(0, 60) : `Mynd frá ${date(entry.createdAt)}`}>
 
       {photos.length > 0 && (
         <div className={`w-print__pics${many ? ' is-many' : ''}`}>
@@ -170,6 +179,11 @@ export default function Print({ username, entry, places, me, isOwner, coverPhoto
         </div>
       ) : (
         entry.text && <p className="w-print__note">{entry.text}</p>
+      )}
+
+      {light && (
+        <span key={light.n} className="w-sign__light" aria-hidden="true" onAnimationEnd={() => setLight(null)}
+          style={{ '--lx': `${light.x}px`, '--ly': `${light.y}px` } as CSSProperties} />
       )}
 
       <footer className="w-print__meta">

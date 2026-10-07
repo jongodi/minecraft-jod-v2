@@ -15,6 +15,7 @@ import { formatAge, plural } from '@/lib/format';
 import type { CrewSummary } from '@/app/api/crew/route';
 import type { FeedEntry } from '@/app/api/crew/feed/route';
 import { photoProps, PHOTO_SIZES } from './photo';
+import { woodClass } from '@/lib/sign-wood';
 
 const STRIP = 12;
 
@@ -91,7 +92,7 @@ function Crew({ server }: { server: ServerState }) {
           </div>
           <Rail label="Nýjast af veggjunum" prevLabel="Fyrri" nextLabel="Næstu" count={strip.length}>
             {strip.map(e => (
-              <Link key={e.id} href={`/crew/${e.username}#${e.id}`} className="w-sign w-note-card" data-rail-item={e.id}>
+              <Link key={e.id} href={`/crew/${e.username}#${e.id}`} className={`w-sign${woodClass(e.wood)} w-note-card`} data-rail-item={e.id}>
                 {e.photos[0] && (
                   <span className="w-note-card__pic">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
