@@ -43,7 +43,7 @@
   .w-poster .b-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .w-poster__top > .b-inline { justify-content: center; }
   .w-poster .w-poster__bio { margin-inline: auto; text-align: center; }
-  .w-page .w-wall__empty { text-align: left; }
+  .w-page .w-wall__empty { justify-self: start; }
 }
 /* On a phone the skin and the name share a row and the rest runs the paper's
    full width under them, so the first pinned sheet starts on the first
@@ -148,7 +148,13 @@
 
 /* ─── the wall ──────────────────────────────────────────────── */
 .w-wall { max-width: 52rem; width: 100%; margin-inline: auto; display: grid; gap: clamp(1.25rem, 3vw, 2rem); }
-.w-wall__empty { text-align: center; }
+/* Nothing pinned yet: a torn slip nailed where the first thing will hang,
+   rather than one faint line in the dark. The owner's says what to do and
+   where; a visitor's says whose wall is bare. */
+.w-wall__empty { justify-self: center; width: min(100%, 22rem); }
+.w-wall__note { display: grid; gap: var(--sp-2); padding: var(--sp-6) var(--sp-5) var(--sp-5); text-align: center; }
+.w-wall__note p { font-size: var(--fs-md); line-height: 1.5; color: var(--ink-soft); text-wrap: balance; }
+.w-wall__note .b-paper__kicker { color: var(--tc-red); }
 .w-print { padding: var(--sp-5) var(--sp-4) var(--sp-4); display: grid; gap: var(--sp-3); scroll-margin-top: calc(var(--bar) + var(--sp-4)); }
 .w-print--note { padding-top: var(--sp-6); }
 .w-print__pics { display: grid; gap: var(--sp-3); }

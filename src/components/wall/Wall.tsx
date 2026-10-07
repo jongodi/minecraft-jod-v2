@@ -445,9 +445,14 @@ export default function Wall({ initial, places, justSignedIn = false }: Props) {
 
         <section className="w-wall" aria-label="Veggurinn">
           {profile.entries.length === 0 ? (
-            <p className="b-empty w-wall__empty">
-              {isOwner ? 'veggurinn er auður; hentu inn skjámynd eða skrifaðu miða hér fyrir ofan' : `${username} hefur ekki fest neitt upp enn`}
-            </p>
+            /* a torn slip nailed where the first thing will hang (wall.css) */
+            <div className="b-hang w-wall__empty">
+              <div className="b-paper b-paper--torn w-wall__note" role="status">
+                <span className="b-paper__nail" aria-hidden="true" />
+                <span className="b-paper__kicker">Auður veggur</span>
+                <p>{isOwner ? 'Ekkert hangir hér enn. Hentu inn skjámynd eða skrifaðu miða í pinnann hér fyrir ofan.' : `${username} hefur ekki fest neitt upp enn.`}</p>
+              </div>
+            </div>
           ) : (
             profile.entries.map(entry => (
               <Print key={entry.id} username={username} entry={entry} places={places} me={me} isOwner={isOwner}
