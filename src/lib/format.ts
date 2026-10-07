@@ -19,11 +19,19 @@ export function formatNumber(v: number, { max = 3, min = 0 }: { max?: number; mi
   return `${negative ? '-' : ''}${grouped}${kept ? `,${kept}` : ''}`;
 }
 
-/** An ISO date as the browser's Icelandic locale writes it: "1. jan. 2025". */
+/** The months, short, as Icelandic print abbreviates them. Shared with the
+    play nights (src/components/badlands/night.ts). */
+export const MONTHS = ['jan.', 'feb.', 'mar.', 'apr.', 'maí', 'jún.', 'júl.', 'ágú.', 'sep.', 'okt.', 'nóv.', 'des.'];
+
+/** An ISO date as it is written in Iceland: "1. jan. 2025". Written out, like
+    the numbers above, rather than left to the browser's locale data: a
+    browser without Icelandic (and a headless one) wrote "Jan 1, 2025" on the
+    wall. Read in UTC, which is Iceland's clock the year round, so the server
+    and the browser write the same day. */
 export function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('is-IS', {
-    day: 'numeric', month: 'short', year: 'numeric',
-  });
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return `${d.getUTCDate()}. ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
 }
 
 /** How long ago an ISO moment was: "fyrir 3 dögum", "fyrir 2 klst.", "rétt í þessu". */

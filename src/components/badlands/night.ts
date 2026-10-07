@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useSyncExternalStore } from 'react';
 import type { PlayNightResponse } from '@/app/api/playnight/route';
+import { MONTHS } from '@/lib/format';
 
 /* The play nights as the page holds them: one answer shared by the hero's line
    and the crew's room, asked for when the page opens and every minute while
@@ -80,7 +81,6 @@ export function usePlayNight(initial?: PlayNightResponse) {
 
 const DAYS = ['sunnudag', 'mánudag', 'þriðjudag', 'miðvikudag', 'fimmtudag', 'föstudag', 'laugardag'];
 const DAYS_NOM = ['sunnudagur', 'mánudagur', 'þriðjudagur', 'miðvikudagur', 'fimmtudagur', 'föstudagur', 'laugardagur'];
-const MONTHS = ['jan.', 'feb.', 'mar.', 'apr.', 'maí', 'jún.', 'júl.', 'ágú.', 'sep.', 'okt.', 'nóv.', 'des.'];
 const cap = (s: string) => s.charAt(0).toLocaleUpperCase('is-IS') + s.slice(1);
 const clock = (d: Date) => `${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`;
 const dayNumber = (d: Date) => Math.floor(d.getTime() / 86_400_000);
