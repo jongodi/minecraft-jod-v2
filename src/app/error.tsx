@@ -17,9 +17,13 @@ export default function PageError({ error, reset }: { error: Error & { digest?: 
   return (
     <OffTrail
       title="Ljósið slokknaði"
-      actions={<button type="button" className="b-btn b-btn--solid" onClick={retry}>Reyna aftur</button>}
+      cause="Eitthvað fór úrskeiðis meðan síðan var teiknuð."
+      actions={<>
+        <button type="button" className="b-btn b-btn--solid" onClick={retry}>Reyna aftur</button>
+        <a href="/" className="b-btn">Titilskjár</a>
+      </>}
     >
-      Eitthvað fór úrskeiðis meðan síðan var teiknuð. Reyndu aftur, eða farðu aftur í sólsetrið og komdu síðar.
+      Reyndu aftur, eða farðu aftur í sólsetrið og komdu síðar.
     </OffTrail>
   );
 }
