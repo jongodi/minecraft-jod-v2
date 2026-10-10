@@ -213,6 +213,43 @@ function Riders({ names }: { names: string[] }) {
   );
 }
 
+/* The armadillo, side on, facing the way it walks, on a 14 by 8 grid: the
+   banded shell, the small head and its ear at the front, the pale belly, and
+   two frames of legs. Rolled up, it is a banded ball. Colours of the game's
+   own: pink-brown hide, darker plates. */
+const HIDE = '#C48B79', PLATE = '#8B5148', BELLY = '#E2B4A0', HEAD = '#D29A86', EYE = '#2A1A14';
+const BODY: [number, number, number, number, string][] = [
+  [5, 0, 6, 1, HIDE], [3, 1, 10, 1, HIDE], [2, 2, 12, 2, HIDE], [2, 4, 11, 1, HIDE],
+  [6, 1, 1, 1, PLATE], [9, 1, 1, 1, PLATE], [5, 2, 1, 3, PLATE], [8, 2, 1, 3, PLATE], [11, 2, 1, 3, PLATE],
+  [0, 3, 2, 2, HEAD], [1, 2, 1, 1, PLATE], [0, 3, 1, 1, EYE], [3, 5, 9, 1, BELLY], [13, 4, 1, 1, PLATE],
+];
+const STEP_A: [number, number][] = [[4, 6], [10, 6]];
+const STEP_B: [number, number][] = [[5, 6], [11, 6]];
+const BALL: [number, number, number, number, string][] = [
+  [5, 1, 4, 1, HIDE], [4, 2, 6, 1, HIDE], [3, 3, 8, 3, HIDE], [4, 6, 6, 1, HIDE], [5, 7, 4, 1, HIDE],
+  [5, 2, 1, 5, PLATE], [8, 2, 1, 5, PLATE], [3, 4, 1, 1, HEAD],
+];
+
+/** The badlands' own animal: an armadillo ambling along the ground at the
+    foot of the mesas, stopping a while halfway, as the game's armadillos
+    wander their biome. Pointed at or tapped, it rolls up into its shell, as
+    they do when someone comes close. Nothing to read and nothing to press
+    for: the land is lived in. */
+function Armadillo() {
+  return (
+    <span className="b-critter" aria-hidden="true">
+      <svg className="b-critter__walk" viewBox="0 0 14 8" shapeRendering="crispEdges">
+        {BODY.map(([x, y, w, h, c]) => <rect key={`${x}-${y}-${c}`} x={x} y={y} width={w} height={h} fill={c} />)}
+        <g className="b-critter__step">{STEP_A.map(([x, y]) => <rect key={x} x={x} y={y} width={1} height={2} fill={PLATE} />)}</g>
+        <g className="b-critter__step">{STEP_B.map(([x, y]) => <rect key={x} x={x} y={y} width={1} height={2} fill={PLATE} />)}</g>
+      </svg>
+      <svg className="b-critter__ball" viewBox="0 0 14 8" shapeRendering="crispEdges">
+        {BALL.map(([x, y, w, h, c]) => <rect key={`${x}-${y}-${c}`} x={x} y={y} width={w} height={h} fill={c} />)}
+      </svg>
+    </span>
+  );
+}
+
 /** The mesas; in winter with snow on them, at Hrekkjavaka with jack-o'-lanterns
     (src/lib/season.ts); with the heads of whoever is in on the nearest ridge. */
 export default function Mesa({ snow = false, halloween = false, heads = [] }: { snow?: boolean; halloween?: boolean; heads?: string[] }) {
@@ -231,7 +268,7 @@ export default function Mesa({ snow = false, halloween = false, heads = [] }: { 
         {snow && <Snow plateaus={NEAR} />}
         {halloween && <Pumpkins />}
       </Layer>
-      <Layer d={`M0 ${H - 4} H${W} V${H} H0 Z`} mod="ground" />
+      <Layer d={`M0 ${H - 4} H${W} V${H} H0 Z`} mod="ground" after={<Armadillo />} />
     </div>
   );
 }
