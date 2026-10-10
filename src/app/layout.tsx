@@ -70,10 +70,12 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="is" className={`${display.variable} ${text.variable} ${data.variable}`}>
       <head>
-        {/* Player portraits come from these two; opening the connections while
-            the page is still parsing saves a DNS + TLS round trip each. */}
+        {/* Player portraits come from minotar; opening the connection while the
+            page is still parsing saves a DNS + TLS round trip. mc-heads is only
+            asked when minotar fails, so it gets the name looked up and no more:
+            a connection opened on every visit and almost never used. */}
         <link rel="preconnect" href="https://minotar.net" />
-        <link rel="preconnect" href="https://mc-heads.net" />
+        <link rel="dns-prefetch" href="https://mc-heads.net" />
       </head>
       {/* extensions like Grammarly write their own attributes onto <body> before React loads */}
       <body suppressHydrationWarning>

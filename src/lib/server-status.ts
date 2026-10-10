@@ -174,7 +174,17 @@ async function fromMcsrvstat(): Promise<StatusResponse> {
     });
     if (!res.ok) throw new Error('mcsrvstat fetch failed');
     const data = await res.json() as Omit<StatusResponse, 'source' | 'life'>;
-    return { ...data, life: data.online ? 'on' : 'off', source: 'mcsrvstat' };
+    /* only what the site reads: the lookup's whole answer (the icon in base64,
+       its debug block, the motd as HTML) went out in every status answer */
+    return {
+      online: !!data.online,
+      life: data.online ? 'on' : 'off',
+      source: 'mcsrvstat',
+      ...(data.version && { version: data.version }),
+      ...(data.online && data.players && {
+        players: { online: data.players.online ?? 0, max: data.players.max ?? DEFAULT_MAX_PLAYERS, list: (data.players.list ?? []).map(p => ({ name: p.name, uuid: p.uuid ?? '' })) },
+      }),
+    };
   } catch {
     return { online: false, life: 'unknown', source: 'error' };
   }

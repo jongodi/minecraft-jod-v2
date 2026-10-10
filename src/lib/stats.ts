@@ -240,13 +240,16 @@ export interface GameStats {
   failed:   string[];
 }
 
+const STATS_TIMEOUT_MS = 8000;
+
 /** Reads every crew member's stats file off the server. Throws when the
     server or its stats folder can't be reached at all. */
 export async function readGameStats(token: string): Promise<GameStats> {
   const id = await getExarotonServerId(token);
   const headers = { Authorization: `Bearer ${token}` };
 
-  const listRes = await fetch(`https://api.exaroton.com/v1/servers/${id}/files/info/world/players/stats`, { headers, cache: 'no-store' });
+  /* each request capped, so a hung one fails into the last copy instead of leaving the board on "sæki tölurnar" */
+  const listRes = await fetch(`https://api.exaroton.com/v1/servers/${id}/files/info/world/players/stats`, { headers, cache: 'no-store', signal: AbortSignal.timeout(STATS_TIMEOUT_MS) });
   if (!listRes.ok) throw new Error(`stats folder not found (${listRes.status})`);
   const listData = await listRes.json() as { data?: { children?: Array<{ name: string }> } };
   const files = new Set((listData.data?.children ?? []).map(f => f.name).filter(f => /^[0-9a-f-]{36}\.json$/i.test(f)));
@@ -259,7 +262,7 @@ export async function readGameStats(token: string): Promise<GameStats> {
       /* never played on this world */
       if (!files.has(`${uuid}.json`)) return { username, ...EMPTY };
       try {
-        const res = await fetch(`https://api.exaroton.com/v1/servers/${id}/files/data/world/players/stats/${uuid}.json`, { headers, cache: 'no-store' });
+        const res = await fetch(`https://api.exaroton.com/v1/servers/${id}/files/data/world/players/stats/${uuid}.json`, { headers, cache: 'no-store', signal: AbortSignal.timeout(STATS_TIMEOUT_MS) });
         if (!res.ok) throw new Error(`file fetch failed (${res.status})`);
         const json = await res.json() as MinecraftStatsJson;
         counters[username] = countersOf(json);
