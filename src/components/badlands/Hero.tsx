@@ -59,6 +59,6 @@ function Hero({ server, season, nights }: { server: ServerState; season: Season;
   );
 }
 
-/* Memoised: the home page also re-renders on stats and on the active
-   section, and this section reads neither. */
+/* Memoised: the home page also re-renders when the lit door and the open
+   room change, and this section reads neither. */
 export default memo(Hero);

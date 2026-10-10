@@ -38,6 +38,6 @@ function CloudSet({ tone }: { tone: 'day' | 'night' }) {
   );
 }
 
-/* Memoised: the home page re-renders whenever the server ping, the stats or
-   the active section changes, and this section depends on none of them. */
+/* Memoised: the home page re-renders whenever the server's status, the lit
+   door or the open room changes, and this section depends on none of them. */
 export default memo(Sky);
