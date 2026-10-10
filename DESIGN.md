@@ -263,7 +263,19 @@ The other bases (Joðville, Faraway lands, Bústaður, Shroomy island; `src/lib/
 
 ## Off the trail
 
-The 404 and the error page (`OffTrail.tsx`) stand in the same night as the roll call and the walls: the stars, tonight's moon and the far ridge (`NightSky`). The dark lantern stands on the ground at the ridge's foot, where the trail gave out, and the words and the two ways back are on the ground in front of it, clear of the rock. The night sky's height is one token, `--nightsky`, so the scene and the sky agree on where the ground is.
+The 404 is the game's death screen (`OffTrail.tsx`): the roll call's night under a veil of red that fades in, *Þú dóst!* in the slab cut from the strata like the name, *Þú féllst út úr heiminum.* (the game's words for a fall out of the world), *Stig: 0*, and the ways back stacked one width in the middle, *Lifna aftur við* (into the world) over *Titilskjár* (the sunset, the site's own title card). A page that broke wears the same screen with its own words and a way to try again.
+
+## The game's own UI, and the land lived in
+
+A pass on 10 October 2026 took more of the page from the game itself:
+
+- **The experience bar** (`AddressBar.tsx`): the green segmented bar over the phone's hotbar, and centred under the plank on a wide screen, filling with the page from the sunset to the campfire. One transform driven by the scroll; the hotbar's height (`--doorbar`) includes it.
+- **The title screen's splash** (`Hero.tsx`): a yellow line tilted over the Ð, pulsing, picked in the browser each visit; facts about this world, and what is true tonight first (who is in, a night planned).
+- **Name tags** over the crew who are in, white on a veil of dark, staggered over a crowd. On a phone the crew climb the name, one on the O and one on the Ð, instead of standing in front of the O's window.
+- **The armadillo** (`Mesa.tsx`): the badlands' own animal ambles along the ground at the mesas' foot, stops halfway, and rolls into a ball when pointed at or tapped.
+- **The world drifts**: the still and the town's lights in one layer, a slow push and pan, only while in view; square again for the hand-over to the live map. **F3 lines** while the live map is up: the block it holds and the way it faces (`jod.js` sends `camera`).
+- **The campfire smokes**: the game's tall column of square puffs; below 1024 px it has its own stretch of sky between the buttons and the fire.
+- **The rooms**: crates open like chests (the lid tips back, lamplight on the tag); wanted posters swing on their nails as the room opens, and the roll call's as the board is reached; a lit lantern hangs over the roll call poster of whoever is in; on a touch screen a room's plank is a handle, pulled down to close it.
 
 ## The walls
 
