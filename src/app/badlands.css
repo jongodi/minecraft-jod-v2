@@ -1288,6 +1288,8 @@ html.is-map-full { overflow: hidden; }
 .b-tip { position: relative; }
 .b-tip::after {
   content: attr(data-tip);
+  /* the tip is for eyes: the control already has its name, and generated text counted in it was read twice. A browser that cannot give it empty alt text keeps the first line. */
+  content: attr(data-tip) / '';
   position: absolute;
   left: 50%;
   bottom: calc(100% + var(--sp-2));
@@ -1949,7 +1951,8 @@ html.is-map-full { overflow: hidden; }
    and the small print, which is on the dark earth under it. The fire is the
    scene and the duel's door, so it has the middle of the band, at eight
    times its pixels in a ring of stones; the way up and the wind sit either
-   side of it on a wide screen, and share the row above it on a phone. */
+   side of it on a wide screen, and share the row above it below 1024 px,
+   where the fire, its sign and the two buttons do not fit one row. */
 .b-foot { position: relative; --ground: calc(var(--px) * 14); padding-top: var(--sp-6); overflow: clip; }
 .b-foot__scene { position: relative; }
 .b-foot__inner {
@@ -1963,7 +1966,7 @@ html.is-map-full { overflow: hidden; }
   align-items: end;
   gap: var(--sp-5) var(--sp-4);
 }
-@media (min-width: 720px) {
+@media (min-width: 1024px) {
   .b-foot__inner {
     grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
     grid-template-areas: 'up camp nav';
@@ -1992,7 +1995,7 @@ html.is-map-full { overflow: hidden; }
    width is kept as an empty margin on the fire's other side, so the fire
    stays the middle of the band and its light falls where it burns. */
 .b-foot__fire { --sign: 7rem; display: flex; align-items: flex-end; margin-left: var(--sign); padding: 0; border: 0; background: none; cursor: pointer; }
-@media (max-width: 719px) { .b-foot__fire { --sign: 6.25rem; } }
+@media (max-width: 1023px) { .b-foot__fire { --sign: 6.25rem; } }
 /* a short plank on a post, the word burnt in lantern light, as the world's
    lantern has its sign nailed under it; the post stands in the ground the
    fire stands on */
@@ -2039,9 +2042,9 @@ html.is-map-full { overflow: hidden; }
 
 /* the wind-and-fire toggle: the same small button as the way up on the
    fire's other side, so the camp reads as one row; a bare glyph there was
-   the one control on the page with no edge, and easy to miss. On a phone the
-   two share the row above the fire, so the toggle keeps its glyph and its
-   frame and lets the name go to a screen reader. */
+   the one control on the page with no edge, and easy to miss. On a narrow
+   phone the two share a row too short for both words, so the toggle keeps
+   its glyph and its frame and lets the name go to a screen reader. */
 .b-foot__nav { grid-area: nav; display: flex; align-items: center; }
 .b-foot__sound { display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2); min-width: var(--tap); min-height: 2.25rem; padding: var(--sp-1) var(--sp-3); border: var(--px) solid var(--lantern); color: var(--lantern); font-family: var(--font-data); font-size: var(--fs-data); letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; transition: background var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out); }
 @media (pointer: coarse) { .b-foot__sound { min-height: var(--tap); } }
@@ -2049,7 +2052,7 @@ html.is-map-full { overflow: hidden; }
 .b-foot__sound:focus-visible { background: var(--lantern); color: var(--night); }
 @media (hover: hover) { .b-foot__sound:hover { background: var(--lantern); color: var(--night); } }
 .b-foot__sound.is-on { background: var(--lantern); color: var(--night); box-shadow: var(--bevel); }
-@media (max-width: 719px) {
+@media (max-width: 559px) {
   .b-foot__sound { padding-inline: 0; }
   .b-sound__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 }
