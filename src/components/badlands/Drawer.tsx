@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
 import { CloseIcon } from './Bits';
 import { useInert } from './hooks';
 
@@ -44,6 +44,37 @@ export default function Drawer({ id, open, title, note, onClose, children }: Pro
     wasOpen.current = open;
   }, [open, root]);
 
+  /* The plank is a handle: pulled down, the room follows the finger, and let
+     go far enough or fast enough it closes, as a sheet on a phone does;
+     otherwise it settles back. The ✕ on the plank stays a button. Only the
+     plank moves the room, so a thumb scrolling the room never closes it. */
+  const drag = useRef<{ id: number; y: number; dy: number; at: number; v: number } | null>(null);
+  const onDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (!open || e.button !== 0 || (e.target as Element).closest('button')) return;
+    drag.current = { id: e.pointerId, y: e.clientY, dy: 0, at: performance.now(), v: 0 };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+  const onMove = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const d = drag.current;
+    const el = root.current;
+    if (!d || e.pointerId !== d.id || !el) return;
+    const dy = Math.max(0, e.clientY - d.y);
+    const now = performance.now();
+    d.v = (dy - d.dy) / Math.max(1, now - d.at);
+    d.dy = dy;
+    d.at = now;
+    el.style.transition = 'none';
+    el.style.transform = `translateY(${dy}px)`;
+  };
+  const onUp = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const d = drag.current;
+    if (!d || e.pointerId !== d.id) return;
+    drag.current = null;
+    const el = root.current;
+    if (el) { el.style.transition = ''; el.style.transform = ''; }
+    if (d.dy > 96 || (d.dy > 24 && d.v > 0.5)) onClose();
+  };
+
   return (
     <section
       ref={root}
@@ -52,7 +83,7 @@ export default function Drawer({ id, open, title, note, onClose, children }: Pro
       aria-labelledby={`${id}-title`}
       aria-hidden={!open}
     >
-      <div className="b-room__plank">
+      <div className="b-room__plank" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
         <h2 id={`${id}-title`} className="b-room__title">{title}</h2>
         {note && <p className="b-room__note">{note}</p>}
         <button ref={close} type="button" className="b-room__close" onClick={onClose} aria-label={`Loka: ${title}`}>

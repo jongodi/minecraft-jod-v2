@@ -41,8 +41,19 @@ export default function Composer({ username, places, onPinned }: Props) {
   const [error, setError]     = useState('');
   const input = useRef<HTMLInputElement>(null);
   const slot  = useRef<HTMLFormElement>(null);
+  /* read by the page's paste and drop listeners as well as the slot's own buttons, so it is a ref beside the state */
+  const pinningNow = useRef(false);
 
-  useEffect(() => { fetchStorageInfo(username).then(setStorage); }, [username]);
+  /* How uploads work right now, asked when the slot opens and again when a
+     picture is sent again, since the failure may have been the store's. A
+     picture that lands before the answer waits for it. */
+  const asking = useRef<Promise<StorageInfo> | null>(null);
+  const askStorage = useCallback(() => {
+    const req: Promise<StorageInfo> = fetchStorageInfo(username).then(info => { if (asking.current === req) setStorage(info); return info; });
+    asking.current = req;
+    return req;
+  }, [username]);
+  useEffect(() => { askStorage(); }, [askStorage]);
   /* Previews are let go when the slot goes away. (A cleanup keyed on the
      drafts ran on every progress tick and revoked the previews still showing.) */
   const live = useRef<Draft[]>([]);
@@ -56,30 +67,47 @@ export default function Composer({ username, places, onPinned }: Props) {
 
   const patch = useCallback((key: string, p: Partial<Draft>) => setDrafts(ds => ds.map(d => (d.key === key ? { ...d, ...p } : d))), []);
 
-  const send = useCallback((d: Draft) => {
-    const info = storage ?? { mode: 'none' as const, access: null, maxBytes: 0, error: 'Geymslan svarar ekki enn.' };
-    uploadPrint(username, d.file, info, pct => patch(d.key, { progress: pct }))
+  const send = useCallback((d: Draft, askAgain = false) => {
+    const info = askAgain || !asking.current ? askStorage() : asking.current;
+    info
+      .then(i => uploadPrint(username, d.file, i, pct => patch(d.key, { progress: pct })))
       .then(done => { if (dropped.current.has(d.key)) discard(done); else patch(d.key, { done, progress: 100 }); })
       .catch(e => patch(d.key, { error: e instanceof Error ? e.message : 'Upphleðsla mistókst.' }));
-  }, [patch, storage, username, discard]);
+  }, [askStorage, patch, username, discard]);
 
   const add = useCallback((files: File[]) => {
     const images = files.filter(f => f.type.startsWith('image/'));
     if (images.length === 0) return;
+    /* the slot holds still while what is in it goes up */
+    if (pinningNow.current) { setError('Bíddu andartak, verið er að festa upp það sem er í hólfinu.'); return; }
+    /* A store that is not there turns the picture away at the door, rather
+       than letting it in to fail at once. It is asked again, so a store that
+       was only out of reach a moment ago takes the next try. */
+    if (storage?.mode === 'none') {
+      askStorage();
+      setError(`${storage.error ?? 'Myndageymslan er ekki stillt.'} Myndir komast ekki upp í bili.`);
+      return;
+    }
     const room = LIMITS.photosPer - drafts.length;
     if (room <= 0) { setError(`Mest ${LIMITS.photosPer} myndir í einu.`); return; }
     const left = images.length - room;
     setError(left > 0 ? `Mest ${LIMITS.photosPer} myndir í einu; ${left} ${plural(left, 'komst', 'komust')} ekki með.` : '');
     const fresh: Draft[] = images.slice(0, room).map(f => ({ key: newKey(), file: f, name: f.name, preview: URL.createObjectURL(f), caption: '', progress: 0, done: null, error: null }));
     setDrafts(ds => [...ds, ...fresh]);
-    fresh.forEach(send);
-  }, [drafts.length, send]);
+    fresh.forEach(d => send(d));
+  }, [askStorage, drafts.length, send, storage]);
 
   /* a print whose upload failed stays in the slot, red, until it is sent again or taken out */
-  const retry = (d: Draft) => { patch(d.key, { error: null, progress: 0 }); send(d); };
+  const retry = (d: Draft) => {
+    if (pinningNow.current) return;
+    patch(d.key, { error: null, progress: 0 });
+    send(d, true);
+  };
 
   /* Taken out of the slot: the preview goes, and so does the copy already in the store. */
   const remove = (key: string) => {
+    /* not while the pin that carries it is being written: its copy would be deleted from under the entry */
+    if (pinningNow.current) return;
     const d = drafts.find(x => x.key === key);
     if (!d) return;
     URL.revokeObjectURL(d.preview);
@@ -93,6 +121,12 @@ export default function Composer({ username, places, onPinned }: Props) {
     const onPaste = (e: ClipboardEvent) => {
       const files = Array.from(e.clipboardData?.files ?? []).filter(f => f.type.startsWith('image/'));
       if (files.length === 0) return;
+      /* A copy from a spreadsheet or a document carries a picture of the
+         words beside the words themselves; pasted into a field, the words
+         are what was meant. */
+      const t = e.target;
+      const field = t instanceof HTMLElement && (t.isContentEditable || t instanceof HTMLTextAreaElement || t instanceof HTMLInputElement);
+      if (field && e.clipboardData?.getData('text/plain').trim()) return;
       e.preventDefault();
       add(files);
       slot.current?.scrollIntoView({ block: 'nearest' });
@@ -132,9 +166,12 @@ export default function Composer({ username, places, onPinned }: Props) {
 
   async function pin(e: FormEvent) {
     e.preventDefault();
-    if (!canPin) return;
+    if (!canPin || pinningNow.current) return;
+    pinningNow.current = true;
     setPinning(true);
     setError('');
+    /* what goes up with this pin; anything else in the slot stays there */
+    const pinned = new Set(ready.map(d => d.key));
     try {
       const res = await fetch(`/api/crew/${username}/entries`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -147,11 +184,13 @@ export default function Composer({ username, places, onPinned }: Props) {
       if (!res.ok) throw new Error(await errorFrom(res));
       const entry = await res.json() as CrewEntry;
       onPinned(entry);
-      drafts.forEach(d => URL.revokeObjectURL(d.preview));
-      setDrafts([]); setText(''); setPlaceId(null);
+      ready.forEach(d => URL.revokeObjectURL(d.preview));
+      setDrafts(ds => ds.filter(d => !pinned.has(d.key)));
+      setText(''); setPlaceId(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ekki tókst að festa þetta upp.');
     } finally {
+      pinningNow.current = false;
       setPinning(false);
     }
   }
@@ -164,10 +203,15 @@ export default function Composer({ username, places, onPinned }: Props) {
     'dragðu skjámyndir hingað, límdu þær, eða veldu';
 
   return (
-    <form ref={slot} className={`w-pin${over ? ' is-over' : ''}${drafts.length ? ' has-prints' : ''}`} onSubmit={pin} aria-label="Festa eitthvað upp">
+    <form ref={slot} className={`w-pin${over ? ' is-over' : ''}${drafts.length ? ' has-prints' : ''}`} onSubmit={pin} aria-label="Festa eitthvað upp" aria-busy={pinning}>
+      {/* While the pin is being written the slot holds still: the words and
+          captions read only, so focus stays where it was, and the buttons
+          off. A change made then would be left out of the entry and then
+          cleared from the slot with it. */}
       <textarea
         className="w-pin__text"
         value={text}
+        readOnly={pinning}
         onChange={e => setText(e.target.value)}
         maxLength={LIMITS.text}
         rows={2}
@@ -183,12 +227,13 @@ export default function Composer({ username, places, onPinned }: Props) {
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={d.preview} alt="" />
                 {!d.done && !d.error && <span className="w-draft__bar" style={{ '--p': Math.min(1, Math.max(0, d.progress / 100)) } as React.CSSProperties} aria-hidden="true" />}
-                <button type="button" className="w-draft__x" onClick={() => remove(d.key)} aria-label={`Taka ${d.name} úr`}><CloseIcon /></button>
+                <button type="button" className="w-draft__x" onClick={() => remove(d.key)} disabled={pinning} aria-label={`Taka ${d.name} úr`}><CloseIcon /></button>
               </div>
-              <input className="w-draft__cap" value={d.caption} onChange={e => patch(d.key, { caption: e.target.value })} maxLength={LIMITS.caption} placeholder="myndatexti" aria-label={`Myndatexti fyrir ${d.name}`} />
+              <input className="w-draft__cap" value={d.caption} readOnly={pinning} onChange={e => patch(d.key, { caption: e.target.value })} maxLength={LIMITS.caption} placeholder="myndatexti" aria-label={`Myndatexti fyrir ${d.name}`} />
               <span className="w-draft__meta">
-                {d.error ? d.error : d.done ? (d.done.takenAt ? `tekin ${formatDate(d.done.takenAt)}` : 'tilbúin') : `hleð upp ${Math.round(d.progress)}%`}
-                {d.error && <> · <button type="button" className="b-link w-draft__retry" onClick={() => retry(d)}>reyna aftur</button></>}
+                {/* a failed upload is said aloud when it fails; the running percentage is not */}
+                {d.error ? <span role="alert"><span className="b-visually-hidden">{d.name}: </span>{d.error}</span> : d.done ? (d.done.takenAt ? `tekin ${formatDate(d.done.takenAt)}` : 'tilbúin') : `hleð upp ${Math.round(d.progress)}%`}
+                {d.error && <> · <button type="button" className="b-link w-draft__retry" onClick={() => retry(d)} disabled={pinning}>reyna aftur</button></>}
               </span>
             </li>
           ))}
@@ -197,10 +242,10 @@ export default function Composer({ username, places, onPinned }: Props) {
 
       <div className="w-pin__row">
         <input ref={input} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={e => { add(Array.from(e.target.files ?? [])); e.target.value = ''; }} />
-        <button type="button" className="b-btn b-btn--small" onClick={() => input.current?.click()} disabled={!storage || storage.mode === 'none'}>Velja myndir</button>
+        <button type="button" className="b-btn b-btn--small" onClick={() => input.current?.click()} disabled={pinning || !storage || storage.mode === 'none'}>Velja myndir</button>
         <label className="w-pin__place">
           <span className="b-visually-hidden">Staður</span>
-          <select className="w-pin__select" value={placeId ?? ''} onChange={e => setPlaceId(e.target.value ? Number(e.target.value) : null)}>
+          <select className="w-pin__select" value={placeId ?? ''} disabled={pinning} onChange={e => setPlaceId(e.target.value ? Number(e.target.value) : null)}>
             <option value="">Hvar var þetta?</option>
             {places.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
           </select>

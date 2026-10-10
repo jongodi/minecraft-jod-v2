@@ -24,6 +24,8 @@ export async function getExarotonServerId(token: string): Promise<string> {
   const res = await fetch('https://api.exaroton.com/v1/servers/', {
     headers: { Authorization: `Bearer ${token}` },
     next: { revalidate: 3600 },
+    /* a hung lookup would hold up every status answer behind it */
+    signal: AbortSignal.timeout(6000),
   });
   if (!res.ok) throw new Error(`Ekki tókst að sækja þjónalista frá Exaroton: ${res.status}`);
   const data = await res.json() as { data: ExarotonServer[] };

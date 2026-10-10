@@ -3,6 +3,7 @@ import { badJson, jsonObject } from '@/lib/http';
 import { randomUUID } from 'crypto';
 import { updateProfile, requireOwner, isCrewUsername, cleanText, LIMITS, type CrewEntry } from '@/lib/crew';
 import { photoFromDraft, type PhotoDraft } from '@/lib/crew-photos';
+import { mapPlaceIds, UNKNOWN_PLACE } from '@/lib/crew-places';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,11 +29,16 @@ export async function POST(req: NextRequest, { params }: Params) {
   if (new Set(kept.map(p => p.id)).size !== kept.length) return NextResponse.json({ error: 'Sama myndin kemur tvisvar fyrir.' }, { status: 400 });
   if (!text && kept.length === 0) return NextResponse.json({ error: 'Skrifaðu eitthvað eða veldu mynd.' }, { status: 400 });
 
+  /* a place is one on the map: a made-up one would be kept and counted under a place nobody can open */
+  const placeId = typeof body.placeId === 'number' && Number.isFinite(body.placeId) ? Math.floor(body.placeId) : null;
+  const places = placeId === null ? null : await mapPlaceIds();
+  if (placeId !== null && places && !places.has(placeId)) return NextResponse.json({ error: UNKNOWN_PLACE }, { status: 400 });
+
   const entry: CrewEntry = {
     id:        randomUUID(),
     text,
     photos:    kept,
-    placeId:   typeof body.placeId === 'number' && Number.isFinite(body.placeId) ? Math.floor(body.placeId) : null,
+    placeId,
     createdAt: new Date().toISOString(),
     lanterns:  [],
     replies:   [],

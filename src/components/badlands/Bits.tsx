@@ -175,6 +175,8 @@ const STONES: ReadonlyArray<readonly [number, number, number, number]> = [[0, 12
 /** The campfire in the footer: a three-frame pixel flame on two logs, in a
     ring of stones there. A play night's fire is the same one, without the
     stones; burnt down, only embers glow on the logs. */
+const SMOKE = [0, 1, 2, 3, 4, 5];
+
 export function Campfire({ embers = false, stones = false, className }: { embers?: boolean; stones?: boolean; className?: string } = {}) {
   return (
     <span className={`b-fire${className ? ` ${className}` : ''}`} aria-hidden="true">
@@ -201,6 +203,10 @@ export function Campfire({ embers = false, stones = false, className }: { embers
           </g>
         ))}
       </svg>
+      {/* the column of smoke a campfire in the game sends up, the signal the
+          crew is camped: square puffs that rise, drift with the wind, grow
+          and thin out (badlands.css). Only the fire in its ring of stones. */}
+      {stones && !embers && <span className="b-fire__smoke">{SMOKE.map(i => <i key={i} />)}</span>}
     </span>
   );
 }
@@ -355,10 +361,10 @@ export function BulletHole({ x, y }: { x: number; y: number }) {
 /* A wax seal on the 16 by 16 grid: a blob of wax with a pixel or two run
    over its edge, the raised disc pressed into it, and the light along its top
    (only there: light at the left rim ran into the Ð's crossbar, and the Ð
-   read as a D). */
-const SEAL_WAX = 'M5 0h6v1h2v1h1v2h1v1h1v6h-1v2h-1v1h-1v1h-2v1H5v-1H3v-1H2v-1H1v-2H0V5h1V3h1V2h1V1h2zM15 7h1v2h-1zM7 15h2v1H7z';
-const SEAL_DISC = 'M6 2h4v1h2v1h1v2h1v4h-1v2h-1v1h-2v1H6v-1H4v-1H3v-2H2V6h1V4h1V3h2z';
-const SEAL_LIGHT = 'M6 2h4v1H6zM4 3h2v1H4zM10 3h2v1h-2z';
+   read as a D). The link cards draw the same three shapes (src/lib/og-seal.tsx). */
+export const SEAL_WAX = 'M5 0h6v1h2v1h1v2h1v1h1v6h-1v2h-1v1h-1v1h-2v1H5v-1H3v-1H2v-1H1v-2H0V5h1V3h1V2h1V1h2zM15 7h1v2h-1zM7 15h2v1H7z';
+export const SEAL_DISC = 'M6 2h4v1h2v1h1v2h1v4h-1v2h-1v1h-2v1H6v-1H4v-1H3v-2H2V6h1V4h1V3h2z';
+export const SEAL_LIGHT = 'M6 2h4v1H6zM4 3h2v1H4zM10 3h2v1h-2z';
 
 /** The seal of the place: JOÐ's Ð pressed into red wax, the way a notice on
     the frontier was made good. Set at 48 px or larger, where the Ð reads as

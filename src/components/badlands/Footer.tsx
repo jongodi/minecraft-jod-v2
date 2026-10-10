@@ -53,8 +53,12 @@ function Footer({ season: initial }: { season?: Season } = {}) {
           </Link>
 
           <div className="b-foot__camp">
-            <button type="button" className="b-foot__fire b-tip" onClick={() => setDuel(true)} aria-haspopup="dialog" aria-label="Einvígi: prófaðu viðbragðstímann" data-tip="Einvígi">
+            {/* the duel's door: the fire, and the sign planted beside it, since a
+                phone has no pointer to bring up a tooltip and the duel was
+                found only by those who happened to tap the fire */}
+            <button type="button" className="b-foot__fire" onClick={() => setDuel(true)} aria-haspopup="dialog" aria-label="Einvígi: prófaðu viðbragðstímann">
               <Campfire stones />
+              <span className="b-foot__sign" aria-hidden="true"><span className="b-foot__board">Einvígi</span></span>
             </button>
             <YuleLad season={season} spot="fire" />
           </div>

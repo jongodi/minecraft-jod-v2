@@ -13,6 +13,9 @@ const STATUS_POLL_MS = 60_000;
 const CHANGING_POLL_MS = 15_000;
 /* a page drawn with the server's own answer asks again soon, since that answer may be a minute old */
 const SEEDED_POLL_MS = 10_000;
+/* how long the browser waits on its own questions: the routes cap what they ask upstream, so a longer wait is a hung connection */
+const STATUS_WAIT_MS = 12_000;
+const STATS_WAIT_MS = 25_000;
 const COPIED_MS = 2400;
 
 /* ─── the server's status ──────────────────────────────────────────
@@ -35,7 +38,8 @@ const unreachable = (): ServerState => ({ ...statusValue, online: false, life: '
 async function loadStatus(): Promise<void> {
   let next: ServerState;
   try {
-    const res  = await fetch('/api/server-status');
+    /* capped: the next question is only scheduled once this one ends, so a request that never answered stopped the lantern for good */
+    const res  = await fetch('/api/server-status', { signal: AbortSignal.timeout(STATUS_WAIT_MS) });
     const data = (res.ok ? await res.json() : null) as StatusResponse | null;
     next = data ? toServerState(data) : unreachable();
   } catch {
@@ -88,7 +92,15 @@ export function useServerStatus(initial?: ServerState): ServerState {
   useEffect(() => {
     polling++;
     if (statusValue.checkedAt === null) refreshStatus();
-    else if (initial && statusValue === initial) { clearTimeout(pollTimer); pollTimer = setTimeout(refreshStatus, SEEDED_POLL_MS); }
+    else if (initial && statusValue === initial) {
+      clearTimeout(pollTimer);
+      /* A page served from the cache can carry an answer from long before the
+         visit, and the windows, the riders and the bar's count said a quiet
+         server was full for ten seconds: an answer older than one poll is
+         asked again at once, a fresh one soon after. */
+      if (Date.now() - (initial.checkedAt ?? 0) > STATUS_POLL_MS) refreshStatus();
+      else pollTimer = setTimeout(() => { if (document.hidden) schedulePoll(); else refreshStatus(); }, SEEDED_POLL_MS);
+    }
     else schedulePoll();
     const onShow = () => { if (!document.hidden) refreshStatus(); };
     document.addEventListener('visibilitychange', onShow);
@@ -111,7 +123,8 @@ export function useStats(): StatsState {
   const [state, setState] = useState<StatsState>({ players: [], source: null, cachedAt: null, week: null, failed: false });
   useEffect(() => {
     let alive = true;
-    fetch('/api/stats')
+    /* capped, so a hung answer says so on the board instead of "sæki tölurnar" for good */
+    fetch('/api/stats', { signal: AbortSignal.timeout(STATS_WAIT_MS) })
       .then(r => (r.ok ? r.json() : null))
       .then((data: StatsResponse | null) => {
         if (!alive) return;
@@ -293,34 +306,64 @@ export function useReducedMotionPref(): boolean {
 type Me = string | null | undefined;   // undefined while the first answer is in flight
 let meValue: Me = undefined;
 let meHasPassword = false;
+/* the first answer came with the page rather than from asking; it is checked once, quietly */
+let meSeeded = false;
 let meInFlight: Promise<void> | null = null;
 const meListeners = new Set<() => void>();
 const notifyMe = () => meListeners.forEach(l => l());
 
-async function fetchMe(): Promise<void> {
+/* `quiet` is the check of an answer the page came with: if that check never
+   comes back, the answer stands, rather than signing a member out of their
+   own wall over a dropped request. */
+async function fetchMe(quiet = false): Promise<void> {
   try {
     const res = await fetch('/api/crew/me', { cache: 'no-store' });
-    const data = (res.ok ? await res.json() : null) as { username: string | null; hasPassword?: boolean } | null;
-    meValue = data?.username ?? null;
-    meHasPassword = !!data?.hasPassword;
+    if (!res.ok) throw new Error(`crew/me ${res.status}`);
+    const data = await res.json() as { username: string | null; hasPassword?: boolean };
+    meValue = data.username ?? null;
+    meHasPassword = !!data.hasPassword;
   } catch {
+    if (quiet) return;
     meValue = null;
     meHasPassword = false;
   }
   notifyMe();
 }
-function refreshMe(): Promise<void> {
-  if (!meInFlight) meInFlight = fetchMe().finally(() => { meInFlight = null; });
+function askMe(quiet: boolean): Promise<void> {
+  if (!meInFlight) meInFlight = fetchMe(quiet).finally(() => { meInFlight = null; });
   return meInFlight;
 }
+const refreshMe = () => askMe(false);
 const subscribeMe = (l: () => void) => { meListeners.add(l); return () => { meListeners.delete(l); }; };
 
+/** Who the server found signed in when it drew the page. */
+export interface CrewSessionSeed { me: string | null; hasPassword: boolean }
+
+/** The session the server read for the page it drew becomes the store's
+    first value in the browser, as the status does (seedStatus), so a
+    member's own wall is drawn with its pin slot, its banner and its reply
+    lines in place instead of growing them a moment in. Pass the same seed to
+    useCrewSession so the server's markup and the first client render agree.
+    Does nothing once the store has an answer of its own, and nothing on the
+    server, where a module lives across requests. */
+export function seedSession(seed: CrewSessionSeed): void {
+  if (typeof window === 'undefined' || meValue !== undefined) return;
+  meValue = seed.me;
+  meHasPassword = seed.hasPassword;
+  meSeeded = true;
+}
+
 /** The signed-in member's username, null when nobody is, undefined until
-    known; and whether they have chosen a password of their own yet. */
-export function useCrewSession(): { me: Me; hasPassword: boolean; refresh: () => Promise<void>; signOut: () => Promise<void> } {
-  const me = useSyncExternalStore(subscribeMe, () => meValue, () => undefined);
-  const hasPassword = useSyncExternalStore(subscribeMe, () => meHasPassword, () => false);
-  useEffect(() => { if (meValue === undefined) refreshMe(); }, []);
+    known; and whether they have chosen a password of their own yet. `seed`
+    is what the server drew the page with (seedSession). */
+export function useCrewSession(seed?: CrewSessionSeed): { me: Me; hasPassword: boolean; refresh: () => Promise<void>; signOut: () => Promise<void> } {
+  const me = useSyncExternalStore(subscribeMe, () => meValue, () => seed?.me);
+  const hasPassword = useSyncExternalStore(subscribeMe, () => meHasPassword, () => seed?.hasPassword ?? false);
+  useEffect(() => {
+    if (meValue === undefined) refreshMe();
+    /* the browser still asks once, which puts right a session the server could not read */
+    else if (meSeeded) { meSeeded = false; askMe(true); }
+  }, []);
   const signOut = useCallback(async () => {
     await fetch('/api/crew/auth', { method: 'DELETE' }).catch(() => {});
     meValue = null;

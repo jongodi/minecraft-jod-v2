@@ -20,9 +20,11 @@ import { woodClass } from '@/lib/sign-wood';
 const STRIP = 12;
 
 /** The crew's room, opened over the world. Portraits of the eight with a
-    lantern behind the ones who are in, the next play night's fire, the notice strip with what was pinned
-    last on their walls, then the wanted board on one rail. Everything here is
-    fetched when the room is first opened, not with the page. */
+    lantern behind the ones who are in, the next play night's fire, then the
+    wanted board the room is named for, on one rail, and under it the notice
+    strip with what was pinned last on their walls. The posters used to hang
+    under the strip, a screen and more down a room that is called Eftirlýst.
+    Everything here is fetched when the room is first opened, not with the page. */
 function Crew({ server }: { server: ServerState }) {
   const stats = useStats();
   const [summary, setSummary] = useState<Record<string, CrewSummary>>({});
@@ -83,6 +85,8 @@ function Crew({ server }: { server: ServerState }) {
       {/* the next play night: the most pressing thing in the room */}
       <NightBoard server={server} />
 
+      <Wanted stats={stats} />
+
       {/* the notice strip: the newest things on every wall, each a tap from where it hangs */}
       {strip && strip.length > 0 && (
         <section className="w-strip" aria-label="Á töflunni">
@@ -106,8 +110,6 @@ function Crew({ server }: { server: ServerState }) {
           </Rail>
         </section>
       )}
-
-      <Wanted stats={stats} />
 
       <div className="b-crew__foot">
         <Link href="/crew" className="b-btn b-btn--small">Veggir hópsins og öll tölfræðin</Link>

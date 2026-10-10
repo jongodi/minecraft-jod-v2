@@ -86,6 +86,12 @@ export const LIMITS = {
   replies:    100,
 } as const;
 
+/* How short a password may be (src/lib/crew-access.ts holds it to this) and
+   how long the name the letters call a member (src/lib/crew-email.ts). Kept
+   here, with no server imports, so the wall's fields say the same. */
+export const PASSWORD_MIN = 6;
+export const NAME_MAX = 40;
+
 const str = (v: unknown, max: number) => (typeof v === 'string' ? v : '').slice(0, max);
 const iso = (v: unknown) => (typeof v === 'string' && !Number.isNaN(Date.parse(v)) ? v : new Date().toISOString());
 

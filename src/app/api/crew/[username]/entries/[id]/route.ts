@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { badJson, jsonObject } from '@/lib/http';
 import { updateProfile, readProfile, requireOwner, isCrewUsername, cleanText, LIMITS, type CrewEntry } from '@/lib/crew';
 import { photosNotIn, removePhotos } from '@/lib/crew-photos';
+import { mapPlaceIds, UNKNOWN_PLACE } from '@/lib/crew-places';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,6 +18,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   let body: { text?: unknown; placeId?: unknown; photos?: unknown };
   { const parsed = await jsonObject(req); if (!parsed) return badJson(); body = parsed; }
 
+  /* the place asked for: null to clear it, undefined to leave it be */
+  const placeId = body.placeId === null ? null : typeof body.placeId === 'number' && Number.isFinite(body.placeId) ? Math.floor(body.placeId) : undefined;
+  const places = typeof placeId === 'number' ? await mapPlaceIds() : null;
+
   let updated: CrewEntry | null = null;
   let dropped: CrewEntry['photos'] = [];
   try {
@@ -27,8 +32,13 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       const entry = p.entries.find(e => e.id === id);
       if (!entry) return;
       if (typeof body.text === 'string') entry.text = cleanText(body.text, LIMITS.text);
-      if (body.placeId === null) entry.placeId = null;
-      else if (typeof body.placeId === 'number' && Number.isFinite(body.placeId)) entry.placeId = Math.floor(body.placeId);
+      /* A place moved to must be on the map. One the entry already has is
+         kept as it is, so a sign whose place has since come off the map can
+         still have its words changed: the editor sends its place back unchanged. */
+      if (placeId !== undefined && placeId !== entry.placeId) {
+        if (placeId !== null && places && !places.has(placeId)) throw new Error(UNKNOWN_PLACE);
+        entry.placeId = placeId;
+      }
       if (Array.isArray(body.photos)) {
         /* the prints that stay, in the order given, each with its caption */
         const keep = (body.photos as Array<{ id?: unknown; caption?: unknown }>)

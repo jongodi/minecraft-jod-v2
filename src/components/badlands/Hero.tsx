@@ -1,7 +1,7 @@
 'use client';
 
-import { memo } from 'react';
-import Mesa from './Mesa';
+import { memo, useEffect, useState } from 'react';
+import Mesa, { Rider } from './Mesa';
 import { Moon, Sun } from './Bits';
 import CopyAddress from './CopyAddress';
 import StatusLantern from './StatusLantern';
@@ -11,6 +11,29 @@ import type { Season } from '@/lib/season';
 import type { PlayNightResponse } from '@/app/api/playnight/route';
 import { YuleLad, useMoonPhase } from './Season';
 import { CREW } from './data';
+
+/* The title screen's splash: what the game tilts in yellow over its logo,
+   one line picked at random each time the title screen comes up. These are
+   facts about this world, in the game's exclaiming voice; what is true
+   tonight (who is in, a night planned) is picked first when there is any. */
+const SPLASHES = ['Aldrei endurræst!', 'Átta vinir!', 'Frá sumrinu 2024!', 'Aðgangur með boði!', 'Badlands við sólsetur!', 'Með armadillo!', 'Ýttu á 1, 2 eða 3!'];
+
+function Splash({ inside, planned }: { inside: number; planned: boolean }) {
+  /* picked in the browser, once: a pick in the server's markup would differ from the browser's */
+  const [line, setLine] = useState<string | null>(null);
+  useEffect(() => {
+    const tonight = [
+      ...(inside > 0 ? [`${inside} inni núna!`] : []),
+      ...(planned ? ['Spilakvöld á dagskrá!'] : []),
+    ];
+    const pool = tonight.length > 0 && Math.random() < 0.6 ? tonight : SPLASHES;
+    setLine(pool[Math.floor(Math.random() * pool.length)]);
+  // the title screen picks once, as the game does
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  if (!line) return null;
+  return <span className="b-hero__splash" aria-hidden="true"><span>{line}</span></span>;
+}
 
 function Hero({ server, season, nights }: { server: ServerState; season: Season; nights?: PlayNightResponse }) {
   /* someone's home: the server is up and somebody is in it */
@@ -38,6 +61,16 @@ function Hero({ server, season, nights }: { server: ServerState; season: Season;
           {/* tonight's moon, rising from behind the J as the sun sets on the other side */}
           {moon !== null && <Moon phase={moon} className="b-hero__moon" />}
         </h1>
+        {/* On a phone the crew who are in climb the name: one on the O, one on
+            the Ð, their name tags in the sky over them, and a count for the rest.
+            The plateau at the name's feet stood them in front of the O's window. */}
+        {inside.length > 0 && (
+          <div className="b-hero__climbers">
+            {inside.slice(0, 2).map(n => <Rider key={n} name={n} className="b-hero__climber" />)}
+            {inside.length > 2 && <span className="b-nametag b-hero__more">+{inside.length - 2}</span>}
+          </div>
+        )}
+        <Splash inside={inside.length} planned={(nights?.nights ?? []).some(n => n.phase !== 'over')} />
         {/* a phone's sun: in the open sky between the words and the name, so no line above it ever crosses it (badlands.css) */}
         <div className="b-hero__sun" aria-hidden="true"><Sun /></div>
         <div className="b-hero__lead">
@@ -59,6 +92,6 @@ function Hero({ server, season, nights }: { server: ServerState; season: Season;
   );
 }
 
-/* Memoised: the home page also re-renders on stats and on the active
-   section, and this section reads neither. */
+/* Memoised: the home page also re-renders when the lit door and the open
+   room change, and this section reads neither. */
 export default memo(Hero);

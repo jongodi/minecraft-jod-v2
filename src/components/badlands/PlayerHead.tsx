@@ -36,6 +36,11 @@ export default function PlayerHead({ name, size = 64, full = false, className, a
   const px = size * 4;
   const src = full ? bodyUrl(name, px) : headUrl(name, px);
   const fallback = full ? bodyFallback(name, px) : headFallback(name, px);
+  /* the next source down: the other service, then the drawn stand-in */
+  const fall = (img: HTMLImageElement) => {
+    if (!img.dataset.fallback) { img.dataset.fallback = '1'; img.src = fallback; }
+    else if (img.dataset.fallback === '1') { img.dataset.fallback = '2'; img.src = full ? UNKNOWN_BODY : UNKNOWN_HEAD; }
+  };
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
@@ -47,11 +52,11 @@ export default function PlayerHead({ name, size = 64, full = false, className, a
       loading={priority ? 'eager' : 'lazy'}
       fetchPriority={priority ? 'high' : undefined}
       decoding="async"
-      onError={e => {
-        const img = e.currentTarget;
-        if (!img.dataset.fallback) { img.dataset.fallback = '1'; img.src = fallback; }
-        else if (img.dataset.fallback === '1') { img.dataset.fallback = '2'; img.src = full ? UNKNOWN_BODY : UNKNOWN_HEAD; }
-      }}
+      /* A head drawn on the server can fail before the page hydrates, and
+         React does not replay that error: a broken image is complete with
+         no width, so it is caught here when the head is first attached. */
+      ref={img => { if (img && img.complete && img.naturalWidth === 0 && img.getAttribute('src')) fall(img); }}
+      onError={e => fall(e.currentTarget)}
     />
   );
 }

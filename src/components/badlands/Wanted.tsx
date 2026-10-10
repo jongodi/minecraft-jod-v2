@@ -52,7 +52,8 @@ export default function Wanted({ stats }: { stats: StatsState }) {
         <div className="b-head b-head--tight">
           <p className="b-note">
             {stats.source === 'live' ? `beint frá þjóninum${when ? `, sótt ${when}` : ''}` :
-             stats.source === 'cached' ? `slökkt á þjóninum, síðast sótt ${when ?? 'við síðustu uppfærslu'}` :
+             /* a copy is kept while the server is off, and also when it is on but did not answer: the room's line says which */
+             stats.source === 'cached' ? `úr síðasta afriti, sótt ${when ?? 'við síðustu uppfærslu'}` :
              'engar tölur úr leiknum í augnablikinu; varðeldurinn telur samt'}
           </p>
         </div>

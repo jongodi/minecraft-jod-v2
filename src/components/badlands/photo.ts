@@ -34,6 +34,10 @@ export const PHOTO_SIZES = {
   cover:    '(min-width: 900px) 832px, 100vw',
   /* a print on the notice strip in the room, and on the roll call */
   strip:    '160px',
+  /* a print on the board on /crew (wall.css, .w-board): two columns on phones,
+     three from 640px and four from 900px inside the wrap, less each sign's
+     padding and rim; about 135 to 260px wide, and 230px once the wrap is full */
+  board:    '(min-width: 1160px) 230px, (min-width: 900px) 20vw, (min-width: 640px) 27vw, 40vw',
   /* the lightbox card: min(90vw, 1100px) */
   lightbox: '(min-width: 1223px) 1100px, 90vw',
 } as const;

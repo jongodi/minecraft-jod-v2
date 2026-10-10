@@ -396,5 +396,6 @@
 .w-strip__title { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-lg); color: var(--paper); }
 /* the rail keeps the bars' overhang and the boards' shadow inside what it scrolls */
 .w-strip .b-rail { gap: var(--sp-3); padding: 2px 3px 6px; align-items: stretch; }
-.w-strip { margin-bottom: var(--sp-6); }
+/* in the crew's room the strip hangs under the wanted board, a step down from it */
+.w-strip { margin-top: var(--sp-7); }
 .w-page__err { max-width: 52rem; margin-inline: auto; }

@@ -4,11 +4,11 @@
 // can rewrite it, recaption or take down its pictures, move it to a place,
 // or make one of its prints the poster's backdrop. Anyone signed in can
 // light a lantern under it or leave a line.
-import { useState, type CSSProperties, type FormEvent, type MouseEvent } from 'react';
+import { memo, useState, type CSSProperties, type FormEvent, type MouseEvent } from 'react';
 import Link from 'next/link';
 import type { CrewEntry, CrewPhoto } from '@/lib/crew-types';
 import { LIMITS, sameUser } from '@/lib/crew-types';
-import { formatDate, formatAge } from '@/lib/format';
+import { formatDate, formatAge, plural } from '@/lib/format';
 import { Lantern } from '@/components/badlands/Bits';
 import { useMounted } from '@/components/badlands/hooks';
 import PlayerHead from '@/components/badlands/PlayerHead';
@@ -38,7 +38,10 @@ interface EditState { text: string; placeId: number | null; photos: CrewPhoto[] 
 /* the longest note still lettered across a sign rather than written on it */
 const WORD_MAX = 90;
 
-export default function Print({ username, entry, places, me, isOwner, coverPhotoId, fresh = false, onChange, onRemove, onCover, onOpen }: Props) {
+/* Every prop the wall hands a sign is a value or a callback that keeps its
+   identity, so a lantern lit on one sign, or a line typed in the bio, does
+   not draw every other sign on the wall again. */
+export default memo(function Print({ username, entry, places, me, isOwner, coverPhotoId, fresh = false, onChange, onRemove, onCover, onOpen }: Props) {
   const [edit, setEdit]       = useState<EditState | null>(null);
   const [saving, setSaving]   = useState(false);
   const [error, setError]     = useState('');
@@ -48,11 +51,14 @@ export default function Print({ username, entry, places, me, isOwner, coverPhoto
   /* the light a lantern just lit throws across the board: where it stands, and a count so a second lighting starts it again */
   const [light, setLight] = useState<{ x: number; y: number; n: number } | null>(null);
   const mounted = useMounted();
-  /* the server has no idea what the browser's locale draws; until mounted the plain date stands in */
+  /* how long ago depends on the clock, and the server's is not the browser's; until mounted the plain date stands in.
+     A date is written out the same everywhere (formatDate), so it needs no wait. */
   const age  = (iso: string) => (mounted ? formatAge(iso) : iso.slice(0, 10));
-  const date = (iso: string) => (mounted ? formatDate(iso) : iso.slice(0, 10));
+  const date = formatDate;
 
   const place = entry.placeId !== null ? places.find(p => p.id === entry.placeId) ?? null : null;
+  /* what the sign is called to a screen reader, and what its own buttons say they act on */
+  const name = entry.text ? entry.text.slice(0, 60) : `Mynd frá ${date(entry.createdAt)}`;
   const lit = !!me && entry.lanterns.some(n => sameUser(n, me));
   const api = (path: string, init?: RequestInit) => fetch(`/api/crew/${username}/entries/${entry.id}${path}`, { headers: { 'Content-Type': 'application/json' }, ...init });
 
@@ -131,7 +137,7 @@ export default function Print({ username, entry, places, me, isOwner, coverPhoto
   const word = !edit && photos.length === 0 && entry.text.length <= WORD_MAX && !entry.text.includes('\n');
 
   return (
-    <article id={entry.id} className={`w-sign${woodClass(place?.wood)} w-print${word ? ' w-print--word' : ''}${fresh ? ' is-fresh' : ''}${edit ? ' is-editing' : ''}`} aria-label={entry.text ? entry.text.slice(0, 60) : `Mynd frá ${date(entry.createdAt)}`}>
+    <article id={entry.id} className={`w-sign${woodClass(place?.wood)} w-print${word ? ' w-print--word' : ''}${fresh ? ' is-fresh' : ''}${edit ? ' is-editing' : ''}`} aria-label={name}>
 
       {photos.length > 0 && (
         <div className={`w-print__pics${many ? ' is-many' : ''}`}>
@@ -187,18 +193,20 @@ export default function Print({ username, entry, places, me, isOwner, coverPhoto
       )}
 
       <footer className="w-print__meta">
-        <time className="b-tip" dateTime={entry.createdAt} data-tip={date(entry.createdAt)}>{age(entry.createdAt)}</time>
+        {/* the day is in the tip for the eye and after the age for a screen reader, which does not read a tip */}
+        <time className="b-tip" dateTime={entry.createdAt} data-tip={date(entry.createdAt)}>{age(entry.createdAt)}<span className="b-visually-hidden">, {date(entry.createdAt)}</span></time>
         {place && <Link href={`/?stadur=${place.id}#heimur`} className="w-print__place">{place.label}</Link>}
         <button type="button" className={`w-lantern b-tip${lit ? ' is-lit' : ''}`} onClick={toggleLantern} disabled={!me || busyLantern}
-          aria-pressed={lit} data-tip={me ? (lit ? 'Slökkva á luktinni' : 'Kveikja á lukt') : 'Skráðu þig inn til að kveikja á lukt'}>
+          aria-pressed={lit} aria-label={`Lukt undir færslunni${entry.lanterns.length ? `, ${entry.lanterns.length} ${plural(entry.lanterns.length, 'logar', 'loga')}` : ''}${me ? '' : '. Skráðu þig inn til að kveikja á lukt'}`}
+          data-tip={me ? (lit ? 'Slökkva á luktinni' : 'Kveikja á lukt') : 'Skráðu þig inn til að kveikja á lukt'}>
           <Lantern lit={lit || entry.lanterns.length > 0} />
           {entry.lanterns.length > 0 && <span>{entry.lanterns.length}</span>}
           <span className="b-visually-hidden">{entry.lanterns.length ? `luktir: ${entry.lanterns.join(', ')}` : 'engin lukt enn'}</span>
         </button>
         {isOwner && !edit && (
           <span className="w-print__actions">
-            <button type="button" onClick={() => setEdit({ text: entry.text, placeId: entry.placeId, photos: entry.photos })}>breyta</button>
-            <button type="button" onClick={remove}>eyða</button>
+            <button type="button" onClick={() => setEdit({ text: entry.text, placeId: entry.placeId, photos: entry.photos })} aria-label={`Breyta færslunni: ${name}`}>breyta</button>
+            <button type="button" onClick={remove} aria-label={`Eyða færslunni: ${name}`}>eyða</button>
           </span>
         )}
       </footer>
@@ -213,7 +221,7 @@ export default function Print({ username, entry, places, me, isOwner, coverPhoto
                 <span className="w-reply__text">{r.text}</span>
                 <span className="w-reply__when">
                   {age(r.createdAt)}
-                  {(sameUser(me, r.username) || isOwner) && <button type="button" onClick={() => dropReply(r.id)}>eyða</button>}
+                  {(sameUser(me, r.username) || isOwner) && <button type="button" onClick={() => dropReply(r.id)} aria-label={`Eyða svari frá ${r.username}: ${r.text.slice(0, 40)}`}>eyða</button>}
                 </span>
               </span>
             </div>
@@ -231,4 +239,4 @@ export default function Print({ username, entry, places, me, isOwner, coverPhoto
       {error && <p className="b-err" role="alert">{error}</p>}
     </article>
   );
-}
+});

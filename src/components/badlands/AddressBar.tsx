@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { CopyIcon, Lantern, Mark, Strata } from './Bits';
 import PlayerHead from './PlayerHead';
 import ToastHost from './Toast';
-import { SERVER_IP, type NavLink } from './data';
+import { SERVER_IP, plainClick, type NavLink } from './data';
 import { useCopy, useCrewSession, useServerStatus, type ServerState } from './hooks';
 import type { ServerLife } from '@/lib/server-state';
 
@@ -56,6 +56,15 @@ function BarLantern({ server, home }: { server: ServerState; home: boolean }) {
   );
 }
 
+/** The experience bar, as the game hangs it over the hotbar: green, in
+    segments, filling as the visitor goes on. Here it fills with the page,
+    the evening at the top and the campfire at the foot, so a glance says
+    how far down the night is. Drawn twice, under the plank on a wide screen
+    and over the hotbar on a phone; badlands.css shows the one that fits. */
+function Xp() {
+  return <span className="b-xp" aria-hidden="true"><span className="b-xp__fill" /></span>;
+}
+
 /** The bar: the mark, the three doors as lanterns, the server's lantern and
     the address with its copy action. On the home page it lies over the sunset
     and takes a surface once the page has scrolled; elsewhere it is solid from
@@ -69,6 +78,52 @@ export default function AddressBar({ links, activeId, onDoor, always = false, st
   const { me } = useCrewSession();
   const server = useServerStatus(status);
   const path = usePathname();
+  const router = useRouter();
+
+  /* The experience bar fills with the page in CSS (badlands.css, scroll
+     timeline). A browser without scroll timelines gets the same from here:
+     one transform per frame on the bar's fill, written only when it moves. */
+  useEffect(() => {
+    if (CSS.supports('animation-timeline: scroll()')) return;
+    let raf = 0;
+    let last = -1;
+    const fill = () => {
+      raf = 0;
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      const t = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
+      const next = Math.round(t * 1000);
+      if (next === last) return;
+      last = next;
+      document.querySelectorAll<HTMLElement>('.b-xp__fill').forEach(el => { el.style.transform = `scaleX(${t})`; });
+    };
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(fill); };
+    fill();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+    return () => { window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', onScroll); cancelAnimationFrame(raf); };
+  }, []);
+
+  /* The game's hotbar keys: 1, 2 and 3 take the three doors, as they take
+     the three first slots in the game. Not while a field is being typed in,
+     nor under a dialog, and never with a modifier, which belongs to the
+     browser. Inside the 3D map the keys are the viewer's own: it is a frame
+     of its own, so they never reach this page. */
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.defaultPrevented || e.repeat || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+      const i = ['1', '2', '3'].indexOf(e.key);
+      const l = links[i];
+      if (!l) return;
+      const at = e.target instanceof HTMLElement ? e.target : null;
+      if (at && (at.isContentEditable || at.closest('input, textarea, select'))) return;
+      if (document.querySelector('[aria-modal="true"]')) return;
+      e.preventDefault();
+      if (onDoor) onDoor(l.id);
+      else router.push(l.href);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [links, onDoor, router]);
 
   useEffect(() => {
     if (always) return;
@@ -80,21 +135,23 @@ export default function AddressBar({ links, activeId, onDoor, always = false, st
     return () => { window.removeEventListener('scroll', onScroll); cancelAnimationFrame(raf); };
   }, [always]);
 
-  const door = (l: Door, cls: string) => {
+  const door = (l: Door, cls: string, i: number) => {
     const here = l.id === activeId;
     const className = `${cls}${here ? ' is-here' : ''}`;
     /* the page itself, or the place on it the visitor is in (a room, a wall in the crew's) */
     const current = !here ? undefined : l.href === path ? 'page' : 'location';
-    const inner = <><Lantern lit={here} /><span className={`${cls}__label`}>{l.label}</span></>;
+    const key = String(i + 1);
+    /* the key's numeral, written small on the lantern's corner as the game writes a stack's count, shows while the doors have the keyboard */
+    const inner = <><Lantern lit={here} />{cls === 'b-door' && <span className="b-door__key" aria-hidden="true">{key}</span>}<span className={`${cls}__label`}>{l.label}</span></>;
     if (onDoor) {
       return (
-        <a key={l.id} href={l.href} className={className} aria-current={current}
-           onClick={e => { e.preventDefault(); onDoor(l.id); }}>
+        <a key={l.id} href={l.href} className={className} aria-current={current} aria-keyshortcuts={key}
+           onClick={e => { if (plainClick(e)) { e.preventDefault(); onDoor(l.id); } }}>
           {inner}
         </a>
       );
     }
-    return <Link key={l.id} href={l.href} className={className} aria-current={current}>{inner}</Link>;
+    return <Link key={l.id} href={l.href} className={className} aria-current={current} aria-keyshortcuts={key}>{inner}</Link>;
   };
 
   return (
@@ -103,7 +160,7 @@ export default function AddressBar({ links, activeId, onDoor, always = false, st
         <div className="b-wrap b-bar__inner">
           <Link href="/" className="b-bar__mark" aria-label="JOÐ, forsíða"><Mark /><span>JOÐ</span></Link>
           <nav className="b-doors" aria-label="Efnisyfirlit">
-            {links.map(l => door(l, 'b-door'))}
+            {links.map((l, i) => door(l, 'b-door', i))}
           </nav>
           <div className="b-bar__end">
             {/* a signed-in member's own head, lit: one tap to their wall from any page */}
@@ -127,6 +184,7 @@ export default function AddressBar({ links, activeId, onDoor, always = false, st
         </div>
         {/* the ground under the plank: the same slice of strata that divides the hours */}
         <Strata className="b-bar__strata" />
+        <Xp />
       </header>
       <ToastHost />
 
@@ -134,7 +192,8 @@ export default function AddressBar({ links, activeId, onDoor, always = false, st
           its slots, the one the visitor is behind framed the way the game
           frames the slot in hand. */}
       <nav className="b-hotbar" aria-label="Efnisyfirlit">
-        {links.map(l => door(l, 'b-slot'))}
+        <Xp />
+        {links.map((l, i) => door(l, 'b-slot', i))}
       </nav>
     </>
   );

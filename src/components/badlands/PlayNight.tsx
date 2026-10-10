@@ -35,10 +35,16 @@ export function NightBoard({ server }: { server: ServerState }) {
   useEffect(() => { setPicked(/^\/kvold\/([^/]+)/.exec(window.location.pathname)?.[1] ?? null); }, []);
   useEffect(() => {
     if (!picked || shown.current || !state) return;
-    const el = document.querySelector(`[data-night="${CSS.escape(picked)}"]`);
+    const el = document.querySelector<HTMLElement>(`[data-night="${CSS.escape(picked)}"]`);
     if (!el) return;
     shown.current = true;
-    el.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    /* Only the room scrolls, to the fire: scrollIntoView moved the page as
+       well, cut short the page's own way down to the world, and put the
+       room's plank and its ✕ under the bar. */
+    const room = el.closest<HTMLElement>('.b-room__body');
+    if (!room) return;
+    const top = el.getBoundingClientRect().top - room.getBoundingClientRect().top + room.scrollTop - parseFloat(getComputedStyle(el).scrollMarginTop || '0');
+    room.scrollTo({ top, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
   }, [picked, state]);
 
   if (!mounted || state === undefined) return null;

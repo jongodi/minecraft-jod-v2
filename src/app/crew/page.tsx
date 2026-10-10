@@ -12,6 +12,8 @@ import AddressBar from '@/components/badlands/AddressBar';
 import Footer from '@/components/badlands/Footer';
 import PlayerHead from '@/components/badlands/PlayerHead';
 import NightSky from '@/components/badlands/NightSky';
+import { Lantern } from '@/components/badlands/Bits';
+import { useServerStatus } from '@/components/badlands/hooks';
 import { NightLine } from '@/components/badlands/NightLine';
 import { CREW, PAGE_LINKS } from '@/components/badlands/data';
 import { photoProps, PHOTO_SIZES } from '@/components/badlands/photo';
@@ -28,6 +30,9 @@ export default function CrewPage() {
   const [feed, setFeed] = useState<FeedEntry[] | null | 'error'>(null);
   const [tab,  setTab]  = useState<'members' | 'board'>('members');
   const [staleLink, setStaleLink] = useState(false);
+  /* who is in the game now: the bar asks for the same answer, so this is no second question */
+  const server = useServerStatus();
+  const isIn = (name: string) => server.online === true && server.list.some(n => n.toLowerCase() === name.toLowerCase());
 
   useEffect(() => {
     setStaleLink(new URLSearchParams(window.location.search).get('lykill') === 'utrunninn');
@@ -82,8 +87,10 @@ export default function CrewPage() {
              once and only the lines about each wall fill in */
           <div className="b-rollcall" aria-busy={crew === null}>
             {(crew ?? CREW.map(blankPoster)).map(m => (
-              <div key={m.username} className="b-hang">
-                <Link href={`/crew/${m.username}`} className={`b-paper b-paper--torn b-poster b-poster--crew${m.cover ? ' has-cover' : ''}`}>
+              <div key={m.username} className={`b-hang${isIn(m.username) ? ' is-in' : ''}`}>
+                {/* someone in the game now: a lit lantern hung over their poster, its light on the paper */}
+                {isIn(m.username) && <span className="b-poster__lamp" aria-hidden="true"><Lantern lit /></span>}
+                <Link href={`/crew/${m.username}`} className={`b-paper b-paper--torn b-poster b-poster--crew${m.cover ? ' has-cover' : ''}`} aria-label={isIn(m.username) ? `${m.username}, inni í leiknum núna` : undefined}>
                   {m.cover && (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img className="b-poster__cover" {...photoProps(m.cover, PHOTO_SIZES.strip)} alt="" aria-hidden="true" loading="lazy" decoding="async" />
@@ -99,7 +106,8 @@ export default function CrewPage() {
                     <div className="b-poster__meta" aria-hidden="true" style={{ visibility: 'hidden' }}><span className="b-nowrap">0 færslur</span> · <span className="b-nowrap">0 myndir</span></div>
                   </>) : (<>
                     <div className="b-poster__note">{m.bio || (m.lastEntry ? `festi eitthvað upp ${formatAge(m.lastEntry)}` : 'ekkert heyrst enn')}</div>
-                    <div className="b-poster__meta"><span className="b-nowrap">{m.entryCount} {plural(m.entryCount, 'færsla', 'færslur')}</span> · <span className="b-nowrap">{m.photoCount} {plural(m.photoCount, 'mynd', 'myndir')}</span></div>
+                    {/* a bare wall says so once, in the line above; its two zeros keep their height so the board's rows stay level */}
+                    <div className="b-poster__meta" aria-hidden={m.entryCount + m.photoCount === 0 || undefined} style={m.entryCount + m.photoCount === 0 ? { visibility: 'hidden' } : undefined}><span className="b-nowrap">{m.entryCount} {plural(m.entryCount, 'færsla', 'færslur')}</span> · <span className="b-nowrap">{m.photoCount} {plural(m.photoCount, 'mynd', 'myndir')}</span></div>
                   </>)}
                 </Link>
               </div>
@@ -124,7 +132,7 @@ export default function CrewPage() {
                     {e.photos[0] && (
                       <span className="w-note-card__pic">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img {...photoProps(e.photos[0].filename, PHOTO_SIZES.strip)} alt={e.photos[0].caption || ''} loading="lazy" decoding="async" />
+                        <img {...photoProps(e.photos[0].filename, PHOTO_SIZES.board)} alt={e.photos[0].caption || ''} loading="lazy" decoding="async" />
                       </span>
                     )}
                     {(e.text || e.photos[0]?.caption) && <span className="w-note-card__text">{e.text || e.photos[0]?.caption}</span>}

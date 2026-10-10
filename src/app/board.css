@@ -77,7 +77,7 @@
 .b-poster__rule { width: 100%; height: var(--px); margin-top: var(--sp-3); background: var(--ink); opacity: 0.22; }
 .b-poster__rest { width: 100%; margin-top: var(--sp-1); list-style: none; display: grid; }
 /* a row under the rule: the rank and the head down the side, the name with its number on the line beneath; at the bitmap face's size the two did not share a line on a poster this wide */
-.b-poster__row { display: grid; grid-template-columns: auto 1rem minmax(0, 1fr); align-items: center; gap: 0 var(--sp-2); padding-block: var(--sp-1); text-decoration: none; color: var(--ink); text-align: left; }
+.b-poster__row { display: grid; grid-template-columns: 1.5rem 1rem minmax(0, 1fr); align-items: center; gap: 0 var(--sp-2); padding-block: var(--sp-1); text-decoration: none; color: var(--ink); text-align: left; }
 .b-poster__row .b-poster__rank, .b-poster__row .b-poster__head { grid-row: span 2; }
 .b-poster__row .b-poster__who, .b-poster__row .b-poster__num { grid-column: 3; }
 .b-poster__row:focus-visible { color: var(--lantern-ink); }
@@ -90,8 +90,12 @@
 /* the week's outlaw, under the three of all time: a dashed rule in red ink, a small heading, one row without a rank */
 .b-poster__rule--week { height: 0; margin-top: var(--sp-3); background: none; border-top: var(--px) dashed var(--tc-red); opacity: 0.45; }
 .b-poster__weekhead { width: 100%; margin-top: var(--sp-2); font-weight: 600; font-size: var(--fs-sm); letter-spacing: 0.04em; text-transform: uppercase; color: var(--tc-red); text-align: left; }
-.b-poster__row--week { grid-template-columns: 1rem minmax(0, 1fr); }
-.b-poster__row--week .b-poster__who, .b-poster__row--week .b-poster__num { grid-column: 2; }
+/* The full width, as its label and the ranked rows above are: the poster
+   centres what it holds, and the week's row stood shrunk in the middle, off
+   every edge above it. The rank's column is a fixed width so the week's
+   head and name stand in the same columns as the ranked ones, with no rank. */
+.b-poster__row--week { width: 100%; }
+.b-poster__row--week .b-poster__head { grid-column: 2; grid-row: span 2; }
 .b-empty { padding: var(--sp-4) 0; font-size: var(--fs-md); color: var(--text-faint); }
 .b-paper .b-empty { color: var(--ink-faint); }
 
@@ -154,7 +158,53 @@
   box-shadow: inset 0 0 0 calc(var(--px) * 3) var(--wood), inset 0 0 0 calc(var(--px) * 4) var(--wood-light), var(--bevel), 0 0 0 var(--px) var(--lantern);
 }
 .b-stock__crate[aria-pressed='true'] { box-shadow: inset 0 0 0 calc(var(--px) * 3) var(--wood), inset 0 0 0 calc(var(--px) * 4) var(--wood-light), var(--bevel-in), 0 0 0 var(--px) var(--lantern); }
-@media (prefers-reduced-motion: reduce) { .b-stock__crate { transition: none; } }
+/* The crate opens as a chest does in the game: its lid, a plank across the
+   top, lifts and tips back on its hinge at the left, and the lamplight inside
+   falls on the tag. Pointed at or tapped; the pinned one stays open. */
+.b-stock__crate::after {
+  content: '';
+  position: absolute;
+  z-index: 2;
+  left: calc(var(--px) * -1);
+  right: calc(var(--px) * -1);
+  top: calc(var(--px) * -1);
+  height: 15%;
+  background: var(--plank);
+  box-shadow: inset 0 0 0 var(--px) rgba(21, 16, 13, 0.35), 0 var(--px) 0 rgba(21, 16, 13, 0.45);
+  transform-origin: 0 100%;
+  transition: transform var(--dur-2) var(--ease-out);
+}
+.b-stock__crate::before {
+  content: '';
+  position: absolute;
+  inset: calc(var(--px) * 4);
+  background: radial-gradient(ellipse 70% 55% at 50% 0%, rgba(242, 166, 59, 0.55), transparent 70%);
+  opacity: 0;
+  transition: opacity var(--dur-2) var(--ease-out);
+  pointer-events: none;
+}
+.b-stock__crate.is-shown::after, .b-stock__crate[aria-pressed='true']::after { transform: translateY(-50%) rotate(-11deg); }
+.b-stock__crate.is-shown::before, .b-stock__crate[aria-pressed='true']::before { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .b-stock__crate, .b-stock__crate::after, .b-stock__crate::before { transition: none; } }
+
+/* Paper hung on a nail swings when it is put up: each wanted poster as the
+   crew's room opens, and the roll call's posters as the board is reached,
+   one after another, a damped swing about the nail at the top. */
+@keyframes b-swing {
+  0%   { transform: rotate(-5deg); }
+  28%  { transform: rotate(3.2deg); }
+  52%  { transform: rotate(-1.6deg); }
+  74%  { transform: rotate(0.7deg); }
+  100% { transform: rotate(0deg); }
+}
+.b-room.is-open .b-posters .b-hang, .b-rollcall > .b-hang { transform-origin: 50% 0.75rem; animation: b-swing 1.3s var(--ease-out) both; }
+.b-room.is-open .b-posters .b-hang:nth-child(2), .b-rollcall > .b-hang:nth-child(2) { animation-delay: 70ms; }
+.b-room.is-open .b-posters .b-hang:nth-child(3), .b-rollcall > .b-hang:nth-child(3) { animation-delay: 140ms; }
+.b-room.is-open .b-posters .b-hang:nth-child(4), .b-rollcall > .b-hang:nth-child(4) { animation-delay: 210ms; }
+.b-room.is-open .b-posters .b-hang:nth-child(5), .b-rollcall > .b-hang:nth-child(5) { animation-delay: 280ms; }
+.b-room.is-open .b-posters .b-hang:nth-child(6), .b-rollcall > .b-hang:nth-child(6) { animation-delay: 350ms; }
+.b-room.is-open .b-posters .b-hang:nth-child(n + 7), .b-rollcall > .b-hang:nth-child(n + 7) { animation-delay: 420ms; }
+@media (prefers-reduced-motion: reduce) { .b-room.is-open .b-posters .b-hang, .b-rollcall > .b-hang { animation: none; } }
 
 /* the counter: one label at a time, on paper like every other notice */
 /* The counter is one sheet that never moves. What moves is the slip on it: a
@@ -171,7 +221,10 @@
 @keyframes b-slip { from { opacity: 0; transform: translateX(calc(var(--px) * -6)); } to { opacity: 1; transform: none; } }
 @keyframes b-land { from { opacity: 0; transform: translateY(calc(var(--px) * -4)); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .b-counter__slip, .b-counter__glyph, .b-counter__text { animation: none; } }
-.b-counter__glyph:empty { background: repeating-linear-gradient(45deg, var(--paper-2) 0 4px, var(--paper) 4px 8px); }
+/* nothing picked: the game's own empty slot, sunk into the paper (shade above
+   and left, light below and right, the bevel turned inside out), where the
+   hatching stood in for a picture that had not loaded */
+.b-counter__glyph:empty { background: color-mix(in oklab, var(--paper-2), var(--ink) 8%); box-shadow: inset var(--px) var(--px) 0 rgba(30, 22, 17, 0.32), inset calc(var(--px) * -1) calc(var(--px) * -1) 0 rgba(255, 248, 232, 0.7); }
 .b-counter__glyph svg { width: 100%; height: 100%; display: block; }
 .b-counter__text { display: grid; gap: var(--px); min-width: 0; }
 .b-counter__name { font-weight: 600; font-size: var(--fs-md); line-height: 1.3; color: var(--ink); }
@@ -184,7 +237,8 @@
    its darkest at the top to the page's own night at the ridge, the stars, and
    the far ridge standing on the line where the page's night begins; the
    posters hang in front of it */
-.b-nightsky { position: absolute; inset-inline: 0; top: 0; height: clamp(19rem, 14rem + 12vw, 26rem); z-index: 0; overflow: clip; pointer-events: none; background: linear-gradient(180deg, var(--sky-night-top), var(--night) 92%); --ground: 0px; }
+:root { --nightsky: clamp(19rem, 14rem + 12vw, 26rem); }
+.b-nightsky { position: absolute; inset-inline: 0; top: 0; height: var(--nightsky); z-index: 0; overflow: clip; pointer-events: none; background: linear-gradient(180deg, var(--sky-night-top), var(--night) 92%); --ground: 0px; }
 .b-nightsky__stars { position: absolute; inset: 0; width: 100%; height: 100%; color: var(--star); opacity: 0.55; }
 .b-nightsky .b-ridge { height: clamp(3.5rem, 8vw, 6rem); }
 /* tonight's moon, risen: high on the right, where the sun stood at the top of the evening */
@@ -193,9 +247,46 @@
 @media (max-width: 759px) { .b-nightsky__moon { width: 2.25rem; height: 2.25rem; top: 5rem; } }
 @media (prefers-reduced-motion: reduce) { .b-nightsky__moon { animation: none; } }
 /* off the trail (404 and a page that broke): the words stand alone under a dark lantern */
-.b-stray { display: grid; align-content: center; justify-items: start; gap: var(--sp-4); min-height: 70svh; }
-.b-stray .b-lantern.b-stray__lantern { width: 3rem; height: 4.5rem; margin-bottom: var(--sp-2); }
-.b-stray__actions { display: flex; flex-wrap: wrap; gap: var(--sp-3); margin-top: var(--sp-3); }
+/* Off the trail: the game's death screen (OffTrail.tsx). The night of the
+   roll call and the walls under a veil of red that deepens towards the foot,
+   as the game lays it over a frozen world, fading in as the game's does.
+   Everything in the middle of the screen: the title in the slab, cut from
+   the strata like the name, what happened, the score, and the ways back
+   stacked one width, Respawn over Title Screen. */
+.b-died__veil {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(96, 0, 0, 0.34), rgba(150, 36, 24, 0.58));
+  animation: b-died-in 1.2s var(--ease-out) both;
+}
+@keyframes b-died-in { from { opacity: 0; } }
+.b-stray { position: relative; z-index: 1; display: grid; align-content: start; justify-items: center; gap: var(--sp-3); text-align: center; padding-top: clamp(6rem, 4rem + 10vh, 10rem); }
+.b-stray__title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(3.5rem, 2rem + 7vw, 7rem);
+  line-height: 0.95;
+  color: var(--paper);
+  --cut: max(1px, round(nearest, 0.026em, 1px));
+  text-shadow:
+    0 var(--cut) 0 var(--tc-white),
+    0 calc(var(--cut) * 2) 0 var(--tc-yellow),
+    0 calc(var(--cut) * 3) 0 var(--tc-orange),
+    0 calc(var(--cut) * 4) 0 var(--tc-red),
+    0 calc(var(--cut) * 5) 0 var(--tc-brown),
+    0 calc(var(--cut) * 5 + var(--px) * 2) 0 rgba(21, 16, 13, 0.45);
+  animation: b-died-title 900ms var(--ease-out) 200ms both;
+}
+@keyframes b-died-title { from { opacity: 0; transform: translateY(var(--sp-3)); } }
+.b-stray__cause { margin-top: var(--sp-4); font-size: var(--fs-lg); color: var(--paper); text-shadow: 0 var(--px) 0 var(--night); }
+.b-stray__score { font-family: var(--font-data); font-size: var(--fs-data); letter-spacing: 0.04em; color: var(--paper); text-shadow: 0 var(--px) 0 var(--night); }
+.b-stray__score b { font-weight: 400; color: var(--sun); }
+.b-stray__text { max-width: 34ch; font-size: var(--fs-md); line-height: var(--lh-night); color: var(--tc-white); text-shadow: 0 var(--px) 0 var(--night); }
+.b-stray__actions { display: grid; gap: var(--sp-3); width: min(20rem, 100%); margin-top: var(--sp-5); }
+.b-stray__actions .b-btn { width: 100%; }
+@media (prefers-reduced-motion: reduce) { .b-died__veil, .b-stray__title { animation: none; } }
 .b-page__night { margin-top: var(--sp-4); }
 .b-page__head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--sp-4) var(--sp-6); margin: var(--sp-4) 0 var(--sp-6); }
 /* The tabs take their own line under the title and the lede at every width.
@@ -233,7 +324,14 @@
   .b-rollcall::before { left: calc(var(--px) * -6); }
   .b-rollcall::after { right: calc(var(--px) * -6); }
 }
-.b-rollcall > .b-hang { display: grid; }
+.b-rollcall > .b-hang { display: grid; position: relative; }
+/* In the game now (crew/page.tsx): a lit lantern hung on a short chain over
+   the poster's corner, and its light warm on the paper, as the lantern burns
+   behind the portraits of whoever is in, in the crew's room. */
+.b-poster__lamp { position: absolute; z-index: 2; top: -3.25rem; right: calc(var(--sp-2) * -1); width: 2rem; pointer-events: none; filter: drop-shadow(0 0 0.75rem rgba(242, 166, 59, 0.7)); }
+.b-poster__lamp::before { content: ''; display: block; width: var(--px); height: 1rem; margin-inline: auto; background: repeating-linear-gradient(180deg, var(--ink-faint) 0 var(--px), transparent var(--px) calc(var(--px) * 2)); }
+.b-poster__lamp .b-lantern { width: 2rem; height: 3rem; }
+.b-rollcall > .b-hang.is-in { filter: drop-shadow(0 calc(var(--px) * 2) 0 rgba(21, 16, 13, 0.55)) drop-shadow(0 0 1.75rem rgba(242, 166, 59, 0.5)); }
 .b-poster--crew { padding: var(--sp-6) var(--sp-3) var(--sp-4); text-decoration: none; }
 /* the torn edge cuts off a ring drawn outside the poster, so it is drawn inside, clear of the tears */
 .b-poster--crew:focus-visible { outline: calc(var(--px) * 2) solid var(--lantern-ink); outline-offset: calc(var(--px) * -6); }
@@ -241,7 +339,7 @@
 .b-poster--crew .b-poster__name { margin-top: var(--sp-3); }
 .b-poster__reward { font-size: var(--fs-sm); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-faint); }
 .b-poster__meta { margin-top: var(--sp-2); font-size: var(--fs-sm); color: var(--ink-faint); }
-.b-poster__note { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.b-poster__note { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; text-wrap: balance; }
 .b-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 var(--sp-5); margin-top: var(--sp-5); }
 @media (min-width: 640px) { .b-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .b-stat { min-width: 0; padding: var(--sp-2) 0; border-top: var(--line) solid var(--ink-faint); }

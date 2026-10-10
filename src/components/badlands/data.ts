@@ -36,6 +36,9 @@ export const SECTIONS: (NavLink & { id: DoorId })[] = [
 export const ROOMS = ['hopur', 'hillan'] as const;
 export type RoomId = typeof ROOMS[number];
 export const isRoom = (s: string | null | undefined): s is RoomId => s === 'hopur' || s === 'hillan';
+/** A plain click: one with a modifier keeps the link's own meaning (a new tab, a new window), so the doors open in place only on this. */
+export const plainClick = (e: { button: number; metaKey: boolean; ctrlKey: boolean; shiftKey: boolean; altKey: boolean }) =>
+  e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey;
 
 /* The same doors from another page. The world and the shelf lead back to the
    home page's own; the crew's door leads to the crew's own page, the roll

@@ -175,37 +175,78 @@ export function Ridge({ snow = false, warm = false }: { snow?: boolean; warm?: b
   );
 }
 
-/* How many of the crew a plateau holds before the rest are a count beside
-   them: three beside the name on a wide screen; two on a phone, where the
-   plateau stands in front of the name's feet and a third figure covered the
-   O's window (the third is hidden there by badlands.css). */
+/* How many of the crew the plateau beside the name holds before the rest
+   are a count beside them, on a wide screen. On a phone the plateau stands
+   in front of the name's feet, so there the crew climb the name instead
+   (Climbers, below). */
 const RIDERS_SHOWN = 3;
-const RIDERS_ON_PHONE = 2;
 
-/** The crew who are in, standing on a plateau of the nearest ridge as
-    themselves: the whole skin at the land's own scale, each with a lit
-    lantern in hand, side by side against the sunset (beside the name on a
-    wide screen, at its feet on a phone; badlands.css places the group on a
-    plateau by its coordinates in the ridge's own drawing). A wanted poster's
-    Western, and the game's own figure. Each is a way to that member's wall,
-    so the lantern's amber is the site's own sign for "press". Inside the near
-    layer, so they move with it. A skin the services can't give falls back to
-    the drawn stand-in (PlayerHead). */
+/** One of the crew as themselves: the whole skin at the land's scale, a lit
+    lantern in hand, and over the head the name tag the game floats over
+    every player, white on a veil of dark. A way to that member's wall, so
+    the lantern's amber is the site's own sign for "press". A skin the
+    services can't give falls back to the drawn stand-in (PlayerHead). */
+export function Rider({ name, className }: { name: string; className: string }) {
+  return (
+    <Link href={`/crew/${name}`} className={className} aria-label={`${name} er inni. Veggurinn`}>
+      <span className="b-nametag" aria-hidden="true">{name}</span>
+      <PlayerHead name={name} size={32} full alt="" />
+      <Lantern lit className="b-mesa__held" />
+    </Link>
+  );
+}
+
+/** The crew who are in, standing on a plateau of the nearest ridge beside
+    the name on a wide screen (badlands.css places the group on the plateau
+    by its coordinates in the ridge's own drawing). A wanted poster's
+    Western, and the game's own figure. Inside the near layer, so they move
+    with it. */
 function Riders({ names }: { names: string[] }) {
   if (names.length === 0) return null;
   const shown = names.slice(0, RIDERS_SHOWN);
   const more = names.length - shown.length;
   return (
     <div className="b-mesa__riders">
-      {shown.map(n => (
-        <Link key={n} href={`/crew/${n}`} className="b-mesa__rider b-tip" data-tip={`${n} er inni`} aria-label={`${n} er inni. Veggurinn`}>
-          <PlayerHead name={n} size={32} full alt="" />
-          <Lantern lit className="b-mesa__held" />
-        </Link>
-      ))}
-      {more > 0 && <span className="b-mesa__more b-mesa__more--wide">+{more}</span>}
-      {names.length > RIDERS_ON_PHONE && <span className="b-mesa__more b-mesa__more--phone">+{names.length - RIDERS_ON_PHONE}</span>}
+      {shown.map(n => <Rider key={n} name={n} className="b-mesa__rider" />)}
+      {more > 0 && <span className="b-nametag b-mesa__more">+{more}</span>}
     </div>
+  );
+}
+
+/* The armadillo, side on, facing the way it walks, on a 14 by 8 grid: the
+   banded shell, the small head and its ear at the front, the pale belly, and
+   two frames of legs. Rolled up, it is a banded ball. Colours of the game's
+   own: pink-brown hide, darker plates. */
+const HIDE = '#C48B79', PLATE = '#8B5148', BELLY = '#E2B4A0', HEAD = '#D29A86', EYE = '#2A1A14';
+const BODY: [number, number, number, number, string][] = [
+  [5, 0, 6, 1, HIDE], [3, 1, 10, 1, HIDE], [2, 2, 12, 2, HIDE], [2, 4, 11, 1, HIDE],
+  [6, 1, 1, 1, PLATE], [9, 1, 1, 1, PLATE], [5, 2, 1, 3, PLATE], [8, 2, 1, 3, PLATE], [11, 2, 1, 3, PLATE],
+  [0, 3, 2, 2, HEAD], [1, 2, 1, 1, PLATE], [0, 3, 1, 1, EYE], [3, 5, 9, 1, BELLY], [13, 4, 1, 1, PLATE],
+];
+const STEP_A: [number, number][] = [[4, 6], [10, 6]];
+const STEP_B: [number, number][] = [[5, 6], [11, 6]];
+const BALL: [number, number, number, number, string][] = [
+  [5, 1, 4, 1, HIDE], [4, 2, 6, 1, HIDE], [3, 3, 8, 3, HIDE], [4, 6, 6, 1, HIDE], [5, 7, 4, 1, HIDE],
+  [5, 2, 1, 5, PLATE], [8, 2, 1, 5, PLATE], [3, 4, 1, 1, HEAD],
+];
+
+/** The badlands' own animal: an armadillo ambling along the ground at the
+    foot of the mesas, stopping a while halfway, as the game's armadillos
+    wander their biome. Pointed at or tapped, it rolls up into its shell, as
+    they do when someone comes close. Nothing to read and nothing to press
+    for: the land is lived in. */
+function Armadillo() {
+  return (
+    <span className="b-critter" aria-hidden="true">
+      <svg className="b-critter__walk" viewBox="0 0 14 8" shapeRendering="crispEdges">
+        {BODY.map(([x, y, w, h, c]) => <rect key={`${x}-${y}-${c}`} x={x} y={y} width={w} height={h} fill={c} />)}
+        <g className="b-critter__step">{STEP_A.map(([x, y]) => <rect key={x} x={x} y={y} width={1} height={2} fill={PLATE} />)}</g>
+        <g className="b-critter__step">{STEP_B.map(([x, y]) => <rect key={x} x={x} y={y} width={1} height={2} fill={PLATE} />)}</g>
+      </svg>
+      <svg className="b-critter__ball" viewBox="0 0 14 8" shapeRendering="crispEdges">
+        {BALL.map(([x, y, w, h, c]) => <rect key={`${x}-${y}-${c}`} x={x} y={y} width={w} height={h} fill={c} />)}
+      </svg>
+    </span>
   );
 }
 
@@ -227,7 +268,7 @@ export default function Mesa({ snow = false, halloween = false, heads = [] }: { 
         {snow && <Snow plateaus={NEAR} />}
         {halloween && <Pumpkins />}
       </Layer>
-      <Layer d={`M0 ${H - 4} H${W} V${H} H0 Z`} mod="ground" />
+      <Layer d={`M0 ${H - 4} H${W} V${H} H0 Z`} mod="ground" after={<Armadillo />} />
     </div>
   );
 }

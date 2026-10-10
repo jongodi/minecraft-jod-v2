@@ -7,7 +7,7 @@
 // a sign-in link can be mailed to someone who has never been in.
 import { promises as fs } from 'fs';
 import path from 'path';
-import { CREW_USERNAMES, canonicalUsername } from '@/lib/crew-types';
+import { CREW_USERNAMES, NAME_MAX, canonicalUsername } from '@/lib/crew-types';
 import { closeInvite, createInvite, inviteUrl, type Invite } from '@/lib/crew-access';
 import { canSendEmail, cleanEmail, emailProblem, sendEmail, siteUrl } from '@/lib/email';
 import { signinLetter } from '@/lib/email-copy';
@@ -85,7 +85,7 @@ export async function nightReaders(except: string[] = []): Promise<Array<{ usern
 // What the letters call a member: the name they or the admin gave, or else
 // their Minecraft name. Only ever in letters, never on the site.
 
-export const NAME_MAX = 40;
+export { NAME_MAX };
 const NAMES_KEY = 'crew:names';
 const namesFile = () => path.join(dataDir(), '_names.json');
 

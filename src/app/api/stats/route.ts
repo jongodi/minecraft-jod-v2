@@ -11,11 +11,13 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   const token = process.env.EXAROTON_API_KEY;
-  /* the week's numbers come from the daily copies, whatever the server says today */
-  const week = await readWeek();
+  /* the week's numbers come from the daily copies, whatever the server says
+     today: read beside the game's own files rather than before them (it never throws) */
+  const weekRead = readWeek();
 
-  // No API key — try cache, then give up
+  // No API key: try cache, then give up
   if (!token) {
+    const week = await weekRead;
     const cached = await getCachedStats();
     if (cached) {
       return NextResponse.json({
@@ -28,7 +30,7 @@ export async function GET() {
   }
 
   try {
-    const read = await readGameStats(token);
+    const [read, week] = await Promise.all([readGameStats(token), weekRead]);
     let players = read.players;
     const now = new Date().toISOString();
 
@@ -51,6 +53,7 @@ export async function GET() {
 
   } catch (err) {
     console.error('Stats fetch failed:', err instanceof Error ? err.message : err);
+    const week = await weekRead;
 
     // Serve last known snapshot if it has real data
     const cached = await getCachedStats();

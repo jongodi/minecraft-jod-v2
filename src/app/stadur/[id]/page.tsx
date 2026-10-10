@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import BadlandsHome from '@/components/badlands/BadlandsHome';
@@ -17,8 +18,11 @@ export const revalidate = 30;
 
 type Props = { params: Promise<{ id: string }> };
 
+/* The link preview and the page are drawn in one request: the place is read once for both. */
+const placeOf = cache((id: string) => sharedPlace(id));
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const shared = await sharedPlace((await params).id);
+  const shared = await placeOf((await params).id);
   if (!shared) return {};
   const title = shared.title;
   const url = `/stadur/${shared.place.id}`;
@@ -32,7 +36,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function Place({ params }: Props) {
-  const [shared, initial] = await Promise.all([sharedPlace((await params).id), loadHomeData()]);
+  const [shared, initial] = await Promise.all([placeOf((await params).id), loadHomeData()]);
   if (!shared) redirect('/#heimur');
   return <BadlandsHome syncedOn={syncedOn} bases={baseLinks()} initial={initial} />;
 }

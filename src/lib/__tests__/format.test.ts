@@ -1,5 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { formatNumber, plural } from '@/lib/format';
+import { formatDate, formatNumber, plural } from '@/lib/format';
+
+describe('dates written as in Iceland', () => {
+  it('writes the day, the short month and the year, whatever the browser carries', () => {
+    expect(formatDate('2026-10-10T14:34:00Z')).toBe('10. okt. 2026');
+    expect(formatDate('2026-03-19')).toBe('19. mar. 2026');
+    expect(formatDate('2026-05-01T00:00:00Z')).toBe('1. maí 2026');
+    expect(formatDate('2025-08-31T23:59:59Z')).toBe('31. ágú. 2025');
+  });
+  it('keeps the day Iceland has, which is the UTC day', () => {
+    expect(formatDate('2026-12-31T23:30:00Z')).toBe('31. des. 2026');
+    expect(formatDate('2026-01-01T00:10:00+01:00')).toBe('31. des. 2025');
+  });
+  it('says nothing for a date it cannot read', () => {
+    expect(formatDate('ekki dagsetning')).toBe('');
+  });
+});
 
 describe('numbers written as in Iceland', () => {
   it('puts a period between the thousands and a comma before the decimals', () => {

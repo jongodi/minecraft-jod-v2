@@ -19,11 +19,19 @@ export function formatNumber(v: number, { max = 3, min = 0 }: { max?: number; mi
   return `${negative ? '-' : ''}${grouped}${kept ? `,${kept}` : ''}`;
 }
 
-/** An ISO date as the browser's Icelandic locale writes it: "1. jan. 2025". */
+/* The months as Icelandic writes them short, the full name where it is
+   already short (maí). */
+const MONTHS = ['jan.', 'feb.', 'mar.', 'apr.', 'maí', 'jún.', 'júl.', 'ágú.', 'sep.', 'okt.', 'nóv.', 'des.'];
+
+/** An ISO date as it is written in Iceland: "1. jan. 2025". Written out
+    for the same reason as formatNumber: a browser without Icelandic
+    locale data wrote "Oct 10, 2026" on the walls, and wrote it differently
+    from the server, so a date drawn on both did not hydrate. Iceland keeps
+    UTC all year, so the day is the UTC day. */
 export function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('is-IS', {
-    day: 'numeric', month: 'short', year: 'numeric',
-  });
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return `${d.getUTCDate()}. ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
 }
 
 /** How long ago an ISO moment was: "fyrir 3 dögum", "fyrir 2 klst.", "rétt í þessu". */

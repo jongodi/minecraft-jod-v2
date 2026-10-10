@@ -7,6 +7,10 @@ import { BLOB_PROXY_PREFIX, hasBlob, isBlobHost } from '@/lib/blob-store';
 import { bodyUrl } from '@/components/badlands/data';
 
 const TIMEOUT_MS = 4000;
+/* The cards are kept for five minutes (`revalidate` beside each one), and a
+   fetch marked no-store would make every card be drawn afresh for every
+   crawler instead; the skin and the print are kept as long as the card is. */
+const KEEP_S = 300;
 
 function dataUrl(bytes: ArrayBuffer | Uint8Array, type: string): string {
   return `data:${type};base64,${Buffer.from(new Uint8Array(bytes)).toString('base64')}`;
@@ -14,7 +18,7 @@ function dataUrl(bytes: ArrayBuffer | Uint8Array, type: string): string {
 
 async function fetchBytes(url: string): Promise<{ bytes: ArrayBuffer; type: string } | null> {
   try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS), cache: 'no-store' });
+    const res = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS), next: { revalidate: KEEP_S } });
     if (!res.ok) return null;
     return { bytes: await res.arrayBuffer(), type: res.headers.get('content-type') ?? 'image/png' };
   } catch {

@@ -12,7 +12,7 @@ import { plural } from '@/lib/format';
 import Drawer from './Drawer';
 import PlayerHead from './PlayerHead';
 import Rail, { revealRailItem } from './Rail';
-import { CREW, MAP_LIGHTS, MAP_POSTER, MAP_URL, SITE_NAME, handCase, titleCase, type Plate, type RoomId } from './data';
+import { CREW, MAP_LIGHTS, MAP_POSTER, MAP_URL, SITE_NAME, handCase, plainClick, titleCase, type Plate, type RoomId } from './data';
 import type { ServerState } from './hooks';
 import { useEffectsAllowed, useInert, useMediaQuery } from './hooks';
 import { photoProps, PHOTO_SIZES } from './photo';
@@ -38,6 +38,7 @@ interface JodViewer {
 }
 type ViewerMessage = {
   source?: string; type?: string; tiles?: number; id?: number; on?: boolean; open?: boolean;
+  x?: number; y?: number; z?: number; facing?: 'north' | 'south' | 'east' | 'west';
   /** follow: who the camera keeps with now, and who it let go of for walking out of the world */
   name?: string | null; outside?: string;
 };
@@ -92,8 +93,8 @@ function Signpost({ sub }: { sub: string }) {
   );
 }
 
-/* a plain click: anything with a modifier keeps the link's own meaning (a new tab) */
-const plainClick = (e: React.MouseEvent) => e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey;
+/* the game's compass in Icelandic: north is towards negative Z */
+const FACING: Record<string, string> = { north: 'norður', south: 'suður', east: 'austur', west: 'vestur' };
 
 interface Props {
   plates: Plate[];
@@ -132,6 +133,8 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
   /* the viewer's map has loaded and window.jod answers */
   const [viewer, setViewer]   = useState(false);
   const [tiles, setTiles]     = useState(0);
+  /* where the live map is looking, for the F3 lines */
+  const [camera, setCamera]   = useState<{ x: number; y: number; z: number; facing: string } | null>(null);
   const [night, setNight]     = useState(false);
   /* BlueMap's own menu is open along the left edge of the frame */
   const [menu, setMenu]       = useState(false);
@@ -189,7 +192,10 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
   const [lit, setLit] = useState(false);
   useEffect(() => {
     const el = frameRef.current;
-    if (!el || !effects || !('IntersectionObserver' in window)) { setLit(true); return; }
+    /* the town is drawn only once the effects are allowed: lighting it before
+       then had it arrive already lit, or lit and going out again at the sunset */
+    if (!el || !effects) return;
+    if (!('IntersectionObserver' in window)) { setLit(true); return; }
     const io = new IntersectionObserver(([e]) => {
       if (e.intersectionRatio >= 0.55) setLit(true);
       else if (e.intersectionRatio < 0.15 && e.boundingClientRect.top > 0) setLit(false);
@@ -261,6 +267,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
       if (m?.source !== 'jod-map') return;
       if (m.type === 'hello') setViewer(true);
       else if (m.type === 'progress') setTiles(m.tiles ?? 0);
+      else if (m.type === 'camera' && typeof m.x === 'number' && typeof m.y === 'number' && typeof m.z === 'number') setCamera({ x: m.x, y: m.y, z: m.z, facing: m.facing ?? 'north' });
       else if (m.type === 'ready') setReady(true);
       else if (m.type === 'night') setNight(!!m.on);
       else if (m.type === 'menu') setMenu(!!m.open);
@@ -394,6 +401,12 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
   return (
     <section id="heimur" className="b-world" aria-labelledby="heimur-title">
       <div ref={frameRef} className={`b-frame${live ? ' is-live' : ''}${ready ? ' is-ready' : ''}${drawn ? ' is-drawn' : ''}${shut ? ' is-room' : ''}${full === 'overlay' ? ' is-full' : ''}${live && still ? ' is-still' : ''}${menu && ready ? ' is-menu' : ''}`}>
+        {/* The still and its lights drift together, slowly, like a camera
+            hovering over the town at night, so the world on the page is
+            looked at rather than printed (badlands.css). Only while the
+            world is in view, on a device with room for the effects, and
+            not under reduced motion. */}
+        <div className={`b-frame__scene${effects && inView && !live && !shut ? ' is-drifting' : ''}`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         {posterOn && <img {...photoProps(MAP_POSTER, PHOTO_SIZES.poster)} className="b-frame__poster" alt="Heimasvæðið á JOÐ séð úr lofti" width={1920} height={1080} decoding="async" fetchPriority="low" />}
         {/* The town's lights come on as the world comes into view: the still
@@ -411,6 +424,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
             ))}
           </div>
         )}
+        </div>
 
         <div className="b-frame__shade" aria-hidden="true" />
 
@@ -457,7 +471,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
                     <span className="b-hud__inword">inni núna</span>
                     {inside.map(n => canFollow ? (
                       <button key={n} type="button" className={`b-hud__head b-tip b-tip--below${following?.toLowerCase() === n.toLowerCase() ? ' is-on' : ''}`}
-                        aria-pressed={following?.toLowerCase() === n.toLowerCase()}
+                        aria-pressed={following?.toLowerCase() === n.toLowerCase()} aria-label={`Elta ${n}`}
                         data-tip={following?.toLowerCase() === n.toLowerCase() ? `Hætta að elta ${n}` : `Elta ${n}`}
                         onClick={() => follow(n)}>
                         <PlayerHead name={n} size={16} />
@@ -588,7 +602,17 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
             and at its end the other bases, each a lit lantern that leads to a
             3D map of its own (/kort/<id>): places too, only further off. */}
         <div ref={places} className="b-places">
-          <p className="b-places__head">Staðir · {config.locations.length}{bases.length > 0 && ` · ${bases.length} ${plural(bases.length, 'stöð', 'stöðvar')} með eigið kort, aftast`}</p>
+          {/* The game's F3 lines while the live map is up: the block the map
+              holds and the way it faces, as a player reads them to find the
+              same spot in the game, each line on its own veil of dark. */}
+          {camera && ready && !still && !drawn && (
+            <p className="b-f3" aria-label={`Kortið horfir á ${camera.x}, ${camera.y}, ${camera.z} og snýr í ${FACING[camera.facing] ?? camera.facing}`}>
+              <span>XYZ: {camera.x} / {camera.y} / {camera.z}</span>
+              <span>Snýr í {FACING[camera.facing] ?? camera.facing}</span>
+            </p>
+          )}
+          {/* a count, as the shelf counts its crates: each base's own tag already says it has its own map, and the rail's order says where */}
+          <p className="b-places__head">{config.locations.length} {plural(config.locations.length, 'staður', 'staðir')}{bases.length > 0 && ` og ${bases.length} ${plural(bases.length, 'stöð', 'stöðvar')}`}</p>
           <Rail label="Staðir og stöðvar" prevLabel="Fyrri staðir" nextLabel="Næstu staðir" count={config.locations.length + bases.length}>
             {config.locations.map(loc => {
               const thumb = loc.photoId ? plates.find(p => p.id === loc.photoId) ?? null : null;

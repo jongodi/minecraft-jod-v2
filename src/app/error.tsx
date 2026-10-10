@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
+import { startTransition, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import OffTrail from '@/components/badlands/OffTrail';
 
 /* A page that threw while it was being drawn. The words stay in the site's
@@ -8,12 +9,23 @@ import OffTrail from '@/components/badlands/OffTrail';
    ways home where they always are. */
 export default function PageError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => { console.error(error); }, [error]);
+  const router = useRouter();
+  /* reset() alone draws the page again from what the server already sent,
+     which for a page that threw on the server is the same error; the page is
+     asked for afresh, and the boundary lets go once the new one is in. */
+  const retry = () => startTransition(() => { router.refresh(); reset(); });
   return (
     <OffTrail
       title="Ljósið slokknaði"
-      actions={<button type="button" className="b-btn b-btn--solid" onClick={reset}>Reyna aftur</button>}
+      cause="Eitthvað fór úrskeiðis meðan síðan var teiknuð."
+      actions={<>
+        <button type="button" className="b-btn b-btn--solid" onClick={retry}>Reyna aftur</button>
+        {/* a whole new load, not the router: what broke may be the page's own state */}
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+        <a href="/" className="b-btn">Titilskjár</a>
+      </>}
     >
-      Eitthvað fór úrskeiðis meðan síðan var teiknuð. Reyndu aftur, eða farðu aftur í sólsetrið og komdu síðar.
+      Reyndu aftur, eða farðu aftur í sólsetrið og komdu síðar.
     </OffTrail>
   );
 }
