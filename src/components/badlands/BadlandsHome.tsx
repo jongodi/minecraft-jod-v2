@@ -43,9 +43,13 @@ export default function BadlandsHome({ syncedOn, bases, initial }: { syncedOn: s
   const [pressed, setPressed] = useState<DoorId | null>(null);
   const { plates, map, pinned, nights } = initial;
 
+  /* Asked of the browser at the moment of scrolling, not held in state: as a
+     dependency it changed once after hydration, ran the hash below a second
+     time and scrolled a reduced-motion visitor to the world twice. */
   const showWorld = useCallback(() => {
-    document.getElementById('heimur')?.scrollIntoView({ block: 'start', behavior: reduce ? 'auto' : 'smooth' });
-  }, [reduce]);
+    const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    document.getElementById('heimur')?.scrollIntoView({ block: 'start', behavior: still ? 'auto' : 'smooth' });
+  }, []);
 
   /* The hash is the source of truth: read it on arrival, on the back button,
      and on any plain anchor to #hopur or #hillan (the status lantern, the crew
@@ -69,14 +73,16 @@ export default function BadlandsHome({ syncedOn, bases, initial }: { syncedOn: s
   /* A door in the bar: the world itself, or a room over it. Opening a room
      makes one history entry, marked as the doors' own; going from that room
      to the other, or out to the world, reuses it, so Back always leaves the
-     rooms instead of walking back through them. */
+     rooms instead of walking back through them. A room arrived at by a link
+     (/#hopur) is reused the same way and keeps its unmarked state, so ✕
+     after a change of room takes the hash off rather than going back into
+     the room the link opened. */
   const openDoor = useCallback((id: string) => {
     const next = isRoom(id) ? id : null;
     const hash = next ? `#${next}` : '#heimur';
     if (window.location.hash !== hash) {
-      const state = { jodRoom: !!next };
-      if (isRoom(window.location.hash.slice(1)) && history.state?.jodRoom) history.replaceState(state, '', hash);
-      else history.pushState(state, '', hash);
+      if (isRoom(window.location.hash.slice(1))) history.replaceState({ jodRoom: !!next && !!history.state?.jodRoom }, '', hash);
+      else history.pushState({ jodRoom: !!next }, '', hash);
     }
     setRoom(next);
     setPressed(next ?? 'heimur');
@@ -131,8 +137,9 @@ export default function BadlandsHome({ syncedOn, bases, initial }: { syncedOn: s
     <div className={`b${seasonClass(season)}`}>
       <Sky />
       {/* the effects start once the browser is idle, and not at all on a device without room for them */}
-      {effects && <Particles heroId="top" fireId="campfire" snow={season.snow} fireworks={season.fireworks} />}
-      {effects && <CursorLight />}
+      {/* under reduced motion neither draws anything, so neither is fetched */}
+      {effects && !reduce && <Particles heroId="top" fireId="campfire" snow={season.snow} fireworks={season.fireworks} />}
+      {effects && !reduce && <CursorLight />}
       <AddressBar links={SECTIONS} activeId={active} onDoor={openDoor} status={initial.status} />
       <main id="efni">
         <Hero server={server} season={season} nights={nights} />

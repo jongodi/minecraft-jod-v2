@@ -186,7 +186,10 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
   const [lit, setLit] = useState(false);
   useEffect(() => {
     const el = frameRef.current;
-    if (!el || !effects || !('IntersectionObserver' in window)) { setLit(true); return; }
+    /* the town is drawn only once the effects are allowed: lighting it before
+       then had it arrive already lit, or lit and going out again at the sunset */
+    if (!el || !effects) return;
+    if (!('IntersectionObserver' in window)) { setLit(true); return; }
     const io = new IntersectionObserver(([e]) => {
       if (e.intersectionRatio >= 0.55) setLit(true);
       else if (e.intersectionRatio < 0.15 && e.boundingClientRect.top > 0) setLit(false);
@@ -454,7 +457,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
                     <span className="b-hud__inword">inni núna</span>
                     {inside.map(n => canFollow ? (
                       <button key={n} type="button" className={`b-hud__head b-tip b-tip--below${following?.toLowerCase() === n.toLowerCase() ? ' is-on' : ''}`}
-                        aria-pressed={following?.toLowerCase() === n.toLowerCase()}
+                        aria-pressed={following?.toLowerCase() === n.toLowerCase()} aria-label={`Elta ${n}`}
                         data-tip={following?.toLowerCase() === n.toLowerCase() ? `Hætta að elta ${n}` : `Elta ${n}`}
                         onClick={() => follow(n)}>
                         <PlayerHead name={n} size={16} />
