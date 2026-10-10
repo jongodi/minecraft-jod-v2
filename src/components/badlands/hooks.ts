@@ -13,6 +13,9 @@ const STATUS_POLL_MS = 60_000;
 const CHANGING_POLL_MS = 15_000;
 /* a page drawn with the server's own answer asks again soon, since that answer may be a minute old */
 const SEEDED_POLL_MS = 10_000;
+/* how long the browser waits on its own questions: the routes cap what they ask upstream, so a longer wait is a hung connection */
+const STATUS_WAIT_MS = 12_000;
+const STATS_WAIT_MS = 25_000;
 const COPIED_MS = 2400;
 
 /* ─── the server's status ──────────────────────────────────────────
@@ -35,7 +38,8 @@ const unreachable = (): ServerState => ({ ...statusValue, online: false, life: '
 async function loadStatus(): Promise<void> {
   let next: ServerState;
   try {
-    const res  = await fetch('/api/server-status');
+    /* capped: the next question is only scheduled once this one ends, so a request that never answered stopped the lantern for good */
+    const res  = await fetch('/api/server-status', { signal: AbortSignal.timeout(STATUS_WAIT_MS) });
     const data = (res.ok ? await res.json() : null) as StatusResponse | null;
     next = data ? toServerState(data) : unreachable();
   } catch {
@@ -88,7 +92,15 @@ export function useServerStatus(initial?: ServerState): ServerState {
   useEffect(() => {
     polling++;
     if (statusValue.checkedAt === null) refreshStatus();
-    else if (initial && statusValue === initial) { clearTimeout(pollTimer); pollTimer = setTimeout(refreshStatus, SEEDED_POLL_MS); }
+    else if (initial && statusValue === initial) {
+      clearTimeout(pollTimer);
+      /* A page served from the cache can carry an answer from long before the
+         visit, and the windows, the riders and the bar's count said a quiet
+         server was full for ten seconds: an answer older than one poll is
+         asked again at once, a fresh one soon after. */
+      if (Date.now() - (initial.checkedAt ?? 0) > STATUS_POLL_MS) refreshStatus();
+      else pollTimer = setTimeout(() => { if (document.hidden) schedulePoll(); else refreshStatus(); }, SEEDED_POLL_MS);
+    }
     else schedulePoll();
     const onShow = () => { if (!document.hidden) refreshStatus(); };
     document.addEventListener('visibilitychange', onShow);
@@ -111,7 +123,8 @@ export function useStats(): StatsState {
   const [state, setState] = useState<StatsState>({ players: [], source: null, cachedAt: null, week: null, failed: false });
   useEffect(() => {
     let alive = true;
-    fetch('/api/stats')
+    /* capped, so a hung answer says so on the board instead of "sæki tölurnar" for good */
+    fetch('/api/stats', { signal: AbortSignal.timeout(STATS_WAIT_MS) })
       .then(r => (r.ok ? r.json() : null))
       .then((data: StatsResponse | null) => {
         if (!alive) return;
