@@ -187,7 +187,10 @@
 .b-sky .b-sun__core, .b-hero__sun .b-sun__core { fill: color-mix(in oklab, var(--sun), #FFF8EA 60%); }
 
 /* ─── page frame ──────────────────────────────────────────────── */
-.b { position: relative; isolation: isolate; color: var(--text); }
+/* Nothing on the page may push it sideways: a poster swinging on its nail,
+   the fire's smoke or its light. Clipped, not hidden, so nothing inside becomes
+   a scroll box and the wall's poster still rides down beside the signs. */
+.b { position: relative; isolation: isolate; color: var(--text); overflow-x: clip; }
 /* room for the hotbar at the foot of a phone */
 @media (max-width: 759px) { .b { padding-bottom: calc(var(--doorbar) + env(safe-area-inset-bottom, 0px)); } }
 .b-wrap { position: relative; z-index: 1; width: 100%; max-width: var(--wrap); margin-inline: auto; padding-inline: var(--gutter); }
