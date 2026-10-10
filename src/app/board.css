@@ -171,7 +171,10 @@
 @keyframes b-slip { from { opacity: 0; transform: translateX(calc(var(--px) * -6)); } to { opacity: 1; transform: none; } }
 @keyframes b-land { from { opacity: 0; transform: translateY(calc(var(--px) * -4)); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .b-counter__slip, .b-counter__glyph, .b-counter__text { animation: none; } }
-.b-counter__glyph:empty { background: repeating-linear-gradient(45deg, var(--paper-2) 0 4px, var(--paper) 4px 8px); }
+/* nothing picked: the game's own empty slot, sunk into the paper (shade above
+   and left, light below and right, the bevel turned inside out), where the
+   hatching stood in for a picture that had not loaded */
+.b-counter__glyph:empty { background: color-mix(in oklab, var(--paper-2), var(--ink) 8%); box-shadow: inset var(--px) var(--px) 0 rgba(30, 22, 17, 0.32), inset calc(var(--px) * -1) calc(var(--px) * -1) 0 rgba(255, 248, 232, 0.7); }
 .b-counter__glyph svg { width: 100%; height: 100%; display: block; }
 .b-counter__text { display: grid; gap: var(--px); min-width: 0; }
 .b-counter__name { font-weight: 600; font-size: var(--fs-md); line-height: 1.3; color: var(--ink); }
@@ -241,7 +244,7 @@
 .b-poster--crew .b-poster__name { margin-top: var(--sp-3); }
 .b-poster__reward { font-size: var(--fs-sm); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-faint); }
 .b-poster__meta { margin-top: var(--sp-2); font-size: var(--fs-sm); color: var(--ink-faint); }
-.b-poster__note { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.b-poster__note { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; text-wrap: balance; }
 .b-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 var(--sp-5); margin-top: var(--sp-5); }
 @media (min-width: 640px) { .b-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .b-stat { min-width: 0; padding: var(--sp-2) 0; border-top: var(--line) solid var(--ink-faint); }
