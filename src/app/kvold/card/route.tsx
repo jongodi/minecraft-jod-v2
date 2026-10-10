@@ -2,6 +2,7 @@ import type { NextRequest } from 'next/server';
 import { ImageResponse } from 'next/og';
 import { sharedNight } from '@/lib/night-share';
 import { C, CARD, STRATA, cardFonts } from '@/lib/og-card';
+import { CardSeal } from '@/lib/og-seal';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,6 +39,8 @@ export async function GET(req: NextRequest) {
             {night.lines.map(l => <div key={l} style={{ display: 'flex', fontFamily: 'Silkscreen', fontSize: 30, color: C.white }}>{l}</div>)}
           </div>
         </div>
+        {/* made good: JOÐ's seal at the card's foot, as a wanted poster carries it */}
+        <CardSeal style={{ left: 72, bottom: 72 }} />
         <div style={{ position: 'absolute', left: 0, bottom: 0, width: 1200, display: 'flex', flexDirection: 'column' }}>
           {STRATA.map(c => <div key={c} style={{ display: 'flex', height: 8, background: c }} />)}
         </div>
