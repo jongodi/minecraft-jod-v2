@@ -52,8 +52,23 @@ export async function readProfile(username: string): Promise<CrewProfile> {
   }
 }
 
+/** Every member's wall, in the crew list's order. With Redis it is one read
+    for the lot, and each wall comes out as readProfile would give it: an
+    unreadable one is an empty wall, and so is every one when the read fails. */
 export async function readAllProfiles(): Promise<CrewProfile[]> {
-  return Promise.all(CREW_USERNAMES.map(u => readProfile(u)));
+  if (!hasKV()) return Promise.all(CREW_USERNAMES.map(u => readProfile(u)));
+  try {
+    const { getRedis } = await import('./redis');
+    const raw = await getRedis().mget(...CREW_USERNAMES.map(profileKey));
+    return CREW_USERNAMES.map((name, i) => {
+      let stored: unknown = null;
+      try { stored = raw[i] ? JSON.parse(raw[i]!) : null; } catch { /* an empty wall, as rGet reads it */ }
+      return normalizeProfile(stored, name);
+    });
+  } catch (e) {
+    console.error('Redis readAllProfiles error:', e);
+    return CREW_USERNAMES.map(name => normalizeProfile(null, name));
+  }
 }
 
 /* A write goes to a temporary file that is then renamed over the wall, so a

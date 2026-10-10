@@ -3,6 +3,20 @@
    postcard and count them on a chip. Answered by /api/crew/places and drawn
    into the home page on the server. Server only. */
 import { readAllProfiles, type CrewPhoto } from '@/lib/crew';
+import { readMap } from '@/lib/map';
+
+/** The ids of the places on the map, which an entry may be pinned at; null
+    when the map cannot be read just now. The read is the strict one: the
+    lenient one answers a storage error with the built-in map, which would
+    turn away a place the admin added. With no map to check against, a place
+    is taken as given, as it was before places were checked at all. */
+export async function mapPlaceIds(): Promise<Set<number> | null> {
+  try { return new Set((await readMap({ strict: true })).locations.map(l => l.id)); }
+  catch { return null; }
+}
+
+/** What the routes answer a place that is not on the map with. */
+export const UNKNOWN_PLACE = 'Þessi staður er ekki á kortinu.';
 
 /** A print pinned at a place, with whose wall it is on. */
 export interface PlacePrint extends CrewPhoto { username: string; entryId: string }
