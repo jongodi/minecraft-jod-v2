@@ -466,7 +466,7 @@ export default function Wall({ initial, places, initialStats = null, justSignedI
                   </ul>
                 )}
                 {statsMeta?.source === 'cached' && statsMeta.cachedAt && (
-                  <p className="b-note" style={{ marginTop: '0.75rem' }}>slökkt á þjóninum, þessar tölur eru frá {formatDate(statsMeta.cachedAt)}</p>
+                  <p className="b-note" style={{ marginTop: '0.75rem' }}>tölurnar eru úr síðasta afriti, frá {formatDate(statsMeta.cachedAt)}</p>
                 )}
               </>
             )}
