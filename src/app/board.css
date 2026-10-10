@@ -158,7 +158,53 @@
   box-shadow: inset 0 0 0 calc(var(--px) * 3) var(--wood), inset 0 0 0 calc(var(--px) * 4) var(--wood-light), var(--bevel), 0 0 0 var(--px) var(--lantern);
 }
 .b-stock__crate[aria-pressed='true'] { box-shadow: inset 0 0 0 calc(var(--px) * 3) var(--wood), inset 0 0 0 calc(var(--px) * 4) var(--wood-light), var(--bevel-in), 0 0 0 var(--px) var(--lantern); }
-@media (prefers-reduced-motion: reduce) { .b-stock__crate { transition: none; } }
+/* The crate opens as a chest does in the game: its lid, a plank across the
+   top, lifts and tips back on its hinge at the left, and the lamplight inside
+   falls on the tag. Pointed at or tapped; the pinned one stays open. */
+.b-stock__crate::after {
+  content: '';
+  position: absolute;
+  z-index: 2;
+  left: calc(var(--px) * -1);
+  right: calc(var(--px) * -1);
+  top: calc(var(--px) * -1);
+  height: 15%;
+  background: var(--plank);
+  box-shadow: inset 0 0 0 var(--px) rgba(21, 16, 13, 0.35), 0 var(--px) 0 rgba(21, 16, 13, 0.45);
+  transform-origin: 0 100%;
+  transition: transform var(--dur-2) var(--ease-out);
+}
+.b-stock__crate::before {
+  content: '';
+  position: absolute;
+  inset: calc(var(--px) * 4);
+  background: radial-gradient(ellipse 70% 55% at 50% 0%, rgba(242, 166, 59, 0.55), transparent 70%);
+  opacity: 0;
+  transition: opacity var(--dur-2) var(--ease-out);
+  pointer-events: none;
+}
+.b-stock__crate.is-shown::after, .b-stock__crate[aria-pressed='true']::after { transform: translateY(-50%) rotate(-11deg); }
+.b-stock__crate.is-shown::before, .b-stock__crate[aria-pressed='true']::before { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .b-stock__crate, .b-stock__crate::after, .b-stock__crate::before { transition: none; } }
+
+/* Paper hung on a nail swings when it is put up: each wanted poster as the
+   crew's room opens, and the roll call's posters as the board is reached,
+   one after another, a damped swing about the nail at the top. */
+@keyframes b-swing {
+  0%   { transform: rotate(-5deg); }
+  28%  { transform: rotate(3.2deg); }
+  52%  { transform: rotate(-1.6deg); }
+  74%  { transform: rotate(0.7deg); }
+  100% { transform: rotate(0deg); }
+}
+.b-room.is-open .b-posters .b-hang, .b-rollcall > .b-hang { transform-origin: 50% 0.75rem; animation: b-swing 1.3s var(--ease-out) both; }
+.b-room.is-open .b-posters .b-hang:nth-child(2), .b-rollcall > .b-hang:nth-child(2) { animation-delay: 70ms; }
+.b-room.is-open .b-posters .b-hang:nth-child(3), .b-rollcall > .b-hang:nth-child(3) { animation-delay: 140ms; }
+.b-room.is-open .b-posters .b-hang:nth-child(4), .b-rollcall > .b-hang:nth-child(4) { animation-delay: 210ms; }
+.b-room.is-open .b-posters .b-hang:nth-child(5), .b-rollcall > .b-hang:nth-child(5) { animation-delay: 280ms; }
+.b-room.is-open .b-posters .b-hang:nth-child(6), .b-rollcall > .b-hang:nth-child(6) { animation-delay: 350ms; }
+.b-room.is-open .b-posters .b-hang:nth-child(n + 7), .b-rollcall > .b-hang:nth-child(n + 7) { animation-delay: 420ms; }
+@media (prefers-reduced-motion: reduce) { .b-room.is-open .b-posters .b-hang, .b-rollcall > .b-hang { animation: none; } }
 
 /* the counter: one label at a time, on paper like every other notice */
 /* The counter is one sheet that never moves. What moves is the slip on it: a
