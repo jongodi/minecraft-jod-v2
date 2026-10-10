@@ -697,3 +697,21 @@ Production builds of `main` (`14849d6`) and the branch, same machine.
 2. **A sign-in link that spends a use only on a press.** Chat apps and mail scanners that open a link to preview it spend its uses now.
 3. **Check the owner's own wall signed in**: the seeded session was reasoned through and checked as a visitor, not in a member's browser.
 4. **Pictures uploaded and never pinned** stay in storage; a daily sweep of `crew/` files nothing points at.
+
+---
+
+## Part 7. The game's own UI, after "it looks the same"
+
+Part 6 was read as no change at all: fixes and refinements, nothing new to the eye. This pass took visible moments from the game and from the land, each with a reason in this world (DESIGN.md, *The game's own UI, and the land lived in*):
+
+| Where | What |
+|---|---|
+| Every page | The experience bar over the phone's hotbar and under the plank, filling with the page. |
+| The hero | The title screen's splash over the Ð; name tags over the crew; on a phone the crew climb the name; an armadillo on the ground that rolls up when touched. |
+| The world | The still drifts like a camera over the town; F3 lines (XYZ and facing) while the live map is up. |
+| The rooms | Crates open like chests; posters swing on their nails; on a phone the plank is pulled down to close a room. |
+| The roll call | A lit lantern over the poster of whoever is in. |
+| The fire | The campfire's smoke column. |
+| Off the trail | The death screen: *Þú dóst!*, *Þú féllst út úr heiminum.*, *Stig: 0*, *Lifna aftur við* over *Titilskjár*. |
+
+Measured on a production build: First Load JS `/` 141 → 142 kB. Scroll probe, phone 390 × 844 at 4× CPU: mean 7.2 ms, worst 30.0 ms, no long frames, style 2.0 s and script 0.7 s over the whole scroll (2.6 s and 1.4 s on `main`). No sideways scroll at 360 to 1920 on any page; reduced motion stills the drift, the smoke, the splash, the swing and the armadillo.
