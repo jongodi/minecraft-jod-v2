@@ -7,6 +7,7 @@
 // forgets their password gets it cleared here and a fresh link.
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { plural } from '@/lib/format';
+import { NAME_MAX } from '@/lib/crew-types';
 import type { AdminCrewRow, InviteResponse } from '@/app/api/admin/crew/route';
 import { Button, Field, Modal, Notice, Panel, Toggle, api, errText } from './ui';
 
@@ -162,7 +163,7 @@ function ContactModal({ row, onClose, onSaved }: { row: AdminCrewRow; onClose: (
     <Modal title={`Nafn og netfang: ${row.username}`} onClose={onClose} width="30rem">
       <form className="a-stack" onSubmit={save}>
         <Field label="Nafn" help={`Það sem bréfin kalla ${row.username}, til dæmis fornafnið. Autt nafn: bréfin segja ${row.username}. Sést aðeins í pósti, ekki á vefnum.`}>
-          <input className="a-input" value={name} onChange={e => setName(e.target.value)} placeholder={row.username} maxLength={40} autoComplete="off" autoFocus />
+          <input className="a-input" value={name} onChange={e => setName(e.target.value)} placeholder={row.username} maxLength={NAME_MAX} autoComplete="off" autoFocus />
         </Field>
         <Field label="Netfang" help="Þangað fara innskráningartenglar og póstur um spilakvöld. Félaginn sér þetta og getur breytt því á veggnum sínum; aðrir sjá það ekki. Autt netfang: enginn póstur.">
           <input className="a-input" type="email" value={address} onChange={e => setAddress(e.target.value)} placeholder="nafn@dæmi.is" autoComplete="off" />

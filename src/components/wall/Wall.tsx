@@ -8,7 +8,7 @@ import dynamic from 'next/dynamic';
 import type { CrewProfile, CrewEntry } from '@/lib/crew-types';
 import type { SignWood } from '@/lib/sign-wood';
 import { nameEm } from '@/lib/name-width';
-import { LIMITS, allPhotos, coverPhoto, sameUser } from '@/lib/crew-types';
+import { LIMITS, NAME_MAX, PASSWORD_MIN, allPhotos, coverPhoto, sameUser } from '@/lib/crew-types';
 import type { PlayerStat, StatsResponse } from '@/app/api/stats/route';
 import { formatDate } from '@/lib/format';
 import { errorFrom } from '@/lib/crew-upload';
@@ -18,7 +18,7 @@ import PlayerHead from '@/components/badlands/PlayerHead';
 import { CloseIcon, Seal, Star } from '@/components/badlands/Bits';
 import { PAGE_LINKS, STAT_TABS } from '@/components/badlands/data';
 import NightSky from '@/components/badlands/NightSky';
-import { useBackdropClose, useCrewSession, useDialogFocus, useScrollLock } from '@/components/badlands/hooks';
+import { seedSession, useBackdropClose, useCrewSession, useDialogFocus, useScrollLock, type CrewSessionSeed } from '@/components/badlands/hooks';
 import { photoProps, PHOTO_SIZES } from '@/components/badlands/photo';
 import Composer from './Composer';
 import Print from './Print';
@@ -26,9 +26,6 @@ import Print from './Print';
 /* The lightbox and the motion library it throws with are a chunk of their
    own, fetched once the page is idle; the wall itself needs neither. */
 const WallLightbox = dynamic(() => import('./WallLightbox'), { ssr: false });
-
-/* the same floor the server holds a password to */
-const LIMITS_PW = 6;
 
 /** A place on the map, as the wall needs it: to pin things at and to list what the member built. */
 export interface WallPlace { id: number; label: string; sublabel: string; builders: string[]; wood: SignWood }
@@ -99,7 +96,8 @@ function LoginModal({ username, onSuccess, onClose }: { username: string; onSucc
       <form className="b-paper b-modal__box" onSubmit={submit}>
         <p className="b-modal__title">Skrá inn sem {username}</p>
         <p className="b-modal__sub">lykilorðið sem þú valdir þér á veggnum. Ekkert lykilorð, eða gleymt? Fáðu tengil í pósti, eða biddu stjórnandann um einn.</p>
-        <input type="password" className={`b-input${error ? ' is-error' : ''}`} value={token} onChange={e => setToken(e.target.value)} placeholder="Lykilorð" autoFocus autoComplete="current-password" />
+        <label className="b-visually-hidden" htmlFor="w-login-pw">Lykilorð</label>
+        <input id="w-login-pw" type="password" className={`b-input${error ? ' is-error' : ''}`} value={token} onChange={e => setToken(e.target.value)} placeholder="Lykilorð" autoFocus autoComplete="current-password" />
         {error && <p className="b-err" role="alert">{error}</p>}
         {mail === 'sent'
           ? <p className="b-modal__ok" role="status">Sé netfang skráð á {username} kemur tengill í pósti eftir smástund. Opnaðu hann í tækinu sem þú vilt nota.</p>
@@ -157,12 +155,14 @@ function PasswordModal({ username, change, onDone, onClose }: { username: string
     <div ref={box} tabIndex={-1} className="b-modal" {...backdrop} role="dialog" aria-modal="true" aria-label="Lykilorð">
       <form className="b-paper b-modal__box" onSubmit={submit}>
         <p className="b-modal__title">{change ? 'Nýtt lykilorð' : 'Veldu þér lykilorð'}</p>
-        <p className="b-modal__sub">með því skráir þú þig inn á hvaða síma eða tölvu sem er undir „Þetta er ég“, án tengils frá stjórnandanum. Minnst {LIMITS_PW} stafir.</p>
-        <input type="password" className={`b-input${error ? ' is-error' : ''}`} value={pw} onChange={e => setPw(e.target.value)} placeholder="Lykilorð" autoFocus autoComplete="new-password" />
-        <input type="password" className={`b-input${error ? ' is-error' : ''}`} value={again} onChange={e => setAgain(e.target.value)} placeholder="Aftur, til öryggis" autoComplete="new-password" style={{ marginTop: '0.5rem' }} />
+        <p className="b-modal__sub">með því skráir þú þig inn á hvaða síma eða tölvu sem er undir „Þetta er ég“, án tengils frá stjórnandanum. Minnst {PASSWORD_MIN} stafir.</p>
+        <label className="b-visually-hidden" htmlFor="w-pw-new">{change ? 'Nýtt lykilorð' : 'Lykilorð'}</label>
+        <input id="w-pw-new" type="password" className={`b-input${error ? ' is-error' : ''}`} value={pw} onChange={e => setPw(e.target.value)} placeholder="Lykilorð" autoFocus autoComplete="new-password" />
+        <label className="b-visually-hidden" htmlFor="w-pw-again">Lykilorðið aftur</label>
+        <input id="w-pw-again" type="password" className={`b-input${error ? ' is-error' : ''}`} value={again} onChange={e => setAgain(e.target.value)} placeholder="Aftur, til öryggis" autoComplete="new-password" style={{ marginTop: '0.5rem' }} />
         {error && <p className="b-err" role="alert">{error}</p>}
         <div className="b-modal__actions">
-          <button type="submit" className="b-btn b-btn--solid" disabled={loading || pw.length < LIMITS_PW || !again}>{loading ? 'Vista…' : 'Vista'}</button>
+          <button type="submit" className="b-btn b-btn--solid" disabled={loading || pw.length < PASSWORD_MIN || !again}>{loading ? 'Vista…' : 'Vista'}</button>
           <button type="button" className="b-btn" onClick={onClose}>Hætta við</button>
         </div>
       </form>
@@ -227,7 +227,7 @@ function ContactModal({ username, onClose }: { username: string; onClose: () => 
         <p className="b-modal__title">Nafn og netfang</p>
         <p className="b-modal__sub">fyrir póstinn frá JOÐ. Aðrir sjá þetta ekki á vefnum; nafnið sést aðeins í bréfunum.</p>
         <label className="b-modal__label" htmlFor="w-contact-name">Hvað eiga bréfin að kalla þig?</label>
-        <input ref={nameRef} id="w-contact-name" className={`b-input${error ? ' is-error' : ''}`} value={name} onChange={e => setName(e.target.value)} placeholder={ready ? username : state === 'loading' ? 'sæki…' : ''} disabled={!ready} maxLength={40} autoComplete="given-name" />
+        <input ref={nameRef} id="w-contact-name" className={`b-input${error ? ' is-error' : ''}`} value={name} onChange={e => setName(e.target.value)} placeholder={ready ? username : state === 'loading' ? 'sæki…' : ''} disabled={!ready} maxLength={NAME_MAX} autoComplete="given-name" />
         <label className="b-modal__label" htmlFor="w-contact-email">Netfang</label>
         <input id="w-contact-email" type="email" className={`b-input${error ? ' is-error' : ''}`} value={address} onChange={e => setAddress(e.target.value)} placeholder={ready ? 'nafn@dæmi.is' : state === 'loading' ? 'sæki…' : ''} disabled={!ready} autoComplete="email" />
         <label className="b-modal__check">
@@ -260,11 +260,17 @@ interface Props {
   initialStats?: PlayerStat | null;
   /** true when the page was opened from a sign-in link */
   justSignedIn?: boolean;
+  /** who the server found signed in, so the owner's own wall is drawn whole from the first paint */
+  session: CrewSessionSeed;
 }
 
-export default function Wall({ initial, places, initialStats = null, justSignedIn = false }: Props) {
+export default function Wall({ initial, places, initialStats = null, justSignedIn = false, session }: Props) {
   const [profile, setProfile] = useState<CrewProfile>(initial);
-  const { me, hasPassword, refresh, signOut } = useCrewSession();
+  /* The session the server drew the page for is the store's first answer, so
+     the pin slot, the banner and the reply lines are in the markup and the
+     signs under them do not drop a moment in. */
+  seedSession(session);
+  const { me, hasPassword, refresh, signOut } = useCrewSession(session);
   const isOwner = sameUser(me, profile.username);
 
   const [showLogin,   setShowLogin]   = useState(false);
@@ -297,12 +303,6 @@ export default function Wall({ initial, places, initialStats = null, justSignedI
       .catch(() => {});
   }, [username]);
 
-  /* The wall is fetched again when the viewer changes: the server rendered it for a stranger. */
-  useEffect(() => {
-    if (me === undefined) return;
-    fetch(`/api/crew/${username}`, { cache: 'no-store' }).then(r => (r.ok ? r.json() : null)).then((p: CrewProfile | null) => { if (p) { setProfile(p); setBioText(p.bio); } }).catch(() => {});
-  }, [me, username]);
-
   /* From 1024 px the poster rides down the wall beside the signs instead of
      leaving an empty column under it. It sticks under the bar while it fits
      the screen; a poster taller than the screen scrolls with the page until its
@@ -329,6 +329,7 @@ export default function Wall({ initial, places, initialStats = null, justSignedI
   }, []);
 
   const prints = useMemo(() => allPhotos(profile), [profile]);
+  const lightboxPhotos = useMemo(() => prints.map(p => ({ src: p.filename, title: p.caption || undefined, sub: p.takenAt ? `tekin ${formatDate(p.takenAt)}` : formatDate(p.uploadedAt) })), [prints]);
   /* a wall with prints fetches the lightbox's code once the page is idle, so the first print opens at once */
   useEffect(() => {
     if (prints.length === 0) return;
@@ -361,11 +362,23 @@ export default function Wall({ initial, places, initialStats = null, justSignedI
   const onPinned  = useCallback((entry: CrewEntry) => { setFresh(entry.id); setProfile(p => ({ ...p, entries: [entry, ...p.entries] })); }, []);
   const onChange  = useCallback((id: string, update: (entry: CrewEntry) => CrewEntry) => setProfile(p => ({ ...p, entries: p.entries.map(e => (e.id === id ? update(e) : e)) })), []);
   const onRemove  = useCallback((id: string) => setProfile(p => ({ ...p, entries: p.entries.filter(e => e.id !== id) })), []);
+  /* One cover change at a time: two quick presses could come back in either
+     order and leave the poster on the one pressed first. */
+  const covering  = useRef(false);
   const onCover   = useCallback((photoId: string | null) => {
+    if (covering.current) return;
+    covering.current = true;
     setWallError('');
-    patchProfile({ coverPhotoId: photoId }).catch(e => setWallError(e instanceof Error ? e.message : 'Ekki tókst að skipta um forsíðumynd.'));
+    patchProfile({ coverPhotoId: photoId })
+      .catch(e => setWallError(e instanceof Error ? e.message : 'Ekki tókst að skipta um forsíðumynd.'))
+      .finally(() => { covering.current = false; });
   }, [patchProfile]);
-  const onOpen    = useCallback((photoId: string, rect: DOMRect) => { const i = prints.findIndex(p => p.id === photoId); if (i >= 0) { setOrigin(rect); setLightbox(i); } }, [prints]);
+  /* The prints are read through a ref, so the callback every sign holds stays
+     the same when a lantern or a reply changes the wall, and the signs that
+     did not change are not drawn again. */
+  const printsNow = useRef(prints);
+  printsNow.current = prints;
+  const onOpen    = useCallback((photoId: string, rect: DOMRect) => { const i = printsNow.current.findIndex(p => p.id === photoId); if (i >= 0) { setOrigin(rect); setLightbox(i); } }, []);
 
   const closeLightbox = useCallback(() => setLightbox(null), []);
   const prevPhoto     = useCallback(() => setLightbox(i => (i !== null && prints.length ? (i - 1 + prints.length) % prints.length : null)), [prints.length]);
@@ -437,6 +450,8 @@ export default function Wall({ initial, places, initialStats = null, justSignedI
               </div>
             ) : isOwner ? (
               <button type="button" className={`w-poster__bio w-poster__bio--edit b-tip${profile.bio ? '' : ' is-empty'}`} onClick={() => setEditingBio(true)} data-tip="Breyta kynningu">
+                {/* the tip is for the eye; a screen reader hears what the button does before the words it holds */}
+                <span className="b-visually-hidden">Breyta kynningu: </span>
                 {profile.bio || 'Skrifaðu eina eða tvær línur um þig…'}
               </button>
             ) : (
@@ -497,7 +512,7 @@ export default function Wall({ initial, places, initialStats = null, justSignedI
       {showPw && isOwner && <PasswordModal username={username} change={hasPassword} onDone={() => { refresh(); setWelcome(false); }} onClose={() => setShowPw(false)} />}
       {showEmail && isOwner && <ContactModal username={username} onClose={() => setShowEmail(false)} />}
       {prints.length > 0 && (
-        <WallLightbox photos={prints.map(p => ({ src: p.filename, title: p.caption || undefined, sub: p.takenAt ? `tekin ${formatDate(p.takenAt)}` : formatDate(p.uploadedAt) }))}
+        <WallLightbox photos={lightboxPhotos}
           index={lightbox} origin={origin} onClose={closeLightbox} onPrev={prevPhoto} onNext={nextPhoto} />
       )}
     </div>

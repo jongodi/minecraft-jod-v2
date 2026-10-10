@@ -293,34 +293,64 @@ export function useReducedMotionPref(): boolean {
 type Me = string | null | undefined;   // undefined while the first answer is in flight
 let meValue: Me = undefined;
 let meHasPassword = false;
+/* the first answer came with the page rather than from asking; it is checked once, quietly */
+let meSeeded = false;
 let meInFlight: Promise<void> | null = null;
 const meListeners = new Set<() => void>();
 const notifyMe = () => meListeners.forEach(l => l());
 
-async function fetchMe(): Promise<void> {
+/* `quiet` is the check of an answer the page came with: if that check never
+   comes back, the answer stands, rather than signing a member out of their
+   own wall over a dropped request. */
+async function fetchMe(quiet = false): Promise<void> {
   try {
     const res = await fetch('/api/crew/me', { cache: 'no-store' });
-    const data = (res.ok ? await res.json() : null) as { username: string | null; hasPassword?: boolean } | null;
-    meValue = data?.username ?? null;
-    meHasPassword = !!data?.hasPassword;
+    if (!res.ok) throw new Error(`crew/me ${res.status}`);
+    const data = await res.json() as { username: string | null; hasPassword?: boolean };
+    meValue = data.username ?? null;
+    meHasPassword = !!data.hasPassword;
   } catch {
+    if (quiet) return;
     meValue = null;
     meHasPassword = false;
   }
   notifyMe();
 }
-function refreshMe(): Promise<void> {
-  if (!meInFlight) meInFlight = fetchMe().finally(() => { meInFlight = null; });
+function askMe(quiet: boolean): Promise<void> {
+  if (!meInFlight) meInFlight = fetchMe(quiet).finally(() => { meInFlight = null; });
   return meInFlight;
 }
+const refreshMe = () => askMe(false);
 const subscribeMe = (l: () => void) => { meListeners.add(l); return () => { meListeners.delete(l); }; };
 
+/** Who the server found signed in when it drew the page. */
+export interface CrewSessionSeed { me: string | null; hasPassword: boolean }
+
+/** The session the server read for the page it drew becomes the store's
+    first value in the browser, as the status does (seedStatus), so a
+    member's own wall is drawn with its pin slot, its banner and its reply
+    lines in place instead of growing them a moment in. Pass the same seed to
+    useCrewSession so the server's markup and the first client render agree.
+    Does nothing once the store has an answer of its own, and nothing on the
+    server, where a module lives across requests. */
+export function seedSession(seed: CrewSessionSeed): void {
+  if (typeof window === 'undefined' || meValue !== undefined) return;
+  meValue = seed.me;
+  meHasPassword = seed.hasPassword;
+  meSeeded = true;
+}
+
 /** The signed-in member's username, null when nobody is, undefined until
-    known; and whether they have chosen a password of their own yet. */
-export function useCrewSession(): { me: Me; hasPassword: boolean; refresh: () => Promise<void>; signOut: () => Promise<void> } {
-  const me = useSyncExternalStore(subscribeMe, () => meValue, () => undefined);
-  const hasPassword = useSyncExternalStore(subscribeMe, () => meHasPassword, () => false);
-  useEffect(() => { if (meValue === undefined) refreshMe(); }, []);
+    known; and whether they have chosen a password of their own yet. `seed`
+    is what the server drew the page with (seedSession). */
+export function useCrewSession(seed?: CrewSessionSeed): { me: Me; hasPassword: boolean; refresh: () => Promise<void>; signOut: () => Promise<void> } {
+  const me = useSyncExternalStore(subscribeMe, () => meValue, () => seed?.me);
+  const hasPassword = useSyncExternalStore(subscribeMe, () => meHasPassword, () => seed?.hasPassword ?? false);
+  useEffect(() => {
+    if (meValue === undefined) refreshMe();
+    /* the browser still asks once, which puts right a session the server could not read */
+    else if (meSeeded) { meSeeded = false; askMe(true); }
+  }, []);
   const signOut = useCallback(async () => {
     await fetch('/api/crew/auth', { method: 'DELETE' }).catch(() => {});
     meValue = null;

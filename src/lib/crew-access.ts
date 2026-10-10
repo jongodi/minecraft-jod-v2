@@ -9,14 +9,14 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { randomBytes, scrypt as scryptCb, timingSafeEqual } from 'crypto';
 import { promisify } from 'util';
-import { canonicalUsername } from '@/lib/crew-types';
+import { PASSWORD_MIN, canonicalUsername } from '@/lib/crew-types';
 
 const scrypt = promisify(scryptCb);
 const hasKV = () => !!process.env.REDIS_URL;
 
 /* ─── passwords ─────────────────────────────────────────────────────────── */
 
-export const PASSWORD_MIN = 6;
+export { PASSWORD_MIN };
 export const PASSWORD_MAX = 128;
 const KEY_LEN = 64;
 
