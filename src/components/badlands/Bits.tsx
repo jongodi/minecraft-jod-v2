@@ -175,6 +175,8 @@ const STONES: ReadonlyArray<readonly [number, number, number, number]> = [[0, 12
 /** The campfire in the footer: a three-frame pixel flame on two logs, in a
     ring of stones there. A play night's fire is the same one, without the
     stones; burnt down, only embers glow on the logs. */
+const SMOKE = [0, 1, 2, 3, 4, 5];
+
 export function Campfire({ embers = false, stones = false, className }: { embers?: boolean; stones?: boolean; className?: string } = {}) {
   return (
     <span className={`b-fire${className ? ` ${className}` : ''}`} aria-hidden="true">
@@ -201,6 +203,10 @@ export function Campfire({ embers = false, stones = false, className }: { embers
           </g>
         ))}
       </svg>
+      {/* the column of smoke a campfire in the game sends up, the signal the
+          crew is camped: square puffs that rise, drift with the wind, grow
+          and thin out (badlands.css). Only the fire in its ring of stones. */}
+      {stones && !embers && <span className="b-fire__smoke">{SMOKE.map(i => <i key={i} />)}</span>}
     </span>
   );
 }

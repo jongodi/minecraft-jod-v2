@@ -2047,7 +2047,7 @@ html.is-map-full { overflow: hidden; }
    times its pixels in a ring of stones; the way up and the wind sit either
    side of it on a wide screen, and share the row above it below 1024 px,
    where the fire, its sign and the two buttons do not fit one row. */
-.b-foot { position: relative; --ground: calc(var(--px) * 14); padding-top: var(--sp-6); overflow: clip; }
+.b-foot { position: relative; --ground: calc(var(--px) * 14); padding-top: var(--sp-8); overflow-x: clip; overflow-y: visible; }
 .b-foot__scene { position: relative; }
 .b-foot__inner {
   position: relative;
@@ -2120,6 +2120,48 @@ html.is-map-full { overflow: hidden; }
 @media (max-width: 719px) { .b-foot .b-fire { width: 6rem; height: 6rem; } }
 .b-fire svg { width: 100%; height: 100%; display: block; shape-rendering: crispEdges; overflow: visible; }
 .b-fire__frame { opacity: 0; animation: b-frames 900ms steps(1, end) infinite; }
+/* The campfire's smoke: six square puffs of the fire's own lit grey, warm,
+   never cold, rising from its mouth one after another, each drifting east
+   with the wind, growing as it goes and thinning to nothing. Transform and
+   opacity only; none under reduced motion. The band lets it rise past its
+   top edge (.b-foot clips sideways only). */
+.b-fire__smoke { position: absolute; left: 50%; bottom: 62%; width: 0; height: 0; pointer-events: none; }
+.b-fire__smoke i {
+  position: absolute;
+  left: -0.625rem;
+  bottom: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+  background: color-mix(in oklab, var(--tc-white), var(--night) 35%);
+  opacity: 0;
+  animation: b-smoke 7.2s linear infinite;
+}
+.b-fire__smoke i:nth-child(1) { animation-delay: 0s; }
+.b-fire__smoke i:nth-child(2) { animation-delay: -1.2s; left: -0.25rem; }
+.b-fire__smoke i:nth-child(3) { animation-delay: -2.4s; left: -1rem; }
+.b-fire__smoke i:nth-child(4) { animation-delay: -3.6s; left: -0.5rem; }
+.b-fire__smoke i:nth-child(5) { animation-delay: -4.8s; left: -0.125rem; }
+.b-fire__smoke i:nth-child(6) { animation-delay: -6s; left: -0.75rem; }
+@keyframes b-smoke {
+  0%   { transform: translate(0, 0) scale(0.6); opacity: 0; }
+  10%  { opacity: 0.55; }
+  60%  { opacity: 0.3; }
+  100% { transform: translate(2.5rem, -11rem) scale(1.9); opacity: 0; }
+}
+/* Below 1024 px the way up and the wind share the row over the fire: the
+   smoke gets a stretch of sky between them and the fire, and rises only
+   that far, so it never passes through the buttons. */
+@keyframes b-smoke-short {
+  0%   { transform: translate(0, 0) scale(0.6); opacity: 0; }
+  12%  { opacity: 0.5; }
+  55%  { opacity: 0.25; }
+  100% { transform: translate(1.75rem, -5rem) scale(1.6); opacity: 0; }
+}
+@media (max-width: 1023px) {
+  .b-foot__inner { row-gap: var(--sp-8); }
+  .b-fire__smoke i { width: 1rem; height: 1rem; animation-name: b-smoke-short; animation-duration: 5.4s; }
+}
+@media (prefers-reduced-motion: reduce) { .b-fire__smoke { display: none; } }
 @keyframes b-frames { 0%, 33.33% { opacity: 1; } 33.34%, 100% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .b-fire__frame { animation: none; } .b-fire__frame:first-child { opacity: 1; } }
 
