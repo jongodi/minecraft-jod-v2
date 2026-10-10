@@ -125,7 +125,7 @@ export default function CrewPage() {
                     {e.photos[0] && (
                       <span className="w-note-card__pic">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img {...photoProps(e.photos[0].filename, PHOTO_SIZES.strip)} alt={e.photos[0].caption || ''} loading="lazy" decoding="async" />
+                        <img {...photoProps(e.photos[0].filename, PHOTO_SIZES.board)} alt={e.photos[0].caption || ''} loading="lazy" decoding="async" />
                       </span>
                     )}
                     {(e.text || e.photos[0]?.caption) && <span className="w-note-card__text">{e.text || e.photos[0]?.caption}</span>}

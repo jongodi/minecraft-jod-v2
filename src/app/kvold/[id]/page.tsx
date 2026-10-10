@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import BadlandsHome from '@/components/badlands/BadlandsHome';
@@ -15,14 +16,17 @@ export const revalidate = 30;
 
 type Props = { params: Promise<{ id: string }> };
 
+/* The link preview and the page are drawn in one request: the night is read once for both. */
+const nightOf = cache((id: string) => sharedNight(id));
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
-  const night = await sharedNight(id);
+  const night = await nightOf(id);
   return night ? nightMetadata(night, id) : {};
 }
 
 export default async function Night({ params }: Props) {
-  const [night, initial] = await Promise.all([sharedNight((await params).id), loadHomeData()]);
+  const [night, initial] = await Promise.all([nightOf((await params).id), loadHomeData()]);
   if (!night) redirect('/kvold#hopur');
   return <BadlandsHome syncedOn={syncedOn} bases={baseLinks()} initial={initial} />;
 }

@@ -5,11 +5,15 @@ import { readProfile, isCrewUsername, coverPhoto } from '@/lib/crew';
 import { skinDataUrl, printDataUrl, playTimeHours } from '@/lib/crew-og';
 import { SERVER_IP } from '@/components/badlands/data';
 import { formatNumber } from '@/lib/format';
+import { CardSeal } from '@/lib/og-seal';
 
 export const alt = 'Eftirlýsingaspjald JOÐ-félaga';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
-export const dynamic = 'force-dynamic';
+/* Drawn again at most every five minutes, as a place's card is: a link
+   pasted into a chat is fetched by every crawler that sees it, and nothing
+   here depends on who asks. */
+export const revalidate = 300;
 
 /* The member's link card: their wanted poster. The print they chose stands
    faded behind the paper, the skin in its frame, the name in the slab, the
@@ -70,13 +74,17 @@ export default async function Image({ params }: { params: Promise<{ username: st
                 <span style={{ fontFamily: 'Silkscreen', fontSize: 40, color: C.red }}>{hours(playtime)}</span>
               </div>
             )}
-            {bio && <div style={{ fontFamily: 'Pixelify Sans', fontSize: 30, lineHeight: 1.35, color: C.inkSoft, marginTop: 22, display: 'flex' }}>{bio}</div>}
+            {/* kept clear of the seal in the poster's corner */}
+            {bio && <div style={{ fontFamily: 'Pixelify Sans', fontSize: 30, lineHeight: 1.35, color: C.inkSoft, marginTop: 22, maxWidth: 560, display: 'flex' }}>{bio}</div>}
           </div>
 
           <div style={{ position: 'absolute', left: 300, bottom: 40, display: 'flex', alignItems: 'center', gap: 20 }}>
             <div style={{ padding: '10px 18px', border: `4px solid ${C.red}`, color: C.red, fontFamily: 'Silkscreen', fontSize: 26, display: 'flex' }}>{SERVER_IP}</div>
-            <div style={{ fontFamily: 'Silkscreen', fontSize: 18, letterSpacing: 2, color: C.inkFaint, display: 'flex' }}>VEGGURINN Á JOÐ</div>
           </div>
+
+          {/* the poster made good: JOÐ's seal in its corner, as the wall's poster carries
+              it, where a line under the address said again what the kicker says */}
+          {profile && <CardSeal style={{ right: 36, bottom: 30 }} />}
         </div>
       </div>
     ),
