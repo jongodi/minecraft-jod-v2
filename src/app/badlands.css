@@ -1665,6 +1665,22 @@ html.is-map-full { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) { .b-room { transition: none; } }
 @media (max-width: 899px) { .b-room { max-height: calc(100% - 4rem); } }
 /* the plank: the same wood the bar is hung from once the page has moved */
+/* On a touch screen the plank is the room's handle (Drawer.tsx): a grip
+   cut into the wood at its middle says it can be pulled down. */
+@media (pointer: coarse) {
+  .b-room__plank { position: relative; touch-action: none; }
+  .b-room__plank::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: calc(var(--px) * 2);
+    width: 2.5rem;
+    height: calc(var(--px) * 2);
+    margin-left: -1.25rem;
+    background: var(--wood-dark);
+    box-shadow: 0 var(--px) 0 var(--wood-light);
+  }
+}
 .b-room__plank {
   display: flex;
   align-items: center;
