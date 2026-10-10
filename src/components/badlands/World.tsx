@@ -588,7 +588,8 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
             and at its end the other bases, each a lit lantern that leads to a
             3D map of its own (/kort/<id>): places too, only further off. */}
         <div ref={places} className="b-places">
-          <p className="b-places__head">Staðir · {config.locations.length}{bases.length > 0 && ` · ${bases.length} ${plural(bases.length, 'stöð', 'stöðvar')} með eigið kort, aftast`}</p>
+          {/* a count, as the shelf counts its crates: each base's own tag already says it has its own map, and the rail's order says where */}
+          <p className="b-places__head">{config.locations.length} {plural(config.locations.length, 'staður', 'staðir')}{bases.length > 0 && ` og ${bases.length} ${plural(bases.length, 'stöð', 'stöðvar')}`}</p>
           <Rail label="Staðir og stöðvar" prevLabel="Fyrri staðir" nextLabel="Næstu staðir" count={config.locations.length + bases.length}>
             {config.locations.map(loc => {
               const thumb = loc.photoId ? plates.find(p => p.id === loc.photoId) ?? null : null;
