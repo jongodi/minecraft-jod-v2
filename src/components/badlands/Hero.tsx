@@ -1,7 +1,7 @@
 'use client';
 
 import { memo } from 'react';
-import Mesa from './Mesa';
+import Mesa, { Rider } from './Mesa';
 import { Moon, Sun } from './Bits';
 import CopyAddress from './CopyAddress';
 import StatusLantern from './StatusLantern';
@@ -38,6 +38,15 @@ function Hero({ server, season, nights }: { server: ServerState; season: Season;
           {/* tonight's moon, rising from behind the J as the sun sets on the other side */}
           {moon !== null && <Moon phase={moon} className="b-hero__moon" />}
         </h1>
+        {/* On a phone the crew who are in climb the name: one on the O, one on
+            the Ð, their name tags in the sky over them, and a count for the rest.
+            The plateau at the name's feet stood them in front of the O's window. */}
+        {inside.length > 0 && (
+          <div className="b-hero__climbers">
+            {inside.slice(0, 2).map(n => <Rider key={n} name={n} className="b-hero__climber" />)}
+            {inside.length > 2 && <span className="b-nametag b-hero__more">+{inside.length - 2}</span>}
+          </div>
+        )}
         {/* a phone's sun: in the open sky between the words and the name, so no line above it ever crosses it (badlands.css) */}
         <div className="b-hero__sun" aria-hidden="true"><Sun /></div>
         <div className="b-hero__lead">

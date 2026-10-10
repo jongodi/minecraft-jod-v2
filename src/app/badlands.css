@@ -932,23 +932,74 @@
   gap: calc(var(--u) * 3);
   pointer-events: auto;
 }
-.b-mesa__more--phone { display: none; }
-@media (max-width: 899px) {
-  .b-mesa__riders { --hx: 210; --hy: 34; }
-  .b-mesa__rider:nth-child(n + 3), .b-mesa__more--wide { display: none; }
-  .b-mesa__more--phone { display: block; }
-}
-.b-mesa__rider { position: relative; display: block; width: calc(var(--u) * 12); line-height: 0; }
+/* on a phone the plateau stands in front of the name's feet; there the crew climb the name (below) */
+@media (max-width: 899px) { .b-mesa__riders { display: none; } }
+.b-mesa__rider, .b-hero__climber { position: relative; display: block; width: calc(var(--u) * 12); line-height: 0; }
 /* a tap target larger than a narrow figure */
-.b-mesa__rider::before { content: ''; position: absolute; inset: -0.5rem calc(var(--u) * -1); }
-.b-mesa__rider img { display: block; width: 100%; height: auto; aspect-ratio: 1 / 2; image-rendering: pixelated; }
+.b-mesa__rider::before, .b-hero__climber::before { content: ''; position: absolute; inset: -0.5rem calc(var(--u) * -1); }
+.b-mesa__rider img, .b-hero__climber img { display: block; width: 100%; height: auto; aspect-ratio: 1 / 2; image-rendering: pixelated; }
 /* the lantern in hand: hung from the bottom of the arm on the far side, its light thrown round the figure */
 .b-mesa__held { position: absolute; left: 82%; top: 60%; width: calc(var(--u) * 3.5); height: calc(var(--u) * 5.25); }
 /* pointed at or focused: a pixel outline round the figure itself, not a box round the picture */
-.b-mesa__rider:focus-visible { outline: none; }
-.b-mesa__rider:focus-visible img { filter: drop-shadow(var(--px) 0 0 var(--lantern)) drop-shadow(calc(var(--px) * -1) 0 0 var(--lantern)) drop-shadow(0 var(--px) 0 var(--lantern)) drop-shadow(0 calc(var(--px) * -1) 0 var(--lantern)); }
-@media (hover: hover) { .b-mesa__rider:hover img { filter: drop-shadow(var(--px) 0 0 var(--paper)) drop-shadow(calc(var(--px) * -1) 0 0 var(--paper)) drop-shadow(0 var(--px) 0 var(--paper)) drop-shadow(0 calc(var(--px) * -1) 0 var(--paper)); } }
-.b-mesa__more { align-self: center; padding: 0 0.3rem; background: var(--night); color: var(--paper); font-weight: 600; font-size: var(--fs-sm); line-height: 1.4; }
+.b-mesa__rider:focus-visible, .b-hero__climber:focus-visible { outline: none; }
+.b-mesa__rider:focus-visible img, .b-hero__climber:focus-visible img { filter: drop-shadow(var(--px) 0 0 var(--lantern)) drop-shadow(calc(var(--px) * -1) 0 0 var(--lantern)) drop-shadow(0 var(--px) 0 var(--lantern)) drop-shadow(0 calc(var(--px) * -1) 0 var(--lantern)); }
+@media (hover: hover) { .b-mesa__rider:hover img, .b-hero__climber:hover img { filter: drop-shadow(var(--px) 0 0 var(--paper)) drop-shadow(calc(var(--px) * -1) 0 0 var(--paper)) drop-shadow(0 var(--px) 0 var(--paper)) drop-shadow(0 calc(var(--px) * -1) 0 var(--paper)); } }
+
+/* The name tag the game floats over every player: white letters on a veil
+   of dark, a little above the head, never turned away. Over each of the
+   crew on the ridge and on the name; the count of the rest wears one too.
+   Neighbours' tags stand at two heights, as tags over a crowd do, so two
+   names side by side never run into each other. */
+.b-nametag {
+  display: block;
+  padding: 1px 3px 0;
+  background: rgba(14, 12, 9, 0.5);
+  color: #FFFFFF;
+  font-family: var(--font-data);
+  font-size: var(--fs-chip);
+  line-height: 1.25;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  text-shadow: 1px 1px 0 rgba(14, 12, 9, 0.6);
+}
+.b-mesa__rider > .b-nametag, .b-hero__climber > .b-nametag {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + var(--sp-1));
+  translate: -50% 0;
+  pointer-events: none;
+}
+.b-mesa__rider:nth-child(even) > .b-nametag { bottom: calc(100% + var(--sp-1) + 0.75rem); }
+.b-mesa__more, .b-hero__more { align-self: flex-start; }
+@media (hover: hover) { .b-mesa__rider:hover > .b-nametag, .b-hero__climber:hover > .b-nametag { color: var(--lantern); } }
+
+/* The phone's climbers: the crew who are in, standing on the name itself,
+   one on the O and one on the Ð, sized and placed in ems of the name so they
+   hold at every size it is set at. Laid over the name's own row of the
+   stage (an absolute grid item takes its row as its frame), in front of it,
+   with the sky over them free for their tags. */
+.b-hero__climbers { display: none; }
+@media (max-width: 899px) {
+  .b-hero__stage { position: relative; }
+  .b-hero__climbers {
+    --u: calc(0.135em / 12);
+    display: block;
+    position: absolute;
+    grid-row: 3;
+    grid-column: 1;
+    inset: 0;
+    z-index: 2;
+    font-size: var(--fs-hero);
+    pointer-events: none;
+  }
+  .b-hero__climber, .b-hero__more { position: absolute; top: 0.02em; translate: 0 -100%; pointer-events: auto; }
+  .b-hero__climber:nth-child(1) { left: 0.99em; }
+  .b-hero__climber:nth-child(2) { left: 1.70em; }
+  /* the count wears a tag of its own beside the Ð's climber; placed in the name's size, since its own em is the tag's */
+  .b-hero__climbers > .b-hero__more { left: calc(var(--fs-hero) * 1.9); top: calc(var(--fs-hero) * -0.2); translate: 0 0; }
+}
+/* a phone on its side stands the name in the ridges with no sky over it to climb into */
+@media (max-width: 899px) and (max-height: 500px) { .b-hero__climbers { display: none; } }
 
 @media (prefers-reduced-motion: reduce) { .b-mesa__layer { transform: none; } }
 

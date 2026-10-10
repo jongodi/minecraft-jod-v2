@@ -175,36 +175,40 @@ export function Ridge({ snow = false, warm = false }: { snow?: boolean; warm?: b
   );
 }
 
-/* How many of the crew a plateau holds before the rest are a count beside
-   them: three beside the name on a wide screen; two on a phone, where the
-   plateau stands in front of the name's feet and a third figure covered the
-   O's window (the third is hidden there by badlands.css). */
+/* How many of the crew the plateau beside the name holds before the rest
+   are a count beside them, on a wide screen. On a phone the plateau stands
+   in front of the name's feet, so there the crew climb the name instead
+   (Climbers, below). */
 const RIDERS_SHOWN = 3;
-const RIDERS_ON_PHONE = 2;
 
-/** The crew who are in, standing on a plateau of the nearest ridge as
-    themselves: the whole skin at the land's own scale, each with a lit
-    lantern in hand, side by side against the sunset (beside the name on a
-    wide screen, at its feet on a phone; badlands.css places the group on a
-    plateau by its coordinates in the ridge's own drawing). A wanted poster's
-    Western, and the game's own figure. Each is a way to that member's wall,
-    so the lantern's amber is the site's own sign for "press". Inside the near
-    layer, so they move with it. A skin the services can't give falls back to
-    the drawn stand-in (PlayerHead). */
+/** One of the crew as themselves: the whole skin at the land's scale, a lit
+    lantern in hand, and over the head the name tag the game floats over
+    every player, white on a veil of dark. A way to that member's wall, so
+    the lantern's amber is the site's own sign for "press". A skin the
+    services can't give falls back to the drawn stand-in (PlayerHead). */
+export function Rider({ name, className }: { name: string; className: string }) {
+  return (
+    <Link href={`/crew/${name}`} className={className} aria-label={`${name} er inni. Veggurinn`}>
+      <span className="b-nametag" aria-hidden="true">{name}</span>
+      <PlayerHead name={name} size={32} full alt="" />
+      <Lantern lit className="b-mesa__held" />
+    </Link>
+  );
+}
+
+/** The crew who are in, standing on a plateau of the nearest ridge beside
+    the name on a wide screen (badlands.css places the group on the plateau
+    by its coordinates in the ridge's own drawing). A wanted poster's
+    Western, and the game's own figure. Inside the near layer, so they move
+    with it. */
 function Riders({ names }: { names: string[] }) {
   if (names.length === 0) return null;
   const shown = names.slice(0, RIDERS_SHOWN);
   const more = names.length - shown.length;
   return (
     <div className="b-mesa__riders">
-      {shown.map(n => (
-        <Link key={n} href={`/crew/${n}`} className="b-mesa__rider b-tip" data-tip={`${n} er inni`} aria-label={`${n} er inni. Veggurinn`}>
-          <PlayerHead name={n} size={32} full alt="" />
-          <Lantern lit className="b-mesa__held" />
-        </Link>
-      ))}
-      {more > 0 && <span className="b-mesa__more b-mesa__more--wide">+{more}</span>}
-      {names.length > RIDERS_ON_PHONE && <span className="b-mesa__more b-mesa__more--phone">+{names.length - RIDERS_ON_PHONE}</span>}
+      {shown.map(n => <Rider key={n} name={n} className="b-mesa__rider" />)}
+      {more > 0 && <span className="b-nametag b-mesa__more">+{more}</span>}
     </div>
   );
 }
