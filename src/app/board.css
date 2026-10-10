@@ -324,7 +324,14 @@
   .b-rollcall::before { left: calc(var(--px) * -6); }
   .b-rollcall::after { right: calc(var(--px) * -6); }
 }
-.b-rollcall > .b-hang { display: grid; }
+.b-rollcall > .b-hang { display: grid; position: relative; }
+/* In the game now (crew/page.tsx): a lit lantern hung on a short chain over
+   the poster's corner, and its light warm on the paper, as the lantern burns
+   behind the portraits of whoever is in, in the crew's room. */
+.b-poster__lamp { position: absolute; z-index: 2; top: -3.25rem; right: calc(var(--sp-2) * -1); width: 2rem; pointer-events: none; filter: drop-shadow(0 0 0.75rem rgba(242, 166, 59, 0.7)); }
+.b-poster__lamp::before { content: ''; display: block; width: var(--px); height: 1rem; margin-inline: auto; background: repeating-linear-gradient(180deg, var(--ink-faint) 0 var(--px), transparent var(--px) calc(var(--px) * 2)); }
+.b-poster__lamp .b-lantern { width: 2rem; height: 3rem; }
+.b-rollcall > .b-hang.is-in { filter: drop-shadow(0 calc(var(--px) * 2) 0 rgba(21, 16, 13, 0.55)) drop-shadow(0 0 1.75rem rgba(242, 166, 59, 0.5)); }
 .b-poster--crew { padding: var(--sp-6) var(--sp-3) var(--sp-4); text-decoration: none; }
 /* the torn edge cuts off a ring drawn outside the poster, so it is drawn inside, clear of the tears */
 .b-poster--crew:focus-visible { outline: calc(var(--px) * 2) solid var(--lantern-ink); outline-offset: calc(var(--px) * -6); }
