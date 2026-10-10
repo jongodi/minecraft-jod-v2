@@ -656,3 +656,44 @@ The phone, the figure this repo has always held to, is level. The desktop gap is
 2. **Find the intermittent hydration mismatch (React #418)** that shows on some loads at 360 px on `main` and here alike; something rendered on the server with the time in it, probably.
 3. **Measure the riders with real skins.** minotar's body render was staged here; check the figures' scale with the real ones, and whether the armour layer reads at 12 units wide.
 
+
+---
+
+## Part 6. The evening pass: the rooms, the fire, the keys, and what was underneath
+
+A pass on 10 October 2026 over every page and room at 360 to 1920 px with staged data, and two read-only audits of the code (the home page; the walls and their server), on `improve/evening-pass`.
+
+### What changed, and why
+
+| Where | What | Why, in one sentence |
+|---|---|---|
+| Eftirlýst | The wanted board hangs right under the portraits and the night; the notice strip under it. | The room is named for the posters, and they hung a screen and more down. |
+| The fire | A sign on a post beside the fire says *Einvígi*; the wind toggle is a named button like the way up; below 1024 px both share the row above the fire. | The duel was announced only by a tooltip, which a phone never shows. |
+| The doors | 1, 2 and 3 take Heimurinn, Eftirlýst and Hillan; the numerals show on the lanterns while the doors have the keyboard. A modified click opens a new tab. | The game's own hotbar keys. |
+| Off the trail | The 404 and the error page stand under the roll call's night, the dark lantern at the ridge's foot. | A wrong turn was a black page any site could have. |
+| The shelf, the posters, the roll call | The empty counter is the game's empty slot; the week's row lines up with second and third; a bare wall says so once. | Each read as a small mistake. |
+| The places' rail | "11 staðir og 4 stöðvar". | It counted, then explained what each tag already says. |
+| Link cards | JOÐ's seal on the night's and the member's cards (`src/lib/og-seal.tsx`). | Part 3's "worth doing later". |
+| Fixes | Icelandic dates on every browser (`formatDate` written out); a room swapped after a link closes at once; the wind toggle tells the truth after a link; heads that failed before hydration fall back; the town's lights wait for the world; the stats' note no longer says the server is off when it is on; status and stats capped in time, and a cached page's old status asked again at once. | Bugs found by looking and by the audits. |
+| The walls | The owner's wall is drawn whole from the first paint (session seeded from the server); the pin slot holds still while it pins; no refetch that could blank a wall; signs memoised; screen-reader names for what tooltips said; unknown places refused; the roll call's pictures fetched at their size. | The second audit. |
+| The server | The play night's answers read once and together; the walls in one MGET; pages read their night, place or wall once per request; the member card kept five minutes; the status fallback trimmed; the play-night bookkeeping after the answer. | Round trips nobody needed. |
+
+### Measured
+
+Production builds of `main` (`14849d6`) and the branch, same machine.
+
+| | `main` | this branch |
+|---|---|---|
+| First Load JS `/` | 140 kB | 141 kB |
+| `/crew`, `/crew/[username]` | 133, 156 kB | 134, 157 kB |
+| Scroll probe, phone 390 × 844, 4× CPU | mean 6.0 ms, p95 9.3 ms, worst 44.7 ms, 1 long | mean 5.8 ms, p95 8.7 ms, worst 15.1 ms, 0 long |
+| Scroll probe, desktop 1440 × 900 | style 658 ms, script 412 ms | style 511 ms, script 329 ms |
+
+`scrollWidth` equals the viewport on `/`, `/crew`, a wall, `/kvold`, `/stadur/2` and the 404 at 360, 390, 768, 1024, 1440 and 1920; no console errors. Tests: 264 (lint, `tsc` and the build clean).
+
+### Worth doing later
+
+1. **A sign-in limit per member that cannot be used to lock a member out.** One was tried and taken out again: twenty wrong guesses from anyone shut the owner out for an hour. The limit per address stays (Vercel overwrites `x-forwarded-for`, so it is the visitor's own).
+2. **A sign-in link that spends a use only on a press.** Chat apps and mail scanners that open a link to preview it spend its uses now.
+3. **Check the owner's own wall signed in**: the seeded session was reasoned through and checked as a visitor, not in a member's browser.
+4. **Pictures uploaded and never pinned** stay in storage; a daily sweep of `crew/` files nothing points at.
