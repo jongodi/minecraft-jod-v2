@@ -204,11 +204,14 @@ export async function writeNight(night: Night): Promise<void> {
   await (await redis()).hset(NIGHTS_KEY, night.id, JSON.stringify(night));
 }
 
-export async function readVotes(id: string): Promise<Votes> {
-  const raw = await (await redis()).hgetall(votesKey(id));
+function votesOf(raw: Record<string, string>): Votes {
   const votes: Votes = {};
   for (const [u, v] of Object.entries(raw)) { try { votes[u] = JSON.parse(v) as string[]; } catch { /* skip */ } }
   return votes;
+}
+
+export async function readVotes(id: string): Promise<Votes> {
+  return votesOf(await (await redis()).hgetall(votesKey(id)));
 }
 
 export async function writeVote(night: Night, username: string, optionIds: string[], now = Date.now()): Promise<void> {
@@ -245,9 +248,13 @@ export interface NightState { night: Night; votes: Votes; seen: string[] }
     put out, or settled and burnt down, is cleared away. */
 export async function currentNights(now = Date.now()): Promise<{ all: Night[]; shown: NightState[] }> {
   const r = await redis();
+  const read = await readNights();
+  /* every night's answers at once, and read once: they were read one night
+     after another, then read again for the nights shown */
+  const answers = new Map(await Promise.all(read.map(async n => [n.id, votesOf(await r.hgetall(votesKey(n.id)))] as const)));
   const all: Night[] = [];
-  for (let night of await readNights()) {
-    const auto = autoChoice(night, await readVotes(night.id), now);
+  for (let night of read) {
+    const auto = autoChoice(night, answers.get(night.id) ?? {}, now);
     if (auto === 'out') { night = { ...night, cancelled: true }; await writeNight(night); }
     else if (auto) { night = { ...night, chosen: auto.id, chosenBy: 'auto' }; await writeNight(night); }
     /* an unsettled one is kept for the daily job, unless it never came round in a month */
@@ -255,12 +262,11 @@ export async function currentNights(now = Date.now()): Promise<{ all: Night[]; s
     if (gone) { await r.hdel(NIGHTS_KEY, night.id); continue; }
     all.push(night);
   }
-  const shown: NightState[] = [];
-  for (const night of shownNights(all, now)) {
+  const shown: NightState[] = await Promise.all(shownNights(all, now).map(async night => {
     const phase = phaseOf(night, now);
-    const seen = phase === 'live' || phase === 'over' ? await readSeen(night.id) : [];
-    shown.push({ night, votes: await readVotes(night.id), seen });
-  }
+    const seen = phase === 'live' || phase === 'over' ? await r.smembers(seenKey(night.id)) : [];
+    return { night, votes: answers.get(night.id) ?? {}, seen };
+  }));
   return { all, shown };
 }
 
