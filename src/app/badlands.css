@@ -2263,8 +2263,11 @@ html.is-map-full { overflow: hidden; }
   0%   { transform: translate(0, 0) scale(0.6); opacity: 0; }
   10%  { opacity: 0.55; }
   60%  { opacity: 0.3; }
-  100% { transform: translate(2.5rem, -11rem) scale(1.9); opacity: 0; }
+  100% { transform: translate(2.25rem, -9rem) scale(1.8); opacity: 0; }
 }
+/* on a wide screen the band keeps a stretch of night over the fire for the
+   smoke, so it thins out under the stars rather than over the world's places */
+@media (min-width: 1024px) { .b-foot { padding-top: 6rem; } }
 /* Below 1024 px the way up and the wind share the row over the fire: the
    smoke gets a stretch of sky between them and the fire, and rises only
    that far, so it never passes through the buttons. */
