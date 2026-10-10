@@ -1726,7 +1726,8 @@ html.is-map-full { overflow: hidden; }
    words above it. Only the form for lighting one keeps an edge (below). A
    night opened from its own link (/kvold/<id>) is lit up for a moment. */
 .b-night { display: grid; gap: var(--sp-4); margin-block: var(--sp-7); }
-.b-night--none { grid-template-columns: auto minmax(0, 1fr) auto; align-items: end; column-gap: var(--sp-5); }
+/* no night yet: the dead fire, the line, and the way to light one right after it, read as one sentence rather than a button across the room */
+.b-night--none { grid-template-columns: auto minmax(0, max-content) auto; justify-content: start; align-items: end; column-gap: var(--sp-5); }
 .b-night.is-picked { padding: var(--sp-4); margin-inline: calc(var(--sp-4) * -1); background: var(--veil); box-shadow: 0 0 0 var(--px) var(--lantern-glow); }
 /* a night under way says so in the green the server's lantern uses for on; amber is only for what can be pressed */
 .b-night--live .b-night__kicker { color: var(--online); }
@@ -1981,7 +1982,31 @@ html.is-map-full { overflow: hidden; }
   animation: b-flicker var(--dur-lantern) ease-in-out infinite;
   pointer-events: none;
 }
-.b-foot__fire { display: block; padding: 0; border: 0; background: none; cursor: pointer; }
+/* The duel's door is the fire and the sign planted beside it. The sign's
+   width is kept as an empty margin on the fire's other side, so the fire
+   stays the middle of the band and its light falls where it burns. */
+.b-foot__fire { --sign: 7rem; display: flex; align-items: flex-end; margin-left: var(--sign); padding: 0; border: 0; background: none; cursor: pointer; }
+@media (max-width: 719px) { .b-foot__fire { --sign: 6.25rem; } }
+/* a short plank on a post, the word burnt in lantern light, as the world's
+   lantern has its sign nailed under it; the post stands in the ground the
+   fire stands on */
+.b-foot__sign { display: flex; flex-direction: column; align-items: center; width: var(--sign); color: var(--lantern); }
+.b-foot__board {
+  padding: var(--sp-1) var(--sp-2);
+  background: var(--plank);
+  clip-path: var(--notch);
+  box-shadow: inset 0 0 0 var(--px) rgba(21, 16, 13, 0.35);
+  font-family: var(--font-data);
+  font-size: var(--fs-data);
+  line-height: 1.5;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  text-shadow: 0 var(--px) 0 var(--wood-dark);
+  transition: color var(--dur-1) var(--ease-out);
+}
+.b-foot__sign::after { content: ''; width: calc(var(--px) * 3); height: 1.5rem; background: var(--plank-up); box-shadow: var(--px) 0 0 rgba(21, 16, 13, 0.45); }
+.b-foot__fire:focus-visible .b-foot__board { color: var(--paper); outline: var(--px) solid var(--lantern); outline-offset: var(--px); clip-path: none; }
+@media (hover: hover) { .b-foot__fire:hover .b-foot__board { color: var(--paper); } }
 .b-foot__fire:focus-visible { outline: none; }
 .b-foot__fire:focus-visible .b-fire { outline: var(--px) solid var(--lantern); outline-offset: var(--px); }
 .b-foot__fire:focus-visible .b-fire { transform: translateY(calc(var(--px) * -1)); }
@@ -2006,12 +2031,22 @@ html.is-map-full { overflow: hidden; }
 }
 .b-ridge svg { width: 100%; height: 100%; display: block; shape-rendering: crispEdges; }
 
-/* the wind-and-fire toggle */
+/* the wind-and-fire toggle: the same small button as the way up on the
+   fire's other side, so the camp reads as one row; a bare glyph there was
+   the one control on the page with no edge, and easy to miss. On a phone the
+   two share the row above the fire, so the toggle keeps its glyph and its
+   frame and lets the name go to a screen reader. */
 .b-foot__nav { grid-area: nav; display: flex; align-items: center; }
-.b-foot__sound { display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2); width: var(--tap); height: var(--tap); color: var(--lantern); }
-.b-foot__sound svg { width: 1.25rem; height: 1.25rem; shape-rendering: crispEdges; }
-@media (hover: hover) { .b-foot__sound:hover { background: rgba(242, 166, 59, 0.12); } }
-.b-foot__sound.is-on { background: var(--lantern); color: var(--night); }
+.b-foot__sound { display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2); min-width: var(--tap); min-height: 2.25rem; padding: var(--sp-1) var(--sp-3); border: var(--px) solid var(--lantern); color: var(--lantern); font-family: var(--font-data); font-size: var(--fs-data); letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; transition: background var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out); }
+@media (pointer: coarse) { .b-foot__sound { min-height: var(--tap); } }
+.b-foot__sound svg { width: 1rem; height: 1rem; flex-shrink: 0; shape-rendering: crispEdges; }
+.b-foot__sound:focus-visible { background: var(--lantern); color: var(--night); }
+@media (hover: hover) { .b-foot__sound:hover { background: var(--lantern); color: var(--night); } }
+.b-foot__sound.is-on { background: var(--lantern); color: var(--night); box-shadow: var(--bevel); }
+@media (max-width: 719px) {
+  .b-foot__sound { padding-inline: 0; }
+  .b-sound__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+}
 
 /* the way back up the evening */
 .b-foot__up { grid-area: up; gap: var(--sp-2); }
