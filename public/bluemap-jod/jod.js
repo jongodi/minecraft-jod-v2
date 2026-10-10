@@ -381,6 +381,30 @@
       }
     });
 
+    /* Where the map is looking, for the page's F3 lines: the point the
+       camera holds, as F3 writes a block's position, and the way the camera
+       faces, by the game's compass (north is towards negative Z). A few times
+       a second at most, and only when it changed. */
+    let lastCamera = '';
+    let cameraTimer = 0;
+    const sendCamera = () => {
+      cameraTimer = 0;
+      const p = cm.position;
+      const m = viewer.camera?.matrixWorld?.elements;
+      const fx = m ? -m[8] : 0;
+      const fz = m ? -m[10] : -1;
+      const facing = Math.abs(fx) > Math.abs(fz) ? (fx > 0 ? 'east' : 'west') : (fz > 0 ? 'south' : 'north');
+      const at = { x: Math.floor(p.x), y: Math.floor(p.y), z: Math.floor(p.z), facing };
+      const key = `${at.x} ${at.y} ${at.z} ${facing}`;
+      if (key === lastCamera) return;
+      lastCamera = key;
+      tell('camera', at);
+    };
+    if (embedded) {
+      app.events.addEventListener('bluemapCameraMoved', () => { if (!cameraTimer) cameraTimer = setTimeout(sendCamera, 150); });
+      sendCamera();
+    }
+
     keepSmooth(app);
     if (params.has('maelir')) meter(app);
 

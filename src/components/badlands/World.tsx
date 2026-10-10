@@ -38,6 +38,7 @@ interface JodViewer {
 }
 type ViewerMessage = {
   source?: string; type?: string; tiles?: number; id?: number; on?: boolean; open?: boolean;
+  x?: number; y?: number; z?: number; facing?: 'north' | 'south' | 'east' | 'west';
   /** follow: who the camera keeps with now, and who it let go of for walking out of the world */
   name?: string | null; outside?: string;
 };
@@ -92,6 +93,9 @@ function Signpost({ sub }: { sub: string }) {
   );
 }
 
+/* the game's compass in Icelandic: north is towards negative Z */
+const FACING: Record<string, string> = { north: 'norður', south: 'suður', east: 'austur', west: 'vestur' };
+
 interface Props {
   plates: Plate[];
   /** the places, zones and paths, as the admin left them, drawn into the page on the server */
@@ -129,6 +133,8 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
   /* the viewer's map has loaded and window.jod answers */
   const [viewer, setViewer]   = useState(false);
   const [tiles, setTiles]     = useState(0);
+  /* where the live map is looking, for the F3 lines */
+  const [camera, setCamera]   = useState<{ x: number; y: number; z: number; facing: string } | null>(null);
   const [night, setNight]     = useState(false);
   /* BlueMap's own menu is open along the left edge of the frame */
   const [menu, setMenu]       = useState(false);
@@ -261,6 +267,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
       if (m?.source !== 'jod-map') return;
       if (m.type === 'hello') setViewer(true);
       else if (m.type === 'progress') setTiles(m.tiles ?? 0);
+      else if (m.type === 'camera' && typeof m.x === 'number' && typeof m.y === 'number' && typeof m.z === 'number') setCamera({ x: m.x, y: m.y, z: m.z, facing: m.facing ?? 'north' });
       else if (m.type === 'ready') setReady(true);
       else if (m.type === 'night') setNight(!!m.on);
       else if (m.type === 'menu') setMenu(!!m.open);
@@ -595,6 +602,15 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
             and at its end the other bases, each a lit lantern that leads to a
             3D map of its own (/kort/<id>): places too, only further off. */}
         <div ref={places} className="b-places">
+          {/* The game's F3 lines while the live map is up: the block the map
+              holds and the way it faces, as a player reads them to find the
+              same spot in the game, each line on its own veil of dark. */}
+          {camera && ready && !still && !drawn && (
+            <p className="b-f3" aria-label={`Kortið horfir á ${camera.x}, ${camera.y}, ${camera.z} og snýr í ${FACING[camera.facing] ?? camera.facing}`}>
+              <span>XYZ: {camera.x} / {camera.y} / {camera.z}</span>
+              <span>Snýr í {FACING[camera.facing] ?? camera.facing}</span>
+            </p>
+          )}
           {/* a count, as the shelf counts its crates: each base's own tag already says it has its own map, and the rail's order says where */}
           <p className="b-places__head">{config.locations.length} {plural(config.locations.length, 'staður', 'staðir')}{bases.length > 0 && ` og ${bases.length} ${plural(bases.length, 'stöð', 'stöðvar')}`}</p>
           <Rail label="Staðir og stöðvar" prevLabel="Fyrri staðir" nextLabel="Næstu staðir" count={config.locations.length + bases.length}>

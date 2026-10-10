@@ -1384,6 +1384,11 @@ html.is-map-full { overflow: hidden; }
 @media (max-width: 899px) { .b-places { padding-bottom: var(--sp-3); } }
 /* on a plate, the hard band of shadow the game lays its chat on: the live map
    under it is as bright as its sky, and the still's dark foot is gone with the still */
+/* The F3 lines (World.tsx): the game's debug text, white on a veil of dark,
+   each line on its own strip, left over the places while the live map is up.
+   The figures are live, so they are the bitmap face. */
+.b-f3 { display: grid; justify-items: start; gap: var(--px); margin-bottom: var(--sp-2); pointer-events: none; }
+.b-f3 > span { padding: var(--px) var(--sp-1); background: rgba(14, 12, 9, 0.6); color: #E8E8E8; font-family: var(--font-data); font-size: var(--fs-data); line-height: 1.2; white-space: nowrap; text-shadow: var(--px) var(--px) 0 rgba(14, 12, 9, 0.8); }
 .b-places__head { justify-self: start; padding: var(--px) var(--sp-2); background: var(--plate); clip-path: var(--notch); font-size: var(--fs-sm); color: var(--paper); text-shadow: 0 var(--px) 0 var(--night); }
 /* min-width: a grid item would otherwise grow to fit every chip instead of scrolling */
 .b-railwrap { position: relative; min-width: 0; }
