@@ -1,8 +1,9 @@
 /* A play night as a calendar entry (RFC 5545), so the phone's own calendar
    can carry it: /kvold/<id>/dagatal.ics. Server only, but pure. */
 import { optionOf, type Night } from '@/lib/play-night';
+import { siteUrl } from '@/lib/email';
+import { SERVER_IP } from '@/components/badlands/data';
 
-const SITE = 'https://jodcraft.world';
 /** how long the entry blocks out: the evening is counted as six hours for who came, but a calendar wants the gathering itself */
 export const ENTRY_MS = 3 * 3600_000;
 
@@ -33,7 +34,7 @@ export function icsOf(night: Night, now = Date.now()): string | null {
   const chosen = optionOf(night, night.chosen);
   if (!chosen) return null;
   const start = Date.parse(chosen.at);
-  const url = `${SITE}/kvold/${night.id}#hopur`;
+  const url = `${siteUrl()}/kvold/${night.id}#hopur`;
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
@@ -41,13 +42,14 @@ export function icsOf(night: Night, now = Date.now()): string | null {
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
     'BEGIN:VEVENT',
+    /* the entry's name for good, the same whichever address served it, so a calendar that fetches it again updates it rather than adding a second */
     `UID:spilakvold-${night.id}@jodcraft.world`,
     `DTSTAMP:${stamp(now)}`,
     `DTSTART:${stamp(start)}`,
     `DTEND:${stamp(start + ENTRY_MS)}`,
     `SUMMARY:${escapeText(night.note ? `Spilakvöld á JOÐ: ${night.note}` : 'Spilakvöld á JOÐ')}`,
     `DESCRIPTION:${escapeText(`${night.by} kveikti bálið. Hverjir mæta, og kveikt á þjóninum, á ${url}`)}`,
-    'LOCATION:play.jodcraft.world',
+    `LOCATION:${SERVER_IP}`,
     `URL:${url}`,
     'END:VEVENT',
     'END:VCALENDAR',
