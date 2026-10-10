@@ -77,7 +77,7 @@
 .b-poster__rule { width: 100%; height: var(--px); margin-top: var(--sp-3); background: var(--ink); opacity: 0.22; }
 .b-poster__rest { width: 100%; margin-top: var(--sp-1); list-style: none; display: grid; }
 /* a row under the rule: the rank and the head down the side, the name with its number on the line beneath; at the bitmap face's size the two did not share a line on a poster this wide */
-.b-poster__row { display: grid; grid-template-columns: auto 1rem minmax(0, 1fr); align-items: center; gap: 0 var(--sp-2); padding-block: var(--sp-1); text-decoration: none; color: var(--ink); text-align: left; }
+.b-poster__row { display: grid; grid-template-columns: 1.5rem 1rem minmax(0, 1fr); align-items: center; gap: 0 var(--sp-2); padding-block: var(--sp-1); text-decoration: none; color: var(--ink); text-align: left; }
 .b-poster__row .b-poster__rank, .b-poster__row .b-poster__head { grid-row: span 2; }
 .b-poster__row .b-poster__who, .b-poster__row .b-poster__num { grid-column: 3; }
 .b-poster__row:focus-visible { color: var(--lantern-ink); }
@@ -90,8 +90,12 @@
 /* the week's outlaw, under the three of all time: a dashed rule in red ink, a small heading, one row without a rank */
 .b-poster__rule--week { height: 0; margin-top: var(--sp-3); background: none; border-top: var(--px) dashed var(--tc-red); opacity: 0.45; }
 .b-poster__weekhead { width: 100%; margin-top: var(--sp-2); font-weight: 600; font-size: var(--fs-sm); letter-spacing: 0.04em; text-transform: uppercase; color: var(--tc-red); text-align: left; }
-.b-poster__row--week { grid-template-columns: 1rem minmax(0, 1fr); }
-.b-poster__row--week .b-poster__who, .b-poster__row--week .b-poster__num { grid-column: 2; }
+/* The full width, as its label and the ranked rows above are: the poster
+   centres what it holds, and the week's row stood shrunk in the middle, off
+   every edge above it. The rank's column is a fixed width so the week's
+   head and name stand in the same columns as the ranked ones, with no rank. */
+.b-poster__row--week { width: 100%; }
+.b-poster__row--week .b-poster__head { grid-column: 2; grid-row: span 2; }
 .b-empty { padding: var(--sp-4) 0; font-size: var(--fs-md); color: var(--text-faint); }
 .b-paper .b-empty { color: var(--ink-faint); }
 
