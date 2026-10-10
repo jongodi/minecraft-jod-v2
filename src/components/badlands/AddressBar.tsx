@@ -56,6 +56,15 @@ function BarLantern({ server, home }: { server: ServerState; home: boolean }) {
   );
 }
 
+/** The experience bar, as the game hangs it over the hotbar: green, in
+    segments, filling as the visitor goes on. Here it fills with the page,
+    the evening at the top and the campfire at the foot, so a glance says
+    how far down the night is. Drawn twice, under the plank on a wide screen
+    and over the hotbar on a phone; badlands.css shows the one that fits. */
+function Xp() {
+  return <span className="b-xp" aria-hidden="true"><span className="b-xp__fill" /></span>;
+}
+
 /** The bar: the mark, the three doors as lanterns, the server's lantern and
     the address with its copy action. On the home page it lies over the sunset
     and takes a surface once the page has scrolled; elsewhere it is solid from
@@ -70,6 +79,29 @@ export default function AddressBar({ links, activeId, onDoor, always = false, st
   const server = useServerStatus(status);
   const path = usePathname();
   const router = useRouter();
+
+  /* The experience bar fills with the page in CSS (badlands.css, scroll
+     timeline). A browser without scroll timelines gets the same from here:
+     one transform per frame on the bar's fill, written only when it moves. */
+  useEffect(() => {
+    if (CSS.supports('animation-timeline: scroll()')) return;
+    let raf = 0;
+    let last = -1;
+    const fill = () => {
+      raf = 0;
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      const t = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
+      const next = Math.round(t * 1000);
+      if (next === last) return;
+      last = next;
+      document.querySelectorAll<HTMLElement>('.b-xp__fill').forEach(el => { el.style.transform = `scaleX(${t})`; });
+    };
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(fill); };
+    fill();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+    return () => { window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', onScroll); cancelAnimationFrame(raf); };
+  }, []);
 
   /* The game's hotbar keys: 1, 2 and 3 take the three doors, as they take
      the three first slots in the game. Not while a field is being typed in,
@@ -152,6 +184,7 @@ export default function AddressBar({ links, activeId, onDoor, always = false, st
         </div>
         {/* the ground under the plank: the same slice of strata that divides the hours */}
         <Strata className="b-bar__strata" />
+        <Xp />
       </header>
       <ToastHost />
 
@@ -159,6 +192,7 @@ export default function AddressBar({ links, activeId, onDoor, always = false, st
           its slots, the one the visitor is behind framed the way the game
           frames the slot in hand. */}
       <nav className="b-hotbar" aria-label="Efnisyfirlit">
+        <Xp />
         {links.map((l, i) => door(l, 'b-slot', i))}
       </nav>
     </>

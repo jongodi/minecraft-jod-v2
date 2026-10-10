@@ -625,6 +625,49 @@
 @media (hover: hover) { .b-slot:hover { color: var(--paper); } }
 .b-slot:focus-visible { outline: var(--px) solid var(--lantern); outline-offset: calc(var(--px) * -4); }
 
+/* ─── the experience bar ─────────────────────────────────────────
+   The game's own, over the hotbar: a dark track in eighteen segments and the
+   green that fills it, light along its top edge and shaded along its foot.
+   Here it fills with the page (AddressBar.tsx), so the evening at the top is
+   an empty bar and the campfire a full one. Over the phone's hotbar it is the
+   strip's first row, as wide as the slots; on a wide screen it hangs centred
+   under the plank, the width of the game's own bar at two pixels a pixel,
+   and comes with the plank's surface. The fill is one transform on the
+   compositor, driven by the scroll itself where the browser can. */
+.b-xp {
+  position: relative;
+  display: block;
+  height: var(--xp, 10px);
+  background: #0E0C09;
+  box-shadow: 0 0 0 var(--px) rgba(0, 0, 0, 0.55);
+  overflow: clip;
+  pointer-events: none;
+}
+.b-xp__fill {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, #C8FF7A 0 var(--px), #80E020 var(--px) calc(100% - var(--px)), #3F7A12 calc(100% - var(--px)));
+  transform: scaleX(0);
+  transform-origin: left;
+}
+/* the segments: a pixel of the track between each eighteenth, over the green as over the dark */
+.b-xp::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(90deg, transparent 0 calc(100% / 18 - var(--px)), rgba(14, 12, 9, 0.9) calc(100% / 18 - var(--px)) calc(100% / 18));
+}
+@supports (animation-timeline: scroll()) {
+  .b-xp__fill { animation: b-xp-fill linear both; animation-timeline: scroll(root); }
+}
+@keyframes b-xp-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.b-hotbar > .b-xp { grid-column: 1 / -1; margin: 0 0 var(--sp-1); }
+/* a phone on its side has no height to give it */
+@media (max-height: 500px) { .b-hotbar > .b-xp { display: none; } }
+.b-bar > .b-xp { position: absolute; left: 50%; top: calc(100% + 12px + var(--sp-2)); width: 22.75rem; translate: -50% 0; opacity: 0; transition: opacity var(--dur-3) var(--ease-out); }
+.b-bar.is-solid > .b-xp { opacity: 1; }
+@media (max-width: 759px) { .b-bar > .b-xp { display: none; } }
+
 /* ─── arrival: sunset over the mesa ───────────────────────────── */
 .b-hero {
   --mesa-h: clamp(9rem, 32svh, 20rem);
