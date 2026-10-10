@@ -521,6 +521,12 @@
   white-space: nowrap;
 }
 .b-door .b-lantern { width: 1.1rem; height: 1.65rem; }
+/* The hotbar key that takes the door (AddressBar.tsx), small on the
+   lantern's foot as the game writes a stack's count on a slot: shown only
+   while the doors have the keyboard's focus, for the hands already on it. */
+.b-door { position: relative; }
+.b-door__key { position: absolute; left: 0.75rem; bottom: var(--sp-1); display: none; font-size: var(--fs-chip); line-height: 1; color: var(--paper); text-shadow: var(--px) var(--px) 0 var(--night); }
+.b-doors:has(:focus-visible) .b-door__key { display: block; }
 @media (hover: hover) { .b-door:hover { color: var(--lantern); } }
 .b-door.is-here { color: var(--lantern); border-bottom-color: var(--lantern); }
 

@@ -11,7 +11,7 @@ import AddressBar from './AddressBar';
 import Hero from './Hero';
 import World from './World';
 import Footer from './Footer';
-import { SECTIONS, isRoom, type DoorId, type RoomId } from './data';
+import { SECTIONS, isRoom, plainClick, type DoorId, type RoomId } from './data';
 import { seedStatus, useEffectsAllowed, useReducedMotionPref, useScrollSpy, useServerStatus } from './hooks';
 import { seedNights } from './night';
 import { seasonClass, useSeason } from './Season';
@@ -98,7 +98,7 @@ export default function BadlandsHome({ syncedOn, bases, initial }: { syncedOn: s
      already said #hopur: no hashchange, and no element by that id. */
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
-      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      if (e.defaultPrevented || !plainClick(e)) return;
       const id = (e.target as Element | null)?.closest?.('a[href^="#"]')?.getAttribute('href')?.slice(1);
       if (!id || !(isRoom(id) || id === 'heimur')) return;
       e.preventDefault();

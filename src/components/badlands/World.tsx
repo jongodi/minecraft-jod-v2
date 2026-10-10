@@ -12,7 +12,7 @@ import { plural } from '@/lib/format';
 import Drawer from './Drawer';
 import PlayerHead from './PlayerHead';
 import Rail, { revealRailItem } from './Rail';
-import { CREW, MAP_LIGHTS, MAP_POSTER, MAP_URL, SITE_NAME, handCase, titleCase, type Plate, type RoomId } from './data';
+import { CREW, MAP_LIGHTS, MAP_POSTER, MAP_URL, SITE_NAME, handCase, plainClick, titleCase, type Plate, type RoomId } from './data';
 import type { ServerState } from './hooks';
 import { useEffectsAllowed, useInert, useMediaQuery } from './hooks';
 import { photoProps, PHOTO_SIZES } from './photo';
@@ -91,9 +91,6 @@ function Signpost({ sub }: { sub: string }) {
     </>
   );
 }
-
-/* a plain click: anything with a modifier keeps the link's own meaning (a new tab) */
-const plainClick = (e: React.MouseEvent) => e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey;
 
 interface Props {
   plates: Plate[];
