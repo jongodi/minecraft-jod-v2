@@ -48,9 +48,10 @@ export default function Print({ username, entry, places, me, isOwner, coverPhoto
   /* the light a lantern just lit throws across the board: where it stands, and a count so a second lighting starts it again */
   const [light, setLight] = useState<{ x: number; y: number; n: number } | null>(null);
   const mounted = useMounted();
-  /* the server has no idea what the browser's locale draws; until mounted the plain date stands in */
+  /* how long ago depends on the clock, and the server's is not the browser's; until mounted the plain date stands in.
+     A date is written out the same everywhere (formatDate), so it needs no wait. */
   const age  = (iso: string) => (mounted ? formatAge(iso) : iso.slice(0, 10));
-  const date = (iso: string) => (mounted ? formatDate(iso) : iso.slice(0, 10));
+  const date = formatDate;
 
   const place = entry.placeId !== null ? places.find(p => p.id === entry.placeId) ?? null : null;
   const lit = !!me && entry.lanterns.some(n => sameUser(n, me));
