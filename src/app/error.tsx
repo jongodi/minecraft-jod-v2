@@ -20,6 +20,8 @@ export default function PageError({ error, reset }: { error: Error & { digest?: 
       cause="Eitthvað fór úrskeiðis meðan síðan var teiknuð."
       actions={<>
         <button type="button" className="b-btn b-btn--solid" onClick={retry}>Reyna aftur</button>
+        {/* a whole new load, not the router: what broke may be the page's own state */}
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
         <a href="/" className="b-btn">Titilskjár</a>
       </>}
     >
