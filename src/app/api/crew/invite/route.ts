@@ -3,7 +3,7 @@ import { badJson, jsonObject } from '@/lib/http';
 import { consumeInvite, createCrewSession, canonicalUsername, isCrewUsername, CREW_COOKIE, SESSION_TTL } from '@/lib/crew';
 import { mailSignInLink } from '@/lib/crew-email';
 import { canSendEmail } from '@/lib/email';
-import { checkRateLimit, clearRateLimit } from '@/lib/rateLimit';
+import { checkRateLimit, clearRateLimit, clientKey } from '@/lib/rateLimit';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
     /api/crew/invite?lykill=… Opening it spends one of its uses, signs this
     browser in for a year and sends it to the member's wall. */
 export async function GET(req: NextRequest) {
-  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+  const ip = clientKey(req.headers);
   const { limited } = await checkRateLimit(ip, 'crew-invite');
   if (limited) return NextResponse.json({ error: 'Of margar tilraunir. Reyndu aftur síðar.' }, { status: 429 });
 
@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
     the answer takes does not tell either. A few an hour per member, so
     nobody's inbox can be filled. */
 export async function POST(req: NextRequest) {
-  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+  const ip = clientKey(req.headers);
   if ((await checkRateLimit(ip, 'crew-mail-link')).limited) return NextResponse.json({ error: 'Of margar tilraunir. Reyndu aftur síðar.' }, { status: 429 });
 
   const body = await jsonObject(req);

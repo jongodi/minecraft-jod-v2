@@ -9,6 +9,27 @@ export interface RateLimitResult {
   remaining: number;
 }
 
+/** Who is asking, as the limits count them: the visitor's own address
+    (Vercel writes x-forwarded-for itself), with an IPv6 address taken as its
+    /64. One connection is handed a whole /64 and may pick any address in it,
+    so counting single addresses let one visitor guess without limit. */
+export function clientKey(headers: Headers): string {
+  return addressKey(headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown');
+}
+
+export function addressKey(ip: string): string {
+  if (!ip.includes(':')) return ip;
+  const mapped = ip.match(/::ffff:(\d{1,3}(?:\.\d{1,3}){3})$/i);
+  if (mapped) return mapped[1];
+  const bare = ip.replace(/^\[|\](?::\d+)?$/g, '').split('%')[0].toLowerCase();
+  const [head, tail] = bare.split('::');
+  const front = head ? head.split(':') : [];
+  const back = tail ? tail.split(':') : [];
+  const groups = tail === undefined ? front : [...front, ...Array(Math.max(0, 8 - front.length - back.length)).fill('0'), ...back];
+  if (groups.length !== 8 || groups.some(g => !/^[0-9a-f]{1,4}$/.test(g))) return bare;
+  return `${groups.slice(0, 4).map(g => parseInt(g, 16).toString(16)).join(':')}::/64`;
+}
+
 // In-memory fallback for environments without Redis
 const memHits = new Map<string, number[]>();
 
