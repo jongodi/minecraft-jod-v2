@@ -1,13 +1,13 @@
 'use client';
 
-import { memo, useEffect, useState } from 'react';
+import { memo, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { Campfire, ChevronIcon } from './Bits';
 import { Ridge } from './Mesa';
 import { SERVER_IP, SITE_NAME } from './data';
 import AmbienceToggle from '@/effects/AmbienceToggle';
-import { useBackdropClose, useScrollLock } from './hooks';
+import { useBackCloses, useBackdropClose, useScrollLock } from './hooks';
 import { YuleLad, seasonClass, useSeason } from './Season';
 import type { Season } from '@/lib/season';
 
@@ -30,7 +30,9 @@ function Footer({ season: initial }: { season?: Season } = {}) {
   const [duel, setDuel] = useState(false);
   const season = useSeason(initial);
   useScrollLock(duel);
-  const backdrop = useBackdropClose(() => setDuel(false));
+  const closeDuel = useCallback(() => setDuel(false), []);
+  const backdrop = useBackdropClose(closeDuel);
+  useBackCloses(duel, closeDuel);
 
   useEffect(() => {
     if (!duel) return;

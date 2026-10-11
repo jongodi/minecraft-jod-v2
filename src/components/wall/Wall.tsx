@@ -18,7 +18,7 @@ import PlayerHead from '@/components/badlands/PlayerHead';
 import { CloseIcon, Seal, Star } from '@/components/badlands/Bits';
 import { PAGE_LINKS, STAT_TABS } from '@/components/badlands/data';
 import NightSky from '@/components/badlands/NightSky';
-import { seedSession, useBackdropClose, useCrewSession, useDialogFocus, useScrollLock, type CrewSessionSeed } from '@/components/badlands/hooks';
+import { seedSession, useBackCloses, useBackdropClose, useCrewSession, useDialogFocus, useScrollLock, type CrewSessionSeed } from '@/components/badlands/hooks';
 import { photoProps, PHOTO_SIZES } from '@/components/badlands/photo';
 import Composer from './Composer';
 import Print from './Print';
@@ -111,14 +111,16 @@ function LoginModal({ username, onSuccess, onClose }: { username: string; onSucc
   );
 }
 
-/* The wall's dialogs share one frame: Escape closes it, the page stays
-   still behind it, and only a click that starts on the dark closes it, so a
-   password dragged-to-select past the paper's edge is not thrown away. */
+/* The wall's dialogs share one frame: Escape and the phone's back gesture
+   close it, the page stays still behind it, and only a click that starts on
+   the dark closes it, so a password dragged-to-select past the paper's edge
+   is not thrown away. */
 function useWallDialog(onClose: () => void) {
   /* the dialog itself, which holds focus until a field inside can take it */
   const box = useRef<HTMLDivElement>(null);
   useScrollLock();
   useDialogFocus(box);
+  useBackCloses(true, onClose);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', onKey);
