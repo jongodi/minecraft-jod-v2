@@ -14,7 +14,7 @@ import PlayerHead from './PlayerHead';
 import Rail, { revealRailItem } from './Rail';
 import { CREW, MAP_LIGHTS, MAP_POSTER, MAP_URL, SITE_NAME, handCase, plainClick, titleCase, type Plate, type RoomId } from './data';
 import type { ServerState } from './hooks';
-import { useEffectsAllowed, useInert, useMediaQuery } from './hooks';
+import { modalOpen, useEffectsAllowed, useInert, useMediaQuery } from './hooks';
 import { photoProps, PHOTO_SIZES } from './photo';
 import { toast } from './Toast';
 
@@ -157,6 +157,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
   const places = useInert<HTMLDivElement>(shut);
   const tools  = useInert<HTMLDivElement>(shut);
   const mid    = useInert<HTMLDivElement>(shut);
+  const back   = useInert<HTMLButtonElement>(shut);
   /* On phones the viewer opens full screen instead of inside the page, so
      BlueMap's drag and pinch never fight the page scroll. */
   const phone = useMediaQuery('(max-width: 899px)');
@@ -365,7 +366,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
     if (!full) return;
     const onFs = () => { if (!document.fullscreenElement && full === 'native') setFull(false); };
     const onPop = () => { if (full === 'overlay' && !(window.history.state as { jodFull?: boolean } | null)?.jodFull) setFull(false); };
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && full === 'overlay') closeFull(); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && full === 'overlay' && !modalOpen()) closeFull(); };
     document.addEventListener('fullscreenchange', onFs);
     window.addEventListener('popstate', onPop);
     window.addEventListener('keydown', onKey);
@@ -382,7 +383,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
      the album, a room. That one closes first, and the place stays picked. */
   useEffect(() => {
     if (selected === null || album || shut) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setSelect(null); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !modalOpen()) setSelect(null); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [selected, album, shut]);
@@ -395,6 +396,8 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
   const inside = CREW.filter(n => lower.includes(n.toLowerCase()));
   /* heads can be followed while the live 3D map is on screen */
   const canFollow = viewer && !drawn && !still;
+  /* and pressed only while no room's dark lies over them: the follow itself goes on under the room */
+  const headsLive = canFollow && !shut;
   useEffect(() => { if (!canFollow && following) jod()?.unfollow(); }, [canFollow, following, jod]);
   const here = place ? pinned[String(place.id)] ?? null : null;
   /* the 3D map that shows the chosen place: this one, a base's own, or none */
@@ -458,7 +461,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
                 left end of the plank, where the base maps' viewers keep theirs;
                 on a wide screen it stands after the tools (badlands.css). */}
             {full && (
-              <button type="button" className="b-btn b-btn--small b-btn--ghost b-hud__back is-on" aria-label="Loka heilum skjá" onClick={closeFull}>
+              <button ref={back} type="button" className="b-btn b-btn--small b-btn--ghost b-hud__back is-on" aria-label="Loka heilum skjá" onClick={closeFull}>
                 <BackIcon className="b-hud__backicon" />
                 <CloseIcon className="b-btn__icon b-hud__closeicon" /><span className="b-hud__word" aria-hidden="true">Loka</span>
               </button>
@@ -469,17 +472,19 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
                 {/* on a phone's plank the date stands alone; the words before it are still read out */}
                 {syncedOn ? <span><span className="b-hud__lead">eins og hann var </span>{syncedOn}</span> : 'heimasvæðið í þrívídd'}
                 {inside.length > 0 && (
-                  <span className="b-hud__in" aria-label={`inni núna: ${inside.join(', ')}`}>
+                  <span className="b-hud__in">
                     <span className="b-hud__dot" aria-hidden="true" />
                     <span className="b-hud__inword">inni núna</span>
-                    {inside.map(n => canFollow ? (
+                    {/* the names in words: a label on a bare span is not read */}
+                    <span className="b-visually-hidden">: {inside.join(', ')}</span>
+                    {inside.map(n => headsLive ? (
                       <button key={n} type="button" className={`b-hud__head b-tip b-tip--below${following?.toLowerCase() === n.toLowerCase() ? ' is-on' : ''}`}
                         aria-pressed={following?.toLowerCase() === n.toLowerCase()} aria-label={`Elta ${n}`}
                         data-tip={following?.toLowerCase() === n.toLowerCase() ? `Hætta að elta ${n}` : `Elta ${n}`}
                         onClick={() => follow(n)}>
                         <PlayerHead name={n} size={16} />
                       </button>
-                    ) : <PlayerHead key={n} name={n} size={16} />)}
+                    ) : <PlayerHead key={n} name={n} size={16} alt="" />)}
                   </span>
                 )}
                 {canFollow && (following || followNote) && (
@@ -606,9 +611,11 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
               holds and the way it faces, as a player reads them to find the
               same spot in the game, each line on its own veil of dark. */}
           {camera && ready && !still && !drawn && (
-            <p className="b-f3" aria-label={`Kortið horfir á ${camera.x}, ${camera.y}, ${camera.z} og snýr í ${FACING[camera.facing] ?? camera.facing}`}>
-              <span>XYZ: {camera.x} / {camera.y} / {camera.z}</span>
-              <span>Snýr í {FACING[camera.facing] ?? camera.facing}</span>
+            <p className="b-f3">
+              {/* said as a sentence; a label on a paragraph is not read */}
+              <span className="b-visually-hidden">Kortið horfir á {camera.x}, {camera.y}, {camera.z} og snýr í {FACING[camera.facing] ?? camera.facing}</span>
+              <span aria-hidden="true">XYZ: {camera.x} / {camera.y} / {camera.z}</span>
+              <span aria-hidden="true">Snýr í {FACING[camera.facing] ?? camera.facing}</span>
             </p>
           )}
           {/* a count, as the shelf counts its crates: each base's own tag already says it has its own map, and the rail's order says where */}

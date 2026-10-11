@@ -7,7 +7,7 @@ import { CopyIcon, Lantern, Mark, Strata } from './Bits';
 import PlayerHead from './PlayerHead';
 import ToastHost from './Toast';
 import { SERVER_IP, plainClick, type NavLink } from './data';
-import { useCopy, useCrewSession, useServerStatus, type ServerState } from './hooks';
+import { modalOpen, useCopy, useCrewSession, useServerStatus, type ServerState } from './hooks';
 import type { ServerLife } from '@/lib/server-state';
 
 export interface Door extends NavLink { id: string }
@@ -116,7 +116,7 @@ export default function AddressBar({ links, activeId, onDoor, always = false, st
       if (!l) return;
       const at = e.target instanceof HTMLElement ? e.target : null;
       if (at && (at.isContentEditable || at.closest('input, textarea, select'))) return;
-      if (document.querySelector('[aria-modal="true"]')) return;
+      if (modalOpen()) return;
       e.preventDefault();
       if (onDoor) onDoor(l.id);
       else router.push(l.href);

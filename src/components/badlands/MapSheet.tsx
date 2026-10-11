@@ -121,7 +121,7 @@ export default function MapSheet({ config, selectedId, onSelect }: Props) {
       onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}
       onDoubleClick={resetView}>
       <motion.div className="b-sheet__view" style={{ x, y, scale: z, transformOrigin: '0 0' }}>
-        <svg viewBox={`0 0 ${MAP_W} ${MAP_H}`} xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Teiknað kort af JOÐ-heiminum">
+        <svg viewBox={`0 0 ${MAP_W} ${MAP_H}`} xmlns="http://www.w3.org/2000/svg" role="group" aria-label="Teiknað kort af JOÐ-heiminum">
           <MapDefs />
           <MapArt
             locations={config.locations}

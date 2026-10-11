@@ -431,6 +431,10 @@ export function useBackdropClose(onClose: () => void): { onPointerDown: (e: Reac
 
 /** `inert` on an element, set as a property. React 18 has no attribute for it
     and warns about the empty string the attribute form needs. */
+/** A dialog is open over the page (the duel, the album, a picture). Escape
+    and the number keys are its own then: one press closes one layer. */
+export const modalOpen = () => document.querySelector('[aria-modal="true"]') !== null;
+
 export function useInert<T extends HTMLElement>(inert: boolean): React.RefObject<T> {
   const ref = useRef<T>(null);
   useEffect(() => {
