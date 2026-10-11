@@ -80,6 +80,20 @@ export function startAmbience(): boolean {
   return true;
 }
 
+/** Made but not playing: the browser held it back for want of a gesture, or
+    a phone suspended it while the visitor was in another app. */
+export const ambienceHeld = () => engine !== null && engine.ctx.state !== 'running';
+
+/** Whether the sound is really playing, asking the browser to resume it
+    first. A context made without a gesture stays suspended and its resume
+    may never settle, so the answer waits a moment at most. */
+export async function ambienceRunning(): Promise<boolean> {
+  const ctx = engine?.ctx;
+  if (!ctx) return false;
+  if (ctx.state !== 'running') await Promise.race([ctx.resume().catch(() => {}), new Promise(r => setTimeout(r, 400))]);
+  return engine?.ctx === ctx && ctx.state === 'running';
+}
+
 export function stopAmbience() {
   if (!engine) return;
   const { ctx, master, crackle } = engine;

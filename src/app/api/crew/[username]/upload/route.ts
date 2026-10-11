@@ -29,7 +29,11 @@ export async function GET(_req: NextRequest, { params }: Params) {
   let error: string | null = null;
   if (mode === 'blob') {
     try { access = await detectBlobAccess(); }
-    catch (e) { error = e instanceof Error ? e.message : String(e); }
+    catch (e) {
+      /* the store's own words are English and for the log; the member is told what it means for them */
+      console.error('crew upload: blob access', e);
+      error = 'Náði ekki sambandi við myndageymsluna. Reyndu aftur eftir smástund.';
+    }
   }
   return NextResponse.json({ mode, access, maxBytes: MAX_UPLOAD_BYTES, error }, { headers: { 'Cache-Control': 'no-store' } });
 }

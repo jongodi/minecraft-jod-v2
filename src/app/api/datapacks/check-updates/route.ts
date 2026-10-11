@@ -18,6 +18,9 @@ export interface DatapackUpdateResult {
   error?:          string;
 }
 
+/* each look at Modrinth or GitHub capped, so one that hangs fails into its own row instead of holding up the rest */
+const CHECK_TIMEOUT_MS = 8000;
+
 /** Strip leading v/V prefixes so "v1.1" and "1.1" compare equal. */
 function normalizeVersion(v: string): string {
   return v.replace(/^[vV]\.?/, '');
@@ -45,29 +48,23 @@ async function checkModrinth(pack: DatapackMeta): Promise<DatapackUpdateResult> 
       loaders:      JSON.stringify(['datapack']),
       game_versions: JSON.stringify([pack.gameVersion]),
     });
-    const url = `https://api.modrinth.com/v2/project/${pack.modrinthSlug}/version?${params}`;
-    const res = await fetch(url, {
+    const ask = (query: string) => fetch(`https://api.modrinth.com/v2/project/${pack.modrinthSlug}/version?${query}`, {
       headers: { 'User-Agent': 'JODCraft-Dashboard/1.0 (play.jodcraft.world)' },
       next: { revalidate: 3600 }, // Cache for 1 hour
+      signal: AbortSignal.timeout(CHECK_TIMEOUT_MS),
     });
+    const res = await ask(params.toString());
+    const tagged = res.ok ? await res.json() as ModrinthVersion[] : null;
+    if (Array.isArray(tagged) && tagged.length > 0) return extractModrinthVersion(base, pack, tagged);
 
-    if (!res.ok) {
-      // Try without game version filter (some packs don't tag versions properly)
-      const res2 = await fetch(
-        `https://api.modrinth.com/v2/project/${pack.modrinthSlug}/version?loaders=${encodeURIComponent(JSON.stringify(['datapack']))}`,
-        {
-          headers: { 'User-Agent': 'JODCraft-Dashboard/1.0 (play.jodcraft.world)' },
-          next: { revalidate: 3600 },
-        }
-      );
-      if (!res2.ok) {
-        return { ...base, error: `Modrinth skilaði stöðukóðanum ${res.status}` };
-      }
-      const versions = await res2.json();
-      return extractModrinthVersion(base, pack, versions);
+    /* Try without the game version filter: some packs don't tag versions
+       properly, and Modrinth answers a filter nothing matches with an empty
+       list, not an error, so the fallback runs on that too. */
+    const res2 = await ask(`loaders=${encodeURIComponent(JSON.stringify(['datapack']))}`);
+    if (!res2.ok) {
+      return { ...base, error: `Modrinth skilaði stöðukóðanum ${res.ok ? res2.status : res.status}` };
     }
-
-    const versions = await res.json();
+    const versions = await res2.json();
     return extractModrinthVersion(base, pack, versions);
   } catch (err) {
     return { ...base, error: errorMessage(err) };
@@ -134,6 +131,7 @@ async function checkGitHub(pack: DatapackMeta): Promise<DatapackUpdateResult> {
           ...(process.env.GITHUB_TOKEN ? { Authorization: `Bearer ${process.env.GITHUB_TOKEN}` } : {}),
         },
         next: { revalidate: 3600 },
+        signal: AbortSignal.timeout(CHECK_TIMEOUT_MS),
       }
     );
 

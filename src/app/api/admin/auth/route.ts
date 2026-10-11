@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { badJson, jsonObject } from '@/lib/http';
 import { isValidAdminToken, ADMIN_COOKIE } from '@/lib/auth';
-import { checkRateLimit, clearRateLimit } from '@/lib/rateLimit';
+import { checkRateLimit, clearRateLimit, clientKey } from '@/lib/rateLimit';
 
 export async function POST(req: NextRequest) {
-  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+  const ip = clientKey(req.headers);
   const { limited } = await checkRateLimit(ip, 'admin-auth');
   if (limited) {
     return NextResponse.json({ error: 'Of margar tilraunir. Reyndu aftur síðar.' }, { status: 429 });

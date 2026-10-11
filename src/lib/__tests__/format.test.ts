@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatDate, formatNumber, plural } from '@/lib/format';
+import { formatDate, formatDaySpan, formatNumber, plural } from '@/lib/format';
 
 describe('dates written as in Iceland', () => {
   it('writes the day, the short month and the year, whatever the browser carries', () => {
@@ -47,5 +47,13 @@ describe('Icelandic number agreement', () => {
     expect(plural(11, 'mynd', 'myndir')).toBe('myndir');
     expect(plural(111, 'mynd', 'myndir')).toBe('myndir');
     expect(plural(0, 'mynd', 'myndir')).toBe('myndir');
+  });
+});
+
+describe('formatDaySpan', () => {
+  it('writes a week as Icelandic does, the month once when it is one', () => {
+    expect(formatDaySpan('2026-10-04', '2026-10-11')).toBe('4. til 11. okt.');
+    expect(formatDaySpan('2026-09-28', '2026-10-05')).toBe('28. sep. til 5. okt.');
+    expect(formatDaySpan('2026-12-28', '2027-01-04')).toBe('28. des. til 4. jan.');
   });
 });

@@ -12,7 +12,7 @@ import Hero from './Hero';
 import World from './World';
 import Footer from './Footer';
 import { SECTIONS, isRoom, plainClick, type DoorId, type RoomId } from './data';
-import { seedStatus, useEffectsAllowed, useReducedMotionPref, useScrollSpy, useServerStatus } from './hooks';
+import { modalOpen, seedStatus, useEffectsAllowed, useReducedMotionPref, useScrollSpy, useServerStatus } from './hooks';
 import { seedNights } from './night';
 import { seasonClass, useSeason } from './Season';
 
@@ -116,7 +116,7 @@ export default function BadlandsHome({ syncedOn, bases, initial }: { syncedOn: s
 
   useEffect(() => {
     if (!room) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') closeRoom(); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !modalOpen()) closeRoom(); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [room, closeRoom]);

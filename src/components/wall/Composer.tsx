@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import type { CrewEntry } from '@/lib/crew-types';
 import { LIMITS } from '@/lib/crew-types';
-import { fetchStorageInfo, uploadPrint, errorFrom, type StorageInfo, type UploadedPrint } from '@/lib/crew-upload';
+import { fetchStorageInfo, uploadPrint, errorFrom, failure, type StorageInfo, type UploadedPrint } from '@/lib/crew-upload';
 import { formatDate, plural } from '@/lib/format';
 import { CloseIcon } from '@/components/badlands/Bits';
 import type { WallPlace } from './Wall';
@@ -30,6 +30,12 @@ interface Props {
 }
 
 const newKey = () => Math.random().toString(36).slice(2);
+
+/* A picture by its type, or by its name where the browser gives no type: a
+   phone's HEIC often comes with none on Windows, Linux and Firefox, and is
+   let through so prepareImage can redraw it or say plainly that it cannot. */
+const PICTURE_NAME = /\.(heic|heif|png|jpe?g|webp|gif|avif|bmp)$/i;
+const isPicture = (f: File) => f.type.startsWith('image/') || (!f.type && PICTURE_NAME.test(f.name));
 
 export default function Composer({ username, places, onPinned }: Props) {
   const [storage, setStorage] = useState<StorageInfo | null>(null);
@@ -72,12 +78,15 @@ export default function Composer({ username, places, onPinned }: Props) {
     info
       .then(i => uploadPrint(username, d.file, i, pct => patch(d.key, { progress: pct })))
       .then(done => { if (dropped.current.has(d.key)) discard(done); else patch(d.key, { done, progress: 100 }); })
-      .catch(e => patch(d.key, { error: e instanceof Error ? e.message : 'Upphleðsla mistókst.' }));
+      .catch(e => patch(d.key, { error: failure(e, 'Upphleðsla mistókst.') }));
   }, [askStorage, patch, username, discard]);
 
   const add = useCallback((files: File[]) => {
-    const images = files.filter(f => f.type.startsWith('image/'));
-    if (images.length === 0) return;
+    const images = files.filter(isPicture);
+    /* what was turned away is said, rather than vanishing: a dropped PDF did nothing at all */
+    const others = files.length - images.length;
+    const turnedAway = others > 0 ? `${others === 1 ? 'Ein skrá var ekki mynd' : `${others} skrár voru ekki myndir`} og ${others === 1 ? 'fór' : 'fóru'} ekki með.` : '';
+    if (images.length === 0) { if (turnedAway) setError(`${turnedAway} Veldu PNG, JPEG eða WebP.`); return; }
     /* the slot holds still while what is in it goes up */
     if (pinningNow.current) { setError('Bíddu andartak, verið er að festa upp það sem er í hólfinu.'); return; }
     /* A store that is not there turns the picture away at the door, rather
@@ -91,7 +100,7 @@ export default function Composer({ username, places, onPinned }: Props) {
     const room = LIMITS.photosPer - drafts.length;
     if (room <= 0) { setError(`Mest ${LIMITS.photosPer} myndir í einu.`); return; }
     const left = images.length - room;
-    setError(left > 0 ? `Mest ${LIMITS.photosPer} myndir í einu; ${left} ${plural(left, 'komst', 'komust')} ekki með.` : '');
+    setError([left > 0 ? `Mest ${LIMITS.photosPer} myndir í einu; ${left} ${plural(left, 'komst', 'komust')} ekki með.` : '', turnedAway].filter(Boolean).join(' '));
     const fresh: Draft[] = images.slice(0, room).map(f => ({ key: newKey(), file: f, name: f.name, preview: URL.createObjectURL(f), caption: '', progress: 0, done: null, error: null }));
     setDrafts(ds => [...ds, ...fresh]);
     fresh.forEach(d => send(d));
@@ -119,7 +128,7 @@ export default function Composer({ username, places, onPinned }: Props) {
   /* Dropped or pasted anywhere on the page, the picture lands in the slot. */
   useEffect(() => {
     const onPaste = (e: ClipboardEvent) => {
-      const files = Array.from(e.clipboardData?.files ?? []).filter(f => f.type.startsWith('image/'));
+      const files = Array.from(e.clipboardData?.files ?? []).filter(isPicture);
       if (files.length === 0) return;
       /* A copy from a spreadsheet or a document carries a picture of the
          words beside the words themselves; pasted into a field, the words
@@ -188,7 +197,7 @@ export default function Composer({ username, places, onPinned }: Props) {
       setDrafts(ds => ds.filter(d => !pinned.has(d.key)));
       setText(''); setPlaceId(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ekki tókst að festa þetta upp.');
+      setError(failure(err, 'Ekki tókst að festa þetta upp.'));
     } finally {
       pinningNow.current = false;
       setPinning(false);
@@ -196,11 +205,12 @@ export default function Composer({ username, places, onPinned }: Props) {
   }
 
 
+  /* how prints get in: a phone has nothing to drag, so it is told what it can do (wall.css keeps one) */
   const storageNote =
     !storage ? 'athuga geymsluna' :
     storage.mode === 'none' ? (storage.error ?? 'myndageymsla er ekki stillt') :
     storage.error ? storage.error :
-    'dragðu skjámyndir hingað, límdu þær, eða veldu';
+    <><span className="w-pin__how w-pin__how--drag">dragðu skjámyndir hingað, límdu þær, eða veldu þær</span><span className="w-pin__how w-pin__how--tap">veldu myndir eða límdu þær</span></>;
 
   return (
     <form ref={slot} className={`w-pin${over ? ' is-over' : ''}${drafts.length ? ' has-prints' : ''}`} onSubmit={pin} aria-label="Festa eitthvað upp" aria-busy={pinning}>

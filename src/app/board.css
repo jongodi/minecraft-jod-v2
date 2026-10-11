@@ -90,6 +90,8 @@
 /* the week's outlaw, under the three of all time: a dashed rule in red ink, a small heading, one row without a rank */
 .b-poster__rule--week { height: 0; margin-top: var(--sp-3); background: none; border-top: var(--px) dashed var(--tc-red); opacity: 0.45; }
 .b-poster__weekhead { width: 100%; margin-top: var(--sp-2); font-weight: 600; font-size: var(--fs-sm); letter-spacing: 0.04em; text-transform: uppercase; color: var(--tc-red); text-align: left; }
+/* which week, in the ink of the rows under it rather than the red of the charge */
+.b-poster__weekspan { font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--ink-soft); }
 /* The full width, as its label and the ranked rows above are: the poster
    centres what it holds, and the week's row stood shrunk in the middle, off
    every edge above it. The rank's column is a fixed width so the week's

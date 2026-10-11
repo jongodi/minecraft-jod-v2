@@ -38,7 +38,7 @@ async function within<T>(work: Promise<T>, fallback: T): Promise<T> {
 export async function loadHomeData(): Promise<HomeData> {
   const now = Date.now();
   const [status, nights, gallery, map, pinned] = await Promise.all([
-    within(getStatus().then(s => toServerState(s, now)), { ...NO_STATUS, online: false, life: 'unknown', checkedAt: now }),
+    within(getStatus({ live: false }).then(s => toServerState(s, now)), { ...NO_STATUS, online: false, life: 'unknown', checkedAt: now }),
     within(viewNights(null, now), NO_NIGHTS),
     within(readGallery(), []),
     within(readMap(), DEFAULT_CONFIG),

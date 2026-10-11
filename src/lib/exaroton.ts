@@ -38,7 +38,8 @@ export async function getExarotonServerId(token: string): Promise<string> {
 /** The server's status code: 0 offline, 1 online, 2 starting, 3 stopping, 4 restarting, 5 saving, 6 loading, 7 crashed. */
 export async function exarotonStatus(token: string): Promise<number> {
   const id = await getExarotonServerId(token);
-  const res = await fetch(`https://api.exaroton.com/v1/servers/${id}/`, { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' });
+  /* capped as the lookup above is: a play night's start waits on this answer */
+  const res = await fetch(`https://api.exaroton.com/v1/servers/${id}/`, { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store', signal: AbortSignal.timeout(6000) });
   if (!res.ok) throw new Error(`Villa frá Exaroton: ${res.status}`);
   return ((await res.json()) as { data: { status: number } }).data.status;
 }
@@ -46,6 +47,6 @@ export async function exarotonStatus(token: string): Promise<number> {
 /** Asks exaroton to start the server. */
 export async function startExaroton(token: string): Promise<void> {
   const id = await getExarotonServerId(token);
-  const res = await fetch(`https://api.exaroton.com/v1/servers/${id}/start/`, { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' });
+  const res = await fetch(`https://api.exaroton.com/v1/servers/${id}/start/`, { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store', signal: AbortSignal.timeout(6000) });
   if (!res.ok) throw new Error(`Villa frá Exaroton: ${res.status}`);
 }

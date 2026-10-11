@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { badJson, jsonObject } from '@/lib/http';
 import { randomUUID } from 'crypto';
-import { updateProfile, getCrewSession, isCrewUsername, cleanText, LIMITS, type CrewReply } from '@/lib/crew';
+import { updateProfile, getCrewSession, isCrewUsername, cleanText, LIMITS, wallError, type CrewReply } from '@/lib/crew';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,15 +21,19 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   const reply: CrewReply = { id: randomUUID(), username: session.username, text, createdAt: new Date().toISOString() };
   let found = false;
-  await updateProfile(username, p => {
-    /* the change may run again on a newer wall; only the last run's finding counts */
-    found = false;
-    const entry = p.entries.find(e => e.id === id);
-    if (!entry) return;
-    found = true;
-    entry.replies.push(reply);
-    if (entry.replies.length > LIMITS.replies) entry.replies = entry.replies.slice(-LIMITS.replies);
-  });
+  try {
+    await updateProfile(username, p => {
+      /* the change may run again on a newer wall; only the last run's finding counts */
+      found = false;
+      const entry = p.entries.find(e => e.id === id);
+      if (!entry) return;
+      found = true;
+      entry.replies.push(reply);
+      if (entry.replies.length > LIMITS.replies) entry.replies = entry.replies.slice(-LIMITS.replies);
+    });
+  } catch (e) {
+    return wallError(e, 'Svarið komst ekki upp.', 'POST reply');
+  }
   if (!found) return NextResponse.json({ error: 'Færslan fannst ekki.' }, { status: 404 });
   return NextResponse.json(reply, { status: 201 });
 }

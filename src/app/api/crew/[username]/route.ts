@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { badJson, jsonObject } from '@/lib/http';
-import { readProfile, updateProfile, requireOwner, isCrewUsername, allPhotos, cleanText, LIMITS } from '@/lib/crew';
+import { readProfile, updateProfile, requireOwner, isCrewUsername, allPhotos, cleanText, LIMITS, Refusal, wallError } from '@/lib/crew';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,12 +29,12 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       if (typeof body.bio === 'string') p.bio = cleanText(body.bio, LIMITS.bio);
       if (body.coverPhotoId === null) p.coverPhotoId = null;
       else if (typeof body.coverPhotoId === 'string') {
-        if (!allPhotos(p).some(ph => ph.id === body.coverPhotoId)) throw new Error('Myndin fannst ekki á veggnum.');
+        if (!allPhotos(p).some(ph => ph.id === body.coverPhotoId)) throw new Refusal('Myndin fannst ekki á veggnum.');
         p.coverPhotoId = body.coverPhotoId;
       }
     });
     return NextResponse.json(profile);
   } catch (e) {
-    return NextResponse.json({ error: e instanceof Error ? e.message : 'Ekki tókst að vista.' }, { status: 400 });
+    return wallError(e, 'Ekki tókst að vista.', 'PATCH profile');
   }
 }

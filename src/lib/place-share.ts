@@ -11,6 +11,8 @@ export interface SharedPlace {
   /** the place's photo, when it has one that is shown in the album */
   photo: GalleryPhoto | null;
   title: string;
+  /** what the place is (its subtitle), empty when it has none */
+  sub: string;
   /** the subtitle and who built it, in one line */
   description: string;
 }
@@ -33,5 +35,5 @@ export async function sharedPlace(idText: string): Promise<SharedPlace | null> {
   const built = place.builders?.length ? `byggt af ${place.builders.join(', ')}` : '';
   const title = titleCase(place.label.trim() || 'Staður');
   const description = [sub, built].filter(Boolean).join(' · ') || 'Staður í Minecraft-heimi JOÐ';
-  return { place, photo, title, description };
+  return { place, photo, title, sub, description };
 }

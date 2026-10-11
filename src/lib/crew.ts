@@ -1,6 +1,7 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import { cookies } from 'next/headers';
+import { NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
 import { CREW_COOKIE } from '@/lib/auth';
 import { CREW_USERNAMES, canonicalUsername, normalizeProfile, type CrewProfile } from '@/lib/crew-types';
@@ -71,6 +72,24 @@ export async function readAllProfiles(): Promise<CrewProfile[]> {
   }
 }
 
+/** Every member's wall as it is stored, the text itself, unparsed: for the
+    sweep of prints nobody pinned (src/lib/crew-sweep.ts), which looks for
+    every picture a wall names anywhere in it, old shapes included. Strict,
+    unlike the reads above: a store that fails throws, since a wall it could
+    not read would look like one with nothing on it. A member with no wall
+    yet is an empty string. */
+export async function readStoredWalls(): Promise<string[]> {
+  if (hasKV()) {
+    const { getRedis } = await import('./redis');
+    const raw = await getRedis().mget(...CREW_USERNAMES.map(profileKey));
+    return raw.map(v => v ?? '');
+  }
+  return Promise.all(CREW_USERNAMES.map(async name => {
+    try { return await fs.readFile(path.join(profilesDir(), `${name.toLowerCase()}.json`), 'utf-8'); }
+    catch (e) { if ((e as NodeJS.ErrnoException).code === 'ENOENT') return ''; throw e; }
+  }));
+}
+
 /* A write goes to a temporary file that is then renamed over the wall, so a
    read that lands mid-write sees the old wall or the new one, never half. */
 async function writeProfileFile(clean: CrewProfile): Promise<void> {
@@ -84,6 +103,25 @@ async function writeProfileFile(clean: CrewProfile): Promise<void> {
 
 const STORE_READ_ERROR = 'Ekki tókst að lesa vegginn úr geymslunni; reyndu aftur.';
 const STORE_WRITE_ERROR = 'Ekki tókst að vista vegginn vegna villu í geymslu.';
+
+/** The store failed, or the wall kept changing under the write: nothing the
+    member did, so it is said as it is and answered 503. */
+export class StoreError extends Error {}
+/** A change refused for a reason the member can act on, thrown from inside
+    a change to a wall: its message is theirs to read. */
+export class Refusal extends Error {
+  constructor(message: string, readonly status = 400) { super(message); }
+}
+
+/** The answer to a change that threw: a refusal with its own status, the
+    store's trouble as 503, and anything else as the route's own words,
+    logged, since its message is the runtime's English. */
+export function wallError(e: unknown, fallback: string, where: string): NextResponse {
+  if (e instanceof Refusal) return NextResponse.json({ error: e.message }, { status: e.status });
+  if (e instanceof StoreError) return NextResponse.json({ error: e.message }, { status: 503 });
+  console.error(`${where}:`, e);
+  return NextResponse.json({ error: fallback }, { status: 500 });
+}
 
 /* Set the wall only if it is still what was read: the stored text is compared
    inside Redis, so two members changing one wall at once cannot both win. */
@@ -130,7 +168,7 @@ export async function updateProfile(username: string, change: (p: CrewProfile) =
         stored = raw === null ? null : JSON.parse(raw);
       } catch (e) {
         console.error('Redis updateProfile read error:', e);
-        throw new Error(STORE_READ_ERROR);
+        throw new StoreError(STORE_READ_ERROR);
       }
       const profile = normalizeProfile(stored, name);
       const before = JSON.stringify(profile);
@@ -143,11 +181,11 @@ export async function updateProfile(username: string, change: (p: CrewProfile) =
         ok = await redis.eval(COMPARE_AND_SET, 1, key, raw ?? '', after);
       } catch (e) {
         console.error('Redis updateProfile write error:', e);
-        throw new Error(STORE_WRITE_ERROR);
+        throw new StoreError(STORE_WRITE_ERROR);
       }
       if (ok === 1) return clean;
     }
-    throw new Error('Veggurinn breyttist á meðan; reyndu aftur.');
+    throw new StoreError('Veggurinn breyttist á meðan; reyndu aftur.');
   }
 
   return withFileLock(name.toLowerCase(), async () => {
@@ -156,7 +194,7 @@ export async function updateProfile(username: string, change: (p: CrewProfile) =
     try {
       stored = JSON.parse(await fs.readFile(file, 'utf-8'));
     } catch (e) {
-      if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw new Error(STORE_READ_ERROR);
+      if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw new StoreError(STORE_READ_ERROR);
     }
     const profile = normalizeProfile(stored, name);
     const before = JSON.stringify(profile);
@@ -209,7 +247,11 @@ export async function deleteCrewSession(sessionId: string): Promise<void> {
   }
 }
 
-export async function getCrewSession(): Promise<CrewSession | null> {
+/** The signed-in member, or null. A store that cannot be read counts as
+    nobody signed in, which is right for drawing a page; `strict` throws a
+    StoreError instead, for the one answer that would otherwise sign a
+    member out of the page they are on (/api/crew/me). */
+export async function getCrewSession({ strict = false }: { strict?: boolean } = {}): Promise<CrewSession | null> {
   try {
     const cookieStore = await cookies();
     const sessionId = cookieStore.get(CREW_COOKIE)?.value;
@@ -230,7 +272,8 @@ export async function getCrewSession(): Promise<CrewSession | null> {
       }
       return { username: session.username };
     }
-  } catch {
+  } catch (e) {
+    if (strict) throw new StoreError(e instanceof Error ? e.message : 'session read failed');
     return null;
   }
 }

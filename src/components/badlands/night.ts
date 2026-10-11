@@ -10,15 +10,21 @@ import type { PlayNightResponse } from '@/app/api/playnight/route';
 type State = PlayNightResponse | undefined;   // undefined until the first answer
 let value: State = undefined;
 let inFlight: Promise<void> | null = null;
+/* counts the answers to actions: a poll that set out before one is older than it, and is dropped */
+let acted = 0;
 const listeners = new Set<() => void>();
 const notify = () => listeners.forEach(l => l());
 
 async function load(): Promise<void> {
+  const asOf = acted;
   try {
     const res = await fetch('/api/playnight', { cache: 'no-store' });
-    if (res.ok) value = await res.json() as PlayNightResponse;
+    const data = res.ok ? await res.json() as PlayNightResponse : null;
+    if (asOf !== acted) return;
+    if (data) value = data;
     else if (value === undefined) value = { nights: [], me: null, max: 5 };
   } catch {
+    if (asOf !== acted) return;
     if (value === undefined) value = { nights: [], me: null, max: 5 };
   }
   notify();
@@ -65,7 +71,7 @@ export function usePlayNight(initial?: PlayNightResponse) {
       const res = await fetch('/api/playnight', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       const data = await res.json().catch(() => null) as (PlayNightResponse & { error?: string }) | null;
       if (!res.ok) return data?.error ?? `Villa ${res.status}`;
-      if (data) { value = data; notify(); }
+      if (data) { acted++; value = data; notify(); }
       return null;
     } catch {
       return 'Villa í nettengingu';
@@ -154,7 +160,12 @@ export function dayLong(value: string): string {
 export const LAST_DAY_AHEAD = 365;
 /** a time must be at least a quarter of an hour off */
 export const SOON_MS = 15 * 60_000;
-export const isLate = (day: string, time: string, now = Date.now()) => Date.parse(`${day}T${time}:00Z`) < now + SOON_MS;
+/** with more than one time, the first must be this far off, so the crew can
+    answer before the night is decided on its own (CHOOSE_BEFORE_MS in
+    src/lib/play-night.ts, which the server holds a proposal to) */
+export const DECIDE_MS = 3 * 3600_000;
+/** Too soon to offer: less than `ahead` (a quarter of an hour unless said) from now. */
+export const isLate = (day: string, time: string, now = Date.now(), ahead = SOON_MS) => Date.parse(`${day}T${time}:00Z`) < now + ahead;
 
 /** Every half hour from ten in the morning to half past eleven at night. */
 export const TIME_CHOICES = Array.from({ length: 28 }, (_, i) => {
