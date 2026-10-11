@@ -80,6 +80,19 @@ describe('the status lookup', () => {
     expect(keepFor(body)).toBe(30_000);
   });
 
+  it("asks the upstream itself for the status route, and lets the page's render use the data cache", async () => {
+    fetchMock.mockResolvedValue(exaroton(0));
+    await getStatus({ live: false });
+    expect(fetchMock.mock.calls[0][1]).toMatchObject({ next: { revalidate: 10 } });
+    /* the page's answer may be the data cache's, however old: the route asks again, live */
+    await getStatus();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[1][1]).toMatchObject({ cache: 'no-store' });
+    /* and a live answer serves the page's next render */
+    await getStatus({ live: false });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
   it('says it could not reach anything when both lookups fail, and asks again soon', async () => {
     fetchMock.mockRejectedValueOnce(new Error('down')).mockRejectedValueOnce(new Error('down'));
     const body = await getStatus();
@@ -129,6 +142,25 @@ describe('when the server last burned', () => {
     const dark = await getStatus();
     expect(dark.life).toBe('off');
     expect(dark.lastOnline).toEqual({ at: '2026-10-02T21:40:00.000Z', names: ['stebbias', 'joenana'] });
+  });
+
+  it("is not written over by an instance whose last answer is hours old", async () => {
+    /* this instance saw it burn at eight, then sat idle while another saw it burn till eleven */
+    vi.setSystemTime(new Date('2026-10-02T20:00:00Z'));
+    fetchMock.mockResolvedValueOnce(exaroton(1, ['stebbias']));
+    await getStatus();
+    kv.set('status:last-online', JSON.stringify({ at: '2026-10-02T23:00:00.000Z', names: ['joenana'] }));
+    vi.setSystemTime(new Date('2026-10-02T23:30:00Z'));
+    fetchMock.mockResolvedValueOnce(exaroton(0));
+    expect((await getStatus()).lastOnline).toEqual({ at: '2026-10-02T23:00:00.000Z', names: ['joenana'] });
+    expect(JSON.parse(kv.get('status:last-online')!)).toEqual({ at: '2026-10-02T23:00:00.000Z', names: ['joenana'] });
+  });
+
+  it("is never noted from a page render's answer, which may be the data cache's", async () => {
+    vi.setSystemTime(new Date('2026-10-02T21:40:00Z'));
+    fetchMock.mockResolvedValueOnce(exaroton(1, ['stebbias']));
+    await getStatus({ live: false });
+    expect(kv.has('status:last-online')).toBe(false);
   });
 
   it('is read from the store by an instance that never saw it burn', async () => {

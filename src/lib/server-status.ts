@@ -36,7 +36,9 @@ const CHANGING_CACHE_MS = 10_000;
 const ERROR_CACHE_MS = 5_000;
 const DEFAULT_MAX_PLAYERS = 20;
 
-let cached: { at: number; body: StatusResponse } | null = null;
+/* `live`: asked of the upstream itself, not of Next's data cache, which
+   hands back whatever it last held (however old) and refreshes it behind. */
+let cached: { at: number; body: StatusResponse; live: boolean } | null = null;
 
 /** How long an answer is kept, by what it says. */
 export function keepFor(body: StatusResponse): number {
@@ -44,11 +46,16 @@ export function keepFor(body: StatusResponse): number {
   return isChanging(body.life) ? CHANGING_CACHE_MS : CACHE_MS;
 }
 
-export async function getStatus(): Promise<StatusResponse> {
-  if (cached && Date.now() - cached.at < keepFor(cached.body)) return cached.body;
-  const body = await lookup();
-  await rememberLastOnline(body, cached);
-  cached = { at: Date.now(), body };
+/** The status as the site shows it. The status route asks live (the
+    default); the home page's half-minute render passes `live: false` and may
+    be answered from Next's data cache, so the page stays static. Only a live
+    answer is trusted to say when the server went out, and a page render
+    never takes the place of a live answer in memory. */
+export async function getStatus({ live = true }: { live?: boolean } = {}): Promise<StatusResponse> {
+  if (cached && (cached.live || !live) && Date.now() - cached.at < keepFor(cached.body)) return cached.body;
+  const body = await lookup(live);
+  await rememberLastOnline(body, cached, live);
+  if (live || !cached?.live) cached = { at: Date.now(), body, live };
   return body;
 }
 
@@ -69,11 +76,17 @@ const sameNames = (a: string[], b: string[]) => a.length === b.length && a.every
     lantern can say so. The moment it goes out is noted from the answer
     before, so the time is good to half a minute. Never holds up or fails
     the answer, and does nothing without the store. */
-async function rememberLastOnline(body: StatusResponse, before: { at: number; body: StatusResponse } | null): Promise<void> {
+async function rememberLastOnline(body: StatusResponse, before: { at: number; body: StatusResponse; live: boolean } | null, live: boolean): Promise<void> {
   if (!process.env.REDIS_URL) return;
   const now = Date.now();
+  /* The answer before says when it went out only if it was live and recent:
+     an instance that sat idle for hours (or answered from the data cache)
+     would write its own old evening over the one the store holds. */
+  const recent = before && before.live && now - before.at <= 2 * keepFor(before.body) ? before : null;
   try {
     if (body.online) {
+      /* a page render's answer may be the data cache's; only a live one is noted */
+      if (!live) return;
       const names = crewIn(body);
       const held = lastKnown?.value;
       if (lastKnown && now - lastKnown.at < LAST_EVERY_MS && held && sameNames(held.names, names)) return;
@@ -83,9 +96,9 @@ async function rememberLastOnline(body: StatusResponse, before: { at: number; bo
       lastKnown = { at: now, value };
       return;
     }
-    if (before?.body.online) {
+    if (live && recent?.body.online) {
       /* it has just gone out: the last answer that saw it burning says when */
-      const value: LastOnline = { at: new Date(before.at).toISOString(), names: crewIn(before.body) };
+      const value: LastOnline = { at: new Date(recent.at).toISOString(), names: crewIn(recent.body) };
       const { rSet } = await import('@/lib/redis');
       await rSet(LAST_KEY, value);
       lastKnown = { at: now, value };
@@ -115,15 +128,21 @@ export async function noteCrewSeen(body: StatusResponse): Promise<void> {
   } catch { /* the status answers regardless */ }
 }
 
-async function lookup(): Promise<StatusResponse> {
+/* How a lookup reaches the upstream: live, or through Next's data cache for
+   as long as a changing state is kept in memory (CHANGING_CACHE_MS). A live
+   read on the page would make every page that reads the status render on
+   demand instead of on its half-minute schedule (src/app/page.tsx). */
+const reach = (live: boolean): RequestInit => (live ? { cache: 'no-store' } : { next: { revalidate: CHANGING_CACHE_MS / 1000 } });
+
+async function lookup(live: boolean): Promise<StatusResponse> {
   if (process.env.EXAROTON_API_KEY) {
     try {
-      return await fromExaroton();
+      return await fromExaroton(live);
     } catch {
       // fall through to mcsrvstat
     }
   }
-  return fromMcsrvstat();
+  return fromMcsrvstat(live);
 }
 
 interface ExarotonServerDetail extends ExarotonServer {
@@ -131,17 +150,13 @@ interface ExarotonServerDetail extends ExarotonServer {
   software?: { id: string; name: string; version: string };
 }
 
-async function fromExaroton(): Promise<StatusResponse> {
+async function fromExaroton(live: boolean): Promise<StatusResponse> {
   const token = process.env.EXAROTON_API_KEY!;
   const id    = await getExarotonServerId(token);
 
-  /* Kept in Next's own data cache for as long as a changing state is kept in
-     memory (CHANGING_CACHE_MS), never longer than the memory cache here. An
-     explicit no-store would make every page that reads the status render on
-     demand instead of on its half-minute schedule (src/app/page.tsx). */
   const res = await fetch(`https://api.exaroton.com/v1/servers/${id}/`, {
     headers: { Authorization: `Bearer ${token}` },
-    next: { revalidate: CHANGING_CACHE_MS / 1000 },
+    ...reach(live),
     signal: AbortSignal.timeout(TIMEOUT_MS),
   });
   if (!res.ok) throw new Error('Exaroton server fetch failed');
@@ -166,10 +181,10 @@ async function fromExaroton(): Promise<StatusResponse> {
   };
 }
 
-async function fromMcsrvstat(): Promise<StatusResponse> {
+async function fromMcsrvstat(live: boolean): Promise<StatusResponse> {
   try {
     const res = await fetch(`https://api.mcsrvstat.us/3/${getServerHost()}`, {
-      next: { revalidate: CHANGING_CACHE_MS / 1000 },
+      ...reach(live),
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
     if (!res.ok) throw new Error('mcsrvstat fetch failed');
