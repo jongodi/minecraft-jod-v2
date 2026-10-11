@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { badJson, jsonObject } from '@/lib/http';
-import { updateProfile, readProfile, requireOwner, isCrewUsername, cleanText, LIMITS, type CrewEntry } from '@/lib/crew';
+import { updateProfile, requireOwner, isCrewUsername, cleanText, LIMITS, Refusal, wallError, type CrewEntry } from '@/lib/crew';
 import { photosNotIn, removePhotos } from '@/lib/crew-photos';
 import { mapPlaceIds, UNKNOWN_PLACE } from '@/lib/crew-places';
 
@@ -36,12 +36,13 @@ export async function PATCH(req: NextRequest, { params }: Params) {
          kept as it is, so a sign whose place has since come off the map can
          still have its words changed: the editor sends its place back unchanged. */
       if (placeId !== undefined && placeId !== entry.placeId) {
-        if (placeId !== null && places && !places.has(placeId)) throw new Error(UNKNOWN_PLACE);
+        if (placeId !== null && places && !places.has(placeId)) throw new Refusal(UNKNOWN_PLACE);
         entry.placeId = placeId;
       }
       if (Array.isArray(body.photos)) {
         /* the prints that stay, in the order given, each with its caption */
-        const keep = (body.photos as Array<{ id?: unknown; caption?: unknown }>)
+        const keep = (body.photos as unknown[])
+          .filter((d): d is { id?: unknown; caption?: unknown } => d !== null && typeof d === 'object')
           .map(d => {
             const ph = entry.photos.find(x => x.id === d.id);
             return ph ? { ...ph, caption: typeof d.caption === 'string' ? cleanText(d.caption, LIMITS.caption) : ph.caption } : null;
@@ -52,11 +53,11 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         entry.photos = keep;
         if (p.coverPhotoId && dropped.some(d => d.id === p.coverPhotoId)) p.coverPhotoId = null;
       }
-      if (!entry.text.trim() && entry.photos.length === 0) throw new Error('Færslan má ekki vera tóm; eyddu henni frekar.');
+      if (!entry.text.trim() && entry.photos.length === 0) throw new Refusal('Færslan má ekki vera tóm; eyddu henni frekar.');
       updated = entry;
     });
   } catch (e) {
-    return NextResponse.json({ error: e instanceof Error ? e.message : 'Ekki tókst að vista.' }, { status: 400 });
+    return wallError(e, 'Ekki tókst að vista.', 'PATCH entry');
   }
   if (!updated) return NextResponse.json({ error: 'Færslan fannst ekki.' }, { status: 404 });
   await removePhotos(dropped);
@@ -69,14 +70,24 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   if (!isCrewUsername(username)) return NextResponse.json({ error: 'Fannst ekki.' }, { status: 404 });
   if (!(await requireOwner(username))) return unauthorized();
 
-  const before = await readProfile(username);
-  const entry = before.entries.find(e => e.id === id);
+  /* what came down is found in the change itself, as PATCH finds what it
+     dropped: a separate read first showed an empty wall when the store
+     failed, and the owner was told the entry was not there */
+  let gone: CrewEntry | null = null;
+  try {
+    await updateProfile(username, p => {
+      /* the change may run again on a newer wall; only the last run's finding counts */
+      const found = p.entries.find(e => e.id === id) ?? null;
+      gone = found;
+      if (!found) return;
+      p.entries = p.entries.filter(e => e.id !== id);
+      if (p.coverPhotoId && found.photos.some(ph => ph.id === p.coverPhotoId)) p.coverPhotoId = null;
+    });
+  } catch (e) {
+    return wallError(e, 'Ekki tókst að taka þetta niður.', 'DELETE entry');
+  }
+  const entry = gone as CrewEntry | null;
   if (!entry) return NextResponse.json({ error: 'Færslan fannst ekki.' }, { status: 404 });
-
-  await updateProfile(username, p => {
-    p.entries = p.entries.filter(e => e.id !== id);
-    if (p.coverPhotoId && entry.photos.some(ph => ph.id === p.coverPhotoId)) p.coverPhotoId = null;
-  });
   await removePhotos(entry.photos);
   return NextResponse.json({ ok: true });
 }
