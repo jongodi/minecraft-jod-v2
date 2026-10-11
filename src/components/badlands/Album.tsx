@@ -40,7 +40,7 @@ export default function Album({ plates, onClose }: { plates: Plate[]; onClose: (
         <div className="b-head">
           <div>
             <h2 className="b-title">Myndir úr heiminum</h2>
-            <p className="b-note">{plates.length} {plural(plates.length, 'mynd', 'myndir')}, í þeirri röð sem byggingarnar risu. Smelltu á ramma til að stækka.</p>
+            <p className="b-note">{plates.length} {plural(plates.length, 'mynd', 'myndir')}, í þeirri röð sem byggingarnar risu. Ýttu á ramma til að stækka.</p>
           </div>
           <button ref={closeRef} type="button" className="b-btn b-btn--small" onClick={onClose}>Loka</button>
         </div>

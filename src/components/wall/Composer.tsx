@@ -196,11 +196,12 @@ export default function Composer({ username, places, onPinned }: Props) {
   }
 
 
+  /* how prints get in: a phone has nothing to drag, so it is told what it can do (wall.css keeps one) */
   const storageNote =
     !storage ? 'athuga geymsluna' :
     storage.mode === 'none' ? (storage.error ?? 'myndageymsla er ekki stillt') :
     storage.error ? storage.error :
-    'dragðu skjámyndir hingað, límdu þær, eða veldu';
+    <><span className="w-pin__how w-pin__how--drag">dragðu skjámyndir hingað, límdu þær, eða veldu þær</span><span className="w-pin__how w-pin__how--tap">veldu myndir eða límdu þær</span></>;
 
   return (
     <form ref={slot} className={`w-pin${over ? ' is-over' : ''}${drafts.length ? ' has-prints' : ''}`} onSubmit={pin} aria-label="Festa eitthvað upp" aria-busy={pinning}>
