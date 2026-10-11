@@ -82,13 +82,16 @@ function useLinger<T>(value: T | null, ms = 400): { shown: T | null; leaving: bo
     does on a paper tag. The lantern is the control, as it always was; the
     wood and the paper are what keep its words legible over the still, where
     a soft pool of night round it was the one blurred edge on the page. */
-function Signpost({ sub }: { sub: string }) {
+/* The paper tag says what the lantern does where it is seen: in place on a
+   wide screen, the whole screen on a phone (badlands.css keeps one of the two). */
+function Signpost() {
   return (
     <>
       <span className="b-boot__post" aria-hidden="true" />
       <Lantern lit />
       <span className="b-boot__word">Ferðast um heiminn</span>
-      <span className="b-boot__sub">{sub}</span>
+      <span className="b-boot__sub b-boot__sub--wide">hleður þrívíddarkortið · dragðu, snúðu, stækkaðu</span>
+      <span className="b-boot__sub b-boot__sub--phone">opnar þrívíddarkortið á heilum skjá</span>
     </>
   );
 }
@@ -514,19 +517,16 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
 
           <div ref={mid} className="b-hud__mid">
             {(!live || still) && !drawn && (
-              phone ? (
-                /* On a phone the frame becomes the whole screen, so the map's drag and
-                   pinch never fight the page scroll. The link is the way in without script. */
-                // eslint-disable-next-line @next/next/no-html-link-for-pages
-                <a href={MAP_URL} className="b-boot" onTouchStart={warmViewer} onFocus={warmViewer}
-                  onClick={e => { if (plainClick(e)) { e.preventDefault(); openFull(); } }}>
-                  <Signpost sub="opnar þrívíddarkortið á heilum skjá" />
-                </a>
-              ) : (
-                <button type="button" className="b-boot" onPointerEnter={warmViewer} onFocus={warmViewer} onClick={() => setLive(true)}>
-                  <Signpost sub="hleður þrívíddarkortið · dragðu, snúðu, stækkaðu" />
-                </button>
-              )
+              /* A link to the viewer, so it is the way in before the page's
+                 script has run (the server cannot know a phone, and drew a dead
+                 button there). With the script, a wide screen loads the map in
+                 the frame; on a phone the frame becomes the whole screen, so the
+                 map's drag and pinch never fight the page scroll. */
+              // eslint-disable-next-line @next/next/no-html-link-for-pages
+              <a href={MAP_URL} className="b-boot" onPointerEnter={warmViewer} onTouchStart={warmViewer} onFocus={warmViewer}
+                onClick={e => { if (plainClick(e)) { e.preventDefault(); if (phone) openFull(); else setLive(true); } }}>
+                <Signpost />
+              </a>
             )}
             {live && !ready && !still && slow && (
               <p className="b-boot__wait" role="status">
