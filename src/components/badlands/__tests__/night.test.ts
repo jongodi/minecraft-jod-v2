@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { sinceAt, untilAt, whenAt } from '../night';
+import { DECIDE_MS, SOON_MS, isLate, sinceAt, untilAt, whenAt } from '../night';
+import { CHOOSE_BEFORE_MS } from '@/lib/play-night';
 
 describe('a moment gone by, in Icelandic', () => {
   const now = new Date('2026-10-02T22:30:00Z');
@@ -29,5 +30,22 @@ describe('the count down to a fire', () => {
   it('says nothing a day or more off, or once the fire is lit', () => {
     expect(untilAt('2026-10-03T18:00:00Z', now)).toBe('');
     expect(untilAt('2026-10-02T17:40:00Z', now)).toBe('');
+  });
+});
+
+describe('which times the fire form offers', () => {
+  const now = Date.parse('2026-10-11T18:00:00Z');
+  it('greys out a time less than a quarter of an hour off for a single time', () => {
+    expect(isLate('2026-10-11', '18:00', now)).toBe(true);
+    expect(isLate('2026-10-11', '18:30', now)).toBe(false);
+  });
+  it('greys out a time less than three hours off once there are several, as the server refuses them', () => {
+    expect(isLate('2026-10-11', '20:30', now, DECIDE_MS)).toBe(true);
+    expect(isLate('2026-10-11', '21:00', now, DECIDE_MS)).toBe(false);
+    expect(isLate('2026-10-12', '10:00', now, DECIDE_MS)).toBe(false);
+  });
+  it("holds the server's own numbers", () => {
+    expect(DECIDE_MS).toBe(CHOOSE_BEFORE_MS);
+    expect(SOON_MS).toBe(15 * 60_000);
   });
 });

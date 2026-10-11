@@ -160,7 +160,12 @@ export function dayLong(value: string): string {
 export const LAST_DAY_AHEAD = 365;
 /** a time must be at least a quarter of an hour off */
 export const SOON_MS = 15 * 60_000;
-export const isLate = (day: string, time: string, now = Date.now()) => Date.parse(`${day}T${time}:00Z`) < now + SOON_MS;
+/** with more than one time, the first must be this far off, so the crew can
+    answer before the night is decided on its own (CHOOSE_BEFORE_MS in
+    src/lib/play-night.ts, which the server holds a proposal to) */
+export const DECIDE_MS = 3 * 3600_000;
+/** Too soon to offer: less than `ahead` (a quarter of an hour unless said) from now. */
+export const isLate = (day: string, time: string, now = Date.now(), ahead = SOON_MS) => Date.parse(`${day}T${time}:00Z`) < now + ahead;
 
 /** Every half hour from ten in the morning to half past eleven at night. */
 export const TIME_CHOICES = Array.from({ length: 28 }, (_, i) => {
