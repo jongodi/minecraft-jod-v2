@@ -998,8 +998,10 @@
   .b-hero__climber, .b-hero__more { position: absolute; top: 0.02em; translate: 0 -100%; pointer-events: auto; }
   .b-hero__climber:nth-child(1) { left: 0.99em; }
   .b-hero__climber:nth-child(2) { left: 1.70em; }
-  /* the count wears a tag of its own beside the Ð's climber; placed in the name's size, since its own em is the tag's */
-  .b-hero__climbers > .b-hero__more { left: calc(var(--fs-hero) * 1.9); top: calc(var(--fs-hero) * -0.2); translate: 0 0; }
+  /* the count wears a tag of its own beside the Ð's climber, down by its
+     feet; placed in the name's size, since its own em is the tag's. At the
+     climber's shoulder it stood on the corner of the sun from 700 px up. */
+  .b-hero__climbers > .b-hero__more { left: calc(var(--fs-hero) * 1.9); top: calc(var(--fs-hero) * -0.09); translate: 0 0; }
 }
 /* The splash (Hero.tsx): the game's yellow line tilted over the corner of
    its logo, pulsing, laid over the name's own row of the stage and placed in
