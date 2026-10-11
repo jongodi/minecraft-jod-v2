@@ -25,9 +25,11 @@ export async function isOnline(id: string, token: string): Promise<boolean> {
   if (serverState && Date.now() - serverState.checked < 30_000) return serverState.online;
   let online = false;
   try {
+    /* every markers and maps request waits on this answer, so it is capped; one that hangs counts as stopped */
     const res = await fetch(`${SERVERS_API}/${id}/`, {
       headers: { Authorization: `Bearer ${token}` },
       cache: 'no-store',
+      signal: AbortSignal.timeout(4000),
     });
     if (res.ok) online = ((await res.json()) as { data?: { status?: number } }).data?.status === 1;
   } catch {
