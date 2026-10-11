@@ -124,7 +124,11 @@ export function shownNights(nights: Night[], now: number): Night[] {
   return embers ? [...planned, embers] : planned;
 }
 
-/** Checks a proposal's times: 1 to 3, from a quarter of an hour ahead to a year, at least half an hour apart. */
+/** Checks a proposal's times: 1 to 3, from a quarter of an hour ahead to a
+    year, at least half an hour apart. With more than one, the first must be
+    far enough off for the crew to answer before the night is decided: one
+    lit less than three hours ahead was decided the moment it was lit, on the
+    proposer's own answer alone. */
 export function checkTimes(times: unknown, now: number): { error: string } | { at: string[] } {
   if (!Array.isArray(times) || times.length < 1 || times.length > MAX_OPTIONS) return { error: `Einn til ${MAX_OPTIONS} tímar.` };
   const ms: number[] = [];
@@ -137,6 +141,7 @@ export function checkTimes(times: unknown, now: number): { error: string } | { a
   }
   ms.sort((a, b) => a - b);
   for (let i = 1; i < ms.length; i++) if (ms[i] - ms[i - 1] < 30 * 60_000) return { error: 'Tímarnir verða að vera að minnsta kosti hálftíma hver frá öðrum.' };
+  if (ms.length > 1 && ms[0] < now + CHOOSE_BEFORE_MS) return { error: 'Með fleiri en einum tíma þarf sá fyrsti að vera minnst þrjá tíma fram í tímann, svo hópurinn nái að svara. Veldu einn tíma eða seinni tíma.' };
   return { at: ms.map(m => new Date(m).toISOString()) };
 }
 
