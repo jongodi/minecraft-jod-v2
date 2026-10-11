@@ -7,7 +7,7 @@ import { forgetStatus } from '@/lib/server-status';
 import { errorMessage } from '@/lib/icelandic';
 import { jsonObject } from '@/lib/http';
 import {
-  MAX_NOTE, MAX_PLANNED, START_BEFORE_MS, checkTimes, clashOf, currentNights, isPlanned, optionOf, phaseOf,
+  MAX_NOTE, MAX_PLANNED, START_BEFORE_MS, checkTimes, clashOf, currentNights, isPlanned, optionOf, phaseOf, readNights,
   writeNight, writeVote, yesFor, type Night,
 } from '@/lib/play-night';
 import { NO_NIGHTS, viewNights, type PlayNightResponse } from '@/lib/play-night-view';
@@ -126,7 +126,10 @@ export async function POST(req: NextRequest) {
       await startExaroton(token);
       /* the status is asked for afresh, so the lantern sees the server on its way up */
       forgetStatus();
-      if (!night.startedBy) await writeNight({ ...night, startedBy: me });
+      /* the night as it is now, not as it was before Exaroton answered: a fire
+         put out in those seconds stayed out rather than coming back lit */
+      const latest = (await readNights()).find(n => n.id === night.id);
+      if (latest && !latest.cancelled && !latest.startedBy) await writeNight({ ...latest, startedBy: me });
       return json(await view(me));
     }
 
