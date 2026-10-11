@@ -11,7 +11,7 @@ import { nameEm } from '@/lib/name-width';
 import { LIMITS, NAME_MAX, PASSWORD_MIN, allPhotos, coverPhoto, sameUser } from '@/lib/crew-types';
 import type { PlayerStat, StatsResponse } from '@/app/api/stats/route';
 import { formatDate } from '@/lib/format';
-import { errorFrom } from '@/lib/crew-upload';
+import { errorFrom, failure, OFFLINE } from '@/lib/crew-upload';
 import AddressBar from '@/components/badlands/AddressBar';
 import Footer from '@/components/badlands/Footer';
 import PlayerHead from '@/components/badlands/PlayerHead';
@@ -73,7 +73,7 @@ function LoginModal({ username, onSuccess, onClose }: { username: string; onSucc
       const res = await fetch('/api/crew/invite', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username }) });
       if (res.ok) setMail('sent');
       else { setError(await errorFrom(res)); setMail('idle'); }
-    } catch { setError('Nettenging brást. Reyndu aftur.'); setMail('idle'); }
+    } catch { setError(OFFLINE); setMail('idle'); }
   }
 
   async function submit(e: FormEvent) {
@@ -87,7 +87,7 @@ function LoginModal({ username, onSuccess, onClose }: { username: string; onSucc
       });
       if (res.ok) { onSuccess(); onClose(); }
       else setError(await errorFrom(res));
-    } catch { setError('Nettenging brást. Reyndu aftur.'); }
+    } catch { setError(OFFLINE); }
     finally   { setLoading(false); }
   }
 
@@ -147,7 +147,7 @@ function PasswordModal({ username, change, onDone, onClose }: { username: string
       const res = await fetch(`/api/crew/${username}/password`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pw }) });
       if (res.ok) { onDone(); onClose(); }
       else setError(await errorFrom(res));
-    } catch { setError('Nettenging brást. Reyndu aftur.'); }
+    } catch { setError(OFFLINE); }
     finally   { setLoading(false); }
   }
 
@@ -217,7 +217,7 @@ function ContactModal({ username, onClose }: { username: string; onClose: () => 
       const res = await fetch(`/api/crew/${username}/email`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, email: address, nights }) });
       if (res.ok) onClose();
       else setError(await errorFrom(res));
-    } catch { setError('Nettenging brást. Reyndu aftur.'); }
+    } catch { setError(OFFLINE); }
     finally   { setLoading(false); }
   }
 
@@ -355,7 +355,7 @@ export default function Wall({ initial, places, initialStats = null, justSignedI
     if (bioSaving) return;
     setBioError(''); setBioSaving(true);
     try { await patchProfile({ bio: bioText }); setEditingBio(false); }
-    catch (e) { setBioError(e instanceof Error ? e.message : 'Ekki tókst að vista kynninguna.'); }
+    catch (e) { setBioError(failure(e, 'Ekki tókst að vista kynninguna.')); }
     finally { setBioSaving(false); }
   }
 
@@ -370,7 +370,7 @@ export default function Wall({ initial, places, initialStats = null, justSignedI
     covering.current = true;
     setWallError('');
     patchProfile({ coverPhotoId: photoId })
-      .catch(e => setWallError(e instanceof Error ? e.message : 'Ekki tókst að skipta um forsíðumynd.'))
+      .catch(e => setWallError(failure(e, 'Ekki tókst að skipta um forsíðumynd.')))
       .finally(() => { covering.current = false; });
   }, [patchProfile]);
   /* The prints are read through a ref, so the callback every sign holds stays

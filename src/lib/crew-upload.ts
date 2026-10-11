@@ -28,6 +28,19 @@ export function newId(): string {
   });
 }
 
+export const OFFLINE = 'Nettenging brást. Reyndu aftur.';
+
+/** What a failed action says under it. A request that never reached the
+    site rejects with the browser's own English ("Failed to fetch", "Load
+    failed"), so that is said in Icelandic; an error thrown with the site's
+    words (errorFrom below, or prepareImage) keeps them; anything else gets
+    the action's own words. */
+export function failure(e: unknown, fallback: string): string {
+  if (e instanceof TypeError || (e instanceof DOMException && (e.name === 'NetworkError' || e.name === 'AbortError'))) return OFFLINE;
+  if (e instanceof Error && e.constructor === Error && e.message) return e.message;
+  return fallback;
+}
+
 /** Read an error message out of any response, JSON or not (Vercel's 413 page is plain text). */
 export async function errorFrom(res: Response): Promise<string> {
   const text = await res.text().catch(() => '');

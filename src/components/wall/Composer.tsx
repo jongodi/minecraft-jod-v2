@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import type { CrewEntry } from '@/lib/crew-types';
 import { LIMITS } from '@/lib/crew-types';
-import { fetchStorageInfo, uploadPrint, errorFrom, type StorageInfo, type UploadedPrint } from '@/lib/crew-upload';
+import { fetchStorageInfo, uploadPrint, errorFrom, failure, type StorageInfo, type UploadedPrint } from '@/lib/crew-upload';
 import { formatDate, plural } from '@/lib/format';
 import { CloseIcon } from '@/components/badlands/Bits';
 import type { WallPlace } from './Wall';
@@ -72,7 +72,7 @@ export default function Composer({ username, places, onPinned }: Props) {
     info
       .then(i => uploadPrint(username, d.file, i, pct => patch(d.key, { progress: pct })))
       .then(done => { if (dropped.current.has(d.key)) discard(done); else patch(d.key, { done, progress: 100 }); })
-      .catch(e => patch(d.key, { error: e instanceof Error ? e.message : 'Upphleðsla mistókst.' }));
+      .catch(e => patch(d.key, { error: failure(e, 'Upphleðsla mistókst.') }));
   }, [askStorage, patch, username, discard]);
 
   const add = useCallback((files: File[]) => {
@@ -188,7 +188,7 @@ export default function Composer({ username, places, onPinned }: Props) {
       setDrafts(ds => ds.filter(d => !pinned.has(d.key)));
       setText(''); setPlaceId(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ekki tókst að festa þetta upp.');
+      setError(failure(err, 'Ekki tókst að festa þetta upp.'));
     } finally {
       pinningNow.current = false;
       setPinning(false);

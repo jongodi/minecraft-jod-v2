@@ -13,7 +13,7 @@ import { Lantern } from '@/components/badlands/Bits';
 import { useMounted } from '@/components/badlands/hooks';
 import PlayerHead from '@/components/badlands/PlayerHead';
 import { photoProps, PHOTO_SIZES } from '@/components/badlands/photo';
-import { errorFrom } from '@/lib/crew-upload';
+import { errorFrom, failure, OFFLINE } from '@/lib/crew-upload';
 import { woodClass } from '@/lib/sign-wood';
 import type { WallPlace } from './Wall';
 
@@ -71,11 +71,9 @@ export default memo(function Print({ username, entry, places, me, isOwner, cover
       const saved = await res.json() as CrewEntry;
       onChange(entry.id, () => saved);
       setEdit(null);
-    } catch (e) { setError(e instanceof Error ? e.message : 'Ekki tókst að vista.'); }
+    } catch (e) { setError(failure(e, 'Ekki tókst að vista.')); }
     finally { setSaving(false); }
   }
-
-  const OFFLINE = 'Nettenging brást. Reyndu aftur.';
 
   async function remove() {
     if (!confirm('Taka þetta niður af veggnum? Myndirnar hverfa líka.')) return;
@@ -97,11 +95,11 @@ export default memo(function Print({ username, entry, places, me, isOwner, cover
     }
     setBusyLantern(true); setError('');
     try {
-      const res = await api('/lantern', { method: 'POST' });
+      const res = await api('/lantern', { method: 'POST', body: JSON.stringify({ lit: !lit }) });
       if (!res.ok) throw new Error(await errorFrom(res));
       const { lanterns } = await res.json() as { lanterns: string[] };
       onChange(entry.id, e => ({ ...e, lanterns }));
-    } catch (err) { setError(err instanceof Error ? err.message : OFFLINE); }
+    } catch (err) { setError(failure(err, 'Ekki tókst að kveikja á luktinni.')); }
     finally { setBusyLantern(false); }
   }
 
@@ -115,7 +113,7 @@ export default memo(function Print({ username, entry, places, me, isOwner, cover
       const r = await res.json() as CrewEntry['replies'][number];
       onChange(entry.id, e => ({ ...e, replies: [...e.replies, r] }));
       setReply('');
-    } catch (err) { setError(err instanceof Error ? err.message : 'Svarið komst ekki upp.'); }
+    } catch (err) { setError(failure(err, 'Svarið komst ekki upp.')); }
     finally { setReplying(false); }
   }
 
@@ -126,7 +124,7 @@ export default memo(function Print({ username, entry, places, me, isOwner, cover
       const res = await api(`/replies/${rid}`, { method: 'DELETE' });
       if (!res.ok) throw new Error(await errorFrom(res));
       onChange(entry.id, e => ({ ...e, replies: e.replies.filter(r => r.id !== rid) }));
-    } catch (err) { setError(err instanceof Error ? err.message : OFFLINE); }
+    } catch (err) { setError(failure(err, 'Ekki tókst að eyða svarinu.')); }
   }
 
   const open = (photo: CrewPhoto) => (e: MouseEvent<HTMLButtonElement>) => onOpen(photo.id, e.currentTarget.getBoundingClientRect());
