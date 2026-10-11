@@ -72,6 +72,24 @@ export async function readAllProfiles(): Promise<CrewProfile[]> {
   }
 }
 
+/** Every member's wall as it is stored, the text itself, unparsed: for the
+    sweep of prints nobody pinned (src/lib/crew-sweep.ts), which looks for
+    every picture a wall names anywhere in it, old shapes included. Strict,
+    unlike the reads above: a store that fails throws, since a wall it could
+    not read would look like one with nothing on it. A member with no wall
+    yet is an empty string. */
+export async function readStoredWalls(): Promise<string[]> {
+  if (hasKV()) {
+    const { getRedis } = await import('./redis');
+    const raw = await getRedis().mget(...CREW_USERNAMES.map(profileKey));
+    return raw.map(v => v ?? '');
+  }
+  return Promise.all(CREW_USERNAMES.map(async name => {
+    try { return await fs.readFile(path.join(profilesDir(), `${name.toLowerCase()}.json`), 'utf-8'); }
+    catch (e) { if ((e as NodeJS.ErrnoException).code === 'ENOENT') return ''; throw e; }
+  }));
+}
+
 /* A write goes to a temporary file that is then renamed over the wall, so a
    read that lands mid-write sees the old wall or the new one, never half. */
 async function writeProfileFile(clean: CrewProfile): Promise<void> {
