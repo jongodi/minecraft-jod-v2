@@ -277,6 +277,15 @@ export default function Wall({ initial, places, initialStats = null, justSignedI
   const [showPw,      setShowPw]      = useState(false);
   const [showEmail,   setShowEmail]   = useState(false);
   const [editingBio,  setEditingBio]  = useState(false);
+  /* the bio's button leaves the page while it is edited; the keyboard comes back to it after */
+  const bioBtn = useRef<HTMLButtonElement>(null);
+  const backToBio = useRef(false);
+  const closeBio = () => { backToBio.current = true; setEditingBio(false); };
+  useEffect(() => {
+    if (editingBio || !backToBio.current) return;
+    backToBio.current = false;
+    bioBtn.current?.focus();
+  }, [editingBio]);
   const [bioText,     setBioText]     = useState(initial.bio);
   const [bioError,    setBioError]    = useState('');
   const [bioSaving,   setBioSaving]   = useState(false);
@@ -354,7 +363,7 @@ export default function Wall({ initial, places, initialStats = null, justSignedI
   async function saveBio() {
     if (bioSaving) return;
     setBioError(''); setBioSaving(true);
-    try { await patchProfile({ bio: bioText }); setEditingBio(false); }
+    try { await patchProfile({ bio: bioText }); closeBio(); }
     catch (e) { setBioError(failure(e, 'Ekki tókst að vista kynninguna.')); }
     finally { setBioSaving(false); }
   }
@@ -444,12 +453,12 @@ export default function Wall({ initial, places, initialStats = null, justSignedI
                 <textarea className={`b-textarea${bioError ? ' is-error' : ''}`} value={bioText} onChange={e => setBioText(e.target.value)} maxLength={LIMITS.bio} rows={3} placeholder="Ein eða tvær línur um þig" autoFocus />
                 <div className="b-inline">
                   <button className="b-btn b-btn--solid b-btn--small" onClick={saveBio} disabled={bioSaving}>{bioSaving ? 'Vista…' : 'Vista'}</button>
-                  <button className="b-btn b-btn--small" onClick={() => { setEditingBio(false); setBioError(''); setBioText(profile.bio); }}>Hætta við</button>
+                  <button className="b-btn b-btn--small" onClick={() => { closeBio(); setBioError(''); setBioText(profile.bio); }}>Hætta við</button>
                 </div>
                 {bioError && <p className="b-err" role="alert">{bioError}</p>}
               </div>
             ) : isOwner ? (
-              <button type="button" className={`w-poster__bio w-poster__bio--edit b-tip${profile.bio ? '' : ' is-empty'}`} onClick={() => setEditingBio(true)} data-tip="Breyta kynningu">
+              <button ref={bioBtn} type="button" className={`w-poster__bio w-poster__bio--edit b-tip${profile.bio ? '' : ' is-empty'}`} onClick={() => setEditingBio(true)} data-tip="Breyta kynningu">
                 {/* the tip is for the eye; a screen reader hears what the button does before the words it holds */}
                 <span className="b-visually-hidden">Breyta kynningu: </span>
                 {profile.bio || 'Skrifaðu eina eða tvær línur um þig…'}
@@ -501,7 +510,7 @@ export default function Wall({ initial, places, initialStats = null, justSignedI
           ) : (
             profile.entries.map(entry => (
               <Print key={entry.id} username={username} entry={entry} places={places} me={me} isOwner={isOwner}
-                coverPhotoId={profile.coverPhotoId} fresh={entry.id === fresh} onChange={onChange} onRemove={onRemove} onCover={onCover} onOpen={onOpen} />
+                coverPhotoId={profile.coverPhotoId} shownCoverId={cover?.id ?? null} fresh={entry.id === fresh} onChange={onChange} onRemove={onRemove} onCover={onCover} onOpen={onOpen} />
             ))
           )}
         </section>

@@ -4,7 +4,7 @@
 // can rewrite it, recaption or take down its pictures, move it to a place,
 // or make one of its prints the poster's backdrop. Anyone signed in can
 // light a lantern under it or leave a line.
-import { memo, useState, type CSSProperties, type FormEvent, type MouseEvent } from 'react';
+import { memo, useEffect, useRef, useState, type CSSProperties, type FormEvent, type MouseEvent } from 'react';
 import Link from 'next/link';
 import type { CrewEntry, CrewPhoto } from '@/lib/crew-types';
 import { LIMITS, sameUser } from '@/lib/crew-types';
@@ -24,6 +24,8 @@ interface Props {
   me:           string | null | undefined;
   isOwner:      boolean;
   coverPhotoId: string | null;
+  /** the print the poster shows: the one chosen, or with none chosen the newest */
+  shownCoverId: string | null;
   /** just put up from this page: it swings on its chains and settles */
   fresh?:       boolean;
   /** change this entry as it is now in the wall's state, not as it was when the request began */
@@ -41,13 +43,24 @@ const WORD_MAX = 90;
 /* Every prop the wall hands a sign is a value or a callback that keeps its
    identity, so a lantern lit on one sign, or a line typed in the bio, does
    not draw every other sign on the wall again. */
-export default memo(function Print({ username, entry, places, me, isOwner, coverPhotoId, fresh = false, onChange, onRemove, onCover, onOpen }: Props) {
+export default memo(function Print({ username, entry, places, me, isOwner, coverPhotoId, shownCoverId, fresh = false, onChange, onRemove, onCover, onOpen }: Props) {
   const [edit, setEdit]       = useState<EditState | null>(null);
   const [saving, setSaving]   = useState(false);
   const [error, setError]     = useState('');
   const [reply, setReply]     = useState('');
   const [replying, setReplying] = useState(false);
   const [busyLantern, setBusyLantern] = useState(false);
+  /* "breyta" leaves the page while the editor is open; the keyboard's place
+     goes to the editor's words and comes back to "breyta" when it closes,
+     rather than falling to the top of the page with the button it was on */
+  const editBtn = useRef<HTMLButtonElement>(null);
+  const backToEdit = useRef(false);
+  const closeEditor = () => { backToEdit.current = true; setEdit(null); };
+  useEffect(() => {
+    if (edit || !backToEdit.current) return;
+    backToEdit.current = false;
+    editBtn.current?.focus();
+  }, [edit]);
   /* the light a lantern just lit throws across the board: where it stands, and a count so a second lighting starts it again */
   const [light, setLight] = useState<{ x: number; y: number; n: number } | null>(null);
   const mounted = useMounted();
@@ -70,7 +83,7 @@ export default memo(function Print({ username, entry, places, me, isOwner, cover
       if (!res.ok) throw new Error(await errorFrom(res));
       const saved = await res.json() as CrewEntry;
       onChange(entry.id, () => saved);
-      setEdit(null);
+      closeEditor();
     } catch (e) { setError(failure(e, 'Ekki tókst að vista.')); }
     finally { setSaving(false); }
   }
@@ -150,8 +163,10 @@ export default memo(function Print({ username, entry, places, me, isOwner, cover
                   <input className="w-draft__cap" value={photo.caption} maxLength={LIMITS.caption} placeholder="myndatexti" aria-label={photos.length > 1 ? `Myndatexti, mynd ${i + 1} af ${photos.length}` : 'Myndatexti'}
                     onChange={e => setEdit(s => s && ({ ...s, photos: s.photos.map(p => p.id === photo.id ? { ...p, caption: e.target.value } : p) }))} />
                   <div className="w-print__pic-tools">
-                    <button type="button" className={`w-tool${coverPhotoId === photo.id ? ' is-on' : ''}`} onClick={() => onCover(coverPhotoId === photo.id ? null : photo.id)}>
-                      {coverPhotoId === photo.id ? 'á plakatinu' : 'setja á plakatið'}
+                    {/* says what the poster shows, the newest print too when none is chosen; pressing a chosen
+                        one lets the poster go back to the newest, pressing any other (that one included) chooses it */}
+                    <button type="button" className={`w-tool${shownCoverId === photo.id ? ' is-on' : ''}`} aria-pressed={shownCoverId === photo.id} onClick={() => onCover(coverPhotoId === photo.id ? null : photo.id)}>
+                      {shownCoverId === photo.id ? 'á plakatinu' : 'setja á plakatið'}
                     </button>
                     <button type="button" className="w-tool" onClick={() => setEdit(s => s && ({ ...s, photos: s.photos.filter(p => p.id !== photo.id) }))}>taka niður</button>
                   </div>
@@ -169,7 +184,8 @@ export default memo(function Print({ username, entry, places, me, isOwner, cover
 
       {edit ? (
         <div className="w-print__editor">
-          <textarea className="b-textarea" value={edit.text} onChange={e => setEdit(s => s && ({ ...s, text: e.target.value }))} maxLength={LIMITS.text} rows={3} placeholder="Miði" aria-label="Miði" />
+          {/* focused as it opens: the button that opened it has left the page */}
+          <textarea className="b-textarea" value={edit.text} onChange={e => setEdit(s => s && ({ ...s, text: e.target.value }))} maxLength={LIMITS.text} rows={3} placeholder="Miði" aria-label="Miði" autoFocus />
           <div className="w-print__editrow">
             <select className="w-pin__select" value={edit.placeId ?? ''} onChange={e => setEdit(s => s && ({ ...s, placeId: e.target.value ? Number(e.target.value) : null }))} aria-label="Staður">
               <option value="">Enginn staður</option>
@@ -177,7 +193,7 @@ export default memo(function Print({ username, entry, places, me, isOwner, cover
             </select>
             <span className="b-inline">
               <button type="button" className="b-btn b-btn--solid b-btn--small" onClick={save} disabled={saving || (!edit.text.trim() && edit.photos.length === 0)}>{saving ? 'Vista…' : 'Vista'}</button>
-              <button type="button" className="b-btn b-btn--small" onClick={() => { setEdit(null); setError(''); }}>Hætta við</button>
+              <button type="button" className="b-btn b-btn--small" onClick={() => { closeEditor(); setError(''); }}>Hætta við</button>
             </span>
           </div>
         </div>
@@ -203,7 +219,7 @@ export default memo(function Print({ username, entry, places, me, isOwner, cover
         </button>
         {isOwner && !edit && (
           <span className="w-print__actions">
-            <button type="button" onClick={() => setEdit({ text: entry.text, placeId: entry.placeId, photos: entry.photos })} aria-label={`Breyta færslunni: ${name}`}>breyta</button>
+            <button ref={editBtn} type="button" onClick={() => setEdit({ text: entry.text, placeId: entry.placeId, photos: entry.photos })} aria-label={`Breyta færslunni: ${name}`}>breyta</button>
             <button type="button" onClick={remove} aria-label={`Eyða færslunni: ${name}`}>eyða</button>
           </span>
         )}
