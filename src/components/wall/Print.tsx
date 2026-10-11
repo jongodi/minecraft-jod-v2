@@ -76,7 +76,7 @@ export default memo(function Print({ username, entry, places, me, isOwner, cover
   }
 
   async function remove() {
-    if (!confirm('Taka þetta niður af veggnum? Myndirnar hverfa líka.')) return;
+    if (!confirm(entry.photos.length > 0 ? `Taka þetta niður af veggnum? ${entry.photos.length === 1 ? 'Myndin hverfur' : 'Myndirnar hverfa'} líka.` : 'Taka þetta niður af veggnum?')) return;
     setError('');
     try {
       const res = await api('', { method: 'DELETE' });

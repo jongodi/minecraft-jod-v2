@@ -53,7 +53,7 @@ export default function CrewPage() {
       <NightSky />
       <main id="efni" className="b-wrap b-page">
         {staleLink && (
-          <p className="w-welcome" role="status">Þessi innskráningartengill er útrunninn eða þegar notaður. Biddu stjórnandann um nýjan.</p>
+          <p className="w-welcome" role="status">Þessi innskráningartengill er útrunninn eða þegar notaður. Fáðu nýjan í pósti undir „Þetta er ég“ á veggnum þínum, eða hjá stjórnandanum.</p>
         )}
         <div className="b-page__head">
           <div>

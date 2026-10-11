@@ -90,7 +90,7 @@ export function NightBoard({ server }: { server: ServerState }) {
           <p className="b-note">{me ? 'Ekkert bál logar. Kveiktu eitt og sjáðu hver kemur.' : 'Ekkert kvöld á dagskrá.'}</p>
         </div>
         {me ? <button type="button" className="b-btn b-btn--solid b-btn--small" onClick={() => setLighting(true)}>Kveikja bál</button>
-            : <Link href="/crew" className="b-btn b-btn--small b-btn--ghost">Skrá sig inn</Link>}
+            : <Link href="/crew" className="b-btn b-btn--small b-btn--ghost">Skrá mig inn</Link>}
       </section>
     );
   }
