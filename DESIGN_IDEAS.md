@@ -715,3 +715,45 @@ Part 6 was read as no change at all: fixes and refinements, nothing new to the e
 | Off the trail | The death screen: *Þú dóst!*, *Þú féllst út úr heiminum.*, *Stig: 0*, *Lifna aftur við* over *Titilskjár*. |
 
 Measured on a production build: First Load JS `/` 141 → 142 kB. Scroll probe, phone 390 × 844 at 4× CPU: mean 7.2 ms, worst 30.0 ms, no long frames, style 2.0 s and script 0.7 s over the whole scroll (2.6 s and 1.4 s on `main`). No sideways scroll at 360 to 1920 on any page; reduced motion stills the drift, the smoke, the splash, the swing and the armadillo.
+
+---
+
+## Part 8. The quiet pass: what broke where nobody was looking
+
+An /improve pass on 11 October 2026, on `improve/oct-11-pass`, after Part 7. No new features: three read-only audits of the code (the home page; the walls; the server), every finding traced before it was fixed, and a look at every page at 320 to 1920 px. Most of what it found sits behind the page: answers that were older than they looked, writes that failed without saying so, and gestures that did the opposite of what they showed.
+
+### What changed, and why
+
+| Where | What | Why, in one sentence |
+|---|---|---|
+| The status | The status route asks Exaroton live; only the home page's half-minute render may use Next's data cache. Only a live, recent answer may say when the server went out. | The data cache hands back its last entry however old and refreshes behind, so the first visitor after a quiet spell could see an evening that was over, and an idle instance could write its own old evening over the store's. |
+| Play nights | A fire with several times needs its first at least three hours off; an older poll cannot undo a fresh vote; starting the server cannot relight a fire put out meanwhile; the 'out' letter is kept and retried. | A night lit inside the three hours was decided at once on the proposer's own answer, and the README promised a retry the 'out' letter never got. |
+| The board | A member Mojang did not answer for counts as failed. | They vanished from the board and the snapshot was saved without them. |
+| The walls | Every write answers the store's trouble as 503 with its own words; lanterns say which state they want; offline reads 'Nettenging brást', not 'Failed to fetch'; /api/crew/me answers a store it cannot read with 503 rather than 'nobody'. | Members read 'Villa 500', a false 'not found' or the browser's English, a stale tab put lanterns out while showing them lit, and a store blip signed the owner out of their own wall. |
+| The wind | A remembered 'on' arms on a finger lifted, and the toggle says on only once the sound plays. | A phone counts the lift, not the touch, as the gesture: the sound stayed silent under a toggle that said it was on. |
+| The world | The way into the 3D map is a link in the server's markup; the paper tag under it says what it does at that width. | The server cannot know a phone, and sent one a dead button. |
+| Keys and readers | One Escape closes one layer; the painted map's pins are exposed; hidden labels are read; nothing under a room's dark takes the keyboard; Back puts down the picture, the album, the duel and a wall's dialog before it leaves the page. | Escape closed the duel and the postcard together, and the back gesture went straight off the page. |
+| Words | No 'point', 'click', 'drag' or number keys on a phone; the week written on each poster ('28. sep. til 5. okt.'); plurals on the link card; 'Skrá mig inn'; the pin slot says when a file is not a picture. | Each asked a phone for something it cannot do, or said nothing where it should have. |
+| The hero | The '+1' beside the Ð's climber stands by its feet. | From 700 px it stood on the corner of the sun. |
+| Small server things | Sign-in tries over IPv6 counted by the /64; the place card says who built it once; Modrinth's empty answer takes the fallback; calls to Exaroton, Modrinth and GitHub are capped in time. | Each was traced to a real path. |
+
+### Measured
+
+Production builds, same machine, same session.
+
+| | before | after |
+|---|---|---|
+| Tests | 264 | 282 |
+| First Load JS `/`, `/crew`, `/crew/[username]` | 142, 134, 157 kB | 143, 135, 158 kB |
+| Lighthouse mobile `/` (three runs) | 84 / 96 / 98, LCP 3.1 / 2.6 / 2.2 s, TBT 410 / 140 / 70 ms | 96 / 96 / 96, LCP 2.6 s, TBT 70 / 70 / 90 ms |
+| Lighthouse mobile `/crew` | 96, LCP 2.7 s | 96, LCP 2.7 s |
+| Lighthouse mobile, a wall | 90 to 91, LCP 3.5 s | 90 to 91, LCP 3.4 to 3.5 s |
+| Scroll probe, phone 390 × 844, 4× CPU | mean 16.7 ms, p95 19.3 ms, 0 long of 1014 | mean 16.7 ms, p95 18.7 to 19.0 ms, 1 to 3 long of about 1020 |
+
+Accessibility, Best Practices and SEO are 100 on `/` before and after; a wall and `/crew` lose Best Practices only to the skin and head hosts the sandbox blocks, and a wall's LCP is the skin itself, so its number says little here. The desktop probe runs on the sandbox's software compositor and swings run to run (49 to 85 long frames of 376 to 603). `scrollWidth` equals the viewport on every page at 320 to 1920; the console is clean apart from the 404's own 404.
+
+### Not done
+
+1. **An idempotency key for Resend.** A letter whose send timed out after Resend delivered it can go twice. A key per night and letter would stop that, but Resend answers a reused key with a different body (a reader who turned the letters off in between) with a 409, which would hold the letter back for a day; it needs trying against Resend itself.
+2. **A sign-in link that spends a use only on a press**, Part 6's item 2, still stands.
+3. **A legacy-JavaScript trim.** Lighthouse counts 11 kB of transpiled code a modern `browserslist` would drop; it would also drop the older iPhones some of the crew may carry, so it is the owner's call.
