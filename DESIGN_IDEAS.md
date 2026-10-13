@@ -718,7 +718,49 @@ Measured on a production build: First Load JS `/` 141 → 142 kB. Scroll probe, 
 
 ---
 
-## Part 8. What the server already wrote down
+## Part 8. The quiet pass: what broke where nobody was looking
+
+An /improve pass on 11 October 2026, on `improve/oct-11-pass`, after Part 7. No new features: three read-only audits of the code (the home page; the walls; the server), every finding traced before it was fixed, and a look at every page at 320 to 1920 px. Most of what it found sits behind the page: answers that were older than they looked, writes that failed without saying so, and gestures that did the opposite of what they showed.
+
+### What changed, and why
+
+| Where | What | Why, in one sentence |
+|---|---|---|
+| The status | The status route asks Exaroton live; only the home page's half-minute render may use Next's data cache. Only a live, recent answer may say when the server went out. | The data cache hands back its last entry however old and refreshes behind, so the first visitor after a quiet spell could see an evening that was over, and an idle instance could write its own old evening over the store's. |
+| Play nights | A fire with several times needs its first at least three hours off, and the fire form greys out nearer times (and moves a chosen one, saying why) once a second time is added; an older poll cannot undo a fresh vote; starting the server cannot relight a fire put out meanwhile; the 'out' letter is kept and retried. | A night lit inside the three hours was decided at once on the proposer's own answer, and the README promised a retry the 'out' letter never got. |
+| The board | A member Mojang did not answer for counts as failed. | They vanished from the board and the snapshot was saved without them. |
+| The walls | Every write answers the store's trouble as 503 with its own words; lanterns say which state they want; offline reads 'Nettenging brást', not 'Failed to fetch'; /api/crew/me answers a store it cannot read with 503 rather than 'nobody'; the daily job sweeps out pictures that went up to a pin slot and were never pinned, once three days old (Part 6's item 4). | Members read 'Villa 500', a false 'not found' or the browser's English, a stale tab put lanterns out while showing them lit, and a store blip signed the owner out of their own wall. |
+| The wind | A remembered 'on' arms on a finger lifted, and the toggle says on only once the sound plays. | A phone counts the lift, not the touch, as the gesture: the sound stayed silent under a toggle that said it was on. |
+| The world | The way into the 3D map is a link in the server's markup; the paper tag under it says what it does at that width. | The server cannot know a phone, and sent one a dead button. |
+| Keys and readers | One Escape closes one layer; the painted map's pins are exposed; hidden labels are read; nothing under a room's dark takes the keyboard; Back puts down the picture, the album, the duel and a wall's dialog before it leaves the page. | Escape closed the duel and the postcard together, and the back gesture went straight off the page. |
+| Words | No 'point', 'click', 'drag' or number keys on a phone; the week written on each poster ('28. sep. til 5. okt.'); plurals on the link card; 'Skrá mig inn'; the pin slot says when a file is not a picture. | Each asked a phone for something it cannot do, or said nothing where it should have. |
+| The hero | The '+1' beside the Ð's climber stands by its feet. | From 700 px it stood on the corner of the sun. |
+| Small server things | Sign-in tries over IPv6 counted by the /64; the place card says who built it once; Modrinth's empty answer takes the fallback; calls to Exaroton, Modrinth and GitHub are capped in time. | Each was traced to a real path. |
+
+### Measured
+
+Production builds, same machine, same session.
+
+| | before | after |
+|---|---|---|
+| Tests | 264 | 282 |
+| First Load JS `/`, `/crew`, `/crew/[username]` | 142, 134, 157 kB | 143, 135, 158 kB |
+| Lighthouse mobile `/` (three runs) | 84 / 96 / 98, LCP 3.1 / 2.6 / 2.2 s, TBT 410 / 140 / 70 ms | 96 / 96 / 96, LCP 2.6 s, TBT 70 / 70 / 90 ms |
+| Lighthouse mobile `/crew` | 96, LCP 2.7 s | 96, LCP 2.7 s |
+| Lighthouse mobile, a wall | 90 to 91, LCP 3.5 s | 90 to 91, LCP 3.4 to 3.5 s |
+| Scroll probe, phone 390 × 844, 4× CPU | mean 16.7 ms, p95 19.3 ms, 0 long of 1014 | mean 16.7 ms, p95 18.7 to 19.0 ms, 1 to 3 long of about 1020 |
+
+Accessibility, Best Practices and SEO are 100 on `/` before and after; a wall and `/crew` lose Best Practices only to the skin and head hosts the sandbox blocks, and a wall's LCP is the skin itself, so its number says little here. The desktop probe runs on the sandbox's software compositor and swings run to run (49 to 85 long frames of 376 to 603). `scrollWidth` equals the viewport on every page at 320 to 1920; the console is clean apart from the 404's own 404.
+
+### Not done
+
+1. **An idempotency key for Resend.** A letter whose send timed out after Resend delivered it can go twice. A key per night and letter would stop that, but Resend answers a reused key with a different body (a reader who turned the letters off in between) with a 409, which would hold the letter back for a day; it needs trying against Resend itself.
+2. **A sign-in link that spends a use only on a press**, Part 6's item 2, still stands.
+3. **A legacy-JavaScript trim.** Lighthouse counts 11 kB of transpiled code a modern `browserslist` would drop; it would also drop the older iPhones some of the crew may carry, so it is the owner's call.
+
+---
+
+## Part 9. What the server already wrote down
 
 A brainstorm on 13 October 2026 asked where the room left was, after seven passes on the look. The answer was in the data: the server keeps every member's advancements with the moment each was done, and the site never read them; settled play nights were deleted outright once their embers went out; screenshots carry their exact time in their names; and a letter asked its reader to sign in before answering. Four of its ideas were built, on `feat/fires-advancements-tab-lantern`.
 
@@ -739,7 +781,7 @@ A brainstorm on 13 October 2026 asked where the room left was, after seven passe
 
 ### Measured
 
-Production build: First Load JS `/` 142 → 143 kB (the tab's lantern rides with the bar), `/crew` 134 → 135 kB, `/crew/[username]` 157 → 159 kB (the advancements list); the annals load with the crew's room. Tests: 264 → 276 (the advancements read, firsts and ties, the folder fallback and a failed file keeping its last copy; the annals kept and none put out; the evening's pictures; a letter's key for its own night and reader, refused tampered, for another night or past its time; the answer buttons in the letters). `tsc`, `next lint` and the build clean. Checked against the live server read-only: `world/players/advancements` holds nine files in the game's format, and the crew has between 9 and 63 of the 121. Screens at 390 and 1440 with staged data: no sideways scroll.
+Production build, on top of the quiet pass (Part 8): First Load JS `/` 143 → 144 kB (the tab's lantern rides with the bar), `/crew` 135 → 136 kB, `/crew/[username]` 158 → 160 kB (the advancements list); the annals load with the crew's room. Twelve new tests, 306 in all with the quiet pass's (the advancements read, firsts and ties, the folder fallback and a failed file keeping its last copy; the annals kept and none put out; the evening's pictures; a letter's key for its own night and reader, refused tampered, for another night or past its time; the answer buttons in the letters). `tsc`, `next lint` and the build clean. Checked against the live server read-only: `world/players/advancements` holds nine files in the game's format, and the crew has between 9 and 63 of the 121. Screens at 390 and 1440 with staged data: no sideways scroll.
 
 ### Worth doing later
 

@@ -998,8 +998,10 @@
   .b-hero__climber, .b-hero__more { position: absolute; top: 0.02em; translate: 0 -100%; pointer-events: auto; }
   .b-hero__climber:nth-child(1) { left: 0.99em; }
   .b-hero__climber:nth-child(2) { left: 1.70em; }
-  /* the count wears a tag of its own beside the Ð's climber; placed in the name's size, since its own em is the tag's */
-  .b-hero__climbers > .b-hero__more { left: calc(var(--fs-hero) * 1.9); top: calc(var(--fs-hero) * -0.2); translate: 0 0; }
+  /* the count wears a tag of its own beside the Ð's climber, down by its
+     feet; placed in the name's size, since its own em is the tag's. At the
+     climber's shoulder it stood on the corner of the sun from 700 px up. */
+  .b-hero__climbers > .b-hero__more { left: calc(var(--fs-hero) * 1.9); top: calc(var(--fs-hero) * -0.09); translate: 0 0; }
 }
 /* The splash (Hero.tsx): the game's yellow line tilted over the corner of
    its logo, pulsing, laid over the name's own row of the stage and placed in
@@ -1310,6 +1312,9 @@ html.is-map-full { overflow: hidden; }
 }
 /* what it does, on a paper tag pinned under the sign */
 .b-boot__sub { margin-top: var(--px); padding: var(--px) var(--sp-3); background: var(--paper); color: var(--ink-soft); clip-path: var(--notch); font-size: var(--fs-sm); line-height: 1.5; }
+/* in place on a wide screen, the whole screen below 900 px (World's phone query) */
+@media (max-width: 899px) { .b-boot__sub--wide { display: none; } }
+@media (min-width: 900px) { .b-boot__sub--phone { display: none; } }
 .b-boot:focus-visible { outline: none; }
 .b-boot:focus-visible .b-boot__word { outline: var(--px) solid var(--lantern); outline-offset: var(--px); clip-path: none; }
 .b-boot:focus-visible .b-lantern { transform: translateY(calc(var(--px) * -2)); }

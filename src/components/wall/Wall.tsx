@@ -11,14 +11,14 @@ import { nameEm } from '@/lib/name-width';
 import { LIMITS, NAME_MAX, PASSWORD_MIN, allPhotos, coverPhoto, sameUser } from '@/lib/crew-types';
 import type { PlayerStat, StatsResponse } from '@/app/api/stats/route';
 import { formatDate } from '@/lib/format';
-import { errorFrom } from '@/lib/crew-upload';
+import { errorFrom, failure, OFFLINE } from '@/lib/crew-upload';
 import AddressBar from '@/components/badlands/AddressBar';
 import Footer from '@/components/badlands/Footer';
 import PlayerHead from '@/components/badlands/PlayerHead';
 import { CloseIcon, Seal } from '@/components/badlands/Bits';
 import { PAGE_LINKS, STAT_TABS } from '@/components/badlands/data';
 import NightSky from '@/components/badlands/NightSky';
-import { seedSession, useBackdropClose, useCrewSession, useDialogFocus, useScrollLock, type CrewSessionSeed } from '@/components/badlands/hooks';
+import { seedSession, useBackCloses, useBackdropClose, useCrewSession, useDialogFocus, useScrollLock, type CrewSessionSeed } from '@/components/badlands/hooks';
 import { photoProps, PHOTO_SIZES } from '@/components/badlands/photo';
 import type { WallAdvancement } from '@/lib/advancements';
 import Advancements from './Advancements';
@@ -49,7 +49,7 @@ function LoginModal({ username, onSuccess, onClose }: { username: string; onSucc
       const res = await fetch('/api/crew/invite', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username }) });
       if (res.ok) setMail('sent');
       else { setError(await errorFrom(res)); setMail('idle'); }
-    } catch { setError('Nettenging brást. Reyndu aftur.'); setMail('idle'); }
+    } catch { setError(OFFLINE); setMail('idle'); }
   }
 
   async function submit(e: FormEvent) {
@@ -63,7 +63,7 @@ function LoginModal({ username, onSuccess, onClose }: { username: string; onSucc
       });
       if (res.ok) { onSuccess(); onClose(); }
       else setError(await errorFrom(res));
-    } catch { setError('Nettenging brást. Reyndu aftur.'); }
+    } catch { setError(OFFLINE); }
     finally   { setLoading(false); }
   }
 
@@ -87,14 +87,16 @@ function LoginModal({ username, onSuccess, onClose }: { username: string; onSucc
   );
 }
 
-/* The wall's dialogs share one frame: Escape closes it, the page stays
-   still behind it, and only a click that starts on the dark closes it, so a
-   password dragged-to-select past the paper's edge is not thrown away. */
+/* The wall's dialogs share one frame: Escape and the phone's back gesture
+   close it, the page stays still behind it, and only a click that starts on
+   the dark closes it, so a password dragged-to-select past the paper's edge
+   is not thrown away. */
 function useWallDialog(onClose: () => void) {
   /* the dialog itself, which holds focus until a field inside can take it */
   const box = useRef<HTMLDivElement>(null);
   useScrollLock();
   useDialogFocus(box);
+  useBackCloses(true, onClose);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', onKey);
@@ -123,7 +125,7 @@ function PasswordModal({ username, change, onDone, onClose }: { username: string
       const res = await fetch(`/api/crew/${username}/password`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pw }) });
       if (res.ok) { onDone(); onClose(); }
       else setError(await errorFrom(res));
-    } catch { setError('Nettenging brást. Reyndu aftur.'); }
+    } catch { setError(OFFLINE); }
     finally   { setLoading(false); }
   }
 
@@ -193,7 +195,7 @@ function ContactModal({ username, onClose }: { username: string; onClose: () => 
       const res = await fetch(`/api/crew/${username}/email`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, email: address, nights }) });
       if (res.ok) onClose();
       else setError(await errorFrom(res));
-    } catch { setError('Nettenging brást. Reyndu aftur.'); }
+    } catch { setError(OFFLINE); }
     finally   { setLoading(false); }
   }
 
@@ -255,6 +257,15 @@ export default function Wall({ initial, places, initialStats = null, advancement
   const [showPw,      setShowPw]      = useState(false);
   const [showEmail,   setShowEmail]   = useState(false);
   const [editingBio,  setEditingBio]  = useState(false);
+  /* the bio's button leaves the page while it is edited; the keyboard comes back to it after */
+  const bioBtn = useRef<HTMLButtonElement>(null);
+  const backToBio = useRef(false);
+  const closeBio = () => { backToBio.current = true; setEditingBio(false); };
+  useEffect(() => {
+    if (editingBio || !backToBio.current) return;
+    backToBio.current = false;
+    bioBtn.current?.focus();
+  }, [editingBio]);
   const [bioText,     setBioText]     = useState(initial.bio);
   const [bioError,    setBioError]    = useState('');
   const [bioSaving,   setBioSaving]   = useState(false);
@@ -331,8 +342,8 @@ export default function Wall({ initial, places, initialStats = null, advancement
   async function saveBio() {
     if (bioSaving) return;
     setBioError(''); setBioSaving(true);
-    try { await patchProfile({ bio: bioText }); setEditingBio(false); }
-    catch (e) { setBioError(e instanceof Error ? e.message : 'Ekki tókst að vista kynninguna.'); }
+    try { await patchProfile({ bio: bioText }); closeBio(); }
+    catch (e) { setBioError(failure(e, 'Ekki tókst að vista kynninguna.')); }
     finally { setBioSaving(false); }
   }
 
@@ -347,7 +358,7 @@ export default function Wall({ initial, places, initialStats = null, advancement
     covering.current = true;
     setWallError('');
     patchProfile({ coverPhotoId: photoId })
-      .catch(e => setWallError(e instanceof Error ? e.message : 'Ekki tókst að skipta um forsíðumynd.'))
+      .catch(e => setWallError(failure(e, 'Ekki tókst að skipta um forsíðumynd.')))
       .finally(() => { covering.current = false; });
   }, [patchProfile]);
   /* The prints are read through a ref, so the callback every sign holds stays
@@ -421,12 +432,12 @@ export default function Wall({ initial, places, initialStats = null, advancement
                 <textarea className={`b-textarea${bioError ? ' is-error' : ''}`} value={bioText} onChange={e => setBioText(e.target.value)} maxLength={LIMITS.bio} rows={3} placeholder="Ein eða tvær línur um þig" autoFocus />
                 <div className="b-inline">
                   <button className="b-btn b-btn--solid b-btn--small" onClick={saveBio} disabled={bioSaving}>{bioSaving ? 'Vista…' : 'Vista'}</button>
-                  <button className="b-btn b-btn--small" onClick={() => { setEditingBio(false); setBioError(''); setBioText(profile.bio); }}>Hætta við</button>
+                  <button className="b-btn b-btn--small" onClick={() => { closeBio(); setBioError(''); setBioText(profile.bio); }}>Hætta við</button>
                 </div>
                 {bioError && <p className="b-err" role="alert">{bioError}</p>}
               </div>
             ) : isOwner ? (
-              <button type="button" className={`w-poster__bio w-poster__bio--edit b-tip${profile.bio ? '' : ' is-empty'}`} onClick={() => setEditingBio(true)} data-tip="Breyta kynningu">
+              <button ref={bioBtn} type="button" className={`w-poster__bio w-poster__bio--edit b-tip${profile.bio ? '' : ' is-empty'}`} onClick={() => setEditingBio(true)} data-tip="Breyta kynningu">
                 {/* the tip is for the eye; a screen reader hears what the button does before the words it holds */}
                 <span className="b-visually-hidden">Breyta kynningu: </span>
                 {profile.bio || 'Skrifaðu eina eða tvær línur um þig…'}
@@ -474,7 +485,7 @@ export default function Wall({ initial, places, initialStats = null, advancement
           ) : (
             profile.entries.map(entry => (
               <Print key={entry.id} username={username} entry={entry} places={places} me={me} isOwner={isOwner}
-                coverPhotoId={profile.coverPhotoId} fresh={entry.id === fresh} onChange={onChange} onRemove={onRemove} onCover={onCover} onOpen={onOpen} />
+                coverPhotoId={profile.coverPhotoId} shownCoverId={cover?.id ?? null} fresh={entry.id === fresh} onChange={onChange} onRemove={onRemove} onCover={onCover} onOpen={onOpen} />
             ))
           )}
         </section>

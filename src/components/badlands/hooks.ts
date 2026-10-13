@@ -434,6 +434,49 @@ export function useBackdropClose(onClose: () => void): { onPointerDown: (e: Reac
 
 /** `inert` on an element, set as a property. React 18 has no attribute for it
     and warns about the empty string the attribute form needs. */
+/* ─── Back closes what is open over the page ─────────────────────────────
+   A layer over the page (a picture held up, the album, the duel, a wall's
+   dialog) takes one history entry while it is open, marked with its own id
+   in the entry's state, as the rooms and the whole-screen map take theirs:
+   the phone's back gesture then closes it instead of leaving the page. A
+   layer closed by its own button takes its entry back. The step back is put
+   off a moment, so React's second run of an effect in development (close
+   and open again at once) keeps the entry rather than closing the layer. */
+let layerSeq = 0;
+const layersOf = (state: unknown): string[] => (state as { jodLayers?: string[] } | null)?.jodLayers ?? [];
+const topLayer = () => { const all = layersOf(window.history.state); return all[all.length - 1]; };
+
+export function useBackCloses(open: boolean, close: () => void): void {
+  const closeNow = useRef(close);
+  closeNow.current = close;
+  const id = useRef<string | null>(null);
+  const stepBack = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => {
+    if (!open) return;
+    if (stepBack.current !== undefined) { clearTimeout(stepBack.current); stepBack.current = undefined; }
+    else {
+      id.current = `l${++layerSeq}`;
+      window.history.pushState({ ...window.history.state, jodLayers: [...layersOf(window.history.state), id.current] }, '');
+    }
+    const mine = id.current!;
+    let popped = false;
+    const onPop = () => { if (!layersOf(window.history.state).includes(mine)) { popped = true; closeNow.current(); } };
+    window.addEventListener('popstate', onPop);
+    return () => {
+      window.removeEventListener('popstate', onPop);
+      if (popped || topLayer() !== mine) return;
+      stepBack.current = setTimeout(() => {
+        stepBack.current = undefined;
+        if (topLayer() === mine) window.history.back();
+      }, 0);
+    };
+  }, [open]);
+}
+
+/** A dialog is open over the page (the duel, the album, a picture). Escape
+    and the number keys are its own then: one press closes one layer. */
+export const modalOpen = () => document.querySelector('[aria-modal="true"]') !== null;
+
 export function useInert<T extends HTMLElement>(inert: boolean): React.RefObject<T> {
   const ref = useRef<T>(null);
   useEffect(() => {

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import Lightbox from './Lightbox';
-import { useDialogFocus, useReducedMotionPref, useScrollLock } from './hooks';
+import { useBackCloses, useDialogFocus, useReducedMotionPref, useScrollLock } from './hooks';
 import { plural } from '@/lib/format';
 import type { Plate } from './data';
 import { photoProps, PHOTO_SIZES } from './photo';
@@ -27,6 +27,8 @@ export default function Album({ plates, onClose }: { plates: Plate[]; onClose: (
   const close = useCallback(() => setOpen(null), []);
 
   useScrollLock();
+  /* the phone's back gesture puts the picture down first, then closes the album */
+  useBackCloses(true, onClose);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && open === null) onClose(); };
     window.addEventListener('keydown', onKey);
@@ -40,7 +42,7 @@ export default function Album({ plates, onClose }: { plates: Plate[]; onClose: (
         <div className="b-head">
           <div>
             <h2 className="b-title">Myndir úr heiminum</h2>
-            <p className="b-note">{plates.length} {plural(plates.length, 'mynd', 'myndir')}, í þeirri röð sem byggingarnar risu. Smelltu á ramma til að stækka.</p>
+            <p className="b-note">{plates.length} {plural(plates.length, 'mynd', 'myndir')}, í þeirri röð sem byggingarnar risu. Ýttu á ramma til að stækka.</p>
           </div>
           <button ref={closeRef} type="button" className="b-btn b-btn--small" onClick={onClose}>Loka</button>
         </div>

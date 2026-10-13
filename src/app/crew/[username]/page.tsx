@@ -15,6 +15,7 @@ import { sameUser } from '@/lib/crew-types';
 import Wall, { type WallPlace } from '@/components/wall/Wall';
 import type { CrewSessionSeed } from '@/components/badlands/hooks';
 import { SITE_NAME } from '@/components/badlands/data';
+import { plural } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,7 +40,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!isCrewUsername(username)) return { title: 'Fannst ekki' };
   const profile = await wallOf(username);
   const prints = allPhotos(profile).length;
-  const description = profile.bio || `Veggur ${profile.username} á JOÐ: ${profile.entries.length} færslur og ${prints} myndir úr leiknum.`;
+  const entries = profile.entries.length;
+  const description = profile.bio || `Veggur ${profile.username} á JOÐ: ${entries} ${plural(entries, 'færsla', 'færslur')} og ${prints} ${plural(prints, 'mynd', 'myndir')} úr leiknum.`;
   return {
     title: profile.username,
     description,

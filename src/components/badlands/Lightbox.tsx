@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion, type PanInfo } from 'framer-motion';
 import { ArrowIcon, CloseIcon } from './Bits';
-import { useDialogFocus, useScrollLock } from './hooks';
+import { useBackCloses, useDialogFocus, useScrollLock } from './hooks';
 import { SPRING, SPRING_THROW, project } from './motion';
 import { photoProps, PHOTO_SIZES } from './photo';
 
@@ -44,6 +44,9 @@ export default function Lightbox({ photos, index, onClose, onPrev, onNext, origi
     setDir(0);
     setClosing(true);
   }, [reduce, origin, onClose, index]);
+
+  /* the phone's back gesture puts the picture down, as Escape does */
+  useBackCloses(true, requestClose);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

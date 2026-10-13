@@ -120,12 +120,12 @@ function QuickDraw({ onClose }: { onClose: () => void }) {
   }, [lastIsHit, shots.length]);
 
   const call =
-    phase === 'idle'   ? { big: 'Tilbúin?', small: 'smelltu til að byrja, bíddu eftir ljósinu og smelltu aftur' } :
+    phase === 'idle'   ? { big: 'Tilbúin?', small: 'ýttu til að byrja, bíddu eftir ljósinu og ýttu aftur' } :
     phase === 'hold'   ? { big: 'Bíddu…',     small: 'ekki strax' } :
     phase === 'draw'   ? { big: 'SKJÓTTU',      small: '' } :
     phase === 'result' ? (lastIsHit ? { big: `${last} ms`, small: rankOf(last) } : { big: 'Of snemma', small: 'þessi umferð er fallin' }) :
-    gameBest !== null  ? { big: `${gameBest} ms`, small: `${rankOf(gameBest)}. Smelltu til að reyna aftur` } :
-                         { big: 'Þrjár fallnar umferðir', small: 'rólegur á gikknum! Smelltu til að reyna aftur' };
+    gameBest !== null  ? { big: `${gameBest} ms`, small: `${rankOf(gameBest)}. Ýttu til að reyna aftur` } :
+                         { big: 'Þrjár fallnar umferðir', small: 'rólegur á gikknum! Ýttu til að reyna aftur' };
 
   return (
     <div className="b-duelpanel">

@@ -147,6 +147,8 @@ export function extractStats(statsJson: MinecraftStatsJson): Omit<PlayerStat, 'u
 /** UUID → username for the crew. Mojang is asked once a day, not on every
     request; without Redis the answer lives in the function's memory. */
 let memUuids: { at: number; map: Record<string, string> } | null = null;
+/* a hung lookup would otherwise hold up the daily job until its time runs out */
+const MOJANG_TIMEOUT_MS = 4000;
 export async function crewUuids(): Promise<Record<string, string>> {
   if (memUuids && Date.now() - memUuids.at < UUID_TTL_MS) return memUuids.map;
   if (hasKV()) {
@@ -163,7 +165,7 @@ export async function crewUuids(): Promise<Record<string, string>> {
   await Promise.all(
     CREW_USERNAMES.map(async (name) => {
       try {
-        const res = await fetch(`https://api.mojang.com/users/profiles/minecraft/${name}`, { cache: 'no-store' });
+        const res = await fetch(`https://api.mojang.com/users/profiles/minecraft/${name}`, { cache: 'no-store', signal: AbortSignal.timeout(MOJANG_TIMEOUT_MS) });
         if (res.ok) {
           const data = await res.json() as { id: string; name: string };
           const uuid = data.id.replace(/^(.{8})(.{4})(.{4})(.{4})(.{12})$/, '$1-$2-$3-$4-$5');
@@ -266,11 +268,17 @@ export async function readGameStats(token: string): Promise<GameStats> {
   const listData = await listRes.json() as { data?: { children?: Array<{ name: string }> } };
   const files = new Set((listData.data?.children ?? []).map(f => f.name).filter(f => /^[0-9a-f-]{36}\.json$/i.test(f)));
 
-  const uuids = await crewUuids();
+  /* Every member, in the crew list's order. One Mojang did not answer for is
+     not someone who never played: they are counted as failed, so the board
+     keeps their last numbers and the snapshot is not saved without them. */
+  const uuidOf = new Map(Object.entries(await crewUuids()).map(([uuid, name]) => [name.toLowerCase(), { uuid, name }]));
   const counters: Record<string, Counters> = {};
   const failed: string[] = [];
   const players = await Promise.all(
-    Object.entries(uuids).map(async ([uuid, username]): Promise<PlayerStat> => {
+    CREW_USERNAMES.map(async (member): Promise<PlayerStat> => {
+      const known = uuidOf.get(member.toLowerCase());
+      if (!known) { failed.push(member); return { username: member, ...EMPTY }; }
+      const { uuid, name: username } = known;
       /* never played on this world */
       if (!files.has(`${uuid}.json`)) return { username, ...EMPTY };
       try {

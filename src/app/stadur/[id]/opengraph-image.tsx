@@ -15,8 +15,11 @@ export default async function Image({ params }: { params: Promise<{ id: string }
   const [shared, fonts] = await Promise.all([sharedPlace((await params).id), cardFonts()]);
   const backdrop = await printDataUrl(shared?.photo?.filename ?? '/map-poster.webp');
   const name = shared?.title ?? 'Staður fannst ekki';
-  const sub = shared ? shared.description.split(' · byggt af ')[0] : '';
   const builders = shared?.place.builders ?? [];
+  /* what it is; a place with neither a subtitle nor builders says where it is.
+     Cut out of the description, a place with builders and no subtitle said
+     "byggt af" twice. */
+  const sub = shared ? shared.sub || (builders.length ? '' : shared.description) : '';
   const long = name.length > 18;
 
   return new ImageResponse(

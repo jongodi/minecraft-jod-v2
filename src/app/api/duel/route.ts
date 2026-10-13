@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { badJson, jsonObject } from '@/lib/http';
-import { getCrewSession, updateProfile } from '@/lib/crew';
+import { getCrewSession, updateProfile, wallError } from '@/lib/crew';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,10 +21,14 @@ export async function POST(req: NextRequest) {
 
   let best = ms;
   let improved = false;
-  await updateProfile(session.username, p => {
-    improved = false;   /* the change may run again on a newer wall */
-    if (p.bestDrawMs === null || ms < p.bestDrawMs) { p.bestDrawMs = ms; improved = true; }
-    best = p.bestDrawMs ?? ms;
-  });
+  try {
+    await updateProfile(session.username, p => {
+      improved = false;   /* the change may run again on a newer wall */
+      if (p.bestDrawMs === null || ms < p.bestDrawMs) { p.bestDrawMs = ms; improved = true; }
+      best = p.bestDrawMs ?? ms;
+    });
+  } catch (e) {
+    return wallError(e, 'Tíminn komst ekki á töfluna.', 'POST duel');
+  }
   return NextResponse.json({ username: session.username, bestDrawMs: best, improved });
 }

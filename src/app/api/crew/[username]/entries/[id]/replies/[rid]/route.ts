@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { updateProfile, getCrewSession, isCrewUsername, sameUser } from '@/lib/crew';
+import { updateProfile, getCrewSession, isCrewUsername, sameUser, wallError } from '@/lib/crew';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,14 +13,20 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   if (!session) return NextResponse.json({ error: 'Þú þarft að skrá þig inn.' }, { status: 401 });
 
   let status: 'gone' | 'forbidden' | 'missing' = 'missing';
-  await updateProfile(username, p => {
-    const entry = p.entries.find(e => e.id === id);
-    const reply = entry?.replies.find(r => r.id === rid);
-    if (!entry || !reply) return;
-    if (!sameUser(session.username, reply.username) && !sameUser(session.username, username)) { status = 'forbidden'; return; }
-    entry.replies = entry.replies.filter(r => r.id !== rid);
-    status = 'gone';
-  });
+  try {
+    await updateProfile(username, p => {
+      /* the change may run again on a newer wall; only the last run's finding counts */
+      status = 'missing';
+      const entry = p.entries.find(e => e.id === id);
+      const reply = entry?.replies.find(r => r.id === rid);
+      if (!entry || !reply) return;
+      if (!sameUser(session.username, reply.username) && !sameUser(session.username, username)) { status = 'forbidden'; return; }
+      entry.replies = entry.replies.filter(r => r.id !== rid);
+      status = 'gone';
+    });
+  } catch (e) {
+    return wallError(e, 'Ekki tókst að eyða svarinu.', 'DELETE reply');
+  }
   if (status === 'missing')   return NextResponse.json({ error: 'Svarið fannst ekki.' }, { status: 404 });
   if (status === 'forbidden') return NextResponse.json({ error: 'Þetta svar er ekki þitt.' }, { status: 403 });
   return NextResponse.json({ ok: true });

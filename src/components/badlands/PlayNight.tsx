@@ -8,7 +8,7 @@ import Calendar from './Calendar';
 import type { ServerState } from './hooks';
 import { expectStarting, useMounted } from './hooks';
 import { isChanging } from '@/lib/server-state';
-import { LAST_DAY_AHEAD, TIME_CHOICES, WhenAt, dayLabel, dayLong, dayNum, dayOf, dayValue, isLate, letterAnswer, usePlayNight, whenAt, type LetterAnswer } from './night';
+import { DECIDE_MS, LAST_DAY_AHEAD, SOON_MS, TIME_CHOICES, WhenAt, dayLabel, dayLong, dayNum, dayOf, dayValue, isLate, letterAnswer, usePlayNight, whenAt, type LetterAnswer } from './night';
 import { Fire, Heads, chosenOf, lower } from './NightLine';
 import { plural } from '@/lib/format';
 import { toast } from './Toast';
@@ -109,7 +109,7 @@ export function NightBoard({ server }: { server: ServerState }) {
           <p className="b-note">{me ? 'Ekkert bál logar. Kveiktu eitt og sjáðu hver kemur.' : 'Ekkert kvöld á dagskrá.'}</p>
         </div>
         {me ? <button type="button" className="b-btn b-btn--solid b-btn--small" onClick={() => setLighting(true)}>Kveikja bál</button>
-            : <Link href="/crew" className="b-btn b-btn--small b-btn--ghost">Skrá sig inn</Link>}
+            : <Link href="/crew" className="b-btn b-btn--small b-btn--ghost">Skrá mig inn</Link>}
       </section>
     );
   }
@@ -307,12 +307,38 @@ function LightFire({ busy, err, onLight, onCancel }: { busy: boolean; err: strin
   /* the clock as the form opened; the server checks the times again when the fire is lit */
   const [now] = useState(() => Date.now());
   const today = Math.floor(now / 86_400_000);
-  const late = (day: string, time: string) => isLate(day, time, now);
-  const first = TIME_CHOICES.some(t => !late(dayValue(today), t)) ? today : today + 1;
   const last = today + LAST_DAY_AHEAD;
-  /** the time kept when the day changes, or the first that is still ahead */
-  const fit = (day: string, time: string) => (late(day, time) ? TIME_CHOICES.find(t => !late(day, t)) ?? time : time);
-  const [rows, setRows] = useState(() => [{ day: dayValue(late(dayValue(today), '20:00') ? today + 1 : today), time: '20:00' }]);
+  const [rows, setRows] = useState(() => [{ day: dayValue(isLate(dayValue(today), '20:00', now) ? today + 1 : today), time: '20:00' }]);
+  /* How far off a time must be: a quarter of an hour for a single time, which
+     is chosen as it is lit; with more than one, three hours, so the crew can
+     answer before the night is decided on its own. Times nearer than that are
+     greyed out in the list and the calendar starts on the first day that has one. */
+  const rule = (several: boolean) => {
+    const ahead = several ? DECIDE_MS : SOON_MS;
+    const late = (day: string, time: string) => isLate(day, time, now, ahead);
+    const first = TIME_CHOICES.some(t => !late(dayValue(today), t)) ? today : today + 1;
+    /** the time kept when the day changes, or the first that is still far enough off */
+    const fit = (day: string, time: string) => (late(day, time) ? TIME_CHOICES.find(t => !late(day, t)) ?? time : time);
+    /** a row moved onto the first day and time the rule allows, if it fell short */
+    const fitRow = (r: { day: string; time: string }) => { const day = dayNum(r.day) < first ? dayValue(first) : r.day; return { day, time: fit(day, r.time) }; };
+    return { late, first, fit, fitRow };
+  };
+  const { late, first, fit } = rule(rows.length > 1);
+  /* A second time moved a chosen one (too soon now), or greys out times on a
+     day already chosen that a single time could have: the form says why,
+     rather than leave a choice changed or a time unpickable without a word. */
+  const [moved, setMoved] = useState(false);
+  const held = rows.length > 1 && (moved || rows.some(r => TIME_CHOICES.some(t => late(r.day, t) && !isLate(r.day, t, now))));
+  const addTime = () => {
+    setOpen(null);
+    const { fitRow } = rule(true);
+    /* the times already chosen first, then the new one the day after the last of
+       them: one moved off tonight would otherwise land on the new one's day and time */
+    const fitted = rows.map(fitRow);
+    const r = fitted[fitted.length - 1];
+    setMoved(rows.some((was, i) => was.day !== fitted[i].day || was.time !== fitted[i].time));
+    setRows([...fitted, fitRow({ day: dayValue(Math.min(last, dayNum(r.day) + 1)), time: r.time })]);
+  };
   const [note, setNote] = useState('');
   const [open, setOpen] = useState<number | null>(null);
   const id = useId();
@@ -353,8 +379,10 @@ function LightFire({ busy, err, onLight, onCancel }: { busy: boolean; err: strin
           {open === i && <Calendar value={r.day} today={today} min={first} max={last} triggerId={trigger(i)} onPick={v => pick(i, v)} onClose={close} />}
         </div>
       ))}
+      {held && <p className="b-note" role="status">Með fleiri en einum tíma þarf sá fyrsti að vera minnst þrjá tíma fram í tímann, svo hópurinn nái að svara.</p>}
       {rows.length < 3 && (
-        <button type="button" className="b-btn b-btn--small b-btn--ghost" onClick={() => { setOpen(null); setRows(rs => { const r = rs[rs.length - 1]; const day = dayValue(Math.min(last, dayNum(r.day) + 1)); return [...rs, { day, time: fit(day, r.time) }]; }); }}>+ Annar tími</button>
+        /* a second time brings the three-hour rule in: any time that falls short of it moves to the first that does not */
+        <button type="button" className="b-btn b-btn--small b-btn--ghost" onClick={addTime}>+ Annar tími</button>
       )}
       <input className="b-input" placeholder="Hvað á að gera? (má sleppa)" maxLength={80} value={note} onChange={e => setNote(e.target.value)} aria-label="Hvað á að gera" />
       {err && <p className="b-err" role="alert">{err}</p>}

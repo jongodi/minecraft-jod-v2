@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cronAuthorised } from '@/lib/cron';
 import { dayOf, saveDay } from '@/lib/daily-stats';
 import { readGameStats, setCachedStats } from '@/lib/stats';
+import { sweepUnpinned } from '@/lib/crew-sweep';
 
 /* The daily job, run by Vercel Cron (vercel.json) once a day around noon in
    Iceland: every crew member's running totals are read off the server and
@@ -9,8 +10,10 @@ import { readGameStats, setCachedStats } from '@/lib/stats';
    night included, falls between two copies. The server need not be running:
    exaroton hands out a stopped server's files as it does a running one's.
 
-   It also reads the crew's advancements (src/lib/advancements.ts) and settles
-   the play nights of the evenings before (src/lib/play-night.ts).
+   It also reads the crew's advancements (src/lib/advancements.ts), settles
+   the play nights of the evenings before (src/lib/play-night.ts), and sweeps
+   out of storage the pictures that went up to a wall's pin slot and were
+   never pinned (src/lib/crew-sweep.ts), whatever came of the stats.
 
    Vercel sends CRON_SECRET as a bearer token; anything else is turned away. */
 
@@ -26,18 +29,26 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'EXAROTON_API_KEY and REDIS_URL are needed' }, { status: 503 });
   }
 
+  /* beside the stats rather than after them, and answered with them either way */
+  const swept = sweepUnpinned().catch(err => {
+    console.error('[cron/daily] could not sweep unpinned pictures:', err instanceof Error ? err.message : err);
+    return { error: 'sweep failed' };
+  });
+  const answer = async (body: Record<string, unknown>, status = 200) =>
+    NextResponse.json({ ...body, sweep: await swept }, { status, headers: { 'Cache-Control': 'no-store' } });
+
   let stats;
   try {
     stats = await readGameStats(token);
   } catch (err) {
     console.error('[cron/daily] could not read the stats:', err instanceof Error ? err.message : err);
-    return NextResponse.json({ error: 'stats unreadable' }, { status: 502 });
+    return answer({ error: 'stats unreadable' }, 502);
   }
 
   const read = Object.keys(stats.counters);
   if (read.length === 0) {
     console.error(`[cron/daily] no stats file could be read${stats.failed.length ? ` (failed: ${stats.failed.join(', ')})` : ''}`);
-    return NextResponse.json({ error: 'no stats read', failed: stats.failed }, { status: 502 });
+    return answer({ error: 'no stats read', failed: stats.failed }, 502);
   }
 
   const now = new Date();
@@ -65,5 +76,5 @@ export async function GET(req: NextRequest) {
     console.error('[cron/daily] could not settle the play nights:', err instanceof Error ? err.message : err);
   }
 
-  return NextResponse.json({ day, read, failed: stats.failed, advancements, playNights }, { headers: { 'Cache-Control': 'no-store' } });
+  return answer({ day, read, failed: stats.failed, advancements, playNights });
 }

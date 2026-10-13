@@ -89,7 +89,16 @@ describe('the rules', () => {
     expect(lib.checkTimes([iso(15 * 24 * H)], now)).toEqual({ at: [iso(15 * 24 * H)] });
     expect(lib.checkTimes([iso(367 * 24 * H)], now)).toHaveProperty('error');
     expect(lib.checkTimes([iso(2 * H), iso(2.25 * H)], now)).toHaveProperty('error');
-    expect(lib.checkTimes([iso(5 * H), iso(2 * H)], now)).toEqual({ at: [iso(2 * H), iso(5 * H)] });
+    expect(lib.checkTimes([iso(5 * H), iso(3.5 * H)], now)).toEqual({ at: [iso(3.5 * H), iso(5 * H)] });
+  });
+
+  it('will not light several times whose first is decided before anyone can answer', () => {
+    const now = 0;
+    /* three hours before the first is when the night is decided: lit inside that, the proposer's own answer decided it */
+    expect(lib.checkTimes([iso(2 * H), iso(5 * H)], now)).toHaveProperty('error');
+    expect(lib.checkTimes([iso(3 * H), iso(5 * H)], now)).toEqual({ at: [iso(3 * H), iso(5 * H)] });
+    /* one time is chosen as it is lit, so it may be soon */
+    expect(lib.checkTimes([iso(2 * H)], now)).toEqual({ at: [iso(2 * H)] });
   });
 
   it('settles who came: seen, or played more; unknown is given the benefit of the doubt', () => {

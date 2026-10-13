@@ -214,4 +214,14 @@ describe('sending, once', () => {
     expect(await mailNightOut(n, { stebbias: ['a'], joenana: ['b'] })).toEqual([]);
     expect(JSON.parse(fetchMock.mock.calls[0][1].body).to).toEqual(['jo@dæmi.is']);
   });
+
+  it("tries the 'out' letter again on the next run, though its night is cleared away", async () => {
+    fetchMock.mockResolvedValueOnce(new Response('{"message":"down"}', { status: 500 })).mockResolvedValue(ok());
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const n = lit('n5');
+    expect(await mailNightOut(n, { joenana: ['a'] })).toEqual([]);
+    /* the night itself is gone from the store; the run still owes its letter */
+    expect(await mailNights(NOW)).toEqual([{ id: 'n5', kind: 'out', to: 1 }]);
+    expect(await mailNights(NOW + 5 * 60_000)).toEqual([]);
+  });
 });

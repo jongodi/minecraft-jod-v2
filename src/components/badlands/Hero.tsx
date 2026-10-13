@@ -16,7 +16,9 @@ import { CREW } from './data';
    one line picked at random each time the title screen comes up. These are
    facts about this world, in the game's exclaiming voice; what is true
    tonight (who is in, a night planned) is picked first when there is any. */
-const SPLASHES = ['Aldrei endurræst!', 'Átta vinir!', 'Frá sumrinu 2024!', 'Aðgangur með boði!', 'Badlands við sólsetur!', 'Með armadillo!', 'Ýttu á 1, 2 eða 3!'];
+const SPLASHES = ['Aldrei endurræst!', 'Átta vinir!', 'Frá sumrinu 2024!', 'Aðgangur með boði!', 'Badlands við sólsetur!', 'Með armadillo!'];
+/* the hotbar's keys, said only where there is likely a keyboard to press them on */
+const KEYS_SPLASH = 'Ýttu á 1, 2 eða 3!';
 
 function Splash({ inside, planned }: { inside: number; planned: boolean }) {
   /* picked in the browser, once: a pick in the server's markup would differ from the browser's */
@@ -26,7 +28,8 @@ function Splash({ inside, planned }: { inside: number; planned: boolean }) {
       ...(inside > 0 ? [`${inside} inni núna!`] : []),
       ...(planned ? ['Spilakvöld á dagskrá!'] : []),
     ];
-    const pool = tonight.length > 0 && Math.random() < 0.6 ? tonight : SPLASHES;
+    const keys = window.matchMedia('(hover: hover) and (pointer: fine)').matches ? [KEYS_SPLASH] : [];
+    const pool = tonight.length > 0 && Math.random() < 0.6 ? tonight : [...SPLASHES, ...keys];
     setLine(pool[Math.floor(Math.random() * pool.length)]);
   // the title screen picks once, as the game does
   // eslint-disable-next-line react-hooks/exhaustive-deps

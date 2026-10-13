@@ -15,7 +15,7 @@ vi.mock('@/lib/redis', () => ({
 }));
 
 process.env.REDIS_URL = 'redis://test';
-const { checkRateLimit } = await import('@/lib/rateLimit');
+const { checkRateLimit, addressKey } = await import('@/lib/rateLimit');
 afterAll(() => { delete process.env.REDIS_URL; });
 
 beforeEach(() => { counts.clear(); ttls.clear(); });
@@ -31,5 +31,25 @@ describe('checkRateLimit', () => {
     const r = await checkRateLimit('1.2.3.4', 'crew-auth');
     expect(r.limited).toBe(true);
     expect(ttls.get('ratelimit:crew-auth:1.2.3.4')).toBe(900);
+  });
+});
+
+describe('addressKey', () => {
+  it('counts an IPv4 address as itself', () => {
+    expect(addressKey('85.220.1.9')).toBe('85.220.1.9');
+    expect(addressKey('::ffff:85.220.1.9')).toBe('85.220.1.9');
+  });
+
+  it('counts an IPv6 address by its /64, which one visitor holds whole', () => {
+    expect(addressKey('2a01:6f0:1:2:aaaa:bbbb:cccc:dddd')).toBe('2a01:6f0:1:2::/64');
+    expect(addressKey('2a01:06f0:0001:0002:1111:2222:3333:4444')).toBe('2a01:6f0:1:2::/64');
+    expect(addressKey('2a01:6f0:1:2::1')).toBe('2a01:6f0:1:2::/64');
+    expect(addressKey('2a01:6f0::5')).toBe('2a01:6f0:0:0::/64');
+    expect(addressKey('[2A01:6F0:1:2::9]:443')).toBe('2a01:6f0:1:2::/64');
+  });
+
+  it('leaves what it cannot read as it is', () => {
+    expect(addressKey('unknown')).toBe('unknown');
+    expect(addressKey('zz::1')).toBe('zz::1');
   });
 });

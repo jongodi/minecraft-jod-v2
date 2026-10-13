@@ -2,12 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { badJson, jsonObject } from '@/lib/http';
 import { cookies } from 'next/headers';
 import { getCrewToken, createCrewSession, deleteCrewSession, CREW_COOKIE, SESSION_TTL, isCrewUsername, canonicalUsername } from '@/lib/crew';
-import { checkRateLimit, clearRateLimit } from '@/lib/rateLimit';
+import { checkRateLimit, clearRateLimit, clientKey } from '@/lib/rateLimit';
 import { getPasswordHash, verifyPassword } from '@/lib/crew-access';
 import { timingSafeEqual } from 'crypto';
 
 export async function POST(req: NextRequest) {
-  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+  const ip = clientKey(req.headers);
   const { limited } = await checkRateLimit(ip, 'crew-auth');
   if (limited) {
     return NextResponse.json({ error: 'Of margar tilraunir. Reyndu aftur síðar.' }, { status: 429 });

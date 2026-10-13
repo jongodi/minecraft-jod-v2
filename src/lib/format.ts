@@ -34,6 +34,15 @@ export function formatDate(iso: string): string {
   return `${d.getUTCDate()}. ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
 }
 
+/** Two days (YYYY-MM-DD) as a stretch of time: "4. til 11. okt.", or
+    "28. sep. til 5. okt." across a month. */
+export function formatDaySpan(from: string, to: string): string {
+  const a = new Date(`${from}T12:00:00Z`), b = new Date(`${to}T12:00:00Z`);
+  if (Number.isNaN(a.getTime()) || Number.isNaN(b.getTime())) return '';
+  const sameMonth = a.getUTCMonth() === b.getUTCMonth() && a.getUTCFullYear() === b.getUTCFullYear();
+  return `${a.getUTCDate()}.${sameMonth ? '' : ` ${MONTHS[a.getUTCMonth()]}`} til ${b.getUTCDate()}. ${MONTHS[b.getUTCMonth()]}`;
+}
+
 /** How long ago an ISO moment was: "fyrir 3 dögum", "fyrir 2 klst.", "rétt í þessu". */
 export function formatAge(iso: string): string {
   const diff  = Date.now() - new Date(iso).getTime();

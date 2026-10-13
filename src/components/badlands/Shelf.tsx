@@ -115,7 +115,7 @@ function Shelf({ version }: { version: string | null }) {
                   <span className="b-counter__name">{packs.length} {plural(packs.length, 'kassi', 'kassar')} á hillunni</span>
                   {/* each kind and its count kept together, the dot at the end of a line rather than the start of the next */}
                   <span className="b-counter__meta">{tally.map(([c, n], i) => <Fragment key={c}>{i > 0 && ' '}<span className="b-nowrap">{categoryName(c)} {n}{i < tally.length - 1 && ' ·'}</span></Fragment>)}</span>
-                  <span className="b-counter__desc">Bentu á kassa til að lesa miðann.</span>
+                  <span className="b-counter__desc">Veldu kassa til að lesa miðann.</span>
                 </span>
               )}
             </div>

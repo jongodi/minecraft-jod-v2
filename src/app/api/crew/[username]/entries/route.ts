@@ -1,16 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { badJson, jsonObject } from '@/lib/http';
 import { randomUUID } from 'crypto';
-import { updateProfile, requireOwner, isCrewUsername, cleanText, LIMITS, type CrewEntry } from '@/lib/crew';
+import { updateProfile, requireOwner, isCrewUsername, cleanText, LIMITS, Refusal, wallError, type CrewEntry } from '@/lib/crew';
 import { photoFromDraft, type PhotoDraft } from '@/lib/crew-photos';
 import { mapPlaceIds, UNKNOWN_PLACE } from '@/lib/crew-places';
 
 export const dynamic = 'force-dynamic';
 
 type Params = { params: Promise<{ username: string }> };
-
-/** The wall turned the entry away; the member can do something about it. */
-class Refusal extends Error {}
 
 /** Pin something to the wall: a note, prints, or both, with a place if it has one. */
 export async function POST(req: NextRequest, { params }: Params) {
@@ -48,15 +45,13 @@ export async function POST(req: NextRequest, { params }: Params) {
     await updateProfile(username, p => {
       /* a print hangs in one place only: taking one entry down deletes its files */
       const onWall = new Set(p.entries.flatMap(e => e.photos.map(ph => ph.id)));
-      if (entry.photos.some(ph => onWall.has(ph.id))) throw new Refusal('Þessi mynd hangir þegar á veggnum.');
+      if (entry.photos.some(ph => onWall.has(ph.id))) throw new Refusal('Þessi mynd hangir þegar á veggnum.', 409);
       /* a full wall says so, rather than quietly dropping its oldest entry and prints */
-      if (p.entries.length >= LIMITS.entries) throw new Refusal(`Veggurinn er fullur (${LIMITS.entries} færslur). Taktu eitthvað gamalt niður fyrst.`);
+      if (p.entries.length >= LIMITS.entries) throw new Refusal(`Veggurinn er fullur (${LIMITS.entries} færslur). Taktu eitthvað gamalt niður fyrst.`, 409);
       p.entries.unshift(entry);
     });
     return NextResponse.json(entry, { status: 201 });
   } catch (e) {
-    if (e instanceof Refusal) return NextResponse.json({ error: e.message }, { status: 409 });
-    console.error('POST entries:', e);
-    return NextResponse.json({ error: e instanceof Error ? e.message : 'Ekki tókst að festa þetta upp.' }, { status: 500 });
+    return wallError(e, 'Ekki tókst að festa þetta upp.', 'POST entries');
   }
 }
