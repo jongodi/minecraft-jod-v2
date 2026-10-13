@@ -643,8 +643,8 @@ Production builds of `main` (`4848bf7`) and of this branch, served side by side 
 
 | | `main` | this branch |
 |---|---|---|
-| Phone 390 × 844, 4× CPU | mean 16.7–16.8 ms, p95 18.8–19.5 ms, 0–5 long of ~870 | mean 16.7–16.8 ms, p95 18.8–19.6 ms, 1–7 long of ~940 |
-| Desktop 1440 × 900 | mean 23.5–23.8 ms, p95 32–36 ms, 22–27 long of ~410 | mean 26.7–27.0 ms, p95 36–39 ms, 49–66 long of ~440 |
+| Phone 390 × 844, 4× CPU | mean 16.7 to 16.8 ms, p95 18.8 to 19.5 ms, 0 to 5 long of ~870 | mean 16.7 to 16.8 ms, p95 18.8 to 19.6 ms, 1 to 7 long of ~940 |
+| Desktop 1440 × 900 | mean 23.5 to 23.8 ms, p95 32 to 36 ms, 22 to 27 long of ~410 | mean 26.7 to 27.0 ms, p95 36 to 39 ms, 49 to 66 long of ~440 |
 
 The phone, the figure this repo has always held to, is level. The desktop gap is the sandbox's software compositor at double density: every layer in the sky and the land is blended on the CPU there, 5 megapixels at a time. Switching features off one by one showed no single one left that is worth trading for it, and a desktop GPU composites a few more layers for nothing.
 
@@ -789,3 +789,56 @@ Production build, on top of the quiet pass (Part 8): First Load JS `/` 143 → 1
 2. **Nights settled before this change are gone**; the annals start with the nights still in the store.
 3. **Run `npm run advancements` when the server moves to 26.4**, so new advancements have a name rather than being left out.
 4. **A key per answer is a forwarded letter's risk**: whoever holds it can answer for its reader until the night starts. Among eight friends that is the trade, and it is written down in `night-answer.ts`.
+
+---
+
+## Part 10. The deeper evening: the game's chat, the climb, the press
+
+A pass on 13 October 2026, on `improve/deeper-evening`, asked for the site to be more immersive and interactive while staying entirely itself. Read first: smekkur's canon for JOÐcraft (keep the sunset hero, the map is the focal point, moments drawn from the game's own UI) and its verdict of 10 October, that a pass of fixes and refinements "looks the same as before". The identity, in one sentence: one evening on a Minecraft server for eight friends, arriving at sunset over the badlands and scrolling down into the night, where the town's lanterns come on and the world they built is waiting. Every change is made in the world's own terms and committed on its own.
+
+| Where | What | Why, in one sentence |
+|---|---|---|
+| The world | **Spjallið**: the game's chat over the places' rail prints what happened since this browser last read it (notes in their writer's name, advancements in the game's sentence and colour, fires lit) and who comes in and goes out while the page is open, in Mojang's Icelandic; lines hold ten seconds; T opens the log. | The server's news, in the game's own UI over the game's own world, gives a returning player a reason to come down into the valley and gives the world a voice. |
+| The hero | **The climb**: one of the crew who comes in while the page is looked at climbs up onto the plateau (on a phone, onto their letter), and climbs down to go. | Motion that follows a real change in the world, and only that. |
+| Everywhere | **The press**: everything that can be pressed sinks one of the art's pixels, as the game's stone button sinks into its block; nineteen kinds of control had no pressed state at all. | One physical answer to every touch, taken from the game. |
+| The hero | **The splash** pops once as it comes, and a press brings the next fact. | A loop that said nothing becomes a toy that says more. |
+| The world | **The still settles** with the scroll as the world is reached, in place of a minute-long drift. | The way down into the valley moves the camera; nothing loops for its own sake. |
+| Eftirlýst | The posters come up into the room's first screen: 120 px higher at 1440 by 900, 55 px on a phone. | The room is named for them. |
+| The admin | The map editor's keys say *1 til 6*, not a dashed range. | No dashes in the copy. |
+
+### Removed, and how to bring it back
+
+- **The splash's endless pulse** (`b-splash`, `infinite alternate`): replaced by a pop when the line changes. Reverting "The splash pops once as it comes" brings it back.
+- **The still's 64-second drift** (`b-drift`, `.is-drifting`): replaced by `b-settle` on a view timeline. Reverting "The world settles as it is reached" brings it back whole.
+- **The numbers' source note above the posters**: moved under them, not removed.
+
+### Where the build differs from the cards, and why
+
+- **The crew climb rather than walk.** Walking in from the plateau's far end floated over the lower ridge beside it, and walking off passed through the others standing there; climbing up from behind the edge and down again does neither, and is the phone's motion too.
+- **A challenge is red in the chat, not the game's dark purple.** The walls already set a challenge apart in the strata's red; the game's purple read at 3:1 on the chat's veil, and the Nether's purple has no place in the badlands.
+- **No loading screen in the game's chunk square.** It was the first candidate for the signature: the 3D map's boot. But the wait is the viewer's own download, which reports no progress, and the tiles after it take under 0.6 s; a square that filled would have had to make its numbers up.
+- **The open log lets the lantern step aside.** At full length the log climbed into the signpost's plate, and an open chat in the game is a reading mode.
+
+### Measured
+
+Production builds of `main` (`e3364398`) and the branch, served side by side on this machine, Lighthouse 12 mobile preset.
+
+| | `main` | this branch |
+|---|---|---|
+| Lighthouse `/` (three runs) | 95, 95, 95; A11y, BP and SEO 100; LCP 2.9 s; TBT 50 to 60 ms; CLS 0.001 | 95, 95, 95; A11y, BP and SEO 100; LCP 2.9 s; TBT 50 to 60 ms; CLS 0.001 |
+| Lighthouse `/crew` (three runs) | 91 to 93, CLS 0.017 | 90 to 92, CLS 0.017 |
+| Lighthouse, a wall, live stats blocked (two runs) | 88, LCP 3.8 to 3.9 s, CLS 0.018 | 88, LCP 3.8 s, CLS 0.018 |
+| First Load JS `/`, `/crew`, `/crew/[username]` | 144, 136, 160 kB | 146, 136, 160 kB |
+| Scroll probe, phone 390 × 844, 4× CPU (two runs) | mean 8.5 to 8.7 ms, p95 11.7 to 12.4 ms, 0 long | mean 7.4 to 8.5 ms, p95 10.7 to 11.9 ms, 0 long |
+| Scroll probe, desktop 1440 × 900 | 1 long frame of about 2,000 | 1 long frame of about 2,000 |
+| Tests | 306 | 312 |
+
+A wall measured with its live numbers scores 72 to 74 with a CLS of 0.287 on both builds: without Redis on this machine there is no snapshot, so the poster is drawn bare and grows when the live numbers come. Production draws it from the snapshot (*Nothing moves as the wall loads*, DESIGN.md), which the blocked run stands in for. Its LCP is the faded print behind the poster, and 3.3 s of its 3.8 s is render delay: the same simulated wait on the page's scripts that DESIGN.md describes for the home page.
+
+`tsc`, `next lint` and the build are clean; no sideways scroll at 390 and 1440 on `/`, `/crew`, a wall and the 404; the console is clean apart from the 404's own.
+
+### Worth doing later
+
+1. **The wall's Lighthouse score** (88 on `main` too): the lever is fewer bytes of runtime, the React 19 and Next 16 upgrade DESIGN.md already names.
+2. **Who is where**: BlueMap's live players could put a head on the chip of the place a member stands at, so the rail says where to find them.
+3. **Dashes in old code comments** (admin routes, `src/data/datapacks.ts`, `src/lib/season.ts`): never shown to anyone, left as they were.

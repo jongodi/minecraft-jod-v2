@@ -68,7 +68,7 @@ A room is `position: absolute` inside the frame: it rises from the foot of the f
 
 1. **Terracotta strata.** The banded terracotta layers of the badlands are the core motif: section dividers, the frame of the map, the base of the logo mark. Purpose: it is the one Western landscape native to Minecraft, so the brand reads Western and Minecraft in a single shape.
 2. **Lantern light means interactive.** Amber is reserved for things you can act on. Purpose: light becomes the wayfinding system, so a visitor never has to guess what is clickable.
-3. **Everything is drawn on a pixel grid.** All three families are pixel faces: the slab for headings, a text face for running prose, and the bitmap face for every short string — navigation, controls, captions, tags, counts, and what the server says. Purpose: the type belongs to the same world the screenshots come from, so nothing on the page reads as borrowed from a different site.
+3. **Everything is drawn on a pixel grid.** All three families are pixel faces: the slab for headings, a text face for running prose, and the bitmap face for every short string: navigation, controls, captions, tags, counts, and what the server says. Purpose: the type belongs to the same world the screenshots come from, so nothing on the page reads as borrowed from a different site.
 4. **Printed paper means notices.** Stats, the installed-pack list and the join steps sit on weathered paper as letterpress notices. Purpose: on the frontier things were posted on a board, not listed in a UI.
 5. **Night is the canvas.** Surfaces are warm off-black. Only the sky itself reaches blue-black at full night. Purpose: warmth keeps the page from reading as a generic dark theme.
 
@@ -103,7 +103,7 @@ Three families, all self-hosted through `@fontsource`, all verified to render þ
 | Text | Pixelify Sans | The one pixel face with text proportions, so a paragraph still reads at length. Carries running prose only: the hero line, a section's opening sentence, a crew member's own words, the body of a post. Two real cuts, 400 and 600. |
 | Label | Silkscreen | Drawn on an 8 px grid, so it stays crisp when sized in whole multiples. Everything that is a short string: navigation, buttons, captions, tags, counts, notices, and live server data. Two real cuts, 400 and 700. |
 
-Both label and text carry a real bold, so nothing is ever synthetically emboldened — faux bold smears a bitmap face. Which selectors sit on which side of the prose/label line is collected in one block at the foot of `badlands.css` and `board.css` rather than spread through them, so the line is one thing to read.
+Both label and text carry a real bold, so nothing is ever synthetically emboldened: faux bold smears a bitmap face. Which selectors sit on which side of the prose/label line is collected in one block at the foot of `badlands.css` and `board.css` rather than spread through them, so the line is one thing to read.
 
 Literata, Rye, Caveat and Lora are removed, and so is JetBrains Mono: the admin panel sets its live values in the same pixel label face as the site.
 
@@ -254,6 +254,10 @@ The other bases (Joðville, Faraway lands, Bústaður, Shroomy island; `src/lib/
 | A lantern on a post, not in a pool of night | The words read off wood and paper; the pool was the one soft edge on the page. |
 | Rooms have walls; the shelf is a store | A room entered through a door should look like one, and fourteen crates read as stock rather than a toolbar. |
 | The fire has the middle of the band | It is the last light and the duel's door, so it gets the space, not a corner beside the credits. |
+| The game's chat over the world | The server's news is said in the game's own UI, in the corner the game keeps for it, so a returning player learns what happened where it happened. |
+| One press for everything | The game's stone button sinks into its block; every control answering a touch the same physical way keeps the site reading as blocks, not as a web page. |
+| Who comes in climbs into view | A change in who is in is shown by the figure itself, as it happens, and only then. |
+| Motion follows a change, never a clock | The splash pops when it changes and the world settles with the scroll; nothing on the page loops for its own sake. |
 | Tokens in one file | Components reference names, never values, so the palette can be retuned in one place. |
 | Metadata and favicon from the strata mark | The brand should be recognizable in a browser tab and a link preview, not only on the page. |
 
@@ -270,12 +274,23 @@ The 404 is the game's death screen (`OffTrail.tsx`): the roll call's night under
 A pass on 10 October 2026 took more of the page from the game itself:
 
 - **The experience bar** (`AddressBar.tsx`): the green segmented bar over the phone's hotbar, and centred under the plank on a wide screen, filling with the page from the sunset to the campfire. One transform driven by the scroll; the hotbar's height (`--doorbar`) includes it.
-- **The title screen's splash** (`Hero.tsx`): a yellow line tilted over the Ð, pulsing, picked in the browser each visit; facts about this world, and what is true tonight first (who is in, a night planned).
+- **The title screen's splash** (`Hero.tsx`): a yellow line tilted over the Ð, picked in the browser each visit; facts about this world, and what is true tonight first (who is in, a night planned). It pops once as it comes, and a press brings the next (below).
 - **Name tags** over the crew who are in, white on a veil of dark, staggered over a crowd. On a phone the crew climb the name, one on the O and one on the Ð, instead of standing in front of the O's window.
 - **The armadillo** (`Mesa.tsx`): the badlands' own animal ambles along the ground at the mesas' foot, stops halfway, and rolls into a ball when pointed at or tapped.
-- **The world drifts**: the still and the town's lights in one layer, a slow push and pan, only while in view; square again for the hand-over to the live map. **F3 lines** while the live map is up: the block it holds and the way it faces (`jod.js` sends `camera`).
+- **The world settles as it is reached** (it drifted on a loop until 13 October; below): the still and the town's lights in one layer; square again for the hand-over to the live map. **F3 lines** while the live map is up: the block it holds and the way it faces (`jod.js` sends `camera`).
 - **The campfire smokes**: the game's tall column of square puffs; below 1024 px it has its own stretch of sky between the buttons and the fire.
 - **The rooms**: crates open like chests (the lid tips back, lamplight on the tag); wanted posters swing on their nails as the room opens, and the roll call's as the board is reached; a lit lantern hangs over the roll call poster of whoever is in; on a touch screen a room's plank is a handle, pulled down to close it.
+
+## The game's chat, the climb and the press
+
+A pass on 13 October 2026 (DESIGN_IDEAS.md, Part 10):
+
+- **Spjallið** (`Chat.tsx`, `src/lib/chat.ts`, `/api/chat`): the game's chat in the corner it keeps over the hotbar, here over the places' rail. When the world is reached it prints what happened on JOÐ since this browser last read it (`jod-chat-seen-v1`), or the newest three on a first visit: what the crew pinned, in their own name (`<stebbias> …`, a picture as `[mynd]`, the way the game writes an item); an advancement in the game's own sentence (*hefur áunnið sér*, *hefur náð takmarkinu*, *hefur lokið við áskorunina*) with its title in green, a challenge set apart in red as the walls set it apart; a fire lit, in the yellow the server speaks in; and while the page is open, *tengdist leiknum* and *hætti í leiknum* as the status changes. The words are Mojang's own Icelandic (`is_is.json`). Lines come in one after another, hold nine seconds and fade in the tenth, as the game's do, and each leads to where it happened. T, the game's chat key, opens the log from anywhere on the page: the world is brought into view and its lantern steps aside while the log is read. So does the game's own *[+2 línur í bið]* when more came than the corner holds. The route reads the walls, the advancements and the fires of the last 21 days, twelve lines at most, shared at the CDN for a minute.
+- **The climb** (`roster.ts`): one of the crew who comes in while the page is looked at climbs up onto the plateau beside the name (on a phone, onto their letter) in four steps of the land's pixels, the part still below the edge cut away; one who goes out climbs down behind it. The first answer is where the page starts, not news; under reduced motion, or in a hidden tab, a figure simply is or isn't there.
+- **The press** (`--press`, *the press* in `badlands.css`): everything that can be pressed sinks one of the art's pixels while it is held, at once, as the game's stone button sinks into its block. A bevel turns over, a lantern dips on its hook, paper and the crew's figures press against what they hang on, and words that lead somewhere darken.
+- **The splash** pops once as it comes, about its own middle, and a press brings the next fact in a shuffled round. It no longer pulses for as long as the page is open, and it follows the address and the lantern in the page's order.
+- **The world settles**: while the frame rises into view the still and its lights come from a little closer and higher, and stand at rest once the frame fills the screen. A view timeline, so the scroll down into the valley moves the camera; it replaced a minute-long drift.
+- **Eftirlýst's posters** come up into the room's first screen: the numbers' source note is their small print, under them; the fire keeps half its air in the room; and from 1100 px the room's line stands beside the portraits.
 
 ## The walls
 
@@ -317,4 +332,4 @@ A play night is a fire (`src/lib/play-night.ts`, `src/components/badlands/PlayNi
 
 ## The time of year
 
-`src/lib/season.ts` keeps the calendar, in Iceland's time: **Hrekkjavaka** (25–31 October) darkens the sunset towards purple and puts jack-o'-lanterns on the nearest mesas; **snow** (1 December – 6 January) lies on every plateau, the ridge and the ground, and falls over the sunset in place of the dust; **fireworks** burst in the campfire's sky all day on 31 December and 1 January; and from 12 to 24 December **the Yule Lad** who came to town that day hides in one of three places on the page (the mesas, beside the server's lantern, by the fire). A tap says who he is, and how many of the thirteen this browser has found this year. The home page is drawn with the server's own day (`src/lib/home-data.ts`), so the snow and the lanterns are there at first paint, and a page drawn without one works it out in the browser; `?arstid=hrekkjavaka`, `snjor`, `aramot` or `jol-1` … `jol-13` shows one on any day. Falling snow and fireworks are drawn only without reduced motion, like the dust and the embers.
+`src/lib/season.ts` keeps the calendar, in Iceland's time: **Hrekkjavaka** (25 to 31 October) darkens the sunset towards purple and puts jack-o'-lanterns on the nearest mesas; **snow** (1 December to 6 January) lies on every plateau, the ridge and the ground, and falls over the sunset in place of the dust; **fireworks** burst in the campfire's sky all day on 31 December and 1 January; and from 12 to 24 December **the Yule Lad** who came to town that day hides in one of three places on the page (the mesas, beside the server's lantern, by the fire). A tap says who he is, and how many of the thirteen this browser has found this year. The home page is drawn with the server's own day (`src/lib/home-data.ts`), so the snow and the lanterns are there at first paint, and a page drawn without one works it out in the browser; `?arstid=hrekkjavaka`, `snjor`, `aramot` or `jol-1` … `jol-13` shows one on any day. Falling snow and fireworks are drawn only without reduced motion, like the dust and the embers.
