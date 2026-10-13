@@ -238,7 +238,6 @@
 @media (max-width: 399px) { .b-btn { white-space: normal; text-align: center; } }
 .b-btn:focus-visible { background: var(--lantern); color: var(--night); }
 @media (hover: hover) { .b-btn:hover { background: var(--lantern); color: var(--night); } }
-.b-btn:active { transform: translateY(1px); }
 .b-btn[disabled] { opacity: 0.45; cursor: default; }
 .b-btn--solid { background: var(--lantern); color: var(--night); box-shadow: var(--bevel); }
 .b-btn--solid:active { box-shadow: var(--bevel-in); }
@@ -251,6 +250,31 @@
 .b-btn--ghost:focus-visible,
 .b-btn--ghost.is-on { background: var(--lantern); border-color: var(--lantern); color: var(--night); }
 @media (hover: hover) { .b-btn--ghost:hover { background: var(--lantern); border-color: var(--lantern); color: var(--night); } }
+
+/* ─── the press ──────────────────────────────────────────────────
+   Whatever can be pressed sinks into what it is set in while it is held,
+   as the game's stone button sinks into its block: one of the art's
+   pixels (--press), at once, and back up at once on letting go. A block
+   with a bevel turns it over, lit from below as a hollow is. A lantern
+   dips on its hook; paper and the crew's figures press against what they
+   hang on; words that lead somewhere darken, as ink does pressed into
+   paper. The `translate` property, so a press composes with whatever
+   transform the thing already wears (a crate's lift, a sign's swing). */
+.b-btn:active, .b-copy__btn:active, .b-bar__addr:active, .b-bar__mark:active,
+.b-chip:active, .b-railwrap__arrow:active, .b-room__close:active, .b-card__x:active,
+.b-folk__item:active, .w-sign:active, .b-foot__sound:active { translate: var(--press); }
+.b-copy__btn:active, .b-foot__sound.is-on:active { box-shadow: var(--bevel-in); }
+.b-stock__crate:active { translate: var(--press); transform: none; box-shadow: inset 0 0 0 calc(var(--px) * 3) var(--wood), inset 0 0 0 calc(var(--px) * 4) var(--wood-light), var(--bevel-in); }
+.b-chip:active { background: var(--wood-dark); }
+.b-chip.is-on:active { background: var(--lantern-deep); }
+.b-railwrap__arrow:active { background: var(--lantern-deep); color: var(--night); }
+.b-slot:active > *, .b-door:active .b-lantern, .b-status:active .b-lantern, .b-bar__status:active .b-lantern,
+.b-mesa__rider:active img, .b-hero__climber:active img, .b-poster__lead:active .b-poster__img,
+.b-foot__fire:active .b-fire, .b-foot__fire:active .b-foot__board { translate: var(--press); }
+.b-slot:active { box-shadow: inset calc(var(--px) * 2) calc(var(--px) * 2) 0 rgba(21, 16, 13, 0.5), 0 0 0 var(--px) var(--wood-dark); }
+.b-boot:active .b-lantern { transform: translateY(var(--px)); transition-duration: 0s; }
+.b-link:active, .b-foot__admin:active { color: var(--lantern-deep); }
+.b-poster__row:active, .b-poster__lead:active .b-poster__name { color: var(--lantern-ink); }
 .b-input, .b-textarea {
   width: 100%;
   background: var(--paper);
@@ -295,7 +319,6 @@
 }
 .b-copy__btn:focus-visible { background: var(--lantern); color: var(--night); box-shadow: var(--bevel); }
 @media (hover: hover) { .b-copy__btn:hover { background: var(--lantern); color: var(--night); box-shadow: var(--bevel); } }
-.b-copy__btn:active { transform: translateY(1px); }
 .b-copy__btn svg { width: 1rem; height: 1rem; shape-rendering: crispEdges; flex-shrink: 0; }
 .b-copy__addr { white-space: nowrap; }
 @media (min-width: 480px) { .b-copy__btn { font-size: var(--fs-data-lg); } }

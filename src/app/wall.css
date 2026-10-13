@@ -315,6 +315,10 @@
 .w-print__place::before { content: ''; display: inline-block; width: 0.75rem; height: 0.75rem; margin-right: 0.3em; vertical-align: -0.1em; background: currentColor; -webkit-mask: var(--w-pin) center / contain no-repeat; mask: var(--w-pin) center / contain no-repeat; }
 .w-print__place { --w-pin: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Cpath d='M5 1h6v2h2v5h-2v2h-2v2H9v3H7v-3H6v-2H5V8H3V3h2zm2 3v3h2V4z'/%3E%3C/svg%3E"); }
 @media (hover: hover) { .w-print__place:hover { color: var(--sign-ink); text-decoration: underline; } }
+/* pressed, as everything is on the site (badlands.css, the press): a picture sinks into its board, a lantern dips, words darken into the wood */
+.w-print__btn:active, .w-lantern:active .b-lantern { translate: var(--press); }
+.w-print__place:active { color: var(--sign-ink); }
+.w-reply__who:active { color: var(--sign-lantern); }
 .w-print__actions { display: flex; gap: var(--sp-3); margin-left: auto; }
 .w-print__actions button { font-family: var(--font-data); font-size: var(--fs-data); letter-spacing: 0.04em; text-transform: uppercase; color: var(--sign-lantern); min-height: 2rem; }
 @media (hover: hover) { .w-print__actions button:hover { color: var(--sign-ink); } }
