@@ -1149,20 +1149,25 @@
   box-shadow: inset 0 0 0 var(--px) var(--wood-light), inset 0 0 0 calc(var(--px) * 2) var(--wood-dark);
   overflow: clip;
 }
-/* The still and the town's lights in one layer that drifts, a slow push
-   and pan over a minute and back, a camera hovering over the town at
-   night. One transform on the compositor; paused whenever the world is out
-   of view, under a room, or live (World.tsx), and none under reduced motion.
-   Drawn a little larger than the frame so its edges never show. */
+/* The still and the town's lights in one layer that settles as the world is
+   reached: while the frame rises into view it comes from a little closer and
+   a little higher, and stands at rest once the frame fills the screen, so
+   the scroll down into the valley moves the camera too. Driven by the
+   frame's own place in the scroll (a view timeline): one transform on the
+   compositor, still whenever the page is, and none under reduced motion or
+   where scroll timelines are missing, where it simply stands at rest. Drawn
+   a little larger than the frame so its edges never show. */
 .b-frame__scene { position: absolute; inset: 0; transform: scale(1.04); transform-origin: 50% 45%; }
-.b-frame__scene.is-drifting { animation: b-drift 64s ease-in-out infinite alternate; }
-@keyframes b-drift {
-  from { transform: scale(1.04) translate(0.6%, 0.4%); }
-  to   { transform: scale(1.1) translate(-1.6%, -1%); }
+@supports (animation-timeline: view()) {
+  .b-frame__scene.is-settling { animation: b-settle linear both; animation-timeline: view(); animation-range: entry 0% contain 0%; }
 }
-@media (prefers-reduced-motion: reduce) { .b-frame__scene.is-drifting { animation: none; } }
+@keyframes b-settle {
+  from { transform: scale(1.12) translateY(-2.5%); }
+  to   { transform: scale(1.04); }
+}
+@media (prefers-reduced-motion: reduce) { .b-frame__scene.is-settling { animation: none; } }
 /* the live map takes over from the still at the very view it was drawn at, so the still stands square again for the hand-over */
-.b-frame.is-live .b-frame__scene { transform: none; }
+.b-frame.is-live .b-frame__scene { animation: none; transform: none; }
 .b-frame__poster {
   position: absolute;
   inset: 0;

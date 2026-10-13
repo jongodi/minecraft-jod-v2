@@ -413,12 +413,11 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
   return (
     <section id="heimur" className="b-world" aria-labelledby="heimur-title">
       <div ref={frameRef} className={`b-frame${live ? ' is-live' : ''}${ready ? ' is-ready' : ''}${drawn ? ' is-drawn' : ''}${shut ? ' is-room' : ''}${full === 'overlay' ? ' is-full' : ''}${live && still ? ' is-still' : ''}${menu && ready ? ' is-menu' : ''}${chatOpen ? ' is-chat' : ''}`}>
-        {/* The still and its lights drift together, slowly, like a camera
-            hovering over the town at night, so the world on the page is
-            looked at rather than printed (badlands.css). Only while the
-            world is in view, on a device with room for the effects, and
-            not under reduced motion. */}
-        <div className={`b-frame__scene${effects && inView && !live && !shut ? ' is-drifting' : ''}`}>
+        {/* The still and its lights settle together as the world is
+            reached, the camera coming down into the valley with the scroll
+            (badlands.css). On a device with room for the effects, until the
+            live map takes over, and not under reduced motion. */}
+        <div className={`b-frame__scene${effects && !live ? ' is-settling' : ''}`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         {posterOn && <img {...photoProps(MAP_POSTER, PHOTO_SIZES.poster)} className="b-frame__poster" alt="Heimasvæðið á JOÐ séð úr lofti" width={1920} height={1080} decoding="async" fetchPriority="low" />}
         {/* The town's lights come on as the world comes into view: the still
