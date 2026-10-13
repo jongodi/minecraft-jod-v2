@@ -1,7 +1,7 @@
 // A play night as its shared link says it (/kvold for the next one, /kvold/<id>
 // for any one): one line for the title, one for the description, and what the
 // link card draws. Server only.
-import { currentNights, optionOf, phaseOf, yesFor } from '@/lib/play-night';
+import { currentNights, optionOf, pastNight, phaseOf, yesFor } from '@/lib/play-night';
 import type { Metadata } from 'next';
 import { plural } from '@/lib/format';
 import { SITE_NAME } from '@/components/badlands/data';
@@ -25,7 +25,8 @@ export const cardVersion = (n: SharedNight) => {
   return (h >>> 0).toString(36);
 };
 
-/** The night with this id, or with none the next one; null for an id that isn't shown (any more). */
+/** The night with this id, or with none the next one; a night of the annals
+    by its id too; null for an id that is neither. */
 export async function sharedNight(): Promise<SharedNight>;
 export async function sharedNight(id: string | undefined): Promise<SharedNight | null>;
 export async function sharedNight(id?: string): Promise<SharedNight | null> {
@@ -34,7 +35,12 @@ export async function sharedNight(id?: string): Promise<SharedNight | null> {
   let shown;
   try { ({ shown } = await currentNights()); } catch { return id ? null : none; }
   const cur = id ? shown.find(s => s.night.id === id) : shown[0];
-  if (!cur) return id ? null : none;
+  if (!cur && id) {
+    /* a night burnt down keeps its link: it opens in the annals */
+    const past = await pastNight(id).catch(() => null);
+    return past ? { title: 'Spilakvöld', note: past.note, lit: false, count: 0, lines: [dayTime(past.at), `${past.came.length} ${plural(past.came.length, 'mætti', 'mættu')}`] } : null;
+  }
+  if (!cur) return none;
   const { night, votes } = cur;
   const phase = phaseOf(night, Date.now());
   const chosen = optionOf(night, night.chosen);

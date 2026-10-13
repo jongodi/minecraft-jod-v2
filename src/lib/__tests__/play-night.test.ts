@@ -234,5 +234,40 @@ describe('/api/playnight', () => {
     vi.setSystemTime(new Date('2026-10-09T12:00:00Z'));
     expect((await view()).nights.map(n => n.id)).toEqual([second.id]);
     expect(hash('playnight:nights').has(first.id)).toBe(false);
+    /* and the first is kept in the annals, as it was settled */
+    expect(JSON.parse(hash('playnight:past').get(first.id)!)).toEqual({
+      id: first.id, by: 'stebbias', note: '', at: '2026-10-01T20:00:00.000Z',
+      yes: ['AmmaGaur', 'stebbias'], came: ['AmmaGaur'], noShows: ['stebbias'], startedBy: null,
+    });
+  });
+
+  it('keeps every night held in the annals, newest first, and none put out', async () => {
+    await post({ action: 'propose', times: ['2026-10-02T20:00:00Z'] });
+    await post({ action: 'propose', times: ['2026-10-06T20:00:00Z'] });
+    await post({ action: 'propose', times: ['2026-10-09T20:00:00Z'] });
+    const [a, b, c] = (await view()).nights;
+    await post({ action: 'cancel', night: c.id });
+    vi.setSystemTime(new Date('2026-10-02T21:00:00Z'));
+    await lib.noteSeen(['joenana']);
+
+    /* the last night's embers glow among the fires; the one before is in the annals already */
+    vi.setSystemTime(new Date('2026-10-08T12:00:00Z'));
+    expect((await view()).nights.map(n => n.id)).toEqual([b.id]);
+    expect((await lib.pastNights()).map(p => p.id)).toEqual([a.id]);
+
+    /* past the embers, an unsettled night waits for the daily job, and is in the annals with who was seen */
+    vi.setSystemTime(new Date('2026-10-16T12:00:00Z'));
+    const past = await lib.pastNights();
+    expect(past.map(p => p.id)).toEqual([b.id, a.id]);
+    expect(past[1]).toMatchObject({ came: ['joenana'], noShows: [], yes: ['stebbias'] });
+    expect(hash('playnight:past').size).toBe(0);
+    expect(await lib.pastNight(a.id)).toMatchObject({ id: a.id });
+    expect(await lib.pastNight(c.id)).toBeNull();
+
+    /* a month on it is cleared from the fires, and kept */
+    vi.setSystemTime(new Date('2026-11-06T12:00:00Z'));
+    expect((await lib.pastNights()).map(p => p.id)).toEqual([b.id, a.id]);
+    expect([...hash('playnight:past').keys()].sort()).toEqual([a.id, b.id].sort());
+    expect(hash('playnight:nights').size).toBe(0);
   });
 });

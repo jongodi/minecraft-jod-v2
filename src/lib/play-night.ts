@@ -17,7 +17,11 @@
    each night's answers a hash of its own and who was seen a set, so two
    people answering or lighting at once can't write over each other. Nothing
    runs on a timer: the phase is worked out from the clock whenever the
-   nights are read, and choosing a night is saved then. */
+   nights are read, and choosing a night is saved then.
+
+   A night that was held is kept for good once it leaves the fires: the
+   annals (Annáll in the crew's room) hold when it was, who lit it, who said
+   they'd come and who came. */
 
 export const MAX_OPTIONS = 3;
 /** nights planned at once: lit and not yet over */
@@ -140,6 +144,34 @@ export function checkTimes(times: unknown, now: number): { error: string } | { a
   return { at: ms.map(m => new Date(m).toISOString()) };
 }
 
+/** A night that has been, as the annals keep it once it leaves the fires. */
+export interface PastNight {
+  id:        string;
+  by:        string;
+  note:      string;
+  /** the time it was held at */
+  at:        string;
+  /** who said they would come */
+  yes:       string[];
+  came:      string[];
+  noShows:   string[];
+  startedBy: string | null;
+}
+
+/** What the annals keep of a night: one that was held, settled or not (then
+    who was seen stands for who came); nothing of one put out or never chosen. */
+export function pastOf(night: Night, votes: Votes, seen: string[]): PastNight | null {
+  const chosen = optionOf(night, night.chosen);
+  if (night.cancelled || !chosen) return null;
+  return {
+    id: night.id, by: night.by, note: night.note, at: chosen.at,
+    yes: yesFor(votes, chosen.id),
+    came: night.outcome?.came ?? [...seen].sort((a, b) => a.localeCompare(b)),
+    noShows: night.outcome?.noShows ?? [],
+    startedBy: night.startedBy,
+  };
+}
+
 /** Who came and who said yes but didn't, from who was seen and the daily copies either side of the evening. */
 export function outcomeOf(
   yes: string[], seen: string[],
@@ -174,6 +206,8 @@ const LEGACY_KEY = 'playnight:current';
 const votesKey = (id: string) => `playnight:votes:${id}`;
 const seenKey = (id: string) => `playnight:seen:${id}`;
 export const NO_SHOWS_KEY = 'playnight:noshows';
+/** the annals: every night held, by id, kept for good once it leaves the fires */
+const PAST_KEY = 'playnight:past';
 /** playnight:settled:<id>, set once a night's no-shows are counted */
 const SETTLED_PREFIX = 'playnight:settled:';
 /* answers and sightings outlive the night by a month, for the day-after count */
@@ -245,7 +279,8 @@ export interface NightState { night: Night; votes: Votes; seen: string[] }
 
 /** Every night as it stands now, in the order the page shows them. An
     unchosen night past its time is chosen (or put out) and saved; a night
-    put out, or settled and burnt down, is cleared away. */
+    put out, or settled and burnt down, is cleared away, and one that was
+    held goes into the annals first (pastNights, below). */
 export async function currentNights(now = Date.now()): Promise<{ all: Night[]; shown: NightState[] }> {
   const r = await redis();
   const read = await readNights();
@@ -259,7 +294,13 @@ export async function currentNights(now = Date.now()): Promise<{ all: Night[]; s
     else if (auto) { night = { ...night, chosen: auto.id, chosenBy: 'auto' }; await writeNight(night); }
     /* an unsettled one is kept for the daily job, unless it never came round in a month */
     const gone = !isShown(night, now) && (night.cancelled || !!night.outcome || now > whenOf(night) + EVENING_MS + 30 * DAY);
-    if (gone) { await r.hdel(NIGHTS_KEY, night.id); continue; }
+    if (gone) {
+      /* written before the night is cleared, so a failed write leaves it to be tried on the next read */
+      const past = pastOf(night, answers.get(night.id) ?? {}, night.outcome ? [] : await r.smembers(seenKey(night.id)));
+      if (past) await r.hset(PAST_KEY, night.id, JSON.stringify(past));
+      await r.hdel(NIGHTS_KEY, night.id);
+      continue;
+    }
     all.push(night);
   }
   const shown: NightState[] = await Promise.all(shownNights(all, now).map(async night => {
@@ -268,6 +309,28 @@ export async function currentNights(now = Date.now()): Promise<{ all: Night[]; s
     return { night, votes: answers.get(night.id) ?? {}, seen };
   }));
   return { all, shown };
+}
+
+/** The annals: every night held that is no longer among the fires the page
+    shows, newest first. The kept ones, and any still waiting to be settled. */
+export async function pastNights(now = Date.now()): Promise<PastNight[]> {
+  const { all, shown } = await currentNights(now);
+  const r = await redis();
+  const showing = new Set(shown.map(s => s.night.id));
+  const kept: PastNight[] = [];
+  for (const v of Object.values(await r.hgetall(PAST_KEY))) { try { kept.push(JSON.parse(v) as PastNight); } catch { /* skip */ } }
+  /* read on the one client already held: the store is never fetched again for each night at once */
+  const waiting = await Promise.all(all
+    .filter(n => !showing.has(n.id) && !n.cancelled && phaseOf(n, now) === 'over')
+    .map(async n => pastOf(n, votesOf(await r.hgetall(votesKey(n.id))), n.outcome ? [] : await r.smembers(seenKey(n.id)))));
+  const ids = new Set(kept.map(p => p.id));
+  return [...kept, ...waiting.filter((p): p is PastNight => p !== null && !ids.has(p.id))]
+    .sort((a, b) => t(b.at) - t(a.at));
+}
+
+/** One night of the annals, for its link; null if it is not there. */
+export async function pastNight(id: string): Promise<PastNight | null> {
+  return (await pastNights()).find(p => p.id === id) ?? null;
 }
 
 /** The day after: once a daily copy taken after a night's evening exists, who

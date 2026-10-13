@@ -379,3 +379,28 @@
   font-family: var(--font-data);
   font-weight: 400;
 }
+
+/* ─── Annáll: the nights that have been (Annall.tsx) ─────────────
+   Burnt-out fires side by side on one strip of ground, newest first.
+   Each is pressed to open its evening under them; the one open stands in
+   the lantern's light, as a pressed thing does. */
+.b-annall { margin-top: var(--sp-7); }
+.b-annall__rail .b-rail { gap: 0; align-items: stretch; padding-bottom: var(--sp-1); }
+.b-annall__fire {
+  flex: 0 0 auto; min-width: 7.5rem; min-height: var(--tap); scroll-snap-align: start;
+  display: grid; justify-items: center; align-content: end; gap: var(--px);
+  padding: var(--sp-3) var(--sp-3) var(--sp-2);
+  border: 0; border-bottom: calc(var(--px) * 2) solid var(--tc-brown);
+  background: none; box-shadow: 0 var(--px) 0 var(--wood-dark);
+  font: inherit; text-align: center; color: var(--text-soft); cursor: pointer;
+}
+.b-annall__fire .b-night__fire { margin-bottom: var(--sp-1); }
+.b-annall__day { font-family: var(--font-data); font-size: var(--fs-data); color: var(--paper); white-space: nowrap; }
+.b-annall__sub { font-size: var(--fs-sm); color: var(--text-faint); white-space: nowrap; }
+.b-annall__fire.is-on { background: var(--veil); box-shadow: inset 0 0 0 var(--px) var(--lantern-glow), 0 var(--px) 0 var(--wood-dark); }
+.b-annall__fire.is-on .b-annall__day { color: var(--lantern); }
+.b-annall__fire:focus-visible { outline: var(--px) solid var(--lantern); outline-offset: calc(var(--px) * -1); }
+@media (hover: hover) { .b-annall__fire:hover .b-annall__day { color: var(--lantern); } }
+.b-annall__evening { margin-block: var(--sp-5) 0; scroll-margin-top: var(--sp-4); }
+.b-annall__pics { display: grid; gap: var(--sp-2); min-width: 0; }
+.b-annall__pics .w-strip { margin-top: 0; }

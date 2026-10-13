@@ -9,8 +9,11 @@ import { nightMetadata, sharedNight } from '@/lib/night-share';
 
 /* One play night's shareable link, /kvold/<id>#hopur: the home page with the
    crew's room open on that night's fire (NightBoard reads the id from the
-   address), and that night's own link preview. A night that is gone sends
-   the link on to the nights there are. Drawn again every half minute, like /kvold. */
+   address), and that night's own link preview. A night burnt down opens in
+   the room's annals (Annall.tsx reads the same id); an id that is neither
+   sends the link on to the nights there are. Drawn again every half minute,
+   like /kvold. A letter's answer link (?svar=…&lykill=…) is read in the
+   browser, so the page stays one drawing for everyone. */
 
 export const revalidate = 30;
 
