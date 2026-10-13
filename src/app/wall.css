@@ -55,6 +55,11 @@
   .w-poster > * { grid-column: 1 / -1; }
   .w-poster > .w-poster__skin { grid-column: 1; width: 5.5rem; }
   .w-poster > .w-poster__body { display: contents; }
+  /* lifted over the faded print and the paper's weathering, as every child
+     of the paper is (.b-paper > *): with the body's box gone, its children
+     were the paper's in the grid but not in that rule, and the print and
+     the weathering painted over the name, the bounty and every charge */
+  .w-poster .w-poster__body > * { position: relative; }
   .w-poster .w-poster__top { grid-column: 2; align-self: center; }
   .w-poster .w-poster__body > :not(.w-poster__top) { grid-column: 1 / -1; }
   .w-poster .w-poster__bio, .w-poster .w-poster__biorow { margin-top: 0; }
