@@ -538,7 +538,7 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
                 Þurrlendi þekur {Math.round((land.dry / land.total) * 100)}% af kortinu.
               </p>
               <p className="a-help">
-                <Kbd>B</Kbd> pensill, <Kbd>F</Kbd> fylla, <Kbd>V</Kbd> velja, <Kbd>G</Kbd> rist, <Kbd>1</Kbd>–<Kbd>6</Kbd> efni, <Kbd>[</Kbd> <Kbd>]</Kbd> stærð.
+                <Kbd>B</Kbd> pensill, <Kbd>F</Kbd> fylla, <Kbd>V</Kbd> velja, <Kbd>G</Kbd> rist, <Kbd>1</Kbd> til <Kbd>6</Kbd> efni, <Kbd>[</Kbd> <Kbd>]</Kbd> stærð.
               </p>
             </div>
           ) : selPin ? (

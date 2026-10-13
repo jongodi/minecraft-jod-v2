@@ -130,7 +130,7 @@
   /* ── type ──
      Three pixel-drawn families. Display is the sign painter's slab, text is
      the one face that carries a paragraph, and data is the label face: every
-     short string on the site — navigation, buttons, captions, counts, tags,
+     short string on the site: navigation, buttons, captions, counts, tags,
      and anything the server says. */
   --font-display: var(--font-display-loaded, 'Alfa Slab One'), Georgia, serif;
   --font-text:    var(--font-text-loaded, 'Pixelify Sans'), 'Trebuchet MS', sans-serif;
