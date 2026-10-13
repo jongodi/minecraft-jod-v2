@@ -1583,19 +1583,27 @@ html.is-map-full { overflow: hidden; }
   text-align: left;
   color: var(--paper);
   background: rgba(42, 26, 20, 0.92);
-  box-shadow: var(--bevel);
+  /* The place's own wood, as it looks at night: its board (--sign, tokens.css)
+     mixed down into the dark, so the castle's tag is spruce and the pink
+     estate's cherry, as their posts are on the walls, and the rail stays
+     darker than the map it lies on. A quarter of the wood in the night's
+     dark, and the board's edge in more of it along the top, lit from above
+     as every block is: the name reads at 7:1 or better on every wood and
+     the line under it at 5:1, the soft ink, since the faint one fell to 2:1. */
+  background: color-mix(in srgb, var(--sign) 24%, var(--night));
+  box-shadow: var(--bevel), inset 0 calc(var(--px) * 2) 0 color-mix(in srgb, var(--sign) 55%, transparent);
   clip-path: var(--notch);
   transition: background var(--dur-1) var(--ease-out);
 }
-.b-chip:focus-visible { background: var(--tc-brown); outline: var(--px) solid var(--lantern); outline-offset: calc(var(--px) * -2); }
-@media (hover: hover) { .b-chip:hover { background: var(--tc-brown); } }
+.b-chip:focus-visible { background: color-mix(in srgb, var(--sign) 30%, var(--night)); outline: var(--px) solid var(--lantern); outline-offset: calc(var(--px) * -2); }
+@media (hover: hover) { .b-chip:hover { background: color-mix(in srgb, var(--sign) 30%, var(--night)); } }
 .b-chip.is-on { background: var(--lantern); color: var(--night); }
 .b-chip__thumb { width: 3.5rem; height: 2.5rem; overflow: hidden; background: var(--dusk-2); box-shadow: 0 0 0 var(--px) var(--wood-dark); }
 .b-chip__thumb img { width: 100%; height: 100%; object-fit: cover; }
 .b-chip__thumb--empty { display: block; width: 100%; height: 100%; background: repeating-linear-gradient(45deg, var(--dusk) 0 4px, var(--dusk-2) 4px 8px); }
 .b-chip__text { display: grid; min-width: 0; }
 .b-chip__name { font-weight: 600; font-size: var(--fs-data); line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.b-chip__sub { font-size: var(--fs-sm); line-height: 1.4; color: var(--text-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.b-chip__sub { font-size: var(--fs-sm); line-height: 1.4; color: var(--text-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .b-chip.is-on .b-chip__sub { color: rgba(21, 16, 13, 0.7); }
 /* how many things the crew pinned at this place */
 .b-chip__count { position: absolute; top: calc(var(--px) * -1); right: calc(var(--px) * -1); padding: 0 0.3rem; background: var(--lantern); color: var(--night); font-family: var(--font-data); font-size: var(--fs-chip); line-height: 1.6; }

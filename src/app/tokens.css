@@ -204,6 +204,24 @@
   --z-lightbox: 60;
   --z-modal: 70;
 }
+/* The woods. A post tied to a place hangs on that place's wood, and the
+   place's tag on the world's rail is tinted with it (src/lib/sign-wood.ts). The pale ones keep the dark ink; the dark ones take
+   paper for their words and the lantern itself for what can be pressed, the
+   way every control on the night does. Every ink is checked on its board. */
+.w-sign--birch    { --sign: #DCCD9C; --sign-2: #CBB983; --sign-rim: #9C8A5A; }   /* ink 11.3:1, soft 7.3:1 */
+.w-sign--cherry   { --sign: #EBC6BE; --sign-2: #DDAFA6; --sign-rim: #B98680; }   /* ink 11.3:1, soft 7.4:1 */
+.w-sign--spruce, .w-sign--mangrove, .w-sign--dark-oak {
+  --sign-ink: var(--paper);
+  --sign-soft: var(--tc-white);
+  --sign-lantern: var(--lantern);
+  --sign-err: #F5A88A;
+  --sign-line: rgba(255, 240, 210, 0.22);
+  --sign-lamp: var(--tc-white);   /* a lit lantern's iron, which dark wood would swallow */
+}
+.w-sign--spruce   { --sign: #523A23; --sign-2: #654A30; --sign-rim: #6E5236; }   /* paper 7.8:1, soft 5.3:1, lantern 5.2:1 */
+.w-sign--mangrove { --sign: #5F3730; --sign-2: #71443B; --sign-rim: #7D4C42; }   /* paper 7.5:1, soft 5.1:1, lantern 5.0:1; the brown side of its red, so it never reads as a warning */
+.w-sign--dark-oak { --sign: #3F2819; --sign-2: #523624; --sign-rim: #5A3B26; }   /* paper 10.1:1, soft 6.9:1, lantern 6.7:1 */
+
 @media (min-width: 900px) { :root { --fs-hero: clamp(12rem, min(23vw, 40svh), 24rem); } }
 /* on a phone on its side the hotbar's slots lay their lantern beside the name, a tap tall (badlands.css) */
 @media (max-height: 500px) { :root { --doorbar: 3.25rem; } }

@@ -3,7 +3,8 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import type { MapConfig, WorldPoint } from '@/lib/map-types';
+import { woodOf, type MapConfig, type WorldPoint } from '@/lib/map-types';
+import { woodClass } from '@/lib/sign-wood';
 import type { PlacePrints } from '@/lib/crew-places';
 import { baseUrl, mapAt, type BaseLink, type MapBounds } from '@/lib/base-links';
 import viewerFiles from '@/lib/bluemap-viewer.json';
@@ -636,7 +637,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
               const count = pinned[String(loc.id)]?.count ?? 0;
               return (
                 <button key={loc.id} type="button" data-rail-item={loc.id}
-                  className={`b-chip${loc.id === selected ? ' is-on' : ''}`} aria-pressed={loc.id === selected} onClick={() => choose(loc.id)}>
+                  className={`b-chip${woodClass(woodOf(loc))}${loc.id === selected ? ' is-on' : ''}`} aria-pressed={loc.id === selected} onClick={() => choose(loc.id)}>
                   {/* a label on a bare span is not read; the count is spoken as words instead */}
                   {count > 0 && <><span className="b-chip__count" aria-hidden="true">{count}</span><span className="b-visually-hidden">{`${count} ${plural(count, 'færsla', 'færslur')} frá hópnum, `}</span></>}
                   <span className="b-chip__thumb">
