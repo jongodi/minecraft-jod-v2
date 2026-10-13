@@ -289,6 +289,16 @@ export function PictureIcon({ className }: { className?: string }) {
   );
 }
 
+/** The whole screen: four corners pushed out to the edge, on the same grid as the other tools. */
+export function FullScreenIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" aria-hidden="true" fill="currentColor" shapeRendering="crispEdges">
+      <path d="M1 1h5v2H3v3H1zM10 1h5v5h-2V3h-3zM1 10h2v3h3v2H1zM13 10h2v5h-5v-2h3z" />
+      <path d="M6 6h4v4H6z" opacity="0.55" />
+    </svg>
+  );
+}
+
 /** A wall calendar: two rings, the month's band and a few days, for the day a fire is lit for. */
 export function CalendarIcon({ className }: { className?: string }) {
   return (
