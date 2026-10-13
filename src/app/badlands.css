@@ -948,6 +948,19 @@
 .b-mesa__rider:focus-visible img, .b-hero__climber:focus-visible img { filter: drop-shadow(var(--px) 0 0 var(--lantern)) drop-shadow(calc(var(--px) * -1) 0 0 var(--lantern)) drop-shadow(0 var(--px) 0 var(--lantern)) drop-shadow(0 calc(var(--px) * -1) 0 var(--lantern)); }
 @media (hover: hover) { .b-mesa__rider:hover img, .b-hero__climber:hover img { filter: drop-shadow(var(--px) 0 0 var(--paper)) drop-shadow(calc(var(--px) * -1) 0 0 var(--paper)) drop-shadow(0 var(--px) 0 var(--paper)) drop-shadow(0 calc(var(--px) * -1) 0 var(--paper)); } }
 
+/* One of the crew comes in while the page is looked at: they climb up onto
+   the plateau they stand on (on a phone, onto their letter), in four steps of
+   the land's pixels, the part still below its edge cut away; going out, they
+   climb down behind it. A state change, so it plays once; under reduced
+   motion the figure simply is or isn't there (roster.ts never asks for it). */
+.b-mesa__rider.is-coming, .b-hero__climber.is-coming { animation: b-climb-up 640ms steps(4, end) backwards; }
+.b-mesa__rider.is-going,  .b-hero__climber.is-going  { animation: b-climb-down 640ms steps(4, end) forwards; pointer-events: none; }
+@keyframes b-climb-up   { from { transform: translateY(60%); clip-path: inset(-4em -4em 60% -4em); } to { transform: none; clip-path: inset(-4em -4em 0 -4em); } }
+@keyframes b-climb-down { from { transform: none; clip-path: inset(-4em -4em 0 -4em); } to { transform: translateY(60%); clip-path: inset(-4em -4em 60% -4em); } }
+@media (prefers-reduced-motion: reduce) {
+  .b-mesa__rider.is-coming, .b-mesa__rider.is-going, .b-hero__climber.is-coming, .b-hero__climber.is-going { animation: none; }
+}
+
 /* The name tag the game floats over every player: white letters on a veil
    of dark, a little above the head, never turned away. Over each of the
    crew on the ridge and on the name; the count of the rest wears one too.

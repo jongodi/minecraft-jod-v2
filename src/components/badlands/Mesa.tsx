@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import PlayerHead from './PlayerHead';
 import { Lantern } from './Bits';
+import { useRoster, type OnRidge } from './roster';
 
 /* The badlands silhouettes behind the hero: three mesa layers and the ground.
    Each layer is a stepped outline built from plateaus so the edge reads as
@@ -186,9 +187,14 @@ const RIDERS_SHOWN = 3;
     every player, white on a veil of dark. A way to that member's wall, so
     the lantern's amber is the site's own sign for "press". A skin the
     services can't give falls back to the drawn stand-in (PlayerHead). */
-export function Rider({ name, className }: { name: string; className: string }) {
+/* One who came in while the page was looked at climbs up into view, one who
+   went out climbs down out of it (`phase`, from useRoster; badlands.css),
+   and `onWalked` says the climb is over. */
+export function Rider({ name, className, phase = 'here', onWalked }: { name: string; className: string; phase?: OnRidge['phase']; onWalked?: (name: string) => void }) {
   return (
-    <Link href={`/crew/${name}`} className={className} aria-label={`${name} er inni. Veggurinn`}>
+    <Link href={`/crew/${name}`} className={`${className}${phase !== 'here' ? ` is-${phase}` : ''}`}
+      aria-label={phase === 'going' ? `${name} fór út. Veggurinn` : `${name} er inni. Veggurinn`}
+      onAnimationEnd={e => { if (e.target === e.currentTarget && phase !== 'here') onWalked?.(name); }}>
       <span className="b-nametag" aria-hidden="true">{name}</span>
       <PlayerHead name={name} size={32} full alt="" />
       <Lantern lit className="b-mesa__held" />
@@ -201,13 +207,14 @@ export function Rider({ name, className }: { name: string; className: string }) 
     by its coordinates in the ridge's own drawing). A wanted poster's
     Western, and the game's own figure. Inside the near layer, so they move
     with it. */
-function Riders({ names }: { names: string[] }) {
-  if (names.length === 0) return null;
-  const shown = names.slice(0, RIDERS_SHOWN);
-  const more = names.length - shown.length;
+function Riders({ names, known }: { names: string[]; known: boolean }) {
+  const { roster, settle } = useRoster(names, known);
+  if (roster.length === 0) return null;
+  const shown = roster.slice(0, RIDERS_SHOWN);
+  const more = names.length - shown.filter(r => r.phase !== 'going').length;
   return (
     <div className="b-mesa__riders">
-      {shown.map(n => <Rider key={n} name={n} className="b-mesa__rider" />)}
+      {shown.map(r => <Rider key={r.name} name={r.name} phase={r.phase} onWalked={settle} className="b-mesa__rider" />)}
       {more > 0 && <span className="b-nametag b-mesa__more">+{more}</span>}
     </div>
   );
@@ -252,7 +259,7 @@ function Armadillo() {
 
 /** The mesas; in winter with snow on them, at Hrekkjavaka with jack-o'-lanterns
     (src/lib/season.ts); with the heads of whoever is in on the nearest ridge. */
-export default function Mesa({ snow = false, halloween = false, heads = [] }: { snow?: boolean; halloween?: boolean; heads?: string[] }) {
+export default function Mesa({ snow = false, halloween = false, heads = [], known = false }: { snow?: boolean; halloween?: boolean; heads?: string[]; known?: boolean }) {
   return (
     <div className="b-mesa">
       <Layer d={FAR_D} mod="far" haze={<Haze />}>
@@ -263,7 +270,7 @@ export default function Mesa({ snow = false, halloween = false, heads = [] }: { 
         <Bands id="b-mesa-mid" d={MID_D} bands={MID_BANDS} />
         {snow && <Snow plateaus={MID} />}
       </Layer>
-      <Layer d={NEAR_D} mod="near" lit={halloween ? <PumpkinFaces /> : undefined} after={<Riders names={heads} />}>
+      <Layer d={NEAR_D} mod="near" lit={halloween ? <PumpkinFaces /> : undefined} after={<Riders names={heads} known={known} />}>
         <Bands id="b-mesa-near" d={NEAR_D} bands={NEAR_BANDS} />
         {snow && <Snow plateaus={NEAR} />}
         {halloween && <Pumpkins />}
