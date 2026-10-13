@@ -8,7 +8,8 @@ import { readProfile, isCrewUsername, canonicalUsername, allPhotos, getCrewSessi
 import { hasPassword } from '@/lib/crew-access';
 import { readMap } from '@/lib/map';
 import { woodOf } from '@/lib/map-types';
-import { getCachedStats } from '@/lib/stats';
+import { getCachedStats, withCharges } from '@/lib/stats';
+import { outlaws } from '@/components/badlands/outlaws';
 import { readNoShows } from '@/lib/play-night';
 import { ADVANCEMENT_COUNT, firstCounts, readStoredAdvancements, wallAdvancements } from '@/lib/advancements';
 import { sameUser } from '@/lib/crew-types';
@@ -70,8 +71,12 @@ export default async function CrewWallPage({ params, searchParams }: Props) {
   const noShows = (noShowTally && Object.entries(noShowTally).find(([u]) => sameUser(u, profile.username))?.[1]) || 0;
   const firsts = (crewAdvancements && Object.entries(firstCounts(crewAdvancements.players)).find(([u]) => sameUser(u, profile.username))?.[1]) || 0;
   const stats = mine ? { ...mine, drawMs: profile.bestDrawMs ?? 0, noShows, firsts } : null;
+  /* which charges they are the outlaw of, against the whole crew's snapshot
+     with the charges kept beside it (the draws, the no-shows, the firsts),
+     so an alias on their poster is one the board gives them */
+  const led = snapshot ? outlaws(await withCharges(snapshot.players).catch(() => snapshot.players)).byName.get(profile.username.toLowerCase())?.led ?? [] : [];
   /* only this member's, with their names: the list of every advancement stays on the server */
   const advancements = crewAdvancements ? { list: wallAdvancements(profile.username, crewAdvancements), of: ADVANCEMENT_COUNT } : null;
   const places: WallPlace[] = (map?.locations ?? []).map(l => ({ id: l.id, label: l.label, sublabel: l.sublabel, builders: l.builders ?? [], wood: woodOf(l) }));
-  return <Wall initial={profile} places={places} initialStats={stats} advancements={advancements} justSignedIn={query.innskrad === '1'} session={session} />;
+  return <Wall initial={profile} places={places} initialStats={stats} initialLed={led} advancements={advancements} justSignedIn={query.innskrad === '1'} session={session} />;
 }

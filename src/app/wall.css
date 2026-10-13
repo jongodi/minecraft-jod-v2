@@ -42,7 +42,6 @@
   .w-poster__body { width: 100%; }
   .w-poster .w-poster__top { flex-direction: column; align-items: center; text-align: center; }
   .w-poster__top > div:first-child { display: grid; justify-items: center; }
-  .w-poster .b-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .w-poster__top > .b-inline { justify-content: center; }
   .w-poster .w-poster__bio { margin-inline: auto; text-align: center; }
   .w-page .w-wall__empty { text-align: left; }

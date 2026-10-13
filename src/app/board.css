@@ -379,14 +379,20 @@
 .b-rollcall__news { display: grid; align-content: start; justify-items: center; gap: var(--sp-3); }
 .b-rollcall__news .w-note-card { flex: none; width: 100%; }
 .b-rollcall__more { justify-self: center; }
-.b-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 var(--sp-5); margin-top: var(--sp-5); }
-@media (min-width: 640px) { .b-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-.b-stat { min-width: 0; padding: var(--sp-2) 0; border-top: var(--line) solid var(--ink-faint); }
-/* the same order as the poster: the outlaw's name first, the charge under it */
-.b-stat__k { font-size: var(--fs-sm); color: var(--ink-faint); }
-.b-stat__k b { display: block; font-weight: 600; color: var(--ink-soft); overflow-wrap: break-word; }
+/* A member's charges on their wall (Wall.tsx), set as a printed poster sets
+   its rewards: one line each, the charge, a run of dots, the number in the
+   bitmap face, the dots meeting the number on the label's last line. What
+   they are the outlaw of comes first, the alias over it in red as the
+   board sets it; a number of those is red too, the bounty on their head. */
+.b-stats { display: grid; gap: var(--sp-1); margin-top: var(--sp-5); padding-top: var(--sp-3); border-top: var(--px) solid var(--ink-faint); }
+.b-stat { display: flex; align-items: last baseline; gap: var(--sp-2); min-width: 0; }
+.b-stat::after { content: ''; order: 1; flex: 1 1 1rem; min-width: 1rem; border-bottom: var(--px) dotted var(--ink-faint); transform: translateY(-0.3em); }
+.b-stat.is-led + .b-stat:not(.is-led) { margin-top: var(--sp-2); }
+.b-stat__k { order: 0; min-width: 0; font-size: var(--fs-sm); line-height: 1.4; color: var(--ink-soft); }
+.b-stat__k b { display: block; font-weight: 600; color: var(--tc-red); overflow-wrap: break-word; }
 .b-stat__k small { display: block; font-size: var(--fs-sm); }
-.b-stat__v { margin-top: var(--sp-1); font-family: var(--font-data); font-size: var(--fs-data); }
+.b-stat__v { order: 2; font-family: var(--font-data); font-size: var(--fs-data); line-height: 1.4; color: var(--ink); white-space: nowrap; }
+.b-stat.is-led .b-stat__v { color: var(--tc-red); }
 
 .b-modal { position: fixed; inset: 0; z-index: var(--z-modal); background: var(--scrim); display: grid; place-items: center; padding: var(--sp-4); }
 /* the backdrop holds focus only until a field inside can take it; no ring around the whole screen */

@@ -16,7 +16,8 @@ import AddressBar from '@/components/badlands/AddressBar';
 import Footer from '@/components/badlands/Footer';
 import PlayerHead from '@/components/badlands/PlayerHead';
 import { CloseIcon, Seal } from '@/components/badlands/Bits';
-import { PAGE_LINKS, STAT_TABS } from '@/components/badlands/data';
+import { PAGE_LINKS, STAT_TABS, type StatKey } from '@/components/badlands/data';
+import { outlaws } from '@/components/badlands/outlaws';
 import NightSky from '@/components/badlands/NightSky';
 import { seedSession, useBackCloses, useBackdropClose, useCrewSession, useDialogFocus, useScrollLock, type CrewSessionSeed } from '@/components/badlands/hooks';
 import { photoProps, PHOTO_SIZES } from '@/components/badlands/photo';
@@ -236,6 +237,8 @@ interface Props {
   places:  WallPlace[];
   /** the member's numbers from the last snapshot, so the poster is drawn whole before the live ones come */
   initialStats?: PlayerStat | null;
+  /** the charges they are the outlaw of, by the same snapshot */
+  initialLed?: StatKey[];
   /** the game's advancements, newest first, and how many there are to earn; null before the first daily read */
   advancements?: { list: WallAdvancement[]; of: number } | null;
   /** true when the page was opened from a sign-in link */
@@ -244,7 +247,7 @@ interface Props {
   session: CrewSessionSeed;
 }
 
-export default function Wall({ initial, places, initialStats = null, advancements = null, justSignedIn = false, session }: Props) {
+export default function Wall({ initial, places, initialStats = null, initialLed = [], advancements = null, justSignedIn = false, session }: Props) {
   const [profile, setProfile] = useState<CrewProfile>(initial);
   /* The session the server drew the page for is the store's first answer, so
      the pin slot, the banner and the reply lines are in the markup and the
@@ -273,6 +276,7 @@ export default function Wall({ initial, places, initialStats = null, advancement
   const [wallError,   setWallError]   = useState('');
   const [stats,       setStats]       = useState<PlayerStat | null>(initialStats);
   const [statsMeta,   setStatsMeta]   = useState<{ source: string; cachedAt: string | null } | null>(null);
+  const [led,         setLed]         = useState<StatKey[]>(initialLed);
   const [lightbox,    setLightbox]    = useState<number | null>(null);
   const [origin,      setOrigin]      = useState<DOMRect | null>(null);
   const [welcome,     setWelcome]     = useState(justSignedIn);
@@ -288,6 +292,7 @@ export default function Wall({ initial, places, initialStats = null, advancement
         /* an answer with nothing for them keeps the snapshot the page was drawn with */
         setStats(s => data.players.find(p => sameUser(p.username, username)) ?? s);
         setStatsMeta({ source: data.source, cachedAt: data.cachedAt });
+        if (data.players.length) setLed(outlaws(data.players).byName.get(username.toLowerCase())?.led ?? []);
       })
       .catch(() => {});
   }, [username]);
@@ -455,10 +460,16 @@ export default function Wall({ initial, places, initialStats = null, advancement
 
             {stats && (
               <>
+                {/* The charges as a printed poster lists its rewards: each on one
+                    line, a run of dots, the number. What they are the outlaw of
+                    comes first, under the alias the board gives them in red; the
+                    aliases they are not the outlaw of are someone else's. */}
                 <dl className="b-stats">
-                  {STAT_TABS.filter(t => (stats[t.id] ?? 0) > 0).map(t => (
-                    <div key={t.id} className="b-stat">
-                      <dt className="b-stat__k"><b>{t.nick}</b><small>{t.label}</small></dt>
+                  {STAT_TABS.filter(t => (stats[t.id] ?? 0) > 0)
+                    .sort((a, b) => Number(led.includes(b.id)) - Number(led.includes(a.id)))
+                    .map(t => (
+                    <div key={t.id} className={`b-stat${led.includes(t.id) ? ' is-led' : ''}`}>
+                      <dt className="b-stat__k">{led.includes(t.id) && <b>„{t.nick}“</b>}<small>{t.label}</small></dt>
                       <dd className="b-stat__v">{t.unit(stats[t.id] ?? 0)}</dd>
                     </div>
                   ))}
