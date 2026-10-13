@@ -1040,7 +1040,7 @@
   .b-hero__climbers > .b-hero__more { left: calc(var(--fs-hero) * 1.9); top: calc(var(--fs-hero) * -0.09); translate: 0 0; }
 }
 /* The splash (Hero.tsx): the game's yellow line tilted over the corner of
-   its logo, pulsing, laid over the name's own row of the stage and placed in
+   its logo, popping as it comes, laid over the name's own row of the stage and placed in
    ems of the name, at the Ð's upper corner on a wide screen and over its
    foot on a phone, where a climber stands on its top. Its words are the
    bitmap face at a size it is drawn for, in the game's yellow with the
@@ -1058,10 +1058,15 @@
   font-size: var(--fs-hero);
   pointer-events: none;
 }
-.b-hero__splash > span {
+.b-hero__splashbtn {
   position: absolute;
   left: 0;
   top: 0;
+  padding: 0.6rem 0.5rem;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  pointer-events: auto;
   font-family: var(--font-data);
   font-size: var(--fs-data-lg);
   line-height: 1;
@@ -1069,18 +1074,24 @@
   color: #FFFF55;
   text-shadow: calc(var(--px) * 1.5) calc(var(--px) * 1.5) 0 #3F3F15;
   transform: translate(-50%, -50%) rotate(-20deg);
-  animation: b-splash 0.9s ease-in-out infinite alternate;
 }
-@keyframes b-splash {
-  from { transform: translate(-50%, -50%) rotate(-20deg) scale(1); }
-  to   { transform: translate(-50%, -50%) rotate(-20deg) scale(1.08); }
+/* the word pops about its own middle; the button only places and tilts it */
+.b-hero__splashword { display: inline-block; animation: b-splash-pop 420ms var(--ease-out) backwards; transition: scale 60ms linear; }
+@keyframes b-splash-pop {
+  0%   { scale: 0.7; }
+  45%  { scale: 1.14; }
+  100% { scale: 1; }
 }
+/* pointed at, it holds the game's swell at its height; pressed, it sinks as everything does */
+@media (hover: hover) { .b-hero__splashbtn:hover .b-hero__splashword { scale: 1.08; } }
+.b-hero__splashbtn:focus-visible { outline: var(--px) solid var(--lantern); outline-offset: 0; }
+.b-hero__splashbtn:active { translate: var(--press); }
 @media (max-width: 899px) {
   .b-hero__splash { left: 1.5em; top: 0.66em; }
-  .b-hero__splash > span { font-size: var(--fs-data); }
+  .b-hero__splashbtn { font-size: var(--fs-data); }
 }
 @media (max-width: 899px) and (max-height: 500px) { .b-hero__splash { display: none; } }
-@media (prefers-reduced-motion: reduce) { .b-hero__splash > span { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .b-hero__splashword { animation: none; } }
 
 /* a phone on its side stands the name in the ridges with no sky over it to climb into */
 @media (max-width: 899px) and (max-height: 500px) { .b-hero__climbers { display: none; } }
