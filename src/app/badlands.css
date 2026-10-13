@@ -664,8 +664,11 @@
   position: relative;
   display: block;
   height: var(--xp, 10px);
-  background: #0E0C09;
-  box-shadow: 0 0 0 var(--px) rgba(0, 0, 0, 0.55);
+  /* the empty track a shade over the night and the segments cut dark into
+     it, so an empty bar reads as the game's eighteen empty cells and not as
+     a black strip that failed to draw */
+  background: linear-gradient(180deg, #3A342B 0 var(--px), #2A251E var(--px));
+  box-shadow: 0 0 0 var(--px) #0E0C09;
   overflow: clip;
   pointer-events: none;
 }
