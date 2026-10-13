@@ -21,6 +21,7 @@ import { nightLetter as nightWords, type NightNotice, type Reader } from '@/lib/
 import { DEFAULT_THEMES, renderLetter, type Theme } from '@/lib/email-design';
 import { readThemes } from '@/lib/email-settings';
 import { canSendEmail, sendEmails, siteUrl, type Mail } from '@/lib/email';
+import { answerUrl } from '@/lib/night-answer';
 
 export type { NightNotice, Reader };
 
@@ -59,10 +60,12 @@ export function recipientsOf(kind: NightNotice, night: Night, votes: Votes, read
 }
 
 /** The letter for one reader, in the look chosen for it, calling members by
-    their names where given (src/lib/email-copy.ts has the words). */
+    their names where given (src/lib/email-copy.ts has the words). Its answer
+    buttons are the reader's own (src/lib/night-answer.ts). */
 export function nightLetter(kind: NightNotice, night: Night, votes: Votes, reader: Reader, theme: Theme = DEFAULT_THEMES[kind], names: Names = {}): Mail {
   const site = siteUrl();
-  const { subject, html, text } = renderLetter(nightWords(kind, night, votes, reader, site, names), theme, site);
+  const answer = (svar: string) => answerUrl(site, night, reader.username, svar);
+  const { subject, html, text } = renderLetter(nightWords(kind, night, votes, reader, site, names, answer), theme, site);
   return { to: reader.address, subject, html, text };
 }
 

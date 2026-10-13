@@ -7,6 +7,7 @@ import Link from 'next/link';
 import PlayerHead from './PlayerHead';
 import Wanted from './Wanted';
 import { NightBoard } from './PlayNight';
+import Annall from './Annall';
 import Rail from './Rail';
 import { CREW } from './data';
 import { useStats, type ServerState } from './hooks';
@@ -24,6 +25,7 @@ const STRIP = 12;
     wanted board the room is named for, on one rail, and under it the notice
     strip with what was pinned last on their walls. The posters used to hang
     under the strip, a screen and more down a room that is called Eftirlýst.
+    At the foot, the annals: the nights that have been (Annall.tsx).
     Everything here is fetched when the room is first opened, not with the page. */
 function Crew({ server }: { server: ServerState }) {
   const stats = useStats();
@@ -110,6 +112,9 @@ function Crew({ server }: { server: ServerState }) {
           </Rail>
         </section>
       )}
+
+      {/* the nights that have been, last: the room's history, under what is happening now */}
+      <Annall />
 
       <div className="b-crew__foot">
         <Link href="/crew" className="b-btn b-btn--small">Veggir hópsins og öll tölfræðin</Link>

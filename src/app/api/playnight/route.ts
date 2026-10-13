@@ -11,13 +11,15 @@ import {
   writeNight, writeVote, yesFor, type Night,
 } from '@/lib/play-night';
 import { NO_NIGHTS, viewNights, type PlayNightResponse } from '@/lib/play-night-view';
+import { answerUser } from '@/lib/night-answer';
 
 /* Spilakvöld (src/lib/play-night.ts). GET is the nights as the page shows
    them (src/lib/play-night-view.ts), for anyone; POST acts on one, for a
    signed-in crew member:
    { action: 'propose', times, note } | { action: 'vote', night, yes } |
    { action: 'choose', night, option } | { action: 'cancel', night } |
-   { action: 'start', night }. */
+   { action: 'start', night }.
+   A vote may instead carry a letter's key ({ …, lykill }), for its reader. */
 
 export const dynamic = 'force-dynamic';
 
@@ -49,14 +51,21 @@ const ACTIONS = new Set(['propose', 'vote', 'choose', 'cancel', 'start']);
 
 export async function POST(req: NextRequest) {
   if (!process.env.REDIS_URL) return json({ error: NO_REDIS }, 503);
-  const me = (await getCrewSession())?.username ?? null;
-  if (!me) return json({ error: 'Skráðu þig inn til að taka þátt.' }, 401);
+  const session = (await getCrewSession())?.username ?? null;
   const body = await jsonObject(req);
   if (!body) return json({ error: 'Ógilt JSON.' }, 400);
   const action = body.action;
   /* an unknown action is the request's fault, whichever night it names */
   if (typeof action !== 'string' || !ACTIONS.has(action)) return json({ error: 'Óþekkt aðgerð.' }, 400);
   const now = Date.now();
+  /* An answer from a letter carries its key (src/lib/night-answer.ts): it
+     answers that night for the letter's reader, whoever is signed in here,
+     and does nothing else. The nights sent back are drawn for the session,
+     not the key, so a key never makes the page act signed in. */
+  const byLetter = action === 'vote' && body.lykill !== undefined;
+  const me = byLetter ? answerUser(typeof body.night === 'string' ? body.night : '', body.lykill, now) : session;
+  if (byLetter && !me) return json({ error: 'Hlekkurinn úr bréfinu gildir ekki lengur. Skráðu þig inn til að svara.' }, 403);
+  if (!me) return json({ error: 'Skráðu þig inn til að taka þátt.' }, 401);
 
   try {
     const { all, shown } = await currentNights(now);
@@ -79,7 +88,7 @@ export async function POST(req: NextRequest) {
       /* whoever lights the fire can make every time they offered */
       await writeVote(night, me, night.options.map(o => o.id), now);
       mailAfter(m => m.mailNights());
-      return json(await view(me));
+      return json(await viewNights(session));
     }
 
     const cur = shown.find(s => s.night.id === body.night);
@@ -94,7 +103,7 @@ export async function POST(req: NextRequest) {
       /* once chosen, only the chosen time is answered */
       const allowed = new Set(night.chosen ? [night.chosen] : night.options.map(o => o.id));
       await writeVote(night, me, [...new Set(yes)].filter(id => allowed.has(id)), now);
-      return json(await view(me));
+      return json(await viewNights(session));
     }
 
     if (action === 'choose' || action === 'cancel') {
@@ -110,7 +119,7 @@ export async function POST(req: NextRequest) {
         await writeNight({ ...night, cancelled: true });
         mailAfter(m => m.mailNightOut(night, votes));
       }
-      return json(await view(me));
+      return json(await viewNights(session));
     }
 
     if (action === 'start') {
@@ -130,7 +139,7 @@ export async function POST(req: NextRequest) {
          put out in those seconds stayed out rather than coming back lit */
       const latest = (await readNights()).find(n => n.id === night.id);
       if (latest && !latest.cancelled && !latest.startedBy) await writeNight({ ...latest, startedBy: me });
-      return json(await view(me));
+      return json(await viewNights(session));
     }
 
     return json({ error: 'Óþekkt aðgerð.' }, 400);

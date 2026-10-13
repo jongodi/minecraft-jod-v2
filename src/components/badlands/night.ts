@@ -80,6 +80,29 @@ export function usePlayNight(initial?: PlayNightResponse) {
   return { state, act, refresh };
 }
 
+/* ─── an answer from a letter ─────────────────────────────────────────── */
+
+/** An answer opened from a letter's button (/kvold/<id>?svar=…&lykill=…,
+    src/lib/night-answer.ts): whose it is, the choice it carries, and its key.
+    Read here only to fill the answer in; the server checks the key when the
+    answer is sent, so a key that is wrong or stale is turned away then. */
+export interface LetterAnswer { user: string; svar: string; lykill: string }
+
+export function letterAnswer(search: string): LetterAnswer | null {
+  const q = new URLSearchParams(search);
+  const svar = q.get('svar');
+  const lykill = q.get('lykill');
+  if (!svar || !lykill) return null;
+  try {
+    const b64 = lykill.split('.')[0].replace(/-/g, '+').replace(/_/g, '/');
+    const bin = atob(b64 + '='.repeat((4 - (b64.length % 4)) % 4));
+    const user = new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0)));
+    return user ? { user, svar, lykill } : null;
+  } catch {
+    return null;
+  }
+}
+
 /* ─── times, in Icelandic, in Iceland (which keeps UTC all year) ─────────
    Written out rather than left to the browser's locale data, which falls
    back to English wherever it carries no Icelandic. */

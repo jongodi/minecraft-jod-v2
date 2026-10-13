@@ -757,3 +757,35 @@ Accessibility, Best Practices and SEO are 100 on `/` before and after; a wall an
 1. **An idempotency key for Resend.** A letter whose send timed out after Resend delivered it can go twice. A key per night and letter would stop that, but Resend answers a reused key with a different body (a reader who turned the letters off in between) with a 409, which would hold the letter back for a day; it needs trying against Resend itself.
 2. **A sign-in link that spends a use only on a press**, Part 6's item 2, still stands.
 3. **A legacy-JavaScript trim.** Lighthouse counts 11 kB of transpiled code a modern `browserslist` would drop; it would also drop the older iPhones some of the crew may carry, so it is the owner's call.
+
+---
+
+## Part 9. What the server already wrote down
+
+A brainstorm on 13 October 2026 asked where the room left was, after seven passes on the look. The answer was in the data: the server keeps every member's advancements with the moment each was done, and the site never read them; settled play nights were deleted outright once their embers went out; screenshots carry their exact time in their names; and a letter asked its reader to sign in before answering. Four of its ideas were built, on `feat/fires-advancements-tab-lantern`.
+
+| Where | What | Why, in one sentence |
+|---|---|---|
+| The walls | **The game's own advancements** replace the invented star badges: each in the frame the game draws it in (task, goal, challenge), titled in the game's Icelandic, dated, newest first, six and then all on a press, with *fyrst allra* where the member was first of the crew. Read by the daily job from `world/players/advancements` (`src/lib/advancements.ts`); names and frames come from Mojang through `npm run advancements` (`src/lib/advancements.json`, 121 for 26.3). | The game already has a reward language, and these happened in the world; the badges were thresholds the site made up. |
+| The wanted board | **Brautryðjandinn**, *Afrek unnin fyrst allra*: who was first of the crew to the most advancements, a poster like the others. | The firsts are a charge the board can post in its own form. |
+| The crew's room | **Annáll** at its foot: every night held, a burnt-out fire each on one strip of ground; a press opens the evening (who lit it, who came, who said yes and didn't) and *Myndir kvöldsins*, the screenshots taken from half an hour before until the evening was over, found on the walls by the time in their names (`src/lib/night-photos.ts`). A past night's link opens it there. | Who came was worked out every week and then thrown away, and the evening's pictures were already on the walls with their times. |
+| The letters | **Answer buttons**: a button per time offered, or *Ég mæti*, and *Kemst ekki*, each carrying a key for that reader and that night (`src/lib/night-answer.ts`). The link fills the answer in on a slip of paper by the fire; the answer goes on *Staðfesta svarið*, without signing in. | A letter is read in a mail app's own browser, which has no session; opening the link writes nothing, since scanners open links too. |
+| The tab | **The tab's lantern**: while the server is on, the tab's icon is a lit lantern and the title carries how many of the crew are in, *(3) JOÐcraft*; a background tab asks for the status every three minutes. | On a play night the site waits in a background tab. |
+
+### Where the build differs from the cards, and why
+
+- **The tab's icon is JOÐ's mark when the server is off, not a dark lantern.** Off is how a tab spends most of its life, and the mark is the site's name; the lit lantern is the change worth seeing.
+- **The annals are at the foot of the room, not under the fire.** Part 6 moved the wanted board up under the night because the room is named for it; history is the least pressing thing in the room.
+- **The day an advancement was done sits under its title at every width.** Beside a wide wall the poster is a portrait column narrower than a phone, and a date column broke titles mid-word there.
+- **A night still waiting to be settled is in the annals with who was seen**, rather than missing until the daily job comes round.
+
+### Measured
+
+Production build, on top of the quiet pass (Part 8): First Load JS `/` 143 → 144 kB (the tab's lantern rides with the bar), `/crew` 135 → 136 kB, `/crew/[username]` 158 → 160 kB (the advancements list); the annals load with the crew's room. Twelve new tests, 306 in all with the quiet pass's (the advancements read, firsts and ties, the folder fallback and a failed file keeping its last copy; the annals kept and none put out; the evening's pictures; a letter's key for its own night and reader, refused tampered, for another night or past its time; the answer buttons in the letters). `tsc`, `next lint` and the build clean. Checked against the live server read-only: `world/players/advancements` holds nine files in the game's format, and the crew has between 9 and 63 of the 121. Screens at 390 and 1440 with staged data: no sideways scroll.
+
+### Worth doing later
+
+1. **The first advancements arrive with the next daily run** (12:05). To see them at once, call `/api/cron/daily` with `CRON_SECRET` after the deploy.
+2. **Nights settled before this change are gone**; the annals start with the nights still in the store.
+3. **Run `npm run advancements` when the server moves to 26.4**, so new advancements have a name rather than being left out.
+4. **A key per answer is a forwarded letter's risk**: whoever holds it can answer for its reader until the night starts. Among eight friends that is the trade, and it is written down in `night-answer.ts`.

@@ -15,6 +15,7 @@
     "map:lights": "node scripts/map-lights.mjs",
     "map:bases": "node scripts/map-bases.mjs",
     "server:size": "node scripts/server-size.mjs",
+    "advancements": "node scripts/advancements.mjs",
     "test": "vitest run"
   },
   "dependencies": {

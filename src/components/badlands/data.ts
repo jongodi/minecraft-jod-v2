@@ -129,6 +129,7 @@ export const STAT_TABS = [
   { id: 'damageRatio',    nick: 'Boxpúðinn',      label: 'Skaði þeginn á móti veittum', unit: (v: number) => `${formatNumber(v, { max: 1, min: 1 })}×` },
   { id: 'raidWins',       nick: 'Ræningja\u00ADbaninn', label: 'Árásir hraktar',             unit: num },
   { id: 'recordsPlayed',  nick: 'Plötu\u00ADsnúðurinn', label: 'Plötur spilaðar',            unit: num },
+  { id: 'firsts',         nick: 'Braut\u00ADryðjandinn', label: 'Afrek unnin fyrst allra',    unit: (v: number) => `${num(v)} afrek` },
   { id: 'drawMs',         nick: 'Fógetinn',       label: 'Hraðasta skotið við varðeldinn', unit: ms, low: true },
   { id: 'noShows',        nick: 'Svikarinn',      label: 'Sagðist mæta en kom ekki',  unit: (v: number) => `${num(v)} kvöld` },
 ] as const;

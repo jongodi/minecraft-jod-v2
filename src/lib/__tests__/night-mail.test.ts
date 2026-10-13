@@ -104,6 +104,21 @@ describe('the letters', () => {
     expect(m.text).toContain('https://jodcraft.world/crew/joenana');
   });
 
+  it('carries the reader\'s own answer buttons when the links can be signed', () => {
+    vi.stubEnv('CRON_SECRET', 'a-secret-long-enough-for-tests');
+    const lit = nightLetter('lit', night(), {}, reader);
+    /* a button per time, in place of the list of times and the one button */
+    expect(lit.text).toMatch(/Mánudag 5\. jan\. kl\. 04:00: https:\/\/jodcraft\.world\/kvold\/n1\?svar=a&lykill=am9lbmFuYQ\.[0-9a-z]+\.[\w-]{22}#hopur/);
+    expect(lit.text).toContain('Kemst ekki: https://jodcraft.world/kvold/n1?svar=ekki&lykill=am9lbmFuYQ.');
+    expect(lit.text).not.toContain('Svara kallinu');
+    expect(lit.html).toContain('Sjá bálið á vefnum');
+
+    const chosen = nightLetter('chosen', night({ chosen: 'b', chosenBy: 'auto' }), {}, reader);
+    expect(chosen.text).toContain('Ég mæti: https://jodcraft.world/kvold/n1?svar=b&lykill=');
+    expect(chosen.text).toContain('https://jodcraft.world/kvold/n1/dagatal.ics');
+    vi.unstubAllEnvs();
+  });
+
   it('a night decided carries the calendar entry and who is coming', () => {
     const m = nightLetter('chosen', night({ chosen: 'b', chosenBy: 'auto' }), { stebbias: ['b'], AmmaGaur: ['b'] }, reader);
     expect(m.subject).toMatch(/^Kvöldið er ákveðið: /);

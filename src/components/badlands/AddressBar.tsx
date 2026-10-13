@@ -8,6 +8,7 @@ import PlayerHead from './PlayerHead';
 import ToastHost from './Toast';
 import { SERVER_IP, plainClick, type NavLink } from './data';
 import { modalOpen, useCopy, useCrewSession, useServerStatus, type ServerState } from './hooks';
+import { useTabLantern } from './tabLantern';
 import type { ServerLife } from '@/lib/server-state';
 
 export interface Door extends NavLink { id: string }
@@ -77,6 +78,8 @@ export default function AddressBar({ links, activeId, onDoor, always = false, st
   const [, copy]          = useCopy(SERVER_IP);
   const { me } = useCrewSession();
   const server = useServerStatus(status);
+  /* the bar is on every page, so it keeps the tab's lantern too */
+  useTabLantern(server);
   const path = usePathname();
   const router = useRouter();
 

@@ -3,7 +3,7 @@
 // When offline, serves the last cached snapshot with a timestamp.
 import { NextResponse } from 'next/server';
 import { CREW_USERNAMES } from '@/lib/crew';
-import { EMPTY, getCachedStats, readGameStats, readWeek, setCachedStats, withDraws, type StatsResponse } from '@/lib/stats';
+import { EMPTY, getCachedStats, readGameStats, readWeek, setCachedStats, withCharges, type StatsResponse } from '@/lib/stats';
 
 export type { PlayerStat, StatsResponse, WeekPlayer, WeekStats } from '@/lib/stats';
 
@@ -21,12 +21,12 @@ export async function GET() {
     const cached = await getCachedStats();
     if (cached) {
       return NextResponse.json({
-        players: await withDraws(cached.players), source: 'cached', cachedAt: cached.cachedAt, week,
+        players: await withCharges(cached.players), source: 'cached', cachedAt: cached.cachedAt, week,
       } satisfies StatsResponse);
     }
-    /* no game stats at all, but the board still has the campfire's own charge */
-    const draws = await withDraws(CREW_USERNAMES.map(username => ({ username, ...EMPTY })));
-    return NextResponse.json({ players: draws.some(p => p.drawMs > 0) ? draws : [], source: 'unavailable', cachedAt: null, week } satisfies StatsResponse);
+    /* no game stats at all, but the board still has the charges kept beside them */
+    const draws = await withCharges(CREW_USERNAMES.map(username => ({ username, ...EMPTY })));
+    return NextResponse.json({ players: draws.some(p => p.drawMs > 0 || p.firsts > 0) ? draws : [], source: 'unavailable', cachedAt: null, week } satisfies StatsResponse);
   }
 
   try {
@@ -46,7 +46,7 @@ export async function GET() {
     }
 
     return NextResponse.json({
-      players: await withDraws(players), source: 'live', cachedAt: now, week,
+      players: await withCharges(players), source: 'live', cachedAt: now, week,
     } satisfies StatsResponse, {
       headers: { 'Cache-Control': 's-maxage=300, stale-while-revalidate=60' },
     });
@@ -59,11 +59,11 @@ export async function GET() {
     const cached = await getCachedStats();
     if (cached && cached.players.some(p => p.playTimeTicks > 0 || p.deaths > 0 || p.mobKills > 0)) {
       return NextResponse.json({
-        players: await withDraws(cached.players), source: 'cached', cachedAt: cached.cachedAt, week,
+        players: await withCharges(cached.players), source: 'cached', cachedAt: cached.cachedAt, week,
       } satisfies StatsResponse);
     }
 
-    const draws = await withDraws(CREW_USERNAMES.map(username => ({ username, ...EMPTY })));
-    return NextResponse.json({ players: draws.some(p => p.drawMs > 0) ? draws : [], source: 'unavailable', cachedAt: null, week } satisfies StatsResponse);
+    const draws = await withCharges(CREW_USERNAMES.map(username => ({ username, ...EMPTY })));
+    return NextResponse.json({ players: draws.some(p => p.drawMs > 0 || p.firsts > 0) ? draws : [], source: 'unavailable', cachedAt: null, week } satisfies StatsResponse);
   }
 }

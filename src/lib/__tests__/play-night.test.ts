@@ -204,6 +204,34 @@ describe('/api/playnight', () => {
     expect((await post([1, 2])).status).toBe(400);
   });
 
+  it('takes an answer from a letter\'s key, for that night and its reader, and nothing else', async () => {
+    vi.stubEnv('CRON_SECRET', 'a-secret-long-enough-for-tests');
+    const { answerKey } = await import('@/lib/night-answer');
+    await post({ action: 'propose', times: ['2026-10-02T20:00:00Z', '2026-10-03T20:00:00Z'] });
+    const id = (await view()).nights[0].id;
+    const key = answerKey((await lib.readNights()).find(n => n.id === id)!, 'joenana');
+
+    /* nobody signed in: the key answers for joenana, and the nights come back drawn for nobody */
+    session = null;
+    const res = await post({ action: 'vote', night: id, yes: ['b'], lykill: key });
+    expect(res.status).toBe(200);
+    expect((await res.json()).me).toBeNull();
+    expect((await view()).nights[0].options[1].yes).toEqual(['joenana', 'stebbias']);
+
+    /* signed in as someone else, the key still answers for its reader */
+    session = 'AmmaGaur';
+    await post({ action: 'vote', night: id, yes: ['a', 'b'], lykill: key });
+    expect((await view()).nights[0].options[0].yes).toEqual(['joenana', 'stebbias']);
+    session = null;
+
+    expect((await post({ action: 'vote', night: 'annad', yes: [], lykill: key })).status).toBe(403);
+    expect((await post({ action: 'vote', night: id, yes: [], lykill: `${key.slice(0, key.lastIndexOf('.'))}.${'A'.repeat(22)}` })).status).toBe(403);
+    expect((await post({ action: 'cancel', night: id, lykill: key })).status).toBe(401);
+    /* once the last time has come, the key has had its day */
+    vi.setSystemTime(new Date('2026-10-03T20:00:00Z'));
+    expect((await post({ action: 'vote', night: id, yes: [], lykill: key })).status).toBe(403);
+  });
+
   it('turns away anyone signed out', async () => {
     session = null;
     expect((await post({ action: 'propose', times: ['2026-10-02T20:00:00Z'] })).status).toBe(401);
@@ -243,5 +271,40 @@ describe('/api/playnight', () => {
     vi.setSystemTime(new Date('2026-10-09T12:00:00Z'));
     expect((await view()).nights.map(n => n.id)).toEqual([second.id]);
     expect(hash('playnight:nights').has(first.id)).toBe(false);
+    /* and the first is kept in the annals, as it was settled */
+    expect(JSON.parse(hash('playnight:past').get(first.id)!)).toEqual({
+      id: first.id, by: 'stebbias', note: '', at: '2026-10-01T20:00:00.000Z',
+      yes: ['AmmaGaur', 'stebbias'], came: ['AmmaGaur'], noShows: ['stebbias'], startedBy: null,
+    });
+  });
+
+  it('keeps every night held in the annals, newest first, and none put out', async () => {
+    await post({ action: 'propose', times: ['2026-10-02T20:00:00Z'] });
+    await post({ action: 'propose', times: ['2026-10-06T20:00:00Z'] });
+    await post({ action: 'propose', times: ['2026-10-09T20:00:00Z'] });
+    const [a, b, c] = (await view()).nights;
+    await post({ action: 'cancel', night: c.id });
+    vi.setSystemTime(new Date('2026-10-02T21:00:00Z'));
+    await lib.noteSeen(['joenana']);
+
+    /* the last night's embers glow among the fires; the one before is in the annals already */
+    vi.setSystemTime(new Date('2026-10-08T12:00:00Z'));
+    expect((await view()).nights.map(n => n.id)).toEqual([b.id]);
+    expect((await lib.pastNights()).map(p => p.id)).toEqual([a.id]);
+
+    /* past the embers, an unsettled night waits for the daily job, and is in the annals with who was seen */
+    vi.setSystemTime(new Date('2026-10-16T12:00:00Z'));
+    const past = await lib.pastNights();
+    expect(past.map(p => p.id)).toEqual([b.id, a.id]);
+    expect(past[1]).toMatchObject({ came: ['joenana'], noShows: [], yes: ['stebbias'] });
+    expect(hash('playnight:past').size).toBe(0);
+    expect(await lib.pastNight(a.id)).toMatchObject({ id: a.id });
+    expect(await lib.pastNight(c.id)).toBeNull();
+
+    /* a month on it is cleared from the fires, and kept */
+    vi.setSystemTime(new Date('2026-11-06T12:00:00Z'));
+    expect((await lib.pastNights()).map(p => p.id)).toEqual([b.id, a.id]);
+    expect([...hash('playnight:past').keys()].sort()).toEqual([a.id, b.id].sort());
+    expect(hash('playnight:nights').size).toBe(0);
   });
 });
