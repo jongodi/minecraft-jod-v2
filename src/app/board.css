@@ -343,6 +343,42 @@
 .b-poster__reward { font-size: var(--fs-sm); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-faint); }
 .b-poster__meta { margin-top: var(--sp-2); font-size: var(--fs-sm); color: var(--ink-faint); }
 .b-poster__note { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; text-wrap: balance; }
+/* what a member is wanted for, under their name on the roll call: as the room's board sets it, a little smaller */
+.b-poster--crew .b-poster__alias { font-size: var(--fs-sm); }
+.b-poster--crew .b-poster__bounty { margin-top: var(--sp-1); }
+.b-poster--crew .b-poster__charge + .b-poster__bounty + .b-poster__note { margin-top: var(--sp-2); }
+
+/* Mest eftirlýst (RollCall.tsx): the outlaw of the most charges hangs first,
+   twice the size of the rest, two columns and two rows of the board on a
+   wide screen and its whole width on a phone; the board's one hierarchy,
+   and it is earned in the game. The whole figure in its frame as on their
+   wall, the name at a title's size, the word for it in the bitmap face in
+   red, and the aliases their charges earn them; the seal at the foot. */
+.b-rollcall > .b-rollcall__most { grid-column: 1 / -1; }
+@media (min-width: 640px) { .b-rollcall > .b-rollcall__most { grid-column: span 2; grid-row: span 2; } }
+.b-poster--most { display: flex; flex-direction: column; align-items: center; padding: var(--sp-6) var(--sp-5) var(--sp-4); }
+.b-poster__kicker { margin-top: var(--sp-4); font-family: var(--font-data); font-size: var(--fs-data); line-height: 1.3; letter-spacing: 0.04em; text-transform: uppercase; color: var(--tc-red); }
+.b-poster--most .b-poster__img--full { width: min(38%, 9.5rem); margin-top: var(--sp-3); }
+@media (max-width: 639px) { .b-poster--most .b-poster__img--full { width: 6.5rem; } }
+.b-poster__img--full img { aspect-ratio: 1 / 2; object-fit: contain; object-position: center bottom; background: var(--paper-2); }
+.b-poster--most .b-poster__name { margin-top: var(--sp-3); font-size: clamp(var(--fs-lg), 12cqi, var(--fs-2xl)); }
+.b-poster__aliases { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 var(--sp-3); margin-top: var(--sp-2); font-weight: 600; font-size: var(--fs-lg); line-height: 1.3; color: var(--tc-red); }
+.b-poster--most .b-poster__charge { margin-top: var(--sp-1); font-size: var(--fs-md); }
+.b-poster--most .b-poster__note { margin-top: var(--sp-4); font-size: var(--fs-md); }
+.b-poster__ledger { list-style: none; display: grid; gap: var(--sp-1); width: min(100% - var(--sp-4), 22rem); margin-top: var(--sp-4); padding-top: var(--sp-3); border-top: var(--px) solid var(--ink-faint); text-align: left; }
+.b-poster__ledger li { display: flex; align-items: baseline; gap: var(--sp-2); font-size: var(--fs-sm); line-height: 1.4; color: var(--ink-soft); }
+.b-poster__ledgerwhat { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* the run of dots between a charge and its bounty, as a printed list leads the eye across */
+.b-poster__ledger li::after { content: ''; order: 1; flex: 1 1 1rem; min-width: 1rem; border-bottom: var(--px) dotted var(--ink-faint); transform: translateY(-0.3em); }
+.b-poster__ledger .b-poster__val { order: 2; margin-top: 0; }
+.b-poster__ledger li.b-poster__ledgermore { justify-content: flex-end; color: var(--ink-faint); }
+.b-poster__ledger li.b-poster__ledgermore::after { content: none; }
+.b-poster--most > .b-poster__seal { align-self: flex-end; margin-top: auto; padding-top: var(--sp-3); }
+
+/* the newest thing pinned on any wall, nailed up in the space the board has left beside the posters */
+.b-rollcall__news { display: grid; align-content: start; justify-items: center; gap: var(--sp-3); }
+.b-rollcall__news .w-note-card { flex: none; width: 100%; }
+.b-rollcall__more { justify-self: center; }
 .b-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 var(--sp-5); margin-top: var(--sp-5); }
 @media (min-width: 640px) { .b-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .b-stat { min-width: 0; padding: var(--sp-2) 0; border-top: var(--line) solid var(--ink-faint); }
