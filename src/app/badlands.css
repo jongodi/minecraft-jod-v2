@@ -1867,6 +1867,15 @@ html.is-map-full { overflow: hidden; }
 .b-crew__row { display: grid; gap: var(--sp-3); margin-bottom: var(--sp-5); }
 .b-crew__who { text-align: center; text-wrap: balance; max-width: var(--measure); margin-inline: auto; }
 @media (min-width: 900px) { .b-crew__who { text-align: left; margin-inline: 0; } }
+/* The room is named for its posters, so what stands over them is kept short:
+   on a wide screen the room's one line stands beside the portraits, at their
+   names' feet, rather than on a row of its own; and the fire keeps half the
+   air it has on a page of its own. */
+@media (min-width: 1100px) {
+  .b-crew__row { grid-template-columns: minmax(0, 52rem) minmax(0, 1fr); align-items: end; column-gap: var(--sp-6); }
+  .b-crew__who { padding-bottom: var(--sp-1); }
+}
+.b-crew > .b-night, .b-crew > .b-nights { margin-block: var(--sp-5); }
 .b-folk { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp-4) var(--sp-1); list-style: none; }
 @media (min-width: 480px) { .b-folk { gap: var(--sp-4) var(--sp-3); } }
 @media (min-width: 1100px) { .b-folk { grid-template-columns: repeat(8, minmax(0, 1fr)); max-width: 52rem; } }
