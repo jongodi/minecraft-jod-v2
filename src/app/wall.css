@@ -114,7 +114,7 @@
    strata's red, as the game sets a challenge apart; nothing else is coloured.
    The day sits under the title at every width: the portrait poster beside a
    wide wall is narrower than a phone. */
-.w-adv { margin-top: var(--sp-5); }
+.w-adv { margin-top: var(--sp-5); scroll-margin-top: calc(var(--bar) + var(--sp-4)); }
 .w-adv__head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-3); }
 .w-adv__count { font-family: var(--font-data); font-size: var(--fs-data); color: var(--ink-soft); }
 .w-adv__list { margin-top: var(--sp-2); list-style: none; }

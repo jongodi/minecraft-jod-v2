@@ -1397,6 +1397,43 @@ html.is-map-full { overflow: hidden; }
    The figures are live, so they are the bitmap face. */
 .b-f3 { display: grid; justify-items: start; gap: var(--px); margin-bottom: var(--sp-2); pointer-events: none; }
 .b-f3 > span { padding: var(--px) var(--sp-1); background: rgba(14, 12, 9, 0.6); color: #E8E8E8; font-family: var(--font-data); font-size: var(--fs-data); line-height: 1.2; white-space: nowrap; text-shadow: var(--px) var(--px) 0 rgba(14, 12, 9, 0.8); }
+/* Spjallið (Chat.tsx): the game's chat, over the places' rail as it sits over
+   the hotbar. Each line on its own veil of dark, the F3 lines' own, in the
+   game's colours with the game's shadow (the colour at a quarter): white for
+   what the crew said, yellow for what the server says, green for an
+   advancement, and a challenge set apart in red, as the walls set it apart.
+   A line holds for nine seconds and fades in the tenth (`b-chat-out`, its
+   delay set when it is printed); lines that came together come in one after
+   another. Open (T, or the note of lines held back), every line stays. Each
+   line leads to where it happened, so it lights as a link does. */
+.b-chat { display: grid; justify-items: start; max-width: min(34rem, 100%); margin-bottom: var(--sp-2); }
+.b-chat__line {
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
+  max-width: 100%; padding: var(--px) var(--sp-2);
+  background: rgba(14, 12, 9, 0.6); color: #FFFFFF;
+  font: inherit; font-size: var(--fs-sm); line-height: 1.4; text-align: left; text-decoration: none;
+  text-shadow: var(--px) var(--px) 0 #3F3F3F;
+  border: 0; cursor: pointer;
+  animation: b-chat-in 1ms linear backwards, b-chat-out 1s linear forwards;
+  transition: background-color 60ms linear;
+}
+.b-chat.is-open .b-chat__line { animation: none; background: rgba(14, 12, 9, 0.78); }
+@keyframes b-chat-in  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes b-chat-out { from { opacity: 1; } to { opacity: 0; visibility: hidden; } }
+@media (hover: hover) { .b-chat__line:hover { background: rgba(14, 12, 9, 0.86); text-decoration: underline var(--px); text-underline-offset: 0.3em; } }
+.b-chat__line:focus-visible { outline: var(--px) solid var(--lantern); outline-offset: 0; background: rgba(14, 12, 9, 0.86); }
+.b-chat__line:active { background: rgba(14, 12, 9, 0.95); }
+.b-chat__sys, .b-chat__queue { color: #FFFF55; text-shadow: var(--px) var(--px) 0 #3F3F15; }
+.b-chat__adv { color: #55FF55; text-shadow: var(--px) var(--px) 0 #153F15; }
+.b-chat__adv--challenge { color: #FF5555; text-shadow: var(--px) var(--px) 0 #3F1515; }
+.b-chat__item { color: #E8E8E8; }
+.b-chat__empty { cursor: default; color: #E8E8E8; }
+.b-chat__close { margin-top: var(--sp-2); }
+/* open, the chat is read as the game's is, with the world's lantern stepped aside: its sign stood where the longer log climbs */
+.b-frame .b-hud__mid { transition: opacity var(--dur-2) var(--ease-out), visibility 0s linear 0s; }
+.b-frame.is-chat .b-hud__mid { opacity: 0; visibility: hidden; transition: opacity var(--dur-2) var(--ease-out), visibility 0s linear var(--dur-2); }
+@media (max-width: 899px) { .b-chat { margin-bottom: var(--sp-1); } }
+
 .b-places__head { justify-self: start; padding: var(--px) var(--sp-2); background: var(--plate); clip-path: var(--notch); font-size: var(--fs-sm); color: var(--paper); text-shadow: 0 var(--px) 0 var(--night); }
 /* min-width: a grid item would otherwise grow to fit every chip instead of scrolling */
 .b-railwrap { position: relative; min-width: 0; }

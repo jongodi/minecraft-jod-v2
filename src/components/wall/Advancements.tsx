@@ -35,7 +35,7 @@ export default function Advancements({ list, of }: { list: WallAdvancement[]; of
   if (list.length === 0) return null;
   const shown = all ? list : list.slice(0, SHOWN);
   return (
-    <section className="w-adv" aria-label="Afrek">
+    <section id="afrek" className="w-adv" aria-label="Afrek">
       <p className="w-adv__head"><span className="b-paper__kicker">Afrek</span><span className="w-adv__count">{list.length} af {of}</span></p>
       <ol className="w-adv__list">
         {shown.map(a => (

@@ -12,6 +12,7 @@ import { plural } from '@/lib/format';
 import Drawer from './Drawer';
 import PlayerHead from './PlayerHead';
 import Rail, { revealRailItem } from './Rail';
+import Chat from './Chat';
 import { CREW, MAP_LIGHTS, MAP_POSTER, MAP_URL, SITE_NAME, handCase, plainClick, titleCase, type Plate, type RoomId } from './data';
 import type { ServerState } from './hooks';
 import { modalOpen, useEffectsAllowed, useInert, useMediaQuery } from './hooks';
@@ -147,6 +148,8 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
   /* the frame as the whole screen: the browser's own full screen, or fixed over the page where there is none (iPhone) */
   const [full, setFull]       = useState<false | 'native' | 'overlay'>(false);
   const [inView, setInView]   = useState(true);
+  /* the chat is open to be read, and the lantern in the middle steps aside for it */
+  const [chatOpen, setChatOpen] = useState(false);
   const frameRef = useRef<HTMLDivElement>(null);
   const viewRef  = useRef<HTMLIFrameElement>(null);
   const hudTop   = useRef<HTMLDivElement>(null);
@@ -193,20 +196,23 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
      again when the visitor climbs back up to the sunset, where it is not yet
      night: a state, like the name's windows, so it is a short transition
      (badlands.css) rather than an animation held for the whole scroll. */
-  const [lit, setLit] = useState(false);
+  /* `reached` is the arrival itself, which the chat answers on every device;
+     the lights are drawn only once the effects are allowed, since lighting
+     them before then had them arrive already lit, or lit and going out again
+     at the sunset. */
+  const [reached, setReached] = useState(false);
   useEffect(() => {
     const el = frameRef.current;
-    /* the town is drawn only once the effects are allowed: lighting it before
-       then had it arrive already lit, or lit and going out again at the sunset */
-    if (!el || !effects) return;
-    if (!('IntersectionObserver' in window)) { setLit(true); return; }
+    if (!el) return;
+    if (!('IntersectionObserver' in window)) { setReached(true); return; }
     const io = new IntersectionObserver(([e]) => {
-      if (e.intersectionRatio >= 0.55) setLit(true);
-      else if (e.intersectionRatio < 0.15 && e.boundingClientRect.top > 0) setLit(false);
+      if (e.intersectionRatio >= 0.55) setReached(true);
+      else if (e.intersectionRatio < 0.15 && e.boundingClientRect.top > 0) setReached(false);
     }, { threshold: [0, 0.15, 0.55] });
     io.observe(el);
     return () => io.disconnect();
-  }, [effects]);
+  }, []);
+  const lit = reached && effects;
 
   /* The rooms' code is fetched once the browser is truly idle, so a door
      opens at once later and the first seconds, when a slow phone is still
@@ -406,7 +412,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
 
   return (
     <section id="heimur" className="b-world" aria-labelledby="heimur-title">
-      <div ref={frameRef} className={`b-frame${live ? ' is-live' : ''}${ready ? ' is-ready' : ''}${drawn ? ' is-drawn' : ''}${shut ? ' is-room' : ''}${full === 'overlay' ? ' is-full' : ''}${live && still ? ' is-still' : ''}${menu && ready ? ' is-menu' : ''}`}>
+      <div ref={frameRef} className={`b-frame${live ? ' is-live' : ''}${ready ? ' is-ready' : ''}${drawn ? ' is-drawn' : ''}${shut ? ' is-room' : ''}${full === 'overlay' ? ' is-full' : ''}${live && still ? ' is-still' : ''}${menu && ready ? ' is-menu' : ''}${chatOpen ? ' is-chat' : ''}`}>
         {/* The still and its lights drift together, slowly, like a camera
             hovering over the town at night, so the world on the page is
             looked at rather than printed (badlands.css). Only while the
@@ -607,6 +613,9 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
             and at its end the other bases, each a lit lantern that leads to a
             3D map of its own (/kort/<id>): places too, only further off. */}
         <div ref={places} className="b-places">
+          {/* Spjallið: the game's chat over the world, in the corner it keeps
+              over the hotbar, here the places' rail (Chat.tsx) */}
+          <Chat active={reached && !shut} covered={place !== null || drawn || shut || album || (menu && ready)} server={server} onOpen={setChatOpen} />
           {/* The game's F3 lines while the live map is up: the block the map
               holds and the way it faces, as a player reads them to find the
               same spot in the game, each line on its own veil of dark. */}
