@@ -15,11 +15,13 @@ import { errorFrom } from '@/lib/crew-upload';
 import AddressBar from '@/components/badlands/AddressBar';
 import Footer from '@/components/badlands/Footer';
 import PlayerHead from '@/components/badlands/PlayerHead';
-import { CloseIcon, Seal, Star } from '@/components/badlands/Bits';
+import { CloseIcon, Seal } from '@/components/badlands/Bits';
 import { PAGE_LINKS, STAT_TABS } from '@/components/badlands/data';
 import NightSky from '@/components/badlands/NightSky';
 import { seedSession, useBackdropClose, useCrewSession, useDialogFocus, useScrollLock, type CrewSessionSeed } from '@/components/badlands/hooks';
 import { photoProps, PHOTO_SIZES } from '@/components/badlands/photo';
+import type { WallAdvancement } from '@/lib/advancements';
+import Advancements from './Advancements';
 import Composer from './Composer';
 import Print from './Print';
 
@@ -29,32 +31,6 @@ const WallLightbox = dynamic(() => import('./WallLightbox'), { ssr: false });
 
 /** A place on the map, as the wall needs it: to pin things at and to list what the member built. */
 export interface WallPlace { id: number; label: string; sublabel: string; builders: string[]; wood: SignWood }
-
-// ─── Badges: the highest earned tier per category ─────────────────────────────
-
-interface BadgeDef { id: string; label: string; category: string; check: (s: PlayerStat) => boolean }
-
-const BADGE_DEFS: BadgeDef[] = [
-  { id: 'played-10h',   label: 'Nýliði',          category: 'playtime', check: s => s.playTimeHours  >= 10    },
-  { id: 'played-100h',  label: 'Fastagestur',     category: 'playtime', check: s => s.playTimeHours  >= 100   },
-  { id: 'played-500h',  label: 'Lykilmaður',      category: 'playtime', check: s => s.playTimeHours  >= 500   },
-  { id: 'kills-100',    label: '100 verur felldar', category: 'kills',  check: s => s.mobKills       >= 100   },
-  { id: 'kills-1k',     label: 'Skrímslabani',    category: 'kills',    check: s => s.mobKills       >= 1000  },
-  { id: 'kills-5k',     label: 'Slátrarinn',      category: 'kills',    check: s => s.mobKills       >= 5000  },
-  { id: 'walked-100km', label: 'Landkönnuður',    category: 'distance', check: s => s.distanceWalked >= 100 * 100_000 },
-  { id: 'walked-500km', label: 'Heimsflakkari',   category: 'distance', check: s => s.distanceWalked >= 500 * 100_000 },
-  { id: 'deaths-10',    label: 'Hrakfallabálkur', category: 'deaths',   check: s => s.deaths         >= 10    },
-  { id: 'deaths-50',    label: 'Óheppinn',        category: 'deaths',   check: s => s.deaths         >= 50    },
-  { id: 'crafted-1k',   label: 'Smiður',          category: 'crafted',  check: s => s.itemsCrafted   >= 1000  },
-  { id: 'pvp',          label: 'Mannabani',       category: 'pvp',      check: s => s.playerKills    >= 1     },
-  { id: 'draw-200',     label: 'Sýslumaður',      category: 'draw',     check: s => s.drawMs > 0 && s.drawMs < 200 },
-];
-
-function earnedBadges(stat: PlayerStat): BadgeDef[] {
-  const top = new Map<string, BadgeDef>();
-  for (const b of BADGE_DEFS) if (b.check(stat)) top.set(b.category, b);
-  return Array.from(top.values());
-}
 
 // ─── Login: the password, or a link by post ───────────────────────────────────
 
@@ -258,13 +234,15 @@ interface Props {
   places:  WallPlace[];
   /** the member's numbers from the last snapshot, so the poster is drawn whole before the live ones come */
   initialStats?: PlayerStat | null;
+  /** the game's advancements, newest first, and how many there are to earn; null before the first daily read */
+  advancements?: { list: WallAdvancement[]; of: number } | null;
   /** true when the page was opened from a sign-in link */
   justSignedIn?: boolean;
   /** who the server found signed in, so the owner's own wall is drawn whole from the first paint */
   session: CrewSessionSeed;
 }
 
-export default function Wall({ initial, places, initialStats = null, justSignedIn = false, session }: Props) {
+export default function Wall({ initial, places, initialStats = null, advancements = null, justSignedIn = false, session }: Props) {
   const [profile, setProfile] = useState<CrewProfile>(initial);
   /* The session the server drew the page for is the store's first answer, so
      the pin slot, the banner and the reply lines are in the markup and the
@@ -341,7 +319,6 @@ export default function Wall({ initial, places, initialStats = null, justSignedI
   }, [prints.length]);
   const cover  = coverPhoto(profile);
   const built  = places.filter(p => p.builders.some(b => sameUser(b, username)));
-  const badges = stats ? earnedBadges(stats) : [];
 
   const patchProfile = useCallback(async (body: { bio?: string; coverPhotoId?: string | null }) => {
     const res = await fetch(`/api/crew/${username}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -475,16 +452,12 @@ export default function Wall({ initial, places, initialStats = null, justSignedI
                     </div>
                   ))}
                 </dl>
-                {badges.length > 0 && (
-                  <ul className="b-badges" aria-label="Afrek">
-                    {badges.map(b => <li key={b.id} className="b-badge"><Star className="b-star" />{b.label}</li>)}
-                  </ul>
-                )}
                 {statsMeta?.source === 'cached' && statsMeta.cachedAt && (
                   <p className="b-note" style={{ marginTop: '0.75rem' }}>tölurnar eru úr síðasta afriti, frá {formatDate(statsMeta.cachedAt)}</p>
                 )}
               </>
             )}
+            {advancements && <Advancements list={advancements.list} of={advancements.of} />}
           </div>
           {/* the poster made good: JOÐ's seal in its corner */}
           <Seal className="w-poster__seal" />

@@ -27,11 +27,13 @@ export interface PlayerStat {
   drawMs:         number;
   /** play nights said yes to and not come to */
   noShows:        number;
+  /** advancements this member was the first of the crew to earn (src/lib/advancements.ts) */
+  firsts:         number;
 }
 
 export const EMPTY: Omit<PlayerStat, 'username'> = {
   deaths: 0, mobKills: 0, playerKills: 0, playTimeTicks: 0, playTimeHours: 0, distanceWalked: 0, itemsCrafted: 0,
-  timeSinceRest: 0, timeSinceDeath: 0, travelCm: 0, damageRatio: 0, raidWins: 0, recordsPlayed: 0, drawMs: 0, noShows: 0,
+  timeSinceRest: 0, timeSinceDeath: 0, travelCm: 0, damageRatio: 0, raidWins: 0, recordsPlayed: 0, drawMs: 0, noShows: 0, firsts: 0,
 };
 
 export interface StatsResponse {
@@ -138,6 +140,7 @@ export function extractStats(statsJson: MinecraftStatsJson): Omit<PlayerStat, 'u
     recordsPlayed:  custom['minecraft:play_record'] ?? 0,
     drawMs:         0,
     noShows:        0,
+    firsts:         0,
   };
 }
 
@@ -179,10 +182,11 @@ export async function crewUuids(): Promise<Record<string, string>> {
   return map;
 }
 
-/** The charges that come from the site, not the game: the best draw at the
-    campfire, posted from each member's wall, and the play nights someone
-    said they would come to and didn't (src/lib/play-night.ts). */
-export async function withDraws(players: PlayerStat[]): Promise<PlayerStat[]> {
+/** The charges not in the stats files: the best draw at the campfire, posted
+    from each member's wall; the play nights someone said they would come to
+    and didn't (src/lib/play-night.ts); and the advancements each was first
+    of the crew to, from the daily copy (src/lib/advancements.ts). */
+export async function withCharges(players: PlayerStat[]): Promise<PlayerStat[]> {
   let out = players;
   try {
     const best = new Map((await readAllProfiles()).map(p => [p.username.toLowerCase(), p.bestDrawMs ?? 0]));
@@ -194,6 +198,14 @@ export async function withDraws(players: PlayerStat[]): Promise<PlayerStat[]> {
       const tally = new Map(Object.entries(await readNoShows()).map(([u, n]) => [u.toLowerCase(), n]));
       out = out.map(p => ({ ...p, noShows: tally.get(p.username.toLowerCase()) ?? 0 }));
     } catch { /* no tally, no charge */ }
+    try {
+      const { firstCounts, readStoredAdvancements } = await import('@/lib/advancements');
+      const crew = await readStoredAdvancements();
+      if (crew) {
+        const firsts = new Map(Object.entries(firstCounts(crew.players)).map(([u, n]) => [u.toLowerCase(), n]));
+        out = out.map(p => ({ ...p, firsts: firsts.get(p.username.toLowerCase()) ?? 0 }));
+      }
+    } catch { /* no copy, no charge */ }
   }
   return out;
 }

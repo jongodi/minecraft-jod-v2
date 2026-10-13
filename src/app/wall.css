@@ -108,6 +108,25 @@
 .w-poster__built { margin-top: var(--sp-3); font-size: var(--fs-sm); color: var(--ink-soft); line-height: 1.6; }
 .w-poster__built .b-paper__kicker { margin-right: var(--sp-1); }
 
+/* The game's advancements on the poster (Advancements.tsx): a ruled list in
+   the paper's own ink, the frame the game draws each one in at its left, the
+   title, and under it the day it was done. A challenge's frame takes the
+   strata's red, as the game sets a challenge apart; nothing else is coloured.
+   The day sits under the title at every width: the portrait poster beside a
+   wide wall is narrower than a phone. */
+.w-adv { margin-top: var(--sp-5); }
+.w-adv__head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-3); }
+.w-adv__count { font-family: var(--font-data); font-size: var(--fs-data); color: var(--ink-soft); }
+.w-adv__list { margin-top: var(--sp-2); list-style: none; }
+.w-adv__item { display: grid; grid-template-columns: 1rem minmax(0, 1fr); column-gap: var(--sp-3); padding: var(--sp-2) 0; border-top: var(--line) solid var(--ink-faint); font-size: var(--fs-sm); line-height: 1.4; }
+.w-adv__frame { grid-row: 1 / span 2; width: 1rem; height: 1rem; margin-top: 0.1rem; color: var(--ink-soft); }
+.w-adv__frame--goal { color: var(--ink); }
+.w-adv__frame--challenge { color: var(--tc-red); }
+.w-adv__title { min-width: 0; color: var(--ink); overflow-wrap: break-word; }
+.w-adv__when { grid-column: 2; color: var(--ink-faint); }
+.w-adv__when b { font-weight: 600; color: var(--ink-soft); }
+.w-adv__more { margin-top: var(--sp-2); font-size: var(--fs-sm); }
+
 /* ─── the pin slot ──────────────────────────────────────────── */
 /* A blank board on the owner's bench, the same oak the signs are cut from, so
    what is written on it is what goes up. Its rim is dashed until something

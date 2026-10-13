@@ -10,6 +10,7 @@ import { readMap } from '@/lib/map';
 import { woodOf } from '@/lib/map-types';
 import { getCachedStats } from '@/lib/stats';
 import { readNoShows } from '@/lib/play-night';
+import { ADVANCEMENT_COUNT, firstCounts, readStoredAdvancements, wallAdvancements } from '@/lib/advancements';
 import { sameUser } from '@/lib/crew-types';
 import Wall, { type WallPlace } from '@/components/wall/Wall';
 import type { CrewSessionSeed } from '@/components/badlands/hooks';
@@ -49,12 +50,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function CrewWallPage({ params, searchParams }: Props) {
   const { username } = await params;
   if (!isCrewUsername(username)) notFound();
-  const [profile, map, query, snapshot, session, noShowTally] = await Promise.all([
+  const [profile, map, query, snapshot, session, noShowTally, crewAdvancements] = await Promise.all([
     wallOf(username), readMap().catch(() => null), searchParams, getCachedStats().catch(() => null), viewer(),
     /* Asked beside the rest rather than after them; a wall without numbers
        simply does not use it. The tally lives in Redis, as the snapshot does,
        so without Redis there is nothing to ask. */
     process.env.REDIS_URL ? readNoShows().catch(() => null) : null,
+    /* the game's advancements, from the daily copy (src/lib/advancements.ts); null before the first */
+    readStoredAdvancements(),
   ]);
   /* The poster is drawn with the last snapshot's numbers, which is one quick
      read, so it stands at its full height at once; the wall then asks for the
@@ -63,7 +66,10 @@ export default async function CrewWallPage({ params, searchParams }: Props) {
   const mine = snapshot?.players.find(p => sameUser(p.username, profile.username));
   /* their best draw is on the wall already read; only the no-show tally is one more read */
   const noShows = (noShowTally && Object.entries(noShowTally).find(([u]) => sameUser(u, profile.username))?.[1]) || 0;
-  const stats = mine ? { ...mine, drawMs: profile.bestDrawMs ?? 0, noShows } : null;
+  const firsts = (crewAdvancements && Object.entries(firstCounts(crewAdvancements.players)).find(([u]) => sameUser(u, profile.username))?.[1]) || 0;
+  const stats = mine ? { ...mine, drawMs: profile.bestDrawMs ?? 0, noShows, firsts } : null;
+  /* only this member's, with their names: the list of every advancement stays on the server */
+  const advancements = crewAdvancements ? { list: wallAdvancements(profile.username, crewAdvancements), of: ADVANCEMENT_COUNT } : null;
   const places: WallPlace[] = (map?.locations ?? []).map(l => ({ id: l.id, label: l.label, sublabel: l.sublabel, builders: l.builders ?? [], wood: woodOf(l) }));
-  return <Wall initial={profile} places={places} initialStats={stats} justSignedIn={query.innskrad === '1'} session={session} />;
+  return <Wall initial={profile} places={places} initialStats={stats} advancements={advancements} justSignedIn={query.innskrad === '1'} session={session} />;
 }

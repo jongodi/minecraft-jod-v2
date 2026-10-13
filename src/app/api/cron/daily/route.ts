@@ -9,7 +9,8 @@ import { readGameStats, setCachedStats } from '@/lib/stats';
    night included, falls between two copies. The server need not be running:
    exaroton hands out a stopped server's files as it does a running one's.
 
-   It also settles the play nights of the evenings before (src/lib/play-night.ts).
+   It also reads the crew's advancements (src/lib/advancements.ts) and settles
+   the play nights of the evenings before (src/lib/play-night.ts).
 
    Vercel sends CRON_SECRET as a bearer token; anything else is turned away. */
 
@@ -46,6 +47,15 @@ export async function GET(req: NextRequest) {
   if (stats.failed.length === 0) await setCachedStats(stats.players);
   if (stats.failed.length) console.warn(`[cron/daily] ${day}: could not read ${stats.failed.join(', ')}`);
 
+  /* the game's advancements, for the walls and the wanted board (src/lib/advancements.ts) */
+  let advancements = null;
+  try {
+    const { refreshAdvancements } = await import('@/lib/advancements');
+    advancements = await refreshAdvancements(token, now);
+  } catch (err) {
+    console.error('[cron/daily] could not read the advancements:', err instanceof Error ? err.message : err);
+  }
+
   /* the day after a play night: who came, and who said yes and didn't */
   let playNights = null;
   try {
@@ -55,5 +65,5 @@ export async function GET(req: NextRequest) {
     console.error('[cron/daily] could not settle the play nights:', err instanceof Error ? err.message : err);
   }
 
-  return NextResponse.json({ day, read, failed: stats.failed, playNights }, { headers: { 'Cache-Control': 'no-store' } });
+  return NextResponse.json({ day, read, failed: stats.failed, advancements, playNights }, { headers: { 'Cache-Control': 'no-store' } });
 }

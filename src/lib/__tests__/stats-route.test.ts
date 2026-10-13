@@ -16,7 +16,7 @@ vi.mock('@/lib/stats', async (orig) => ({
   getCachedStats: vi.fn(async () => cache),
   setCachedStats: vi.fn(async (players: PlayerStat[]) => { saved.push(players); }),
   readWeek: vi.fn(async () => null),
-  withDraws: vi.fn(async (players: PlayerStat[]) => players),
+  withCharges: vi.fn(async (players: PlayerStat[]) => players),
 }));
 
 const { GET } = await import('../../app/api/stats/route');

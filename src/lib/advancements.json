@@ -1,0 +1,861 @@
+{
+  "version": "26.3",
+  "list": [
+    {
+      "id": "minecraft:story/mine_stone",
+      "tab": "story",
+      "frame": "task",
+      "title": "Steinöld",
+      "description": "Höggðu grjót með nýja hakanum þínum"
+    },
+    {
+      "id": "minecraft:story/upgrade_tools",
+      "tab": "story",
+      "frame": "task",
+      "title": "Nældir þér í uppfærslu",
+      "description": "Búðu til betri haka"
+    },
+    {
+      "id": "minecraft:story/smelt_iron",
+      "tab": "story",
+      "frame": "task",
+      "title": "Harðhaus",
+      "description": "Bræddu hráttjárn í járnhleif"
+    },
+    {
+      "id": "minecraft:story/iron_tools",
+      "tab": "story",
+      "frame": "task",
+      "title": "Er það ekki járnhaki",
+      "description": "Uppfærðu hakann þinn"
+    },
+    {
+      "id": "minecraft:story/lava_bucket",
+      "tab": "story",
+      "frame": "task",
+      "title": "Alveg brennandi heitt",
+      "description": "Fylltu Fötu af Hrauni"
+    },
+    {
+      "id": "minecraft:story/obtain_armor",
+      "tab": "story",
+      "frame": "task",
+      "title": "Spariföt",
+      "description": "Verndaðu þig með járnbrynklæðum"
+    },
+    {
+      "id": "minecraft:story/mine_diamond",
+      "tab": "story",
+      "frame": "task",
+      "title": "Demantar!",
+      "description": "Eignast demanta"
+    },
+    {
+      "id": "minecraft:story/form_obsidian",
+      "tab": "story",
+      "frame": "task",
+      "title": "Ís fötu áskorun",
+      "description": "Eignastu kubb af Hrafntinnu"
+    },
+    {
+      "id": "minecraft:story/deflect_arrow",
+      "tab": "story",
+      "frame": "task",
+      "title": "Kannski í næsta lífi, takk fyrir",
+      "description": "Verðu skotfæri með Skildi"
+    },
+    {
+      "id": "minecraft:story/enchant_item",
+      "tab": "story",
+      "frame": "task",
+      "title": "Galdramaður",
+      "description": "Galdra hlut með galdraborði"
+    },
+    {
+      "id": "minecraft:story/shiny_gear",
+      "tab": "story",
+      "frame": "task",
+      "title": "Skýldu mér með demöntum",
+      "description": "Demantsbrynklæði bjarga lífum"
+    },
+    {
+      "id": "minecraft:story/enter_the_nether",
+      "tab": "story",
+      "frame": "task",
+      "title": "Við þurfum að fara dýpra",
+      "description": "Byggja, tendra og ganga um heljargátt"
+    },
+    {
+      "id": "minecraft:story/cure_zombie_villager",
+      "tab": "story",
+      "frame": "goal",
+      "title": "Skottulæknir",
+      "description": "Veikja og síðan lækna uppvakningsþorpsbúa"
+    },
+    {
+      "id": "minecraft:story/follow_ender_eye",
+      "tab": "story",
+      "frame": "task",
+      "title": "Gefur augaleið",
+      "description": "Fylgja endaauga"
+    },
+    {
+      "id": "minecraft:story/enter_the_end",
+      "tab": "story",
+      "frame": "task",
+      "title": "Endirinn?",
+      "description": "Ganga um endagátt\n"
+    },
+    {
+      "id": "minecraft:nether/distract_piglin",
+      "tab": "nether",
+      "frame": "task",
+      "title": "Það glitrar!",
+      "description": "Truflaðu Svínunga með gulli"
+    },
+    {
+      "id": "minecraft:nether/fast_travel",
+      "tab": "nether",
+      "frame": "challenge",
+      "title": "Undirheimaferðalangur",
+      "description": "Notfæra sér Hel til þess að ferðast 7 km í yfirheiminum"
+    },
+    {
+      "id": "minecraft:nether/find_bastion",
+      "tab": "nether",
+      "frame": "task",
+      "title": "Sú var tíðin",
+      "description": "Gakktu inn í Svínungavirkisrústir"
+    },
+    {
+      "id": "minecraft:nether/find_fortress",
+      "tab": "nether",
+      "frame": "task",
+      "title": "Hryllilegt virki",
+      "description": "Brjótast inn í heljarvirki"
+    },
+    {
+      "id": "minecraft:nether/obtain_ancient_debris",
+      "tab": "nether",
+      "frame": "task",
+      "title": "Falið í djúpinu",
+      "description": "Finndu fornleifar"
+    },
+    {
+      "id": "minecraft:nether/obtain_crying_obsidian",
+      "tab": "nether",
+      "frame": "task",
+      "title": "Hver er að skera lauk?",
+      "description": "Finndu grátandi hrafntinnu"
+    },
+    {
+      "id": "minecraft:nether/return_to_sender",
+      "tab": "nether",
+      "frame": "challenge",
+      "title": "Fallinn á eigin bragði",
+      "description": "Drepa vom með eldhnetti"
+    },
+    {
+      "id": "minecraft:nether/ride_strider",
+      "tab": "nether",
+      "frame": "task",
+      "title": "Þessi bátur hefur fætur",
+      "description": "Stýrðu Strider með Klikkuðum Sveppi á Priki"
+    },
+    {
+      "id": "minecraft:nether/loot_bastion",
+      "tab": "nether",
+      "frame": "task",
+      "title": "Stríðsgrísir",
+      "description": "Steldu úr kistu í Svínungavirkisrústum"
+    },
+    {
+      "id": "minecraft:nether/get_wither_skull",
+      "tab": "nether",
+      "frame": "task",
+      "title": "Draugsleg ógnar beinagrind",
+      "description": "Fá hauskúpu viðrinisbeinagrindar"
+    },
+    {
+      "id": "minecraft:nether/obtain_blaze_rod",
+      "tab": "nether",
+      "frame": "task",
+      "title": "Inn í eldinn",
+      "description": "Losa Loga við stöngina sína"
+    },
+    {
+      "id": "minecraft:nether/netherite_armor",
+      "tab": "nether",
+      "frame": "challenge",
+      "title": "Hyldu mig í rústum",
+      "description": "Vertu fullklæddur heljarmálmsherklæðum"
+    },
+    {
+      "id": "minecraft:nether/charge_respawn_anchor",
+      "tab": "nether",
+      "frame": "task",
+      "title": "Ekki alveg \"Níu\" líf",
+      "description": "Hladdu endurlífgunarakkeri að hámarki"
+    },
+    {
+      "id": "minecraft:nether/uneasy_alliance",
+      "tab": "nether",
+      "frame": "challenge",
+      "title": "Banvænt bandalag",
+      "description": "Bjarga vomi frá Hel, ná honum í yfirheimin... og drepa hann"
+    },
+    {
+      "id": "minecraft:nether/explore_nether",
+      "tab": "nether",
+      "frame": "challenge",
+      "title": "Heitir ferðamannastaðir",
+      "description": "Kanna öll landslög Heljar"
+    },
+    {
+      "id": "minecraft:nether/ride_strider_in_overworld_lava",
+      "tab": "nether",
+      "frame": "task",
+      "title": "Eins og heima",
+      "description": "Farðu á Röltara í laaaaanga ferð á hrauntjörn í Efra"
+    },
+    {
+      "id": "minecraft:nether/summon_wither",
+      "tab": "nether",
+      "frame": "task",
+      "title": "Viðrinishæðir",
+      "description": "Boða viðrini"
+    },
+    {
+      "id": "minecraft:nether/brew_potion",
+      "tab": "nether",
+      "frame": "task",
+      "title": "Brugghús hverfisins",
+      "description": "Bruggaðu seyði"
+    },
+    {
+      "id": "minecraft:nether/create_beacon",
+      "tab": "nether",
+      "frame": "task",
+      "title": "Að leiðarljósi",
+      "description": "Byggja og staðsetja leiðarljós"
+    },
+    {
+      "id": "minecraft:nether/all_potions",
+      "tab": "nether",
+      "frame": "challenge",
+      "title": "Tryllt blanda",
+      "description": "Hafa öll seyðisáhrif á sama tíma"
+    },
+    {
+      "id": "minecraft:nether/create_full_beacon",
+      "tab": "nether",
+      "frame": "goal",
+      "title": "Geislafræðingur",
+      "description": "Stilla leiðarljós á hæsta styrk"
+    },
+    {
+      "id": "minecraft:nether/all_effects",
+      "tab": "nether",
+      "frame": "challenge",
+      "title": "Hvernig komumst við hingað?",
+      "description": "Hafa öll áhrifin á sama tíma",
+      "hidden": true
+    },
+    {
+      "id": "minecraft:end/kill_dragon",
+      "tab": "end",
+      "frame": "task",
+      "title": "Falla fjötrarnir af endaheiminum",
+      "description": "Gangi þér vel"
+    },
+    {
+      "id": "minecraft:end/dragon_breath",
+      "tab": "end",
+      "frame": "goal",
+      "title": "Þig vantar mintu",
+      "description": "Safnaðu anda drekans í glerflösku"
+    },
+    {
+      "id": "minecraft:end/dragon_egg",
+      "tab": "end",
+      "frame": "goal",
+      "title": "Komandi kynslóðir",
+      "description": "Haltu á drekaegginu"
+    },
+    {
+      "id": "minecraft:end/enter_end_gateway",
+      "tab": "end",
+      "frame": "task",
+      "title": "Fjarlægur flóttastaður",
+      "description": "Flýðu eyjuna"
+    },
+    {
+      "id": "minecraft:end/respawn_dragon",
+      "tab": "end",
+      "frame": "goal",
+      "title": "Endirinn... Aftur...",
+      "description": "Endurlífga endadrekann"
+    },
+    {
+      "id": "minecraft:end/find_end_city",
+      "tab": "end",
+      "frame": "task",
+      "title": "Borgin í leikslok",
+      "description": "Farðu inn, hvað gæti gerst?"
+    },
+    {
+      "id": "minecraft:end/elytra",
+      "tab": "end",
+      "frame": "goal",
+      "title": "Eins og fuglinn flýr!",
+      "description": "Nældu þér í þekjuvængi"
+    },
+    {
+      "id": "minecraft:end/levitate",
+      "tab": "end",
+      "frame": "challenge",
+      "title": "Ég sé húsið mitt héðan",
+      "description": "Svífa upp 50 einingar eftir árás skálks"
+    },
+    {
+      "id": "minecraft:adventure/avoid_vibration",
+      "tab": "adventure",
+      "frame": "task",
+      "title": "Þögull sem gröfin",
+      "description": "Laumast nærri skelksnema eða verði svo þeir skynji þig ekki"
+    },
+    {
+      "id": "minecraft:adventure/brush_armadillo",
+      "tab": "adventure",
+      "frame": "task",
+      "title": "Hreistu það af þér!",
+      "description": "Fáðu beltisdýrahreistur frá beltisdýri með bursta"
+    },
+    {
+      "id": "minecraft:adventure/crafters_crafting_crafters",
+      "tab": "adventure",
+      "frame": "task",
+      "title": "Smiður smíða smiði",
+      "description": "Vertu nálægt smið er hann smíðar smið"
+    },
+    {
+      "id": "minecraft:adventure/fall_from_world_height",
+      "tab": "adventure",
+      "frame": "task",
+      "title": "Hellar & Hamrar",
+      "description": "Hrapa frá efri mörkum heims niður á botn heims og lifa af"
+    },
+    {
+      "id": "minecraft:adventure/heart_transplanter",
+      "tab": "adventure",
+      "frame": "task",
+      "title": "Hjartaígræðsla",
+      "description": "Setja brakandi hjarta á réttan hátt á milli tveggja föleikardrumba"
+    },
+    {
+      "id": "minecraft:adventure/honey_block_slide",
+      "tab": "adventure",
+      "frame": "task",
+      "title": "Klístraðar aðstæður",
+      "description": "Hoppaðu á hunangskubb til að fjaðra fall þitt"
+    },
+    {
+      "id": "minecraft:adventure/kill_a_mob",
+      "tab": "adventure",
+      "frame": "task",
+      "title": "Skrímslabani",
+      "description": "Dreptu óvinveitt skrímsli"
+    },
+    {
+      "id": "minecraft:adventure/lightning_rod_with_villager_no_fire",
+      "tab": "adventure",
+      "frame": "task",
+      "title": "Yfirspennuvörn",
+      "description": "Verja þorpsbúa fyrir raflosti án þess að eldur brjótist út"
+    },
+    {
+      "id": "minecraft:adventure/minecraft_trials_edition",
+      "tab": "adventure",
+      "frame": "task",
+      "title": "Minecraft: þrautarútgáfa",
+      "description": "Farðu inn í þrautarklefa"
+    },
+    {
+      "id": "minecraft:adventure/ol_betsy",
+      "tab": "adventure",
+      "frame": "task",
+      "title": "Gamla brýnið",
+      "description": "Skjóttu með lásboga"
+    },
+    {
+      "id": "minecraft:adventure/read_power_of_chiseled_bookshelf",
+      "tab": "adventure",
+      "frame": "task",
+      "title": "Mennt er máttur",
+      "description": "Lestu skotmáttinn frá meitlaðri bókahillu með samanburðarrofa"
+    },
+    {
+      "id": "minecraft:adventure/salvage_sherd",
+      "tab": "adventure",
+      "frame": "task",
+      "title": "Virðing fyrir fortíðinni",
+      "description": "Sópa grunsamlega einingu til að fá leirkersbrot"
+    },
+    {
+      "id": "minecraft:adventure/sleep_in_bed",
+      "tab": "adventure",
+      "frame": "task",
+      "title": "Sofðu rótt",
+      "description": "Sofðu í rúmi til að færa endurlífgunarstaðinn þinn"
+    },
+    {
+      "id": "minecraft:adventure/spyglass_at_parrot",
+      "tab": "adventure",
+      "frame": "task",
+      "title": "Er þetta fugl?",
+      "description": "Horfðu á páfagauk í gegnum sjónauka"
+    },
+    {
+      "id": "minecraft:adventure/trade",
+      "tab": "adventure",
+      "frame": "task",
+      "title": "Þvílíkur Díll!",
+      "description": "Versla við þorpsbúa"
+    },
+    {
+      "id": "minecraft:adventure/trim_with_any_armor_pattern",
+      "tab": "adventure",
+      "frame": "task",
+      "title": "Skapar nýtt útlit",
+      "description": "Skapa brynju með útliti á járnsmíðabekk"
+    },
+    {
+      "id": "minecraft:adventure/use_lodestone",
+      "tab": "adventure",
+      "frame": "task",
+      "title": "Ber varðan mig heim, um breiðan veg",
+      "description": "Nota áttavita á vörðu"
+    },
+    {
+      "id": "minecraft:adventure/voluntary_exile",
+      "tab": "adventure",
+      "frame": "task",
+      "title": "Sjálfskipuð útlegð",
+      "description": "Drepa árásarforingja.\nKannski ættirðu að halda þig frá þorpum í bili...",
+      "hidden": true
+    },
+    {
+      "id": "minecraft:adventure/kill_all_mobs",
+      "tab": "adventure",
+      "frame": "challenge",
+      "title": "Skrímsli veidd",
+      "description": "Dreptu eitt af hverju óvinveittu skrímsli"
+    },
+    {
+      "id": "minecraft:adventure/kill_mob_near_sculk_catalyst",
+      "tab": "adventure",
+      "frame": "challenge",
+      "title": "Það breiðist út",
+      "description": "Dreptu skrímsli nálægt skelkshvata"
+    },
+    {
+      "id": "minecraft:adventure/shoot_arrow",
+      "tab": "adventure",
+      "frame": "task",
+      "title": "Taka mið",
+      "description": "Skjóttu eitthvað með boga og ör"
+    },
+    {
+      "id": "minecraft:adventure/spear_many_mobs",
+      "tab": "adventure",
+      "frame": "goal",
+      "title": "Skrímslaverður",
+      "description": "Hæfðu fimm verur í sömu árás með spjótinu"
+    },
+    {
+      "id": "minecraft:adventure/throw_trident",
+      "tab": "adventure",
+      "frame": "task",
+      "title": "Forkastanleg fyndni",
+      "description": "Kastaðu þríforki að einhverju.\nMundu: Það er ekki góð hugmynd að kasta frá sér eina vopninu sínu."
+    },
+    {
+      "id": "minecraft:adventure/totem_of_undying",
+      "tab": "adventure",
+      "frame": "goal",
+      "title": "Endurfæðing",
+      "description": "Notaðu verndargrip tilverunnar til að svíkja undan dauðanum"
+    },
+    {
+      "id": "minecraft:adventure/blowback",
+      "tab": "adventure",
+      "frame": "challenge",
+      "title": "Afturkast",
+      "description": "Banaðu golu með snúnu goluskotnu vindhnetti"
+    },
+    {
+      "id": "minecraft:adventure/lighten_up",
+      "tab": "adventure",
+      "frame": "task",
+      "title": "Verði ljós",
+      "description": "Skafðu koparperu með öxi til að gera hana bjartari"
+    },
+    {
+      "id": "minecraft:adventure/overoverkill",
+      "tab": "adventure",
+      "frame": "challenge",
+      "title": "Einum of mikið",
+      "description": "Gerðu 50 hjarta skaða í einu höggi með sleggjunni"
+    },
+    {
+      "id": "minecraft:adventure/under_lock_and_key",
+      "tab": "adventure",
+      "frame": "task",
+      "title": "Bak við lás og slá",
+      "description": "Notaðu þrautalykil á hvelfingu"
+    },
+    {
+      "id": "minecraft:adventure/who_needs_rockets",
+      "tab": "adventure",
+      "frame": "task",
+      "title": "Hver þarf rakettur?",
+      "description": "Notaðu vindhnött til að skjóta þig upp um 8 kubba"
+    },
+    {
+      "id": "minecraft:adventure/arbalistic",
+      "tab": "adventure",
+      "frame": "challenge",
+      "title": "Lásbogafærni",
+      "description": "Drepa fimm ólíkar verur með einu lásbogaskoti",
+      "hidden": true
+    },
+    {
+      "id": "minecraft:adventure/two_birds_one_arrow",
+      "tab": "adventure",
+      "frame": "challenge",
+      "title": "Tveir fuglar, ein ör",
+      "description": "Drepa tvær vofur með gegnumsmjúgandi ör"
+    },
+    {
+      "id": "minecraft:adventure/whos_the_pillager_now",
+      "tab": "adventure",
+      "frame": "task",
+      "title": "Hver er nú ruplari, ha?",
+      "description": "Láta ruplara finna fyrir eigin aðferðum"
+    },
+    {
+      "id": "minecraft:adventure/craft_decorated_pot_using_only_sherds",
+      "tab": "adventure",
+      "frame": "task",
+      "title": "Rækileg forvarsla",
+      "description": "Búa til skreytt leirker úr 4 leirkersbrotum"
+    },
+    {
+      "id": "minecraft:adventure/adventuring_time",
+      "tab": "adventure",
+      "frame": "challenge",
+      "title": "Ævintýramennska",
+      "description": "Uppgötvaðu allar tegundir landsvæða"
+    },
+    {
+      "id": "minecraft:adventure/play_jukebox_in_meadows",
+      "tab": "adventure",
+      "frame": "task",
+      "title": "Söngvaseiður",
+      "description": "Lífgaðu upp á engin með söngvaseið úr glymskratta"
+    },
+    {
+      "id": "minecraft:adventure/walk_on_powder_snow_with_leather_boots",
+      "tab": "adventure",
+      "frame": "task",
+      "title": "Létt sem kanína",
+      "description": "Ganga á lausamjöll... án þess að sökkva í hana"
+    },
+    {
+      "id": "minecraft:adventure/spyglass_at_ghast",
+      "tab": "adventure",
+      "frame": "task",
+      "title": "Er þetta blaðra?",
+      "description": "Horfðu á vom í gegnum sjónauka"
+    },
+    {
+      "id": "minecraft:adventure/summon_iron_golem",
+      "tab": "adventure",
+      "frame": "goal",
+      "title": "Til þjónustu reiðubúinn",
+      "description": "Framkalla járnþjarka til verndar þorpi"
+    },
+    {
+      "id": "minecraft:adventure/trade_at_world_height",
+      "tab": "adventure",
+      "frame": "task",
+      "title": "Stjörnukaupmaður",
+      "description": "Versla við þorpsbúa á efstu mörkum byggjanlegs heims"
+    },
+    {
+      "id": "minecraft:adventure/trim_with_all_exclusive_armor_patterns",
+      "tab": "adventure",
+      "frame": "challenge",
+      "title": "Smíðað með glæsibrag",
+      "description": "Nota þessi smíðasniðmát minnst einu sinni: spíru, trýni, rif, gæslu, þögn, ergi, flæði, sporrekjara"
+    },
+    {
+      "id": "minecraft:adventure/hero_of_the_village",
+      "tab": "adventure",
+      "frame": "challenge",
+      "title": "Hvunndagshetja",
+      "description": "Ná að verja þorp fyrir árás",
+      "hidden": true
+    },
+    {
+      "id": "minecraft:adventure/bullseye",
+      "tab": "adventure",
+      "frame": "challenge",
+      "title": "Beint í mark",
+      "description": "Skjóttu í miðdepil skotmarks úr a.m.k. 30 metra fjarlægð"
+    },
+    {
+      "id": "minecraft:adventure/sniper_duel",
+      "tab": "adventure",
+      "frame": "challenge",
+      "title": "Skyttueinvígi",
+      "description": "Banaðu beinagrind úr minnst 50 metra fjarlægð"
+    },
+    {
+      "id": "minecraft:adventure/very_very_frightening",
+      "tab": "adventure",
+      "frame": "task",
+      "title": "Mjög, mjög ógnvekjandi",
+      "description": "Slá eldingu niður í þorpsbúa"
+    },
+    {
+      "id": "minecraft:adventure/revaulting",
+      "tab": "adventure",
+      "frame": "goal",
+      "title": "Ógn og hvelfing",
+      "description": "Opnaðu váboðahvelfingu með váboðaþrautalykli"
+    },
+    {
+      "id": "minecraft:adventure/spyglass_at_dragon",
+      "tab": "adventure",
+      "frame": "task",
+      "title": "Er þetta flugvél?",
+      "description": "Horfðu á endadrekann í gegnum sjónauka"
+    },
+    {
+      "id": "minecraft:husbandry/allay_deliver_item_to_player",
+      "tab": "husbandry",
+      "frame": "task",
+      "title": "Ég er sko vinur þinn",
+      "description": "Láttu hjálpara koma með hluti handa þér",
+      "hidden": true
+    },
+    {
+      "id": "minecraft:husbandry/breed_an_animal",
+      "tab": "husbandry",
+      "frame": "task",
+      "title": "Páfagaukarnir og leðurblökurnar",
+      "description": "Láttu tvö dýr æxlast"
+    },
+    {
+      "id": "minecraft:husbandry/fishy_business",
+      "tab": "husbandry",
+      "frame": "task",
+      "title": "Veiðivafstur",
+      "description": "Veiddu fisk"
+    },
+    {
+      "id": "minecraft:husbandry/make_a_sign_glow",
+      "tab": "husbandry",
+      "frame": "task",
+      "title": "Lýsa og lesa!",
+      "description": "Láttu texta á hvers konar skiltum glóa"
+    },
+    {
+      "id": "minecraft:husbandry/obtain_sniffer_egg",
+      "tab": "husbandry",
+      "frame": "task",
+      "title": "Lyktar áhugavert",
+      "description": "Fá þefaraegg",
+      "hidden": true
+    },
+    {
+      "id": "minecraft:husbandry/place_dried_ghast_in_water",
+      "tab": "husbandry",
+      "frame": "task",
+      "title": "Þetta kemur allt með kalda vatninu!",
+      "description": "Setja kubb af þurrkuðum vom í vatn"
+    },
+    {
+      "id": "minecraft:husbandry/plant_seed",
+      "tab": "husbandry",
+      "frame": "task",
+      "title": "Að gera garðinn frægan",
+      "description": "Gróðursettu fræ og sjáðu það vaxa"
+    },
+    {
+      "id": "minecraft:husbandry/ride_a_boat_with_a_goat",
+      "tab": "husbandry",
+      "frame": "task",
+      "title": "Hafhafur!",
+      "description": "Fara í bát og fljóta með geit"
+    },
+    {
+      "id": "minecraft:husbandry/safely_harvest_honey",
+      "tab": "husbandry",
+      "frame": "task",
+      "title": "Hunangsbóndi",
+      "description": "Notaðu varðeld til þess að safna hunangi úr býflugnabúi án þess að reita býflugurnar til reiði"
+    },
+    {
+      "id": "minecraft:husbandry/silk_touch_nest",
+      "tab": "husbandry",
+      "frame": "task",
+      "title": "Býflutningur",
+      "description": "Færðu býflugnabú með 3 býflugum inní, með silki snertingu"
+    },
+    {
+      "id": "minecraft:husbandry/tadpole_in_a_bucket",
+      "tab": "husbandry",
+      "frame": "task",
+      "title": "Fötuberi",
+      "description": "Veiða halakörtu með fötu"
+    },
+    {
+      "id": "minecraft:husbandry/tame_an_animal",
+      "tab": "husbandry",
+      "frame": "task",
+      "title": "Bestu vinir að eilífu",
+      "description": "Temja dýr"
+    },
+    {
+      "id": "minecraft:husbandry/uh_oh",
+      "tab": "husbandry",
+      "frame": "task",
+      "title": "Uh-Oh",
+      "description": "Láttu brennisteinskubb gleypa sprengiefni"
+    },
+    {
+      "id": "minecraft:husbandry/allay_deliver_cake_to_note_block",
+      "tab": "husbandry",
+      "frame": "task",
+      "title": "Afmælissöngur",
+      "description": "Fá hjálpara til að kasta köku að nótnakubb",
+      "hidden": true
+    },
+    {
+      "id": "minecraft:husbandry/bred_all_animals",
+      "tab": "husbandry",
+      "frame": "challenge",
+      "title": "Tvö og tvö",
+      "description": "Ræktaðu öll dýrin!"
+    },
+    {
+      "id": "minecraft:husbandry/tactical_fishing",
+      "tab": "husbandry",
+      "frame": "task",
+      "title": "Kænlegar krókaveiðar",
+      "description": "Veiða fisk... án veiðistangar!"
+    },
+    {
+      "id": "minecraft:husbandry/feed_snifflet",
+      "tab": "husbandry",
+      "frame": "task",
+      "title": "Litlir þefarar",
+      "description": "Fóðraðu þefling",
+      "hidden": true
+    },
+    {
+      "id": "minecraft:husbandry/balanced_diet",
+      "tab": "husbandry",
+      "frame": "challenge",
+      "title": "Fjölbreytt mataræði",
+      "description": "Borðaðu allt sem er ætilegt, jafnvel þótt það sé ekki gott fyrir þig"
+    },
+    {
+      "id": "minecraft:husbandry/obtain_netherite_hoe",
+      "tab": "husbandry",
+      "frame": "challenge",
+      "title": "Alvöru áhugi",
+      "description": "Notaðu heljarmálmshleif til að uppfæra plóg, og endurmettu svo lífið þitt"
+    },
+    {
+      "id": "minecraft:husbandry/wax_on",
+      "tab": "husbandry",
+      "frame": "task",
+      "title": "Vax á",
+      "description": "Bera vaxköku á koparkubb!"
+    },
+    {
+      "id": "minecraft:husbandry/leash_all_frog_variants",
+      "tab": "husbandry",
+      "frame": "task",
+      "title": "Þegar liðið hoppar í bæinn",
+      "description": "Náðu öllum afbrigðum frosks með taumi"
+    },
+    {
+      "id": "minecraft:husbandry/complete_catalogue",
+      "tab": "husbandry",
+      "frame": "challenge",
+      "title": "Allsherjarlisti",
+      "description": "Temdu öll kattarafbrigðin!"
+    },
+    {
+      "id": "minecraft:husbandry/remove_wolf_armor",
+      "tab": "husbandry",
+      "frame": "task",
+      "title": "Skærljómandi",
+      "description": "Taktu úlfsbrynjuna af úlfi með skærum"
+    },
+    {
+      "id": "minecraft:husbandry/repair_wolf_armor",
+      "tab": "husbandry",
+      "frame": "task",
+      "title": "Eins og nýr",
+      "description": "Gerðu við skaddaða úlfsbrynju með beltisdýrahreistri"
+    },
+    {
+      "id": "minecraft:husbandry/whole_pack",
+      "tab": "husbandry",
+      "frame": "challenge",
+      "title": "Allur pakkinn",
+      "description": "Temdu einn af öllum úlfategundunum"
+    },
+    {
+      "id": "minecraft:husbandry/axolotl_in_a_bucket",
+      "tab": "husbandry",
+      "frame": "task",
+      "title": "Krúttlegasta rándýrið",
+      "description": "Veiða tálknamöndru í fötu"
+    },
+    {
+      "id": "minecraft:husbandry/plant_any_sniffer_seed",
+      "tab": "husbandry",
+      "frame": "task",
+      "title": "Gróðursetja liðna tíð",
+      "description": "Gróðursetja eitthvert þefarafræ",
+      "hidden": true
+    },
+    {
+      "id": "minecraft:husbandry/wax_off",
+      "tab": "husbandry",
+      "frame": "task",
+      "title": "Vax af",
+      "description": "Skafa vax af koparkubbi!"
+    },
+    {
+      "id": "minecraft:husbandry/froglights",
+      "tab": "husbandry",
+      "frame": "challenge",
+      "title": "Með sameinuðum kröftum okkar!",
+      "description": "Hafðu allar froskaluktir í bakpokanum"
+    },
+    {
+      "id": "minecraft:husbandry/kill_axolotl_target",
+      "tab": "husbandry",
+      "frame": "task",
+      "title": "Græðandi afl vináttu!",
+      "description": "Stofnaðu til samstarfs við tálknamöndru og sigraðu í bardaga"
+    }
+  ]
+}
