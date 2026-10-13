@@ -345,6 +345,10 @@
 .b-poster__note { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; text-wrap: balance; }
 /* what a member is wanted for, under their name on the roll call: as the room's board sets it, a little smaller */
 .b-poster--crew .b-poster__alias { font-size: var(--fs-sm); }
+/* one who is not a charge's outlaw: their place on it, where the alias would stand, in the paper's soft ink */
+.b-poster__place { margin-top: var(--sp-1); font-size: var(--fs-sm); font-weight: 600; line-height: 1.3; color: var(--ink-faint); }
+/* the three lines held open while the numbers come */
+.b-poster__held { display: grid; justify-items: center; visibility: hidden; }
 .b-poster--crew .b-poster__bounty { margin-top: var(--sp-1); }
 .b-poster--crew .b-poster__charge + .b-poster__bounty + .b-poster__note { margin-top: var(--sp-2); }
 

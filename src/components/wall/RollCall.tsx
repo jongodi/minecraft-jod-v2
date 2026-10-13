@@ -28,16 +28,28 @@ const tabOf = (id: string) => STAT_TABS.find(t => t.id === id)!;
 const whole = (nick: string) => nick.replace(/\u00AD/g, '');
 
 /* What a member's poster says they are wanted for: the alias of a charge
-   they are the outlaw of, in red, or the charge they stand highest on; and
-   their number on it, as the bounty. Read off the same numbers as the board
-   in the crew's room (outlaws.ts). */
-function Charge({ outlaw }: { outlaw: Outlaw | undefined }) {
+   they are the outlaw of, in red, or their place on the charge they stand
+   highest on; the charge; and their number on it, as the bounty. Read off
+   the same numbers as the board in the crew's room (outlaws.ts). Always
+   three lines, held open while the numbers are on their way, so a poster
+   never grows under the visitor when they come. */
+function Charge({ outlaw, waiting }: { outlaw: Outlaw | undefined; waiting: boolean }) {
   const best = outlaw?.best;
-  if (!best) return null;
+  if (!best) {
+    return waiting ? (
+      <span className="b-poster__held" aria-hidden="true">
+        <span className="b-poster__alias">„ “</span>
+        <span className="b-poster__charge">sæki</span>
+        <span className="b-poster__bounty"><span className="b-poster__reward">Verðlaun</span></span>
+      </span>
+    ) : null;
+  }
   const tab = tabOf(best.id);
   return (
     <>
-      {best.rank === 1 && <span className="b-poster__alias">„{tab.nick}“</span>}
+      {best.rank === 1
+        ? <span className="b-poster__alias">„{tab.nick}“</span>
+        : <span className="b-poster__place">{best.rank}. sæti</span>}
       <span className="b-poster__charge">{tab.label}</span>
       <span className="b-poster__bounty"><span className="b-poster__reward">Verðlaun</span> <span className="b-poster__val">{tab.unit(best.value)}</span></span>
     </>
@@ -84,7 +96,10 @@ export default function RollCall({ initialPlayers }: { initialPlayers: StatRow[]
       .catch(() => {});
   }, [initialPlayers]);
   const { byName, mostWanted } = useMemo(() => outlaws(players ?? []), [players]);
-  const most = mostWanted?.toLowerCase() ?? null;
+  /* The most wanted hangs large only on a board drawn with the numbers: one
+     drawn without them (the store did not answer) fills in each poster's
+     charge when they come, but never rearranges itself under the visitor. */
+  const most = initialPlayers ? mostWanted?.toLowerCase() ?? null : null;
   const mostRow = most ? (players ?? []).find(p => p.username.toLowerCase() === most) : undefined;
 
   return (
@@ -163,7 +178,7 @@ export default function RollCall({ initialPlayers }: { initialPlayers: StatRow[]
                   </>) : (<>
                     <div className="b-poster__img"><PlayerHead name={m.username} size={128} alt="" /></div>
                     <div className="b-poster__name">{m.username}</div>
-                    <Charge outlaw={outlaw} />
+                    <Charge outlaw={outlaw} waiting={players === null} />
                   </>)}
                   {crew === null ? (<>
                     <div className="b-poster__note">sæki vegginn…</div>
@@ -171,7 +186,7 @@ export default function RollCall({ initialPlayers }: { initialPlayers: StatRow[]
                     <div className="b-poster__meta" aria-hidden="true" style={{ visibility: 'hidden' }}><span className="b-nowrap">0 færslur</span> · <span className="b-nowrap">0 myndir</span></div>
                   </>) : (<>
                     {/* someone with a charge against them has a poster already; "nothing heard yet" is for one with neither */}
-                    {(m.bio || m.lastEntry || !outlaw?.best) && <div className="b-poster__note">{m.bio || (m.lastEntry ? `festi eitthvað upp ${formatAge(m.lastEntry)}` : 'ekkert heyrst enn')}</div>}
+                    {(m.bio || m.lastEntry || (!outlaw?.best && players !== null)) && <div className="b-poster__note">{m.bio || (m.lastEntry ? `festi eitthvað upp ${formatAge(m.lastEntry)}` : 'ekkert heyrst enn')}</div>}
                     {/* a bare wall says so once, in the line above; its two zeros keep their height so the board's rows stay level */}
                     <div className="b-poster__meta" aria-hidden={m.entryCount + m.photoCount === 0 || undefined} style={m.entryCount + m.photoCount === 0 ? { visibility: 'hidden' } : undefined}><span className="b-nowrap">{m.entryCount} {plural(m.entryCount, 'færsla', 'færslur')}</span> · <span className="b-nowrap">{m.photoCount} {plural(m.photoCount, 'mynd', 'myndir')}</span></div>
                   </>)}
