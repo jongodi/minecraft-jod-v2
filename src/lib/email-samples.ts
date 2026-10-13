@@ -27,5 +27,7 @@ export function sampleLetter(kind: MailKind, site: string, names: Names = {}, no
     cancelled: kind === 'out', startedBy: null, outcome: null,
   };
   const votes: Votes = { stebbias: ['a', 'b'], AmmaGaur: ['a'], ingunnbirta: ['a'], joenana: ['a', 'b'] };
-  return nightLetter(kind, night, votes, { username: 'joenana', address: '' }, site, names);
+  /* the answer buttons as they look, on links that answer nothing */
+  const answer = (svar: string) => `${site}/kvold/synishorn?svar=${svar}&lykill=synishorn#hopur`;
+  return nightLetter(kind, night, votes, { username: 'joenana', address: '' }, site, names, answer);
 }

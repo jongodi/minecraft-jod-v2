@@ -132,14 +132,26 @@ ${letter.when.map(w => `<tr><td class="jod-when" style="padding:3px 16px;font-fa
 </table>`
     : '';
 
+  const smallLink = (l: { label: string; url: string }) =>
+    `<a href="${esc(l.url)}" style="font-family:${FONT.label};${BOLD};font-size:12px;letter-spacing:1px;text-transform:uppercase;color:${c.link}">${esc(l.label)}&nbsp;→</a>`;
+  const bigButton = (b: { label: string; url: string }) =>
+    `<td bgcolor="${c.button}" style="background:${c.button};border:2px solid ${c.buttonEdge};border-bottom-width:5px">
+<a href="${esc(b.url)}" style="display:inline-block;padding:13px 24px;font-family:${FONT.label};${BOLD};font-size:14px;letter-spacing:2px;text-transform:uppercase;color:${c.buttonInk};text-decoration:none">${esc(b.label)}</a>
+</td>`;
+
+  /* answers straight from the letter: a button each, one under another, and a quiet one ("Kemst ekki") as a link under them */
+  const loud = (letter.answers ?? []).filter(a => !a.quiet);
+  const quiet = (letter.answers ?? []).filter(a => a.quiet);
+  const answers = letter.answers?.length
+    ? `${loud.map(a => `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:6px 0 8px"><tr>${bigButton(a)}</tr></table>`).join('\n')}
+${quiet.length ? `<p style="margin:4px 0 14px">${quiet.map(smallLink).join('<br>')}</p>` : ''}`
+    : '';
+
   /* the button, with any smaller links beside it (under it on a phone) */
-  const links = (letter.links ?? []).map(l =>
-    `<a href="${esc(l.url)}" style="font-family:${FONT.label};${BOLD};font-size:12px;letter-spacing:1px;text-transform:uppercase;color:${c.link}">${esc(l.label)}&nbsp;→</a>`).join('<br>');
+  const links = (letter.links ?? []).map(smallLink).join('<br>');
   const actions = letter.button
     ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:6px 0 4px"><tr>
-<td bgcolor="${c.button}" style="background:${c.button};border:2px solid ${c.buttonEdge};border-bottom-width:5px">
-<a href="${esc(letter.button.url)}" style="display:inline-block;padding:13px 24px;font-family:${FONT.label};${BOLD};font-size:14px;letter-spacing:2px;text-transform:uppercase;color:${c.buttonInk};text-decoration:none">${esc(letter.button.label)}</a>
-</td>
+${bigButton(letter.button)}
 ${links ? `<td class="jod-stack" style="padding:0 0 0 20px;vertical-align:middle">${links}</td>` : ''}
 </tr></table>`
     : links ? `<p style="margin:0">${links}</p>` : '';
@@ -181,7 +193,7 @@ a{text-decoration-thickness:2px;text-underline-offset:3px}
 <tr><td style="background:${c.bar}"><a href="${esc(assets)}" style="text-decoration:none"><img src="${esc(art)}" width="${ART.width}" height="${ART.height}" alt="${esc(headingInArt ? letter.heading : `${BRAND} · ${BANNERS[letter.kind].title}`)}" style="display:block;width:100%;max-width:${ART.width}px;height:auto;border:0;background:${c.bar};font-family:${FONT.display};${BOLD};font-size:24px;line-height:1.3;text-align:center;color:#E8DCC4"></a></td></tr>
 ${strata(3)}
 <tr><td class="jod-pad" bgcolor="${c.card}" style="background:${c.card};padding:24px 40px 10px">
-${heading}${quote}${ticket}${letter.lines.map(p).join('\n')}${actions}${verse}
+${heading}${quote}${ticket}${letter.lines.map(p).join('\n')}${answers}${actions}${verse}
 </td></tr>
 <tr><td class="jod-pad" bgcolor="${c.card}" style="background:${c.card};padding:8px 40px 20px">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="border-top:2px dashed ${c.rule};padding-top:12px">${foot}</td></tr></table>
@@ -202,6 +214,7 @@ ${strata(2)}
     ...(letter.quote ? [`„${letter.quote}“`, ''] : []),
     ...(letter.when?.length ? [...letter.when.map(w => `${letter.struck ? '(aflýst) ' : ''}${w}`), ''] : []),
     ...letter.lines.flatMap(l => [l, '']),
+    ...(letter.answers ?? []).flatMap(a => [`${a.label}: ${a.url}`, '']),
     ...(letter.button ? [`${letter.button.label}: ${letter.button.url}`, ''] : []),
     ...(letter.links ?? []).flatMap(l => [`${l.label}: ${l.url}`, '']),
     ...(letter.verse?.length ? [...letter.verse, ''] : []),

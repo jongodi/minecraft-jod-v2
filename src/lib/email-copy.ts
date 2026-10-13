@@ -95,6 +95,8 @@ export interface Letter {
   lines:      string[];
   /** the verse, a line each */
   verse?:     string[];
+  /** answers straight from the letter, each a button; a quiet one ("Kemst ekki") is a link beside them */
+  answers?:   { label: string; url: string; quiet?: boolean }[];
   button?:    { label: string; url: string };
   /** smaller links under the button */
   links?:     { label: string; url: string }[];
@@ -140,7 +142,18 @@ const coming = (names: string[]) => names.length
   ? [`${names.length} ${plural(names.length, 'ætlar', 'ætla')} að mæta: ${[...names].sort((a, b) => a.localeCompare(b, 'is')).join(', ')}.`]
   : [];
 
-export function nightLetter(kind: NightNotice, night: Night, votes: Votes, reader: Reader, site: string, names: Names = {}): Letter {
+/** An answer link for this reader and night (src/lib/night-answer.ts): `svar`
+    is an option's id, or 'ekki'. Null when links can't be signed. */
+export type AnswerLink = (svar: string) => string | null;
+
+/** The answers a letter offers, or none when the links can't be made. */
+function answersOf(choices: { svar: string; label: string; quiet?: boolean }[], answer?: AnswerLink): Letter['answers'] {
+  if (!answer) return undefined;
+  const made = choices.map(c => ({ ...c, url: answer(c.svar) }));
+  return made.every(c => c.url) ? made.map(({ label, url, quiet }) => ({ label, url: url!, ...(quiet ? { quiet } : {}) })) : undefined;
+}
+
+export function nightLetter(kind: NightNotice, night: Night, votes: Votes, reader: Reader, site: string, names: Names = {}, answer?: AnswerLink): Letter {
   /* a member by name, or by username when no name is given */
   const who = (username: string) => names[username.toLowerCase()] ?? username;
   const by = who(night.by);
@@ -153,24 +166,33 @@ export function nightLetter(kind: NightNotice, night: Night, votes: Votes, reade
     foot: ['Viltu ekki fleiri bréf um spilakvöld? Breyttu því undir „Nafn og netfang“ á veggnum þínum.'],
     footLink: { label: 'Veggurinn þinn', url: `${site}/crew/${reader.username}` },
   };
+  /* "Ég mæti" or "Kemst ekki" from the letter, for a night with its time fixed */
+  const comeOrNot = chosen ? answersOf([{ svar: chosen.id, label: 'Ég mæti' }, { svar: 'ekki', label: 'Kemst ekki', quiet: true }], answer) : undefined;
 
   if (kind === 'lit') {
     const times = night.options.map(o => dayTime(o.at));
+    /* one button per time offered: the times are the answers, so they are not listed twice */
+    const answers = chosen ? comeOrNot : answersOf([...night.options.map(o => ({ svar: o.id, label: dayTime(o.at) })), { svar: 'ekki', label: 'Kemst ekki', quiet: true }], answer);
     return {
       ...base,
       subject: night.note ? `${by} kveikti bál: ${night.note}` : `${by} kveikti bál á ${BRAND}`,
       preheader: chosen ? `${dayTime(chosen.at)}. Kemurðu?` : `${times.length} tímar í boði. Hvenær kemstu?`,
       heading: `${by} kallar saman hópinn`,
-      when: chosen ? [dayTime(chosen.at)] : times,
-      lines: chosen
-        ? ['Kemurðu? Svaraðu á vefnum svo hin viti hvort von sé á þér.']
-        : ['Merktu við alla tímana sem þú kemst. Sá tími sem flest komast á verður fyrir valinu.'],
-      button: { label: 'Svara kallinu', url },
+      ...(chosen || !answers ? { when: chosen ? [dayTime(chosen.at)] : times } : {}),
+      lines: answers
+        ? [chosen
+            ? 'Kemurðu? Veldu svar hér fyrir neðan og staðfestu það á vefnum, svo hin viti hvort von sé á þér.'
+            : 'Hvaða tíma kemstu? Veldu einn hér fyrir neðan og merktu við fleiri á vefnum. Sá tími sem flest komast á verður fyrir valinu.']
+        : [chosen
+            ? 'Kemurðu? Svaraðu á vefnum svo hin viti hvort von sé á þér.'
+            : 'Merktu við alla tímana sem þú kemst. Sá tími sem flest komast á verður fyrir valinu.'],
+      ...(answers ? { answers, links: [{ label: 'Sjá bálið á vefnum', url }] } : { button: { label: 'Svara kallinu', url } }),
     };
   }
 
   if (kind === 'chosen' && chosen) {
     const yes = yesFor(votes, chosen.id);
+    const calendar = { label: 'Setja í dagatalið', url: `${site}/kvold/${night.id}/dagatal.ics` };
     return {
       ...base,
       subject: `Kvöldið er ákveðið: ${lower(dayTime(chosen.at))}`,
@@ -178,8 +200,9 @@ export function nightLetter(kind: NightNotice, night: Night, votes: Votes, reade
       heading: night.chosenBy && night.chosenBy !== 'auto' ? `${who(night.chosenBy)} festi tímann` : 'Flest komast þá',
       when: [dayTime(chosen.at)],
       lines: [...coming(yes.map(who)), 'Sá sem lofar en mætir ekki fær nafnbótina Svikarinn.'],
-      button: { label: 'Sjá kvöldið', url },
-      links: [{ label: 'Setja í dagatalið', url: `${site}/kvold/${night.id}/dagatal.ics` }],
+      ...(comeOrNot
+        ? { answers: comeOrNot, links: [{ label: 'Sjá kvöldið', url }, calendar] }
+        : { button: { label: 'Sjá kvöldið', url }, links: [calendar] }),
     };
   }
 

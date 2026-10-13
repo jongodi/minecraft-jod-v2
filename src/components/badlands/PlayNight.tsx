@@ -8,7 +8,7 @@ import Calendar from './Calendar';
 import type { ServerState } from './hooks';
 import { expectStarting, useMounted } from './hooks';
 import { isChanging } from '@/lib/server-state';
-import { LAST_DAY_AHEAD, TIME_CHOICES, WhenAt, dayLabel, dayLong, dayNum, dayOf, dayValue, isLate, usePlayNight, whenAt } from './night';
+import { LAST_DAY_AHEAD, TIME_CHOICES, WhenAt, dayLabel, dayLong, dayNum, dayOf, dayValue, isLate, letterAnswer, usePlayNight, whenAt, type LetterAnswer } from './night';
 import { Fire, Heads, chosenOf, lower } from './NightLine';
 import { plural } from '@/lib/format';
 import { toast } from './Toast';
@@ -31,8 +31,13 @@ export function NightBoard({ server }: { server: ServerState }) {
   const [err, setErr] = useState<{ at: string; text: string } | null>(null);
   /* /kvold/<id> is one night's link: that fire is lit up and brought into view */
   const [picked, setPicked] = useState<string | null>(null);
+  /* a letter's answer button opens that link with the answer to fill in (night.ts) */
+  const [letter, setLetter] = useState<LetterAnswer | null>(null);
   const shown = useRef(false);
-  useEffect(() => { setPicked(/^\/kvold\/([^/]+)/.exec(window.location.pathname)?.[1] ?? null); }, []);
+  useEffect(() => {
+    setPicked(/^\/kvold\/([^/]+)/.exec(window.location.pathname)?.[1] ?? null);
+    setLetter(letterAnswer(window.location.search));
+  }, []);
   useEffect(() => {
     if (!picked || shown.current || !state) return;
     const el = document.querySelector<HTMLElement>(`[data-night="${CSS.escape(picked)}"]`);
@@ -59,6 +64,20 @@ export function NightBoard({ server }: { server: ServerState }) {
     /* the server was asked to start: the lantern kindles at once, and the status is asked again soon */
     else if (body.action === 'start') expectStarting();
     return !e;
+  };
+
+  /* The answer from the letter goes when it is confirmed here, and the
+     address loses it then, so a reload or a shared link does not carry it on. */
+  const dropLetter = () => {
+    setLetter(null);
+    window.history.replaceState(window.history.state, '', `${window.location.pathname}${window.location.hash}`);
+  };
+  const answerFromLetter = async (id: string, yes: string[]) => {
+    if (!letter) return;
+    if (await run(id, { action: 'vote', night: id, yes, lykill: letter.lykill })) {
+      toast('Svarið skráð', letter.user);
+      dropLetter();
+    }
   };
 
   const share = async (id: string) => {
@@ -107,8 +126,11 @@ export function NightBoard({ server }: { server: ServerState }) {
           busy={busy}
           err={err?.at === n.id ? err.text : ''}
           picked={picked === n.id}
+          letter={letter && picked === n.id ? letter : null}
           onRun={body => run(n.id, { ...body, night: n.id })}
           onShare={() => share(n.id)}
+          onLetter={yes => answerFromLetter(n.id, yes)}
+          onDropLetter={dropLetter}
         />
       ))}
       {me && (lighting ? lightFire : planned < max ? (
@@ -123,10 +145,11 @@ export function NightBoard({ server }: { server: ServerState }) {
 }
 
 /** One fire: the times it offers and who can make each, or the night chosen and who is coming. */
-function NightFire({ night, kicker, me, server, busy, err, picked, onRun, onShare }: {
+function NightFire({ night, kicker, me, server, busy, err, picked, letter, onRun, onShare, onLetter, onDropLetter }: {
   night: PublicNight; kicker: string; me: string | null; server: ServerState;
-  busy: boolean; err: string; picked: boolean;
+  busy: boolean; err: string; picked: boolean; letter: LetterAnswer | null;
   onRun: (body: Record<string, unknown>) => void; onShare: () => void;
+  onLetter: (yes: string[]) => void; onDropLetter: () => void;
 }) {
   const mine = me ? night.options.filter(o => o.yes.some(y => lower(y) === lower(me))).map(o => o.id) : [];
   const mineIsBy = !!me && lower(night.by) === lower(me);
@@ -150,6 +173,8 @@ function NightFire({ night, kicker, me, server, busy, err, picked, onRun, onShar
           {night.phase === 'open' && `. Kvöldið velst sjálft ${whenAt(night.decidesAt)}, sá tími sem flest geta.`}
         </p>
       </header>
+
+      {letter && <LetterSlip night={night} letter={letter} busy={busy} onSend={onLetter} onDrop={onDropLetter} />}
 
       {night.phase === 'open' ? (
         <ul className="b-night__options">
@@ -218,9 +243,61 @@ function NightFire({ night, kicker, me, server, busy, err, picked, onRun, onShar
           )}
         </div>
       )}
-      {!me && night.phase !== 'over' && night.phase !== 'live' && <p className="b-note"><Link href="/crew" className="b-link">Skráðu þig inn</Link> til að svara.</p>}
+      {!me && !letter && night.phase !== 'over' && night.phase !== 'live' && <p className="b-note"><Link href="/crew" className="b-link">Skráðu þig inn</Link> til að svara.</p>}
       {err && <p className="b-err" role="alert">{err}</p>}
     </section>
+  );
+}
+
+/* ─── an answer from a letter ─────────────────────────────────────────── */
+
+/** The answer a letter's button carried, filled in on a slip of paper by its
+    fire, and sent only when it is confirmed here: opening the link wrote
+    nothing, as mail scanners open links too. The slip says whose answer it
+    is, since a letter needs nobody signed in. */
+function LetterSlip({ night, letter, busy, onSend, onDrop }: {
+  night: PublicNight; letter: LetterAnswer; busy: boolean;
+  onSend: (yes: string[]) => void; onDrop: () => void;
+}) {
+  const chosen = chosenOf(night);
+  const has = (id: string) => night.options.some(o => o.id === id);
+  /* what they answered before, with the letter's choice added to it (or none, for "Kemst ekki") */
+  const before = night.options.filter(o => o.yes.some(y => lower(y) === lower(letter.user))).map(o => o.id);
+  const [yes, setYes] = useState<string[]>(() =>
+    letter.svar === 'ekki' ? [] : chosen ? [chosen.id] : [...new Set([...before, letter.svar])].filter(has));
+  const toggle = (id: string) => setYes(y => (y.includes(id) ? y.filter(x => x !== id) : [...y, id]));
+  const closed = night.phase === 'live' || night.phase === 'over';
+
+  return (
+    <div className="b-hang b-night__slip">
+      <div className="b-paper b-night__slipbody" role="group" aria-label={`Svar úr bréfinu fyrir ${letter.user}`}>
+        <p className="b-paper__kicker">Svar úr bréfinu</p>
+        {closed ? (
+          <p className="b-night__sliptext">Kvöldið er hafið, svo ekki er lengur hægt að svara.</p>
+        ) : (
+          <>
+            <p className="b-night__sliptext">Svar fyrir <b>{letter.user}</b>. Það fer þegar þú staðfestir.</p>
+            {night.phase === 'open' ? (
+              <div className="b-inline">
+                {night.options.map(o => {
+                  const on = yes.includes(o.id);
+                  return <button key={o.id} type="button" className={`b-btn b-btn--small${on ? ' b-btn--solid' : ''}`} aria-pressed={on} disabled={busy} onClick={() => toggle(o.id)}>{WhenAt(o.at)}{on && <CheckIcon className="b-btn__icon" />}</button>;
+                })}
+              </div>
+            ) : (
+              <div className="b-inline">
+                <button type="button" className={`b-btn b-btn--small${yes.length ? ' b-btn--solid' : ''}`} aria-pressed={yes.length > 0} disabled={busy} onClick={() => setYes([chosen!.id])}>Mæti</button>
+                <button type="button" className={`b-btn b-btn--small${!yes.length ? ' b-btn--solid' : ''}`} aria-pressed={yes.length === 0} disabled={busy} onClick={() => setYes([])}>Kemst ekki</button>
+              </div>
+            )}
+          </>
+        )}
+        <div className="b-inline">
+          {!closed && <button type="button" className="b-btn b-btn--solid" disabled={busy} onClick={() => onSend(yes)}>{busy ? 'Sendi…' : yes.length ? 'Staðfesta svarið' : 'Staðfesta: kemst ekki'}</button>}
+          <button type="button" className="b-btn b-btn--small" onClick={onDrop}>{closed ? 'Loka' : 'Hætta við'}</button>
+        </div>
+      </div>
+    </div>
   );
 }
 

@@ -195,6 +195,34 @@ describe('/api/playnight', () => {
     expect((await post([1, 2])).status).toBe(400);
   });
 
+  it('takes an answer from a letter\'s key, for that night and its reader, and nothing else', async () => {
+    vi.stubEnv('CRON_SECRET', 'a-secret-long-enough-for-tests');
+    const { answerKey } = await import('@/lib/night-answer');
+    await post({ action: 'propose', times: ['2026-10-02T20:00:00Z', '2026-10-03T20:00:00Z'] });
+    const id = (await view()).nights[0].id;
+    const key = answerKey((await lib.readNights()).find(n => n.id === id)!, 'joenana');
+
+    /* nobody signed in: the key answers for joenana, and the nights come back drawn for nobody */
+    session = null;
+    const res = await post({ action: 'vote', night: id, yes: ['b'], lykill: key });
+    expect(res.status).toBe(200);
+    expect((await res.json()).me).toBeNull();
+    expect((await view()).nights[0].options[1].yes).toEqual(['joenana', 'stebbias']);
+
+    /* signed in as someone else, the key still answers for its reader */
+    session = 'AmmaGaur';
+    await post({ action: 'vote', night: id, yes: ['a', 'b'], lykill: key });
+    expect((await view()).nights[0].options[0].yes).toEqual(['joenana', 'stebbias']);
+    session = null;
+
+    expect((await post({ action: 'vote', night: 'annad', yes: [], lykill: key })).status).toBe(403);
+    expect((await post({ action: 'vote', night: id, yes: [], lykill: `${key.slice(0, key.lastIndexOf('.'))}.${'A'.repeat(22)}` })).status).toBe(403);
+    expect((await post({ action: 'cancel', night: id, lykill: key })).status).toBe(401);
+    /* once the last time has come, the key has had its day */
+    vi.setSystemTime(new Date('2026-10-03T20:00:00Z'));
+    expect((await post({ action: 'vote', night: id, yes: [], lykill: key })).status).toBe(403);
+  });
+
   it('turns away anyone signed out', async () => {
     session = null;
     expect((await post({ action: 'propose', times: ['2026-10-02T20:00:00Z'] })).status).toBe(401);

@@ -2044,6 +2044,11 @@ html.is-map-full { overflow: hidden; }
 @media (hover: hover) { .b-cal__day:hover:not([disabled]):not(.is-on) { background: var(--paper-2); box-shadow: inset 0 0 0 var(--px) var(--lantern-deep); } }
 .b-cal__day[disabled] { color: var(--ink-faint); opacity: 0.4; cursor: default; }
 .b-night > .b-btn { justify-self: start; }
+/* a letter's answer, on a slip of paper by its fire, sent only when confirmed (PlayNight.tsx) */
+.b-night__slip { justify-self: start; width: min(100%, 34rem); }
+.b-night__slipbody { display: grid; gap: var(--sp-3); padding: var(--sp-4) var(--sp-5); }
+.b-night__sliptext { color: var(--ink-soft); }
+.b-night__sliptext b { font-weight: 600; color: var(--ink); }
 .b-night .b-err { color: var(--ember); }
 /* The form for lighting a fire keeps an edge: it is a form on the dark of the
    room. Its one column may be narrower than the month at its widest, so
