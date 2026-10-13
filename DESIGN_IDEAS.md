@@ -842,3 +842,44 @@ A wall measured with its live numbers scores 72 to 74 with a CLS of 0.287 on bot
 1. **The wall's Lighthouse score** (88 on `main` too): the lever is fewer bytes of runtime, the React 19 and Next 16 upgrade DESIGN.md already names.
 2. **Who is where**: BlueMap's live players could put a head on the chip of the place a member stands at, so the rail says where to find them.
 3. **Dashes in old code comments** (admin routes, `src/data/datapacks.ts`, `src/lib/season.ts`): never shown to anyone, left as they were.
+
+---
+
+## Part 11. The board, the tools and the woods: where the site still looked like a web page
+
+A second pass on 13 October 2026, on `improve/creative-evening` (stacked on Part 10), asked for the layout and the style themselves to be more creative and more the site's own. Part 10 was mostly behaviour; this one looked for the screens that still read as generic, and found three: the roll call (eight identical posters, seven saying nothing had been heard yet), the world's tools on a wide screen (three outlined buttons), and the places' rail (eleven identical dark cards). On the way it found a bug that had made every phone wall with a cover print hard to read.
+
+| Where | What | Why, in one sentence |
+|---|---|---|
+| A wall, on a phone | The poster's words are lifted over its faded print again. | With the body's box given up for the grid, the print and a paper wash up to 85 per cent opaque painted over the name, the bounty and every charge. |
+| The roll call | **A wanted board**: every poster says what its member is wanted for (alias, or their place on their best charge; the charge; the bounty), the outlaw of the most charges hangs first at twice the size as *Mest eftirlýst á JOÐ* with the rewards set as a printed poster sets them, and the newest thing pinned is nailed up in the board's last space. Read from the snapshot on the server every five minutes. | The roll call was the uniform cards the canon rejects; the board's one hierarchy is now earned in the game, and nothing on it is invented. |
+| A wall | The charges as a poster's rewards: one line each, a run of dots, the number; the member's own aliases first, in red; nobody else's. | Every member was called Draugurinn and Innipúkinn on their own wall, whoever had earned the name, in three lines a charge. |
+| The world, wide screens | The tools are the hotbar's slots, as on a phone, each with its word under its icon; *Heill skjár* gets an icon. | The one corner of the world that looked like a web page. |
+| The world | Each place's tag wears its wood as it looks at night, the board's edge in more of it along the top; the woods' colours move to `tokens.css`. | The walls already hang a place's posts on its wood; the rail now says which place is which before a word is read. |
+| Every page | An empty experience bar shows its eighteen cells. | On every page but the evening's it was a black strip that looked like it had failed to draw. |
+
+### Where the build differs from the cards, and why
+
+- **The rail's tags are tinted, not hung as signs.** Full-colour boards of oak, birch and cherry along the foot of the night still outshone the map, the focal point; a quarter of the wood in the night's dark, with the edge in more of it, carries the wood and keeps the map brightest.
+- **The most wanted hangs large only on a board drawn with the numbers.** Drawn without them (the store not answering, or this machine), the board hung them large a moment in, a layout shift of 0.49; it now fills in the charges in lines held open for them and never rearranges.
+- **Names on the world's still were left for later.** Tags floating over each place in the still need the start view's camera and each place's coordinates; no local map carries the coordinates, so nothing could be checked against the picture.
+
+### Measured
+
+Production build of this branch, on top of Part 10, same machine; Lighthouse 12 mobile preset.
+
+| | Part 10 | this pass |
+|---|---|---|
+| Lighthouse `/` (three runs) | 95, 95, 95; CLS 0.001 | 95, 95, 94; CLS 0.001 |
+| Lighthouse `/crew`, no snapshot (three runs) | 90 to 92, CLS 0.017 | 90 to 93, CLS 0.010 to 0.015 |
+| Lighthouse, a wall, live stats blocked (two runs) | 88, CLS 0.018 | 87 to 88, CLS 0.018 |
+| First Load JS `/`, `/crew`, `/crew/[username]` | 146, 136, 160 kB | 147, 138, 161 kB |
+| Scroll probe, phone 390 × 844, 4× CPU | 0 long | mean 6.1 ms, p95 9.3 ms, 0 long of about 2,500 |
+| Tests | 312 | 316 |
+
+`/crew` is now prerendered and kept for five minutes (`revalidate = 300`) rather than drawn only in the browser. No sideways scroll at 390 and 1440; `tsc`, `next lint` and the build are clean.
+
+### Worth doing later
+
+1. **Names over the places in the still**: the start view (`MAP_START_VIEW`) and each place's world coordinates, projected onto the still the way BlueMap's camera draws it, so the town is labelled before the 3D map is opened.
+2. **The wall's Lighthouse score**, unchanged at 88: the runtime upgrade Part 10 names.
