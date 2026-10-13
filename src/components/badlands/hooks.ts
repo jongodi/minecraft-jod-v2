@@ -13,6 +13,8 @@ const STATUS_POLL_MS = 60_000;
 const CHANGING_POLL_MS = 15_000;
 /* a page drawn with the server's own answer asks again soon, since that answer may be a minute old */
 const SEEDED_POLL_MS = 10_000;
+/* a tab in the background asks seldom, so its lantern (tabLantern.ts) still lights when the server does */
+const HIDDEN_POLL_MS = 3 * 60_000;
 /* how long the browser waits on its own questions: the routes cap what they ask upstream, so a longer wait is a hung connection */
 const STATUS_WAIT_MS = 12_000;
 const STATS_WAIT_MS = 25_000;
@@ -20,9 +22,10 @@ const COPIED_MS = 2400;
 
 /* ─── the server's status ──────────────────────────────────────────
    One answer shared by everything that asks (the hero's lantern, the
-   world's HUD, the crew's room, the fires), refreshed every minute while
-   the page is looked at, every quarter of one while the server is on its
-   way up or down, and at once after the site itself asked for a start. */
+   world's HUD, the crew's room, the fires, the tab), refreshed every minute
+   while the page is looked at, every quarter of one while the server is on
+   its way up or down, every few in a background tab, and at once after the
+   site itself asked for a start. */
 let statusValue: ServerState = NO_STATUS;
 let statusInFlight: Promise<void> | null = null;
 /* a start asked for from the site: the server counts as on its way up until the status says, a few minutes at most */
@@ -55,10 +58,10 @@ async function loadStatus(): Promise<void> {
 function schedulePoll(): void {
   clearTimeout(pollTimer);
   if (!polling) return;
-  pollTimer = setTimeout(() => {
-    /* a tab in the background does not ask; it asks once when it is looked at again */
-    if (document.hidden) schedulePoll(); else refreshStatus();
-  }, isChanging(statusValue.life) ? CHANGING_POLL_MS : STATUS_POLL_MS);
+  /* A tab in the background asks every few minutes rather than every one,
+     for the tab's own lantern; it asks at once when it is looked at again. */
+  pollTimer = setTimeout(refreshStatus,
+    document.hidden ? HIDDEN_POLL_MS : isChanging(statusValue.life) ? CHANGING_POLL_MS : STATUS_POLL_MS);
 }
 
 /** Asks the server's status now; one request at a time. */
