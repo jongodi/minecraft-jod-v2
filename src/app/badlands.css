@@ -664,8 +664,11 @@
   position: relative;
   display: block;
   height: var(--xp, 10px);
-  background: #0E0C09;
-  box-shadow: 0 0 0 var(--px) rgba(0, 0, 0, 0.55);
+  /* the empty track a shade over the night and the segments cut dark into
+     it, so an empty bar reads as the game's eighteen empty cells and not as
+     a black strip that failed to draw */
+  background: linear-gradient(180deg, #3A342B 0 var(--px), #2A251E var(--px));
+  box-shadow: 0 0 0 var(--px) #0E0C09;
   overflow: clip;
   pointer-events: none;
 }
@@ -1273,6 +1276,41 @@ html.is-map-full { overflow: hidden; }
 .b-hud__head:focus-visible { outline: none; }
 .b-hud__follow { color: var(--lantern); }
 .b-hud__tools { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--sp-2); }
+/* On a wide screen the tools are the hotbar's slots too, as they are on a
+   phone (below): sunk side by side into one strip of night, each its drawn
+   icon at the art's own scale with its word under it, the way the hotbar's
+   doors carry theirs, since a wide screen has the room to say it and a word
+   behind a hover is a word a keyboard never reads. The slot in hand (the
+   painted map laid over) is framed in light as the hotbar frames it; the
+   pictures' count sits low on the right of its slot, as a stack's does. */
+@media (min-width: 900px) {
+  .b-hud__tools { flex-wrap: nowrap; gap: var(--px); padding: var(--px); background: var(--night); box-shadow: 0 0 0 var(--px) var(--wood-dark), 0 calc(var(--px) * 3) 0 var(--veil); }
+  .b-hud__tool.b-btn {
+    position: relative;
+    flex-direction: column;
+    gap: var(--sp-1);
+    min-width: 6rem;
+    min-height: 0;
+    padding: var(--sp-2) var(--sp-3) var(--sp-1);
+    border: 0;
+    background: var(--dusk-2);
+    color: var(--tc-white);
+    box-shadow: var(--bevel-in);
+  }
+  .b-hud__tool .b-btn__icon { width: 2rem; height: 2rem; }
+  .b-hud__tool .b-hud__word { font-family: var(--font-text); font-weight: 600; font-size: var(--fs-sm); line-height: 1.2; letter-spacing: 0.04em; text-transform: uppercase; }
+  .b-hud__tool .b-hud__sep { display: none; }
+  .b-hud__tool .b-hud__count { position: absolute; right: var(--sp-2); top: calc(var(--sp-2) + 1rem); color: var(--paper); font-family: var(--font-data); font-size: var(--fs-data); line-height: 1; text-shadow: var(--px) var(--px) 0 var(--night); pointer-events: none; }
+  .b-hud__tool.b-btn.is-on { z-index: 1; background: var(--dusk-2); color: var(--lantern); }
+  .b-hud__tool.b-btn.is-on::before { content: ''; position: absolute; inset: calc(var(--px) * -2); border: var(--px) solid var(--paper); box-shadow: inset 0 0 0 var(--px) var(--night); clip-path: var(--notch); pointer-events: none; }
+  .b-hud__tool.b-btn:focus-visible { background: var(--lantern); color: var(--night); }
+  .b-hud__tool.b-btn:focus-visible .b-hud__count { color: var(--night); text-shadow: none; }
+  .b-hud__tool.b-btn:active { background: var(--lantern-deep); color: var(--night); }
+}
+@media (min-width: 900px) and (hover: hover) {
+  .b-hud__tool.b-btn:hover { background: var(--lantern); color: var(--night); }
+  .b-hud__tool.b-btn:hover .b-hud__count { color: var(--night); text-shadow: none; }
+}
 /* The way out of the whole screen is first in the HUD, the back key at the
    left end of a phone's plank; on a wide screen it stands after the tools,
    a lit Loka, and the title takes the room between. */
@@ -1545,19 +1583,27 @@ html.is-map-full { overflow: hidden; }
   text-align: left;
   color: var(--paper);
   background: rgba(42, 26, 20, 0.92);
-  box-shadow: var(--bevel);
+  /* The place's own wood, as it looks at night: its board (--sign, tokens.css)
+     mixed down into the dark, so the castle's tag is spruce and the pink
+     estate's cherry, as their posts are on the walls, and the rail stays
+     darker than the map it lies on. A quarter of the wood in the night's
+     dark, and the board's edge in more of it along the top, lit from above
+     as every block is: the name reads at 7:1 or better on every wood and
+     the line under it at 5:1, the soft ink, since the faint one fell to 2:1. */
+  background: color-mix(in srgb, var(--sign) 24%, var(--night));
+  box-shadow: var(--bevel), inset 0 calc(var(--px) * 2) 0 color-mix(in srgb, var(--sign) 55%, transparent);
   clip-path: var(--notch);
   transition: background var(--dur-1) var(--ease-out);
 }
-.b-chip:focus-visible { background: var(--tc-brown); outline: var(--px) solid var(--lantern); outline-offset: calc(var(--px) * -2); }
-@media (hover: hover) { .b-chip:hover { background: var(--tc-brown); } }
+.b-chip:focus-visible { background: color-mix(in srgb, var(--sign) 30%, var(--night)); outline: var(--px) solid var(--lantern); outline-offset: calc(var(--px) * -2); }
+@media (hover: hover) { .b-chip:hover { background: color-mix(in srgb, var(--sign) 30%, var(--night)); } }
 .b-chip.is-on { background: var(--lantern); color: var(--night); }
 .b-chip__thumb { width: 3.5rem; height: 2.5rem; overflow: hidden; background: var(--dusk-2); box-shadow: 0 0 0 var(--px) var(--wood-dark); }
 .b-chip__thumb img { width: 100%; height: 100%; object-fit: cover; }
 .b-chip__thumb--empty { display: block; width: 100%; height: 100%; background: repeating-linear-gradient(45deg, var(--dusk) 0 4px, var(--dusk-2) 4px 8px); }
 .b-chip__text { display: grid; min-width: 0; }
 .b-chip__name { font-weight: 600; font-size: var(--fs-data); line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.b-chip__sub { font-size: var(--fs-sm); line-height: 1.4; color: var(--text-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.b-chip__sub { font-size: var(--fs-sm); line-height: 1.4; color: var(--text-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .b-chip.is-on .b-chip__sub { color: rgba(21, 16, 13, 0.7); }
 /* how many things the crew pinned at this place */
 .b-chip__count { position: absolute; top: calc(var(--px) * -1); right: calc(var(--px) * -1); padding: 0 0.3rem; background: var(--lantern); color: var(--night); font-family: var(--font-data); font-size: var(--fs-chip); line-height: 1.6; }

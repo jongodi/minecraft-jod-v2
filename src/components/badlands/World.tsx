@@ -4,10 +4,11 @@ import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import type { MapConfig, WorldPoint } from '@/lib/map-types';
+import { woodClass } from '@/lib/sign-wood';
 import type { PlacePrints } from '@/lib/crew-places';
 import { baseUrl, mapAt, type BaseLink, type MapBounds } from '@/lib/base-links';
 import viewerFiles from '@/lib/bluemap-viewer.json';
-import { BackIcon, CloseIcon, FoldedMapIcon, Lantern, MoonIcon, PictureIcon, Sun } from './Bits';
+import { BackIcon, CloseIcon, FoldedMapIcon, FullScreenIcon, Lantern, MoonIcon, PictureIcon, Sun } from './Bits';
 import { plural } from '@/lib/format';
 import Drawer from './Drawer';
 import PlayerHead from './PlayerHead';
@@ -519,8 +520,10 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
               </button>
               {!full && (
                 // eslint-disable-next-line @next/next/no-html-link-for-pages -- BlueMap's own app, not a Next page
-                <a href={MAP_URL} className="b-btn b-btn--small b-btn--ghost" onPointerEnter={warmViewer} onFocus={warmViewer}
-                  onClick={e => { if (plainClick(e)) { e.preventDefault(); setDrawn(false); openFull(); } }}>Heill skjár</a>
+                <a href={MAP_URL} className="b-btn b-btn--small b-btn--ghost b-hud__tool" onPointerEnter={warmViewer} onFocus={warmViewer}
+                  onClick={e => { if (plainClick(e)) { e.preventDefault(); setDrawn(false); openFull(); } }}>
+                  <FullScreenIcon className="b-btn__icon" /><span className="b-hud__word">Heill skjár</span>
+                </a>
               )}
             </div>
           </div>
@@ -634,7 +637,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
               const count = pinned[String(loc.id)]?.count ?? 0;
               return (
                 <button key={loc.id} type="button" data-rail-item={loc.id}
-                  className={`b-chip${loc.id === selected ? ' is-on' : ''}`} aria-pressed={loc.id === selected} onClick={() => choose(loc.id)}>
+                  className={`b-chip${woodClass(loc.wood)}${loc.id === selected ? ' is-on' : ''}`} aria-pressed={loc.id === selected} onClick={() => choose(loc.id)}>
                   {/* a label on a bare span is not read; the count is spoken as words instead */}
                   {count > 0 && <><span className="b-chip__count" aria-hidden="true">{count}</span><span className="b-visually-hidden">{`${count} ${plural(count, 'færsla', 'færslur')} frá hópnum, `}</span></>}
                   <span className="b-chip__thumb">

@@ -12,7 +12,7 @@ import { NO_NIGHTS, viewNights, type PlayNightResponse } from '@/lib/play-night-
 import { readGallery } from '@/lib/gallery';
 import { readMap } from '@/lib/map';
 import { placePrints, type PlacePrints } from '@/lib/crew-places';
-import { DEFAULT_CONFIG, type MapConfig } from '@/lib/map-types';
+import { DEFAULT_CONFIG, woodOf, type MapConfig } from '@/lib/map-types';
 import { PLATES, sentenceCase, titleCase, type Plate } from '@/components/badlands/data';
 import { seasonAt, type Season } from '@/lib/season';
 
@@ -49,7 +49,8 @@ export async function loadHomeData(): Promise<HomeData> {
     status,
     nights,
     plates: shown.length ? shown.map(p => ({ id: p.id, src: p.filename, title: titleCase(p.title), sub: sentenceCase(p.sublabel) })) : PLATES,
-    map: map.locations.length ? { locations: map.locations, zones: map.zones ?? [], paths: map.paths ?? [], terrain: map.terrain } : DEFAULT_CONFIG,
+    /* each place with the wood its tag on the rail wears, settled here so the page carries no default map to work it out */
+    map: map.locations.length ? { locations: map.locations.map(l => ({ ...l, wood: woodOf(l) })), zones: map.zones ?? [], paths: map.paths ?? [], terrain: map.terrain } : DEFAULT_CONFIG,
     pinned,
     season: seasonAt(new Date(now)),
   };
