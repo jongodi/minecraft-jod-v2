@@ -11,31 +11,70 @@ import type { Season } from '@/lib/season';
 import type { PlayNightResponse } from '@/app/api/playnight/route';
 import { YuleLad, useMoonPhase } from './Season';
 import { CREW } from './data';
+import { useRoster } from './roster';
 
 /* The title screen's splash: what the game tilts in yellow over its logo,
    one line picked at random each time the title screen comes up. These are
    facts about this world, in the game's exclaiming voice; what is true
-   tonight (who is in, a night planned) is picked first when there is any. */
+   tonight (who is in, a night planned) is picked first when there is any.
+   It pops as it comes, as the game's swells, once rather than for as long
+   as the page is open; a press brings the next, so every fact can be read. */
 const SPLASHES = ['Aldrei endurræst!', 'Átta vinir!', 'Frá sumrinu 2024!', 'Aðgangur með boði!', 'Badlands við sólsetur!', 'Með armadillo!'];
 /* the hotbar's keys, said only where there is likely a keyboard to press them on */
 const KEYS_SPLASH = 'Ýttu á 1, 2 eða 3!';
 
+const shuffled = <T,>(a: T[]): T[] => {
+  const b = [...a];
+  for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; }
+  return b;
+};
+
 function Splash({ inside, planned }: { inside: number; planned: boolean }) {
-  /* picked in the browser, once: a pick in the server's markup would differ from the browser's */
-  const [line, setLine] = useState<string | null>(null);
+  /* picked in the browser, once: a pick in the server's markup would differ
+     from the browser's. The first as the game picks it, the rest in a
+     shuffled round, so a press never brings the same line twice running. */
+  const [lines, setLines] = useState<string[] | null>(null);
+  const [at, setAt] = useState(0);
   useEffect(() => {
     const tonight = [
       ...(inside > 0 ? [`${inside} inni núna!`] : []),
       ...(planned ? ['Spilakvöld á dagskrá!'] : []),
     ];
     const keys = window.matchMedia('(hover: hover) and (pointer: fine)').matches ? [KEYS_SPLASH] : [];
-    const pool = tonight.length > 0 && Math.random() < 0.6 ? tonight : [...SPLASHES, ...keys];
-    setLine(pool[Math.floor(Math.random() * pool.length)]);
+    const all = [...tonight, ...SPLASHES, ...keys];
+    const first = shuffled(tonight.length > 0 && Math.random() < 0.6 ? tonight : [...SPLASHES, ...keys])[0];
+    setLines([first, ...shuffled(all.filter(l => l !== first))]);
   // the title screen picks once, as the game does
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  if (!line) return null;
-  return <span className="b-hero__splash" aria-hidden="true"><span>{line}</span></span>;
+  if (!lines) return null;
+  const line = lines[at % lines.length];
+  return (
+    <span className="b-hero__splash">
+      <button type="button" className="b-hero__splashbtn" onClick={() => setAt(v => v + 1)}>
+        {/* keyed, so each line pops as it comes */}
+        <span key={at} className="b-hero__splashword">{line}</span>
+      </button>
+    </span>
+  );
+}
+
+/* On a phone the crew who are in climb the name: one on the O, one on the
+   Ð, their name tags in the sky over them, and a count for the rest. The
+   plateau at the name's feet stood them in front of the O's window. One who
+   comes in while the page is looked at climbs up onto the letter; one who
+   goes out climbs down. */
+function Climbers({ names, known }: { names: string[]; known: boolean }) {
+  const { roster, settle } = useRoster(names, known);
+  if (roster.length === 0) return null;
+  const shown = roster.slice(0, 2);
+  const more = names.length - shown.filter(r => r.phase !== 'going').length;
+  return (
+    <div className="b-hero__climbers">
+      {shown.map(r => <Rider key={r.name} name={r.name} phase={r.phase} onWalked={settle} className="b-hero__climber" />)}
+      {more > 0 && <span className="b-nametag b-hero__more">+{more}</span>}
+    </div>
+  );
 }
 
 function Hero({ server, season, nights }: { server: ServerState; season: Season; nights?: PlayNightResponse }) {
@@ -43,6 +82,8 @@ function Hero({ server, season, nights }: { server: ServerState; season: Season;
   const home = server.online === true && server.players > 0;
   const lower = server.list.map(n => n.toLowerCase());
   const inside = server.online ? CREW.filter(n => lower.includes(n.toLowerCase())) : [];
+  /* the names are an answer, so a change in them is someone coming or going */
+  const known = server.checkedAt !== null && server.online !== null;
   const moon = useMoonPhase();
   return (
     <section id="top" className="b-hero" aria-label="Sólsetur">
@@ -64,16 +105,7 @@ function Hero({ server, season, nights }: { server: ServerState; season: Season;
           {/* tonight's moon, rising from behind the J as the sun sets on the other side */}
           {moon !== null && <Moon phase={moon} className="b-hero__moon" />}
         </h1>
-        {/* On a phone the crew who are in climb the name: one on the O, one on
-            the Ð, their name tags in the sky over them, and a count for the rest.
-            The plateau at the name's feet stood them in front of the O's window. */}
-        {inside.length > 0 && (
-          <div className="b-hero__climbers">
-            {inside.slice(0, 2).map(n => <Rider key={n} name={n} className="b-hero__climber" />)}
-            {inside.length > 2 && <span className="b-nametag b-hero__more">+{inside.length - 2}</span>}
-          </div>
-        )}
-        <Splash inside={inside.length} planned={(nights?.nights ?? []).some(n => n.phase !== 'over')} />
+        <Climbers names={inside} known={known} />
         {/* a phone's sun: in the open sky between the words and the name, so no line above it ever crosses it (badlands.css) */}
         <div className="b-hero__sun" aria-hidden="true"><Sun /></div>
         <div className="b-hero__lead">
@@ -88,8 +120,11 @@ function Hero({ server, season, nights }: { server: ServerState; season: Season;
             </div>
           </div>
         </div>
+        {/* after the address and the lantern in the page's order, so the one
+            action comes first to the keyboard; drawn over the Ð all the same */}
+        <Splash inside={inside.length} planned={(nights?.nights ?? []).some(n => n.phase !== 'over')} />
       </div>
-      <Mesa snow={season.snow} halloween={season.halloween} heads={inside} />
+      <Mesa snow={season.snow} halloween={season.halloween} heads={inside} known={known} />
       <YuleLad season={season} spot="mesa" />
     </section>
   );

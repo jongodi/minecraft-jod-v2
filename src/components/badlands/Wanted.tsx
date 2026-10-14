@@ -49,18 +49,6 @@ export default function Wanted({ stats }: { stats: StatsState }) {
 
   return (
     <div className="b-wanted">
-      {/* the room's plank already says Eftirlýst; the board only says where its numbers came from */}
-      {stats.source && posters.length > 0 && (
-        <div className="b-head b-head--tight">
-          <p className="b-note">
-            {stats.source === 'live' ? `beint frá þjóninum${when ? `, sótt ${when}` : ''}` :
-             /* a copy is kept while the server is off, and also when it is on but did not answer: the room's line says which */
-             stats.source === 'cached' ? `úr síðasta afriti, sótt ${when ?? 'við síðustu uppfærslu'}` :
-             'engar tölur úr leiknum í augnablikinu; varðeldurinn telur samt'}
-          </p>
-        </div>
-      )}
-
       {/* an empty board says nothing of its own: the room's one line under the
           portraits says why there are no numbers, beside why nobody is in */}
       {posters.length === 0 ? (
@@ -115,6 +103,19 @@ export default function Wanted({ stats }: { stats: StatsState }) {
             </div>
           ))}
         </Rail>
+      )}
+
+      {/* The room's plank already says Eftirlýst; the board only says where
+          its numbers came from, under the posters, as a notice's small
+          print: above them it held the posters a line further down a room
+          named for them. */}
+      {stats.source && posters.length > 0 && (
+        <p className="b-note b-wanted__source">
+          {stats.source === 'live' ? `beint frá þjóninum${when ? `, sótt ${when}` : ''}` :
+           /* a copy is kept while the server is off, and also when it is on but did not answer: the room's line says which */
+           stats.source === 'cached' ? `úr síðasta afriti, sótt ${when ?? 'við síðustu uppfærslu'}` :
+           'engar tölur úr leiknum í augnablikinu; varðeldurinn telur samt'}
+        </p>
       )}
     </div>
   );

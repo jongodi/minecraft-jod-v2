@@ -29,6 +29,7 @@
    ride one rail across the room on every width, so the board is read by
    walking along it. */
 .b-wanted { margin-top: 0; }
+.b-wanted__source { margin-top: var(--sp-2); }
 .b-posters .b-rail { gap: var(--sp-3); padding: 4px 3px; align-items: start; }
 /* Wide enough for the longest value the board posts, a stretch of game time
    like "1 d. 14 klst.", on one line beside the leader's head and again beside

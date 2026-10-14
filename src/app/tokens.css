@@ -130,7 +130,7 @@
   /* ── type ──
      Three pixel-drawn families. Display is the sign painter's slab, text is
      the one face that carries a paragraph, and data is the label face: every
-     short string on the site — navigation, buttons, captions, counts, tags,
+     short string on the site: navigation, buttons, captions, counts, tags,
      and anything the server says. */
   --font-display: var(--font-display-loaded, 'Alfa Slab One'), Georgia, serif;
   --font-text:    var(--font-text-loaded, 'Pixelify Sans'), 'Trebuchet MS', sans-serif;
@@ -182,6 +182,8 @@
   /* a block's bevel: light on the top and left, shadow below and right */
   --bevel:    inset var(--px) var(--px) 0 rgba(255, 240, 210, 0.35), inset calc(var(--px) * -1) calc(var(--px) * -1) 0 rgba(21, 16, 13, 0.35);
   --bevel-in: inset var(--px) var(--px) 0 rgba(21, 16, 13, 0.35), inset calc(var(--px) * -1) calc(var(--px) * -1) 0 rgba(255, 240, 210, 0.2);
+  /* a press: one of the art's pixels down, as a stone button sinks into its block (badlands.css, the press) */
+  --press: 0 var(--px);
   /* notched corners, one pixel each */
   --notch: polygon(var(--px) 0, calc(100% - var(--px)) 0, 100% var(--px), 100% calc(100% - var(--px)), calc(100% - var(--px)) 100%, var(--px) 100%, 0 calc(100% - var(--px)), 0 var(--px));
 

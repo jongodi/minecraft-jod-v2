@@ -238,7 +238,6 @@
 @media (max-width: 399px) { .b-btn { white-space: normal; text-align: center; } }
 .b-btn:focus-visible { background: var(--lantern); color: var(--night); }
 @media (hover: hover) { .b-btn:hover { background: var(--lantern); color: var(--night); } }
-.b-btn:active { transform: translateY(1px); }
 .b-btn[disabled] { opacity: 0.45; cursor: default; }
 .b-btn--solid { background: var(--lantern); color: var(--night); box-shadow: var(--bevel); }
 .b-btn--solid:active { box-shadow: var(--bevel-in); }
@@ -251,6 +250,31 @@
 .b-btn--ghost:focus-visible,
 .b-btn--ghost.is-on { background: var(--lantern); border-color: var(--lantern); color: var(--night); }
 @media (hover: hover) { .b-btn--ghost:hover { background: var(--lantern); border-color: var(--lantern); color: var(--night); } }
+
+/* ─── the press ──────────────────────────────────────────────────
+   Whatever can be pressed sinks into what it is set in while it is held,
+   as the game's stone button sinks into its block: one of the art's
+   pixels (--press), at once, and back up at once on letting go. A block
+   with a bevel turns it over, lit from below as a hollow is. A lantern
+   dips on its hook; paper and the crew's figures press against what they
+   hang on; words that lead somewhere darken, as ink does pressed into
+   paper. The `translate` property, so a press composes with whatever
+   transform the thing already wears (a crate's lift, a sign's swing). */
+.b-btn:active, .b-copy__btn:active, .b-bar__addr:active, .b-bar__mark:active,
+.b-chip:active, .b-railwrap__arrow:active, .b-room__close:active, .b-card__x:active,
+.b-folk__item:active, .w-sign:active, .b-foot__sound:active { translate: var(--press); }
+.b-copy__btn:active, .b-foot__sound.is-on:active { box-shadow: var(--bevel-in); }
+.b-stock__crate:active { translate: var(--press); transform: none; box-shadow: inset 0 0 0 calc(var(--px) * 3) var(--wood), inset 0 0 0 calc(var(--px) * 4) var(--wood-light), var(--bevel-in); }
+.b-chip:active { background: var(--wood-dark); }
+.b-chip.is-on:active { background: var(--lantern-deep); }
+.b-railwrap__arrow:active { background: var(--lantern-deep); color: var(--night); }
+.b-slot:active > *, .b-door:active .b-lantern, .b-status:active .b-lantern, .b-bar__status:active .b-lantern,
+.b-mesa__rider:active img, .b-hero__climber:active img, .b-poster__lead:active .b-poster__img,
+.b-foot__fire:active .b-fire, .b-foot__fire:active .b-foot__board { translate: var(--press); }
+.b-slot:active { box-shadow: inset calc(var(--px) * 2) calc(var(--px) * 2) 0 rgba(21, 16, 13, 0.5), 0 0 0 var(--px) var(--wood-dark); }
+.b-boot:active .b-lantern { transform: translateY(var(--px)); transition-duration: 0s; }
+.b-link:active, .b-foot__admin:active { color: var(--lantern-deep); }
+.b-poster__row:active, .b-poster__lead:active .b-poster__name { color: var(--lantern-ink); }
 .b-input, .b-textarea {
   width: 100%;
   background: var(--paper);
@@ -295,7 +319,6 @@
 }
 .b-copy__btn:focus-visible { background: var(--lantern); color: var(--night); box-shadow: var(--bevel); }
 @media (hover: hover) { .b-copy__btn:hover { background: var(--lantern); color: var(--night); box-shadow: var(--bevel); } }
-.b-copy__btn:active { transform: translateY(1px); }
 .b-copy__btn svg { width: 1rem; height: 1rem; shape-rendering: crispEdges; flex-shrink: 0; }
 .b-copy__addr { white-space: nowrap; }
 @media (min-width: 480px) { .b-copy__btn { font-size: var(--fs-data-lg); } }
@@ -948,6 +971,19 @@
 .b-mesa__rider:focus-visible img, .b-hero__climber:focus-visible img { filter: drop-shadow(var(--px) 0 0 var(--lantern)) drop-shadow(calc(var(--px) * -1) 0 0 var(--lantern)) drop-shadow(0 var(--px) 0 var(--lantern)) drop-shadow(0 calc(var(--px) * -1) 0 var(--lantern)); }
 @media (hover: hover) { .b-mesa__rider:hover img, .b-hero__climber:hover img { filter: drop-shadow(var(--px) 0 0 var(--paper)) drop-shadow(calc(var(--px) * -1) 0 0 var(--paper)) drop-shadow(0 var(--px) 0 var(--paper)) drop-shadow(0 calc(var(--px) * -1) 0 var(--paper)); } }
 
+/* One of the crew comes in while the page is looked at: they climb up onto
+   the plateau they stand on (on a phone, onto their letter), in four steps of
+   the land's pixels, the part still below its edge cut away; going out, they
+   climb down behind it. A state change, so it plays once; under reduced
+   motion the figure simply is or isn't there (roster.ts never asks for it). */
+.b-mesa__rider.is-coming, .b-hero__climber.is-coming { animation: b-climb-up 640ms steps(4, end) backwards; }
+.b-mesa__rider.is-going,  .b-hero__climber.is-going  { animation: b-climb-down 640ms steps(4, end) forwards; pointer-events: none; }
+@keyframes b-climb-up   { from { transform: translateY(60%); clip-path: inset(-4em -4em 60% -4em); } to { transform: none; clip-path: inset(-4em -4em 0 -4em); } }
+@keyframes b-climb-down { from { transform: none; clip-path: inset(-4em -4em 0 -4em); } to { transform: translateY(60%); clip-path: inset(-4em -4em 60% -4em); } }
+@media (prefers-reduced-motion: reduce) {
+  .b-mesa__rider.is-coming, .b-mesa__rider.is-going, .b-hero__climber.is-coming, .b-hero__climber.is-going { animation: none; }
+}
+
 /* The name tag the game floats over every player: white letters on a veil
    of dark, a little above the head, never turned away. Over each of the
    crew on the ridge and on the name; the count of the rest wears one too.
@@ -1004,7 +1040,7 @@
   .b-hero__climbers > .b-hero__more { left: calc(var(--fs-hero) * 1.9); top: calc(var(--fs-hero) * -0.09); translate: 0 0; }
 }
 /* The splash (Hero.tsx): the game's yellow line tilted over the corner of
-   its logo, pulsing, laid over the name's own row of the stage and placed in
+   its logo, popping as it comes, laid over the name's own row of the stage and placed in
    ems of the name, at the Ð's upper corner on a wide screen and over its
    foot on a phone, where a climber stands on its top. Its words are the
    bitmap face at a size it is drawn for, in the game's yellow with the
@@ -1022,10 +1058,15 @@
   font-size: var(--fs-hero);
   pointer-events: none;
 }
-.b-hero__splash > span {
+.b-hero__splashbtn {
   position: absolute;
   left: 0;
   top: 0;
+  padding: 0.6rem 0.5rem;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  pointer-events: auto;
   font-family: var(--font-data);
   font-size: var(--fs-data-lg);
   line-height: 1;
@@ -1033,18 +1074,24 @@
   color: #FFFF55;
   text-shadow: calc(var(--px) * 1.5) calc(var(--px) * 1.5) 0 #3F3F15;
   transform: translate(-50%, -50%) rotate(-20deg);
-  animation: b-splash 0.9s ease-in-out infinite alternate;
 }
-@keyframes b-splash {
-  from { transform: translate(-50%, -50%) rotate(-20deg) scale(1); }
-  to   { transform: translate(-50%, -50%) rotate(-20deg) scale(1.08); }
+/* the word pops about its own middle; the button only places and tilts it */
+.b-hero__splashword { display: inline-block; animation: b-splash-pop 420ms var(--ease-out) backwards; transition: scale 60ms linear; }
+@keyframes b-splash-pop {
+  0%   { scale: 0.7; }
+  45%  { scale: 1.14; }
+  100% { scale: 1; }
 }
+/* pointed at, it holds the game's swell at its height; pressed, it sinks as everything does */
+@media (hover: hover) { .b-hero__splashbtn:hover .b-hero__splashword { scale: 1.08; } }
+.b-hero__splashbtn:focus-visible { outline: var(--px) solid var(--lantern); outline-offset: 0; }
+.b-hero__splashbtn:active { translate: var(--press); }
 @media (max-width: 899px) {
   .b-hero__splash { left: 1.5em; top: 0.66em; }
-  .b-hero__splash > span { font-size: var(--fs-data); }
+  .b-hero__splashbtn { font-size: var(--fs-data); }
 }
 @media (max-width: 899px) and (max-height: 500px) { .b-hero__splash { display: none; } }
-@media (prefers-reduced-motion: reduce) { .b-hero__splash > span { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .b-hero__splashword { animation: none; } }
 
 /* a phone on its side stands the name in the ridges with no sky over it to climb into */
 @media (max-width: 899px) and (max-height: 500px) { .b-hero__climbers { display: none; } }
@@ -1102,20 +1149,25 @@
   box-shadow: inset 0 0 0 var(--px) var(--wood-light), inset 0 0 0 calc(var(--px) * 2) var(--wood-dark);
   overflow: clip;
 }
-/* The still and the town's lights in one layer that drifts, a slow push
-   and pan over a minute and back, a camera hovering over the town at
-   night. One transform on the compositor; paused whenever the world is out
-   of view, under a room, or live (World.tsx), and none under reduced motion.
-   Drawn a little larger than the frame so its edges never show. */
+/* The still and the town's lights in one layer that settles as the world is
+   reached: while the frame rises into view it comes from a little closer and
+   a little higher, and stands at rest once the frame fills the screen, so
+   the scroll down into the valley moves the camera too. Driven by the
+   frame's own place in the scroll (a view timeline): one transform on the
+   compositor, still whenever the page is, and none under reduced motion or
+   where scroll timelines are missing, where it simply stands at rest. Drawn
+   a little larger than the frame so its edges never show. */
 .b-frame__scene { position: absolute; inset: 0; transform: scale(1.04); transform-origin: 50% 45%; }
-.b-frame__scene.is-drifting { animation: b-drift 64s ease-in-out infinite alternate; }
-@keyframes b-drift {
-  from { transform: scale(1.04) translate(0.6%, 0.4%); }
-  to   { transform: scale(1.1) translate(-1.6%, -1%); }
+@supports (animation-timeline: view()) {
+  .b-frame__scene.is-settling { animation: b-settle linear both; animation-timeline: view(); animation-range: entry 0% contain 0%; }
 }
-@media (prefers-reduced-motion: reduce) { .b-frame__scene.is-drifting { animation: none; } }
+@keyframes b-settle {
+  from { transform: scale(1.12) translateY(-2.5%); }
+  to   { transform: scale(1.04); }
+}
+@media (prefers-reduced-motion: reduce) { .b-frame__scene.is-settling { animation: none; } }
 /* the live map takes over from the still at the very view it was drawn at, so the still stands square again for the hand-over */
-.b-frame.is-live .b-frame__scene { transform: none; }
+.b-frame.is-live .b-frame__scene { animation: none; transform: none; }
 .b-frame__poster {
   position: absolute;
   inset: 0;
@@ -1397,6 +1449,43 @@ html.is-map-full { overflow: hidden; }
    The figures are live, so they are the bitmap face. */
 .b-f3 { display: grid; justify-items: start; gap: var(--px); margin-bottom: var(--sp-2); pointer-events: none; }
 .b-f3 > span { padding: var(--px) var(--sp-1); background: rgba(14, 12, 9, 0.6); color: #E8E8E8; font-family: var(--font-data); font-size: var(--fs-data); line-height: 1.2; white-space: nowrap; text-shadow: var(--px) var(--px) 0 rgba(14, 12, 9, 0.8); }
+/* Spjallið (Chat.tsx): the game's chat, over the places' rail as it sits over
+   the hotbar. Each line on its own veil of dark, the F3 lines' own, in the
+   game's colours with the game's shadow (the colour at a quarter): white for
+   what the crew said, yellow for what the server says, green for an
+   advancement, and a challenge set apart in red, as the walls set it apart.
+   A line holds for nine seconds and fades in the tenth (`b-chat-out`, its
+   delay set when it is printed); lines that came together come in one after
+   another. Open (T, or the note of lines held back), every line stays. Each
+   line leads to where it happened, so it lights as a link does. */
+.b-chat { display: grid; justify-items: start; max-width: min(34rem, 100%); margin-bottom: var(--sp-2); }
+.b-chat__line {
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
+  max-width: 100%; padding: var(--px) var(--sp-2);
+  background: rgba(14, 12, 9, 0.6); color: #FFFFFF;
+  font: inherit; font-size: var(--fs-sm); line-height: 1.4; text-align: left; text-decoration: none;
+  text-shadow: var(--px) var(--px) 0 #3F3F3F;
+  border: 0; cursor: pointer;
+  animation: b-chat-in 1ms linear backwards, b-chat-out 1s linear forwards;
+  transition: background-color 60ms linear;
+}
+.b-chat.is-open .b-chat__line { animation: none; background: rgba(14, 12, 9, 0.78); }
+@keyframes b-chat-in  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes b-chat-out { from { opacity: 1; } to { opacity: 0; visibility: hidden; } }
+@media (hover: hover) { .b-chat__line:hover { background: rgba(14, 12, 9, 0.86); text-decoration: underline var(--px); text-underline-offset: 0.3em; } }
+.b-chat__line:focus-visible { outline: var(--px) solid var(--lantern); outline-offset: 0; background: rgba(14, 12, 9, 0.86); }
+.b-chat__line:active { background: rgba(14, 12, 9, 0.95); }
+.b-chat__sys, .b-chat__queue { color: #FFFF55; text-shadow: var(--px) var(--px) 0 #3F3F15; }
+.b-chat__adv { color: #55FF55; text-shadow: var(--px) var(--px) 0 #153F15; }
+.b-chat__adv--challenge { color: #FF5555; text-shadow: var(--px) var(--px) 0 #3F1515; }
+.b-chat__item { color: #E8E8E8; }
+.b-chat__empty { cursor: default; color: #E8E8E8; }
+.b-chat__close { margin-top: var(--sp-2); }
+/* open, the chat is read as the game's is, with the world's lantern stepped aside: its sign stood where the longer log climbs */
+.b-frame .b-hud__mid { transition: opacity var(--dur-2) var(--ease-out), visibility 0s linear 0s; }
+.b-frame.is-chat .b-hud__mid { opacity: 0; visibility: hidden; transition: opacity var(--dur-2) var(--ease-out), visibility 0s linear var(--dur-2); }
+@media (max-width: 899px) { .b-chat { margin-bottom: var(--sp-1); } }
+
 .b-places__head { justify-self: start; padding: var(--px) var(--sp-2); background: var(--plate); clip-path: var(--notch); font-size: var(--fs-sm); color: var(--paper); text-shadow: 0 var(--px) 0 var(--night); }
 /* min-width: a grid item would otherwise grow to fit every chip instead of scrolling */
 .b-railwrap { position: relative; min-width: 0; }
@@ -1778,6 +1867,15 @@ html.is-map-full { overflow: hidden; }
 .b-crew__row { display: grid; gap: var(--sp-3); margin-bottom: var(--sp-5); }
 .b-crew__who { text-align: center; text-wrap: balance; max-width: var(--measure); margin-inline: auto; }
 @media (min-width: 900px) { .b-crew__who { text-align: left; margin-inline: 0; } }
+/* The room is named for its posters, so what stands over them is kept short:
+   on a wide screen the room's one line stands beside the portraits, at their
+   names' feet, rather than on a row of its own; and the fire keeps half the
+   air it has on a page of its own. */
+@media (min-width: 1100px) {
+  .b-crew__row { grid-template-columns: minmax(0, 52rem) minmax(0, 1fr); align-items: end; column-gap: var(--sp-6); }
+  .b-crew__who { padding-bottom: var(--sp-1); }
+}
+.b-crew > .b-night, .b-crew > .b-nights { margin-block: var(--sp-5); }
 .b-folk { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp-4) var(--sp-1); list-style: none; }
 @media (min-width: 480px) { .b-folk { gap: var(--sp-4) var(--sp-3); } }
 @media (min-width: 1100px) { .b-folk { grid-template-columns: repeat(8, minmax(0, 1fr)); max-width: 52rem; } }
