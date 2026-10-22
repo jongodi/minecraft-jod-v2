@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import type { MapConfig, WorldPoint } from '@/lib/map-types';
@@ -14,9 +14,11 @@ import Drawer from './Drawer';
 import PlayerHead from './PlayerHead';
 import Rail, { revealRailItem } from './Rail';
 import Chat from './Chat';
+import Flight, { type FlightPlace } from './Flight';
+import { FLIGHT } from '@/lib/map-flight';
 import { CREW, MAP_LIGHTS, MAP_POSTER, MAP_URL, SITE_NAME, handCase, plainClick, titleCase, type Plate, type RoomId } from './data';
 import type { ServerState } from './hooks';
-import { modalOpen, useEffectsAllowed, useInert, useMediaQuery } from './hooks';
+import { modalOpen, useEffectsAllowed, useInert, useMediaQuery, useReducedMotionPref } from './hooks';
 import { photoProps, PHOTO_SIZES } from './photo';
 import { toast } from './Toast';
 
@@ -213,7 +215,15 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
     io.observe(el);
     return () => io.disconnect();
   }, []);
-  const lit = reached && effects;
+  /* The flight down into the world (Flight.tsx): where it has been taken,
+     on a device with room for the effects and not under reduced motion. The
+     frame is then held at the top of the screen over a stretch of page while
+     the camera comes down, and the town's lights wait for the landing. */
+  const reduce = useReducedMotionPref();
+  const fly = FLIGHT !== null && effects && !reduce;
+  const runway = useRef<HTMLDivElement>(null);
+  const [landed, setLanded] = useState(true);
+  const lit = reached && effects && landed;
 
   /* The rooms' code is fetched once the browser is truly idle, so a door
      opens at once later and the first seconds, when a slow phone is still
@@ -410,15 +420,19 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
   /* the 3D map that shows the chosen place: this one, a base's own, or none */
   const seen = place?.world ? mapAt(bases, MAIN_BOUNDS, place.world) : null;
   const atBase = seen !== null && seen !== 'main' ? seen : null;
+  /* the places pinned on the still and the flight: those on this map's ground */
+  const grounded = useMemo<FlightPlace[]>(() => config.locations.flatMap(l =>
+    l.world && mapAt(bases, MAIN_BOUNDS, l.world) === 'main' ? [{ id: l.id, label: l.label, world: l.world }] : []), [config.locations, bases]);
 
   return (
-    <section id="heimur" className="b-world" aria-labelledby="heimur-title">
+    <section id="heimur" className={`b-world${fly ? ' has-flight' : ''}`} aria-labelledby="heimur-title">
       <div ref={frameRef} className={`b-frame${live ? ' is-live' : ''}${ready ? ' is-ready' : ''}${drawn ? ' is-drawn' : ''}${shut ? ' is-room' : ''}${full === 'overlay' ? ' is-full' : ''}${live && still ? ' is-still' : ''}${menu && ready ? ' is-menu' : ''}${chatOpen ? ' is-chat' : ''}`}>
         {/* The still and its lights settle together as the world is
             reached, the camera coming down into the valley with the scroll
             (badlands.css). On a device with room for the effects, until the
-            live map takes over, and not under reduced motion. */}
-        <div className={`b-frame__scene${effects && !live ? ' is-settling' : ''}`}>
+            live map takes over, and not under reduced motion. Where the
+            flight is flown, it is the camera coming down instead. */}
+        <div className={`b-frame__scene${effects && !live && !fly ? ' is-settling' : ''}`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         {posterOn && <img {...photoProps(MAP_POSTER, PHOTO_SIZES.poster)} className="b-frame__poster" alt="Heimasvæðið á JOÐ séð úr lofti" width={1920} height={1080} decoding="async" fetchPriority="low" />}
         {/* The town's lights come on as the world comes into view: the still
@@ -428,13 +442,20 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
             it shows; the live map has its own. Under the frame's shade, so
             the dark at its edges falls on the lamplight too. */}
         {posterOn && effects && MAP_LIGHTS.length > 0 && (
-          <div className={`b-frame__town${lit ? ' is-lit' : ''}`} aria-hidden="true">
+          <div className={`b-frame__town${lit ? ' is-lit' : ''}${reached && effects && !landed ? ' is-dawn' : ''}`} aria-hidden="true">
             <div className="b-frame__dusk" />
             {MAP_LIGHTS.map((src, i) => (
               // eslint-disable-next-line @next/next/no-img-element -- a few kB of soft light, drawn at a quarter of the still's size
               <img key={src} src={src} className={`b-frame__lights b-frame__lights--${i + 1}`} alt="" width={480} height={270} decoding="async" fetchPriority="low" />
             ))}
           </div>
+        )}
+        {/* The flight down, and the places pinned on whatever is showing.
+            Once the live map is asked for, the still is what it takes over
+            from, and the live map has its own lanterns. */}
+        {FLIGHT && posterOn && (
+          <Flight flight={FLIGHT} fly={fly && !live} runway={runway} places={grounded} selected={selected}
+            onChoose={choose} hidden={live || drawn} onLanded={setLanded} />
         )}
         </div>
 
@@ -674,6 +695,8 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
           {visited.hillan && <Shelf version={server.version} />}
         </Drawer>
       </div>
+      {/* the stretch of page the frame is held over while the camera comes down */}
+      {fly && <div ref={runway} className="b-world__runway" aria-hidden="true" />}
 
       {album && <Album plates={plates} onClose={closeAlbum} />}
     </section>
