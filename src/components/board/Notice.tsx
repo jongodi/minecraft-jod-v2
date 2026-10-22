@@ -34,6 +34,12 @@ function FrameIcon({ frame }: { frame: 'task' | 'goal' | 'challenge' }) {
   return <svg viewBox="0 0 16 16" width="16" height="16" shapeRendering="crispEdges" aria-hidden="true"><path fill="currentColor" fillRule="evenodd" d={d} /></svg>;
 }
 
+/* A room's hash (#hopur) is a plain link, so the home page's own door handler
+   swaps the room; the router would only push it and no room would know. */
+function Go({ href, className, children }: { href: string; className: string; children: React.ReactNode }) {
+  return href.startsWith('#') ? <a href={href} className={className}>{children}</a> : <Link href={href} className={className}>{children}</Link>;
+}
+
 function Head({ name }: { name: string }) {
   return <Link href={`/crew/${name}`} className="t-notice__who"><PlayerHead name={name} size={16} alt="" />{name}</Link>;
 }
@@ -134,7 +140,7 @@ export default function Notice({ item, room, mounted }: { item: Notice; room: bo
         {body}
         <span className="t-notice__meta">
           <time dateTime={item.at} suppressHydrationWarning>{when}</time>
-          <Link href={href} className="t-notice__go">{item.kind === 'place' || item.kind === 'photo' ? 'sjá á kortinu' : item.kind === 'advancement' ? 'á veggnum' : item.kind === 'painted' || item.kind === 'synced' ? 'í heiminn' : 'sjá kvöldið'}</Link>
+          <Go href={href} className="t-notice__go">{item.kind === 'place' || item.kind === 'photo' ? 'sjá á kortinu' : item.kind === 'advancement' ? 'á veggnum' : item.kind === 'painted' || item.kind === 'synced' ? 'í heiminn' : 'sjá kvöldið'}</Go>
         </span>
       </div>
       {pic && (

@@ -62,8 +62,10 @@ export default function Board({ room = false, open = true, initial = null, initi
   const [filter, setFilter] = useState<Shown>(initialFilter);
   /* the sign just put up from here, which swings in on its chains */
   const [fresh, setFresh] = useState<string | null>(null);
-  const loadedAt = useRef(0);
+  /* a board drawn on the server is fresh: it is not asked for again the moment it arrives */
+  const loadedAt = useRef(initial ? Date.now() : 0);
   const { seen } = useBoardNews();
+  useEffect(() => { if (initial) takeStamps(initial.items.map(i => ({ at: i.at, who: i.who }))); }, [initial]);
 
   /* asked when the board is first looked at, and again when it is opened after standing a while */
   useEffect(() => {
@@ -147,7 +149,7 @@ export default function Board({ room = false, open = true, initial = null, initi
      where it hangs. A plain #link would change the address, and over the
      world the address is which room is open. */
   const show = useCallback((entryId: string) => {
-    setFilter('allt');
+    choose('allt');
     requestAnimationFrame(() => {
       const el = document.getElementById(entryId);
       if (!el) return;
@@ -156,7 +158,7 @@ export default function Board({ room = false, open = true, initial = null, initi
       if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '-1');
       el.focus({ preventScroll: true });
     });
-  }, []);
+  }, [choose]);
 
   const H = room ? 'h3' : 'h2';
   const now = mounted ? Date.now() : undefined;
@@ -212,7 +214,7 @@ export default function Board({ room = false, open = true, initial = null, initi
           </p>
         ) : (
           days.map(({ day, items: dayItems }) => (
-            <section key={day} className="t-day" aria-label={dayLabel(day, now)}>
+            <section key={day} className="t-day">
               <H className="t-day__head" suppressHydrationWarning>{dayLabel(day, now)}</H>
               <ul className="t-list">
                 {dayItems.map(item => {

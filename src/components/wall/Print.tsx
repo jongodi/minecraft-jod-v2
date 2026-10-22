@@ -235,7 +235,7 @@ export default memo(function Print({ username, entry, places, me, isOwner, cover
       <footer className="w-print__meta">
         {/* the day is in the tip for the eye and after the age for a screen reader, which does not read a tip */}
         <time className="b-tip" dateTime={entry.createdAt} data-tip={date(entry.createdAt)}>{age(entry.createdAt)}<span className="b-visually-hidden">, {date(entry.createdAt)}</span></time>
-        {place && <Link href={`/?stadur=${place.id}#heimur`} className="w-print__place">{place.label}</Link>}
+        {place && <Link href={`/stadur/${place.id}#heimur`} className="w-print__place">{place.label}</Link>}
         <button type="button" className={`w-lantern b-tip${lit ? ' is-lit' : ''}`} onClick={toggleLantern} disabled={!me || busyLantern}
           aria-pressed={lit} aria-label={`Lukt undir færslunni${entry.lanterns.length ? `, ${entry.lanterns.length} ${plural(entry.lanterns.length, 'logar', 'loga')}` : ''}${me ? '' : '. Skráðu þig inn til að kveikja á lukt'}`}
           data-tip={me ? (lit ? 'Slökkva á luktinni' : 'Kveikja á lukt') : 'Skráðu þig inn til að kveikja á lukt'}>

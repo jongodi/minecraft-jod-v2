@@ -139,20 +139,31 @@ export function boardItems({ walls, map, gallery, nights, past, advancements, ne
 
 /* ─── the reads ───────────────────────────────────────────────────────────── */
 
+/** The fires as they stand (an unchosen night past its time is decided on the
+    read, as everywhere), and every night that has been held: the annals, and
+    one still burning down to embers among the fires, which the annals only
+    take once it leaves them a week on. Without Redis there are no fires. */
+async function readNightsForBoard(): Promise<{ nights: Night[]; past: PastNight[] }> {
+  if (!process.env.REDIS_URL) return { nights: [], past: [] };
+  const play = await import('@/lib/play-night');
+  const now = Date.now();
+  const [{ all, shown }, kept] = await Promise.all([play.currentNights(now), play.pastNights(now)]);
+  const embers = shown.filter(s => play.phaseOf(s.night, now) === 'over').map(s => play.pastOf(s.night, s.votes, s.seen)).filter((p): p is PastNight => p !== null);
+  const ids = new Set(kept.map(p => p.id));
+  return { nights: all, past: [...kept, ...embers.filter(p => !ids.has(p.id))] };
+}
+
 export async function readBoard(): Promise<BoardResponse> {
   const [{ readAllProfiles }, { readMap }, { readGallery }, { readStoredAdvancements }, { readNews }, snapshot] = await Promise.all([
     import('@/lib/crew'), import('@/lib/map'), import('@/lib/gallery'), import('@/lib/advancements'), import('@/lib/map-news'), import('@/lib/bluemap-snapshot.json'),
   ]);
-  const redis = !!process.env.REDIS_URL;
-  const play = redis ? await import('@/lib/play-night') : null;
-  const [walls, map, gallery, advancements, news, nights, past] = await Promise.all([
+  const [walls, map, gallery, advancements, news, { nights, past }] = await Promise.all([
     readAllProfiles().catch(() => []),
     readMap().catch(() => null),
     readGallery().catch(() => []),
     readStoredAdvancements(),
     readNews().catch(() => []),
-    play ? play.readNights().catch(() => []) : Promise.resolve([]),
-    play ? play.pastNights().catch(() => []) : Promise.resolve([]),
+    readNightsForBoard().catch(() => ({ nights: [], past: [] })),
   ]);
   return {
     items: boardItems({ walls, map, gallery, nights, past, advancements, news, syncedAt: (snapshot.default as { syncedAt?: string | null }).syncedAt ?? null }),
