@@ -94,9 +94,16 @@ for (const shape of SHAPES) {
      hold it nearer and steer its angle, and the viewer stops drawing by
      itself: in a browser drawing in software one frame of the whole world
      takes many seconds, so each still is drawn once, by hand, below. */
-  const plan = await page.evaluate(({ end, angle, swing, farthest }) => {
+  const plan = await page.evaluate(async ({ end, angle, swing, farthest }) => {
     const viewer = window.bluemap.mapViewer;
     const cm = viewer.controlsManager;
+    /* The viewer takes the start view up from the hash a while after its map
+       has loaded, and would set it over the flight's first frame: it is
+       waited for (ten seconds at most) before the camera is taken over. */
+    const waited = Date.now();
+    while (Date.now() - waited < 10_000 && !(Math.abs(cm.distance - end.d) < 0.5 && Math.abs(cm.position.x - end.x) < 1 && Math.abs(cm.position.z - end.z) < 1)) {
+      await new Promise((r) => setTimeout(r, 100));
+    }
     cm.controls = null;
     window.jod?.pause(true);
     const b = window.JOD_MAP?.bounds ?? { minX: end.x - 400, maxX: end.x + 400, minZ: end.z - 400, maxZ: end.z + 400 };
@@ -139,11 +146,15 @@ for (const shape of SHAPES) {
       const s = t * t * (3 - 2 * t);
       const d = Math.exp(Math.log(start.d) + (Math.log(end.d) - Math.log(start.d)) * s);
       const k = (start.d - d) / (start.d - end.d);
-      cm.position.set(start.x + (end.x - start.x) * k, start.y + (end.y - start.y) * k, start.z + (end.z - start.z) * k);
-      cm.distance = d;
-      cm.rotation = start.rotation + (end.rotation - start.rotation) * s;
-      cm.angle = start.angle + (end.angle - start.angle) * s;
-      cm.updateCamera();
+      /* set again just before the frame is drawn, should anything have moved it meanwhile */
+      const place = () => {
+        cm.position.set(start.x + (end.x - start.x) * k, start.y + (end.y - start.y) * k, start.z + (end.z - start.z) * k);
+        cm.distance = d;
+        cm.rotation = start.rotation + (end.rotation - start.rotation) * s;
+        cm.angle = start.angle + (end.angle - start.angle) * s;
+        cm.updateCamera();
+      };
+      place();
       /* wait until every tile in view has arrived: nothing loading and the
          count of drawn tiles steady (two seconds for the first frame, which
          loads the whole world, tile by tile out of the store; a moment after
@@ -163,6 +174,7 @@ for (const shape of SHAPES) {
          before the browser clears it: the paused viewer draws nothing else. */
       const drawn = performance.now();
       const jod = window.jod;
+      place();
       if (jod) jod.paused = false;
       viewer.render(0);
       const png = viewer.renderer.domElement.toDataURL('image/png');
