@@ -526,7 +526,7 @@
 .b-bar__me:focus-visible img { box-shadow: 0 0 0 var(--px) var(--paper); }
 @media (hover: hover) { .b-bar__me:hover img { box-shadow: 0 0 0 var(--px) var(--paper); } }
 
-/* three lanterns in the bar; one is lit, the door the visitor is behind.
+/* four lanterns in the bar; one is lit, the door the visitor is behind.
    From 760 px the bar has room for them; below, they are the hotbar's. */
 .b-doors { display: none; gap: var(--sp-5); }
 @media (min-width: 760px) { .b-doors { display: flex; } }
@@ -553,6 +553,27 @@
 .b-door { position: relative; }
 .b-door__key { position: absolute; left: 0.75rem; bottom: var(--sp-1); display: none; font-size: var(--fs-chip); line-height: 1; color: var(--paper); text-shadow: var(--px) var(--px) 0 var(--night); }
 .b-doors:has(:focus-visible) .b-door__key { display: block; }
+/* What is new on the board, on its door: written low on the lantern's right
+   in the game's own way of counting a stack on a slot, white with its hard
+   shadow, so the door says there is something there before it is opened.
+   The word stays as it is: amber on a door says which one the visitor is behind. */
+.b-news {
+  position: absolute;
+  left: calc(1.1rem - var(--sp-3));
+  bottom: calc(var(--px) * -1);
+  min-width: 1ch;
+  font-family: var(--font-data);
+  font-size: var(--fs-data-lg);
+  line-height: 1;
+  letter-spacing: 0;
+  color: var(--paper);
+  text-shadow: var(--px) var(--px) 0 var(--night);
+  pointer-events: none;
+  animation: b-news-in var(--dur-3) var(--ease-out) both;
+}
+@keyframes b-news-in { from { opacity: 0; transform: translateY(calc(var(--px) * -3)); } }
+@media (prefers-reduced-motion: reduce) { .b-news { animation: none; } }
+.b-slot .b-news { left: calc(50% + 0.1rem); bottom: auto; top: calc(var(--sp-1) + 0.6rem); }
 @media (hover: hover) { .b-door:hover { color: var(--lantern); } }
 .b-door.is-here { color: var(--lantern); border-bottom-color: var(--lantern); }
 
@@ -578,21 +599,35 @@
    the doors or the server's lantern take the room its letters need, so the
    tag is the glyph and the verb (the address is still its name, and the toast
    shows it), and it does not give way to a signed-in member's head: from
-   760 px the doors close up instead. */
+   760 px the doors close up instead (below). */
 @media (max-width: 759px) {
   .b-bar--home .b-bar__addr { display: none; }
   /* the server's lantern is then the last thing on the plank */
   .b-bar--home .b-bar__status::after { left: auto; right: 0; --tip-x: 0%; }
 }
 .b-bar__addr { flex-shrink: 0; }
-@media (min-width: 760px) and (max-width: 899px) { .b-doors { gap: var(--sp-4); } }
-@media (max-width: 1099px) {
+/* Four doors want the room the address had: until 1200 px the tag is the
+   glyph and the verb, and until 1100 px the glyph alone (the address is
+   still its name, and the toast shows it), the doors set close and their
+   letters unspaced, so the plank holds everything without a scroll. */
+@media (min-width: 760px) and (max-width: 1099px) {
+  .b-doors { gap: var(--sp-3); }
+  .b-door { gap: var(--sp-1); letter-spacing: 0; }
+  .b-door .b-news { left: calc(1.1rem - var(--sp-3) - var(--sp-1)); }
+  .b-bar__addr b { display: none; }
+}
+/* the narrowest of them, with a member's head on the plank too */
+@media (min-width: 760px) and (max-width: 899px) {
+  .b-doors { gap: var(--sp-2); }
+  .b-bar__state { min-width: 3.5rem; }
+}
+@media (max-width: 1199px) {
   .b-bar__ip { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 }
 @media (min-width: 760px) and (max-width: 899px) { .b-bar__mark span { display: none; } }
 
 /* ─── the hotbar: the doors at the foot of a phone ───────────────
-   The game's own inventory bar: three slots sunk into a strip, the one in
+   The game's own inventory bar: four slots sunk into a strip, the one in
    hand framed in a light square one pixel larger than the slot, as the game
    frames it. Solid: it is the floor of the screen, and the world's title
    under it is not meant to show through. */
@@ -602,7 +637,7 @@
   bottom: 0;
   z-index: var(--z-bar);
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   padding: var(--sp-2) var(--sp-2) calc(var(--sp-2) + env(safe-area-inset-bottom, 0px));
   background: var(--night);
   box-shadow: 0 calc(var(--line) * -1) 0 rgba(209, 178, 161, 0.14);

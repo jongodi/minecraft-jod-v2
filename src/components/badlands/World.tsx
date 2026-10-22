@@ -21,11 +21,12 @@ import { photoProps, PHOTO_SIZES } from './photo';
 import { toast } from './Toast';
 
 /* Everything that opens over the world is a screen of its own, fetched when
-   its door is first opened: the paper sheet, the album, and the two rooms. */
+   its door is first opened: the paper sheet, the album, and the three rooms. */
 const MapSheet = dynamic(() => import('./MapSheet'), { ssr: false });
 const Album    = dynamic(() => import('./Album'),    { ssr: false });
 const Crew     = dynamic(() => import('./Crew'),     { ssr: false });
 const Shelf    = dynamic(() => import('./Shelf'),    { ssr: false });
+const Board    = dynamic(() => import('@/components/board/Board'), { ssr: false });
 
 /** What public/bluemap-jod/jod.js offers the page, once the viewer's map has loaded. */
 interface JodViewer {
@@ -124,8 +125,8 @@ interface Props {
     camera there and its lantern opens its postcard. A place at another base
     is seen in that base's own map, from its postcard's button; the camera
     never sets off over the void to look for it. The painted map lays over
-    the same frame, the album opens on top, and the two rooms of the evening (the crew,
-    the shelf) rise from the foot of the frame when their door is opened,
+    the same frame, the album opens on top, and the three rooms of the evening (the
+    board, the crew, the shelf) rise from the foot of the frame when their door is opened,
     leaving the world in view above them. *Heill skjár* makes the frame itself
     the whole screen, so nothing reloads; on a phone the lantern does. */
 function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseRoom }: Props) {
@@ -155,7 +156,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
   const viewRef  = useRef<HTMLIFrameElement>(null);
   const hudTop   = useRef<HTMLDivElement>(null);
   /* A room stays mounted once it has been opened, so its fetches happen once. */
-  const [visited, setVisited] = useState<Record<RoomId, boolean>>({ hopur: false, hillan: false });
+  const [visited, setVisited] = useState<Record<RoomId, boolean>>({ taflan: false, hopur: false, hillan: false });
   /* While a room is open, the world's own controls are out of reach. */
   const shut = room !== null;
   const places = useInert<HTMLDivElement>(shut);
@@ -220,7 +221,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
      drawing the hero, pay nothing for rooms nobody has opened. */
   useEffect(() => {
     const w = window as Window & { requestIdleCallback?: (cb: () => void) => number; cancelIdleCallback?: (id: number) => void };
-    const warm = () => { import('./Crew'); import('./Shelf'); };
+    const warm = () => { import('@/components/board/Board'); import('./Crew'); import('./Shelf'); };
     if (w.requestIdleCallback) { const id = w.requestIdleCallback(warm); return () => w.cancelIdleCallback?.(id); }
     const id = setTimeout(warm, 6000);
     return () => clearTimeout(id);
@@ -666,7 +667,10 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
           </Rail>
         </div>
 
-        {/* The two rooms. Each rises from the foot of the frame over the world. */}
+        {/* The three rooms. Each rises from the foot of the frame over the world. */}
+        <Drawer id="taflan" open={room === 'taflan'} title="Taflan" note="allt sem gerist á JOÐ, nýjast efst" onClose={onCloseRoom}>
+          {visited.taflan && <Board room open={room === 'taflan'} />}
+        </Drawer>
         <Drawer id="hopur" open={room === 'hopur'} title="Eftirlýst" note="átta vinir, einn heimur · þrjú efstu í hverjum flokki, beint úr leiknum" onClose={onCloseRoom}>
           {visited.hopur && <Crew server={server} />}
         </Drawer>

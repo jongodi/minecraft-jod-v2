@@ -19,8 +19,6 @@ import { titleCase, sentenceCase } from '@/components/badlands/data';
 export const BOARD_DAYS = 60;
 /** The newest posts always on the board, however old. Older ones are on the walls. */
 export const POSTS_KEEP = 60;
-/** A member's advancements on one day are one notice; this many are named on it. */
-export const ADV_NAMED = 6;
 
 const PAINTED: Painted[] = ['land', 'zones', 'lines'];
 

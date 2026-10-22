@@ -31,6 +31,9 @@ export type BoardItem =
 
 export type BoardKind = BoardItem['kind'];
 
+/** A member's advancements on one day are one notice; this many are named on it, the rest counted. */
+export const ADV_SHOWN = 6;
+
 /** A place on the map, as the board needs it: to pin things at and to name them. */
 export interface BoardPlace { id: number; label: string; sublabel: string; builders: string[]; wood: SignWood }
 

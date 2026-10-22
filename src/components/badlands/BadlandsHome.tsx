@@ -24,9 +24,10 @@ const CursorLight = dynamic(() => import('@/effects/CursorLight'), { ssr: false 
    frame (the visitor scrolled back up before the smooth scroll arrived). */
 const PRESSED_HOLD_MS = 1500;
 
-/** The evening: the sunset, the world, and the campfire. The crew and the
-    shelf are rooms that open over the world; the hash says which is open, so
-    /#hopur and /#hillan work from anywhere and the back button closes a room.
+/** The evening: the sunset, the world, and the campfire. The board, the crew
+    and the shelf are rooms that open over the world; the hash says which is
+    open, so /#taflan, /#hopur and /#hillan work from anywhere and the back
+    button closes a room.
     `initial` is everything the page was drawn with on the server
     (src/lib/home-data.ts): the status and the nights seed the browser's
     stores, which keep polling from there; the gallery, the map and the
@@ -52,7 +53,7 @@ export default function BadlandsHome({ syncedOn, bases, initial }: { syncedOn: s
   }, []);
 
   /* The hash is the source of truth: read it on arrival, on the back button,
-     and on any plain anchor to #hopur or #hillan (the status lantern, the crew
+     and on any plain anchor to a room (#taflan, #hopur, #hillan: the status lantern, the crew
      pages). No element carries those ids, so the browser has nothing to jump
      to and the frame is brought into view here instead. */
   useEffect(() => {

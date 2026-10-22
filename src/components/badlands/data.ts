@@ -24,28 +24,32 @@ export const bodyFallback = (name: string, size = 256) => `https://mc-heads.net/
 
 export interface NavLink { label: string; href: string; id?: string }
 
-/* The three doors of the evening, each a lantern in the bar (a hotbar slot on phones).
-   The first is the world itself; the other two are rooms that open over it.
-   A door's id is also the hash that opens it, so /#hopur works from anywhere. */
-export type DoorId = 'heimur' | 'hopur' | 'hillan';
+/* The four doors of the evening, each a lantern in the bar (a hotbar slot on phones).
+   The first is the world itself; the other three are rooms that open over it.
+   The board comes second: it is where whatever happens on JOÐ is posted, and
+   the door a returning member reaches for first. A door's id is also the
+   hash that opens it, so /#taflan works from anywhere. */
+export type DoorId = 'heimur' | 'taflan' | 'hopur' | 'hillan';
 export const SECTIONS: (NavLink & { id: DoorId })[] = [
   { label: 'Heimurinn', href: '#heimur', id: 'heimur' },
+  { label: 'Taflan',    href: '#taflan', id: 'taflan' },   /* the notice board: posts, prints, calls, questions, fires and the map's news */
   { label: 'Eftirlýst', href: '#hopur',  id: 'hopur'  },   /* the crew's room: the wanted board is what it is named for */
   { label: 'Hillan',    href: '#hillan', id: 'hillan' },
 ];
-export const ROOMS = ['hopur', 'hillan'] as const;
+export const ROOMS = ['taflan', 'hopur', 'hillan'] as const;
 export type RoomId = typeof ROOMS[number];
-export const isRoom = (s: string | null | undefined): s is RoomId => s === 'hopur' || s === 'hillan';
+export const isRoom = (s: string | null | undefined): s is RoomId => (ROOMS as readonly string[]).includes(s ?? '');
 /** A plain click: one with a modifier keeps the link's own meaning (a new tab, a new window), so the doors open in place only on this. */
 export const plainClick = (e: { button: number; metaKey: boolean; ctrlKey: boolean; shiftKey: boolean; altKey: boolean }) =>
   e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey;
 
 /* The same doors from another page. The world and the shelf lead back to the
    home page's own; the crew's door leads to the crew's own page, the roll
-   call, which the walls belong to. A door lit on the roll call or a wall
-   that took the visitor back to the home page's room was lit for one place
-   and led to another. */
-export const PAGE_LINKS = SECTIONS.map(l => ({ label: l.label, href: l.id === 'hopur' ? '/crew' : `/${l.href}`, id: l.id }));
+   call, which the walls belong to, and the board's to its own page. A door
+   lit on the roll call or a wall that took the visitor back to the home
+   page's room was lit for one place and led to another. */
+const PAGE_HREF: Partial<Record<DoorId, string>> = { hopur: '/crew', taflan: '/taflan' };
+export const PAGE_LINKS = SECTIONS.map(l => ({ label: l.label, href: PAGE_HREF[l.id] ?? `/${l.href}`, id: l.id }));
 
 /* The view the 3D map opens on, in BlueMap's own link format:
    map:x:y:z:distance:rotation:angle:tilt:ortho:mode. To change it, open the map
