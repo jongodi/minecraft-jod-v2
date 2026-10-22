@@ -83,6 +83,15 @@ export async function writeMap(cfg: MapConfig, note?: string): Promise<void> {
     } catch (e) {
       console.error('Map history error:', e);
     }
+    /* and what the board tells of it: a new place, a picture on a place, the land painted */
+    if (prev) {
+      try {
+        const { newsOf, recordNews } = await import('@/lib/map-news');
+        await recordNews(newsOf(prev, cfg, new Date().toISOString()));
+      } catch (e) {
+        console.error('Map news error:', e);
+      }
+    }
     return;
   }
 

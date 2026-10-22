@@ -2,15 +2,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 import type { MapConfig } from '@/lib/map-types';
 
-/* Redis, in memory: strings and one list */
+/* Redis, in memory: strings and lists by key (the history, and the board's map news beside it) */
 const kv = new Map<string, string>();
-let list: string[] = [];
+const lists = new Map<string, string[]>();
+const at = (k: string) => lists.get(k) ?? [];
 vi.mock('@/lib/redis', () => ({
   getRedis: () => ({
-    llen: async () => list.length,
-    lpush: async (_k: string, ...v: string[]) => { list = [...v.reverse(), ...list]; return list.length; },
-    ltrim: async (_k: string, a: number, b: number) => { list = list.slice(a, b + 1); return 'OK'; },
-    lrange: async (_k: string, a: number, b: number) => list.slice(a, b + 1),
+    llen: async (k: string) => at(k).length,
+    lpush: async (k: string, ...v: string[]) => { lists.set(k, [...v.reverse(), ...at(k)]); return at(k).length; },
+    ltrim: async (k: string, a: number, b: number) => { lists.set(k, at(k).slice(a, b + 1)); return 'OK'; },
+    lrange: async (k: string, a: number, b: number) => at(k).slice(a, b + 1),
   }),
   rGet: async (k: string) => (kv.has(k) ? JSON.parse(kv.get(k)!) : null),
   rSet: async (k: string, v: unknown) => { kv.set(k, JSON.stringify(v)); },
@@ -50,7 +51,7 @@ describe('summarize', () => {
 describe('the map history', () => {
   beforeEach(() => {
     kv.clear();
-    list = [];
+    lists.clear();
     vi.stubEnv('REDIS_URL', 'redis://test');
   });
   afterEach(() => vi.unstubAllEnvs());
@@ -81,6 +82,14 @@ describe('the map history', () => {
 
     const list = await (await route.GET()).json();
     expect(list.versions[0]).not.toHaveProperty('config');
+  });
+
+  it('tells the board what a save added, and nothing of the save it was first kept from', async () => {
+    kv.set('map:config', JSON.stringify(map([loc(1)])));
+    await writeMap(map([loc(1, { photoId: 'g1' }), loc(2)], { terrain: ['~~'] }));
+    const news = at('map:news').map(s => JSON.parse(s));
+    expect(news.map(n => n.kind).sort()).toEqual(['painted', 'photo', 'place']);
+    expect(news.find(n => n.kind === 'place')).toMatchObject({ placeId: 2 });
   });
 
   it('turns away a version it does not have', async () => {

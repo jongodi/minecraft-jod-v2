@@ -49,6 +49,8 @@ export interface Night {
   chosen:    string | null;
   /** 'auto' when the leading time was fixed on its own */
   chosenBy:  string | null;
+  /** when the time was fixed, for the board; left out on nights from before it was kept, and on one lit with a single time */
+  chosenAt?: string;
   cancelled: boolean;
   startedBy: string | null;
   /** filled in the day after, by the daily job */
@@ -296,7 +298,7 @@ export async function currentNights(now = Date.now()): Promise<{ all: Night[]; s
   for (let night of read) {
     const auto = autoChoice(night, answers.get(night.id) ?? {}, now);
     if (auto === 'out') { night = { ...night, cancelled: true }; await writeNight(night); }
-    else if (auto) { night = { ...night, chosen: auto.id, chosenBy: 'auto' }; await writeNight(night); }
+    else if (auto) { night = { ...night, chosen: auto.id, chosenBy: 'auto', chosenAt: new Date(now).toISOString() }; await writeNight(night); }
     /* an unsettled one is kept for the daily job, unless it never came round in a month */
     const gone = !isShown(night, now) && (night.cancelled || !!night.outcome || now > whenOf(night) + EVENING_MS + 30 * DAY);
     if (gone) {

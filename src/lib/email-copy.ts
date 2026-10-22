@@ -19,8 +19,8 @@ import type { Names } from '@/lib/crew-email';
 /** What the letters call the site: in the sender's name, the picture, the foot and the subjects. */
 export const BRAND = 'JOÐcraft';
 
-export type MailKind = 'signin' | 'lit' | 'chosen' | 'soon' | 'out';
-export const MAIL_KINDS: MailKind[] = ['signin', 'lit', 'chosen', 'soon', 'out'];
+export type MailKind = 'signin' | 'lit' | 'chosen' | 'soon' | 'out' | 'mention';
+export const MAIL_KINDS: MailKind[] = ['signin', 'lit', 'chosen', 'soon', 'out', 'mention'];
 
 /** What each letter is called in the admin panel, and when it goes. */
 export const MAIL_NAMES: Record<MailKind, { name: string; when: string }> = {
@@ -29,6 +29,7 @@ export const MAIL_NAMES: Record<MailKind, { name: string; when: string }> = {
   chosen: { name: 'Kvöldið ákveðið',      when: 'Þegar tími er festur á kvöldi með fleiri en einum tíma.' },
   soon:   { name: 'Hálftími í bál',       when: 'Hálftíma fyrir kvöldið, til þeirra sem ætla að mæta.' },
   out:    { name: 'Bálið slokknaði',      when: 'Þegar kvöldi er aflýst, til þeirra sem ætluðu að mæta.' },
+  mention: { name: 'Nefnd/ur á töflunni',  when: 'Þegar félagi skrifar @nafn í miða eða svar. Til þess sem er nefndur.' },
 };
 
 /** The picture at the top of each letter: a small tag and a big title, drawn
@@ -40,6 +41,7 @@ export const BANNERS: Record<MailKind, { tag: string; title: string }> = {
   chosen: { tag: 'Spilakvöld',  title: 'Kvöldið er ákveðið' },
   soon:   { tag: 'Spilakvöld',  title: 'Hálftími í bál' },
   out:    { tag: 'Spilakvöld',  title: 'Bálið slokknaði' },
+  mention: { tag: 'Taflan',     title: 'Kallað á þig' },
 };
 
 /** A verse at the foot of each letter: ferskeytlur, four lines of alternating
@@ -75,6 +77,12 @@ export const VERSES: Record<MailKind, string[]> = {
     'seinna komum aftur.',
     'Kólnar glóð og kemur ís,',
     'kviknar nýr þá kraftur.',
+  ],
+  mention: [
+    'Nafn þitt stendur neglt á fjöl,',
+    'nú skal svara kalli.',
+    'Fljúgðu yfir fjall og möl',
+    'fram að hæsta stalli.',
   ],
 };
 
@@ -133,9 +141,30 @@ export function signinLetter({ name, url, expiresAt, uses }: { name: string; url
   };
 }
 
+/* ─── a member called by name on the board ────────────────────────────────── */
+
+/** `by` called the reader by name (@nafn) in a note on `owner`'s wall, or in a
+    reply under one. `text` is what they wrote, `url` where it hangs. */
+export function mentionLetter({ by, reader, text, url, reply, site }: { by: string; reader: string; text: string; url: string; reply: boolean; site: string }): Letter {
+  const line = text.replace(/\s+/g, ' ').trim();
+  const quote = line.length > 160 ? `${line.slice(0, 157).replace(/\s+\S*$/, '')}…` : line;
+  return {
+    kind: 'mention',
+    subject: `${by} nefndi þig á töflunni`,
+    preheader: quote,
+    heading: `${by} kallar á þig, ${reader}`,
+    quote,
+    lines: [reply ? `${by} nefndi þig í svari á töflunni á ${BRAND}.` : `${by} nefndi þig í miða á töflunni á ${BRAND}.`],
+    button: { label: 'Sjá á töflunni', url },
+    verse: VERSES.mention,
+    foot: ['Viltu ekki bréf þegar einhver nefnir þig? Breyttu því undir „Nafn og netfang“ á veggnum þínum.'],
+    footLink: { label: 'Taflan', url: `${site}/taflan` },
+  };
+}
+
 /* ─── the play nights ─────────────────────────────────────────────────────── */
 
-export type NightNotice = Exclude<MailKind, 'signin'>;
+export type NightNotice = Exclude<MailKind, 'signin' | 'mention'>;
 
 /** Who is coming, as one sentence; nothing when nobody is. */
 const coming = (names: string[]) => names.length

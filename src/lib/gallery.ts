@@ -101,5 +101,12 @@ export async function addGalleryPhoto(input: { id: string; fileUrl: string; titl
   };
   gallery.push(photo);
   await writeGallery(gallery);
+  /* a new picture on the wall of pictures is news on the board; hung on a place later, that is told instead */
+  try {
+    const { recordNews } = await import('./map-news');
+    await recordNews([{ kind: 'photo', at: new Date().toISOString(), photoId: photo.id, placeId: null }]);
+  } catch (e) {
+    console.error('Map news error:', e);
+  }
   return photo;
 }
