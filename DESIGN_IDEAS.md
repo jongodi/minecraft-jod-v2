@@ -883,3 +883,52 @@ Production build of this branch, on top of Part 10, same machine; Lighthouse 12 
 
 1. **Names over the places in the still**: the start view (`MAP_START_VIEW`) and each place's world coordinates, projected onto the still the way BlueMap's camera draws it, so the town is labelled before the 3D map is opened.
 2. **The wall's Lighthouse score**, unchanged at 88: the runtime upgrade Part 10 names.
+
+---
+
+## Part 12. Taflan: the board comes out of hiding
+
+A pass on 22 October 2026, on `claude/members-board-redesign-y1x6ly`, asked for the members' board to stop being hidden: posts, pictures and events easy to see for a signed-in member, what is new easy to spot, the map's news on it too, a structure that makes sense, and new things for the crew to do there. Decided with the owner before building: the board stays readable by everyone and members get the extras; it gets a door of its own; and it gains calls for something with a reward, questions, and @names with a letter.
+
+What was hidden: the newest posts lived in a strip three screens down the crew's room, under the portraits, the fire and the wanted posters, and behind a second tab on `/crew`. Nothing anywhere said that something new had gone up, and the map's changes were told nowhere.
+
+| Where | What | Why, in one sentence |
+|---|---|---|
+| The bar, every page | **Taflan, the second door** (key 2, a hotbar slot on phones), with what is new counted on its lantern as the game counts a stack on a slot. | The one place a returning member wants first is a press away from anywhere, and says it has news before it is opened. |
+| Over the world, `/taflan` | **One board**: the crew's signs answered in place, the town's slips (fires, nights decided and held, advancements by the day, new places and pictures, the painted map, the 3D copy) beside them, the days divided by the strata. | Everything that happens on JOÐ, in the world's own materials: hand-lettered wood for what the crew wrote, printed paper for what the town posts. |
+| The board | Filters as hotbar slots, kept in the address; *Til þín* when someone named you; *Á döfinni* pinned beside it. | Pictures, notes, events and the map are each one press, and what still asks something of the crew never scrolls away. |
+| The board | *Nýtt* tags, and the member's own mark of when they last looked, kept on the server. | New is the same on the phone and the computer, and stops being new once seen. |
+| A sign | **Óskast**: a printed notice with a reward, taken on and stamped *Í höfn*; **Hausaveiðarinn** on the wanted board. | A frontier town's bounty notice, and a reason to log in that ends in the game. |
+| A sign | **A question**: answers that fill with heads. | The crew already decide things together; now on the board instead of in a chat that scrolls. |
+| A sign, the mail | **@name**: a link, lit for the one named, and a letter, *Kallað á þig*, with its own ferskeytla. | A call by name should reach the person, wherever they are. |
+| The crew's room, `/crew` | The strip and the tab point at the board instead of keeping a copy of it. | One place for the posts, two ways to it. |
+| The bar, 760 to 1199 px | The address tag gives up its verb until 1100 px and its letters until 1200 px; the doors set closer. | Four doors and a member's head fit the plank at every width. |
+
+### Where the build differs from the plan, and why
+
+- **The map's news is worked out when the map is saved, not read from its history.** The history keeps the whole map, terrain and all, thirty times over; reading it for every visit's count would have cost a megabyte a visitor. A short list is kept beside it, and filled once from the history that was already there.
+- **No hero line for the board.** The count on the door is on the first screen on every device (the bar over the sunset, the hotbar on a phone); a line in the hero drawn after the page loads would have moved the hero under the visitor.
+- **The count, not an amber word.** Lighting the door's word as well read as a second door being open: amber on a door says which one the visitor is behind.
+- **Questions and calls are notes with a field each**, not a store of their own, so the walls, the board and the chat read them with no second source.
+
+### Measured
+
+Production builds of `main` (`1f6c721`) and this branch, same machine.
+
+| | `main` | this branch |
+|---|---|---|
+| First Load JS `/`, `/crew`, `/crew/[username]` | 147, 138, 160 kB | 149, 139, 166 kB |
+| First Load JS `/taflan` | | 167 kB |
+| Build warnings | 0 | 0 |
+| Tests | 316 | 349 |
+| Sideways scroll at 360, 390, 760, 800, 1024, 1440 on `/`, `/#taflan`, `/taflan`, `/crew`, a wall | none (but the bar's address was pushed off the plank at 760 to 899 px once a fourth door came) | none |
+| New colour pairs | | every one 4.8:1 or more |
+
+`tsc`, `next lint` and the build are clean. Posting a question with an @name, posting a call, answering, taking the call on, stamping it done, the filters in the address, key 2 opening the room and Escape closing it were all walked through in the browser against a local Redis, with no console errors.
+
+### Worth doing later
+
+1. **Who claimed your call, by post**: a letter to the one who posted a call when someone takes it on, in the same dress as *Kallað á þig*.
+2. **The weekly paper** (*Vikublaðið*): a Sunday letter with the week on the board, the week's outlaw and the new places.
+3. **Reactions beyond the lantern**: the game's own items as stamps on a sign (a cake, a skull, a diamond), counted like the lantern.
+4. **Board search**, once there is enough on it to lose something.
