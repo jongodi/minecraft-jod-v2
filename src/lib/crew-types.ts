@@ -45,7 +45,31 @@ export interface CrewReply {
   createdAt: string;
 }
 
-/** One thing pinned to the wall: a note, a print, or a note with prints. */
+/** Óskast: something the poster wants, gathered or built, with a reward for
+    whoever brings it. One of the crew takes it on; the poster says when it is
+    done, and the one who took it is credited on the wanted board as
+    Hausaveiðarinn. Done with nobody on it, it is simply closed. */
+export interface CrewBounty {
+  /** what the poster pays, as they wrote it ("10 smaragðar") */
+  reward:  string;
+  /** who has taken it on; null while it is up for grabs */
+  takenBy: string | null;
+  /** when the poster called it done; null until then */
+  doneAt:  string | null;
+}
+
+/** One answer a poll offers, and the heads of those who chose it. */
+export interface CrewPollChoice { id: string; text: string; votes: string[] }
+
+/** A question for the crew: the entry's text asks it, each member chooses
+    one answer (and may change it) until the poster closes it. */
+export interface CrewPoll {
+  choices: CrewPollChoice[];
+  closed:  boolean;
+}
+
+/** One thing pinned to the wall: a note, a print, or a note with prints;
+    or a call for something (bounty) or a question (poll), which are notes too. */
 export interface CrewEntry {
   id:        string;
   text:      string;
@@ -56,6 +80,10 @@ export interface CrewEntry {
   /** who has lit a lantern under it */
   lanterns:  string[];
   replies:   CrewReply[];
+  /** set on a call for something, with its reward; never together with a poll */
+  bounty?:   CrewBounty;
+  /** set on a question for the crew */
+  poll?:     CrewPoll;
 }
 
 export interface CrewProfile {
@@ -84,6 +112,10 @@ export const LIMITS = {
   photosPer:  12,
   entries:    400,
   replies:    100,
+  reward:     80,
+  choice:     60,
+  choicesMin: 2,
+  choicesMax: 4,
 } as const;
 
 /* How short a password may be (src/lib/crew-access.ts holds it to this) and
@@ -107,12 +139,48 @@ export function normalizePhoto(raw: unknown): CrewPhoto | null {
   };
 }
 
+/** A member's name as the crew list spells it, or null for anyone else. */
+const crewName = (v: unknown) => (typeof v === 'string' && isCrewUsername(v) ? canonicalUsername(v) : null);
+const names = (v: unknown) => Array.from(new Set((Array.isArray(v) ? v : []).map(crewName).filter((n): n is string => n !== null)));
+
+export function normalizeBounty(raw: unknown): CrewBounty | null {
+  const b = raw as Partial<CrewBounty> | null;
+  if (!b || typeof b !== 'object') return null;
+  const reward = str(b.reward, LIMITS.reward).trim();
+  if (!reward) return null;
+  return {
+    reward,
+    takenBy: crewName(b.takenBy),
+    doneAt:  typeof b.doneAt === 'string' && !Number.isNaN(Date.parse(b.doneAt)) ? b.doneAt : null,
+  };
+}
+
+export function normalizePoll(raw: unknown): CrewPoll | null {
+  const p = raw as Partial<CrewPoll> | null;
+  if (!p || typeof p !== 'object' || !Array.isArray(p.choices)) return null;
+  /* one vote a member: the first choice that names them keeps it */
+  const voted = new Set<string>();
+  const choices = p.choices.flatMap(c => {
+    const x = c as Partial<CrewPollChoice> | null;
+    if (!x || typeof x.id !== 'string') return [];
+    const text = str(x.text, LIMITS.choice).trim();
+    if (!text) return [];
+    const votes = names(x.votes).filter(n => { const k = n.toLowerCase(); if (voted.has(k)) return false; voted.add(k); return true; });
+    return [{ id: x.id, text, votes }];
+  }).slice(0, LIMITS.choicesMax);
+  if (choices.length < LIMITS.choicesMin || new Set(choices.map(c => c.id)).size !== choices.length) return null;
+  return { choices, closed: p.closed === true };
+}
+
 export function normalizeEntry(raw: unknown): CrewEntry | null {
   const e = raw as Partial<CrewEntry> | null;
   if (!e || typeof e.id !== 'string') return null;
   const photos = (Array.isArray(e.photos) ? e.photos : []).map(normalizePhoto).filter((p): p is CrewPhoto => p !== null);
   const text = str(e.text, LIMITS.text);
   if (!text.trim() && photos.length === 0) return null;
+  /* a call and a question both need words to say what they are; a poll wins if both came */
+  const poll = text.trim() ? normalizePoll(e.poll) : null;
+  const bounty = text.trim() && !poll ? normalizeBounty(e.bounty) : null;
   return {
     id:        e.id,
     text,
@@ -126,6 +194,9 @@ export function normalizeEntry(raw: unknown): CrewEntry | null {
       const t = str(x.text, LIMITS.reply);
       return t.trim() ? [{ id: x.id, username: x.username, text: t, createdAt: iso(x.createdAt) }] : [];
     }),
+    /* only when there is one, so a plain note is stored as it always was */
+    ...(bounty ? { bounty } : {}),
+    ...(poll ? { poll } : {}),
   };
 }
 
@@ -171,6 +242,57 @@ export function allPhotos(profile: CrewProfile): Array<CrewPhoto & { entryId: st
 export function coverPhoto(profile: CrewProfile): CrewPhoto | null {
   const all = allPhotos(profile);
   return (profile.coverPhotoId ? all.find(p => p.id === profile.coverPhotoId) : null) ?? all[0] ?? null;
+}
+
+/** Where a call for something stands: up for grabs, taken on by one of the
+    crew, or done (closed, if nobody had taken it). */
+export type BountyState = 'open' | 'taken' | 'done';
+export const bountyState = (b: CrewBounty): BountyState => (b.doneAt ? 'done' : b.takenBy ? 'taken' : 'open');
+
+/** How many calls each member has brought home: done, with them on it.
+    The charge the wanted board names Hausaveiðarinn. Keyed by username in lower case. */
+export function bountyCounts(walls: CrewProfile[]): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const w of walls) for (const e of w.entries) {
+    const by = e.bounty?.doneAt ? e.bounty.takenBy : null;
+    if (by) out[by.toLowerCase()] = (out[by.toLowerCase()] ?? 0) + 1;
+  }
+  return out;
+}
+
+/* ─── @nafn: a member called by name ─────────────────────────────────────── */
+
+/* An @ that starts a word, then a Minecraft name's letters. The @ inside an
+   email address follows a letter, so it is not one. */
+const MENTION = /(^|[^\p{L}\p{N}_@])@([A-Za-z0-9_]{2,16})/gu;
+
+/** The members a text calls by name (@stebbias), as the crew list spells
+    them, each once, in the order first called. Anything else after an @ is
+    just text. */
+export function mentionsIn(text: string): string[] {
+  const out: string[] = [];
+  for (const m of text.matchAll(MENTION)) {
+    if (!isCrewUsername(m[2])) continue;
+    const name = canonicalUsername(m[2]);
+    if (!out.includes(name)) out.push(name);
+  }
+  return out;
+}
+
+/** A text cut where it calls a member by name, so the name can be drawn as a
+    link: plain runs and `{ name }` for each @member, in order. */
+export function splitMentions(text: string): Array<string | { name: string; raw: string }> {
+  const parts: Array<string | { name: string; raw: string }> = [];
+  let at = 0;
+  for (const m of text.matchAll(MENTION)) {
+    if (!isCrewUsername(m[2])) continue;
+    const start = (m.index ?? 0) + m[1].length;
+    if (start > at) parts.push(text.slice(at, start));
+    parts.push({ name: canonicalUsername(m[2]), raw: `@${m[2]}` });
+    at = start + 1 + m[2].length;
+  }
+  if (at < text.length) parts.push(text.slice(at));
+  return parts;
 }
 
 /** A bio or a note is stored as the text that was typed. Rendering escapes

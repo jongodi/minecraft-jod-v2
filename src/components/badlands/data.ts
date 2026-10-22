@@ -1,5 +1,5 @@
 import posterFile from '@/lib/map-poster.json';
-import { formatNumber } from '@/lib/format';
+import { formatNumber, plural } from '@/lib/format';
 export const SERVER_IP = 'play.jodcraft.world';
 /* The name as it is written: every page's title ends in it, the manifest,
    the footer's credit and the link previews carry it. The mark and the hero
@@ -130,6 +130,7 @@ export const STAT_TABS = [
   { id: 'raidWins',       nick: 'Ræningja\u00ADbaninn', label: 'Árásir hraktar',             unit: num },
   { id: 'recordsPlayed',  nick: 'Plötu\u00ADsnúðurinn', label: 'Plötur spilaðar',            unit: num },
   { id: 'firsts',         nick: 'Braut\u00ADryðjandinn', label: 'Afrek unnin fyrst allra',    unit: (v: number) => `${num(v)} afrek` },
+  { id: 'bounties',       nick: 'Hausa\u00ADveiðarinn', label: 'Óskir uppfylltar fyrir verðlaun', unit: (v: number) => `${num(v)} ${plural(v, 'ósk', 'óskir')}` },
   { id: 'drawMs',         nick: 'Fógetinn',       label: 'Hraðasta skotið við varðeldinn', unit: ms, low: true },
   { id: 'noShows',        nick: 'Svikarinn',      label: 'Sagðist mæta en kom ekki',  unit: (v: number) => `${num(v)} kvöld` },
 ] as const;

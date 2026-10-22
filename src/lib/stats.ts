@@ -1,7 +1,7 @@
 /* Player stats, read from the Minecraft world through exaroton's file API
    (world/players/stats/<uuid>.json). Shared by /api/stats, which the wanted
    board reads, and /api/cron/daily, which keeps a copy of each day's counters. */
-import { CREW_USERNAMES, readAllProfiles } from '@/lib/crew';
+import { CREW_USERNAMES, bountyCounts, readAllProfiles } from '@/lib/crew';
 import { getExarotonServerId } from '@/lib/exaroton';
 
 export interface PlayerStat {
@@ -29,11 +29,13 @@ export interface PlayerStat {
   noShows:        number;
   /** advancements this member was the first of the crew to earn (src/lib/advancements.ts) */
   firsts:         number;
+  /** calls on the board (Óskast) this member took on and the poster called done */
+  bounties:       number;
 }
 
 export const EMPTY: Omit<PlayerStat, 'username'> = {
   deaths: 0, mobKills: 0, playerKills: 0, playTimeTicks: 0, playTimeHours: 0, distanceWalked: 0, itemsCrafted: 0,
-  timeSinceRest: 0, timeSinceDeath: 0, travelCm: 0, damageRatio: 0, raidWins: 0, recordsPlayed: 0, drawMs: 0, noShows: 0, firsts: 0,
+  timeSinceRest: 0, timeSinceDeath: 0, travelCm: 0, damageRatio: 0, raidWins: 0, recordsPlayed: 0, drawMs: 0, noShows: 0, firsts: 0, bounties: 0,
 };
 
 export interface StatsResponse {
@@ -141,6 +143,7 @@ export function extractStats(statsJson: MinecraftStatsJson): Omit<PlayerStat, 'u
     drawMs:         0,
     noShows:        0,
     firsts:         0,
+    bounties:       0,
   };
 }
 
@@ -191,9 +194,11 @@ export async function crewUuids(): Promise<Record<string, string>> {
 export async function withCharges(players: PlayerStat[]): Promise<PlayerStat[]> {
   let out = players;
   try {
-    const best = new Map((await readAllProfiles()).map(p => [p.username.toLowerCase(), p.bestDrawMs ?? 0]));
-    out = out.map(p => ({ ...p, drawMs: best.get(p.username.toLowerCase()) ?? 0 }));
-  } catch { /* the draws stay as they were */ }
+    const walls = await readAllProfiles();
+    const best = new Map(walls.map(p => [p.username.toLowerCase(), p.bestDrawMs ?? 0]));
+    const bounties = bountyCounts(walls);
+    out = out.map(p => ({ ...p, drawMs: best.get(p.username.toLowerCase()) ?? 0, bounties: bounties[p.username.toLowerCase()] ?? 0 }));
+  } catch { /* the draws and the calls stay as they were */ }
   if (hasKV()) {
     try {
       const { readNoShows } = await import('@/lib/play-night');
