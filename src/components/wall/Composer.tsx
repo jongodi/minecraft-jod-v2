@@ -255,9 +255,9 @@ export default function Composer({ username, places, onPinned, active = true }: 
   return (
     <form ref={slot} className={`w-pin w-pin--${kind}${over ? ' is-over' : ''}${drafts.length ? ' has-prints' : ''}`} onSubmit={pin} aria-label="Festa eitthvað upp" aria-busy={pinning}>
       {/* what goes up: a note, a call for something, or a question */}
-      <div className="w-pin__kinds" role="radiogroup" aria-label="Hvað fer upp">
+      <div className="w-pin__kinds" role="group" aria-label="Hvað fer upp">
         {KINDS.map(k => (
-          <button key={k.id} type="button" role="radio" aria-checked={kind === k.id} className={`w-pin__kind${kind === k.id ? ' is-on' : ''}`} onClick={() => setKind(k.id)} disabled={pinning}>{k.label}</button>
+          <button key={k.id} type="button" aria-pressed={kind === k.id} className={`w-pin__kind${kind === k.id ? ' is-on' : ''}`} onClick={() => setKind(k.id)} disabled={pinning}>{k.label}</button>
         ))}
       </div>
       {/* While the pin is being written the slot holds still: the words and
