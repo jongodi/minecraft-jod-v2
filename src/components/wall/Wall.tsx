@@ -154,7 +154,7 @@ function PasswordModal({ username, change, onDone, onClose }: { username: string
 // the play nights; the name is what the letters call them instead of their
 // Minecraft name. Seen only here, by its owner, and by the admin.
 
-interface Contact { email: { address: string; nights: boolean } | null; name: string | null }
+interface Contact { email: { address: string; nights: boolean; mentions?: boolean } | null; name: string | null }
 
 function ContactModal({ username, onClose }: { username: string; onClose: () => void }) {
   /* The saved ones are fetched first. Until they are in, nothing can be
@@ -165,6 +165,7 @@ function ContactModal({ username, onClose }: { username: string; onClose: () => 
   const [name,    setName]    = useState('');
   const [address, setAddress] = useState('');
   const [nights,  setNights]  = useState(true);
+  const [mentions, setMentions] = useState(true);
   const [error,   setError]   = useState('');
   const [loading, setLoading] = useState(false);
   const nameRef = useRef<HTMLInputElement>(null);
@@ -177,7 +178,7 @@ function ContactModal({ username, onClose }: { username: string; onClose: () => 
       .then(r => { if (!r.ok) throw new Error(); return r.json() as Promise<Contact>; })
       .then(d => {
         if (!live) return;
-        if (d.email) { setAddress(d.email.address); setNights(d.email.nights); }
+        if (d.email) { setAddress(d.email.address); setNights(d.email.nights); setMentions(d.email.mentions !== false); }
         if (d.name) setName(d.name);
         setState('ready');
       })
@@ -193,7 +194,7 @@ function ContactModal({ username, onClose }: { username: string; onClose: () => 
     setLoading(true);
     setError('');
     try {
-      const res = await fetch(`/api/crew/${username}/email`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, email: address, nights }) });
+      const res = await fetch(`/api/crew/${username}/email`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, email: address, nights, mentions }) });
       if (res.ok) onClose();
       else setError(await errorFrom(res));
     } catch { setError(OFFLINE); }
@@ -212,6 +213,10 @@ function ContactModal({ username, onClose }: { username: string; onClose: () => 
         <label className="b-modal__check">
           <input type="checkbox" checked={nights} onChange={e => setNights(e.target.checked)} disabled={!ready} />
           Póstur þegar bál er kveikt, þegar kvöldið er ákveðið, og hálftíma áður en það hefst
+        </label>
+        <label className="b-modal__check">
+          <input type="checkbox" checked={mentions} onChange={e => setMentions(e.target.checked)} disabled={!ready} />
+          Póstur þegar einhver nefnir mig á töflunni (@{username})
         </label>
         <p className="b-modal__ok">Autt nafn: bréfin segja {username}. Autt netfang: enginn póstur.</p>
         {state === 'failed' && (
@@ -280,6 +285,14 @@ export default function Wall({ initial, places, initialStats = null, initialLed 
   const [lightbox,    setLightbox]    = useState<number | null>(null);
   const [origin,      setOrigin]      = useState<DOMRect | null>(null);
   const [welcome,     setWelcome]     = useState(justSignedIn);
+  /* Come from the board's heads (?skra=inn): the way in opens by itself for
+     a visitor, once it is known nobody is signed in on this device. */
+  const askedIn = useRef(false);
+  useEffect(() => {
+    if (askedIn.current || me !== null) return;
+    askedIn.current = true;
+    if (new URLSearchParams(window.location.search).get('skra') === 'inn') setShowLogin(true);
+  }, [me]);
   /* the sign put up from this page, which swings in on its chains */
   const [fresh,       setFresh]       = useState<string | null>(null);
 

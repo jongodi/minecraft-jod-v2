@@ -417,3 +417,111 @@
 /* in the crew's room the strip hangs under the wanted board, a step down from it */
 .w-strip { margin-top: var(--sp-7); }
 .w-page__err { max-width: 52rem; margin-inline: auto; }
+
+/* ─── what else a sign can be: a call, a question, a name called ─────────
+   On the board a sign carries its writer's head and name at its top, a tap
+   from their wall. A call for something (Óskast) is a printed notice nailed
+   to the sign, in the wanted posters' type, stamped in red when it is done.
+   A question is its answers in a column, each filling with the heads of
+   those who chose it. @name is a link to the member's wall, and the one
+   looking, when it is them, is lit. */
+.w-print__by { display: inline-flex; align-items: center; gap: var(--sp-2); justify-self: start; min-height: 2rem; padding-inline: var(--sp-1); color: var(--sign-ink); font-weight: 600; text-decoration: none; }
+.w-print__by img { width: 1.5rem; height: 1.5rem; image-rendering: pixelated; box-shadow: 0 0 0 var(--px) var(--sign-rim); }
+@media (hover: hover) { .w-print__by:hover span { text-decoration: underline var(--px); text-underline-offset: 0.3em; } }
+.w-print__by:focus-visible { outline: var(--px) solid var(--sign-lantern); outline-offset: var(--px); }
+
+.w-mention { color: var(--sign-lantern); font-weight: 600; text-decoration: none; }
+@media (hover: hover) { .w-mention:hover { text-decoration: underline var(--px); text-underline-offset: 0.3em; } }
+/* the one looking, called by name: the lantern's own light behind the name */
+.w-mention.is-me { padding-inline: var(--px); background: var(--lantern); color: var(--ink); box-shadow: 0 var(--px) 0 var(--lantern-deep); }
+
+.w-call { container-type: inline-size; display: grid; justify-items: center; gap: var(--sp-2); padding: var(--sp-6) var(--sp-4) var(--sp-4); text-align: center; }
+.w-call__mast { max-width: 16rem; }
+.w-call__reward { display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: var(--sp-1) var(--sp-2); }
+.w-call__pay { font-family: var(--font-data); font-size: var(--fs-data); line-height: 1.3; color: var(--tc-red); overflow-wrap: anywhere; }
+.w-call__state { font-size: var(--fs-sm); color: var(--ink-soft); }
+.w-call__who { display: inline-flex; align-items: center; gap: var(--sp-1); color: var(--lantern-ink); font-weight: 600; text-decoration: none; }
+.w-call__who img { width: 1rem; height: 1rem; image-rendering: pixelated; }
+@media (hover: hover) { .w-call__who:hover { text-decoration: underline var(--px); text-underline-offset: 0.3em; } }
+.w-call__acts { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--sp-2); margin-top: var(--sp-1); }
+/* on a dark wood the sign's own inks are pale; on the notice's paper they are the paper's */
+.w-print .w-call .b-btn { color: var(--lantern-ink); border-color: var(--lantern-ink); }
+.w-print .w-call .b-btn:focus-visible { background: var(--lantern-ink); color: var(--paper); }
+@media (hover: hover) { .w-print .w-call .b-btn:hover { background: var(--lantern-ink); color: var(--paper); } }
+.w-print .w-call .b-btn--solid { background: var(--lantern); color: var(--ink); }
+.w-print .w-call .b-err { color: var(--tc-red); }
+/* paid: the stamp goes on askew, as a stamp does, over a notice gone pale */
+.w-call.is-done > :not(.w-call__stamp):not(.b-paper__nail):not(.w-call__acts) { opacity: 0.62; }
+.w-call .w-call__stamp {
+  position: absolute;
+  right: var(--sp-4);
+  top: var(--sp-5);
+  padding: var(--px) var(--sp-2);
+  border: calc(var(--px) * 2) solid var(--tc-red);
+  color: var(--tc-red);
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  line-height: 1.1;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  transform: rotate(-12deg);
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+@media (max-width: 479px) { .w-call .w-call__stamp { top: var(--sp-3); right: var(--sp-2); font-size: var(--fs-md); } }
+
+.w-poll { display: grid; gap: var(--sp-2); }
+.w-poll__list { list-style: none; display: grid; gap: var(--sp-2); }
+.w-poll__choice {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--sp-2) var(--sp-3);
+  width: 100%;
+  min-height: var(--tap);
+  padding: var(--sp-2) var(--sp-3);
+  overflow: hidden;
+  text-align: left;
+  color: var(--sign-ink);
+  border: var(--px) solid var(--sign-rim);
+  box-shadow: var(--bevel-in);
+}
+/* the share of the crew that chose it, filling the row from the left: one transform, so it grows smoothly as votes come */
+.w-poll__fill { position: absolute; inset: 0; background: var(--sign-line); transform: scaleX(var(--share, 0)); transform-origin: left; transition: transform var(--dur-3) var(--ease-out); pointer-events: none; }
+.w-poll__choice > :not(.w-poll__fill) { position: relative; }
+.w-poll__text { min-width: 0; overflow-wrap: anywhere; }
+.w-poll__won { margin-left: var(--sp-2); font-size: var(--fs-sm); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--sign-lantern); }
+.w-poll__heads { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--px); max-width: 7rem; }
+.w-poll__heads img { width: 1rem; height: 1rem; image-rendering: pixelated; box-shadow: 0 0 0 var(--px) var(--wood-dark); }
+.w-poll__count { min-width: 1.5ch; font-family: var(--font-data); font-size: var(--fs-data); text-align: right; font-variant-numeric: tabular-nums; }
+.w-poll__choice:not([disabled]) { cursor: pointer; }
+@media (hover: hover) { .w-poll__choice:not([disabled]):hover { border-color: var(--sign-lantern); } }
+.w-poll__choice:focus-visible { outline: var(--px) solid var(--sign-lantern); outline-offset: var(--px); }
+.w-poll__choice:not([disabled]):active > :not(.w-poll__fill) { translate: var(--press); }
+/* your own answer: framed in the lantern's light burnt into the wood */
+.w-poll__choice.is-mine { border-color: var(--sign-lantern); box-shadow: inset 0 0 0 var(--px) var(--sign-lantern); }
+.w-poll__choice.is-won { border-color: var(--sign-lantern); }
+.w-poll.is-closed .w-poll__choice:not(.is-won) { opacity: 0.75; }
+.w-poll__foot { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--sp-1) var(--sp-3); padding-inline: var(--sp-1); font-size: var(--fs-sm); color: var(--sign-soft); }
+@media (prefers-reduced-motion: reduce) { .w-poll__fill { transition: none; } }
+
+/* the pin slot's three kinds: what goes up is chosen along its top edge */
+.w-pin__kinds { display: flex; flex-wrap: wrap; gap: var(--sp-1); }
+.w-pin__kind { min-height: 2.25rem; padding: var(--sp-1) var(--sp-3); font-family: var(--font-data); font-size: var(--fs-data); letter-spacing: 0.04em; text-transform: uppercase; color: var(--sign-lantern); border: var(--px) solid transparent; }
+@media (hover: hover) { .w-pin__kind:not(.is-on):hover { border-color: var(--sign-lantern); } }
+.w-pin__kind.is-on { background: var(--sign-lantern); color: var(--sign); box-shadow: var(--bevel-in); }
+.w-pin__kind:focus-visible { outline: var(--px) solid var(--ink); outline-offset: var(--px); }
+.w-pin__names { display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-2); margin-top: calc(var(--sp-2) * -1); }
+.w-pin__name { display: inline-flex; align-items: center; gap: var(--sp-1); min-height: 2rem; padding-inline: var(--sp-2); color: var(--sign-lantern); font-weight: 600; border: var(--px) solid var(--sign-rim); background: var(--sign-2); }
+.w-pin__name img { width: 1rem; height: 1rem; image-rendering: pixelated; }
+@media (hover: hover) { .w-pin__name:hover { border-color: var(--sign-lantern); } }
+.w-pin__reward { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-3); }
+.w-pin__reward .b-poster__reward { color: var(--sign-soft); }
+.w-pin__reward .b-input, .w-pin__choice .b-input { flex: 1 1 12rem; min-width: 0; padding-block: var(--sp-2); border-color: var(--sign-rim); }
+.w-pin__choices { display: grid; gap: var(--sp-2); }
+.w-pin__choice { display: flex; align-items: center; gap: var(--sp-2); }
+.w-pin__drop { display: grid; place-items: center; width: var(--tap); height: var(--tap); flex-shrink: 0; color: var(--sign-lantern); }
+.w-pin__drop svg { width: 1rem; height: 1rem; }
+.w-pin__more { justify-self: start; }
+.w-print__reward { padding-block: var(--sp-2); }

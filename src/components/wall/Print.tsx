@@ -1,13 +1,19 @@
 'use client';
 
-// One thing on the wall: a note, a print, or a note with prints. The owner
+// One thing on the wall: a note, a print, or a note with prints; a call for
+// something with its reward (Óskast), or a question for the crew. The owner
 // can rewrite it, recaption or take down its pictures, move it to a place,
 // or make one of its prints the poster's backdrop. Anyone signed in can
-// light a lantern under it or leave a line.
+// light a lantern under it, leave a line, take a call on or answer a
+// question. The same sign hangs on the board (src/components/board), with
+// its writer named at its top.
 import { memo, useEffect, useRef, useState, type CSSProperties, type FormEvent, type MouseEvent } from 'react';
 import Link from 'next/link';
 import type { CrewEntry, CrewPhoto } from '@/lib/crew-types';
 import { LIMITS, sameUser } from '@/lib/crew-types';
+import Call from './Call';
+import Poll from './Poll';
+import Mentions from './Mentions';
 import { formatDate, formatAge, plural } from '@/lib/format';
 import { Lantern } from '@/components/badlands/Bits';
 import { useMounted } from '@/components/badlands/hooks';
@@ -28,14 +34,17 @@ interface Props {
   shownCoverId: string | null;
   /** just put up from this page: it swings on its chains and settles */
   fresh?:       boolean;
+  /** on the board: the writer's head and name at the top, a tap from their wall */
+  byline?:      boolean;
   /** change this entry as it is now in the wall's state, not as it was when the request began */
   onChange:     (id: string, update: (entry: CrewEntry) => CrewEntry) => void;
   onRemove:     (id: string) => void;
-  onCover:      (photoId: string | null) => void;
+  /** on the wall only: the board has no poster to put a print on */
+  onCover?:     (photoId: string | null) => void;
   onOpen:       (photoId: string, origin: DOMRect) => void;
 }
 
-interface EditState { text: string; placeId: number | null; photos: CrewPhoto[] }
+interface EditState { text: string; placeId: number | null; photos: CrewPhoto[]; reward: string }
 
 /* the longest note still lettered across a sign rather than written on it */
 const WORD_MAX = 90;
@@ -43,7 +52,7 @@ const WORD_MAX = 90;
 /* Every prop the wall hands a sign is a value or a callback that keeps its
    identity, so a lantern lit on one sign, or a line typed in the bio, does
    not draw every other sign on the wall again. */
-export default memo(function Print({ username, entry, places, me, isOwner, coverPhotoId, shownCoverId, fresh = false, onChange, onRemove, onCover, onOpen }: Props) {
+export default memo(function Print({ username, entry, places, me, isOwner, coverPhotoId, shownCoverId, fresh = false, byline = false, onChange, onRemove, onCover, onOpen }: Props) {
   const [edit, setEdit]       = useState<EditState | null>(null);
   const [saving, setSaving]   = useState(false);
   const [error, setError]     = useState('');
@@ -79,7 +88,7 @@ export default memo(function Print({ username, entry, places, me, isOwner, cover
     if (!edit) return;
     setSaving(true); setError('');
     try {
-      const res = await api('', { method: 'PATCH', body: JSON.stringify({ text: edit.text, placeId: edit.placeId, photos: edit.photos.map(p => ({ id: p.id, caption: p.caption })) }) });
+      const res = await api('', { method: 'PATCH', body: JSON.stringify({ text: edit.text, placeId: edit.placeId, photos: edit.photos.map(p => ({ id: p.id, caption: p.caption })), ...(entry.bounty ? { reward: edit.reward } : {}) }) });
       if (!res.ok) throw new Error(await errorFrom(res));
       const saved = await res.json() as CrewEntry;
       onChange(entry.id, () => saved);
@@ -144,11 +153,21 @@ export default memo(function Print({ username, entry, places, me, isOwner, cover
   const photos = edit ? edit.photos : entry.photos;
   const many = photos.length > 1;
 
-  /* a few words and nothing else are lettered like a sign: larger, centred */
-  const word = !edit && photos.length === 0 && entry.text.length <= WORD_MAX && !entry.text.includes('\n');
+  /* a few words and nothing else are lettered like a sign: larger, centred; a call or a question has its own layout */
+  const word = !edit && photos.length === 0 && !entry.bounty && !entry.poll && entry.text.length <= WORD_MAX && !entry.text.includes('\n');
 
   return (
-    <article id={entry.id} className={`w-sign${woodClass(place?.wood)} w-print${word ? ' w-print--word' : ''}${fresh ? ' is-fresh' : ''}${edit ? ' is-editing' : ''}`} aria-label={name}>
+    <article id={entry.id} className={`w-sign${woodClass(place?.wood)} w-print${word ? ' w-print--word' : ''}${entry.bounty ? ' w-print--call' : ''}${entry.poll ? ' w-print--poll' : ''}${fresh ? ' is-fresh' : ''}${edit ? ' is-editing' : ''}`} aria-label={name}>
+
+      {byline && (
+        <Link href={`/crew/${username}`} className="w-print__by">
+          <PlayerHead name={username} size={24} alt="" />
+          <span>{username}</span>
+        </Link>
+      )}
+
+      {/* a call's notice is nailed to the board above whatever it shows */}
+      {entry.bounty && !edit && <Call username={username} entryId={entry.id} bounty={entry.bounty} me={me} isOwner={isOwner} onChange={b => onChange(entry.id, e => ({ ...e, bounty: b }))} />}
 
       {photos.length > 0 && (
         <div className={`w-print__pics${many ? ' is-many' : ''}`}>
@@ -165,9 +184,11 @@ export default memo(function Print({ username, entry, places, me, isOwner, cover
                   <div className="w-print__pic-tools">
                     {/* says what the poster shows, the newest print too when none is chosen; pressing a chosen
                         one lets the poster go back to the newest, pressing any other (that one included) chooses it */}
-                    <button type="button" className={`w-tool${shownCoverId === photo.id ? ' is-on' : ''}`} aria-pressed={shownCoverId === photo.id} onClick={() => onCover(coverPhotoId === photo.id ? null : photo.id)}>
-                      {shownCoverId === photo.id ? 'á plakatinu' : 'setja á plakatið'}
-                    </button>
+                    {onCover && (
+                      <button type="button" className={`w-tool${shownCoverId === photo.id ? ' is-on' : ''}`} aria-pressed={shownCoverId === photo.id} onClick={() => onCover(coverPhotoId === photo.id ? null : photo.id)}>
+                        {shownCoverId === photo.id ? 'á plakatinu' : 'setja á plakatið'}
+                      </button>
+                    )}
                     <button type="button" className="w-tool" onClick={() => setEdit(s => s && ({ ...s, photos: s.photos.filter(p => p.id !== photo.id) }))}>taka niður</button>
                   </div>
                 </div>
@@ -185,21 +206,26 @@ export default memo(function Print({ username, entry, places, me, isOwner, cover
       {edit ? (
         <div className="w-print__editor">
           {/* focused as it opens: the button that opened it has left the page */}
-          <textarea className="b-textarea" value={edit.text} onChange={e => setEdit(s => s && ({ ...s, text: e.target.value }))} maxLength={LIMITS.text} rows={3} placeholder="Miði" aria-label="Miði" autoFocus />
+          <textarea className="b-textarea" value={edit.text} onChange={e => setEdit(s => s && ({ ...s, text: e.target.value }))} maxLength={LIMITS.text} rows={3} placeholder={entry.bounty ? 'Hvað vantar?' : entry.poll ? 'Spurningin' : 'Miði'} aria-label={entry.bounty ? 'Hvað vantar' : entry.poll ? 'Spurningin' : 'Miði'} autoFocus />
+          {entry.bounty && (
+            <input className="b-input w-print__reward" value={edit.reward} onChange={e => setEdit(s => s && ({ ...s, reward: e.target.value }))} maxLength={LIMITS.reward} placeholder="Verðlaun" aria-label="Verðlaun" />
+          )}
           <div className="w-print__editrow">
             <select className="w-pin__select" value={edit.placeId ?? ''} onChange={e => setEdit(s => s && ({ ...s, placeId: e.target.value ? Number(e.target.value) : null }))} aria-label="Staður">
               <option value="">Enginn staður</option>
               {places.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
             </select>
             <span className="b-inline">
-              <button type="button" className="b-btn b-btn--solid b-btn--small" onClick={save} disabled={saving || (!edit.text.trim() && edit.photos.length === 0)}>{saving ? 'Vista…' : 'Vista'}</button>
+              <button type="button" className="b-btn b-btn--solid b-btn--small" onClick={save} disabled={saving || (!edit.text.trim() && edit.photos.length === 0) || ((!!entry.bounty || !!entry.poll) && !edit.text.trim()) || (!!entry.bounty && !edit.reward.trim())}>{saving ? 'Vista…' : 'Vista'}</button>
               <button type="button" className="b-btn b-btn--small" onClick={() => { closeEditor(); setError(''); }}>Hætta við</button>
             </span>
           </div>
         </div>
       ) : (
-        entry.text && <p className="w-print__note">{entry.text}</p>
+        entry.text && <p className="w-print__note"><Mentions text={entry.text} me={me} /></p>
       )}
+
+      {entry.poll && !edit && <Poll username={username} entryId={entry.id} poll={entry.poll} me={me} isOwner={isOwner} onChange={q => onChange(entry.id, e => ({ ...e, poll: q }))} />}
 
       {light && (
         <span key={light.n} className="w-sign__light" aria-hidden="true" onAnimationEnd={() => setLight(null)}
@@ -219,7 +245,7 @@ export default memo(function Print({ username, entry, places, me, isOwner, cover
         </button>
         {isOwner && !edit && (
           <span className="w-print__actions">
-            <button ref={editBtn} type="button" onClick={() => setEdit({ text: entry.text, placeId: entry.placeId, photos: entry.photos })} aria-label={`Breyta færslunni: ${name}`}>breyta</button>
+            <button ref={editBtn} type="button" onClick={() => setEdit({ text: entry.text, placeId: entry.placeId, photos: entry.photos, reward: entry.bounty?.reward ?? '' })} aria-label={`Breyta færslunni: ${name}`}>breyta</button>
             <button type="button" onClick={remove} aria-label={`Eyða færslunni: ${name}`}>eyða</button>
           </span>
         )}
@@ -232,7 +258,7 @@ export default memo(function Print({ username, entry, places, me, isOwner, cover
               <span className="w-reply__head"><PlayerHead name={r.username} size={24} /></span>
               <span className="w-reply__body">
                 <Link href={`/crew/${r.username}`} className="w-reply__who">{r.username}</Link>
-                <span className="w-reply__text">{r.text}</span>
+                <span className="w-reply__text"><Mentions text={r.text} me={me} /></span>
                 <span className="w-reply__when">
                   {age(r.createdAt)}
                   {(sameUser(me, r.username) || isOwner) && <button type="button" onClick={() => dropReply(r.id)} aria-label={`Eyða svari frá ${r.username}: ${r.text.slice(0, 40)}`}>eyða</button>}
