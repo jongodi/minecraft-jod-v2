@@ -45,6 +45,11 @@ const FARTHEST = 990;
 const src = readFileSync('src/components/badlands/data.ts', 'utf8');
 const view = src.match(/MAP_START_VIEW = '([^']+)'/)?.[1];
 if (!view) { console.error('MAP_START_VIEW not found in data.ts'); process.exit(1); }
+/* where the flight lands, read off the view itself (map:x:y:z:distance:rotation:angle:…):
+   the viewer only takes it up from the hash a while after its map has loaded */
+const [, ex, ey, ez, ed, erot, eang] = view.split(':').map(Number);
+const END = { x: ex, y: ey, z: ez, d: ed, rotation: erot, angle: eang };
+if (!Object.values(END).every(Number.isFinite)) { console.error(`MAP_START_VIEW not read: ${view}`); process.exit(1); }
 
 /* playwright-core ships no browser of its own: use the Chrome or Edge already on
    this machine, or the executable named in CHROME. A machine without a
@@ -83,15 +88,17 @@ for (const shape of SHAPES) {
   await page.waitForFunction(() => window.bluemap?.mapViewer?.map && window.bluemap.mapViewer.data.mapState === 'loaded', null, { timeout: 120_000 });
 
   /* The path, worked out in the viewer with its own camera: from the start
-     view the hash set, back to an overview whose distance is the nearest that
-     shows all four corners of the rendered world (or the farthest out that
-     still has full detail). The camera is taken off the visitor's controls,
-     which would hold it nearer and steer its angle. */
-  const plan = await page.evaluate(({ angle, swing, farthest }) => {
+     view back to an overview whose distance is the nearest that shows all
+     four corners of the rendered world (or the farthest out that still has
+     full detail). The camera is taken off the visitor's controls, which would
+     hold it nearer and steer its angle, and the viewer stops drawing by
+     itself: in a browser drawing in software one frame of the whole world
+     takes many seconds, so each still is drawn once, by hand, below. */
+  const plan = await page.evaluate(({ end, angle, swing, farthest }) => {
     const viewer = window.bluemap.mapViewer;
     const cm = viewer.controlsManager;
     cm.controls = null;
-    const end = { x: cm.position.x, y: cm.position.y, z: cm.position.z, d: cm.distance, rotation: cm.rotation, angle: cm.angle };
+    window.jod?.pause(true);
     const b = window.JOD_MAP?.bounds ?? { minX: end.x - 400, maxX: end.x + 400, minZ: end.z - 400, maxZ: end.z + 400 };
     const start = { x: (b.minX + b.maxX) / 2, y: end.y, z: (b.minZ + b.maxZ) / 2, rotation: end.rotation + swing, angle };
     const V = cm.position.constructor;
@@ -115,7 +122,7 @@ for (const shape of SHAPES) {
     viewer.data.loadedHiresViewDistance = Math.min(1500, Math.ceil(far) + 32);
     viewer.updateLoadedMapArea();
     return { start, end };
-  }, { angle: OVERVIEW_ANGLE, swing: SWING, farthest: FARTHEST });
+  }, { end: END, angle: OVERVIEW_ANGLE, swing: SWING, farthest: FARTHEST });
   console.log(`${shape.name}: frá ${Math.round(plan.start.d)} blokkum niður í ${Math.round(plan.end.d)}`);
 
   const matrices = [];
@@ -139,36 +146,43 @@ for (const shape of SHAPES) {
       cm.updateCamera();
       /* wait until every tile in view has arrived: nothing loading and the
          count of drawn tiles steady (two seconds for the first frame, which
-         loads the whole world; a moment after that) */
+         loads the whole world, tile by tile out of the store; a moment after
+         that) */
       const manager = () => viewer.map.hiresTileManager;
       const count = () => { let n = 0; manager().tiles.forEach((tile) => { if (tile.model && !tile.unloaded) n++; }); return n; };
       const started = Date.now();
       let last = -1;
       let steadySince = Date.now();
-      while (Date.now() - started < 180_000) {
+      while (Date.now() - started < (first ? 600_000 : 180_000)) {
         await new Promise((r) => setTimeout(r, first ? 500 : 120));
         const n = count();
         if (n !== last || manager().currentlyLoading > 0) { last = n; steadySince = Date.now(); }
         else if (Date.now() - steadySince > (first ? 2000 : 240)) break;
       }
-      viewer.redraw();
-      for (let f = 0; f < 3; f++) await new Promise((r) => requestAnimationFrame(r));
+      /* One frame, drawn here and read off the canvas in the same breath,
+         before the browser clears it: the paused viewer draws nothing else. */
+      const drawn = performance.now();
+      const jod = window.jod;
+      if (jod) jod.paused = false;
+      viewer.render(0);
+      const png = viewer.renderer.domElement.toDataURL('image/png');
+      if (jod) jod.paused = true;
       /* the camera the frame was drawn with, as one matrix from the world to
          the screen (projection × view), which the page projects places by */
       const cam = viewer.camera;
-      cm.updateCamera();
       cam.updateMatrixWorld(true);
       cam.updateProjectionMatrix();
       const m = cam.projectionMatrix.clone().multiply(cam.matrixWorldInverse);
-      return { m: Array.from(m.elements), tiles: count() };
+      return { m: Array.from(m.elements), tiles: count(), png, ms: Math.round(performance.now() - drawn) };
     }, { plan, t, first: i === 0 });
-    const png = await page.screenshot({ type: 'png' });
+    const png = Buffer.from(shot.png.slice(shot.png.indexOf(',') + 1), 'base64');
     const webp = await sharp(png).resize(shape.width, shape.height, { kernel: 'lanczos3' }).webp({ quality: 62 }).toBuffer();
     writeFileSync(`${OUT}/${shape.name}-${i}.webp`, webp);
     hash.update(webp);
     /* six significant figures put a pin within a pixel */
     matrices.push(shot.m.map(v => Number(v.toPrecision(6))));
     if (i === 0) console.log(`${shape.name}: ${shot.tiles} reitir í fullri upplausn`);
+    console.log(`${shape.name} ${i + 1}/${FRAMES}: teiknað á ${shot.ms} ms`);
   }
   await page.close();
   flights[shape.name] = { width: shape.width, height: shape.height, matrices };

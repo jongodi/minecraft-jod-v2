@@ -97,7 +97,7 @@ jobs:
       - name: Take the map's still
         if: steps.changed.outputs.map == 'true'
         continue-on-error: true
-        timeout-minutes: 45
+        timeout-minutes: 75
         run: |
           npx next dev -p 3000 > next-dev.log 2>&1 &
           for i in $(seq 1 90); do curl -sf -o /dev/null http://localhost:3000/bluemap/settings.json && break; sleep 2; done
