@@ -932,3 +932,53 @@ Production builds of `main` (`1f6c721`) and this branch, same machine.
 2. **The weekly paper** (*Vikublaðið*): a Sunday letter with the week on the board, the week's outlaw and the new places.
 3. **Reactions beyond the lantern**: the game's own items as stamps on a sign (a cake, a skull, a diamond), counted like the lantern.
 4. **Board search**, once there is enough on it to lose something.
+
+---
+
+## Part 13. Taflan, reviewed: what it counted, how it drew, how it looks
+
+A review pass on 23 October 2026 on the same branch, after living with Part 12 for a day: an independent read of the code for defects, a measured look at how the board performs with a full season on it (92 items, 4,350 elements), and a design pass on the places it still looked like a list.
+
+| Where | What | Why, in one sentence |
+|---|---|---|
+| The board, a phone | **Drawn as it is read**: the first twenty things at once, the rest as the foot of the board comes near (or at *Sýna eldra*), and days further down laid out only as they come into view. | Ninety live signs held a mid-range phone's hand for one to two seconds before it could scroll. |
+| Myndir | **Item frames**: every picture on the board, the crew's and the map's, hangs as the game hangs one, an oak rim round a ring of leather, a day to a row, each a press from the lightbox. | Under Myndir the board was the same column of signs; pictures are what that filter is for. |
+| The board | **The red string**: pinned across the board, a nail at each end, above the first thing that was already there when the visitor last looked. | One glance says where reading stops being news, in the board's own materials rather than a chat app's line. |
+| The board | **Nýtt svar**, and replies counted on the door. | A reply under last week's post was invisible unless you went looking. |
+| The map's slips | A new picture is held up like a postcard, twice the size, and opens in the lightbox. | The owner asked for new map pictures to be easy to see. |
+| The pin slot, on the board | One line until it is used; *Settu upp ósk* and *Spyrðu hópinn* in Á döfinni turn it to a call or a question. | The news is the first thing under the filters, and the board says what can be put up where it is missing. |
+| Óskast | The one who posted a call can free it from one who took it and never came back. | Otherwise the only way to close it paid them as Hausaveiðarinn. |
+
+### Fixed
+
+- **An advancement was never news**: it reaches the site a day after the game's own moment, so the seen mark had already passed it. Each daily copy now notes when it first finds an advancement, and the board counts that.
+- **A picture hung later on a recently drawn place vanished** into the place's slip; a place now keeps the picture it was drawn with.
+- **The map's news could tell a save twice** when a save landed between the deploy and the first read; a save and its news now share one moment, and a fill that fails is tried again.
+- **The fires were read and decided twice** on every board read.
+- **A member's slot was not in the board page's markup** (the session was not handed to the board), so it popped in after hydration and pushed the board down.
+- **A post put up, or a lantern lit, while the board was still being fetched** was dropped when the fetch landed; changes are now made again on what the fetch brings.
+- **Til þín** missed a reply calling you under your own post, could be stranded as the filter in hand, and was not said to a screen reader; **"1 svör"** is "1 svar"; a seen mark written from two tabs at once could go back; a writer could send a member any number of letters for naming them (now one an hour); the stats fallback dropped members whose only charge was a call or a no-show.
+- **Found while measuring, before it shipped**: the size given to days laid out off screen stood in for their width too and widened the board's column under Á döfinni; it is the height alone now, and the column has its own track.
+
+### Measured
+
+Production build, local Redis, the board with 92 items; Chromium, phone 390 × 844 at 4× CPU throttling and desktop 1440 × 900 unthrottled, two runs each.
+
+| | before | after |
+|---|---|---|
+| Main thread blocked after load, phone 4× | 1,202 to 2,190 ms | 353 to 428 ms |
+| Board ready, phone 4× | 1.6 to 2.5 s | 0.9 to 1.1 s |
+| Elements on the page | 4,350 | 1,250 |
+| Scrolling, phone 4× (frame p95) | 33.3 ms, dropped frames | 16.7 ms, none dropped |
+| Desktop, main thread blocked | 38 to 71 ms | 8 to 56 ms |
+| `/api/board` | about 10 ms, 43 kB | about 10 ms, 43 kB |
+| First Load JS `/`, `/crew/[username]`, `/taflan` | 149, 166, 167 kB | 149, 166, 169 kB |
+| Tests | 349 | 355 |
+
+No sideways scroll at 360 to 1440 on any page or filter; `tsc`, `next lint` and the build are clean.
+
+### Worth doing later
+
+1. **A letter when your call is taken on**, in the same dress as *Kallað á þig*.
+2. **The weekly paper** (*Vikublaðið*).
+3. **Item-frame stamps**: the game's items as reactions on a sign, counted like the lantern.
