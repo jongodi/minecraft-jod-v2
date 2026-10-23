@@ -16,9 +16,9 @@ import Rail, { revealRailItem } from './Rail';
 import Chat from './Chat';
 import Flight, { type FlightPlace } from './Flight';
 import { FLIGHT } from '@/lib/map-flight';
-import { CREW, MAP_LIGHTS, MAP_POSTER, MAP_URL, SITE_NAME, handCase, plainClick, titleCase, type Plate, type RoomId } from './data';
+import { CREW, FACING, MAP_LIGHTS, MAP_POSTER, MAP_URL, SITE_NAME, handCase, plainClick, titleCase, type Plate, type RoomId } from './data';
 import type { ServerState } from './hooks';
-import { modalOpen, useEffectsAllowed, useInert, useMediaQuery, useReducedMotionPref } from './hooks';
+import { modalOpen, useEffectsAllowed, useInert, useMediaQuery, useReducedMotionPref, useRoomForEffects } from './hooks';
 import { photoProps, PHOTO_SIZES } from './photo';
 import { toast } from './Toast';
 
@@ -99,9 +99,6 @@ function Signpost() {
     </>
   );
 }
-
-/* the game's compass in Icelandic: north is towards negative Z */
-const FACING: Record<string, string> = { north: 'norður', south: 'suður', east: 'austur', west: 'vestur' };
 
 interface Props {
   plates: Plate[];
@@ -218,11 +215,18 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
   /* The flight down into the world (Flight.tsx): where it has been taken,
      on a device with room for the effects and not under reduced motion. The
      frame is then held at the top of the screen over a stretch of page while
-     the camera comes down, and the town's lights wait for the landing. */
+     the camera comes down, and the town's lights wait for the landing.
+     Decided as soon as the page runs, not at the effects' idle moment: the
+     runway lengthens the page, and arriving late it would move the campfire
+     out from under a visitor who had already scrolled down to it. */
   const reduce = useReducedMotionPref();
-  const fly = FLIGHT !== null && effects && !reduce;
+  const capable = useRoomForEffects();
+  const fly = FLIGHT !== null && capable && !reduce;
   const runway = useRef<HTMLDivElement>(null);
+  const flightF3 = useRef<HTMLParagraphElement>(null);
   const [landed, setLanded] = useState(true);
+  /* coming down: the way into the live map stands aside until the camera lands */
+  const flying = fly && !live && !landed;
   const lit = reached && effects && landed;
 
   /* The rooms' code is fetched once the browser is truly idle, so a door
@@ -426,7 +430,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
 
   return (
     <section id="heimur" className={`b-world${fly ? ' has-flight' : ''}`} aria-labelledby="heimur-title">
-      <div ref={frameRef} className={`b-frame${live ? ' is-live' : ''}${ready ? ' is-ready' : ''}${drawn ? ' is-drawn' : ''}${shut ? ' is-room' : ''}${full === 'overlay' ? ' is-full' : ''}${live && still ? ' is-still' : ''}${menu && ready ? ' is-menu' : ''}${chatOpen ? ' is-chat' : ''}`}>
+      <div ref={frameRef} className={`b-frame${live ? ' is-live' : ''}${ready ? ' is-ready' : ''}${drawn ? ' is-drawn' : ''}${shut ? ' is-room' : ''}${full === 'overlay' ? ' is-full' : ''}${live && still ? ' is-still' : ''}${menu && ready ? ' is-menu' : ''}${chatOpen ? ' is-chat' : ''}${flying ? ' is-flying' : ''}`}>
         {/* The still and its lights settle together as the world is
             reached, the camera coming down into the valley with the scroll
             (badlands.css). On a device with room for the effects, until the
@@ -454,7 +458,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
             Once the live map is asked for, the still is what it takes over
             from, and the live map has its own lanterns. */}
         {FLIGHT && posterOn && (
-          <Flight flight={FLIGHT} fly={fly && !live} runway={runway} places={grounded} selected={selected}
+          <Flight flight={FLIGHT} fly={fly && !live} runway={runway} f3={flightF3} places={grounded} selected={selected}
             onChoose={choose} hidden={live || drawn} onLanded={setLanded} />
         )}
         </div>
@@ -639,6 +643,14 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
           {/* Spjallið: the game's chat over the world, in the corner it keeps
               over the hotbar, here the places' rail (Chat.tsx) */}
           <Chat active={reached && !shut} covered={place !== null || drawn || shut || album || (menu && ready)} server={server} onOpen={setChatOpen} />
+          {/* The F3 lines while the camera comes down: where it is and the
+              way it faces, written by Flight.tsx as it moves. */}
+          {fly && (
+            <p ref={flightF3} className="b-f3" aria-hidden="true" hidden>
+              <span />
+              <span />
+            </p>
+          )}
           {/* The game's F3 lines while the live map is up: the block the map
               holds and the way it faces, as a player reads them to find the
               same spot in the game, each line on its own veil of dark. */}

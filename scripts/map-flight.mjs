@@ -1,8 +1,11 @@
 // The flight down into the world: a run of stills of the 3D map, from high
 // over the whole rendered world down to the start view the still and the live
-// map open on. The home page plays it as the world scrolls into view, one
-// frame for each step of the scroll, and pins the places on whichever frame is
-// showing, so each still also keeps the camera it was taken with.
+// map open on. The home page plays it as the world scrolls into view and pins
+// the places on whatever is showing, so each still keeps the camera it was
+// taken with: the matrix that puts a block on the screen, where the camera
+// stood, the point it looked at and how far off it was. The page zooms each
+// still towards the next by those, so the camera moves between frames instead
+// of one frame fading into another.
 // Usage: npm run map:flight   (with `npm run dev` running; the map sync on
 //        GitHub runs it after every copy that changed the map, and the Map
 //        flight workflow whenever this script changes)
@@ -39,6 +42,15 @@ const SHAPES = [
    so the descent swings round a little as it comes down. */
 const OVERVIEW_ANGLE = 0.8;
 const SWING = -0.35;
+/* The still is shown at saturate(0.85) (badlands.css), and the flight lands
+   on it: the frames carry the same colour, put in here with the matrix CSS
+   uses, so the page draws them as they are and pays no filter on a layer
+   that changes every frame. */
+const SATURATE = ((k) => [
+  [0.213 + 0.787 * k, 0.715 - 0.715 * k, 0.072 - 0.072 * k],
+  [0.213 - 0.213 * k, 0.715 + 0.285 * k, 0.072 - 0.072 * k],
+  [0.213 - 0.213 * k, 0.715 - 0.715 * k, 0.072 + 0.928 * k],
+])(0.85);
 /* the farthest the camera stands while BlueMap still draws full detail */
 const FARTHEST = 990;
 
@@ -123,18 +135,19 @@ for (const shape of SHAPES) {
   }, { end: END, angle: OVERVIEW_ANGLE, swing: SWING, farthest: FARTHEST });
   console.log(`${shape.name}: frá ${Math.round(plan.start.d)} blokkum niður í ${Math.round(plan.end.d)}`);
 
-  const matrices = [];
+  const shots = [];
   for (let i = 0; i < FRAMES; i++) {
-    const t = i / (FRAMES - 1);
-    const shot = await page.evaluate(async ({ plan, t, first }) => {
+    const s = i / (FRAMES - 1);
+    const shot = await page.evaluate(async ({ plan, s, first }) => {
       const viewer = window.bluemap.mapViewer;
       const cm = viewer.controlsManager;
       const { start, end } = plan;
-      /* Eased at both ends, so the overview holds a moment and the landing
-         settles. The distance falls evenly in proportion, which reads as an
-         even speed of descent; the camera's target crosses to the start view
-         as the distance closes, so the town it lands on stays in sight. */
-      const s = t * t * (3 - 2 * t);
+      /* Evenly along the path, so neighbouring frames are as alike all the
+         way down; the page eases the scroll onto it (the overview holds a
+         moment, the landing settles). The distance falls evenly in
+         proportion, which reads as an even speed of descent; the camera's
+         target crosses to the start view as the distance closes, so the town
+         it lands on stays in sight. */
       const d = Math.exp(Math.log(start.d) + (Math.log(end.d) - Math.log(start.d)) * s);
       const k = (start.d - d) / (start.d - end.d);
       /* set again just before the frame is drawn, should anything have moved it meanwhile */
@@ -166,29 +179,32 @@ for (const shape of SHAPES) {
       const drawn = performance.now();
       const jod = window.jod;
       place();
+      const cam = viewer.camera;
+      const eye = [cam.position.x, cam.position.y, cam.position.z];
+      const look = [cm.position.x, cm.position.y, cm.position.z];
       if (jod) jod.paused = false;
       viewer.render(0);
       const png = viewer.renderer.domElement.toDataURL('image/png');
       if (jod) jod.paused = true;
       /* the camera the frame was drawn with, as one matrix from the world to
          the screen (projection × view), which the page projects places by */
-      const cam = viewer.camera;
       cam.updateMatrixWorld(true);
       cam.updateProjectionMatrix();
       const m = cam.projectionMatrix.clone().multiply(cam.matrixWorldInverse);
-      return { m: Array.from(m.elements), tiles: count(), png, ms: Math.round(performance.now() - drawn) };
-    }, { plan, t, first: i === 0 });
+      return { m: Array.from(m.elements), eye, look, d, tiles: count(), png, ms: Math.round(performance.now() - drawn) };
+    }, { plan, s, first: i === 0 });
     const png = Buffer.from(shot.png.slice(shot.png.indexOf(',') + 1), 'base64');
-    const webp = await sharp(png).resize(shape.width, shape.height, { kernel: 'lanczos3' }).webp({ quality: 62 }).toBuffer();
+    const webp = await sharp(png).resize(shape.width, shape.height, { kernel: 'lanczos3' }).recomb(SATURATE).webp({ quality: 62 }).toBuffer();
     writeFileSync(`${OUT}/${shape.name}-${i}.webp`, webp);
     hash.update(webp);
-    /* six significant figures put a pin within a pixel */
-    matrices.push(shot.m.map(v => Number(v.toPrecision(6))));
+    /* six significant figures put a pin within a pixel; a tenth of a block is plenty for the rest */
+    const tenth = (v) => Math.round(v * 10) / 10;
+    shots.push({ m: shot.m.map(v => Number(v.toPrecision(6))), eye: shot.eye.map(tenth), look: shot.look.map(tenth), d: tenth(shot.d) });
     if (i === 0) console.log(`${shape.name}: ${shot.tiles} reitir í fullri upplausn`);
     console.log(`${shape.name} ${i + 1}/${FRAMES}: teiknað á ${shot.ms} ms`);
   }
   await page.close();
-  flights[shape.name] = { width: shape.width, height: shape.height, matrices };
+  flights[shape.name] = { width: shape.width, height: shape.height, shots };
   const bytes = readdirSync(OUT).filter(f => f.startsWith(`${shape.name}-`)).reduce((sum, f) => sum + readFileSync(`${OUT}/${f}`).length, 0);
   console.log(`${shape.name}: ${FRAMES} rammar, ${(bytes / 1e6).toFixed(1)} MB`);
 }

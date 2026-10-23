@@ -47,6 +47,9 @@ export const plainClick = (e: { button: number; metaKey: boolean; ctrlKey: boole
    and led to another. */
 export const PAGE_LINKS = SECTIONS.map(l => ({ label: l.label, href: l.id === 'hopur' ? '/crew' : `/${l.href}`, id: l.id }));
 
+/* the game's compass in Icelandic, for the F3 lines: north is towards negative Z */
+export const FACING: Record<string, string> = { north: 'norður', south: 'suður', east: 'austur', west: 'vestur' };
+
 /* The view the 3D map opens on, in BlueMap's own link format:
    map:x:y:z:distance:rotation:angle:tilt:ortho:mode. To change it, open the map
    full screen, frame the view you want and copy everything after the # in the

@@ -1165,10 +1165,18 @@
    frame is held at the top of the screen while a stretch of page passes
    under it, and the camera comes down from over the whole world to the start
    view as it does, the frames drawn on a canvas over the still. Landed, the
-   frame lets go and goes on up with the page. */
-.b-world.has-flight .b-frame { position: sticky; top: var(--bar); }
+   frame lets go and goes on up with the page. The whole screen (.is-full)
+   stays fixed over the page, as it always was. */
+.b-world.has-flight .b-frame:not(.is-full) { position: sticky; top: var(--bar); }
 .b-world__runway { height: 110svh; }
-.b-flight { position: absolute; inset: 0; width: 100%; height: 100%; display: block; visibility: hidden; filter: saturate(0.85); }
+/* Two sheets, each a frame at the size it was taken, moved and faded by
+   Flight.tsx: transform and opacity only, each on its own layer, so the
+   scroll moves layers and paints nothing between frames. The night is under
+   them for the margin a moved frame can leave. The frames carry the still's
+   saturate(0.85) already (scripts/map-flight.mjs): no filter on a layer that
+   changes. */
+.b-flight { position: absolute; inset: 0; overflow: clip; background: var(--night); visibility: hidden; }
+.b-flight__sheet { position: absolute; left: 0; top: 0; display: block; transform-origin: 0 0; opacity: 0; will-change: transform, opacity; }
 /* The places, pinned where they stand on what is showing, as their lanterns
    stand in the 3D map: a lit lantern on its spot, its name on a paper tag
    under it when it is chosen or pointed at. Placed by Flight.tsx, a transform
@@ -1177,6 +1185,8 @@
 .b-pins.is-hidden { opacity: 0; visibility: hidden; transition: opacity var(--dur-2) var(--ease-out), visibility 0s linear var(--dur-2); }
 .b-pin {
   position: absolute;
+  /* its own layer: a pin moved with the camera moves, it does not repaint the world under it */
+  will-change: transform;
   left: 0;
   top: 0;
   display: grid;
@@ -1192,8 +1202,8 @@
   translate: -50% -1.5rem;
   -webkit-tap-highlight-color: transparent;
 }
-/* a tap on a phone lands on more than the lantern's few pixels */
-.b-pin::after { content: ''; position: absolute; inset: -0.5rem -0.75rem auto; height: 2.5rem; }
+/* a tap on a phone lands on more than the lantern's few pixels: 44 px square round it */
+.b-pin::after { content: ''; position: absolute; inset: -0.625rem -0.875rem auto; height: 2.75rem; }
 .b-pin .b-pin__lamp { width: 1rem; height: 1.5rem; filter: drop-shadow(0 0 1px rgba(232, 220, 196, 0.6)); transition: transform var(--dur-1) var(--ease-out); }
 .b-pin .b-pin__lamp::before {
   content: '';
@@ -1201,7 +1211,7 @@
   inset: -70% -110%;
   z-index: -1;
   background: radial-gradient(closest-side, var(--lantern-glow), transparent);
-  animation: b-flicker 3400ms ease-in-out infinite;
+  animation: b-flicker var(--dur-lantern) ease-in-out infinite;
 }
 .b-pin__label {
   padding: 2px var(--sp-2) 3px;
@@ -1218,12 +1228,13 @@
   transform: translateY(calc(var(--px) * -2));
   transition: opacity var(--dur-1) var(--ease-out), transform var(--dur-1) var(--ease-out);
 }
-.b-pin.is-on .b-pin__lamp { transform: translateY(-2px) scale(1.2); }
+.b-pin.is-on .b-pin__lamp { transform: translateY(-2px) scale(1.15); }
 .b-pin.is-on .b-pin__label { opacity: 1; transform: none; background: var(--lantern); }
 @media (hover: hover) {
-  .b-pin:hover .b-pin__lamp { transform: translateY(-2px) scale(1.2); }
+  .b-pin:hover .b-pin__lamp { transform: translateY(-2px) scale(1.15); }
   .b-pin:hover .b-pin__label { opacity: 1; transform: none; }
 }
+.b-pin:active .b-pin__lamp { transform: scale(1.05); transition-duration: 0s; }
 @media (prefers-reduced-motion: reduce) { .b-pin .b-pin__lamp::before { animation: none; } .b-pin__label, .b-pin .b-pin__lamp { transition: none; } }
 @supports (animation-timeline: view()) {
   .b-frame__scene.is-settling { animation: b-settle linear both; animation-timeline: view(); animation-range: entry 0% contain 0%; }
@@ -1587,8 +1598,17 @@ html.is-map-full { overflow: hidden; }
 .b-chat__empty { cursor: default; color: #E8E8E8; }
 .b-chat__close { margin-top: var(--sp-2); }
 /* open, the chat is read as the game's is, with the world's lantern stepped aside: its sign stood where the longer log climbs */
-.b-frame .b-hud__mid { transition: opacity var(--dur-2) var(--ease-out), visibility 0s linear 0s; }
+.b-frame .b-hud__mid { transition: opacity var(--dur-2) var(--ease-out), transform var(--dur-3) var(--ease-out), visibility 0s linear 0s; }
 .b-frame.is-chat .b-hud__mid { opacity: 0; visibility: hidden; transition: opacity var(--dur-2) var(--ease-out), visibility 0s linear var(--dur-2); }
+/* Coming down (Flight.tsx), the post is pulled up out of the camera's way,
+   and set down in the town when it lands: the way into the live map stands
+   where the flight ends, and the pins under it can be reached while flying. */
+.b-frame.is-flying .b-hud__mid {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(calc(var(--px) * -16));
+  transition: opacity var(--dur-1) var(--ease-out), transform var(--dur-2) var(--ease-out), visibility 0s linear var(--dur-2);
+}
 @media (max-width: 899px) { .b-chat { margin-bottom: var(--sp-1); } }
 
 .b-places__head { justify-self: start; padding: var(--px) var(--sp-2); background: var(--plate); clip-path: var(--notch); font-size: var(--fs-sm); color: var(--paper); text-shadow: 0 var(--px) 0 var(--night); }
