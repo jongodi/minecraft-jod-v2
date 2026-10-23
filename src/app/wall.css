@@ -506,6 +506,12 @@
 .w-poll__foot { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--sp-1) var(--sp-3); padding-inline: var(--sp-1); font-size: var(--fs-sm); color: var(--sign-soft); }
 @media (prefers-reduced-motion: reduce) { .w-poll__fill { transition: none; } }
 
+/* On the board the slot is one line until it is used: the place, the note on
+   how pictures get in and the button come with the first word, picture or
+   press, or as soon as it has the keyboard. */
+.w-pin--compact.is-quiet:not(:focus-within) .w-pin__text { min-height: 2.5rem; }
+.w-pin--compact.is-quiet:not(:focus-within) :is(.w-pin__place, .w-pin__note, .w-pin__go) { display: none; }
+
 /* the pin slot's three kinds: what goes up is chosen along its top edge */
 .w-pin__kinds { display: flex; flex-wrap: wrap; gap: var(--sp-1); }
 .w-pin__kind { min-height: 2.25rem; padding: var(--sp-1) var(--sp-3); font-family: var(--font-data); font-size: var(--fs-data); letter-spacing: 0.04em; text-transform: uppercase; color: var(--sign-lantern); border: var(--px) solid transparent; }

@@ -17,7 +17,8 @@ type Notice = Exclude<BoardItem, { kind: 'post' }>;
 
 const PAINTED: Record<Painted, string> = { land: 'landslagið', zones: 'svæðin', lines: 'leiðirnar' };
 const listed = (words: string[]) => (words.length < 2 ? words.join('') : `${words.slice(0, -1).join(', ')} og ${words[words.length - 1]}`);
-const THUMB = '96px';
+/* the map's picture on its slip, held up like a postcard: 12rem beside the words, the slip's width under them on a phone */
+const POSTCARD = '(min-width: 480px) 192px, calc(100vw - 6rem)';
 
 /* A map pin and a block of the world, drawn on the art's grid like the other glyphs (Bits.tsx). */
 function PinIcon() {
@@ -44,8 +45,9 @@ function Head({ name }: { name: string }) {
   return <Link href={`/crew/${name}`} className="t-notice__who"><PlayerHead name={name} size={16} alt="" />{name}</Link>;
 }
 
-/** One slip. `room`: the board is open over the world, where a fire's room is a hash away. */
-export default function Notice({ item, room, mounted }: { item: Notice; room: boolean; mounted: boolean }) {
+/** One slip. `room`: the board is open over the world, where a fire's room
+    is a hash away. `onOpen` holds the map's picture up in the lightbox. */
+export default function Notice({ item, room, mounted, onOpen }: { item: Notice; room: boolean; mounted: boolean; onOpen?: (id: string, origin: DOMRect) => void }) {
   /* when, as the browser's clock tells it; the plain day until it has one */
   const when = mounted ? sinceAt(item.at) : item.at.slice(0, 10);
   const fire = (id: string) => (room ? '#hopur' : `/kvold/${id}#hopur`);
@@ -144,10 +146,10 @@ export default function Notice({ item, room, mounted }: { item: Notice; room: bo
         </span>
       </div>
       {pic && (
-        <Link href={href} className="t-notice__pic" tabIndex={-1} aria-hidden="true">
+        <button type="button" className="t-notice__pic" onClick={e => onOpen?.(item.id, e.currentTarget.getBoundingClientRect())} aria-label="Stækka myndina">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img {...photoProps(pic, THUMB)} alt="" loading="lazy" decoding="async" />
-        </Link>
+          <img {...photoProps(pic, POSTCARD)} alt="" loading="lazy" decoding="async" />
+        </button>
       )}
     </article>
   );

@@ -26,7 +26,7 @@ export default function BoardPage({ initial, session, initialFilter }: { initial
             <p className="b-lede">Það sem gerist á JOÐ, nýjast efst: myndir og miðar hópsins, óskir og spurningar, bálin og kvöldin, afrekin og það sem bættist við kortið.</p>
           </div>
         </div>
-        <Board initial={initial} initialFilter={initialFilter} />
+        <Board initial={initial} initialFilter={initialFilter} session={session} />
       </main>
       <Footer />
     </div>

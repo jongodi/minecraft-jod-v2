@@ -21,7 +21,7 @@ interface Props {
   onChange: (bounty: CrewBounty) => void;
 }
 
-type Action = 'take' | 'drop' | 'done' | 'reopen';
+type Action = 'take' | 'drop' | 'release' | 'done' | 'reopen';
 
 export default function Call({ username, entryId, bounty, me, isOwner, onChange }: Props) {
   const [busy, setBusy] = useState(false);
@@ -64,6 +64,8 @@ export default function Call({ username, entryId, bounty, me, isOwner, onChange 
               {state === 'taken' ? 'Komið í höfn' : 'Loka óskinni'}
             </button>
           )}
+          {/* one who took it and never came back is let go, so another can take it, or it can be closed without paying them */}
+          {isOwner && state === 'taken' && <button type="button" className="b-btn b-btn--small" onClick={() => act('release')} disabled={busy}>Losa {bounty.takenBy}</button>}
           {isOwner && state === 'done' && <button type="button" className="b-btn b-btn--small" onClick={() => act('reopen')} disabled={busy}>Opna aftur</button>}
         </div>
       )}

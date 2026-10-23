@@ -33,7 +33,14 @@ interface Props {
   onPinned: (entry: CrewEntry) => void;
   /** whether pictures pasted or dropped anywhere on the page come here: not while the board's room is closed */
   active?:  boolean;
+  /** on the board: one line until it is used, so the news is the first thing under the filters */
+  compact?: boolean;
+  /** a call or a question asked for from elsewhere on the board: the slot turns to it and takes the keyboard */
+  ask?:     Ask | null;
 }
+
+/** A request to put up a call or a question; `n` makes each press a new one. */
+export interface Ask { kind: 'call' | 'ask'; n: number }
 
 /** What goes up: a note (with or without prints), a call for something, or a question. */
 type Kind = 'note' | 'call' | 'ask';
@@ -54,7 +61,7 @@ const newKey = () => Math.random().toString(36).slice(2);
 const PICTURE_NAME = /\.(heic|heif|png|jpe?g|webp|gif|avif|bmp)$/i;
 const isPicture = (f: File) => f.type.startsWith('image/') || (!f.type && PICTURE_NAME.test(f.name));
 
-export default function Composer({ username, places, onPinned, active = true }: Props) {
+export default function Composer({ username, places, onPinned, active = true, compact = false, ask = null }: Props) {
   const [storage, setStorage] = useState<StorageInfo | null>(null);
   const [kind, setKind]       = useState<Kind>('note');
   const [reward, setReward]   = useState('');
@@ -201,6 +208,16 @@ export default function Composer({ username, places, onPinned, active = true }: 
     kind === 'ask' ? text.trim().length > 0 && filled.length >= LIMITS.choicesMin :
     text.trim().length > 0 || ready.length > 0);
 
+  /* asked for from Á döfinni: the slot turns to a call or a question and takes the keyboard */
+  useEffect(() => {
+    if (!ask) return;
+    setKind(ask.kind);
+    slot.current?.scrollIntoView({ block: 'nearest', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    requestAnimationFrame(() => words.current?.focus({ preventScroll: true }));
+  }, [ask]);
+  /* on the board, untouched, it is one line: the place, the note on how pictures get in and the button come once it is used */
+  const quiet = compact && kind === 'note' && !text && drafts.length === 0 && !pinning && !error;
+
   /* the crew who could be meant by what is typed after an @, the writer left out */
   const typing = typingName(text, caret);
   const named = typing === null ? [] : CREW.filter(n => n.toLowerCase() !== username.toLowerCase() && n.toLowerCase().startsWith(typing.toLowerCase())).slice(0, 4);
@@ -253,7 +270,7 @@ export default function Composer({ username, places, onPinned, active = true }: 
     <><span className="w-pin__how w-pin__how--drag">dragðu skjámyndir hingað, límdu þær, eða veldu þær</span><span className="w-pin__how w-pin__how--tap">veldu myndir eða límdu þær</span></>;
 
   return (
-    <form ref={slot} className={`w-pin w-pin--${kind}${over ? ' is-over' : ''}${drafts.length ? ' has-prints' : ''}`} onSubmit={pin} aria-label="Festa eitthvað upp" aria-busy={pinning}>
+    <form ref={slot} className={`w-pin w-pin--${kind}${compact ? ' w-pin--compact' : ''}${quiet ? ' is-quiet' : ''}${over ? ' is-over' : ''}${drafts.length ? ' has-prints' : ''}`} onSubmit={pin} aria-label="Festa eitthvað upp" aria-busy={pinning}>
       {/* what goes up: a note, a call for something, or a question */}
       <div className="w-pin__kinds" role="group" aria-label="Hvað fer upp">
         {KINDS.map(k => (

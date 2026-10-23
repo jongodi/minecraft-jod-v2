@@ -6,10 +6,11 @@
    still asks something of the crew is pinned beside the board.
    ═══════════════════════════════════════════════════════════════ */
 
-.t-board { display: grid; gap: var(--sp-5) var(--sp-6); align-items: start; }
+/* one column of its own width: a grid left to size itself grows to its widest picture's natural size */
+.t-board { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-5) var(--sp-6); align-items: start; }
 .t-board--room { padding-inline: var(--gutter); max-width: calc(var(--wrap) + var(--gutter) * 2); margin-inline: auto; }
 @media (min-width: 1100px) { .t-board { grid-template-columns: minmax(0, 1fr) 19rem; } }
-.t-board__main { display: grid; gap: var(--sp-5); min-width: 0; }
+.t-board__main { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-5); min-width: 0; }
 
 /* the head: how much is new, and the filters, as the hotbar's slots in a row */
 .t-board__head { display: grid; gap: var(--sp-3); }
@@ -50,7 +51,7 @@
 .t-join__head:focus-visible { outline: var(--px) solid var(--lantern); outline-offset: var(--px); }
 
 /* ─── the days ─────────────────────────────────────────────────── */
-.t-day { display: grid; gap: var(--sp-3); }
+.t-day { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-3); }
 .t-day + .t-day { margin-top: var(--sp-4); }
 /* the day, with the five clays run out beside it: the strata divide the days as they divide the hours */
 .t-day__head {
@@ -135,12 +136,93 @@
 .t-notice__go { color: var(--lantern-ink); font-weight: 600; text-decoration: none; }
 @media (hover: hover) { .t-notice__go:hover { color: var(--ink); text-decoration: underline var(--px); text-underline-offset: 0.3em; } }
 .t-notice__go:focus-visible { outline: var(--px) solid var(--lantern-ink); outline-offset: var(--px); }
-.t-notice__pic { display: block; width: 6rem; box-shadow: 0 0 0 var(--px) var(--wood-dark); background: var(--paper-2); }
+/* the map's new picture, held up beside the words like a postcard; a press holds it up larger */
+.t-notice__pic { display: block; width: 12rem; padding: 0; background: var(--paper-2); box-shadow: 0 0 0 var(--px) var(--wood-dark), 0 var(--px) 0 calc(var(--px) * 2) rgba(21, 16, 13, 0.12); transition: box-shadow var(--dur-2) var(--ease-out); }
 .t-notice__pic img { display: block; width: 100%; aspect-ratio: 16 / 10; object-fit: cover; }
-@media (max-width: 479px) { .t-notice { grid-template-columns: 1.5rem minmax(0, 1fr); } .t-notice__pic { grid-column: 2; width: 100%; max-width: 14rem; } }
+@media (hover: hover) { .t-notice__pic:hover { box-shadow: 0 0 0 var(--px) var(--wood-dark), 0 0 0 calc(var(--px) * 2) var(--lantern-ink); } }
+.t-notice__pic:focus-visible { outline: none; box-shadow: 0 0 0 var(--px) var(--wood-dark), 0 0 0 calc(var(--px) * 2) var(--lantern-ink); }
+.t-notice__pic:active img { translate: var(--press); }
+@media (max-width: 599px) { .t-notice { grid-template-columns: 1.5rem minmax(0, 1fr); } .t-notice__pic { grid-column: 2; width: 100%; max-width: 20rem; } }
 
 .t-board__empty { padding-block: var(--sp-6); }
 .t-board__end { padding-top: var(--sp-4); }
+/* The red string: pinned across the board, a nail at each end, above the
+   first thing that was already there when the visitor last looked. What is
+   above it came since. */
+.t-string { position: relative; display: grid; place-items: center; min-height: var(--sp-6); }
+.t-string::before {
+  content: '';
+  position: absolute;
+  inset-inline: calc(var(--sp-2) * -1);
+  top: 50%;
+  height: var(--px);
+  background: var(--tc-red);
+  box-shadow: 0 var(--px) 0 rgba(21, 16, 13, 0.55);
+}
+.t-string::after {
+  content: '';
+  position: absolute;
+  inset-inline: calc(var(--sp-2) * -1 - var(--px));
+  top: calc(50% - var(--px));
+  height: calc(var(--px) * 2);
+  background: linear-gradient(90deg, var(--iron-light) 0 calc(var(--px) * 2), transparent calc(var(--px) * 2) calc(100% - var(--px) * 2), var(--iron-light) calc(100% - var(--px) * 2));
+}
+.t-string__tag {
+  position: relative;
+  z-index: 1;
+  padding: var(--px) var(--sp-2);
+  background: var(--paper);
+  color: var(--tc-red);
+  border: var(--px) solid var(--tc-red);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  box-shadow: 0 var(--px) 0 rgba(21, 16, 13, 0.5);
+}
+
+/* ─── Myndir: the pictures in item frames ─────────────────────────
+   As the game hangs a picture on a wall: an oak rim round a ring of
+   leather, the picture inside it, a hard shadow on the boards behind.
+   Lit, like everything that can be pressed, when pointed at. */
+.t-frames { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 12.5rem), 1fr)); gap: var(--sp-5) var(--sp-4); }
+@media (max-width: 479px) { .t-frames { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-4) var(--sp-3); } }
+.t-frame { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: var(--sp-2); min-width: 0; }
+.t-frame .t-tags { top: calc(var(--sp-2) * -1); right: var(--sp-2); }
+.t-frame__pic {
+  display: block;
+  width: 100%;
+  padding: calc(var(--px) * 5);
+  background: var(--wood-light);
+  box-shadow:
+    inset 0 0 0 calc(var(--px) * 2) var(--sign),
+    inset 0 0 0 calc(var(--px) * 3) var(--wood-dark),
+    0 0 0 var(--px) var(--wood-dark),
+    0 calc(var(--px) * 2) 0 var(--px) rgba(21, 16, 13, 0.55);
+  transition: box-shadow var(--dur-2) var(--ease-out);
+}
+.t-frame__pic img { display: block; width: 100%; aspect-ratio: 16 / 10; object-fit: cover; background: var(--wood-dark); }
+@media (hover: hover) { .t-frame__pic:hover { box-shadow: inset 0 0 0 calc(var(--px) * 2) var(--lantern), inset 0 0 0 calc(var(--px) * 3) var(--wood-dark), 0 0 0 var(--px) var(--wood-dark), 0 calc(var(--px) * 2) 0 var(--px) rgba(21, 16, 13, 0.55); } }
+.t-frame__pic:focus-visible { outline: var(--px) solid var(--lantern); outline-offset: calc(var(--px) * 2); }
+.t-frame__pic:active img { translate: var(--press); }
+.t-frame__line { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; min-height: 2rem; font-size: var(--fs-sm); color: var(--text-soft); text-decoration: none; }
+.t-frame__line img { width: 1rem; height: 1rem; image-rendering: pixelated; flex-shrink: 0; }
+.t-frame__cap { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (hover: hover) { .t-frame__line:hover .t-frame__cap { color: var(--paper); text-decoration: underline var(--px); text-underline-offset: 0.3em; } }
+.t-frame__line:focus-visible { outline: var(--px) solid var(--lantern); outline-offset: var(--px); }
+/* the map's pictures carry its pin where a member's head would be */
+.t-frame__map { width: 1rem; height: 1rem; flex-shrink: 0; background: var(--tc-orange); -webkit-mask: var(--t-pin) center / contain no-repeat; mask: var(--t-pin) center / contain no-repeat; --t-pin: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Cpath d='M5 1h6v2h2v5h-2v2h-2v2H9v3H7v-3H6v-2H5V8H3V3h2zm2 3v3h2V4z'/%3E%3C/svg%3E"); }
+
+/* the foot of what is drawn: the rest comes as it nears, or at a press */
+.t-board__more { display: grid; justify-items: center; padding-block: var(--sp-4); }
+
+/* Days further down are laid out only as they come near: the signs' grain,
+   chains and pictures cost nothing off screen. Each keeps the height it was
+   last drawn at, so the scrollbar does not jump. */
+/* the height only: a size given for both stood in for the width too, and widened the board's column to 60rem */
+.t-day + .t-day + .t-day { content-visibility: auto; contain-intrinsic-block-size: auto 60rem; }
+
 /* two signs' worth of board held while it is fetched, so nothing jumps when it comes */
 .t-board__wait {
   height: 26rem;
@@ -164,6 +246,9 @@
 .t-side__pay { font-size: var(--fs-sm); color: var(--ink-soft); overflow-wrap: anywhere; }
 @media (hover: hover) { .t-side__item:hover .t-side__what { color: var(--lantern-ink); text-decoration: underline var(--px); text-underline-offset: 0.3em; } }
 .t-side__item:focus-visible { outline: var(--px) solid var(--lantern-ink); outline-offset: var(--px); }
+.t-side__start { color: var(--lantern-ink); font-weight: 600; text-decoration: underline var(--px); text-underline-offset: 0.3em; }
+@media (hover: hover) { .t-side__start:hover { color: var(--ink); } }
+.t-side__start:focus-visible { outline: var(--px) solid var(--lantern-ink); outline-offset: var(--px); }
 @media (min-width: 1100px) {
   .t-board__side { position: sticky; top: calc(var(--bar) + 12px + var(--sp-6)); }
   .t-board--room .t-board__side { top: 0; }
@@ -175,10 +260,10 @@
   .t-board__main { display: contents; }
   .t-board__head, .t-board .w-pin, .t-join { order: 0; }
   .t-board__side { order: 1; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
-  .t-day, .t-board__empty, .t-board__wait, .t-board__end { order: 2; }
+  .t-day, .t-board__empty, .t-board__wait, .t-board__more, .t-board__end { order: 2; }
   .t-day + .t-day { margin-top: 0; }
   .t-side__title { grid-column: 1 / -1; }
-  .t-side__block:has(.t-side__none) { display: none; }
+  .t-side__block.is-empty { display: none; }
 }
 
 /* the board's own page */
