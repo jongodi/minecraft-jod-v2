@@ -1212,6 +1212,35 @@
    changes. */
 .b-flight { position: absolute; inset: 0; overflow: clip; background: var(--night); visibility: hidden; }
 .b-flight__sheet { position: absolute; left: 0; top: 0; display: block; transform-origin: 0 0; opacity: 0; will-change: transform, opacity; }
+/* With a flight the still is square at rest: the flight ends on it, and the
+   live map takes over from it, at the very view each was drawn at. */
+.b-world.has-flight .b-frame__scene { transform: none; }
+/* The sky the land hangs in, cut out of the stills (scripts/sky-key.mjs):
+   the page's own night, the stars it comes out with over the hero and
+   tonight's moon, as on the crew's pages. They give way to the town's lamps
+   over the last stretch down (Flight.tsx fades the layer), so the landing
+   meets the still's own flat night. */
+.b-flight__sky { position: absolute; inset: 0; background: linear-gradient(180deg, var(--sky-night-top), var(--night) 80%); will-change: opacity; }
+.b-flight__stars { position: absolute; inset: 0; width: 100%; height: 100%; color: var(--star); opacity: 0.55; }
+.b-flight__moon { position: absolute; right: 14%; top: 16%; width: 3rem; height: 3rem; color: var(--star); }
+@media (max-width: 759px) { .b-flight__moon { width: 2.25rem; height: 2.25rem; top: 22%; right: 12%; } }
+/* The last of the evening on the horizon: the sunset's colours low over the
+   land's far edge, its foot set on the horizon line by Flight.tsx (a
+   transform) and fading as the camera comes down (opacity). */
+.b-flight__glow {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 40%;
+  opacity: 0;
+  background: linear-gradient(180deg,
+    transparent,
+    color-mix(in srgb, var(--sky-sunset-top) 40%, transparent) 45%,
+    color-mix(in srgb, var(--sky-sunset-mid) 55%, transparent) 75%,
+    color-mix(in srgb, var(--sky-sunset-low) 70%, transparent) 92%,
+    color-mix(in srgb, var(--sky-sunset-horizon) 80%, transparent));
+  will-change: transform, opacity;
+}
 /* The places, pinned where they stand on what is showing, as their lanterns
    stand in the 3D map: a lit lantern on its spot, its name on a paper tag
    under it when it is chosen or pointed at. Placed by Flight.tsx, a transform
@@ -1240,6 +1269,8 @@
 /* a tap on a phone lands on more than the lantern's few pixels: 44 px square round it */
 .b-pin::after { content: ''; position: absolute; inset: -0.625rem -0.875rem auto; height: 2.75rem; }
 .b-pin .b-pin__lamp { width: 1rem; height: 1.5rem; filter: drop-shadow(0 0 1px rgba(232, 220, 196, 0.6)); transition: transform var(--dur-1) var(--ease-out); }
+/* smaller the farther off the camera stands (Flight.tsx sets --depth), its foot kept on the spot */
+.b-pin .b-pin__lamp, .b-pin .b-pin__head { scale: var(--depth, 1); transform-origin: 50% 100%; }
 .b-pin .b-pin__lamp::before {
   content: '';
   position: absolute;
@@ -1263,8 +1294,15 @@
   transform: translateY(calc(var(--px) * -2));
   transition: opacity var(--dur-1) var(--ease-out), transform var(--dur-1) var(--ease-out);
 }
-.b-pin.is-on .b-pin__lamp { transform: translateY(-2px) scale(1.15); }
+.b-pin.is-on .b-pin__lamp, .b-pin.is-near .b-pin__lamp { transform: translateY(-2px) scale(1.15); }
 .b-pin.is-on .b-pin__label { opacity: 1; transform: none; background: var(--lantern); }
+/* pointed at on the rail: its lantern lifts and says its name */
+.b-pin.is-near .b-pin__label { opacity: 1; transform: none; }
+/* A member who is on, where they stand: their head, a block over them, under
+   the name tag the game floats over every player. Not pressed: their heads
+   in the HUD follow them in the live map. */
+.b-pin--player { pointer-events: none; cursor: default; translate: -50% -100%; gap: 2px; }
+.b-pin--player .b-pin__head { display: block; width: 1rem; height: 1rem; image-rendering: pixelated; box-shadow: 0 0 0 1px var(--night); }
 @media (hover: hover) {
   .b-pin:hover .b-pin__lamp { transform: translateY(-2px) scale(1.15); }
   .b-pin:hover .b-pin__label { opacity: 1; transform: none; }
@@ -1349,6 +1387,43 @@ html.is-map-full { overflow: hidden; }
 .b-frame.is-menu .b-hud, .b-frame.is-menu .b-places, .b-frame.is-menu > .b-card { opacity: 0; visibility: hidden; transition: opacity var(--dur-2) var(--ease-out), visibility 0s linear var(--dur-2); }
 /* a phone's map back in the page: a picture until the lantern opens it again */
 .b-frame.is-still .b-frame__view { pointer-events: none; }
+/* Landed in the live map (World.tsx): woken behind the flight it is not seen
+   at all, and landed it is glass until the lantern is pressed, so the wheel
+   still scrolls the page past it. */
+.b-frame.is-standby .b-frame__view { visibility: hidden; }
+.b-frame.is-glass .b-frame__view { pointer-events: none; }
+/* The locator bar (Locator.tsx), as the game hangs one over the hotbar: a
+   strip of the F3 lines' dark under the HUD's top row, a notch for straight
+   ahead, the other bases as lanterns (pressed, each opens its own map, so
+   they are amber) and the crew who are on as their heads, set along it by
+   where they stand from the way the camera faces. One at an end lies
+   farther round, and points on. */
+.b-locator {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  top: calc(var(--hud-bottom, 5rem) + var(--sp-2));
+  width: min(30rem, 56%);
+  height: 0.75rem;
+  translate: -50% 0;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--dur-2) var(--ease-out), visibility 0s linear var(--dur-2);
+}
+.b-locator.is-up { opacity: 1; visibility: visible; transition: opacity var(--dur-2) var(--ease-out), visibility 0s linear 0s; }
+.b-locator.is-hidden, .b-frame.is-room .b-locator { opacity: 0; visibility: hidden; transition: opacity var(--dur-2) var(--ease-out), visibility 0s linear var(--dur-2); }
+.b-locator::before { content: ''; position: absolute; inset: 0; background: rgba(14, 12, 9, 0.6); clip-path: var(--notch); }
+.b-locator__ahead { position: absolute; left: 50%; top: 0; bottom: 0; width: var(--px); translate: -50% 0; background: rgba(232, 220, 196, 0.35); }
+.b-locator .b-locator__mark { position: absolute; top: 50%; display: grid; place-items: center; translate: -50% -50%; line-height: 0; }
+.b-locator__mark--base { width: 1.25rem; height: 1.75rem; color: var(--lantern); }
+.b-locator__mark--base .b-lantern { width: 0.75rem; height: 1.125rem; color: var(--lantern); filter: drop-shadow(0 0 2px var(--lantern-glow)); }
+.b-locator__mark--player img { width: 0.875rem; height: 0.875rem; image-rendering: pixelated; box-shadow: 0 0 0 1px var(--night); }
+/* farther round than the bar reaches: at its end, dimmer, with an arrow on */
+.b-locator__mark.is-off { opacity: 0.7; }
+.b-locator__mark.is-off::before { content: ''; position: absolute; top: 50%; right: -0.5rem; width: 0; height: 0; translate: 0 -50%; border-block: 0.25rem solid transparent; border-left: 0.25rem solid var(--text-soft); }
+.b-locator__mark.is-off.is-left::before { right: auto; left: -0.5rem; border-left: 0; border-right: 0.25rem solid var(--text-soft); }
+@media (hover: hover) { .b-locator__mark--base:hover .b-lantern { color: var(--paper); } }
+@media (max-width: 759px) { .b-locator { width: min(18rem, 72%); } }
 
 /* the sheet: the painted map, drag to pan, pinch or buttons to zoom */
 .b-sheet { position: absolute; inset: 0; overflow: clip; cursor: grab; touch-action: none; }
@@ -1719,6 +1794,8 @@ html.is-map-full { overflow: hidden; }
 }
 .b-chip:focus-visible { background: color-mix(in srgb, var(--sign) 30%, var(--night)); outline: var(--px) solid var(--lantern); outline-offset: calc(var(--px) * -2); }
 @media (hover: hover) { .b-chip:hover { background: color-mix(in srgb, var(--sign) 30%, var(--night)); } }
+/* its lantern pointed at on the map */
+.b-chip.is-near:not(.is-on) { background: color-mix(in srgb, var(--sign) 30%, var(--night)); outline: var(--px) solid var(--lantern); outline-offset: calc(var(--px) * -2); }
 .b-chip.is-on { background: var(--lantern); color: var(--night); }
 .b-chip__thumb { width: 3.5rem; height: 2.5rem; overflow: hidden; background: var(--dusk-2); box-shadow: 0 0 0 var(--px) var(--wood-dark); }
 .b-chip__thumb img { width: 100%; height: 100%; object-fit: cover; }

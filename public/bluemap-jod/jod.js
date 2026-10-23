@@ -383,8 +383,9 @@
 
     /* Where the map is looking, for the page's F3 lines: the point the
        camera holds, as F3 writes a block's position, and the way the camera
-       faces, by the game's compass (north is towards negative Z). A few times
-       a second at most, and only when it changed. */
+       faces, by the game's compass (north is towards negative Z), and for its
+       locator bar the camera's turn itself, to a few degrees. A few times a
+       second at most, and only when it changed. */
     let lastCamera = '';
     let cameraTimer = 0;
     const sendCamera = () => {
@@ -394,8 +395,10 @@
       const fx = m ? -m[8] : 0;
       const fz = m ? -m[10] : -1;
       const facing = Math.abs(fx) > Math.abs(fz) ? (fx > 0 ? 'east' : 'west') : (fz > 0 ? 'south' : 'north');
-      const at = { x: Math.floor(p.x), y: Math.floor(p.y), z: Math.floor(p.z), facing };
-      const key = `${at.x} ${at.y} ${at.z} ${facing}`;
+      const rotation = Math.round(cm.rotation * 20) / 20;
+      const eye = viewer.camera?.position;
+      const at = { x: Math.floor(p.x), y: Math.floor(p.y), z: Math.floor(p.z), facing, rotation, ex: Math.floor(eye?.x ?? p.x), ez: Math.floor(eye?.z ?? p.z) };
+      const key = `${at.x} ${at.y} ${at.z} ${facing} ${rotation}`;
       if (key === lastCamera) return;
       lastCamera = key;
       tell('camera', at);

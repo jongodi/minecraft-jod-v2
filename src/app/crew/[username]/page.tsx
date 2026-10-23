@@ -12,7 +12,10 @@ import { getCachedStats, withCharges } from '@/lib/stats';
 import { outlaws } from '@/components/badlands/outlaws';
 import { ADVANCEMENT_COUNT, readStoredAdvancements, wallAdvancements } from '@/lib/advancements';
 import { sameUser } from '@/lib/crew-types';
-import Wall, { type WallPlace } from '@/components/wall/Wall';
+import Wall, { type WallCorner, type WallPlace } from '@/components/wall/Wall';
+import { FLIGHT, flightFrame, frameFor } from '@/lib/map-flight';
+import { onMap, type MapBounds } from '@/lib/base-links';
+import viewerFiles from '@/lib/bluemap-viewer.json';
 import type { CrewSessionSeed } from '@/components/badlands/hooks';
 import { SITE_NAME } from '@/components/badlands/data';
 import { plural } from '@/lib/format';
@@ -73,5 +76,21 @@ export default async function CrewWallPage({ params, searchParams }: Props) {
   /* only this member's, with their names: the list of every advancement stays on the server */
   const advancements = crewAdvancements ? { list: wallAdvancements(profile.username, crewAdvancements), of: ADVANCEMENT_COUNT } : null;
   const places: WallPlace[] = (map?.locations ?? []).map(l => ({ id: l.id, label: l.label, sublabel: l.sublabel, builders: l.builders ?? [], wood: woodOf(l) }));
-  return <Wall initial={profile} places={places} initialStats={stats} initialLed={led} advancements={advancements} justSignedIn={query.innskrad === '1'} session={session} />;
+  return <Wall initial={profile} places={places} initialStats={stats} initialLed={led} advancements={advancements} justSignedIn={query.innskrad === '1'} corner={cornerOf(map?.locations ?? [], profile.username)} session={session} />;
+}
+
+/* The main map's rendered edges, as map:brand wrote them */
+const BOUNDS = (viewerFiles as { bounds?: MapBounds | null }).bounds ?? null;
+
+/** What a member built that stands on the main map's ground, on the still of
+    the flight that shows it best, and where each place stands in it. */
+function cornerOf(locations: { id: number; label: string; builders?: string[]; world?: { x: number; y: number; z: number } | null }[], username: string): WallCorner | null {
+  if (!FLIGHT) return null;
+  const built = locations.flatMap(l =>
+    l.world && (l.builders ?? []).some(b => sameUser(b, username)) && (!BOUNDS || onMap(BOUNDS, l.world)) ? [{ ...l, world: l.world }] : []);
+  /* a place's lantern stands in the middle of its block, a block up */
+  const pick = frameFor(FLIGHT.wide, built.map(l => [l.world.x + 0.5, l.world.y + 1, l.world.z + 0.5]));
+  if (!pick) return null;
+  const pins = built.flatMap((l, i) => { const at = pick.at[i]; return at ? [{ id: l.id, label: l.label, x: at.x, y: at.y }] : []; });
+  return { src: flightFrame(FLIGHT, 'wide', pick.k), pins };
 }

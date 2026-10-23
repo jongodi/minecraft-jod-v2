@@ -121,3 +121,66 @@ export function cover(w: number, h: number, iw: number, ih: number): { x: number
   const width = iw * s, height = ih * s;
   return { x: (w - width) * 0.5, y: (h - height) * 0.45, width, height };
 }
+
+/** How big a lantern is drawn at this many blocks from the camera: full size
+    near, down to about half over the overview, so the pins stand in the
+    world rather than on the glass in front of it. */
+export const depthScale = (blocks: number): number => Math.min(1.1, Math.max(0.5, 140 / Math.max(1, blocks)));
+
+/** The camera's way across the ground: where it looks, from where it stands,
+    on the level (x and z), one block long. North is towards negative Z. */
+export function heading(eye: readonly number[], look: readonly number[]): [number, number] {
+  const fx = look[0] - eye[0], fz = look[2] - eye[2];
+  const n = Math.hypot(fx, fz) || 1;
+  return [fx / n, fz / n];
+}
+
+/** BlueMap's camera turned `rotation` radians looks this way across the ground
+    (its ControlsManager: rotation 0 faces north). */
+export const headingOf = (rotation: number): [number, number] => [Math.sin(rotation), -Math.cos(rotation)];
+
+/** Where something stands as seen from a point facing a way across the
+    ground: its angle off straight ahead in radians (negative to the left,
+    positive to the right, ±π behind) and how far it is in blocks. */
+export function bearing(from: readonly [number, number], way: readonly [number, number], to: readonly [number, number]): { angle: number; blocks: number } {
+  const dx = to[0] - from[0], dz = to[1] - from[1];
+  /* to the right of facing north is east: right is (-z, x) of the way ahead */
+  const ahead = dx * way[0] + dz * way[1];
+  const right = dx * -way[1] + dz * way[0];
+  return { angle: Math.atan2(right, ahead), blocks: Math.hypot(dx, dz) };
+}
+
+/** A point on the horizon straight ahead of the camera: far off along the way
+    it faces, at its own height, which a still puts on the line where the land
+    meets the sky. */
+export function horizonPoint(eye: readonly number[], look: readonly number[]): [number, number, number] {
+  const [fx, fz] = heading(eye, look);
+  return [eye[0] + fx * 100000, eye[1], eye[2] + fz * 100000];
+}
+
+/** The still of a flight that shows these points best, for a member's wall:
+    the one that has the most of them inside it with a margin, and of those
+    the one they spread widest across, so a corner of the world is seen close
+    rather than as dots on the overview. Where each point falls in it, as a
+    fraction of its width and height (null for one it does not show). */
+export function frameFor(set: FlightSet, points: readonly (readonly number[])[]): { k: number; at: ({ x: number; y: number } | null)[] } | null {
+  if (points.length === 0) return null;
+  type Pick = { k: number; at: ({ x: number; y: number } | null)[]; score: number };
+  let best: Pick | null = null;
+  for (let k = 0; k < set.shots.length; k++) {
+    const at = points.map(p => {
+      const pr = projectPoint(set.shots[k].m, p);
+      return pr && pr.x >= 0.12 && pr.x <= 0.88 && pr.y >= 0.15 && pr.y <= 0.9 ? pr : null;
+    });
+    const inside = at.filter((a): a is { x: number; y: number } => a !== null);
+    if (inside.length === 0) continue;
+    const xs = inside.map(a => a.x), ys = inside.map(a => a.y);
+    /* one point alone is best seen at the middle distance of the flight, not right under the camera */
+    const spread = inside.length > 1
+      ? (Math.max(...xs) - Math.min(...xs)) * (Math.max(...ys) - Math.min(...ys))
+      : 1 - Math.abs(k / Math.max(1, set.shots.length - 1) - 0.5);
+    const score = inside.length * 10 + Math.min(1, spread);
+    if (!best || score > best.score) best = { k, at, score };
+  }
+  return best && { k: best.k, at: best.at };
+}

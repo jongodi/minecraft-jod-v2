@@ -6,7 +6,7 @@ const LAND = [30, 40, 20, 255];
 
 /** A row of pixels, keyed, read back as [r, g, b, a] each. */
 function row(...pixels: number[][]) {
-  const out = keySky(new Uint8ClampedArray(pixels.flat()), pixels.length, 1);
+  const out = keySky(new Uint8ClampedArray(pixels.flat()), pixels.length, 1) as Uint8ClampedArray;
   return pixels.map((_, k) => Array.from(out.slice(k * 4, k * 4 + 4)));
 }
 

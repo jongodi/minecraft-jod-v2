@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cameraAt, cover, easeFlight, facing, fetchOrder, flightShape, project, projectPoint, warp, type Flight, type FlightShot } from '../map-flight';
+import { bearing, cameraAt, cover, depthScale, easeFlight, facing, fetchOrder, flightShape, frameFor, heading, headingOf, horizonPoint, project, projectPoint, warp, type Flight, type FlightShot } from '../map-flight';
 
 const IDENTITY = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
 /* w = z, as a camera at the origin looking down +z would give */
@@ -89,5 +89,65 @@ describe('flightShape', () => {
     expect(flightShape({ version: 'v', frames: 2, wide: set, tall: set } as Flight, 390, 700)).toBe('tall');
     expect(flightShape({ version: 'v', frames: 2, wide: set } as Flight, 390, 700)).toBe('wide');
     expect(flightShape({ version: 'v', frames: 2, wide: set, tall: set } as Flight, 1440, 800)).toBe('wide');
+  });
+});
+
+describe('the locator bar and the lanterns', () => {
+  it('reads a bearing as the game faces: north is negative Z, east to its right', () => {
+    const north = headingOf(0);
+    expect(north[0]).toBeCloseTo(0);
+    expect(north[1]).toBeCloseTo(-1);
+    expect(bearing([0, 0], north, [0, -100]).angle).toBeCloseTo(0);
+    expect(bearing([0, 0], north, [100, 0]).angle).toBeCloseTo(Math.PI / 2);
+    expect(bearing([0, 0], north, [-100, 0]).angle).toBeCloseTo(-Math.PI / 2);
+    expect(Math.abs(bearing([0, 0], north, [0, 100]).angle)).toBeCloseTo(Math.PI);
+    expect(bearing([0, 0], north, [30, -40]).blocks).toBeCloseTo(50);
+  });
+
+  it('takes the way the camera faces from where it stands and looks', () => {
+    const [x, z] = heading([0, 300, 0], [0, 64, -40]);
+    expect(x).toBeCloseTo(0);
+    expect(z).toBeCloseTo(-1);
+    expect(heading([0, 0, 0], [10, -5, 0])).toEqual([1, 0]);
+  });
+
+  it('draws a lantern smaller the farther off it stands, within bounds', () => {
+    expect(depthScale(140)).toBeCloseTo(1);
+    expect(depthScale(1000)).toBe(0.5);
+    expect(depthScale(20)).toBe(1.1);
+    expect(depthScale(280)).toBeCloseTo(0.5);
+  });
+
+  it('puts the horizon far ahead at the camera\'s own height', () => {
+    const [x, y, z] = horizonPoint([0, 300, 0], [0, 64, -40]);
+    expect(x).toBeCloseTo(0);
+    expect(y).toBe(300);
+    expect(z).toBeLessThan(-99000);
+  });
+});
+
+describe('a corner of the world on a wall', () => {
+  /* a camera that sees x and y from -1 to 1 at a distance, wider as it backs off */
+  const at = (span: number): FlightShot => {
+    const m = [...IDENTITY];
+    m[0] = 1 / span; m[5] = 1 / span;
+    return { m, eye: [0, 0, 0], look: [0, 0, 0], d: span };
+  };
+  const set = { width: 1280, height: 720, shots: [at(100), at(10), at(3)] };
+
+  it('takes the still that has them all, as close as it still has them', () => {
+    const pick = frameFor(set, [[-5, -5, 0], [5, 5, 0]])!;
+    expect(pick.k).toBe(1);
+    expect(pick.at.every(a => a !== null)).toBe(true);
+  });
+
+  it('takes the still with the most of them when none has all', () => {
+    const pick = frameFor(set, [[-5, 0, 0], [5, 0, 0], [500, 0, 0]])!;
+    expect(pick.at.filter(Boolean)).toHaveLength(2);
+    expect(pick.at[2]).toBeNull();
+  });
+
+  it('has nothing to show for no places', () => {
+    expect(frameFor(set, [])).toBeNull();
   });
 });
