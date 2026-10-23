@@ -982,3 +982,18 @@ No sideways scroll at 360 to 1440 on any page or filter; `tsc`, `next lint` and 
 1. **A letter when your call is taken on**, in the same dress as *Kallað á þig*.
 2. **The weekly paper** (*Vikublaðið*).
 3. **Item-frame stamps**: the game's items as reactions on a sign, counted like the lantern.
+
+---
+
+## Part 14. Items for a sign
+
+The third thing on Part 13's list, asked for on 23 October 2026: the game's own items as reactions on a sign, counted like the lantern.
+
+| Where | What | Why, in one sentence |
+|---|---|---|
+| Every sign, walls and the board | **The hotbar in the sign's foot**: what has been given, after the lantern, each item in one of the game's slots with its count written as the game writes a stack, yours in the frame of the slot in hand; pressing one gives it too or takes yours back. | A lantern says "seen"; a cake says "til hamingju", and every one of the crew reads a slot and a stack count without being told. |
+| The empty slot after them | **The inventory**: all eight items, four or eight to a row, walked with the arrow keys, and the game's violet tooltip saying the item's name, its words and who gave it; with nothing pointed at, who gave what. | Giving needs every item at hand, and a phone, which points at nothing, still has to be able to see who gave what. |
+| An item given | **The pop**: it jumps into its slot as an item picked up does in the game, narrow and tall and back over five ticks, with the game's pop when the sound is on. | The moment of giving should feel like picking something up, not like a form being sent. |
+| The art | **Eight items drawn for the site** on the game's sixteen-pixel grid (`src/lib/item-art.ts`), shown only as CSS (`src/app/items.css`) that a test draws from the art and holds to it. | An icon is one element with a background, so ninety signs with items on them cost the page no script and next to no markup. |
+
+Eight items and the plus are nine slots: one hotbar. Each member gives each item once, on any sign, their own too, and takes it back the same way. Nothing is stored on a sign until something is given, so every wall written before reads as it did.

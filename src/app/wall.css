@@ -531,3 +531,117 @@
 .w-pin__drop svg { width: 1rem; height: 1rem; }
 .w-pin__more { justify-self: start; }
 .w-print__reward { padding-block: var(--sp-2); }
+
+/* ─── what the crew give a sign: the game's items, in the game's slots ───
+   Given items hang in the sign's foot after the lantern as a hotbar: each a
+   slot sunk into a strip of the night, eighteen of the art's pixels square
+   with the item's sixteen in it, as in the game, and a thumb's reach where
+   there is a thumb. The count is the game's stack count, white with its hard
+   shadow, written from two up; the items you gave wear the frame the game
+   puts round the slot in hand. A pointer over a slot lightens it, as the
+   game's does. The pictures are src/app/items.css, drawn from the art in
+   src/lib/reactions.ts. */
+.w-print { --w-slot: calc(var(--px) * 18); }
+@media (pointer: coarse) { .w-print { --w-slot: var(--tap); } }
+.w-items { display: flex; flex-wrap: wrap; align-items: center; gap: var(--px); }
+.w-slot {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: var(--w-slot);
+  height: var(--w-slot);
+  padding: 0;
+  color: var(--tc-white);
+  background: var(--dusk-2);
+  box-shadow: var(--bevel-in), 0 0 0 var(--px) var(--wood-dark);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.w-item { display: block; width: calc(var(--px) * 16); height: calc(var(--px) * 16); background: center / 100% 100% no-repeat; image-rendering: pixelated; }
+.w-slot__count {
+  position: absolute;
+  z-index: 2;
+  right: 0;
+  bottom: 0;
+  font-family: var(--font-data);
+  font-size: var(--fs-data);
+  line-height: 1;
+  color: var(--paper);
+  text-shadow: var(--px) var(--px) 0 var(--night);
+  pointer-events: none;
+}
+/* the light over a slot pointed at, laid over the item as the game lays it */
+.w-slot::before { content: ''; position: absolute; z-index: 1; inset: 0; background: rgba(255, 240, 210, 0.32); opacity: 0; pointer-events: none; }
+@media (hover: hover) { .w-slot:not([disabled]):hover::before { opacity: 1; } }
+.w-slot:not([disabled]):active .w-item, .w-slot:not([disabled]):active .w-slot__plus { translate: var(--press); }
+.w-slot:focus-visible { outline: var(--px) solid var(--lantern); outline-offset: calc(var(--px) * 3); }
+.w-slot[disabled] { cursor: default; }
+/* in hand: a pixel of night round the slot and a frame of light round that */
+.w-slot.is-mine { z-index: 1; box-shadow: var(--bevel-in), 0 0 0 var(--px) var(--night), 0 0 0 calc(var(--px) * 2) var(--paper); }
+/* An item given pops into its slot the way the game's do when one is picked
+   up: drawn half as wide and half as tall again, coming back to itself over
+   five of the game's ticks, from its foot, at the game's even pace. */
+.w-item.is-popping { transform-origin: 50% 75%; animation: w-pop 250ms linear both; }
+@keyframes w-pop { 0% { transform: scale(0.5, 1.5); } 50% { transform: scale(0.67, 1.25); } }
+@media (prefers-reduced-motion: reduce) { .w-item.is-popping { animation: none; } }
+/* the empty slot after them: a plus in the slot, lit while the inventory is open */
+.w-slot__plus { width: calc(var(--px) * 8); height: calc(var(--px) * 8); background: currentColor; -webkit-mask: var(--w-plus) center / contain no-repeat; mask: var(--w-plus) center / contain no-repeat; }
+.w-slot--add { --w-plus: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'%3E%3Cpath d='M3 0h2v3h3v2H5v3H3V5H0V3h3z'/%3E%3C/svg%3E"); }
+@media (hover: hover) { .w-slot--add:hover { color: var(--paper); } }
+.w-slot--add.is-open { color: var(--lantern); }
+/* the slot's tag stands above it, where on a phone it would only widen the page unseen */
+@media (max-width: 719px) { .w-slot.b-tip::after { content: none; } }
+
+/* The inventory: under a seam in the board like the replies, every item in
+   a slot, and the game's own tooltip for the one pointed at: its dark violet
+   box with the violet rim inside a pixel of the box's own dark, the corners
+   cut, the item's name in white and what it says in the game's grey. Four
+   slots to a row where eight do not fit. */
+.w-inv {
+  container-type: inline-size;
+  display: grid;
+  gap: var(--sp-2);
+  margin-inline: calc(var(--sp-4) * -1);
+  padding: var(--sp-3) var(--sp-4) 0;
+  border-top: var(--px) solid var(--sign-line);
+  box-shadow: inset 0 var(--px) 0 rgba(255, 240, 210, 0.3);
+  animation: w-inv-in var(--dur-2) var(--ease-out) both;
+}
+@keyframes w-inv-in { from { opacity: 0; transform: translateY(calc(var(--px) * -3)); } }
+@media (prefers-reduced-motion: reduce) { .w-inv { animation: none; } }
+.w-inv__head { display: flex; justify-content: space-between; align-items: center; gap: var(--sp-3); padding-inline: var(--sp-1); }
+.w-inv__title { font-family: var(--font-data); font-size: var(--fs-data); letter-spacing: 0.04em; text-transform: uppercase; color: var(--sign-soft); }
+.w-inv__body { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--sp-3) var(--sp-4); padding: var(--px) var(--px) 0; }
+.w-inv__slots { display: grid; grid-template-columns: repeat(4, var(--w-slot)); gap: var(--px); }
+@container (min-width: 20rem) { .w-inv__slots { grid-template-columns: repeat(8, var(--w-slot)); } }
+@media (pointer: coarse) {
+  .w-inv__slots { grid-template-columns: repeat(4, var(--w-slot)); }
+  @container (min-width: 24rem) { .w-inv__slots { grid-template-columns: repeat(8, var(--w-slot)); } }
+}
+.w-inv__tip {
+  position: relative;
+  flex: 1 1 13rem;
+  min-width: 0;
+  min-height: 5.25rem;
+  display: grid;
+  align-content: start;
+  gap: var(--px);
+  padding: calc(var(--px) * 3) calc(var(--px) * 5);
+  background: var(--game-tip);
+  border: var(--px) solid var(--game-tip);
+  clip-path: var(--notch);
+  color: var(--paper);
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+}
+.w-inv__tip::before { content: ''; position: absolute; inset: 0; border: var(--px) solid; border-image: linear-gradient(180deg, var(--game-tip-rim), var(--game-tip-rim-2)) 1; pointer-events: none; }
+.w-inv__name { font-weight: 600; overflow-wrap: anywhere; }
+.w-inv__says { color: var(--game-tip-lore); }
+.w-inv__who { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-1); margin-top: var(--px); color: var(--tc-white); }
+.w-inv__who img { width: 1rem; height: 1rem; image-rendering: pixelated; }
+.w-inv__who span { margin-left: var(--px); overflow-wrap: anywhere; }
+.w-inv__given { list-style: none; display: grid; gap: var(--sp-1); }
+.w-inv__given li { display: flex; align-items: center; gap: var(--sp-2); color: var(--tc-white); }
+.w-inv__given li span:last-child { min-width: 0; overflow-wrap: anywhere; }
+.w-inv__given .w-item { width: 1rem; height: 1rem; flex-shrink: 0; }

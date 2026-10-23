@@ -4,16 +4,18 @@
 // something with its reward (Óskast), or a question for the crew. The owner
 // can rewrite it, recaption or take down its pictures, move it to a place,
 // or make one of its prints the poster's backdrop. Anyone signed in can
-// light a lantern under it, leave a line, take a call on or answer a
-// question. The same sign hangs on the board (src/components/board), with
-// its writer named at its top.
-import { memo, useEffect, useRef, useState, type CSSProperties, type FormEvent, type MouseEvent } from 'react';
+// light a lantern under it, give it one of the game's items, leave a line,
+// take a call on or answer a question. The same sign hangs on the board
+// (src/components/board), with its writer named at its top.
+import { memo, useCallback, useEffect, useId, useRef, useState, type CSSProperties, type FormEvent, type MouseEvent } from 'react';
 import Link from 'next/link';
 import type { CrewEntry, CrewPhoto } from '@/lib/crew-types';
 import { LIMITS, sameUser } from '@/lib/crew-types';
 import Call from './Call';
 import Poll from './Poll';
 import Mentions from './Mentions';
+import { Hotbar, Inventory, useGifts } from './Reactions';
+import type { Reactions } from '@/lib/reactions';
 import { formatDate, formatAge, plural } from '@/lib/format';
 import { Lantern } from '@/components/badlands/Bits';
 import { useMounted } from '@/components/badlands/hooks';
@@ -70,6 +72,12 @@ export default memo(function Print({ username, entry, places, me, isOwner, cover
     backToEdit.current = false;
     editBtn.current?.focus();
   }, [edit]);
+  /* the items given to it; the inventory opens under the sign's foot, and closing it hands the keyboard back to the slot that opened it */
+  const updateReactions = useCallback((change: (r: Reactions | undefined) => Reactions) => onChange(entry.id, e => ({ ...e, reactions: change(e.reactions) })), [onChange, entry.id]);
+  const gifts = useGifts({ username, entryId: entry.id, reactions: entry.reactions, me, update: updateReactions, setError });
+  const inventoryId = useId();
+  const plusBtn = useRef<HTMLButtonElement>(null);
+  const closeInventory = () => { gifts.setOpen(false); plusBtn.current?.focus(); };
   /* the light a lantern just lit throws across the board: where it stands, and a count so a second lighting starts it again */
   const [light, setLight] = useState<{ x: number; y: number; n: number } | null>(null);
   const mounted = useMounted();
@@ -243,6 +251,7 @@ export default memo(function Print({ username, entry, places, me, isOwner, cover
           {entry.lanterns.length > 0 && <span>{entry.lanterns.length}</span>}
           <span className="b-visually-hidden">{entry.lanterns.length ? `luktir: ${entry.lanterns.join(', ')}` : 'engin lukt enn'}</span>
         </button>
+        <Hotbar gifts={gifts} panelId={inventoryId} plusRef={plusBtn} />
         {isOwner && !edit && (
           <span className="w-print__actions">
             <button ref={editBtn} type="button" onClick={() => setEdit({ text: entry.text, placeId: entry.placeId, photos: entry.photos, reward: entry.bounty?.reward ?? '' })} aria-label={`Breyta færslunni: ${name}`}>breyta</button>
@@ -250,6 +259,8 @@ export default memo(function Print({ username, entry, places, me, isOwner, cover
           </span>
         )}
       </footer>
+
+      {gifts.open && me && <Inventory gifts={gifts} id={inventoryId} onClose={closeInventory} />}
 
       {(entry.replies.length > 0 || me) && (
         <div className="w-replies">

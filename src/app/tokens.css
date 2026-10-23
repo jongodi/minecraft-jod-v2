@@ -123,6 +123,14 @@
   --iron:         #5E544C;           /* the chains; drawn into the chain's tile in wall.css */
   --iron-light:   #AFA191;   /* the chains catch the light; dark iron vanished on the night */
 
+  /* ── the game's own tooltip: the dark violet box an item's name comes up
+     in, its rim the game's two violets laid over it at the game's strength
+     (the inventory on a sign, wall.css) ── */
+  --game-tip:       #100010;
+  --game-tip-rim:   #2E0A78;   /* the rim at the top */
+  --game-tip-rim-2: #1C0546;   /* and at the foot */
+  --game-tip-lore:  #A8A8A8;   /* what an item says, 8.6:1 */
+
   /* ── status ── */
   --online:  #8FB06A;
   --offline: var(--tc-red);

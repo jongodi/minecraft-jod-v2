@@ -1,5 +1,6 @@
 /* The crew's walls: types and pure helpers with no server imports, so the
    wall's client components and the API routes read the same definitions. */
+import { isItem, type Reactions } from '@/lib/reactions';
 
 export const CREW_USERNAMES = [
   'stebbias',
@@ -84,6 +85,8 @@ export interface CrewEntry {
   bounty?:   CrewBounty;
   /** set on a question for the crew */
   poll?:     CrewPoll;
+  /** the items the crew have given it (src/lib/reactions.ts); only once something has been */
+  reactions?: Reactions;
 }
 
 export interface CrewProfile {
@@ -172,6 +175,18 @@ export function normalizePoll(raw: unknown): CrewPoll | null {
   return { choices, closed: p.closed === true };
 }
 
+/** The items given, each list the crew's own names once, in the order the
+    items were first given; null when nothing has been. */
+export function normalizeReactions(raw: unknown): Reactions | null {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const out: Reactions = {};
+  for (const [id, who] of Object.entries(raw)) {
+    const list = isItem(id) ? names(who) : [];
+    if (isItem(id) && list.length) out[id] = list;
+  }
+  return Object.keys(out).length ? out : null;
+}
+
 export function normalizeEntry(raw: unknown): CrewEntry | null {
   const e = raw as Partial<CrewEntry> | null;
   if (!e || typeof e.id !== 'string') return null;
@@ -181,6 +196,7 @@ export function normalizeEntry(raw: unknown): CrewEntry | null {
   /* a call and a question both need words to say what they are; a poll wins if both came */
   const poll = text.trim() ? normalizePoll(e.poll) : null;
   const bounty = text.trim() && !poll ? normalizeBounty(e.bounty) : null;
+  const reactions = normalizeReactions(e.reactions);
   return {
     id:        e.id,
     text,
@@ -197,6 +213,7 @@ export function normalizeEntry(raw: unknown): CrewEntry | null {
     /* only when there is one, so a plain note is stored as it always was */
     ...(bounty ? { bounty } : {}),
     ...(poll ? { poll } : {}),
+    ...(reactions ? { reactions } : {}),
   };
 }
 
