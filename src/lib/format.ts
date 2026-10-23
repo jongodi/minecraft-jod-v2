@@ -4,6 +4,11 @@ export function plural(n: number, one: string, many: string): string {
   return n % 10 === 1 && n % 100 !== 11 ? one : many;
 }
 
+/** Names run together as a sentence does in Icelandic: "a, b og c". */
+export function andList(items: readonly string[]): string {
+  return items.length < 2 ? items.join('') : `${items.slice(0, -1).join(', ')} og ${items[items.length - 1]}`;
+}
+
 /** A number as it is written in Iceland: a period between the thousands, a
     comma before the decimals, "1.234,5". Written out rather than left to the
     browser's locale data, which falls back to "1,234.5" wherever it carries

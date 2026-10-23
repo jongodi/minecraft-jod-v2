@@ -8,29 +8,22 @@ import PlayerHead from './PlayerHead';
 import Wanted from './Wanted';
 import { NightBoard } from './PlayNight';
 import Annall from './Annall';
-import Rail from './Rail';
 import { CREW } from './data';
 import { useStats, type ServerState } from './hooks';
 import { sinceAt } from './night';
-import { formatAge, plural } from '@/lib/format';
+import { plural } from '@/lib/format';
 import type { CrewSummary } from '@/app/api/crew/route';
-import type { FeedEntry } from '@/app/api/crew/feed/route';
-import { photoProps, PHOTO_SIZES } from './photo';
-import { woodClass } from '@/lib/sign-wood';
-
-const STRIP = 12;
 
 /** The crew's room, opened over the world. Portraits of the eight with a
     lantern behind the ones who are in, the next play night's fire, then the
-    wanted board the room is named for, on one rail, and under it the notice
-    strip with what was pinned last on their walls. The posters used to hang
-    under the strip, a screen and more down a room that is called Eftirlýst.
-    At the foot, the annals: the nights that have been (Annall.tsx).
-    Everything here is fetched when the room is first opened, not with the page. */
+    wanted board the room is named for, on one rail. At the foot, the annals:
+    the nights that have been (Annall.tsx). What the crew pinned on their
+    walls hangs on the board, a door of its own (#taflan); the strip of it
+    this room used to keep is a way there now. Everything here is fetched
+    when the room is first opened, not with the page. */
 function Crew({ server }: { server: ServerState }) {
   const stats = useStats();
   const [summary, setSummary] = useState<Record<string, CrewSummary>>({});
-  const [strip, setStrip]     = useState<FeedEntry[] | null>(null);
   const { online, life, players, list, lastOnline } = server;
   const lower = list.map(n => n.toLowerCase());
   const inside = CREW.filter(n => lower.includes(n.toLowerCase())).length;
@@ -41,10 +34,6 @@ function Crew({ server }: { server: ServerState }) {
       .then(r => (r.ok ? r.json() : null))
       .then((rows: CrewSummary[] | null) => { if (rows) setSummary(Object.fromEntries(rows.map(r => [r.username.toLowerCase(), r]))); })
       .catch(() => {});
-    fetch(`/api/crew/feed?limit=${STRIP}`, { cache: 'no-store' })
-      .then(r => (r.ok ? r.json() : null))
-      .then((rows: FeedEntry[] | null) => setStrip(rows ?? []))
-      .catch(() => setStrip([]));
   }, []);
 
   return (
@@ -89,34 +78,12 @@ function Crew({ server }: { server: ServerState }) {
 
       <Wanted stats={stats} />
 
-      {/* the notice strip: the newest things on every wall, each a tap from where it hangs */}
-      {strip && strip.length > 0 && (
-        <section className="w-strip" aria-label="Á töflunni">
-          <div className="w-strip__head">
-            <h3 className="w-strip__title">Á töflunni</h3>
-            <p className="b-note">það nýjasta af veggjum hópsins</p>
-          </div>
-          <Rail label="Nýjast af veggjunum" prevLabel="Fyrri" nextLabel="Næstu" count={strip.length}>
-            {strip.map(e => (
-              <Link key={e.id} href={`/crew/${e.username}#${e.id}`} className={`w-sign${woodClass(e.wood)} w-note-card`} data-rail-item={e.id}>
-                {e.photos[0] && (
-                  <span className="w-note-card__pic">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img {...photoProps(e.photos[0].filename, PHOTO_SIZES.strip)} alt={e.photos[0].caption || ''} loading="lazy" decoding="async" />
-                  </span>
-                )}
-                {(e.text || e.photos[0]?.caption) && <span className="w-note-card__text">{e.text || e.photos[0]?.caption}</span>}
-                <span className="w-note-card__who"><PlayerHead name={e.username} size={16} alt="" /><b>{e.username}</b><span>{formatAge(e.createdAt)}</span></span>
-              </Link>
-            ))}
-          </Rail>
-        </section>
-      )}
-
       {/* the nights that have been, last: the room's history, under what is happening now */}
       <Annall />
 
       <div className="b-crew__foot">
+        {/* the board is the room next door: the doors' own link swaps one room for the other */}
+        <a href="#taflan" className="b-btn b-btn--small">Taflan: það nýjasta frá hópnum</a>
         <Link href="/crew" className="b-btn b-btn--small">Veggir hópsins og öll tölfræðin</Link>
       </div>
     </div>

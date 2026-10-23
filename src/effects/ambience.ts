@@ -94,6 +94,27 @@ export async function ambienceRunning(): Promise<boolean> {
   return engine?.ctx === ctx && ctx.state === 'running';
 }
 
+/** The game's pop when something is picked up, at a pitch of its own each
+    time, as the game picks one: only while the wind and the fire are playing,
+    since the visitor turned the sound on with them, and never on its own. */
+export function pickupPop() {
+  if (!engine || engine.ctx.state !== 'running') return;
+  const { ctx, master } = engine;
+  const t = ctx.currentTime;
+  const pitch = 1 + (Math.random() - Math.random()) * 0.35;
+  const osc = ctx.createOscillator();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(880 * pitch, t);
+  osc.frequency.exponentialRampToValueAtTime(330 * pitch, t + 0.06);
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0.0001, t);
+  gain.gain.exponentialRampToValueAtTime(0.22, t + 0.006);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.09);
+  osc.connect(gain).connect(master);
+  osc.start(t);
+  osc.stop(t + 0.1);
+}
+
 export function stopAmbience() {
   if (!engine) return;
   const { ctx, master, crackle } = engine;

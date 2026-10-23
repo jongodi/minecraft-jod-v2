@@ -1,5 +1,5 @@
 import posterFile from '@/lib/map-poster.json';
-import { formatNumber } from '@/lib/format';
+import { formatNumber, plural } from '@/lib/format';
 export const SERVER_IP = 'play.jodcraft.world';
 /* The name as it is written: every page's title ends in it, the manifest,
    the footer's credit and the link previews carry it. The mark and the hero
@@ -24,28 +24,32 @@ export const bodyFallback = (name: string, size = 256) => `https://mc-heads.net/
 
 export interface NavLink { label: string; href: string; id?: string }
 
-/* The three doors of the evening, each a lantern in the bar (a hotbar slot on phones).
-   The first is the world itself; the other two are rooms that open over it.
-   A door's id is also the hash that opens it, so /#hopur works from anywhere. */
-export type DoorId = 'heimur' | 'hopur' | 'hillan';
+/* The four doors of the evening, each a lantern in the bar (a hotbar slot on phones).
+   The first is the world itself; the other three are rooms that open over it.
+   The board comes second: it is where whatever happens on JOÐ is posted, and
+   the door a returning member reaches for first. A door's id is also the
+   hash that opens it, so /#taflan works from anywhere. */
+export type DoorId = 'heimur' | 'taflan' | 'hopur' | 'hillan';
 export const SECTIONS: (NavLink & { id: DoorId })[] = [
   { label: 'Heimurinn', href: '#heimur', id: 'heimur' },
+  { label: 'Taflan',    href: '#taflan', id: 'taflan' },   /* the notice board: posts, prints, calls, questions, fires and the map's news */
   { label: 'Eftirlýst', href: '#hopur',  id: 'hopur'  },   /* the crew's room: the wanted board is what it is named for */
   { label: 'Hillan',    href: '#hillan', id: 'hillan' },
 ];
-export const ROOMS = ['hopur', 'hillan'] as const;
+export const ROOMS = ['taflan', 'hopur', 'hillan'] as const;
 export type RoomId = typeof ROOMS[number];
-export const isRoom = (s: string | null | undefined): s is RoomId => s === 'hopur' || s === 'hillan';
+export const isRoom = (s: string | null | undefined): s is RoomId => (ROOMS as readonly string[]).includes(s ?? '');
 /** A plain click: one with a modifier keeps the link's own meaning (a new tab, a new window), so the doors open in place only on this. */
 export const plainClick = (e: { button: number; metaKey: boolean; ctrlKey: boolean; shiftKey: boolean; altKey: boolean }) =>
   e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey;
 
 /* The same doors from another page. The world and the shelf lead back to the
    home page's own; the crew's door leads to the crew's own page, the roll
-   call, which the walls belong to. A door lit on the roll call or a wall
-   that took the visitor back to the home page's room was lit for one place
-   and led to another. */
-export const PAGE_LINKS = SECTIONS.map(l => ({ label: l.label, href: l.id === 'hopur' ? '/crew' : `/${l.href}`, id: l.id }));
+   call, which the walls belong to, and the board's to its own page. A door
+   lit on the roll call or a wall that took the visitor back to the home
+   page's room was lit for one place and led to another. */
+const PAGE_HREF: Partial<Record<DoorId, string>> = { hopur: '/crew', taflan: '/taflan' };
+export const PAGE_LINKS = SECTIONS.map(l => ({ label: l.label, href: PAGE_HREF[l.id] ?? `/${l.href}`, id: l.id }));
 
 /* the game's compass in Icelandic, for the F3 lines: north is towards negative Z */
 export const FACING: Record<string, string> = { north: 'norður', south: 'suður', east: 'austur', west: 'vestur' };
@@ -133,6 +137,7 @@ export const STAT_TABS = [
   { id: 'raidWins',       nick: 'Ræningja\u00ADbaninn', label: 'Árásir hraktar',             unit: num },
   { id: 'recordsPlayed',  nick: 'Plötu\u00ADsnúðurinn', label: 'Plötur spilaðar',            unit: num },
   { id: 'firsts',         nick: 'Braut\u00ADryðjandinn', label: 'Afrek unnin fyrst allra',    unit: (v: number) => `${num(v)} afrek` },
+  { id: 'bounties',       nick: 'Hausa\u00ADveiðarinn', label: 'Óskir uppfylltar fyrir verðlaun', unit: (v: number) => `${num(v)} ${plural(v, 'ósk', 'óskir')}` },
   { id: 'drawMs',         nick: 'Fógetinn',       label: 'Hraðasta skotið við varðeldinn', unit: ms, low: true },
   { id: 'noShows',        nick: 'Svikarinn',      label: 'Sagðist mæta en kom ekki',  unit: (v: number) => `${num(v)} kvöld` },
 ] as const;

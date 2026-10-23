@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatDate, formatDaySpan, formatNumber, plural } from '@/lib/format';
+import { andList, formatDate, formatDaySpan, formatNumber, plural } from '@/lib/format';
 
 describe('dates written as in Iceland', () => {
   it('writes the day, the short month and the year, whatever the browser carries', () => {
@@ -55,5 +55,14 @@ describe('formatDaySpan', () => {
     expect(formatDaySpan('2026-10-04', '2026-10-11')).toBe('4. til 11. okt.');
     expect(formatDaySpan('2026-09-28', '2026-10-05')).toBe('28. sep. til 5. okt.');
     expect(formatDaySpan('2026-12-28', '2027-01-04')).toBe('28. des. til 4. jan.');
+  });
+});
+
+describe('names in a row', () => {
+  it('runs them together with commas and an og before the last', () => {
+    expect(andList([])).toBe('');
+    expect(andList(['stebbias'])).toBe('stebbias');
+    expect(andList(['stebbias', 'joenana'])).toBe('stebbias og joenana');
+    expect(andList(['stebbias', 'joenana', 'AmmaGaur'])).toBe('stebbias, joenana og AmmaGaur');
   });
 });

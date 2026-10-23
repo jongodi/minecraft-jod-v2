@@ -49,6 +49,8 @@ export interface Night {
   chosen:    string | null;
   /** 'auto' when the leading time was fixed on its own */
   chosenBy:  string | null;
+  /** when the time was fixed, for the board; left out on nights from before it was kept, and on one lit with a single time */
+  chosenAt?: string;
   cancelled: boolean;
   startedBy: string | null;
   /** filled in the day after, by the daily job */
@@ -296,7 +298,7 @@ export async function currentNights(now = Date.now()): Promise<{ all: Night[]; s
   for (let night of read) {
     const auto = autoChoice(night, answers.get(night.id) ?? {}, now);
     if (auto === 'out') { night = { ...night, cancelled: true }; await writeNight(night); }
-    else if (auto) { night = { ...night, chosen: auto.id, chosenBy: 'auto' }; await writeNight(night); }
+    else if (auto) { night = { ...night, chosen: auto.id, chosenBy: 'auto', chosenAt: new Date(now).toISOString() }; await writeNight(night); }
     /* an unsettled one is kept for the daily job, unless it never came round in a month */
     const gone = !isShown(night, now) && (night.cancelled || !!night.outcome || now > whenOf(night) + EVENING_MS + 30 * DAY);
     if (gone) {
@@ -317,9 +319,11 @@ export async function currentNights(now = Date.now()): Promise<{ all: Night[]; s
 }
 
 /** The annals: every night held that is no longer among the fires the page
-    shows, newest first. The kept ones, and any still waiting to be settled. */
-export async function pastNights(now = Date.now()): Promise<PastNight[]> {
-  const { all, shown } = await currentNights(now);
+    shows, newest first. The kept ones, and any still waiting to be settled.
+    `current` is a read of the fires already made (the board's), so they are
+    not read and decided twice in one request. */
+export async function pastNights(now = Date.now(), current?: { all: Night[]; shown: NightState[] }): Promise<PastNight[]> {
+  const { all, shown } = current ?? await currentNights(now);
   const r = await redis();
   const showing = new Set(shown.map(s => s.night.id));
   const kept: PastNight[] = [];

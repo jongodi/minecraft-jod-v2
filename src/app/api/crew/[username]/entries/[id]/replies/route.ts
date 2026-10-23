@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
+import { canSendEmail } from '@/lib/email';
 import { badJson, jsonObject } from '@/lib/http';
 import { randomUUID } from 'crypto';
 import { updateProfile, getCrewSession, isCrewUsername, cleanText, LIMITS, wallError, type CrewReply } from '@/lib/crew';
@@ -7,7 +8,7 @@ export const dynamic = 'force-dynamic';
 
 type Params = { params: Promise<{ username: string; id: string }> };
 
-/** A short reply under something on a wall. Any signed-in member. */
+/** A short reply under something on a wall. Any signed-in member. Whoever it calls by name (@nafn) gets a letter. */
 export async function POST(req: NextRequest, { params }: Params) {
   const { username, id } = await params;
   if (!isCrewUsername(username)) return NextResponse.json({ error: 'Fannst ekki.' }, { status: 404 });
@@ -35,5 +36,11 @@ export async function POST(req: NextRequest, { params }: Params) {
     return wallError(e, 'Svarið komst ekki upp.', 'POST reply');
   }
   if (!found) return NextResponse.json({ error: 'Færslan fannst ekki.' }, { status: 404 });
+  if (canSendEmail() && text.includes('@')) {
+    after(async () => {
+      try { const { mailMentions } = await import('@/lib/mention-mail'); await mailMentions({ by: session.username, owner: username, entryId: id, text, reply: true }); }
+      catch (e) { console.error('[replies] the letters did not go:', e instanceof Error ? e.message : e); }
+    });
+  }
   return NextResponse.json(reply, { status: 201 });
 }

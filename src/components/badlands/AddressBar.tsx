@@ -9,6 +9,8 @@ import ToastHost from './Toast';
 import { SERVER_IP, plainClick, type NavLink } from './data';
 import { modalOpen, useCopy, useCrewSession, useServerStatus, type ServerState } from './hooks';
 import { useTabLantern } from './tabLantern';
+import { useBoardNews } from '@/components/board/news';
+import { plural } from '@/lib/format';
 import type { ServerLife } from '@/lib/server-state';
 
 export interface Door extends NavLink { id: string }
@@ -66,7 +68,7 @@ function Xp() {
   return <span className="b-xp" aria-hidden="true"><span className="b-xp__fill" /></span>;
 }
 
-/** The bar: the mark, the three doors as lanterns, the server's lantern and
+/** The bar: the mark, the four doors as lanterns, the server's lantern and
     the address with its copy action. On the home page it lies over the sunset
     and takes a surface once the page has scrolled; elsewhere it is solid from
     the start. On phones the doors move to a hotbar at the foot of the screen,
@@ -106,15 +108,15 @@ export default function AddressBar({ links, activeId, onDoor, always = false, st
     return () => { window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', onScroll); cancelAnimationFrame(raf); };
   }, []);
 
-  /* The game's hotbar keys: 1, 2 and 3 take the three doors, as they take
-     the three first slots in the game. Not while a field is being typed in,
+  /* The game's hotbar keys: 1 to 4 take the four doors, as they take the
+     first slots in the game. Not while a field is being typed in,
      nor under a dialog, and never with a modifier, which belongs to the
      browser. Inside the 3D map the keys are the viewer's own: it is a frame
      of its own, so they never reach this page. */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.defaultPrevented || e.repeat || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
-      const i = ['1', '2', '3'].indexOf(e.key);
+      const i = ['1', '2', '3', '4'].indexOf(e.key);
       const l = links[i];
       if (!l) return;
       const at = e.target instanceof HTMLElement ? e.target : null;
@@ -138,14 +140,24 @@ export default function AddressBar({ links, activeId, onDoor, always = false, st
     return () => { window.removeEventListener('scroll', onScroll); cancelAnimationFrame(raf); };
   }, [always]);
 
+  /* what is new on the board, counted on its door's lantern as the game counts a stack on a slot */
+  const { count: fresh } = useBoardNews();
   const door = (l: Door, cls: string, i: number) => {
     const here = l.id === activeId;
-    const className = `${cls}${here ? ' is-here' : ''}`;
+    const news = l.id === 'taflan' && fresh ? fresh : 0;
+    const className = `${cls}${here ? ' is-here' : ''}${news ? ' has-news' : ''}`;
     /* the page itself, or the place on it the visitor is in (a room, a wall in the crew's) */
     const current = !here ? undefined : l.href === path ? 'page' : 'location';
     const key = String(i + 1);
     /* the key's numeral, written small on the lantern's corner as the game writes a stack's count, shows while the doors have the keyboard */
-    const inner = <><Lantern lit={here} />{cls === 'b-door' && <span className="b-door__key" aria-hidden="true">{key}</span>}<span className={`${cls}__label`}>{l.label}</span></>;
+    const inner = <>
+      <Lantern lit={here} />
+      {cls === 'b-door' && <span className="b-door__key" aria-hidden="true">{key}</span>}
+      {/* the count, low on the lantern's right as the game writes a stack's; said after the name to a screen reader */}
+      {news > 0 && <span className="b-news" aria-hidden="true">{news > 99 ? '99+' : news}</span>}
+      <span className={`${cls}__label`}>{l.label}</span>
+      {news > 0 && <span className="b-visually-hidden">, {news} {plural(news, 'nýtt', 'ný')}</span>}
+    </>;
     if (onDoor) {
       return (
         <a key={l.id} href={l.href} className={className} aria-current={current} aria-keyshortcuts={key}
@@ -191,7 +203,7 @@ export default function AddressBar({ links, activeId, onDoor, always = false, st
       </header>
       <ToastHost />
 
-      {/* The hotbar at the foot of a phone, on every page: the three doors as
+      {/* The hotbar at the foot of a phone, on every page: the four doors as
           its slots, the one the visitor is behind framed the way the game
           frames the slot in hand. */}
       <nav className="b-hotbar" aria-label="Efnisyfirlit">

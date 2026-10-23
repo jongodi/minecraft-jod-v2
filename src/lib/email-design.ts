@@ -24,7 +24,7 @@ export const THEME_NAMES: Record<Theme, string> = { sunset: 'Sólsetur', campfir
 /** The look each letter has until another is chosen in the admin panel:
     the day's letters at sunset, the evening's by the fire. */
 export const DEFAULT_THEMES: Record<MailKind, Theme> = {
-  signin: 'sunset', lit: 'sunset', chosen: 'sunset', soon: 'campfire', out: 'campfire',
+  signin: 'sunset', lit: 'sunset', chosen: 'sunset', soon: 'campfire', out: 'campfire', mention: 'campfire',
 };
 
 export const isTheme = (v: unknown): v is Theme => v === 'sunset' || v === 'campfire';

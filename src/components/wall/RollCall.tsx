@@ -56,8 +56,9 @@ function Charge({ outlaw, waiting }: { outlaw: Outlaw | undefined; waiting: bool
   );
 }
 
-/** The roll call: one poster per member on one notice board, and the board
-    of what was pinned last across every wall. Each poster says what its
+/** The roll call: one poster per member on one notice board, with the
+    newest thing pinned on any wall nailed up beside them (the rest is on
+    the board, /taflan). Each poster says what its
     member is wanted for; the outlaw of the most charges hangs first at
     twice the size, *Mest eftirlýst*, and the newest thing pinned on any wall
     is nailed up in the space the board has left. `initialPlayers` is the
@@ -67,7 +68,6 @@ export default function RollCall({ initialPlayers }: { initialPlayers: StatRow[]
   /* null while loading; 'error' if the list never came */
   const [crew, setCrew] = useState<CrewSummary[] | null | 'error'>(null);
   const [feed, setFeed] = useState<FeedEntry[] | null | 'error'>(null);
-  const [tab,  setTab]  = useState<'members' | 'board'>('members');
   const [staleLink, setStaleLink] = useState(false);
   /* who is in the game now: the bar asks for the same answer, so this is no second question */
   const server = useServerStatus();
@@ -82,7 +82,7 @@ export default function RollCall({ initialPlayers }: { initialPlayers: StatRow[]
         .then((rows: unknown) => set(Array.isArray(rows) ? (rows as T[]) : 'error'))
         .catch(() => set('error'));
     list<CrewSummary>('/api/crew', setCrew);
-    list<FeedEntry>('/api/crew/feed?limit=40', setFeed);
+    list<FeedEntry>('/api/crew/feed?limit=1', setFeed);
   }, []);
 
   /* the game's numbers: the server's snapshot, or asked for here when the
@@ -119,26 +119,11 @@ export default function RollCall({ initialPlayers }: { initialPlayers: StatRow[]
             {/* the next fire: the room on the home page holds it, one tap away */}
             <div className="b-page__night"><NightLine href="/kvold#hopur" /></div>
           </div>
-          {/* tabs as a keyboard expects them: one stop for Tab, the arrows go between them */}
-          <div className="b-tabs" style={{ marginBottom: 0 }} role="tablist" aria-label="Hópurinn"
-            onKeyDown={e => {
-              if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
-              e.preventDefault();
-              const next = e.key === 'Home' ? 'members' : e.key === 'End' ? 'board' : tab === 'members' ? 'board' : 'members';
-              setTab(next);
-              document.getElementById(`tab-${next}`)?.focus();
-            }}>
-            {(['members', 'board'] as const).map(t => (
-              <button key={t} id={`tab-${t}`} type="button" role="tab" aria-selected={tab === t} aria-controls={`panel-${t}`} tabIndex={tab === t ? 0 : -1} className={`b-tab${tab === t ? ' is-active' : ''}`} onClick={() => setTab(t)}>
-                {t === 'members' ? 'Félagar' : `Á töflunni${Array.isArray(feed) && feed.length ? ` (${feed.length})` : ''}`}
-              </button>
-            ))}
-          </div>
+          {/* everything the crew pinned, with the fires and the map's news, is on the board */}
+          <Link href="/taflan" className="b-btn b-btn--small">Taflan: það nýjasta frá hópnum</Link>
         </div>
 
-        {tab === 'members' && (
-          <div id="panel-members" role="tabpanel" aria-labelledby="tab-members">
-          {crew === 'error' ? <p className="b-empty" role="alert">Náði ekki í félagalistann. Reyndu aftur eftir smástund.</p> :
+        {crew === 'error' ? <p className="b-empty" role="alert">Náði ekki í félagalistann. Reyndu aftur eftir smástund.</p> :
           /* the eight are known before the list comes, so their posters stand at
              once and only the lines about each wall fill in */
           <div className="b-rollcall" aria-busy={crew === null}>
@@ -196,8 +181,7 @@ export default function RollCall({ initialPlayers }: { initialPlayers: StatRow[]
               );
             })}
             {/* The newest thing pinned on any wall, nailed up in the space the
-                board has left beside the posters: the board's other half, a
-                press from its tab. */}
+                board has left beside the posters: a press from the board itself. */}
             {Array.isArray(feed) && feed[0] && (
               <div className="b-rollcall__news">
                 <Link href={`/crew/${feed[0].username}#${feed[0].id}`} className={`w-sign${woodClass(feed[0].wood)} w-note-card`}>
@@ -210,43 +194,10 @@ export default function RollCall({ initialPlayers }: { initialPlayers: StatRow[]
                   {(feed[0].text || feed[0].photos[0]?.caption) && <span className="w-note-card__text">{feed[0].text || feed[0].photos[0]?.caption}</span>}
                   <span className="w-note-card__who"><PlayerHead name={feed[0].username} size={16} alt="" /><b>{feed[0].username}</b><span>{formatAge(feed[0].createdAt)}</span></span>
                 </Link>
-                <button type="button" className="b-btn b-btn--small b-rollcall__more" onClick={() => { setTab('board'); window.scrollTo({ top: 0 }); }}>
-                  Öll taflan
-                </button>
+                <Link href="/taflan" className="b-btn b-btn--small b-rollcall__more">Öll taflan</Link>
               </div>
             )}
           </div>}
-          </div>
-        )}
-
-        {tab === 'board' && (
-          <div id="panel-board" role="tabpanel" aria-labelledby="tab-board">
-          {feed === null ? (
-            <p className="b-empty" role="status">sæki töfluna…</p>
-          ) : feed === 'error' ? (
-            <p className="b-empty" role="alert">Náði ekki í töfluna. Reyndu aftur eftir smástund.</p>
-          ) : feed.length === 0 ? (
-            <p className="b-empty">Ekkert á töflunni enn. Félagar festa miða og myndir upp á eigin vegg.</p>
-          ) : (
-            <ul className="w-board">
-              {feed.map(e => (
-                <li key={e.id}>
-                  <Link href={`/crew/${e.username}#${e.id}`} className={`w-sign${woodClass(e.wood)} w-note-card`}>
-                    {e.photos[0] && (
-                      <span className="w-note-card__pic">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img {...photoProps(e.photos[0].filename, PHOTO_SIZES.board)} alt={e.photos[0].caption || ''} loading="lazy" decoding="async" />
-                      </span>
-                    )}
-                    {(e.text || e.photos[0]?.caption) && <span className="w-note-card__text">{e.text || e.photos[0]?.caption}</span>}
-                    <span className="w-note-card__who"><PlayerHead name={e.username} size={16} alt="" /><b>{e.username}</b><span>{formatAge(e.createdAt)}</span></span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-          </div>
-        )}
       </main>
       <Footer />
     </div>

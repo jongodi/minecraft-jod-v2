@@ -20,6 +20,8 @@ export interface CrewEmail {
   address: string;
   /** a letter when a fire is lit, when its time is chosen, before it starts and if it is put out */
   nights:  boolean;
+  /** a letter when one of the crew calls them by name (@nafn) on the board */
+  mentions: boolean;
 }
 
 const key = (name: string) => `crew:email:${name}`;
@@ -33,7 +35,7 @@ async function readEmailFile(): Promise<Record<string, CrewEmail>> {
 
 const shaped = (v: unknown): CrewEmail | null => {
   const e = v as Partial<CrewEmail> | null;
-  return e && typeof e.address === 'string' && e.address ? { address: e.address, nights: e.nights !== false } : null;
+  return e && typeof e.address === 'string' && e.address ? { address: e.address, nights: e.nights !== false, mentions: e.mentions !== false } : null;
 };
 
 export async function getEmail(username: string): Promise<CrewEmail | null> {
@@ -46,9 +48,9 @@ export async function getEmail(username: string): Promise<CrewEmail | null> {
 }
 
 /** Set or clear (null) a member's address. The address is kept trimmed and in lower case. */
-export async function setEmail(username: string, email: CrewEmail | null): Promise<void> {
+export async function setEmail(username: string, email: (Omit<CrewEmail, 'mentions'> & { mentions?: boolean }) | null): Promise<void> {
   const name = canonicalUsername(username).toLowerCase();
-  const clean = email ? { address: cleanEmail(email.address), nights: email.nights } : null;
+  const clean = email ? { address: cleanEmail(email.address), nights: email.nights, mentions: email.mentions !== false } : null;
   if (hasKV()) {
     const { getRedis } = await import('./redis');
     if (clean) await getRedis().set(key(name), JSON.stringify(clean));
@@ -79,6 +81,12 @@ export async function allEmails(): Promise<Array<{ username: string } & CrewEmai
 export async function nightReaders(except: string[] = []): Promise<Array<{ username: string; address: string }>> {
   const skip = new Set(except.map(u => u.toLowerCase()));
   return (await allEmails()).filter(e => e.nights && !skip.has(e.username.toLowerCase()));
+}
+
+/** Who of `names` gets a letter for being called by name: those with an address who have not turned it off. */
+export async function mentionReaders(names: string[]): Promise<Array<{ username: string; address: string }>> {
+  const want = new Set(names.map(u => u.toLowerCase()));
+  return (await allEmails()).filter(e => e.mentions && want.has(e.username.toLowerCase()));
 }
 
 /* ─── names ───────────────────────────────────────────────────────────────── */
@@ -144,7 +152,7 @@ export async function setName(username: string, name: string | null): Promise<vo
     an empty `email` clears the address (`nights` is kept with it), an empty
     `name` clears the name, and a field left out is left alone. All is checked
     before anything is kept. Returns what is wrong, or null once kept. */
-export async function updateContact(username: string, body: { email?: unknown; nights?: unknown; name?: unknown }): Promise<string | null> {
+export async function updateContact(username: string, body: { email?: unknown; nights?: unknown; mentions?: unknown; name?: unknown }): Promise<string | null> {
   const hasEmail = 'email' in body, hasName = 'name' in body;
   if (hasEmail && body.email !== null && typeof body.email !== 'string') return 'Netfangið verður að vera texti.';
   const address = typeof body.email === 'string' ? body.email.trim() : '';
@@ -152,7 +160,9 @@ export async function updateContact(username: string, body: { email?: unknown; n
   if (hasName && body.name !== null) { const problem = nameProblem(body.name); if (problem) return problem; }
 
   if (hasName) await setName(username, typeof body.name === 'string' ? body.name : null);
-  if (hasEmail) await setEmail(username, address ? { address, nights: body.nights !== false } : null);
+  /* a form that does not ask about the letters for being named (the admin's) leaves the member's choice as it was */
+  const mentions = 'mentions' in body ? body.mentions !== false : (await getEmail(username))?.mentions ?? true;
+  if (hasEmail) await setEmail(username, address ? { address, nights: body.nights !== false, mentions } : null);
   return null;
 }
 

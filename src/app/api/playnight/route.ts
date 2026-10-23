@@ -112,7 +112,7 @@ export async function POST(req: NextRequest) {
         if (night.chosen) return json({ error: 'Kvöldið er þegar valið.' }, 409);
         const option = optionOf(night, typeof body.option === 'string' ? body.option : null);
         if (!option) return json({ error: 'Tíminn fannst ekki.' }, 400);
-        await writeNight({ ...night, chosen: option.id, chosenBy: me });
+        await writeNight({ ...night, chosen: option.id, chosenBy: me, chosenAt: new Date(now).toISOString() });
         mailAfter(m => m.mailNights());
       } else {
         if (phase === 'live' || phase === 'over') return json({ error: 'Kvöldið er hafið.' }, 409);

@@ -3,9 +3,12 @@
 // When offline, serves the last cached snapshot with a timestamp.
 import { NextResponse } from 'next/server';
 import { CREW_USERNAMES } from '@/lib/crew';
-import { EMPTY, getCachedStats, readGameStats, readWeek, setCachedStats, withCharges, type StatsResponse } from '@/lib/stats';
+import { EMPTY, getCachedStats, readGameStats, readWeek, setCachedStats, withCharges, type PlayerStat, type StatsResponse } from '@/lib/stats';
 
 export type { PlayerStat, StatsResponse, WeekPlayer, WeekStats } from '@/lib/stats';
+
+/* a member with any charge kept beside the game's numbers: a draw, an advancement first, a call brought home, a night missed */
+const hasCharge = (p: PlayerStat) => p.drawMs > 0 || p.firsts > 0 || p.bounties > 0 || p.noShows > 0;
 
 export const dynamic = 'force-dynamic';
 
@@ -26,7 +29,7 @@ export async function GET() {
     }
     /* no game stats at all, but the board still has the charges kept beside them */
     const draws = await withCharges(CREW_USERNAMES.map(username => ({ username, ...EMPTY })));
-    return NextResponse.json({ players: draws.some(p => p.drawMs > 0 || p.firsts > 0) ? draws : [], source: 'unavailable', cachedAt: null, week } satisfies StatsResponse);
+    return NextResponse.json({ players: draws.some(hasCharge) ? draws : [], source: 'unavailable', cachedAt: null, week } satisfies StatsResponse);
   }
 
   try {
@@ -64,6 +67,6 @@ export async function GET() {
     }
 
     const draws = await withCharges(CREW_USERNAMES.map(username => ({ username, ...EMPTY })));
-    return NextResponse.json({ players: draws.some(p => p.drawMs > 0 || p.firsts > 0) ? draws : [], source: 'unavailable', cachedAt: null, week } satisfies StatsResponse);
+    return NextResponse.json({ players: draws.some(hasCharge) ? draws : [], source: 'unavailable', cachedAt: null, week } satisfies StatsResponse);
   }
 }

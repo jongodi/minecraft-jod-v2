@@ -883,3 +883,148 @@ Production build of this branch, on top of Part 10, same machine; Lighthouse 12 
 
 1. **Names over the places in the still**: the start view (`MAP_START_VIEW`) and each place's world coordinates, projected onto the still the way BlueMap's camera draws it, so the town is labelled before the 3D map is opened.
 2. **The wall's Lighthouse score**, unchanged at 88: the runtime upgrade Part 10 names.
+
+---
+
+## Part 12. Taflan: the board comes out of hiding
+
+A pass on 22 October 2026, on `claude/members-board-redesign-y1x6ly`, asked for the members' board to stop being hidden: posts, pictures and events easy to see for a signed-in member, what is new easy to spot, the map's news on it too, a structure that makes sense, and new things for the crew to do there. Decided with the owner before building: the board stays readable by everyone and members get the extras; it gets a door of its own; and it gains calls for something with a reward, questions, and @names with a letter.
+
+What was hidden: the newest posts lived in a strip three screens down the crew's room, under the portraits, the fire and the wanted posters, and behind a second tab on `/crew`. Nothing anywhere said that something new had gone up, and the map's changes were told nowhere.
+
+| Where | What | Why, in one sentence |
+|---|---|---|
+| The bar, every page | **Taflan, the second door** (key 2, a hotbar slot on phones), with what is new counted on its lantern as the game counts a stack on a slot. | The one place a returning member wants first is a press away from anywhere, and says it has news before it is opened. |
+| Over the world, `/taflan` | **One board**: the crew's signs answered in place, the town's slips (fires, nights decided and held, advancements by the day, new places and pictures, the painted map, the 3D copy) beside them, the days divided by the strata. | Everything that happens on JOÐ, in the world's own materials: hand-lettered wood for what the crew wrote, printed paper for what the town posts. |
+| The board | Filters as hotbar slots, kept in the address; *Til þín* when someone named you; *Á döfinni* pinned beside it. | Pictures, notes, events and the map are each one press, and what still asks something of the crew never scrolls away. |
+| The board | *Nýtt* tags, and the member's own mark of when they last looked, kept on the server. | New is the same on the phone and the computer, and stops being new once seen. |
+| A sign | **Óskast**: a printed notice with a reward, taken on and stamped *Í höfn*; **Hausaveiðarinn** on the wanted board. | A frontier town's bounty notice, and a reason to log in that ends in the game. |
+| A sign | **A question**: answers that fill with heads. | The crew already decide things together; now on the board instead of in a chat that scrolls. |
+| A sign, the mail | **@name**: a link, lit for the one named, and a letter, *Kallað á þig*, with its own ferskeytla. | A call by name should reach the person, wherever they are. |
+| The crew's room, `/crew` | The strip and the tab point at the board instead of keeping a copy of it. | One place for the posts, two ways to it. |
+| The bar, 760 to 1199 px | The address tag gives up its verb until 1100 px and its letters until 1200 px; the doors set closer. | Four doors and a member's head fit the plank at every width. |
+
+### Where the build differs from the plan, and why
+
+- **The map's news is worked out when the map is saved, not read from its history.** The history keeps the whole map, terrain and all, thirty times over; reading it for every visit's count would have cost a megabyte a visitor. A short list is kept beside it, and filled once from the history that was already there.
+- **No hero line for the board.** The count on the door is on the first screen on every device (the bar over the sunset, the hotbar on a phone); a line in the hero drawn after the page loads would have moved the hero under the visitor.
+- **The count, not an amber word.** Lighting the door's word as well read as a second door being open: amber on a door says which one the visitor is behind.
+- **Questions and calls are notes with a field each**, not a store of their own, so the walls, the board and the chat read them with no second source.
+
+### Measured
+
+Production builds of `main` (`1f6c721`) and this branch, same machine.
+
+| | `main` | this branch |
+|---|---|---|
+| First Load JS `/`, `/crew`, `/crew/[username]` | 147, 138, 160 kB | 149, 139, 166 kB |
+| First Load JS `/taflan` | | 167 kB |
+| Build warnings | 0 | 0 |
+| Tests | 316 | 349 |
+| Sideways scroll at 360, 390, 760, 800, 1024, 1440 on `/`, `/#taflan`, `/taflan`, `/crew`, a wall | none (but the bar's address was pushed off the plank at 760 to 899 px once a fourth door came) | none |
+| New colour pairs | | every one 4.8:1 or more |
+
+`tsc`, `next lint` and the build are clean. Posting a question with an @name, posting a call, answering, taking the call on, stamping it done, the filters in the address, key 2 opening the room and Escape closing it were all walked through in the browser against a local Redis, with no console errors.
+
+### Worth doing later
+
+1. **Who claimed your call, by post**: a letter to the one who posted a call when someone takes it on, in the same dress as *Kallað á þig*.
+2. **The weekly paper** (*Vikublaðið*): a Sunday letter with the week on the board, the week's outlaw and the new places.
+3. **Reactions beyond the lantern**: the game's own items as stamps on a sign (a cake, a skull, a diamond), counted like the lantern.
+4. **Board search**, once there is enough on it to lose something.
+
+---
+
+## Part 13. Taflan, reviewed: what it counted, how it drew, how it looks
+
+A review pass on 23 October 2026 on the same branch, after living with Part 12 for a day: an independent read of the code for defects, a measured look at how the board performs with a full season on it (92 items, 4,350 elements), and a design pass on the places it still looked like a list.
+
+| Where | What | Why, in one sentence |
+|---|---|---|
+| The board, a phone | **Drawn as it is read**: the first twenty things at once, the rest as the foot of the board comes near (or at *Sýna eldra*), and days further down laid out only as they come into view. | Ninety live signs held a mid-range phone's hand for one to two seconds before it could scroll. |
+| Myndir | **Item frames**: every picture on the board, the crew's and the map's, hangs as the game hangs one, an oak rim round a ring of leather, a day to a row, each a press from the lightbox. | Under Myndir the board was the same column of signs; pictures are what that filter is for. |
+| The board | **The red string**: pinned across the board, a nail at each end, above the first thing that was already there when the visitor last looked. | One glance says where reading stops being news, in the board's own materials rather than a chat app's line. |
+| The board | **Nýtt svar**, and replies counted on the door. | A reply under last week's post was invisible unless you went looking. |
+| The map's slips | A new picture is held up like a postcard, twice the size, and opens in the lightbox. | The owner asked for new map pictures to be easy to see. |
+| The pin slot, on the board | One line until it is used; *Settu upp ósk* and *Spyrðu hópinn* in Á döfinni turn it to a call or a question. | The news is the first thing under the filters, and the board says what can be put up where it is missing. |
+| Óskast | The one who posted a call can free it from one who took it and never came back. | Otherwise the only way to close it paid them as Hausaveiðarinn. |
+
+### Fixed
+
+- **An advancement was never news**: it reaches the site a day after the game's own moment, so the seen mark had already passed it. Each daily copy now notes when it first finds an advancement, and the board counts that.
+- **A picture hung later on a recently drawn place vanished** into the place's slip; a place now keeps the picture it was drawn with.
+- **The map's news could tell a save twice** when a save landed between the deploy and the first read; a save and its news now share one moment, and a fill that fails is tried again.
+- **The fires were read and decided twice** on every board read.
+- **A member's slot was not in the board page's markup** (the session was not handed to the board), so it popped in after hydration and pushed the board down.
+- **A post put up, or a lantern lit, while the board was still being fetched** was dropped when the fetch landed; changes are now made again on what the fetch brings.
+- **Til þín** missed a reply calling you under your own post, could be stranded as the filter in hand, and was not said to a screen reader; **"1 svör"** is "1 svar"; a seen mark written from two tabs at once could go back; a writer could send a member any number of letters for naming them (now one an hour); the stats fallback dropped members whose only charge was a call or a no-show.
+- **Found while measuring, before it shipped**: the size given to days laid out off screen stood in for their width too and widened the board's column under Á döfinni; it is the height alone now, and the column has its own track.
+
+### Measured
+
+Production build, local Redis, the board with 92 items; Chromium, phone 390 × 844 at 4× CPU throttling and desktop 1440 × 900 unthrottled, two runs each.
+
+| | before | after |
+|---|---|---|
+| Main thread blocked after load, phone 4× | 1,202 to 2,190 ms | 353 to 428 ms |
+| Board ready, phone 4× | 1.6 to 2.5 s | 0.9 to 1.1 s |
+| Elements on the page | 4,350 | 1,250 |
+| Scrolling, phone 4× (frame p95) | 33.3 ms, dropped frames | 16.7 ms, none dropped |
+| Desktop, main thread blocked | 38 to 71 ms | 8 to 56 ms |
+| `/api/board` | about 10 ms, 43 kB | about 10 ms, 43 kB |
+| First Load JS `/`, `/crew/[username]`, `/taflan` | 149, 166, 167 kB | 149, 166, 169 kB |
+| Tests | 349 | 355 |
+
+No sideways scroll at 360 to 1440 on any page or filter; `tsc`, `next lint` and the build are clean.
+
+### Worth doing later
+
+1. **A letter when your call is taken on**, in the same dress as *Kallað á þig*.
+2. **The weekly paper** (*Vikublaðið*).
+3. **Item-frame stamps**: the game's items as reactions on a sign, counted like the lantern.
+
+---
+
+## Part 14. Items for a sign
+
+The third thing on Part 13's list, asked for on 23 October 2026: the game's own items as reactions on a sign, counted like the lantern.
+
+| Where | What | Why, in one sentence |
+|---|---|---|
+| Every sign, walls and the board | **The hotbar in the sign's foot**: what has been given, after the lantern, each item in one of the game's slots with its count written as the game writes a stack, yours in the frame of the slot in hand; pressing one gives it too or takes yours back. | A lantern says "seen"; a cake says "til hamingju", and every one of the crew reads a slot and a stack count without being told. |
+| The empty slot after them | **The inventory**: all eight items, four or eight to a row, walked with the arrow keys, and the game's violet tooltip saying the item's name, its words and who gave it; with nothing pointed at, who gave what. | Giving needs every item at hand, and a phone, which points at nothing, still has to be able to see who gave what. |
+| An item given | **The pop**: it jumps into its slot as an item picked up does in the game, narrow and tall and back over five ticks, with the game's pop when the sound is on. | The moment of giving should feel like picking something up, not like a form being sent. |
+| The art | **Eight items drawn for the site** on the game's sixteen-pixel grid (`src/lib/item-art.ts`), shown only as CSS (`src/app/items.css`) that a test draws from the art and holds to it. | An icon is one element with a background, so ninety signs with items on them cost the page no script and next to no markup. |
+
+Eight items and the plus are nine slots: one hotbar. Each member gives each item once, on any sign, their own too, and takes it back the same way. Nothing is stored on a sign until something is given, so every wall written before reads as it did.
+
+### Reviewed before it shipped
+
+An independent read of the code found no defect in the logic: the optimistic press, the board's replay of changes after a fetch and the server's answer end in the right state in every order. It found these, all fixed:
+
+- **A slot's focus ring and its tag were cut by the slot beside it**; the slot pointed at or with the keyboard now stands over its neighbours.
+- **A long list of givers ran off the screen** on a narrow desktop; a slot's tag now wraps at a width and is moved in as far as it must be to stay on the screen.
+- **A refused take-back put the item at the end** of the hotbar and your name at the end of its givers; it now goes back where it hung, as it was.
+- **A press on an item still on its way did nothing and said nothing**; the slot now says it is busy, and the keyboard is moved on only when a press goes ahead.
+- **A refused gift could leave its pop behind**, to play when someone else's gift brought the slot back; **the inventory could open by itself** at the next sign-in after signing out in another tab; **giving what was already given reordered the givers** from a stale tab. None of these can happen now.
+- **The icons relied on which stylesheet loaded last**; the slot sets only where its picture sits, and the picture comes from its own sheet.
+
+### Measured
+
+Production build, local Redis, the board with 92 items of which 51 carry items, Chromium; the same data on the branch without the change for comparison, two runs each.
+
+| | without | with |
+|---|---|---|
+| Elements on the board | 1,207 to 1,214 | 1,267 to 1,313 |
+| Main thread blocked after load, phone 4× | 1,013 to 1,167 ms | 1,132 to 1,210 ms |
+| Board ready, phone 4× | 1.8 to 1.9 s | 1.7 to 1.9 s |
+| Scrolling, phone 4× (frame p95) | 16.7 to 16.8 ms | 16.8 ms |
+| First Load JS `/crew/[username]`, `/taflan` | 166, 169 kB | 169, 172 kB |
+| Tests | 367 | 386 |
+
+The machine ran slower and noisier than it did for Part 13: the commit before main was merged measured 716 to 1,377 ms on the same data, so the phone figures are for comparing the two columns, not with Part 13. No sideways scroll at 360 to 1440 on the board or a wall with every inventory open; reduced motion stills the pop and the inventory's arrival; `tsc`, `next lint` and the build are clean.
+
+### Worth doing later
+
+1. **Told when your sign is given something**: items carry no time yet, so they are not news on the door.
+2. **The crew's favourite item** on the wanted posters, once there is a season of them.

@@ -1,15 +1,19 @@
 'use client';
 
-// The pin slot: the one place on a member's own wall where things go up.
+// The pin slot: where things go up, on a member's own wall and on the board.
 // Drop screenshots on it, paste them, pick several, or just write. Each
 // picture starts uploading the moment it lands, gets a caption line, and
-// the whole lot is pinned with one press.
+// the whole lot is pinned with one press. The same slot puts up a call for
+// something with its reward (Óskast) or a question with its answers; @name
+// in the words calls one of the crew, who gets a letter.
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import type { CrewEntry } from '@/lib/crew-types';
 import { LIMITS } from '@/lib/crew-types';
 import { fetchStorageInfo, uploadPrint, errorFrom, failure, type StorageInfo, type UploadedPrint } from '@/lib/crew-upload';
 import { formatDate, plural } from '@/lib/format';
 import { CloseIcon } from '@/components/badlands/Bits';
+import PlayerHead from '@/components/badlands/PlayerHead';
+import { CREW } from '@/components/badlands/data';
 import type { WallPlace } from './Wall';
 
 interface Draft {
@@ -27,7 +31,27 @@ interface Props {
   username: string;
   places:   WallPlace[];
   onPinned: (entry: CrewEntry) => void;
+  /** whether pictures pasted or dropped anywhere on the page come here: not while the board's room is closed */
+  active?:  boolean;
+  /** on the board: one line until it is used, so the news is the first thing under the filters */
+  compact?: boolean;
+  /** a call or a question asked for from elsewhere on the board: the slot turns to it and takes the keyboard */
+  ask?:     Ask | null;
 }
+
+/** A request to put up a call or a question; `n` makes each press a new one. */
+export interface Ask { kind: 'call' | 'ask'; n: number }
+
+/** What goes up: a note (with or without prints), a call for something, or a question. */
+type Kind = 'note' | 'call' | 'ask';
+const KINDS: { id: Kind; label: string; text: string }[] = [
+  { id: 'note', label: 'Miði',     text: 'Hvað er að frétta úr heiminum?' },
+  { id: 'call', label: 'Óskast',   text: 'Hvað vantar þig? Til dæmis þrjá stakka af járni' },
+  { id: 'ask',  label: 'Spurning', text: 'Hvað viltu spyrja hópinn um?' },
+];
+
+/** The name being typed after an @ at the caret, if any. */
+const typingName = (text: string, caret: number) => /(?:^|[^\p{L}\p{N}_@])@([A-Za-z0-9_]{0,16})$/u.exec(text.slice(0, caret))?.[1] ?? null;
 
 const newKey = () => Math.random().toString(36).slice(2);
 
@@ -37,9 +61,15 @@ const newKey = () => Math.random().toString(36).slice(2);
 const PICTURE_NAME = /\.(heic|heif|png|jpe?g|webp|gif|avif|bmp)$/i;
 const isPicture = (f: File) => f.type.startsWith('image/') || (!f.type && PICTURE_NAME.test(f.name));
 
-export default function Composer({ username, places, onPinned }: Props) {
+export default function Composer({ username, places, onPinned, active = true, compact = false, ask = null }: Props) {
   const [storage, setStorage] = useState<StorageInfo | null>(null);
+  const [kind, setKind]       = useState<Kind>('note');
+  const [reward, setReward]   = useState('');
+  const [choices, setChoices] = useState<string[]>(['', '']);
   const [text, setText]       = useState('');
+  /* who could be meant by the name being typed after an @ */
+  const [caret, setCaret]     = useState(0);
+  const words = useRef<HTMLTextAreaElement>(null);
   const [placeId, setPlaceId] = useState<number | null>(null);
   const [drafts, setDrafts]   = useState<Draft[]>([]);
   const [over, setOver]       = useState(false);
@@ -127,6 +157,7 @@ export default function Composer({ username, places, onPinned }: Props) {
 
   /* Dropped or pasted anywhere on the page, the picture lands in the slot. */
   useEffect(() => {
+    if (!active) return;
     const onPaste = (e: ClipboardEvent) => {
       const files = Array.from(e.clipboardData?.files ?? []).filter(isPicture);
       if (files.length === 0) return;
@@ -165,13 +196,38 @@ export default function Composer({ username, places, onPinned }: Props) {
       document.removeEventListener('dragover', onOver);
       document.removeEventListener('drop', onDrop);
     };
-  }, [add]);
+  }, [add, active]);
 
   const uploading = drafts.some(d => !d.done && !d.error);
   /* pinning past a failed print would leave it out and then clear it from the slot without a word */
   const failed = drafts.some(d => d.error);
   const ready = drafts.filter(d => d.done);
-  const canPin = !pinning && !uploading && !failed && (text.trim().length > 0 || ready.length > 0);
+  const filled = choices.map(c => c.trim()).filter(Boolean);
+  const canPin = !pinning && !uploading && !failed && (
+    kind === 'call' ? text.trim().length > 0 && reward.trim().length > 0 :
+    kind === 'ask' ? text.trim().length > 0 && filled.length >= LIMITS.choicesMin :
+    text.trim().length > 0 || ready.length > 0);
+
+  /* asked for from Á döfinni: the slot turns to a call or a question and takes the keyboard */
+  useEffect(() => {
+    if (!ask) return;
+    setKind(ask.kind);
+    slot.current?.scrollIntoView({ block: 'nearest', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    requestAnimationFrame(() => words.current?.focus({ preventScroll: true }));
+  }, [ask]);
+  /* on the board, untouched, it is one line: the place, the note on how pictures get in and the button come once it is used */
+  const quiet = compact && kind === 'note' && !text && drafts.length === 0 && !pinning && !error;
+
+  /* the crew who could be meant by what is typed after an @, the writer left out */
+  const typing = typingName(text, caret);
+  const named = typing === null ? [] : CREW.filter(n => n.toLowerCase() !== username.toLowerCase() && n.toLowerCase().startsWith(typing.toLowerCase())).slice(0, 4);
+  const callBy = (name: string) => {
+    const before = text.slice(0, caret).replace(/@[A-Za-z0-9_]*$/, `@${name} `);
+    const next = before + text.slice(caret);
+    setText(next);
+    setCaret(before.length);
+    requestAnimationFrame(() => { const el = words.current; if (el) { el.focus(); el.setSelectionRange(before.length, before.length); } });
+  };
 
   async function pin(e: FormEvent) {
     e.preventDefault();
@@ -188,6 +244,7 @@ export default function Composer({ username, places, onPinned }: Props) {
           text,
           placeId,
           photos: ready.map(d => ({ ...d.done!, caption: d.caption })),
+          ...(kind === 'call' ? { bounty: { reward } } : kind === 'ask' ? { poll: { choices: filled } } : {}),
         }),
       });
       if (!res.ok) throw new Error(await errorFrom(res));
@@ -195,7 +252,7 @@ export default function Composer({ username, places, onPinned }: Props) {
       onPinned(entry);
       ready.forEach(d => URL.revokeObjectURL(d.preview));
       setDrafts(ds => ds.filter(d => !pinned.has(d.key)));
-      setText(''); setPlaceId(null);
+      setText(''); setPlaceId(null); setReward(''); setChoices(['', '']); setKind('note');
     } catch (err) {
       setError(failure(err, 'Ekki tókst að festa þetta upp.'));
     } finally {
@@ -213,21 +270,57 @@ export default function Composer({ username, places, onPinned }: Props) {
     <><span className="w-pin__how w-pin__how--drag">dragðu skjámyndir hingað, límdu þær, eða veldu þær</span><span className="w-pin__how w-pin__how--tap">veldu myndir eða límdu þær</span></>;
 
   return (
-    <form ref={slot} className={`w-pin${over ? ' is-over' : ''}${drafts.length ? ' has-prints' : ''}`} onSubmit={pin} aria-label="Festa eitthvað upp" aria-busy={pinning}>
+    <form ref={slot} className={`w-pin w-pin--${kind}${compact ? ' w-pin--compact' : ''}${quiet ? ' is-quiet' : ''}${over ? ' is-over' : ''}${drafts.length ? ' has-prints' : ''}`} onSubmit={pin} aria-label="Festa eitthvað upp" aria-busy={pinning}>
+      {/* what goes up: a note, a call for something, or a question */}
+      <div className="w-pin__kinds" role="group" aria-label="Hvað fer upp">
+        {KINDS.map(k => (
+          <button key={k.id} type="button" aria-pressed={kind === k.id} className={`w-pin__kind${kind === k.id ? ' is-on' : ''}`} onClick={() => setKind(k.id)} disabled={pinning}>{k.label}</button>
+        ))}
+      </div>
       {/* While the pin is being written the slot holds still: the words and
           captions read only, so focus stays where it was, and the buttons
           off. A change made then would be left out of the entry and then
           cleared from the slot with it. */}
       <textarea
+        ref={words}
         className="w-pin__text"
         value={text}
         readOnly={pinning}
-        onChange={e => setText(e.target.value)}
+        onChange={e => { setText(e.target.value); setCaret(e.target.selectionStart ?? e.target.value.length); }}
+        onSelect={e => setCaret(e.currentTarget.selectionStart ?? 0)}
         maxLength={LIMITS.text}
         rows={2}
-        placeholder="Hvað er að frétta úr heiminum?"
-        aria-label="Miði"
+        placeholder={KINDS.find(k => k.id === kind)!.text}
+        aria-label={kind === 'call' ? 'Hvað vantar' : kind === 'ask' ? 'Spurningin' : 'Miði'}
       />
+      {/* @ and the start of a name: the crew it could be, a tap to finish it */}
+      {named.length > 0 && (
+        <div className="w-pin__names" aria-label="Nefna félaga">
+          {named.map(n => (
+            <button key={n} type="button" className="w-pin__name" onClick={() => callBy(n)}><PlayerHead name={n} size={16} alt="" />@{n}</button>
+          ))}
+        </div>
+      )}
+      {kind === 'call' && (
+        <label className="w-pin__reward">
+          <span className="b-poster__reward">Verðlaun</span>
+          <input className="b-input" value={reward} readOnly={pinning} onChange={e => setReward(e.target.value)} maxLength={LIMITS.reward} placeholder="til dæmis 10 smaragðar" />
+        </label>
+      )}
+      {kind === 'ask' && (
+        <div className="w-pin__choices">
+          {choices.map((c, i) => (
+            <div key={i} className="w-pin__choice">
+              <input className="b-input" value={c} readOnly={pinning} maxLength={LIMITS.choice} placeholder={`Svar ${i + 1}`} aria-label={`Svarkostur ${i + 1}`}
+                onChange={e => setChoices(cs => cs.map((x, j) => (j === i ? e.target.value : x)))} />
+              {choices.length > LIMITS.choicesMin && (
+                <button type="button" className="w-pin__drop" onClick={() => setChoices(cs => cs.filter((_, j) => j !== i))} disabled={pinning} aria-label={`Taka svar ${i + 1} út`}><CloseIcon /></button>
+              )}
+            </div>
+          ))}
+          {choices.length < LIMITS.choicesMax && <button type="button" className="w-tool w-pin__more" onClick={() => setChoices(cs => [...cs, ''])} disabled={pinning}>bæta við svari</button>}
+        </div>
+      )}
 
       {drafts.length > 0 && (
         <ul className="w-pin__prints" aria-label="Myndir sem eru að fara upp">

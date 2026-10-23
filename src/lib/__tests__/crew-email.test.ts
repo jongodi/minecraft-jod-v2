@@ -30,7 +30,7 @@ vi.mock('@/lib/redis', () => {
   };
 });
 
-const { getEmail, setEmail, nightReaders, mailSignInLink, getName, getNames, setName, nameProblem, updateContact } = await import('@/lib/crew-email');
+const { getEmail, setEmail, nightReaders, mentionReaders, mailSignInLink, getName, getNames, setName, nameProblem, updateContact } = await import('@/lib/crew-email');
 const { listInvites } = await import('@/lib/crew-access');
 
 describe('a member’s name', () => {
@@ -57,7 +57,7 @@ describe('a member’s name', () => {
   it('changes only what a form sends, and nothing when part of it is wrong', async () => {
     await setEmail('joenana', { address: 'jo@dæmi.is', nights: true });
     expect(await updateContact('joenana', { name: 'Jóna' })).toBeNull();
-    expect(await getEmail('joenana')).toEqual({ address: 'jo@dæmi.is', nights: true });
+    expect(await getEmail('joenana')).toEqual({ address: 'jo@dæmi.is', nights: true, mentions: true });
     expect(await updateContact('joenana', { name: 'Jónína', email: 'ekki netfang' })).toMatch(/netfang/);
     expect(await getName('joenana')).toBe('Jóna');
     expect(await updateContact('joenana', { name: '', email: '', nights: true })).toBeNull();
@@ -73,7 +73,7 @@ describe('a member’s address', () => {
   it('is kept apart from the wall, trimmed and in lower case, under any spelling of the name', async () => {
     await setEmail('JOENANA', { address: '  Jo@Dæmi.IS ', nights: true });
     expect(kv.has('crew:email:joenana')).toBe(true);
-    expect(await getEmail('joenana')).toEqual({ address: 'jo@dæmi.is', nights: true });
+    expect(await getEmail('joenana')).toEqual({ address: 'jo@dæmi.is', nights: true, mentions: true });
     await setEmail('joenana', null);
     expect(await getEmail('joenana')).toBeNull();
   });
@@ -84,6 +84,16 @@ describe('a member’s address', () => {
     await setEmail('stebbias', { address: 'stebbi@dæmi.is', nights: true });
     expect((await nightReaders()).map(r => r.username)).toEqual(['stebbias', 'joenana']);
     expect((await nightReaders(['STEBBIAS'])).map(r => r.username)).toEqual(['joenana']);
+  });
+
+  it('gets a letter for being named unless it was turned off, and a form that does not ask keeps the choice', async () => {
+    await setEmail('joenana', { address: 'jo@dæmi.is', nights: true, mentions: false });
+    await setEmail('AmmaGaur', { address: 'amma@dæmi.is', nights: false });
+    expect((await mentionReaders(['joenana', 'ammagaur', 'stebbias'])).map(r => r.username)).toEqual(['AmmaGaur']);
+    expect(await updateContact('joenana', { email: 'jona@dæmi.is', nights: true })).toBeNull();
+    expect((await getEmail('joenana'))?.mentions).toBe(false);
+    expect(await updateContact('joenana', { email: 'jona@dæmi.is', nights: true, mentions: true })).toBeNull();
+    expect((await getEmail('joenana'))?.mentions).toBe(true);
   });
 });
 

@@ -1,7 +1,7 @@
 // Made-up letters for the admin panel (Póstur): a night stebbias lit to
 // build a bridge, answered by a few of the crew, as joenana would get it,
 // with the crew called by the names given them. Server only.
-import { nightLetter, signinLetter, type Letter, type MailKind } from '@/lib/email-copy';
+import { mentionLetter, nightLetter, signinLetter, type Letter, type MailKind } from '@/lib/email-copy';
 import type { Names } from '@/lib/crew-email';
 import type { Night, Votes } from '@/lib/play-night';
 
@@ -18,6 +18,9 @@ function nextSaturday(now: number): number {
 export function sampleLetter(kind: MailKind, site: string, names: Names = {}, now = Date.now()): Letter {
   if (kind === 'signin') {
     return signinLetter({ name: names.joenana ?? 'joenana', url: `${site}/api/crew/invite?lykill=synishorn-ekki-alvoru`, expiresAt: new Date(now + 7 * DAY).toISOString(), uses: 5 });
+  }
+  if (kind === 'mention') {
+    return mentionLetter({ by: names.stebbias ?? 'stebbias', reader: names.joenana ?? 'joenana', text: '@joenana áttu nokkuð þrjá stakka af járni handa brúnni? Ég borga í smaragðum.', url: `${site}/crew/stebbias`, reply: false, site });
   }
   const sat = nextSaturday(now);
   const night: Night = {

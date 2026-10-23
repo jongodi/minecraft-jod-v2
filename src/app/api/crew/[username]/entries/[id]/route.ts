@@ -9,13 +9,13 @@ export const dynamic = 'force-dynamic';
 type Params = { params: Promise<{ username: string; id: string }> };
 const unauthorized = () => NextResponse.json({ error: 'Þú þarft að skrá þig inn með réttum aðgangi.' }, { status: 401 });
 
-/** Change a note, its captions, its place, or take some of its prints down. */
+/** Change a note, its captions, its place, a call's reward, or take some of its prints down. */
 export async function PATCH(req: NextRequest, { params }: Params) {
   const { username, id } = await params;
   if (!isCrewUsername(username)) return NextResponse.json({ error: 'Fannst ekki.' }, { status: 404 });
   if (!(await requireOwner(username))) return unauthorized();
 
-  let body: { text?: unknown; placeId?: unknown; photos?: unknown };
+  let body: { text?: unknown; placeId?: unknown; photos?: unknown; reward?: unknown };
   { const parsed = await jsonObject(req); if (!parsed) return badJson(); body = parsed; }
 
   /* the place asked for: null to clear it, undefined to leave it be */
@@ -53,7 +53,14 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         entry.photos = keep;
         if (p.coverPhotoId && dropped.some(d => d.id === p.coverPhotoId)) p.coverPhotoId = null;
       }
+      if (entry.bounty && typeof body.reward === 'string') {
+        const reward = cleanText(body.reward, LIMITS.reward).replace(/\s+/g, ' ');
+        if (!reward) throw new Refusal('Hver eru verðlaunin?');
+        entry.bounty = { ...entry.bounty, reward };
+      }
       if (!entry.text.trim() && entry.photos.length === 0) throw new Refusal('Færslan má ekki vera tóm; eyddu henni frekar.');
+      /* a call says what it wants and a question asks something, in words */
+      if (!entry.text.trim() && (entry.bounty || entry.poll)) throw new Refusal(entry.bounty ? 'Segðu hvað vantar.' : 'Hver er spurningin?');
       updated = entry;
     });
   } catch (e) {

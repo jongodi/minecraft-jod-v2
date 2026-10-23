@@ -417,3 +417,237 @@
 /* in the crew's room the strip hangs under the wanted board, a step down from it */
 .w-strip { margin-top: var(--sp-7); }
 .w-page__err { max-width: 52rem; margin-inline: auto; }
+
+/* ─── what else a sign can be: a call, a question, a name called ─────────
+   On the board a sign carries its writer's head and name at its top, a tap
+   from their wall. A call for something (Óskast) is a printed notice nailed
+   to the sign, in the wanted posters' type, stamped in red when it is done.
+   A question is its answers in a column, each filling with the heads of
+   those who chose it. @name is a link to the member's wall, and the one
+   looking, when it is them, is lit. */
+.w-print__by { display: inline-flex; align-items: center; gap: var(--sp-2); justify-self: start; min-height: 2rem; padding-inline: var(--sp-1); color: var(--sign-ink); font-weight: 600; text-decoration: none; }
+.w-print__by img { width: 1.5rem; height: 1.5rem; image-rendering: pixelated; box-shadow: 0 0 0 var(--px) var(--sign-rim); }
+@media (hover: hover) { .w-print__by:hover span { text-decoration: underline var(--px); text-underline-offset: 0.3em; } }
+.w-print__by:focus-visible { outline: var(--px) solid var(--sign-lantern); outline-offset: var(--px); }
+
+.w-mention { color: var(--sign-lantern); font-weight: 600; text-decoration: none; }
+@media (hover: hover) { .w-mention:hover { text-decoration: underline var(--px); text-underline-offset: 0.3em; } }
+/* the one looking, called by name: the lantern's own light behind the name */
+.w-mention.is-me { padding-inline: var(--px); background: var(--lantern); color: var(--ink); box-shadow: 0 var(--px) 0 var(--lantern-deep); }
+
+.w-call { container-type: inline-size; display: grid; justify-items: center; gap: var(--sp-2); padding: var(--sp-6) var(--sp-4) var(--sp-4); text-align: center; }
+.w-call__mast { max-width: 16rem; }
+.w-call__reward { display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: var(--sp-1) var(--sp-2); }
+.w-call__pay { font-family: var(--font-data); font-size: var(--fs-data); line-height: 1.3; color: var(--tc-red); overflow-wrap: anywhere; }
+.w-call__state { font-size: var(--fs-sm); color: var(--ink-soft); }
+.w-call__who { display: inline-flex; align-items: center; gap: var(--sp-1); color: var(--lantern-ink); font-weight: 600; text-decoration: none; }
+.w-call__who img { width: 1rem; height: 1rem; image-rendering: pixelated; }
+@media (hover: hover) { .w-call__who:hover { text-decoration: underline var(--px); text-underline-offset: 0.3em; } }
+.w-call__acts { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--sp-2); margin-top: var(--sp-1); }
+/* on a dark wood the sign's own inks are pale; on the notice's paper they are the paper's */
+.w-print .w-call .b-btn { color: var(--lantern-ink); border-color: var(--lantern-ink); }
+.w-print .w-call .b-btn:focus-visible { background: var(--lantern-ink); color: var(--paper); }
+@media (hover: hover) { .w-print .w-call .b-btn:hover { background: var(--lantern-ink); color: var(--paper); } }
+.w-print .w-call .b-btn--solid { background: var(--lantern); color: var(--ink); }
+.w-print .w-call .b-err { color: var(--tc-red); }
+/* paid: the stamp goes on askew, as a stamp does, over a notice gone pale */
+.w-call.is-done > :not(.w-call__stamp):not(.b-paper__nail):not(.w-call__acts) { opacity: 0.62; }
+.w-call .w-call__stamp {
+  position: absolute;
+  right: var(--sp-4);
+  top: var(--sp-5);
+  padding: var(--px) var(--sp-2);
+  border: calc(var(--px) * 2) solid var(--tc-red);
+  color: var(--tc-red);
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  line-height: 1.1;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  transform: rotate(-12deg);
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+@media (max-width: 479px) { .w-call .w-call__stamp { top: var(--sp-3); right: var(--sp-2); font-size: var(--fs-md); } }
+
+.w-poll { display: grid; gap: var(--sp-2); }
+.w-poll__list { list-style: none; display: grid; gap: var(--sp-2); }
+.w-poll__choice {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--sp-2) var(--sp-3);
+  width: 100%;
+  min-height: var(--tap);
+  padding: var(--sp-2) var(--sp-3);
+  overflow: hidden;
+  text-align: left;
+  color: var(--sign-ink);
+  border: var(--px) solid var(--sign-rim);
+  box-shadow: var(--bevel-in);
+}
+/* the share of the crew that chose it, filling the row from the left: one transform, so it grows smoothly as votes come */
+.w-poll__fill { position: absolute; inset: 0; background: var(--sign-line); transform: scaleX(var(--share, 0)); transform-origin: left; transition: transform var(--dur-3) var(--ease-out); pointer-events: none; }
+.w-poll__choice > :not(.w-poll__fill) { position: relative; }
+.w-poll__text { min-width: 0; overflow-wrap: anywhere; }
+.w-poll__won { margin-left: var(--sp-2); font-size: var(--fs-sm); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--sign-lantern); }
+.w-poll__heads { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--px); max-width: 7rem; }
+.w-poll__heads img { width: 1rem; height: 1rem; image-rendering: pixelated; box-shadow: 0 0 0 var(--px) var(--wood-dark); }
+.w-poll__count { min-width: 1.5ch; font-family: var(--font-data); font-size: var(--fs-data); text-align: right; font-variant-numeric: tabular-nums; }
+.w-poll__choice:not([disabled]) { cursor: pointer; }
+@media (hover: hover) { .w-poll__choice:not([disabled]):hover { border-color: var(--sign-lantern); } }
+.w-poll__choice:focus-visible { outline: var(--px) solid var(--sign-lantern); outline-offset: var(--px); }
+.w-poll__choice:not([disabled]):active > :not(.w-poll__fill) { translate: var(--press); }
+/* your own answer: framed in the lantern's light burnt into the wood */
+.w-poll__choice.is-mine { border-color: var(--sign-lantern); box-shadow: inset 0 0 0 var(--px) var(--sign-lantern); }
+.w-poll__choice.is-won { border-color: var(--sign-lantern); }
+.w-poll.is-closed .w-poll__choice:not(.is-won) { opacity: 0.75; }
+.w-poll__foot { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--sp-1) var(--sp-3); padding-inline: var(--sp-1); font-size: var(--fs-sm); color: var(--sign-soft); }
+@media (prefers-reduced-motion: reduce) { .w-poll__fill { transition: none; } }
+
+/* On the board the slot is one line until it is used: the place, the note on
+   how pictures get in and the button come with the first word, picture or
+   press, or as soon as it has the keyboard. */
+.w-pin--compact.is-quiet:not(:focus-within) .w-pin__text { min-height: 2.5rem; }
+.w-pin--compact.is-quiet:not(:focus-within) :is(.w-pin__place, .w-pin__note, .w-pin__go) { display: none; }
+
+/* the pin slot's three kinds: what goes up is chosen along its top edge */
+.w-pin__kinds { display: flex; flex-wrap: wrap; gap: var(--sp-1); }
+.w-pin__kind { min-height: 2.25rem; padding: var(--sp-1) var(--sp-3); font-family: var(--font-data); font-size: var(--fs-data); letter-spacing: 0.04em; text-transform: uppercase; color: var(--sign-lantern); border: var(--px) solid transparent; }
+@media (hover: hover) { .w-pin__kind:not(.is-on):hover { border-color: var(--sign-lantern); } }
+.w-pin__kind.is-on { background: var(--sign-lantern); color: var(--sign); box-shadow: var(--bevel-in); }
+.w-pin__kind:focus-visible { outline: var(--px) solid var(--ink); outline-offset: var(--px); }
+.w-pin__names { display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-2); margin-top: calc(var(--sp-2) * -1); }
+.w-pin__name { display: inline-flex; align-items: center; gap: var(--sp-1); min-height: 2rem; padding-inline: var(--sp-2); color: var(--sign-lantern); font-weight: 600; border: var(--px) solid var(--sign-rim); background: var(--sign-2); }
+.w-pin__name img { width: 1rem; height: 1rem; image-rendering: pixelated; }
+@media (hover: hover) { .w-pin__name:hover { border-color: var(--sign-lantern); } }
+.w-pin__reward { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-3); }
+.w-pin__reward .b-poster__reward { color: var(--sign-soft); }
+.w-pin__reward .b-input, .w-pin__choice .b-input { flex: 1 1 12rem; min-width: 0; padding-block: var(--sp-2); border-color: var(--sign-rim); }
+.w-pin__choices { display: grid; gap: var(--sp-2); }
+.w-pin__choice { display: flex; align-items: center; gap: var(--sp-2); }
+.w-pin__drop { display: grid; place-items: center; width: var(--tap); height: var(--tap); flex-shrink: 0; color: var(--sign-lantern); }
+.w-pin__drop svg { width: 1rem; height: 1rem; }
+.w-pin__more { justify-self: start; }
+.w-print__reward { padding-block: var(--sp-2); }
+
+/* ─── what the crew give a sign: the game's items, in the game's slots ───
+   Given items hang in the sign's foot after the lantern as a hotbar: each a
+   slot sunk into a strip of the night, eighteen of the art's pixels square
+   with the item's sixteen in it, as in the game, and a thumb's reach where
+   there is a thumb. The count is the game's stack count, white with its hard
+   shadow, written from two up; the items you gave wear the frame the game
+   puts round the slot in hand. A pointer over a slot lightens it, as the
+   game's does. The pictures are src/app/items.css, drawn from the art in
+   src/lib/item-art.ts. */
+.w-print { --w-slot: calc(var(--px) * 18); }
+@media (pointer: coarse) { .w-print { --w-slot: var(--tap); } }
+.w-items { display: flex; flex-wrap: wrap; align-items: center; gap: var(--px); }
+.w-slot {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: var(--w-slot);
+  height: var(--w-slot);
+  padding: 0;
+  color: var(--tc-white);
+  background: var(--dusk-2);
+  box-shadow: var(--bevel-in), 0 0 0 var(--px) var(--wood-dark);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+/* the picture itself comes from items.css; only its placing is set here, so neither sheet undoes the other whichever loads first */
+.w-item { display: block; width: calc(var(--px) * 16); height: calc(var(--px) * 16); background-position: center; background-size: 100% 100%; background-repeat: no-repeat; image-rendering: pixelated; }
+.w-slot__count {
+  position: absolute;
+  z-index: 2;
+  right: 0;
+  bottom: 0;
+  font-family: var(--font-data);
+  font-size: var(--fs-data);
+  line-height: 1;
+  color: var(--paper);
+  text-shadow: var(--px) var(--px) 0 var(--night);
+  pointer-events: none;
+}
+/* the light over a slot pointed at, laid over the item as the game lays it */
+.w-slot::before { content: ''; position: absolute; z-index: 1; inset: 0; background: rgba(255, 240, 210, 0.32); opacity: 0; pointer-events: none; }
+@media (hover: hover) { .w-slot:not([disabled]):hover::before { opacity: 1; } }
+.w-slot:not([disabled]):active .w-item, .w-slot:not([disabled]):active .w-slot__plus { translate: var(--press); }
+.w-slot:focus-visible { outline: var(--px) solid var(--lantern); outline-offset: calc(var(--px) * 3); }
+/* the slot pointed at or with the keyboard stands over its neighbours, so its ring and its tag are whole */
+.w-slot:is(:hover, :focus-visible) { z-index: 3; }
+.w-slot[disabled] { cursor: default; }
+.w-slot[aria-busy='true'] { cursor: progress; }
+/* in hand: a pixel of night round the slot and a frame of light round that */
+.w-slot.is-mine { z-index: 1; box-shadow: var(--bevel-in), 0 0 0 var(--px) var(--night), 0 0 0 calc(var(--px) * 2) var(--paper); }
+/* An item given pops into its slot the way the game's do when one is picked
+   up: drawn half as wide and half as tall again, coming back to itself over
+   five of the game's ticks, from its foot, at the game's even pace. */
+.w-item.is-popping { transform-origin: 50% 75%; animation: w-pop 250ms linear both; }
+@keyframes w-pop { 0% { transform: scale(0.5, 1.5); } 50% { transform: scale(0.67, 1.25); } }
+@media (prefers-reduced-motion: reduce) { .w-item.is-popping { animation: none; } }
+/* the empty slot after them: a plus in the slot, lit while the inventory is open */
+.w-slot__plus { width: calc(var(--px) * 8); height: calc(var(--px) * 8); background: currentColor; -webkit-mask: var(--w-plus) center / contain no-repeat; mask: var(--w-plus) center / contain no-repeat; }
+.w-slot--add { --w-plus: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'%3E%3Cpath d='M3 0h2v3h3v2H5v3H3V5H0V3h3z'/%3E%3C/svg%3E"); }
+@media (hover: hover) { .w-slot--add:hover { color: var(--paper); } }
+.w-slot--add.is-open { color: var(--lantern); }
+/* the slot's tag stands above it, wrapping at a width (Reactions.tsx keeps it on the screen);
+   on a phone, where nothing points at it, it would only widen the page unseen */
+.w-slot.b-tip::after { width: max-content; max-width: 15rem; white-space: normal; text-align: center; }
+@media (max-width: 719px) { .w-slot.b-tip::after { content: none; } }
+
+/* The inventory: under a seam in the board like the replies, every item in
+   a slot, and the game's own tooltip for the one pointed at: its dark violet
+   box with the violet rim inside a pixel of the box's own dark, the corners
+   cut, the item's name in white and what it says in the game's grey. Four
+   slots to a row where eight do not fit. */
+.w-inv {
+  container-type: inline-size;
+  display: grid;
+  gap: var(--sp-2);
+  margin-inline: calc(var(--sp-4) * -1);
+  padding: var(--sp-3) var(--sp-4) 0;
+  border-top: var(--px) solid var(--sign-line);
+  box-shadow: inset 0 var(--px) 0 rgba(255, 240, 210, 0.3);
+  animation: w-inv-in var(--dur-2) var(--ease-out) both;
+}
+@keyframes w-inv-in { from { opacity: 0; transform: translateY(calc(var(--px) * -3)); } }
+@media (prefers-reduced-motion: reduce) { .w-inv { animation: none; } }
+.w-inv__head { display: flex; justify-content: space-between; align-items: center; gap: var(--sp-3); padding-inline: var(--sp-1); }
+.w-inv__title { font-family: var(--font-data); font-size: var(--fs-data); letter-spacing: 0.04em; text-transform: uppercase; color: var(--sign-soft); }
+.w-inv__body { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--sp-3) var(--sp-4); padding: var(--px) var(--px) 0; }
+.w-inv__slots { display: grid; grid-template-columns: repeat(4, var(--w-slot)); gap: var(--px); }
+@container (min-width: 20rem) { .w-inv__slots { grid-template-columns: repeat(8, var(--w-slot)); } }
+@media (pointer: coarse) {
+  .w-inv__slots { grid-template-columns: repeat(4, var(--w-slot)); }
+  @container (min-width: 24rem) { .w-inv__slots { grid-template-columns: repeat(8, var(--w-slot)); } }
+}
+.w-inv__tip {
+  position: relative;
+  flex: 1 1 13rem;
+  min-width: 0;
+  min-height: 5.25rem;
+  display: grid;
+  align-content: start;
+  gap: var(--px);
+  padding: calc(var(--px) * 3) calc(var(--px) * 5);
+  background: var(--game-tip);
+  border: var(--px) solid var(--game-tip);
+  clip-path: var(--notch);
+  color: var(--paper);
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+}
+.w-inv__tip::before { content: ''; position: absolute; inset: 0; border: var(--px) solid; border-image: linear-gradient(180deg, var(--game-tip-rim), var(--game-tip-rim-2)) 1; pointer-events: none; }
+.w-inv__name { font-weight: 600; overflow-wrap: anywhere; }
+.w-inv__says { color: var(--game-tip-lore); }
+.w-inv__who { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-1); margin-top: var(--px); color: var(--tc-white); }
+.w-inv__who img { width: 1rem; height: 1rem; image-rendering: pixelated; }
+.w-inv__who span { margin-left: var(--px); overflow-wrap: anywhere; }
+.w-inv__given { list-style: none; display: grid; gap: var(--sp-1); }
+.w-inv__given li { display: flex; align-items: center; gap: var(--sp-2); color: var(--tc-white); }
+.w-inv__given li span:last-child { min-width: 0; overflow-wrap: anywhere; }
+.w-inv__given .w-item { width: 1rem; height: 1rem; flex-shrink: 0; }
