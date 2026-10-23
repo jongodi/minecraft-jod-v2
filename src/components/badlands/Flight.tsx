@@ -290,14 +290,15 @@ function Flight({ flight, fly, runway, f3, places, players, selected, onChoose, 
         return a && b ? { x: a.x + (b.x - a.x) * alpha, y: a.y + (b.y - a.y) * alpha } : a ?? b;
       };
 
-      /* The sky: the evening's last light on the horizon, fading as the
-         camera comes down, and the stars and the moon giving way to the
-         town's lamps over the last stretch. Both are layers moved and faded,
-         never painted again. */
+      /* The sky: the evening's last light on the horizon, and the stars and
+         the moon giving way to the town's lamps over the last stretch. Looking
+         down from the overview the horizon is far over the frame, so the light
+         holds until the camera has come down far enough to see it and fades
+         over the landing. Both are layers moved and faded, never painted again. */
       if (flying && sky && glow) {
         const horizon = onScreen(horizonPoint(cam.eye, cam.look));
         const stars = Math.min(1, Math.max(0, (1 - along) / 0.3));
-        const light = Math.pow(1 - along, 1.3);
+        const light = Math.min(1, Math.max(0, (1 - p) / 0.35));
         const look = `${horizon ? horizon.y.toFixed(1) : 'x'} ${stars.toFixed(3)} ${light.toFixed(3)}`;
         if (look !== skyLook) {
           skyLook = look;
