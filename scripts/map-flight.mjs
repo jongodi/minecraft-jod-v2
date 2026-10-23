@@ -21,10 +21,17 @@
 // BlueMap draws only its blurred low-detail layer from 1,000 blocks out, so
 // the overview stays inside that: the tall flight would need to stand further
 // back to fit the whole world across a phone, and keeps the detail instead.
+//
+// The evening goes on as the camera comes down: the land is lit as at dusk
+// over the overview and darkens frame by frame to the night the still is
+// taken in, where the town's lights come on. The sky is not the stills' own:
+// it is painted #FF00FF and cut out (scripts/sky-key.mjs), so the world hangs
+// in the page's night, its stars and tonight's moon (Flight.tsx).
 import { chromium } from 'playwright-core';
 import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
+import { keySky } from './sky-key.mjs';
 
 const require = createRequire(import.meta.url);
 const sharp = require('sharp');
@@ -39,8 +46,9 @@ const SHAPES = [
 ];
 /* The overview: looking down at this angle from the vertical (the start view
    is 1.08, nearer the horizon), turned this far from the start view's heading,
-   so the descent swings round a little as it comes down. */
-const OVERVIEW_ANGLE = 0.8;
+   so the descent swings round a little as it comes down. Steep enough that
+   the land fills the first view rather than the sky over it. */
+const OVERVIEW_ANGLE = 0.6;
 const SWING = -0.35;
 /* The still is shown at saturate(0.85) (badlands.css), and the flight lands
    on it: the frames carry the same colour, put in here with the matrix CSS
@@ -51,6 +59,8 @@ const SATURATE = ((k) => [
   [0.213 - 0.213 * k, 0.715 + 0.285 * k, 0.072 - 0.072 * k],
   [0.213 - 0.213 * k, 0.715 - 0.715 * k, 0.072 + 0.928 * k],
 ])(0.85);
+/* BlueMap's sunlight over the overview, at dusk; the landing is the night jod.js sets */
+const DUSK = 0.62;
 /* the farthest the camera stands while BlueMap still draws full detail */
 const FARTHEST = 990;
 
@@ -119,6 +129,8 @@ for (const shape of SHAPES) {
     }
     cm.controls = null;
     window.jod?.pause(true);
+    /* the night the map opens in (jod.js), which the flight lands in */
+    const night = viewer.data.uniforms.sunlightStrength.value;
     const b = window.JOD_MAP?.bounds ?? { minX: end.x - 400, maxX: end.x + 400, minZ: end.z - 400, maxZ: end.z + 400 };
     const start = { x: (b.minX + b.maxX) / 2, y: end.y, z: (b.minZ + b.maxZ) / 2, rotation: end.rotation + swing, angle };
     /* the camera's field of view is upright; across the frame it is wider or narrower with the frame's shape */
@@ -131,7 +143,7 @@ for (const shape of SHAPES) {
     const far = Math.max(...[start, end].flatMap(p => [Math.abs(b.minX - p.x), Math.abs(b.maxX - p.x), Math.abs(b.minZ - p.z), Math.abs(b.maxZ - p.z)]));
     viewer.data.loadedHiresViewDistance = Math.min(1500, Math.ceil(far) + 32);
     viewer.updateLoadedMapArea();
-    return { start, end };
+    return { start, end, night };
   }, { end: END, angle: OVERVIEW_ANGLE, swing: SWING, farthest: FARTHEST });
   console.log(`${shape.name}: frá ${Math.round(plan.start.d)} blokkum niður í ${Math.round(plan.end.d)}`);
 
@@ -242,13 +254,23 @@ for (const shape of SHAPES) {
 
   const shots = [];
   for (let i = 0; i < FRAMES; i++) {
-    const shot = await page.evaluate(async ({ s, lift }) => {
+    const shot = await page.evaluate(async ({ s, lift, sun }) => {
       const viewer = window.bluemap.mapViewer;
       const cm = viewer.controlsManager;
       const f = window.__flight;
       const c = f.camAt(s, lift);
       f.place(c);
       await f.settle(false);
+      /* The light of the hour this frame is at, and the sky painted #FF00FF
+         to be cut out: BlueMap draws the sky and the void past the world's
+         edge as their colour times the light (the larger of the sun squared
+         and the ambient light), so the colour is given over the light and
+         comes out exactly #FF00FF at any hour. */
+      const u = viewer.data.uniforms;
+      u.sunlightStrength.value = sun;
+      const light = Math.max(sun * sun, u.ambientLight.value);
+      u.skyColor.value.setRGB(1 / light, 0, 1 / light);
+      u.voidColor.value.setRGB(1 / light, 0, 1 / light);
       /* One frame, drawn here and read off the canvas in the same breath,
          before the browser clears it: the paused viewer draws nothing else.
          The camera is set again just before, should anything have moved it. */
@@ -268,9 +290,21 @@ for (const shape of SHAPES) {
       cam.updateProjectionMatrix();
       const m = cam.projectionMatrix.clone().multiply(cam.matrixWorldInverse);
       return { m: Array.from(m.elements), eye, look, d: c.d, png, ms: Math.round(performance.now() - drawn) };
-    }, { s: i / (FRAMES - 1), lift: lift[i] });
+    }, { s: i / (FRAMES - 1), lift: lift[i], sun: DUSK + (plan.night - DUSK) * (i / (FRAMES - 1)) });
     const png = Buffer.from(shot.png.slice(shot.png.indexOf(',') + 1), 'base64');
-    const webp = await sharp(png).resize(shape.width, shape.height, { kernel: 'lanczos3' }).recomb(SATURATE).webp({ quality: 62 }).toBuffer();
+    /* the sky cut out at the size it was drawn, before the frame is shrunk,
+       so the land's edge is as fine as the render; then the still's colour
+       on what is left, and the cut kept as the frame's transparency */
+    const full = await sharp(png).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+    keySky(full.data, full.info.width, full.info.height);
+    const small = await sharp(full.data, { raw: { width: full.info.width, height: full.info.height, channels: 4 } })
+      .resize(shape.width, shape.height, { kernel: 'lanczos3' }).raw().toBuffer();
+    const raw = { raw: { width: shape.width, height: shape.height, channels: 4 } };
+    const rgb = await sharp(small, raw).removeAlpha().recomb(SATURATE).raw().toBuffer();
+    const alpha = await sharp(small, raw).extractChannel(3).raw().toBuffer();
+    const webp = await sharp(rgb, { raw: { width: shape.width, height: shape.height, channels: 3 } })
+      .joinChannel(alpha, { raw: { width: shape.width, height: shape.height, channels: 1 } })
+      .webp({ quality: 62, alphaQuality: 70 }).toBuffer();
     writeFileSync(`${OUT}/${shape.name}-${i}.webp`, webp);
     hash.update(webp);
     /* six significant figures put a pin within a pixel; a tenth of a block is plenty for the rest */
