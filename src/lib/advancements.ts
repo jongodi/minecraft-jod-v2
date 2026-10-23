@@ -37,6 +37,11 @@ export interface CrewAdvancements {
   readAt:  string;
   /** by username, as the crew list spells it */
   players: Record<string, Done>;
+  /** when each advancement first turned up in a daily copy, by username: it
+      is done at the game's own moment but reaches the site only with the next
+      copy, and the board tells it as news from then. None from the first copy,
+      whose advancements were all there already. */
+  found?:  Record<string, Done>;
 }
 
 /** "2024-06-01 20:11:02 +0000", as the game writes a moment, in ISO; null for anything else. */
@@ -173,6 +178,18 @@ export async function refreshAdvancements(token: string, now = new Date()): Prom
   /* only the crew as it stands: a name dropped from the list drops out here too */
   const crew = new Set<string>(CREW_USERNAMES.map(u => u.toLowerCase()));
   const kept = Object.fromEntries(Object.entries(players).filter(([u]) => crew.has(u.toLowerCase())));
-  if (read.length > 0 && process.env.REDIS_URL) await rSet(KEY, { readAt: now.toISOString(), players: kept } satisfies CrewAdvancements);
+  /* what this copy found that the last one did not have, kept beside what was found before and is still there */
+  const found: Record<string, Done> = {};
+  for (const [u, done] of Object.entries(kept)) {
+    const had = before?.players[u];
+    const was = before?.found?.[u] ?? {};
+    const mine: Done = {};
+    for (const adv of Object.keys(done)) {
+      if (was[adv]) mine[adv] = was[adv];
+      else if (had && !had[adv]) mine[adv] = now.toISOString();
+    }
+    if (Object.keys(mine).length) found[u] = mine;
+  }
+  if (read.length > 0 && process.env.REDIS_URL) await rSet(KEY, { readAt: now.toISOString(), players: kept, found } satisfies CrewAdvancements);
   return { read: read.sort(), failed: failed.sort() };
 }

@@ -78,21 +78,25 @@ export function boardItems({ walls, map, gallery, nights, past, advancements, ne
 
   /* each member's advancements, a day to a notice */
   for (const [who, done] of Object.entries(advancements?.players ?? {})) {
-    const days = new Map<string, { at: string; list: { title: string; frame: 'task' | 'goal' | 'challenge'; at: string }[] }>();
+    const found = advancements?.found?.[who] ?? {};
+    const days = new Map<string, { at: string; arrived: string; list: { title: string; frame: 'task' | 'goal' | 'challenge'; at: string }[] }>();
     for (const [id, at] of Object.entries(done)) {
       const def = advancementOf(id);
       if (!def || !recent(at)) continue;
       const day = at.slice(0, 10);
-      const d = days.get(day) ?? { at, list: [] };
+      const d = days.get(day) ?? { at, arrived: at, list: [] };
       d.list.push({ title: def.title, frame: def.frame, at });
       if (at > d.at) d.at = at;
+      /* the copy that brought it, which is when it is news */
+      const came = found[id] && found[id] > at ? found[id] : at;
+      if (came > d.arrived) d.arrived = came;
       days.set(day, d);
     }
     for (const [day, d] of days) {
       /* the challenges first, then the goals, then in the order they were done */
       const rank = { challenge: 0, goal: 1, task: 2 } as const;
       const list = d.list.sort((a, b) => rank[a.frame] - rank[b.frame] || a.at.localeCompare(b.at)).map(({ title, frame }) => ({ title, frame }));
-      items.push({ kind: 'advancement', id: `a-${who}-${day}`, at: d.at, who, list });
+      items.push({ kind: 'advancement', id: `a-${who}-${day}`, at: d.at, who, list, ...(d.arrived > d.at ? { arrived: d.arrived } : {}) });
     }
   }
 
@@ -108,7 +112,9 @@ export function boardItems({ walls, map, gallery, nights, past, advancements, ne
     if (n.kind === 'place') {
       const l = places.get(n.placeId);
       if (!l) continue;
-      const photo = l.photoId ? photos.get(l.photoId) ?? null : null;
+      /* the picture it was drawn with, not one hung on it since, which is news of its own */
+      const given = n.photoId === undefined ? l.photoId ?? null : n.photoId;
+      const photo = given ? photos.get(given) ?? null : null;
       if (photo) drawnWith.add(photo.id);
       items.push({ kind: 'place', id: `l-${n.placeId}-${n.at}`, at: n.at, who: null, placeId: l.id, label: titleCase(l.label), sublabel: sentenceCase(l.sublabel), photo: photo?.filename ?? null });
     } else if (n.kind === 'photo') {
@@ -147,7 +153,9 @@ async function readNightsForBoard(): Promise<{ nights: Night[]; past: PastNight[
   if (!process.env.REDIS_URL) return { nights: [], past: [] };
   const play = await import('@/lib/play-night');
   const now = Date.now();
-  const [{ all, shown }, kept] = await Promise.all([play.currentNights(now), play.pastNights(now)]);
+  const current = await play.currentNights(now);
+  const { all, shown } = current;
+  const kept = await play.pastNights(now, current);
   const embers = shown.filter(s => play.phaseOf(s.night, now) === 'over').map(s => play.pastOf(s.night, s.votes, s.seen)).filter((p): p is PastNight => p !== null);
   const ids = new Set(kept.map(p => p.id));
   return { nights: all, past: [...kept, ...embers.filter(p => !ids.has(p.id))] };

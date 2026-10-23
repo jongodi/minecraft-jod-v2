@@ -18,8 +18,8 @@ export type BoardItem =
   | { kind: 'decided'; id: string; at: string; who: string | null; nightId: string; note: string; time: string }
   /** a night that was held: who lit it, who came, who said they would and didn't */
   | { kind: 'held'; id: string; at: string; who: string; nightId: string; note: string; came: string[]; noShows: string[] }
-  /** one member's advancements on one day */
-  | { kind: 'advancement'; id: string; at: string; who: string; list: { title: string; frame: Frame }[] }
+  /** one member's advancements on one day; `arrived` is when the daily copy brought the newest of them, if later than `at` */
+  | { kind: 'advancement'; id: string; at: string; who: string; list: { title: string; frame: Frame }[]; arrived?: string }
   /** a place drawn on the map */
   | { kind: 'place'; id: string; at: string; who: null; placeId: number; label: string; sublabel: string; photo: string | null }
   /** a picture hung on a place, or on the wall of pictures */
@@ -87,9 +87,45 @@ export function isNew(stamp: BoardStamp, seen: string | null, me: string | null 
 export const countNew = (stamps: BoardStamp[], seen: string | null, me: string | null | undefined, now = Date.now()) =>
   stamps.reduce((n, s) => n + (isNew(s, seen, me, now) ? 1 : 0), 0);
 
+/** When an item became news: when it reached the board, which for an
+    advancement can be a day after the game's own moment. */
+export const stampOf = (i: BoardItem): BoardStamp => ({ at: i.kind === 'advancement' && i.arrived ? i.arrived : i.at, who: i.who });
+
+/** Everything on the board that can be new: each item, and each reply under
+    a post, since a reply under something older is news too. */
+export function stampsOf(items: BoardItem[]): BoardStamp[] {
+  const out: BoardStamp[] = items.map(stampOf);
+  for (const i of items) if (i.kind === 'post') for (const r of i.entry.replies) out.push({ at: r.createdAt, who: r.username });
+  return out;
+}
+
+/** The replies under a post that are new to the one looking. */
+export const newReplies = (item: BoardItem, seen: string | null, me: string | null | undefined, now = Date.now()) =>
+  item.kind === 'post' ? item.entry.replies.filter(r => isNew({ at: r.createdAt, who: r.username }, seen, me, now)).length : 0;
+
 /** The newest moment on the board, which is what "seen" moves up to. */
 export const newestAt = (stamps: BoardStamp[]): string | null =>
   stamps.reduce<string | null>((max, s) => (!max || Date.parse(s.at) > Date.parse(max) ? s.at : max), null);
+
+/* ─── changes made in the browser ─────────────────────────────────────────── */
+
+/** A change made on the board itself: a post put up, a post changed (a
+    lantern, a reply, a vote, a call taken on), a post taken down. */
+export type BoardEdit =
+  | { pin: Extract<BoardItem, { kind: 'post' }> }
+  | { id: string; update: (e: CrewEntry) => CrewEntry }
+  | { id: string; remove: true };
+
+/** The board with changes made on it, in order: what a fetch brings, which
+    was read before them, is put right by making them again. A post already
+    there is not put up twice. */
+export function replay(items: BoardItem[], edits: BoardEdit[]): BoardItem[] {
+  return edits.reduce<BoardItem[]>((list, e) => {
+    if ('pin' in e) return list.some(i => i.id === e.pin.id) ? list : [e.pin, ...list];
+    if ('remove' in e) return list.filter(i => !(i.kind === 'post' && i.entry.id === e.id));
+    return list.map(i => (i.kind === 'post' && i.entry.id === e.id ? { ...i, entry: e.update(i.entry) } : i));
+  }, items);
+}
 
 /* ─── the days ────────────────────────────────────────────────────────────── */
 

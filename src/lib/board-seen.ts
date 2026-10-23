@@ -28,18 +28,26 @@ export async function getSeen(username: string): Promise<string | null> {
   return valid((await readFile())[name]);
 }
 
+/* Move the mark up inside Redis, so two tabs marking at once can never set
+   it back: the marks are ISO times in UTC, which compare as text. */
+const MOVE_UP = `
+local cur = redis.call('HGET', KEYS[1], ARGV[1])
+if (not cur) or cur < ARGV[2] then
+  redis.call('HSET', KEYS[1], ARGV[1], ARGV[2])
+  return ARGV[2]
+end
+return cur`;
+
 /** Moves the member's mark up to `at` (never past now, never back). Returns the mark kept. */
 export async function markSeen(username: string, at: string, now = Date.now()): Promise<string> {
   const name = canonicalUsername(username).toLowerCase();
-  const wanted = Math.min(Date.parse(at), now);
-  const prev = await getSeen(name);
-  if (prev && Date.parse(prev) >= wanted) return prev;
-  const iso = new Date(wanted).toISOString();
+  const iso = new Date(Math.min(Date.parse(at), now)).toISOString();
   if (hasKV()) {
     const { getRedis } = await import('./redis');
-    await getRedis().hset(KEY, name, iso);
-    return iso;
+    return String(await getRedis().eval(MOVE_UP, 1, KEY, name, iso));
   }
+  const prev = await getSeen(name);
+  if (prev && prev >= iso) return prev;
   const all = await readFile();
   all[name] = iso;
   await fs.mkdir(dataDir(), { recursive: true });

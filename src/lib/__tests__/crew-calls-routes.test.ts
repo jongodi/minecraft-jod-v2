@@ -74,6 +74,15 @@ describe('a call for something', () => {
     expect((await (await bounty(req({ action: 'reopen' }), on('call'))).json()).bounty.doneAt).toBeNull();
   });
 
+  it('lets the one who posted it free it from one who took it, so it can close without paying them', async () => {
+    await bounty(req({ action: 'take' }), on('call'));
+    expect((await bounty(req({ action: 'release' }), on('call'))).status).toBe(403);
+    me = 'stebbias';
+    expect((await (await bounty(req({ action: 'release' }), on('call'))).json()).bounty.takenBy).toBeNull();
+    const closed = await (await bounty(req({ action: 'done' }), on('call'))).json();
+    expect(closed.bounty).toMatchObject({ takenBy: null, doneAt: expect.any(String) });
+  });
+
   it('answers 404 for a note that is no call, and 400 for no action', async () => {
     expect((await bounty(req({ action: 'take' }), on('ask'))).status).toBe(404);
     expect((await bounty(req({ action: 'steal' }), on('call'))).status).toBe(400);

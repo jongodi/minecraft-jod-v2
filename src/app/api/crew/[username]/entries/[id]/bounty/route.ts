@@ -5,13 +5,14 @@ import { updateProfile, getCrewSession, isCrewUsername, sameUser, Refusal, wallE
 export const dynamic = 'force-dynamic';
 
 type Params = { params: Promise<{ username: string; id: string }> };
-type Action = 'take' | 'drop' | 'done' | 'reopen';
-const ACTIONS: Action[] = ['take', 'drop', 'done', 'reopen'];
+type Action = 'take' | 'drop' | 'release' | 'done' | 'reopen';
+const ACTIONS: Action[] = ['take', 'drop', 'release', 'done', 'reopen'];
 
 /** A call for something on a wall (Óskast). One of the crew takes it on
     (`take`) or lets it go again (`drop`); the one who posted it calls it
-    done (`done`), which credits whoever took it, or opens it again
-    (`reopen`). Answers with the call as it now stands. */
+    done (`done`), which credits whoever took it, frees it from one who took
+    it and never came back (`release`), or opens it again (`reopen`).
+    Answers with the call as it now stands. */
 export async function POST(req: NextRequest, { params }: Params) {
   const { username, id } = await params;
   if (!isCrewUsername(username)) return NextResponse.json({ error: 'Fannst ekki.' }, { status: 404 });
@@ -35,10 +36,14 @@ export async function POST(req: NextRequest, { params }: Params) {
       if (action === 'take') {
         if (owner) throw new Refusal('Þú getur ekki tekið þína eigin ósk að þér.', 403);
         if (b.doneAt) throw new Refusal('Þetta er þegar komið í höfn.', 409);
-        if (b.takenBy && !sameUser(b.takenBy, me)) throw new Refusal(`${b.takenBy} er þegar búin(n) að taka þetta að sér.`, 409);
+        if (b.takenBy && !sameUser(b.takenBy, me)) throw new Refusal(`${b.takenBy} hefur þegar tekið þetta að sér.`, 409);
         entry.bounty = { ...b, takenBy: me };
       } else if (action === 'drop') {
         if (!b.takenBy || !sameUser(b.takenBy, me)) throw new Refusal('Þú ert ekki með þetta.', 403);
+        if (b.doneAt) throw new Refusal('Þetta er þegar komið í höfn.', 409);
+        entry.bounty = { ...b, takenBy: null };
+      } else if (action === 'release') {
+        if (!owner) throw new Refusal('Aðeins sá sem setti óskina upp getur þetta.', 403);
         if (b.doneAt) throw new Refusal('Þetta er þegar komið í höfn.', 409);
         entry.bounty = { ...b, takenBy: null };
       } else {

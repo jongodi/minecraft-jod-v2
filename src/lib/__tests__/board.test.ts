@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { boardItems, POSTS_KEEP, type BoardSources } from '@/lib/board';
 import { newsOf } from '@/lib/map-news';
-import { byDay, countNew, dayLabel, inFilter, isNew, newestAt, type BoardItem } from '@/lib/board-types';
+import { byDay, countNew, dayLabel, inFilter, isNew, newReplies, newestAt, replay, stampOf, stampsOf, type BoardItem } from '@/lib/board-types';
 import { normalizeProfile } from '@/lib/crew-types';
 import type { MapConfig } from '@/lib/map-types';
 import type { Night } from '@/lib/play-night';
@@ -24,7 +24,7 @@ describe('what the map news says', () => {
     const next: MapConfig = { locations: [place(1, { photoId: 'g1' }), place(2)], zones: [], paths: [], terrain: ['ab'] };
     expect(newsOf(prev, next, 'T')).toEqual([
       { kind: 'photo', at: 'T', photoId: 'g1', placeId: 1 },
-      { kind: 'place', at: 'T', placeId: 2 },
+      { kind: 'place', at: 'T', placeId: 2, photoId: null },
       { kind: 'painted', at: 'T', what: ['land'] },
     ]);
   });
@@ -93,6 +93,24 @@ describe('the board', () => {
     expect(items[2]).toMatchObject({ placeId: 2, label: 'Staður 2', photo: '/screenshots/b.webp', title: 'Mynd tvö' });
   });
 
+  it('tells a picture hung later on a place drawn without one', () => {
+    const news = [
+      { kind: 'place' as const, at: ago(30), placeId: 1, photoId: null },
+      { kind: 'photo' as const, at: ago(5), photoId: 'g1', placeId: 1 },
+    ];
+    const items = boardItems({ ...base, news });
+    expect(kinds(items)).toEqual(['photo', 'place']);
+    expect(items[1]).toMatchObject({ kind: 'place', photo: null });
+  });
+
+  it('tells advancements as news from the copy that brought them, filed on the day they were done', () => {
+    const advancements = { readAt: ago(1), players: { joenana: { 'minecraft:story/mine_stone': ago(20) } }, found: { joenana: { 'minecraft:story/mine_stone': ago(1) } } };
+    const [item] = boardItems({ ...base, advancements });
+    expect(item).toMatchObject({ kind: 'advancement', at: ago(20), arrived: ago(1) });
+    expect(stampOf(item).at).toBe(ago(1));
+    expect(isNew(stampOf(item), ago(10), 'stebbias', NOW)).toBe(true);
+  });
+
   it('tells a fresh copy of the 3D map, and nothing older than the board reaches', () => {
     expect(kinds(boardItems({ ...base, syncedAt: ago(2) }))).toEqual(['synced']);
     expect(boardItems({ ...base, syncedAt: ago(24 * 90) })).toEqual([]);
@@ -107,6 +125,33 @@ describe('what is new, and where it goes', () => {
     expect(isNew({ at: ago(24 * 2), who: null }, null, null, NOW)).toBe(true);
     expect(isNew({ at: ago(24 * 4), who: null }, null, null, NOW)).toBe(false);
     expect(newestAt(stamps)).toBe(ago(1));
+  });
+
+  it('counts a reply under something older as news, and not one of your own', () => {
+    const post: BoardItem = { kind: 'post', id: 'p-e', at: ago(48), who: 'stebbias', wood: 'oak', entry: { id: 'e', text: 'gamalt', photos: [], placeId: null, createdAt: ago(48), lanterns: [], replies: [
+      { id: 'r1', username: 'joenana', text: 'hæ', createdAt: ago(2) },
+      { id: 'r2', username: 'stebbias', text: 'hæ sjálf', createdAt: ago(1) },
+      { id: 'r3', username: 'AmmaGaur', text: 'gamalt svar', createdAt: ago(40) },
+    ] } };
+    expect(stampsOf([post])).toHaveLength(4);
+    expect(newestAt(stampsOf([post]))).toBe(ago(1));
+    expect(newReplies(post, ago(24), 'stebbias', NOW)).toBe(1);
+    expect(newReplies(post, ago(24), 'joenana', NOW)).toBe(1);
+    expect(countNew(stampsOf([post]), ago(24), 'stebbias', NOW)).toBe(1);
+  });
+
+  it('makes changes again on a board fetched before them, and never puts a post up twice', () => {
+    const entry = (id: string) => ({ id, text: id, photos: [], placeId: null, createdAt: ago(1), lanterns: [], replies: [] });
+    const post = (id: string): Extract<BoardItem, { kind: 'post' }> => ({ kind: 'post', id: `p-${id}`, at: ago(1), who: 'joenana', wood: 'oak', entry: entry(id) });
+    const fetched: BoardItem[] = [post('a'), post('b')];
+    const after = replay(fetched, [
+      { pin: post('new') },
+      { id: 'a', update: e => ({ ...e, lanterns: ['stebbias'] }) },
+      { id: 'b', remove: true },
+      { pin: post('new') },
+    ]);
+    expect(after.map(i => i.id)).toEqual(['p-new', 'p-a']);
+    expect(after[1].kind === 'post' && after[1].entry.lanterns).toEqual(['stebbias']);
   });
 
   it('files a note with prints under both, and the map under its own', () => {

@@ -319,9 +319,11 @@ export async function currentNights(now = Date.now()): Promise<{ all: Night[]; s
 }
 
 /** The annals: every night held that is no longer among the fires the page
-    shows, newest first. The kept ones, and any still waiting to be settled. */
-export async function pastNights(now = Date.now()): Promise<PastNight[]> {
-  const { all, shown } = await currentNights(now);
+    shows, newest first. The kept ones, and any still waiting to be settled.
+    `current` is a read of the fires already made (the board's), so they are
+    not read and decided twice in one request. */
+export async function pastNights(now = Date.now(), current?: { all: Night[]; shown: NightState[] }): Promise<PastNight[]> {
+  const { all, shown } = current ?? await currentNights(now);
   const r = await redis();
   const showing = new Set(shown.map(s => s.night.id));
   const kept: PastNight[] = [];

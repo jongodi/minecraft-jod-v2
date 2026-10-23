@@ -76,10 +76,13 @@ export async function writeMap(cfg: MapConfig, note?: string): Promise<void> {
       console.error('Redis writeMap error:', e);
       throw new Error('Ekki tókst að vista kortið vegna villu í geymslu');
     }
+    /* one moment for the save, its line in the history and the board's news
+       of it, so the news filled from the history never tells it twice */
+    const at = new Date();
     /* the save stands even if its history can't be kept */
     try {
       const { recordVersion } = await import('@/lib/map-history');
-      await recordVersion(prev, cfg, note);
+      await recordVersion(prev, cfg, note, at);
     } catch (e) {
       console.error('Map history error:', e);
     }
@@ -87,7 +90,7 @@ export async function writeMap(cfg: MapConfig, note?: string): Promise<void> {
     if (prev) {
       try {
         const { newsOf, recordNews } = await import('@/lib/map-news');
-        await recordNews(newsOf(prev, cfg, new Date().toISOString()));
+        await recordNews(newsOf(prev, cfg, at.toISOString()));
       } catch (e) {
         console.error('Map news error:', e);
       }

@@ -95,9 +95,25 @@ describe('the daily read', () => {
         AmmaGaur: { 'minecraft:story/mine_stone': '2024-06-01T10:00:00.000Z' },
         stebbias: { 'minecraft:story/mine_diamond': '2024-06-02T18:00:00.000Z' },
       },
+      /* stebbias's first copy: what it holds was there already, so none of it is news */
+      found: {},
     });
     /* joenana never played on this world: no file was asked for */
     expect(fetchMock.mock.calls.some(([u]) => String(u).includes('u-jo'))).toBe(false);
+  });
+
+  it('notes when a copy first finds an advancement, and keeps that moment on later copies', async () => {
+    kv.set('adv:crew', JSON.stringify({ readAt: 'x', players: { stebbias: { 'minecraft:story/mine_stone': '2024-06-01T10:00:00.000Z' } } }));
+    fetchMock.mockImplementation(async (url: string) => {
+      if (url.includes('info/world/players/advancements')) return reply({ data: { children: [{ name: 'u-stebbi.json' }] } });
+      if (url.endsWith('u-stebbi.json')) return reply({ 'minecraft:story/mine_stone': done('2024-06-01 10:00:00 +0000'), 'minecraft:story/mine_diamond': done('2024-06-02 18:00:00 +0000') });
+      throw new Error(`unexpected ${url}`);
+    });
+    await adv.refreshAdvancements('t', NOW);
+    expect(JSON.parse(kv.get('adv:crew')!).found).toEqual({ stebbias: { 'minecraft:story/mine_diamond': NOW.toISOString() } });
+    const later = new Date(NOW.getTime() + 86_400_000);
+    await adv.refreshAdvancements('t', later);
+    expect(JSON.parse(kv.get('adv:crew')!).found).toEqual({ stebbias: { 'minecraft:story/mine_diamond': NOW.toISOString() } });
   });
 
   it('writes nothing when no file could be read, and throws when there is no folder', async () => {

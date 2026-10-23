@@ -8,8 +8,8 @@
 import type { MapConfig } from '@/lib/map-types';
 
 export type MapNews =
-  /** a place drawn on the map for the first time */
-  | { kind: 'place'; at: string; placeId: number }
+  /** a place drawn on the map for the first time, with the picture it was drawn with, if any */
+  | { kind: 'place'; at: string; placeId: number; photoId?: string | null }
   /** a picture hung: on a place (placeId), or on the wall of pictures with none */
   | { kind: 'photo'; at: string; photoId: string; placeId: number | null }
   /** the painted map painted again: its land, its zones, its lines */
@@ -19,6 +19,8 @@ export type Painted = 'land' | 'zones' | 'lines';
 
 export const NEWS_KEY = 'map:news';
 const FILLED_KEY = 'map:news:filled';
+/* held while one read fills the list, so two at once never tell it twice; it lapses on its own if that read dies */
+const FILLING_KEY = 'map:news:filling';
 export const NEWS_SIZE = 40;
 
 const same = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
@@ -29,7 +31,7 @@ export function newsOf(prev: MapConfig, next: MapConfig, at: string): MapNews[] 
   const out: MapNews[] = [];
   for (const l of next.locations) {
     const was = before.get(l.id);
-    if (!was) out.push({ kind: 'place', at, placeId: l.id });
+    if (!was) out.push({ kind: 'place', at, placeId: l.id, photoId: l.photoId ?? null });
     /* a place drawn with its picture says so once, as the place; a picture given later is news of its own */
     const photo = l.photoId ?? null;
     if (photo !== null && was && (was.photoId ?? null) !== photo) out.push({ kind: 'photo', at, photoId: photo, placeId: l.id });
@@ -59,11 +61,12 @@ export async function recordNews(news: MapNews[]): Promise<void> {
 const parse = (raw: string[]): MapNews[] => raw.flatMap(s => { try { return [JSON.parse(s) as MapNews]; } catch { return []; } });
 
 /** The news, newest first. The first read ever fills the list from the map's
-    history; only one read wins that, so two at once never tell it twice. */
+    history; only one read at a time does that, and the list counts as filled
+    only once it has been, so a fill that failed is tried again. */
 export async function readNews(): Promise<MapNews[]> {
   if (!process.env.REDIS_URL) return [];
   const r = await redis();
-  if (await r.set(FILLED_KEY, new Date().toISOString(), 'NX')) {
+  if (!(await r.exists(FILLED_KEY)) && await r.set(FILLING_KEY, '1', 'EX', 60, 'NX')) {
     try {
       const { readHistory } = await import('@/lib/map-history');
       /* the history is newest first; each save is told against the one before it */
@@ -77,8 +80,11 @@ export async function readNews(): Promise<MapNews[]> {
         await r.rpush(NEWS_KEY, ...missing.sort((a, b) => Date.parse(b.at) - Date.parse(a.at)).map(n => JSON.stringify(n)));
         await r.ltrim(NEWS_KEY, 0, NEWS_SIZE - 1);
       }
+      await r.set(FILLED_KEY, new Date().toISOString());
     } catch (e) {
       console.error('map news backfill:', e);
+    } finally {
+      await r.del(FILLING_KEY).catch(() => {});
     }
   }
   return parse(await r.lrange(NEWS_KEY, 0, NEWS_SIZE - 1));

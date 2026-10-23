@@ -66,10 +66,10 @@ async function redis() {
 }
 
 /** Record a save. The first one also records the map as it was before it, so
-    the state before the first recorded change can be restored too. */
-export async function recordVersion(prev: MapConfig | null, next: MapConfig, note?: string): Promise<void> {
+    the state before the first recorded change can be restored too. `now` is
+    the save's moment, shared with the board's news of it (src/lib/map-news.ts). */
+export async function recordVersion(prev: MapConfig | null, next: MapConfig, note?: string, now = new Date()): Promise<void> {
   const r = await redis();
-  const now = new Date();
   /* time-ordered, with a few random characters so two saves in one millisecond still differ */
   const idAt = (t: number) => `${t.toString(36)}${Math.random().toString(36).slice(2, 6)}`;
   const entries: MapVersion[] = [];
