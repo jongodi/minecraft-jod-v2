@@ -25,8 +25,9 @@
 // The evening goes on as the camera comes down: the land is lit as at dusk
 // over the overview and darkens frame by frame to the night the still is
 // taken in, where the town's lights come on. The sky is not the stills' own:
-// it is painted #FF00FF and cut out (scripts/sky-key.mjs), so the world hangs
-// in the page's night, its stars and tonight's moon (Flight.tsx).
+// each still is drawn over a #FF00FF sky and again over #00FF00 and the sky
+// cut out by what changed (scripts/sky-key.mjs), so the world hangs in the
+// page's night, its stars and tonight's moon (Flight.tsx).
 import { chromium } from 'playwright-core';
 import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -261,19 +262,22 @@ for (const shape of SHAPES) {
       const c = f.camAt(s, lift);
       f.place(c);
       await f.settle(false);
-      /* The light of the hour this frame is at, and the sky painted #FF00FF
-         to be cut out: BlueMap draws the sky and the void past the world's
-         edge as their colour times the light (the larger of the sun squared
-         and the ambient light), so the colour is given over the light and
-         comes out exactly #FF00FF at any hour. */
+      /* The light of the hour this frame is at, and the sky painted to be
+         cut out (scripts/sky-key.mjs): BlueMap draws the sky and the void
+         past the world's edge as their colour times the light (the larger of
+         the sun squared and the ambient light), so the colour is given over
+         the light and comes out exactly #FF00FF, then #00FF00, at any hour. */
       const u = viewer.data.uniforms;
       u.sunlightStrength.value = sun;
       const light = Math.max(sun * sun, u.ambientLight.value);
-      u.skyColor.value.setRGB(1 / light, 0, 1 / light);
-      u.voidColor.value.setRGB(1 / light, 0, 1 / light);
-      /* One frame, drawn here and read off the canvas in the same breath,
-         before the browser clears it: the paused viewer draws nothing else.
-         The camera is set again just before, should anything have moved it. */
+      const paint = (r, g, b) => {
+        u.skyColor.value.setRGB(r / light, g / light, b / light);
+        u.voidColor.value.setRGB(r / light, g / light, b / light);
+      };
+      /* The frame, drawn here twice and read off the canvas each time in the
+         same breath, before the browser clears it: the paused viewer draws
+         nothing else, and nothing can load between the two. The camera is
+         set again just before, should anything have moved it. */
       const drawn = performance.now();
       const jod = window.jod;
       f.place(c);
@@ -281,22 +285,33 @@ for (const shape of SHAPES) {
       const eye = [cam.position.x, cam.position.y, cam.position.z];
       const look = [cm.position.x, cm.position.y, cm.position.z];
       if (jod) jod.paused = false;
-      viewer.render(0);
-      const png = viewer.renderer.domElement.toDataURL('image/png');
+      const draw = () => { viewer.render(0); return viewer.renderer.domElement.toDataURL('image/png'); };
+      paint(1, 0, 1);
+      const magenta = draw();
+      paint(0, 1, 0);
+      const green = draw();
       if (jod) jod.paused = true;
       /* the camera the frame was drawn with, as one matrix from the world to
          the screen (projection × view), which the page projects places by */
       cam.updateMatrixWorld(true);
       cam.updateProjectionMatrix();
       const m = cam.projectionMatrix.clone().multiply(cam.matrixWorldInverse);
-      return { m: Array.from(m.elements), eye, look, d: c.d, png, ms: Math.round(performance.now() - drawn) };
+      return { m: Array.from(m.elements), eye, look, d: c.d, magenta, green, ms: Math.round(performance.now() - drawn) };
     }, { s: i / (FRAMES - 1), lift: lift[i], sun: DUSK + (plan.night - DUSK) * (i / (FRAMES - 1)) });
-    const png = Buffer.from(shot.png.slice(shot.png.indexOf(',') + 1), 'base64');
+    const pixels = (url) => sharp(Buffer.from(url.slice(url.indexOf(',') + 1), 'base64')).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
     /* the sky cut out at the size it was drawn, before the frame is shrunk,
        so the land's edge is as fine as the render; then the still's colour
        on what is left, and the cut kept as the frame's transparency */
-    const full = await sharp(png).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
-    keySky(full.data, full.info.width, full.info.height);
+    const full = await pixels(shot.magenta);
+    const green = (await pixels(shot.green)).data;
+    /* the three channels tell the sky's share alike unless the two draws
+       differ in more than the sky, which would show as ghosts in the land */
+    let odd = 0;
+    for (let k = 0; k < green.length; k += 4) {
+      const r = full.data[k] - green[k], g = green[k + 1] - full.data[k + 1], b = full.data[k + 2] - green[k + 2];
+      if (Math.max(r, g, b) - Math.min(r, g, b) > 24) odd++;
+    }
+    keySky(full.data, green, full.info.width, full.info.height);
     const small = await sharp(full.data, { raw: { width: full.info.width, height: full.info.height, channels: 4 } })
       .resize(shape.width, shape.height, { kernel: 'lanczos3' }).raw().toBuffer();
     const raw = { raw: { width: shape.width, height: shape.height, channels: 4 } };
@@ -310,7 +325,7 @@ for (const shape of SHAPES) {
     /* six significant figures put a pin within a pixel; a tenth of a block is plenty for the rest */
     const tenth = (v) => Math.round(v * 10) / 10;
     shots.push({ m: shot.m.map(v => Number(v.toPrecision(6))), eye: shot.eye.map(tenth), look: shot.look.map(tenth), d: tenth(shot.d) });
-    console.log(`${shape.name} ${i + 1}/${FRAMES}: teiknað á ${shot.ms} ms`);
+    console.log(`${shape.name} ${i + 1}/${FRAMES}: teiknað á ${shot.ms} ms${odd ? `, ${odd} dílar ekki eins í báðum` : ''}`);
   }
   await page.close();
   flights[shape.name] = { width: shape.width, height: shape.height, shots };

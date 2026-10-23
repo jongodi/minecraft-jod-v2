@@ -1,63 +1,36 @@
-// The sky cut out of a still of the flight (scripts/map-flight.mjs). The
-// recording paints BlueMap's sky and the void past the world's edge exactly
-// #FF00FF, so that colour, and only that, is sky: it becomes transparency and
-// the page's own night shows round the land. A pixel on the land's edge is
-// part land and part sky; only a pixel touching the painted sky can be, so a
-// magenta block in the middle of the town is never cut, and for those the
-// sky's share is read off how magenta the pixel is (red and blue alike, well
-// over green) and taken back out of its colour, so no pink is left round the
-// blocks.
+// The sky cut out of a still of the flight (scripts/map-flight.mjs). Each
+// still is drawn twice, the sky and the void past the world's edge painted
+// #FF00FF the first time and #00FF00 the second, and what changed between the
+// two is how much of each pixel is sky: land is drawn the same both times,
+// however magenta it is, and the rest is sky in the measure it changed, so
+// the edge of the land, the band where BlueMap's low-res map fades out into
+// the void at the world's edge, and water the void shows through all come out
+// part transparent, by no guess at what colour the sky left in them. The two
+// keys share no channel, so the land's own colour is read off each channel
+// where the sky put nothing: red and blue over green, green over magenta.
 //
 // Tested in src/lib/__tests__/sky-key.test.ts.
 
-/* how near #FF00FF a pixel is and still all sky */
-const PURE = 14;
-/* how far from the painted sky an edge pixel can be, in pixels */
-const REACH = 2;
-/* how magenta an edge pixel must be before any of it is sky, and when it is all sky */
-const FROM = 30;
-const TO = 220;
+/* how little of a pixel can be land and it still be all sky */
+const CLEAR = 0.02;
 
-/** Cuts the painted sky out of raw RGBA pixels, `width` × `height`, in place, and returns them. */
-export function keySky(data, width, height) {
-  const n = width * height;
-  const sky = new Uint8Array(n);
-  for (let p = 0; p < n; p++) {
-    const i = p * 4;
-    if (255 - data[i] <= PURE && data[i + 1] <= PURE && 255 - data[i + 2] <= PURE) sky[p] = 1;
+/** The sky cut out of a still drawn twice, `onMagenta` (sky #FF00FF) and
+    `onGreen` (sky #00FF00), raw RGBA pixels `width` × `height` each: the
+    land's own colour, with the sky as transparency, written into `onMagenta`,
+    which is returned. */
+export function keySky(onMagenta, onGreen, width, height) {
+  const a = onMagenta, b = onGreen;
+  for (let i = 0; i < width * height * 4; i += 4) {
+    /* the sky's share, read from how far each channel moved towards its key */
+    const sky = Math.min(1, Math.max(0, ((a[i] - b[i]) + (b[i + 1] - a[i + 1]) + (a[i + 2] - b[i + 2])) / (3 * 255)));
+    const land = 1 - sky;
+    if (land < CLEAR) { a[i] = a[i + 1] = a[i + 2] = a[i + 3] = 0; continue; }
+    if (sky === 0) { a[i + 3] = 255; continue; }
+    /* the land's share of each channel, from the draw whose key has none of it */
+    a[i] = Math.round(Math.min(255, b[i] / land));
+    a[i + 1] = Math.round(Math.min(255, a[i + 1] / land));
+    a[i + 2] = Math.round(Math.min(255, b[i + 2] / land));
+    a[i + 3] = Math.round(land * 255);
   }
-  /* the pixels touching the sky, where the land's edge is */
-  const edge = new Uint8Array(n);
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      if (!sky[y * width + x]) continue;
-      for (let dy = -REACH; dy <= REACH; dy++) {
-        const yy = y + dy;
-        if (yy < 0 || yy >= height) continue;
-        for (let dx = -REACH; dx <= REACH; dx++) {
-          const xx = x + dx;
-          if (xx >= 0 && xx < width) edge[yy * width + xx] = 1;
-        }
-      }
-    }
-  }
-  for (let p = 0; p < n; p++) {
-    const i = p * 4;
-    if (sky[p]) { data[i] = data[i + 1] = data[i + 2] = data[i + 3] = 0; continue; }
-    if (!edge[p]) continue;
-    const r = data[i], g = data[i + 1], b = data[i + 2];
-    const low = Math.min(r, b);
-    /* the sky mixed into anything keeps red and blue alike */
-    const m = Math.abs(r - b) <= low * 0.3 + 10 ? low - g : 0;
-    const share = Math.min(1, Math.max(0, (m - FROM) / (TO - FROM)));
-    if (share <= 0) continue;
-    const a = 1 - share;
-    if (a < 0.04) { data[i] = data[i + 1] = data[i + 2] = data[i + 3] = 0; continue; }
-    /* what the land's own colour was, before the sky's share was mixed in */
-    data[i] = Math.round(Math.min(255, Math.max(0, (r - share * 255) / a)));
-    data[i + 1] = Math.round(Math.min(255, Math.max(0, g / a)));
-    data[i + 2] = Math.round(Math.min(255, Math.max(0, (b - share * 255) / a)));
-    data[i + 3] = Math.round(a * 255);
-  }
-  return data;
+  return a;
 }
