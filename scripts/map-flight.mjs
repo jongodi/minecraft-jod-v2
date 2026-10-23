@@ -135,50 +135,126 @@ for (const shape of SHAPES) {
   }, { end: END, angle: OVERVIEW_ANGLE, swing: SWING, farthest: FARTHEST });
   console.log(`${shape.name}: frá ${Math.round(plan.start.d)} blokkum niður í ${Math.round(plan.end.d)}`);
 
-  const shots = [];
-  for (let i = 0; i < FRAMES; i++) {
-    const s = i / (FRAMES - 1);
-    const shot = await page.evaluate(async ({ plan, s, first }) => {
-      const viewer = window.bluemap.mapViewer;
-      const cm = viewer.controlsManager;
-      const { start, end } = plan;
-      /* Evenly along the path, so neighbouring frames are as alike all the
-         way down; the page eases the scroll onto it (the overview holds a
-         moment, the landing settles). The distance falls evenly in
-         proportion, which reads as an even speed of descent; the camera's
-         target crosses to the start view as the distance closes, so the town
-         it lands on stays in sight. */
+  /* The camera on the path, and the means to place it, wait for its tiles
+     and ask the ground how high it stands, kept in the page for the survey
+     and the frames below. */
+  await page.evaluate((plan) => {
+    const viewer = window.bluemap.mapViewer;
+    const cm = viewer.controlsManager;
+    const { start, end } = plan;
+    /* Evenly along the path, so neighbouring frames are as alike all the
+       way down; the page eases the scroll onto it (the overview holds a
+       moment, the landing settles). The distance falls evenly in
+       proportion, which reads as an even speed of descent; the camera's
+       target crosses to the start view as the distance closes, so the town
+       it lands on stays in sight. `lift` turns the camera to look further
+       down, which raises it and draws it in, where the ground would be in
+       its way. */
+    const camAt = (s, lift = 0) => {
       const d = Math.exp(Math.log(start.d) + (Math.log(end.d) - Math.log(start.d)) * s);
       const k = (start.d - d) / (start.d - end.d);
-      /* set again just before the frame is drawn, should anything have moved it meanwhile */
-      const place = () => {
-        cm.position.set(start.x + (end.x - start.x) * k, start.y + (end.y - start.y) * k, start.z + (end.z - start.z) * k);
-        cm.distance = d;
-        cm.rotation = start.rotation + (end.rotation - start.rotation) * s;
-        cm.angle = start.angle + (end.angle - start.angle) * s;
-        cm.updateCamera();
+      return {
+        look: [start.x + (end.x - start.x) * k, start.y + (end.y - start.y) * k, start.z + (end.z - start.z) * k],
+        d,
+        rotation: start.rotation + (end.rotation - start.rotation) * s,
+        angle: start.angle + (end.angle - start.angle) * s - lift,
       };
-      place();
-      /* wait until every tile in view has arrived: nothing loading and the
-         count of drawn tiles steady (two seconds for the first frame, which
-         loads the whole world, tile by tile out of the store; a moment after
-         that) */
-      const manager = () => viewer.map.hiresTileManager;
-      const count = () => { let n = 0; manager().tiles.forEach((tile) => { if (tile.model && !tile.unloaded) n++; }); return n; };
+    };
+    /* where BlueMap puts the camera for a view (ControlsManager.updateCamera) */
+    const eyeOf = (c) => {
+      const h = Math.sin(c.angle), v = Math.cos(c.angle);
+      return [c.look[0] - Math.sin(c.rotation) * h * c.d, c.look[1] + v * c.d, c.look[2] + Math.cos(c.rotation) * h * c.d];
+    };
+    const place = (c) => {
+      cm.position.set(...c.look);
+      cm.distance = c.d;
+      cm.rotation = c.rotation;
+      cm.angle = c.angle;
+      cm.updateCamera();
+    };
+    /* Wait until every tile in view has arrived: nothing loading and the
+       count of drawn tiles steady (two seconds when the whole world is
+       loading, tile by tile out of the store; a moment after that). */
+    const manager = () => viewer.map.hiresTileManager;
+    const count = () => { let n = 0; manager().tiles.forEach((tile) => { if (tile.model && !tile.unloaded) n++; }); return n; };
+    const settle = async (whole) => {
       const started = Date.now();
       let last = -1;
       let steadySince = Date.now();
-      while (Date.now() - started < (first ? 600_000 : 180_000)) {
-        await new Promise((r) => setTimeout(r, first ? 500 : 120));
+      while (Date.now() - started < (whole ? 600_000 : 180_000)) {
+        await new Promise((r) => setTimeout(r, whole ? 500 : 120));
         const n = count();
         if (n !== last || manager().currentlyLoading > 0) { last = n; steadySince = Date.now(); }
-        else if (Date.now() - steadySince > (first ? 2000 : 240)) break;
+        else if (Date.now() - steadySince > (whole ? 2000 : 240)) break;
       }
+      return count();
+    };
+    /* The top of whatever stands at a spot, trees and builds and all: BlueMap
+       casts a ray down through the detailed tiles from y 300. */
+    const ground = (x, z) => {
+      const y = viewer.map.terrainHeightAt(x, z);
+      return typeof y === 'number' && Number.isFinite(y) ? y : -Infinity;
+    };
+    /* The camera stands clear: ten blocks over what is under it, and nothing
+       across the near third of its view, where a tree would fill the screen. */
+    const clear = (c) => {
+      const e = eyeOf(c);
+      if (e[1] < ground(e[0], e[2]) + 10) return false;
+      for (const t of [0.08, 0.16, 0.24, 0.32]) {
+        const x = e[0] + (c.look[0] - e[0]) * t, y = e[1] + (c.look[1] - e[1]) * t, z = e[2] + (c.look[2] - e[2]) * t;
+        if (y < ground(x, z) + 2) return false;
+      }
+      return true;
+    };
+    window.__flight = { camAt, place, settle, count, clear };
+  }, plan);
+
+  /* The whole world in full detail, from the overview, before anything is drawn or measured. */
+  const tiles = await page.evaluate(async () => { const f = window.__flight; f.place(f.camAt(0)); return f.settle(true); });
+  console.log(`${shape.name}: ${tiles} reitir í fullri upplausn`);
+
+  /* The survey: how far each frame's camera must look down to stand clear of
+     the ground and what grows on it, eased over the frames round it so the
+     camera rises over a tree and settles back instead of jumping. The landing
+     is the start view itself, as it is. */
+  const needed = await page.evaluate((frames) => {
+    const f = window.__flight;
+    return Array.from({ length: frames }, (_, i) => {
+      const s = i / (frames - 1);
+      const c = f.camAt(s);
+      for (let lift = 0; lift <= c.angle - 0.15; lift += 0.02) if (f.clear(f.camAt(s, lift))) return lift;
+      return c.angle - 0.15;
+    });
+  }, FRAMES);
+  const lift = needed.map((_, i) => {
+    let sum = 0, weight = 0;
+    for (let j = Math.max(0, i - 6); j <= Math.min(FRAMES - 1, i + 6); j++) {
+      const near = Math.max(...needed.slice(Math.max(0, j - 2), j + 3));
+      const g = Math.exp(-((i - j) ** 2) / 8);
+      sum += near * g; weight += g;
+    }
+    return Math.max(needed[i], sum / weight);
+  });
+  for (let i = FRAMES - 4; i < FRAMES; i++) lift[i] *= (FRAMES - 1 - i) / 4;
+  const lifted = lift.flatMap((v, i) => (v > 0.005 ? [i] : []));
+  if (lifted.length) console.log(`${shape.name}: myndavélin lyft yfir landið í römmum ${lifted[0]}–${lifted.at(-1)} (mest ${Math.max(...lift).toFixed(2)} rad)`);
+  if (needed.at(-1) > 0) console.warn(`${shape.name}: upphafssjónarhornið sjálft stendur nærri landinu`);
+
+  const shots = [];
+  for (let i = 0; i < FRAMES; i++) {
+    const shot = await page.evaluate(async ({ s, lift }) => {
+      const viewer = window.bluemap.mapViewer;
+      const cm = viewer.controlsManager;
+      const f = window.__flight;
+      const c = f.camAt(s, lift);
+      f.place(c);
+      await f.settle(false);
       /* One frame, drawn here and read off the canvas in the same breath,
-         before the browser clears it: the paused viewer draws nothing else. */
+         before the browser clears it: the paused viewer draws nothing else.
+         The camera is set again just before, should anything have moved it. */
       const drawn = performance.now();
       const jod = window.jod;
-      place();
+      f.place(c);
       const cam = viewer.camera;
       const eye = [cam.position.x, cam.position.y, cam.position.z];
       const look = [cm.position.x, cm.position.y, cm.position.z];
@@ -191,8 +267,8 @@ for (const shape of SHAPES) {
       cam.updateMatrixWorld(true);
       cam.updateProjectionMatrix();
       const m = cam.projectionMatrix.clone().multiply(cam.matrixWorldInverse);
-      return { m: Array.from(m.elements), eye, look, d, tiles: count(), png, ms: Math.round(performance.now() - drawn) };
-    }, { plan, s, first: i === 0 });
+      return { m: Array.from(m.elements), eye, look, d: c.d, png, ms: Math.round(performance.now() - drawn) };
+    }, { s: i / (FRAMES - 1), lift: lift[i] });
     const png = Buffer.from(shot.png.slice(shot.png.indexOf(',') + 1), 'base64');
     const webp = await sharp(png).resize(shape.width, shape.height, { kernel: 'lanczos3' }).recomb(SATURATE).webp({ quality: 62 }).toBuffer();
     writeFileSync(`${OUT}/${shape.name}-${i}.webp`, webp);
@@ -200,7 +276,6 @@ for (const shape of SHAPES) {
     /* six significant figures put a pin within a pixel; a tenth of a block is plenty for the rest */
     const tenth = (v) => Math.round(v * 10) / 10;
     shots.push({ m: shot.m.map(v => Number(v.toPrecision(6))), eye: shot.eye.map(tenth), look: shot.look.map(tenth), d: tenth(shot.d) });
-    if (i === 0) console.log(`${shape.name}: ${shot.tiles} reitir í fullri upplausn`);
     console.log(`${shape.name} ${i + 1}/${FRAMES}: teiknað á ${shot.ms} ms`);
   }
   await page.close();
