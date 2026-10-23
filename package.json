@@ -13,6 +13,7 @@
     "map:warm": "node scripts/map-warm.mjs",
     "map:poster": "node scripts/map-poster.mjs",
     "map:lights": "node scripts/map-lights.mjs",
+    "map:flight": "node scripts/map-flight.mjs",
     "map:bases": "node scripts/map-bases.mjs",
     "server:size": "node scripts/server-size.mjs",
     "advancements": "node scripts/advancements.mjs",

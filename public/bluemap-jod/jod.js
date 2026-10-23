@@ -405,7 +405,10 @@
       sendCamera();
     }
 
-    keepSmooth(app);
+    /* ?upptaka: the flight being recorded (scripts/map-flight.mjs), in a
+       browser drawing in software, where every frame is slow and easing off
+       would only take the detail out of the stills */
+    if (!params.has('upptaka')) keepSmooth(app);
     if (params.has('maelir')) meter(app);
 
     jod.ready = true;
