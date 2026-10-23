@@ -88,9 +88,10 @@ for (const shape of SHAPES) {
   await page.waitForFunction(() => window.bluemap?.mapViewer?.map && window.bluemap.mapViewer.data.mapState === 'loaded', null, { timeout: 120_000 });
 
   /* The path, worked out in the viewer with its own camera: from the start
-     view back to an overview whose distance is the nearest that shows all
-     four corners of the rendered world (or the farthest out that still has
-     full detail). The camera is taken off the visitor's controls, which would
+     view back to an overview from as far out as puts the rendered world
+     across the frame's width, its near edge running off the foot of the
+     frame and the night beyond its far one (or the farthest out that still
+     has full detail). The camera is taken off the visitor's controls, which would
      hold it nearer and steer its angle, and the viewer stops drawing by
      itself: in a browser drawing in software one frame of the whole world
      takes many seconds, so each still is drawn once, by hand, below. */
@@ -108,21 +109,11 @@ for (const shape of SHAPES) {
     window.jod?.pause(true);
     const b = window.JOD_MAP?.bounds ?? { minX: end.x - 400, maxX: end.x + 400, minZ: end.z - 400, maxZ: end.z + 400 };
     const start = { x: (b.minX + b.maxX) / 2, y: end.y, z: (b.minZ + b.maxZ) / 2, rotation: end.rotation + swing, angle };
-    const V = cm.position.constructor;
-    const corners = [[b.minX, b.minZ], [b.maxX, b.minZ], [b.minX, b.maxZ], [b.maxX, b.maxZ]].map(([x, z]) => new V(x, end.y, z));
-    const fits = (d) => {
-      cm.position.set(start.x, start.y, start.z);
-      cm.rotation = start.rotation; cm.angle = start.angle; cm.distance = d;
-      cm.updateCamera();
-      viewer.camera.updateMatrixWorld(true);
-      viewer.camera.updateProjectionMatrix();
-      return corners.every(c => { const p = c.clone().project(viewer.camera); return p.z < 1 && Math.abs(p.x) <= 0.94 && Math.abs(p.y) <= 0.9; });
-    };
-    let lo = end.d, hi = farthest;
-    if (fits(hi)) {
-      for (let i = 0; i < 24; i++) { const mid = (lo + hi) / 2; if (fits(mid)) hi = mid; else lo = mid; }
-    }
-    start.d = hi;
+    /* the camera's field of view is upright; across the frame it is wider or narrower with the frame's shape */
+    const cam = viewer.camera;
+    const across = Math.atan(Math.tan((cam.fov * Math.PI) / 360) * cam.aspect);
+    const width = Math.max(b.maxX - b.minX, b.maxZ - b.minZ);
+    start.d = Math.min(farthest, Math.max(end.d * 2, width / 2 / Math.tan(across)));
     /* full detail everywhere the flight looks: the square BlueMap loads round
        its centre reaches the farthest edge from either end of the path */
     const far = Math.max(...[start, end].flatMap(p => [Math.abs(b.minX - p.x), Math.abs(b.maxX - p.x), Math.abs(b.minZ - p.z), Math.abs(b.maxZ - p.z)]));
