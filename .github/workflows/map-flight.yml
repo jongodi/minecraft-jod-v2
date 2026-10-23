@@ -1,0 +1,98 @@
+name: Map flight
+
+# Records the flight down into the world (npm run map:flight): the stills the
+# home page plays as the world scrolls into view, from high over the whole
+# map down to its start view. Map sync records it along with the still after
+# every copy that changed the map; this records it again without a new copy:
+# by hand under Actions → Map flight → Run workflow, and by itself when the
+# recording script or this file changes on a branch other than main, so a
+# change to the flight is seen on that branch's preview before it is merged.
+# The flight is committed to the branch it ran on.
+#
+# The map is read the way the site reads it, out of Vercel Blob through a dev
+# server (off the server through exaroton should the store refuse), so it
+# needs the same two repository secrets as Map sync: EXAROTON_API_KEY and
+# BLOB_READ_WRITE_TOKEN.
+
+on:
+  workflow_dispatch:
+  push:
+    branches-ignore: [main]
+    paths:
+      - scripts/map-flight.mjs
+      - .github/workflows/map-flight.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: map-flight-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  flight:
+    if: github.repository == 'jongodi/minecraft-jod-v2'
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+
+    steps:
+      - name: Check the secrets
+        env:
+          EXAROTON_API_KEY: ${{ secrets.EXAROTON_API_KEY }}
+          BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
+        run: |
+          missing=""
+          [ -n "$EXAROTON_API_KEY" ] || missing="$missing EXAROTON_API_KEY"
+          [ -n "$BLOB_READ_WRITE_TOKEN" ] || missing="$missing BLOB_READ_WRITE_TOKEN"
+          if [ -n "$missing" ]; then
+            echo "::error::Repository secrets missing:$missing. Add them under Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Map sync's local copy, when GitHub still keeps it: read off the disk
+      # it is quicker than out of the store, and the same map
+      - name: Restore the map copy
+        uses: actions/cache/restore@v4
+        with:
+          path: public/bluemap-data
+          key: map-copy-${{ github.run_id }}
+          restore-keys: map-copy-
+
+      - name: Record the flight
+        timeout-minutes: 60
+        run: |
+          npx next dev -p 3000 > next-dev.log 2>&1 &
+          for i in $(seq 1 90); do curl -sf -o /dev/null http://localhost:3000/bluemap/settings.json && break; sleep 2; done
+          npm run map:flight
+        env:
+          CI: 'true'
+          EXAROTON_API_KEY: ${{ secrets.EXAROTON_API_KEY }}
+          BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
+
+      - name: The dev server's log
+        if: failure()
+        run: tail -n 80 next-dev.log || true
+
+      - name: Commit the flight
+        run: |
+          git add -A public/map-flight src/lib/map-flight.json
+          if git diff --cached --quiet; then
+            echo "The flight is as it was."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "New map flight (automatic)"
+          # someone may have pushed while this ran
+          git pull --rebase origin "$GITHUB_REF_NAME"
+          git push origin "HEAD:$GITHUB_REF_NAME"
