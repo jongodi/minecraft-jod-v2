@@ -6,7 +6,7 @@ import Link from 'next/link';
 import type { MapConfig, WorldPoint } from '@/lib/map-types';
 import { woodClass } from '@/lib/sign-wood';
 import type { PlacePrints } from '@/lib/crew-places';
-import { baseUrl, mapAt, type BaseLink, type MapBounds } from '@/lib/base-links';
+import { baseUrl, mapAt, onMap, type BaseLink, type MapBounds } from '@/lib/base-links';
 import viewerFiles from '@/lib/bluemap-viewer.json';
 import { BackIcon, CloseIcon, FoldedMapIcon, FullScreenIcon, Lantern, MoonIcon, PictureIcon, Sun } from './Bits';
 import { plural } from '@/lib/format';
@@ -15,7 +15,9 @@ import PlayerHead from './PlayerHead';
 import Rail, { revealRailItem } from './Rail';
 import Chat from './Chat';
 import Flight, { type FlightPlace } from './Flight';
-import { FLIGHT } from '@/lib/map-flight';
+import Locator, { type CameraSink } from './Locator';
+import { useLivePlayers } from './livePlayers';
+import { FLIGHT, headingOf } from '@/lib/map-flight';
 import { CREW, FACING, MAP_LIGHTS, MAP_POSTER, MAP_URL, SITE_NAME, handCase, plainClick, titleCase, type Plate, type RoomId } from './data';
 import type { ServerState } from './hooks';
 import { modalOpen, useEffectsAllowed, useInert, useMediaQuery, useReducedMotionPref, useRoomForEffects } from './hooks';
@@ -44,6 +46,10 @@ interface JodViewer {
 type ViewerMessage = {
   source?: string; type?: string; tiles?: number; id?: number; on?: boolean; open?: boolean;
   x?: number; y?: number; z?: number; facing?: 'north' | 'south' | 'east' | 'west';
+  /** camera: BlueMap's rotation of the camera round the point it holds, in radians, 0 facing north */
+  rotation?: number;
+  /** camera: where the camera itself stands on the ground (x, z) */
+  ex?: number; ez?: number;
   /** follow: who the camera keeps with now, and who it let go of for walking out of the world */
   name?: string | null; outside?: string;
 };
@@ -89,13 +95,14 @@ function useLinger<T>(value: T | null, ms = 400): { shown: T | null; leaving: bo
     a soft pool of night round it was the one blurred edge on the page. */
 /* The paper tag says what the lantern does where it is seen: in place on a
    wide screen, the whole screen on a phone (badlands.css keeps one of the two). */
-function Signpost() {
+function Signpost({ here }: { here: boolean }) {
   return (
     <>
       <span className="b-boot__post" aria-hidden="true" />
       <Lantern lit />
       <span className="b-boot__word">Ferðast um heiminn</span>
-      <span className="b-boot__sub b-boot__sub--wide">hleður þrívíddarkortið · dragðu, snúðu, stækkaðu</span>
+      {/* landed in the live map (World.tsx): it is already here, and waits to be taken hold of */}
+      <span className="b-boot__sub b-boot__sub--wide">{here ? 'þrívíddarkortið er komið · smelltu og taktu í það' : 'hleður þrívíddarkortið · dragðu, snúðu, stækkaðu'}</span>
       <span className="b-boot__sub b-boot__sub--phone">opnar þrívíddarkortið á heilum skjá</span>
     </>
   );
@@ -226,8 +233,22 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
   const runway = useRef<HTMLDivElement>(null);
   const flightF3 = useRef<HTMLParagraphElement>(null);
   const [landed, setLanded] = useState(true);
+  /* Landing in the live map, on a wide screen: past halfway down, the viewer
+     is woken behind the flight, loading and drawing nothing (standby), and
+     at the landing it takes over from the still at the very view the flight
+     ends on, alive (water moving, the crew walking). It stays glass until the
+     lantern is pressed, so the wheel still scrolls the page past it; climbing
+     back up puts it to sleep behind the flight again. `auto` is that viewer,
+     woken by the flight and not yet taken hold of. */
+  const [auto, setAuto] = useState(false);
+  const standby = live && auto && !landed;
+  const shown = live && !standby;
   /* coming down: the way into the live map stands aside until the camera lands */
-  const flying = fly && !live && !landed;
+  const flying = fly && !shown && !landed;
+  /* where the camera is, for the locator bar, told by the flight and by the live map */
+  const cameraSink = useRef<CameraSink | null>(null);
+  /* the place pointed at, on the rail or by its lantern: the other lights */
+  const [near, setNear] = useState<number | null>(null);
   const lit = reached && effects && landed;
 
   /* The rooms' code is fetched once the browser is truly idle, so a door
@@ -285,6 +306,8 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
 
   /* What the viewer says: that it is there, how far the first view has come,
      that it is drawn, night and day, and a place's lantern pressed in 3D. */
+  const standbyRef = useRef(standby);
+  standbyRef.current = standby;
   useEffect(() => {
     if (!live) return;
     const onMessage = (e: MessageEvent) => {
@@ -293,7 +316,11 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
       if (m?.source !== 'jod-map') return;
       if (m.type === 'hello') setViewer(true);
       else if (m.type === 'progress') setTiles(m.tiles ?? 0);
-      else if (m.type === 'camera' && typeof m.x === 'number' && typeof m.y === 'number' && typeof m.z === 'number') setCamera({ x: m.x, y: m.y, z: m.z, facing: m.facing ?? 'north' });
+      else if (m.type === 'camera' && typeof m.x === 'number' && typeof m.y === 'number' && typeof m.z === 'number') {
+        setCamera({ x: m.x, y: m.y, z: m.z, facing: m.facing ?? 'north' });
+        /* asleep behind the flight, the viewer's camera is not the one on screen */
+        if (typeof m.rotation === 'number' && !standbyRef.current) cameraSink.current?.([m.ex ?? m.x, m.ez ?? m.z], headingOf(m.rotation));
+      }
       else if (m.type === 'ready') setReady(true);
       else if (m.type === 'night') setNight(!!m.on);
       else if (m.type === 'menu') setMenu(!!m.open);
@@ -314,11 +341,12 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
      the render, would send it over nothing; that place's postcard opens the
      map that has it instead, if one does. */
   useEffect(() => {
-    if (!viewer) return;
+    /* asleep behind the flight, the viewer holds the start view the flight lands on */
+    if (!viewer || standby) return;
     const loc = config.locations.find(l => l.id === selected);
     if (loc?.world && mapAt(bases, MAIN_BOUNDS, loc.world) === 'main') jod()?.flyTo(loc.world, loc.id);
     else jod()?.choose(null);
-  }, [viewer, selected, config.locations, bases, jod]);
+  }, [viewer, standby, selected, config.locations, bases, jod]);
 
   /* The viewer draws nothing while nobody can see it: scrolled away, under a
      room, the album or the painted map. */
@@ -350,7 +378,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
   /* On a phone the map is only live as the whole screen: back in the page it
      is a still again, so a thumb scrolls the page, and the lantern reopens it. */
   const still = phone && !full;
-  const hidden = !inView || shut || album || drawn || still;
+  const hidden = !inView || shut || album || drawn || still || standby;
   useEffect(() => { if (viewer) jod()?.pause(hidden); }, [viewer, hidden, jod]);
 
   /* The viewer says when its first view is drawn, which is usually well under
@@ -367,6 +395,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
 
   /* ─── the whole screen ─── */
   const openFull = useCallback(() => {
+    setAuto(false);
     setLive(true);
     const el = frameRef.current;
     if (el?.requestFullscreen && document.fullscreenEnabled) {
@@ -417,7 +446,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
   const lower = server.list.map(n => n.toLowerCase());
   const inside = CREW.filter(n => lower.includes(n.toLowerCase()));
   /* heads can be followed while the live 3D map is on screen */
-  const canFollow = viewer && !drawn && !still;
+  const canFollow = viewer && shown && !drawn && !still;
   /* and pressed only while no room's dark lies over them: the follow itself goes on under the room */
   const headsLive = canFollow && !shut;
   useEffect(() => { if (!canFollow && following) jod()?.unfollow(); }, [canFollow, following, jod]);
@@ -428,10 +457,32 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
   /* the places pinned on the still and the flight: those on this map's ground */
   const grounded = useMemo<FlightPlace[]>(() => config.locations.flatMap(l =>
     l.world && mapAt(bases, MAIN_BOUNDS, l.world) === 'main' ? [{ id: l.id, label: l.label, world: l.world }] : []), [config.locations, bases]);
+  /* who is where: the crew in the overworld, while the world is in view; on
+     the land itself only those standing on its rendered ground, the rest
+     are on the locator bar alone */
+  const players = useLivePlayers(inView && !shut, CREW);
+  const onLand = useMemo(() => players.filter(p => !MAIN_BOUNDS || onMap(MAIN_BOUNDS, p)), [players]);
+  /* The live map, taken hold of: from the lantern, the postcard or the whole
+     screen. A viewer the flight woke is the same one, now let go of as glass. */
+  const takeHold = useCallback(() => { setAuto(false); setLive(true); }, []);
+  /* past halfway down on a wide screen: wake the live map behind the flight */
+  const liveRef = useRef(live);
+  liveRef.current = live;
+  const approach = useCallback(() => {
+    if (liveRef.current || window.matchMedia('(max-width: 899px)').matches) return;
+    setAuto(true);
+    setLive(true);
+  }, []);
+  const pointAt = useCallback((id: number | null) => {
+    setNear(id);
+    if (id !== null) revealRailItem(id, places.current);
+  // places is a ref
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <section id="heimur" className={`b-world${fly ? ' has-flight' : ''}`} aria-labelledby="heimur-title">
-      <div ref={frameRef} className={`b-frame${live ? ' is-live' : ''}${ready ? ' is-ready' : ''}${drawn ? ' is-drawn' : ''}${shut ? ' is-room' : ''}${full === 'overlay' ? ' is-full' : ''}${live && still ? ' is-still' : ''}${menu && ready ? ' is-menu' : ''}${chatOpen ? ' is-chat' : ''}${flying ? ' is-flying' : ''}`}>
+      <div ref={frameRef} className={`b-frame${shown ? ' is-live' : ''}${shown && ready ? ' is-ready' : ''}${standby ? ' is-standby' : ''}${shown && auto ? ' is-glass' : ''}${drawn ? ' is-drawn' : ''}${shut ? ' is-room' : ''}${full === 'overlay' ? ' is-full' : ''}${shown && still ? ' is-still' : ''}${menu && ready ? ' is-menu' : ''}${chatOpen ? ' is-chat' : ''}${flying ? ' is-flying' : ''}`}>
         {/* The still and its lights settle together as the world is
             reached, the camera coming down into the valley with the scroll
             (badlands.css). On a device with room for the effects, until the
@@ -459,8 +510,9 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
             Once the live map is asked for, the still is what it takes over
             from, and the live map has its own lanterns. */}
         {FLIGHT && posterOn && (
-          <Flight flight={FLIGHT} fly={fly && !live} runway={runway} f3={flightF3} places={grounded} selected={selected}
-            onChoose={choose} hidden={live || drawn} onLanded={setLanded} />
+          <Flight flight={FLIGHT} fly={fly && (!live || auto)} runway={runway} f3={flightF3} places={grounded} players={onLand}
+            selected={selected} onChoose={choose} near={near} onNear={pointAt} camera={cameraSink}
+            hidden={shown || drawn} onLanded={setLanded} onApproach={approach} />
         )}
         </div>
 
@@ -529,7 +581,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
                 never wrap down into the world among the places' name tags
                 (badlands.css, the HUD on a phone). */}
             <div ref={tools} className="b-hud__tools">
-              {viewer && !drawn && !still && (
+              {viewer && shown && !drawn && !still && (
                 <button type="button" className={`b-btn b-btn--small b-btn--ghost b-hud__tool b-tip b-tip--below${night ? ' is-on' : ''}`} aria-pressed={night}
                   data-tip="Sólin sest og ljósin í bænum loga" onClick={() => jod()?.setNight(!night)}>
                   <MoonIcon className="b-btn__icon" /><span className="b-hud__word">Nótt</span>
@@ -555,7 +607,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
           </div>
 
           <div ref={mid} className="b-hud__mid">
-            {(!live || still) && !drawn && (
+            {(!shown || still || auto) && !drawn && (
               /* A link to the viewer, so it is the way in before the page's
                  script has run (the server cannot know a phone, and drew a dead
                  button there). With the script, a wide screen loads the map in
@@ -563,17 +615,20 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
                  map's drag and pinch never fight the page scroll. */
               // eslint-disable-next-line @next/next/no-html-link-for-pages
               <a href={MAP_URL} className="b-boot" onPointerEnter={warmViewer} onTouchStart={warmViewer} onFocus={warmViewer}
-                onClick={e => { if (plainClick(e)) { e.preventDefault(); if (phone) openFull(); else setLive(true); } }}>
-                <Signpost />
+                onClick={e => { if (plainClick(e)) { e.preventDefault(); if (phone) openFull(); else takeHold(); } }}>
+                <Signpost here={shown && auto && ready} />
               </a>
             )}
-            {live && !ready && !still && slow && (
+            {shown && !ready && !still && slow && (
               <p className="b-boot__wait" role="status">
                 sæki kortið{tiles > 0 ? ` · ${tiles} ${plural(tiles, 'reitur', 'reitir')}` : '…'}
               </p>
             )}
           </div>
         </div>
+
+        {/* the locator bar: the other bases and the crew, by where they stand from the way the camera faces */}
+        <Locator bases={bases} players={players} sink={cameraSink} hidden={drawn || shut || (menu && ready)} />
 
         {place && (
             <figure
@@ -615,9 +670,9 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
                 <a href={baseUrl(atBase.id)} className="b-btn b-btn--small b-btn--solid b-card__fly">
                   <Lantern lit /> {atBase.name} í þrívídd
                 </a>
-              ) : seen === 'main' && (!viewer || still) && !drawn && (
+              ) : seen === 'main' && (!viewer || still || auto) && !drawn && (
                 <button type="button" className="b-btn b-btn--small b-btn--solid b-card__fly" onPointerEnter={warmViewer} onFocus={warmViewer}
-                  onClick={() => (phone ? openFull() : setLive(true))}>
+                  onClick={() => (phone ? openFull() : takeHold())}>
                   <Lantern lit /> Sjá staðinn í þrívídd
                 </button>
               )}
@@ -655,7 +710,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
           {/* The game's F3 lines while the live map is up: the block the map
               holds and the way it faces, as a player reads them to find the
               same spot in the game, each line on its own veil of dark. */}
-          {camera && ready && !still && !drawn && (
+          {camera && shown && ready && !still && !drawn && (
             <p className="b-f3">
               {/* said as a sentence; a label on a paragraph is not read */}
               <span className="b-visually-hidden">Kortið horfir á {camera.x}, {camera.y}, {camera.z} og snýr í {FACING[camera.facing] ?? camera.facing}</span>
@@ -671,7 +726,9 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
               const count = pinned[String(loc.id)]?.count ?? 0;
               return (
                 <button key={loc.id} type="button" data-rail-item={loc.id}
-                  className={`b-chip${woodClass(loc.wood)}${loc.id === selected ? ' is-on' : ''}`} aria-pressed={loc.id === selected} onClick={() => choose(loc.id)}>
+                  className={`b-chip${woodClass(loc.wood)}${loc.id === selected ? ' is-on' : ''}${loc.id === near ? ' is-near' : ''}`} aria-pressed={loc.id === selected} onClick={() => choose(loc.id)}
+                  onPointerEnter={e => { if (e.pointerType === 'mouse') setNear(loc.id); }} onPointerLeave={e => { if (e.pointerType === 'mouse') setNear(null); }}
+                  onFocus={() => setNear(loc.id)} onBlur={() => setNear(null)}>
                   {/* a label on a bare span is not read; the count is spoken as words instead */}
                   {count > 0 && <><span className="b-chip__count" aria-hidden="true">{count}</span><span className="b-visually-hidden">{`${count} ${plural(count, 'færsla', 'færslur')} frá hópnum, `}</span></>}
                   <span className="b-chip__thumb">

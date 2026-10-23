@@ -15,7 +15,7 @@ import { errorFrom, failure, OFFLINE } from '@/lib/crew-upload';
 import AddressBar from '@/components/badlands/AddressBar';
 import Footer from '@/components/badlands/Footer';
 import PlayerHead from '@/components/badlands/PlayerHead';
-import { CloseIcon, Seal } from '@/components/badlands/Bits';
+import { CloseIcon, Lantern, Seal } from '@/components/badlands/Bits';
 import { PAGE_LINKS, STAT_TABS, type StatKey } from '@/components/badlands/data';
 import { outlaws } from '@/components/badlands/outlaws';
 import NightSky from '@/components/badlands/NightSky';
@@ -32,6 +32,13 @@ const WallLightbox = dynamic(() => import('./WallLightbox'), { ssr: false });
 
 /** A place on the map, as the wall needs it: to pin things at and to list what the member built. */
 export interface WallPlace { id: number; label: string; sublabel: string; builders: string[]; wood: SignWood }
+
+/** What the member built, seen in the world: the still of the flight down
+    (src/lib/map-flight.ts) that shows their places best, and where each of
+    them stands in it, as fractions of its width and height. Worked out on
+    the server, so the wall carries the picture and the spots, not the
+    flight's cameras. */
+export interface WallCorner { src: string; pins: { id: number; label: string; x: number; y: number }[] }
 
 // ─── Login: the password, or a link by post ───────────────────────────────────
 
@@ -248,11 +255,13 @@ interface Props {
   advancements?: { list: WallAdvancement[]; of: number } | null;
   /** true when the page was opened from a sign-in link */
   justSignedIn?: boolean;
+  /** what they built, seen in the world; null when none of it stands on the main map's ground */
+  corner?: WallCorner | null;
   /** who the server found signed in, so the owner's own wall is drawn whole from the first paint */
   session: CrewSessionSeed;
 }
 
-export default function Wall({ initial, places, initialStats = null, initialLed = [], advancements = null, justSignedIn = false, session }: Props) {
+export default function Wall({ initial, places, initialStats = null, initialLed = [], advancements = null, justSignedIn = false, corner = null, session }: Props) {
   const [profile, setProfile] = useState<CrewProfile>(initial);
   /* The session the server drew the page for is the store's first answer, so
      the pin slot, the banner and the reply lines are in the markup and the
@@ -469,6 +478,23 @@ export default function Wall({ initial, places, initialStats = null, initialLed 
                 <span className="b-paper__kicker">Byggði</span>{' '}
                 {built.map((p, i) => <span key={p.id}>{i > 0 && ', '}<Link href={`/?stadur=${p.id}#heimur`} className="b-link">{p.label}</Link></span>)}
               </p>
+            )}
+            {/* Their corner of the world: what they built, where it stands,
+                on the still of the flight that shows it best, the night
+                behind the land as on the home page, each place a lantern
+                that opens its postcard in the world. */}
+            {corner && corner.pins.length > 0 && (
+              <figure className="w-corner">
+                {/* eslint-disable-next-line @next/next/no-img-element -- a still of the flight, drawn at the size it was taken */}
+                <img src={corner.src} alt={`${corner.pins.map(p => p.label).join(', ')} í heiminum, séð úr lofti`} width={1280} height={720} loading="lazy" decoding="async" />
+                {corner.pins.map(p => (
+                  <Link key={p.id} href={`/?stadur=${p.id}#heimur`} className="w-corner__pin" style={{ left: `${(p.x * 100).toFixed(2)}%`, top: `${(p.y * 100).toFixed(2)}%` }}>
+                    <Lantern lit />
+                    <span className="w-corner__label">{p.label}</span>
+                  </Link>
+                ))}
+                <figcaption className="w-corner__cap"><span className="b-paper__kicker">Í heiminum</span> séð úr lofti</figcaption>
+              </figure>
             )}
 
             {stats && (

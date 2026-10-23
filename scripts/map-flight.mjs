@@ -21,10 +21,18 @@
 // BlueMap draws only its blurred low-detail layer from 1,000 blocks out, so
 // the overview stays inside that: the tall flight would need to stand further
 // back to fit the whole world across a phone, and keeps the detail instead.
+//
+// The evening goes on as the camera comes down: the land is lit as at dusk
+// over the overview and darkens frame by frame to the night the still is
+// taken in, where the town's lights come on. The sky is not the stills' own:
+// each still is drawn over a #FF00FF sky and again over #00FF00 and the sky
+// cut out by what changed (scripts/sky-key.mjs), so the world hangs in the
+// page's night, its stars and tonight's moon (Flight.tsx).
 import { chromium } from 'playwright-core';
 import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
+import { keySky } from './sky-key.mjs';
 
 const require = createRequire(import.meta.url);
 const sharp = require('sharp');
@@ -39,8 +47,9 @@ const SHAPES = [
 ];
 /* The overview: looking down at this angle from the vertical (the start view
    is 1.08, nearer the horizon), turned this far from the start view's heading,
-   so the descent swings round a little as it comes down. */
-const OVERVIEW_ANGLE = 0.8;
+   so the descent swings round a little as it comes down. Steep enough that
+   the land fills the first view rather than the sky over it. */
+const OVERVIEW_ANGLE = 0.6;
 const SWING = -0.35;
 /* The still is shown at saturate(0.85) (badlands.css), and the flight lands
    on it: the frames carry the same colour, put in here with the matrix CSS
@@ -51,6 +60,8 @@ const SATURATE = ((k) => [
   [0.213 - 0.213 * k, 0.715 + 0.285 * k, 0.072 - 0.072 * k],
   [0.213 - 0.213 * k, 0.715 - 0.715 * k, 0.072 + 0.928 * k],
 ])(0.85);
+/* BlueMap's sunlight over the overview, at dusk; the landing is the night jod.js sets */
+const DUSK = 0.62;
 /* the farthest the camera stands while BlueMap still draws full detail */
 const FARTHEST = 990;
 
@@ -119,6 +130,8 @@ for (const shape of SHAPES) {
     }
     cm.controls = null;
     window.jod?.pause(true);
+    /* the night the map opens in (jod.js), which the flight lands in */
+    const night = viewer.data.uniforms.sunlightStrength.value;
     const b = window.JOD_MAP?.bounds ?? { minX: end.x - 400, maxX: end.x + 400, minZ: end.z - 400, maxZ: end.z + 400 };
     const start = { x: (b.minX + b.maxX) / 2, y: end.y, z: (b.minZ + b.maxZ) / 2, rotation: end.rotation + swing, angle };
     /* the camera's field of view is upright; across the frame it is wider or narrower with the frame's shape */
@@ -131,7 +144,7 @@ for (const shape of SHAPES) {
     const far = Math.max(...[start, end].flatMap(p => [Math.abs(b.minX - p.x), Math.abs(b.maxX - p.x), Math.abs(b.minZ - p.z), Math.abs(b.maxZ - p.z)]));
     viewer.data.loadedHiresViewDistance = Math.min(1500, Math.ceil(far) + 32);
     viewer.updateLoadedMapArea();
-    return { start, end };
+    return { start, end, night };
   }, { end: END, angle: OVERVIEW_ANGLE, swing: SWING, farthest: FARTHEST });
   console.log(`${shape.name}: frá ${Math.round(plan.start.d)} blokkum niður í ${Math.round(plan.end.d)}`);
 
@@ -242,16 +255,29 @@ for (const shape of SHAPES) {
 
   const shots = [];
   for (let i = 0; i < FRAMES; i++) {
-    const shot = await page.evaluate(async ({ s, lift }) => {
+    const shot = await page.evaluate(async ({ s, lift, sun }) => {
       const viewer = window.bluemap.mapViewer;
       const cm = viewer.controlsManager;
       const f = window.__flight;
       const c = f.camAt(s, lift);
       f.place(c);
       await f.settle(false);
-      /* One frame, drawn here and read off the canvas in the same breath,
-         before the browser clears it: the paused viewer draws nothing else.
-         The camera is set again just before, should anything have moved it. */
+      /* The light of the hour this frame is at, and the sky painted to be
+         cut out (scripts/sky-key.mjs): BlueMap draws the sky and the void
+         past the world's edge as their colour times the light (the larger of
+         the sun squared and the ambient light), so the colour is given over
+         the light and comes out exactly #FF00FF, then #00FF00, at any hour. */
+      const u = viewer.data.uniforms;
+      u.sunlightStrength.value = sun;
+      const light = Math.max(sun * sun, u.ambientLight.value);
+      const paint = (r, g, b) => {
+        u.skyColor.value.setRGB(r / light, g / light, b / light);
+        u.voidColor.value.setRGB(r / light, g / light, b / light);
+      };
+      /* The frame, drawn here twice and read off the canvas each time in the
+         same breath, before the browser clears it: the paused viewer draws
+         nothing else, and nothing can load between the two. The camera is
+         set again just before, should anything have moved it. */
       const drawn = performance.now();
       const jod = window.jod;
       f.place(c);
@@ -259,24 +285,47 @@ for (const shape of SHAPES) {
       const eye = [cam.position.x, cam.position.y, cam.position.z];
       const look = [cm.position.x, cm.position.y, cm.position.z];
       if (jod) jod.paused = false;
-      viewer.render(0);
-      const png = viewer.renderer.domElement.toDataURL('image/png');
+      const draw = () => { viewer.render(0); return viewer.renderer.domElement.toDataURL('image/png'); };
+      paint(1, 0, 1);
+      const magenta = draw();
+      paint(0, 1, 0);
+      const green = draw();
       if (jod) jod.paused = true;
       /* the camera the frame was drawn with, as one matrix from the world to
          the screen (projection × view), which the page projects places by */
       cam.updateMatrixWorld(true);
       cam.updateProjectionMatrix();
       const m = cam.projectionMatrix.clone().multiply(cam.matrixWorldInverse);
-      return { m: Array.from(m.elements), eye, look, d: c.d, png, ms: Math.round(performance.now() - drawn) };
-    }, { s: i / (FRAMES - 1), lift: lift[i] });
-    const png = Buffer.from(shot.png.slice(shot.png.indexOf(',') + 1), 'base64');
-    const webp = await sharp(png).resize(shape.width, shape.height, { kernel: 'lanczos3' }).recomb(SATURATE).webp({ quality: 62 }).toBuffer();
+      return { m: Array.from(m.elements), eye, look, d: c.d, magenta, green, ms: Math.round(performance.now() - drawn) };
+    }, { s: i / (FRAMES - 1), lift: lift[i], sun: DUSK + (plan.night - DUSK) * (i / (FRAMES - 1)) });
+    const pixels = (url) => sharp(Buffer.from(url.slice(url.indexOf(',') + 1), 'base64')).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+    /* the sky cut out at the size it was drawn, before the frame is shrunk,
+       so the land's edge is as fine as the render; then the still's colour
+       on what is left, and the cut kept as the frame's transparency */
+    const full = await pixels(shot.magenta);
+    const green = (await pixels(shot.green)).data;
+    /* the three channels tell the sky's share alike unless the two draws
+       differ in more than the sky, which would show as ghosts in the land */
+    let odd = 0;
+    for (let k = 0; k < green.length; k += 4) {
+      const r = full.data[k] - green[k], g = green[k + 1] - full.data[k + 1], b = full.data[k + 2] - green[k + 2];
+      if (Math.max(r, g, b) - Math.min(r, g, b) > 24) odd++;
+    }
+    keySky(full.data, green, full.info.width, full.info.height);
+    const small = await sharp(full.data, { raw: { width: full.info.width, height: full.info.height, channels: 4 } })
+      .resize(shape.width, shape.height, { kernel: 'lanczos3' }).raw().toBuffer();
+    const raw = { raw: { width: shape.width, height: shape.height, channels: 4 } };
+    const rgb = await sharp(small, raw).removeAlpha().recomb(SATURATE).raw().toBuffer();
+    const alpha = await sharp(small, raw).extractChannel(3).raw().toBuffer();
+    const webp = await sharp(rgb, { raw: { width: shape.width, height: shape.height, channels: 3 } })
+      .joinChannel(alpha, { raw: { width: shape.width, height: shape.height, channels: 1 } })
+      .webp({ quality: 62, alphaQuality: 70 }).toBuffer();
     writeFileSync(`${OUT}/${shape.name}-${i}.webp`, webp);
     hash.update(webp);
     /* six significant figures put a pin within a pixel; a tenth of a block is plenty for the rest */
     const tenth = (v) => Math.round(v * 10) / 10;
     shots.push({ m: shot.m.map(v => Number(v.toPrecision(6))), eye: shot.eye.map(tenth), look: shot.look.map(tenth), d: tenth(shot.d) });
-    console.log(`${shape.name} ${i + 1}/${FRAMES}: teiknað á ${shot.ms} ms`);
+    console.log(`${shape.name} ${i + 1}/${FRAMES}: teiknað á ${shot.ms} ms${odd ? `, ${odd} dílar ekki eins í báðum` : ''}`);
   }
   await page.close();
   flights[shape.name] = { width: shape.width, height: shape.height, shots };
