@@ -62,6 +62,16 @@ describe('giving an item', () => {
     expect('reactions' in stored().entries[0]).toBe(false);
   });
 
+  it('changes nothing when the item is already as asked, so a stale tab never reorders the givers', async () => {
+    await react(req({ item: 'cake', given: true }), on('e'));
+    me = 'stebbias';
+    await react(req({ item: 'cake', given: true }), on('e'));
+    me = 'joenana';
+    const res = await react(req({ item: 'cake', given: true }), on('e'));
+    expect((await res.json()).reactions.cake).toEqual(['joenana', 'stebbias']);
+    expect((await (await react(req({ item: 'heart', given: false }), on('e'))).json()).reactions).toEqual({ cake: ['joenana', 'stebbias'] });
+  });
+
   it('flips the item when the body does not say which', async () => {
     await react(req({ item: 'poppy' }), on('e'));
     expect(stored().entries[0].reactions).toEqual({ poppy: ['joenana'] });

@@ -540,7 +540,7 @@
    shadow, written from two up; the items you gave wear the frame the game
    puts round the slot in hand. A pointer over a slot lightens it, as the
    game's does. The pictures are src/app/items.css, drawn from the art in
-   src/lib/reactions.ts. */
+   src/lib/item-art.ts. */
 .w-print { --w-slot: calc(var(--px) * 18); }
 @media (pointer: coarse) { .w-print { --w-slot: var(--tap); } }
 .w-items { display: flex; flex-wrap: wrap; align-items: center; gap: var(--px); }
@@ -558,7 +558,8 @@
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
-.w-item { display: block; width: calc(var(--px) * 16); height: calc(var(--px) * 16); background: center / 100% 100% no-repeat; image-rendering: pixelated; }
+/* the picture itself comes from items.css; only its placing is set here, so neither sheet undoes the other whichever loads first */
+.w-item { display: block; width: calc(var(--px) * 16); height: calc(var(--px) * 16); background-position: center; background-size: 100% 100%; background-repeat: no-repeat; image-rendering: pixelated; }
 .w-slot__count {
   position: absolute;
   z-index: 2;
@@ -576,7 +577,10 @@
 @media (hover: hover) { .w-slot:not([disabled]):hover::before { opacity: 1; } }
 .w-slot:not([disabled]):active .w-item, .w-slot:not([disabled]):active .w-slot__plus { translate: var(--press); }
 .w-slot:focus-visible { outline: var(--px) solid var(--lantern); outline-offset: calc(var(--px) * 3); }
+/* the slot pointed at or with the keyboard stands over its neighbours, so its ring and its tag are whole */
+.w-slot:is(:hover, :focus-visible) { z-index: 3; }
 .w-slot[disabled] { cursor: default; }
+.w-slot[aria-busy='true'] { cursor: progress; }
 /* in hand: a pixel of night round the slot and a frame of light round that */
 .w-slot.is-mine { z-index: 1; box-shadow: var(--bevel-in), 0 0 0 var(--px) var(--night), 0 0 0 calc(var(--px) * 2) var(--paper); }
 /* An item given pops into its slot the way the game's do when one is picked
@@ -590,7 +594,9 @@
 .w-slot--add { --w-plus: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'%3E%3Cpath d='M3 0h2v3h3v2H5v3H3V5H0V3h3z'/%3E%3C/svg%3E"); }
 @media (hover: hover) { .w-slot--add:hover { color: var(--paper); } }
 .w-slot--add.is-open { color: var(--lantern); }
-/* the slot's tag stands above it, where on a phone it would only widen the page unseen */
+/* the slot's tag stands above it, wrapping at a width (Reactions.tsx keeps it on the screen);
+   on a phone, where nothing points at it, it would only widen the page unseen */
+.w-slot.b-tip::after { width: max-content; max-width: 15rem; white-space: normal; text-align: center; }
 @media (max-width: 719px) { .w-slot.b-tip::after { content: none; } }
 
 /* The inventory: under a seam in the board like the replies, every item in

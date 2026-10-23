@@ -54,9 +54,20 @@ describe('giving', () => {
     expect(gaveIt(r, 'cake', null)).toBe(false);
   });
 
-  it('gives an item once a member however many times it is given', () => {
+  it('gives an item once a member however many times it is given, and leaves the givers where they stand', () => {
     const r = give(give(undefined, 'diamond', 'AmmaGaur', true), 'diamond', 'ammagaur', true);
     expect(r.diamond).toHaveLength(1);
+    expect(give({ cake: ['stebbias', 'joenana'] }, 'cake', 'stebbias', true).cake).toEqual(['stebbias', 'joenana']);
+    expect(give({ cake: ['joenana'] }, 'heart', 'stebbias', false)).toEqual({ cake: ['joenana'] });
+  });
+
+  it('puts an item back where it hung, and its givers in their order, when a press is refused', () => {
+    const before: Reactions = { cake: ['stebbias', 'joenana'], skull: ['AmmaGaur'], heart: ['stebbias'] };
+    expect(Object.keys(settle(give(before, 'heart', 'stebbias', false), 'heart', before))).toEqual(['cake', 'skull', 'heart']);
+    const taken = give(before, 'cake', 'stebbias', false);
+    expect(settle(taken, 'cake', before).cake).toEqual(['stebbias', 'joenana']);
+    const alone: Reactions = { cake: ['stebbias'], skull: ['AmmaGaur'] };
+    expect(Object.keys(settle(give(alone, 'cake', 'stebbias', false), 'cake', alone))).toEqual(['cake', 'skull']);
   });
 
   it('settles one item from an answer and leaves the rest as they stand', () => {

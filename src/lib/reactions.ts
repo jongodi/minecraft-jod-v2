@@ -38,32 +38,38 @@ export const giversOf = (r: Reactions | undefined, id: ItemId): string[] => r?.[
 export const gaveIt = (r: Reactions | undefined, id: ItemId, me: string | null | undefined) => !!me && giversOf(r, id).some(n => same(n, me));
 
 /** The reactions with `me` having given an item or taken it back. An item
-    first given goes after the others; one nobody gives any longer leaves. */
+    first given goes after the others; one nobody gives any longer leaves.
+    Giving what is already given, or taking back what is not, changes nothing. */
 export function give(r: Reactions | undefined, id: ItemId, me: string, on: boolean): Reactions {
   const out: Reactions = {};
   let placed = false;
   for (const { id: k, who } of given(r)) {
     if (k !== id) { out[k] = who; continue; }
     placed = true;
-    const rest = who.filter(n => !same(n, me));
-    const next = on ? [...rest, me] : rest;
+    const has = who.some(n => same(n, me));
+    const next = on ? (has ? who : [...who, me]) : who.filter(n => !same(n, me));
     if (next.length) out[k] = next;
   }
   if (!placed && on) out[id] = [me];
   return out;
 }
 
-/** The item's list taken from another copy of the reactions (what the server
-    answered), the rest of `r` as it stands, so answers that come back in any
-    order each settle only their own item. */
+/** The item as another copy of the reactions has it (what the server
+    answered, or how the sign stood before a refused press), the rest of `r`
+    as it stands, so answers that come back in any order each settle only
+    their own item. An item `r` lacks goes where that copy has it. */
 export function settle(r: Reactions | undefined, id: ItemId, from: Reactions): Reactions {
   const who = giversOf(from, id);
-  const out: Reactions = {};
-  let placed = false;
-  for (const { id: k, who: w } of given(r)) {
-    if (k !== id) out[k] = w;
-    else { placed = true; if (who.length) out[k] = who; }
+  const now = given(r);
+  const rest = now.filter(g => g.id !== id);
+  let at = now.findIndex(g => g.id === id);
+  if (at < 0) {
+    const order = given(from).map(g => g.id);
+    const after = rest.findIndex(g => order.indexOf(g.id) > order.indexOf(id));
+    at = after < 0 ? rest.length : after;
   }
-  if (!placed && who.length) out[id] = who;
+  const out: Reactions = {};
+  rest.forEach((g, k) => { if (k === at && who.length) out[id] = who; out[g.id] = g.who; });
+  if (at >= rest.length && who.length) out[id] = who;
   return out;
 }

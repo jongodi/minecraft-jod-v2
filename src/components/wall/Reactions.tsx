@@ -22,7 +22,10 @@ export interface Gifts {
   /** the inventory: shut, or open and how (from the keyboard, its first slot takes the keyboard) */
   open:      false | 'pointer' | 'keys';
   setOpen:   (open: false | 'pointer' | 'keys') => void;
-  toggle:    (id: ItemId) => void;
+  /** give the item or take yours back; false when it went nowhere (signed out, or its last press still on its way) */
+  toggle:    (id: ItemId) => boolean;
+  /** the items whose press is still on its way */
+  busy:      ItemId[];
   /** the item just given, and a count so a second giving pops it again */
   pop:       { id: ItemId; n: number } | null;
   popped:    () => void;
@@ -40,33 +43,59 @@ interface Options {
 
 /** Giving and taking back, at once on the sign and then on the server. Each
     item waits for its own answer before it can be pressed again; an answer
-    settles only its own item, and a refusal puts the item back as it was. */
+    settles only its own item, and a refusal puts the item back where it hung,
+    its givers as they were. */
 export function useGifts({ username, entryId, reactions, me, update, setError }: Options): Gifts {
   const [open, setOpen] = useState<Gifts['open']>(false);
   const [pop, setPop] = useState<Gifts['pop']>(null);
-  const busy = useRef(new Set<ItemId>());
+  const [busy, setBusy] = useState<ItemId[]>([]);
+  /* the same, read at once: a second press can come before the first has drawn */
+  const sending = useRef(new Set<ItemId>());
 
-  async function toggle(id: ItemId) {
-    if (!me || busy.current.has(id)) return;
+  /* signed out on another tab, the inventory shuts, and does not open again by itself at the next sign-in */
+  useEffect(() => { if (!me) setOpen(false); }, [me]);
+
+  function toggle(id: ItemId): boolean {
+    if (!me || sending.current.has(id)) return false;
     const on = !gaveIt(reactions, id, me);
-    busy.current.add(id);
+    const before = reactions ?? {};
+    sending.current.add(id);
+    setBusy(b => [...b, id]);
     setError('');
     update(r => give(r, id, me, on));
     if (on) { setPop(p => ({ id, n: (p?.n ?? 0) + 1 })); pickupPop(); }
-    try {
-      const res = await fetch(`/api/crew/${username}/entries/${entryId}/react`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ item: id, given: on }) });
-      if (!res.ok) throw new Error(await errorFrom(res));
-      const answer = (await res.json() as { reactions: Reactions }).reactions;
-      update(r => settle(r, id, answer));
-    } catch (e) {
-      update(r => give(r, id, me, !on));
-      setError(failure(e, on ? 'Ekki tókst að gefa hlutinn.' : 'Ekki tókst að taka hlutinn aftur.'));
-    } finally {
-      busy.current.delete(id);
-    }
+    void (async () => {
+      try {
+        const res = await fetch(`/api/crew/${username}/entries/${entryId}/react`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ item: id, given: on }) });
+        if (!res.ok) throw new Error(await errorFrom(res));
+        const answer = (await res.json() as { reactions: Reactions }).reactions;
+        update(r => settle(r, id, answer));
+      } catch (e) {
+        update(r => settle(r, id, before));
+        /* a slot gone before its pop ended would pop again when someone else's gift brings it back */
+        if (on) setPop(p => (p?.id === id ? null : p));
+        setError(failure(e, on ? 'Ekki tókst að gefa hlutinn.' : 'Ekki tókst að taka hlutinn aftur.'));
+      } finally {
+        sending.current.delete(id);
+        setBusy(b => b.filter(x => x !== id));
+      }
+    })();
+    return true;
   }
 
-  return { reactions, me, open, setOpen, toggle, pop, popped: () => setPop(null) };
+  return { reactions, me, open, setOpen, toggle, busy, pop, popped: () => setPop(null) };
+}
+
+/* A slot's tag stands centred over it, wrapping at a width, and moved in as
+   far as it must be to stay on the screen: a slot can be anywhere along a
+   sign's foot, and a list of names is long. Read when it is about to show. */
+function keepTag(el: HTMLElement) {
+  const w = parseFloat(getComputedStyle(el, '::after').width) || 0;
+  const r = el.getBoundingClientRect();
+  const left = r.left + r.width / 2 - w / 2;
+  const edge = 8;
+  const shift = Math.max(edge - left, Math.min(0, window.innerWidth - edge - (left + w)));
+  el.style.setProperty('--tip-x', shift ? `calc(-50% + ${Math.round(shift)}px)` : '-50%');
 }
 
 /** One of the game's slots with an item in it, its count when there is more than one. */
@@ -90,14 +119,16 @@ export function Hotbar({ gifts, panelId, plusRef }: { gifts: Gifts; panelId: str
         const item = itemOf(id);
         const mine = gaveIt(gifts.reactions, id, gifts.me);
         const label = `${item.name}: ${andList(who)}`;
+        const busy = gifts.busy.includes(id);
         /* taking back the last of an item takes its slot away; the keyboard goes on to the plus rather than to the top of the page */
         const press = (e: MouseEvent<HTMLButtonElement>) => {
-          if (mine && who.length === 1 && document.activeElement === e.currentTarget) plusRef.current?.focus();
-          gifts.toggle(id);
+          const focused = document.activeElement === e.currentTarget;
+          if (gifts.toggle(id) && mine && who.length === 1 && focused) plusRef.current?.focus();
         };
         return (
           <button key={id} type="button" className={`w-slot b-tip${mine ? ' is-mine' : ''}`} onClick={press} disabled={!gifts.me}
-            aria-pressed={mine} aria-label={label} data-tip={mine ? `${label}. Taka þinn aftur` : label}>
+            aria-pressed={mine} aria-busy={busy || undefined} aria-label={label} data-tip={mine ? `${label}. Taka þinn aftur` : label}
+            onMouseEnter={e => keepTag(e.currentTarget)} onFocus={e => keepTag(e.currentTarget)}>
             <Slot id={id} count={who.length} popping={gifts.pop?.id === id} popKey={gifts.pop?.n} onPopped={gifts.popped} />
           </button>
         );
@@ -154,7 +185,7 @@ export function Inventory({ gifts, id, onClose }: { gifts: Gifts; id: string; on
             const mine = gaveIt(gifts.reactions, item.id, gifts.me);
             return (
               <button key={item.id} ref={b => { slots.current[i] = b; }} type="button" className={`w-slot${mine ? ' is-mine' : ''}`} tabIndex={i === at ? 0 : -1}
-                aria-pressed={mine} aria-label={`${item.name}, „${item.says}“${who.length ? `. Gefið af ${andList(who)}` : ''}`}
+                aria-pressed={mine} aria-busy={gifts.busy.includes(item.id) || undefined} aria-label={`${item.name}, „${item.says}“${who.length ? `. Gefið af ${andList(who)}` : ''}`}
                 onClick={() => gifts.toggle(item.id)} onMouseEnter={() => setHover(item.id)}
                 onFocus={() => { setAt(i); setFocus(item.id); }} onBlur={() => setFocus(f => (f === item.id ? null : f))}>
                 <Slot id={item.id} count={who.length} />

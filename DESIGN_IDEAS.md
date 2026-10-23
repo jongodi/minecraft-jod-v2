@@ -997,3 +997,34 @@ The third thing on Part 13's list, asked for on 23 October 2026: the game's own 
 | The art | **Eight items drawn for the site** on the game's sixteen-pixel grid (`src/lib/item-art.ts`), shown only as CSS (`src/app/items.css`) that a test draws from the art and holds to it. | An icon is one element with a background, so ninety signs with items on them cost the page no script and next to no markup. |
 
 Eight items and the plus are nine slots: one hotbar. Each member gives each item once, on any sign, their own too, and takes it back the same way. Nothing is stored on a sign until something is given, so every wall written before reads as it did.
+
+### Reviewed before it shipped
+
+An independent read of the code found no defect in the logic: the optimistic press, the board's replay of changes after a fetch and the server's answer end in the right state in every order. It found these, all fixed:
+
+- **A slot's focus ring and its tag were cut by the slot beside it**; the slot pointed at or with the keyboard now stands over its neighbours.
+- **A long list of givers ran off the screen** on a narrow desktop; a slot's tag now wraps at a width and is moved in as far as it must be to stay on the screen.
+- **A refused take-back put the item at the end** of the hotbar and your name at the end of its givers; it now goes back where it hung, as it was.
+- **A press on an item still on its way did nothing and said nothing**; the slot now says it is busy, and the keyboard is moved on only when a press goes ahead.
+- **A refused gift could leave its pop behind**, to play when someone else's gift brought the slot back; **the inventory could open by itself** at the next sign-in after signing out in another tab; **giving what was already given reordered the givers** from a stale tab. None of these can happen now.
+- **The icons relied on which stylesheet loaded last**; the slot sets only where its picture sits, and the picture comes from its own sheet.
+
+### Measured
+
+Production build, local Redis, the board with 92 items of which 51 carry items, Chromium; the same data on the branch without the change for comparison, two runs each.
+
+| | without | with |
+|---|---|---|
+| Elements on the board | 1,207 to 1,214 | 1,267 to 1,313 |
+| Main thread blocked after load, phone 4× | 1,013 to 1,167 ms | 1,132 to 1,210 ms |
+| Board ready, phone 4× | 1.8 to 1.9 s | 1.7 to 1.9 s |
+| Scrolling, phone 4× (frame p95) | 16.7 to 16.8 ms | 16.8 ms |
+| First Load JS `/crew/[username]`, `/taflan` | 166, 169 kB | 169, 172 kB |
+| Tests | 367 | 386 |
+
+The machine ran slower and noisier than it did for Part 13: the commit before main was merged measured 716 to 1,377 ms on the same data, so the phone figures are for comparing the two columns, not with Part 13. No sideways scroll at 360 to 1440 on the board or a wall with every inventory open; reduced motion stills the pop and the inventory's arrival; `tsc`, `next lint` and the build are clean.
+
+### Worth doing later
+
+1. **Told when your sign is given something**: items carry no time yet, so they are not news on the door.
+2. **The crew's favourite item** on the wanted posters, once there is a season of them.
