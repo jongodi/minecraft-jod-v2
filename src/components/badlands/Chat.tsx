@@ -7,7 +7,7 @@ import type { ChatResponse } from '@/app/api/chat/route';
 import { plural } from '@/lib/format';
 import { CREW } from './data';
 import type { ServerState } from './hooks';
-import { modalOpen, useMediaQuery } from './hooks';
+import { isLive, modalOpen, useMediaQuery } from './hooks';
 
 /* When the chat was last read in this browser: the newest line it printed. */
 const SEEN_KEY = 'jod-chat-seen-v1';
@@ -98,11 +98,12 @@ function Chat({ active, covered, server, onOpen }: Props) {
   }, []);
 
   /* Who comes in and goes out while the page is open: the crew in the
-     status's player list, compared answer to answer. The first answer is
-     where the page starts, not news. */
+     status's player list, compared answer to answer. The first live answer
+     is where the page starts, not news; one that never came, or a cached
+     page's from long before, is neither (isLive). */
   const before = useRef<string[] | null>(null);
   useEffect(() => {
-    if (server.checkedAt === null || server.online === null) return;
+    if (!isLive(server) || server.checkedAt === null) return;
     const lower = server.online ? server.list.map(n => n.toLowerCase()) : [];
     const now = CREW.filter(n => lower.includes(n.toLowerCase()));
     if (before.current !== null) {
@@ -110,7 +111,7 @@ function Chat({ active, covered, server, onOpen }: Props) {
       if (news.length) setLog(cur => [...cur, ...news].slice(-LOG_KEEP));
     }
     before.current = now;
-  }, [server.checkedAt, server.online, server.list]);
+  }, [server]);
 
   /* In the world, whatever has not been printed is printed, one line after
      another, and the newest of it is remembered as read. */

@@ -6,7 +6,7 @@ import { Moon, Sun } from './Bits';
 import CopyAddress from './CopyAddress';
 import StatusLantern from './StatusLantern';
 import { NightLine } from './NightLine';
-import type { ServerState } from './hooks';
+import { isLive, type ServerState } from './hooks';
 import type { Season } from '@/lib/season';
 import type { PlayNightResponse } from '@/app/api/playnight/route';
 import { YuleLad, useMoonPhase } from './Season';
@@ -82,8 +82,8 @@ function Hero({ server, season, nights }: { server: ServerState; season: Season;
   const home = server.online === true && server.players > 0;
   const lower = server.list.map(n => n.toLowerCase());
   const inside = server.online ? CREW.filter(n => lower.includes(n.toLowerCase())) : [];
-  /* the names are an answer, so a change in them is someone coming or going */
-  const known = server.checkedAt !== null && server.online !== null;
+  /* the names are a live answer, so a change in them is someone coming or going (isLive) */
+  const known = isLive(server);
   const moon = useMoonPhase();
   return (
     <section id="top" className="b-hero" aria-label="Sólsetur">

@@ -17,6 +17,11 @@ const SEEDED_POLL_MS = 10_000;
 const HIDDEN_POLL_MS = 3 * 60_000;
 /* how long the browser waits on its own questions: the routes cap what they ask upstream, so a longer wait is a hung connection */
 const STATUS_WAIT_MS = 12_000;
+/* An answer that does not come (a phone back from its pocket before its
+   network is, a hiccup upstream) is no news: the last real answer stands
+   this long, asked again often, before the lantern says it lost touch. The
+   lantern says how old the answer it shows is from two minutes on. */
+const KEEP_ON_MISS_MS = 5 * 60_000;
 const STATS_WAIT_MS = 25_000;
 const COPIED_MS = 2400;
 
@@ -32,6 +37,8 @@ let statusInFlight: Promise<void> | null = null;
 let startingUntil = 0;
 let pollTimer: ReturnType<typeof setTimeout> | undefined;
 let polling = 0;   // how many are listening
+/* the last question went unanswered, and the answer before it was kept */
+let missed = false;
 const statusListeners = new Set<() => void>();
 const notifyStatus = () => statusListeners.forEach(l => l());
 const subscribeStatus = (l: () => void) => { statusListeners.add(l); return () => { statusListeners.delete(l); }; };
@@ -48,6 +55,9 @@ async function loadStatus(): Promise<void> {
   } catch {
     next = unreachable();
   }
+  missed = next.life === 'unknown' && statusValue.life !== null && statusValue.life !== 'unknown' &&
+    statusValue.checkedAt !== null && Date.now() - statusValue.checkedAt < KEEP_ON_MISS_MS;
+  if (missed) return;
   /* the site asked for a start a moment ago: an answer from before it does not put the lantern out again */
   if (startingUntil && Date.now() < startingUntil && (next.life === 'off' || next.life === 'unknown')) next = { ...next, life: 'starting' };
   else if (next.life !== 'starting') startingUntil = 0;
@@ -61,8 +71,16 @@ function schedulePoll(): void {
   /* A tab in the background asks every few minutes rather than every one,
      for the tab's own lantern; it asks at once when it is looked at again. */
   pollTimer = setTimeout(refreshStatus,
-    document.hidden ? HIDDEN_POLL_MS : isChanging(statusValue.life) ? CHANGING_POLL_MS : STATUS_POLL_MS);
+    document.hidden ? HIDDEN_POLL_MS : missed || isChanging(statusValue.life) ? CHANGING_POLL_MS : STATUS_POLL_MS);
 }
+
+/** Whether an answer can be where who comes and goes is counted from: a real
+    answer, and a recent one. A failed question said everyone had left, and a
+    page served from the cache carries an answer from long before the visit;
+    either, as a starting point, made the next answer tell old comings and
+    goings (or none) as news. */
+export const isLive = (s: ServerState): boolean =>
+  s.checkedAt !== null && s.online !== null && s.life !== 'unknown' && Date.now() - s.checkedAt <= STATUS_POLL_MS + STATUS_WAIT_MS;
 
 /** Asks the server's status now; one request at a time. */
 export function refreshStatus(): Promise<void> {
@@ -492,6 +510,7 @@ export function useBackCloses(open: boolean, close: () => void): void {
 /** A dialog is open over the page (the duel, the album, a picture). Escape
     and the number keys are its own then: one press closes one layer. */
 export const modalOpen = () => document.querySelector('[aria-modal="true"]') !== null;
+
 
 export function useInert<T extends HTMLElement>(inert: boolean): React.RefObject<T> {
   const ref = useRef<T>(null);
