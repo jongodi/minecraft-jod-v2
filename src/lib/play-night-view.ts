@@ -2,6 +2,7 @@
    what /api/playnight answers, and what the home page is drawn with on the
    server so the hero's line is there at first paint. Server only. */
 import { MAX_PLANNED, currentNights, decidesAt, phaseOf, yesFor, type NightState, type Phase } from '@/lib/play-night';
+import { summaryOf, type NightSummary } from '@/lib/night-numbers';
 
 export interface PublicNight {
   id: string;
@@ -16,6 +17,8 @@ export interface PublicNight {
   startedBy: string | null;
   /** seen during the evening, or settled the day after */
   came: string[];
+  /** what the game counted of the evening, once it is settled (src/lib/night-numbers.ts) */
+  numbers: NightSummary | null;
 }
 
 export interface PlayNightResponse {
@@ -36,6 +39,7 @@ export const publicOf = ({ night, votes, seen }: NightState, now: number): Publi
   decidesAt: new Date(decidesAt(night)).toISOString(),
   startedBy: night.startedBy,
   came: night.outcome?.came ?? seen,
+  numbers: summaryOf(night.outcome?.numbers),
 });
 
 /** The nights as anyone sees them; `me` is the caller's to know, since the

@@ -13,6 +13,7 @@ import { Fire, Heads, chosenOf, lower } from './NightLine';
 import { plural } from '@/lib/format';
 import { toast } from './Toast';
 import { SITE_NAME } from './data';
+import NightNumbers from './NightNumbers';
 
 /* Spilakvöld (src/lib/play-night.ts). The crew's room holds the fires
    themselves, up to five planned at once, soonest first: lighting one,
@@ -215,6 +216,9 @@ function NightFire({ night, kicker, me, server, busy, err, picked, letter, onRun
           </div>
         </div>
       )}
+
+      {/* the morning after: what the game counted of the evening, once the daily job has settled it */}
+      {night.phase === 'over' && night.numbers && <NightNumbers numbers={night.numbers} />}
 
       {me && night.phase !== 'over' && (
         <div className="b-inline b-night__mine">
