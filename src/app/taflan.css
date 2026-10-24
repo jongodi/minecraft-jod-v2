@@ -118,6 +118,13 @@
 .t-notice__icon .b-fire { width: 1.75rem; height: 1.75rem; margin: 0; }
 .t-notice--advancement .t-notice__icon { color: var(--online); }
 .t-notice--place .t-notice__icon, .t-notice--photo .t-notice__icon, .t-notice--painted .t-notice__icon, .t-notice--synced .t-notice__icon { color: var(--tc-orange); }
+/* the server's own news, from the shelf: a crate's wood, and a pack's own glyph in its own inks */
+.t-notice--version .t-notice__icon, .t-notice--shelf .t-notice__icon { color: var(--wood-light); }
+.t-notice__icon .t-notice__glyph { width: 1.5rem; height: 1.5rem; }
+.t-notice__packs { list-style: none; display: grid; gap: var(--px); }
+.t-notice__packs li { display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--sp-2); }
+.t-notice__packs .t-notice__glyph { width: 0.75rem; height: 0.75rem; flex-shrink: 0; }
+.t-notice__packs b { color: var(--ink); font-weight: 600; }
 .t-notice__body { display: grid; gap: var(--px); min-width: 0; line-height: 1.5; }
 .t-notice__line { overflow-wrap: anywhere; }
 .t-notice__line q { quotes: '„' '“'; }

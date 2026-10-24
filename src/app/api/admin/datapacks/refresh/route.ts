@@ -1,9 +1,10 @@
 import { errorMessage } from '@/lib/icelandic';
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import { extractVersion } from '@/lib/datapack-version';
 import { requireAdmin, unauthorizedResponse } from '@/lib/auth';
 import { getExarotonServerId } from '@/lib/exaroton';
 import { getPacksView, saveSettings } from '@/lib/datapacks-store';
+import { noteShelf } from '@/lib/server-news';
 
 export const dynamic = 'force-dynamic';
 
@@ -96,7 +97,11 @@ export async function POST() {
       if (m.version && m.version !== current) patch[m.id] = { version: m.version };
     }
     const updated = Object.keys(patch).length;
-    if (updated > 0) await saveSettings(patch);
+    if (updated > 0) {
+      await saveSettings(patch);
+      /* the board tells which packs moved on the server, after the answer has gone (src/lib/server-news.ts) */
+      after(noteShelf);
+    }
 
     return NextResponse.json({ scanned: entries, matched, unmatched, updated } satisfies RefreshResult);
 

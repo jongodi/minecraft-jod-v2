@@ -3,6 +3,7 @@ import { cronAuthorised } from '@/lib/cron';
 import { dayOf, saveDay } from '@/lib/daily-stats';
 import { readGameStats, setCachedStats } from '@/lib/stats';
 import { sweepUnpinned } from '@/lib/crew-sweep';
+import { noteShelf } from '@/lib/server-news';
 
 /* The daily job, run by Vercel Cron (vercel.json) once a day around noon in
    Iceland: every crew member's running totals are read off the server and
@@ -13,7 +14,9 @@ import { sweepUnpinned } from '@/lib/crew-sweep';
    It also reads the crew's advancements (src/lib/advancements.ts), settles
    the play nights of the evenings before (src/lib/play-night.ts), and sweeps
    out of storage the pictures that went up to a wall's pin slot and were
-   never pinned (src/lib/crew-sweep.ts), whatever came of the stats.
+   never pinned (src/lib/crew-sweep.ts), and looks over the shelf for packs
+   that came with a deploy rather than through the admin panel, so the board
+   tells them (src/lib/server-news.ts), whatever came of the stats.
 
    Vercel sends CRON_SECRET as a bearer token; anything else is turned away. */
 
@@ -34,8 +37,11 @@ export async function GET(req: NextRequest) {
     console.error('[cron/daily] could not sweep unpinned pictures:', err instanceof Error ? err.message : err);
     return { error: 'sweep failed' };
   });
-  const answer = async (body: Record<string, unknown>, status = 200) =>
-    NextResponse.json({ ...body, sweep: await swept }, { status, headers: { 'Cache-Control': 'no-store' } });
+  const shelved = noteShelf();
+  const answer = async (body: Record<string, unknown>, status = 200) => {
+    await shelved;
+    return NextResponse.json({ ...body, sweep: await swept }, { status, headers: { 'Cache-Control': 'no-store' } });
+  };
 
   let stats;
   try {

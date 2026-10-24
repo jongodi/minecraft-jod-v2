@@ -1,9 +1,9 @@
-import { GLYPH_SIZE } from './packGlyphs';
-
 const FILL: Record<string, string> = { '#': 'var(--ink)', r: 'var(--tc-red)', y: 'var(--tc-yellow)' };
 
 /** Renders a rows-of-characters drawing as crisp SVG rectangles. Runs of the
-    same colour on a row become one rect, so a glyph is a few dozen nodes. */
+    same colour on a row become one rect, so a glyph is a few dozen nodes.
+    Sized by its own rows rather than the glyph table's constant, so drawing
+    one glyph never brings the whole table (packGlyphs.ts) into a page. */
 export default function PixelGlyph({ rows, className }: { rows: readonly string[]; className?: string }) {
   const rects: React.ReactNode[] = [];
   rows.forEach((row, y) => {
@@ -18,7 +18,7 @@ export default function PixelGlyph({ rows, className }: { rows: readonly string[
     }
   });
   return (
-    <svg className={className} viewBox={`0 0 ${GLYPH_SIZE} ${GLYPH_SIZE}`} aria-hidden="true" shapeRendering="crispEdges">
+    <svg className={className} viewBox={`0 0 ${rows[0]?.length ?? rows.length} ${rows.length}`} aria-hidden="true" shapeRendering="crispEdges">
       {rects}
     </svg>
   );

@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { requireAdmin, unauthorizedResponse } from '@/lib/auth';
 import { getPacksView, saveSettings, type PackSettings } from '@/lib/datapacks-store';
 import { errorMessage } from '@/lib/icelandic';
+import { noteShelf } from '@/lib/server-news';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,6 +27,8 @@ export async function PUT(req: NextRequest) {
   }
   try {
     await saveSettings(patch);
+    /* the board tells what changed on the shelf, after the answer has gone (src/lib/server-news.ts) */
+    after(noteShelf);
     return NextResponse.json({ ok: true, packs: await getPacksView() });
   } catch (err) {
     return NextResponse.json({ error: errorMessage(err, 'Ekki tókst að vista.') }, { status: 500 });

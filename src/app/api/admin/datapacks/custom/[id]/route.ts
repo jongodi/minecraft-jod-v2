@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { requireAdmin, unauthorizedResponse } from '@/lib/auth';
 import { CUSTOM_ID_START, deleteCustomPack, getPacksView, saveSettings, updateCustomPack } from '@/lib/datapacks-store';
 import { parsePackBody } from '../fields';
 import { errorMessage } from '@/lib/icelandic';
+import { noteShelf } from '@/lib/server-news';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,6 +24,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     const pack = await updateCustomPack(id, parsed.fields);
     if (!pack) return NextResponse.json({ error: 'Pakkinn fannst ekki.' }, { status: 404 });
     if (parsed.settings) await saveSettings({ [id]: parsed.settings });
+    /* the board tells what changed on the shelf, after the answer has gone (src/lib/server-news.ts) */
+    after(noteShelf);
     return NextResponse.json({ pack, packs: await getPacksView() });
   } catch (err) {
     return NextResponse.json({ error: errorMessage(err, 'Ekki tókst að vista.') }, { status: 500 });
@@ -35,6 +38,8 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   if (id === null) return NextResponse.json({ error: 'Aðeins er hægt að eyða eigin pökkum.' }, { status: 400 });
   try {
     await deleteCustomPack(id);
+    /* gone from what was seen too, so a pack put back later is new again */
+    after(noteShelf);
     return NextResponse.json({ ok: true, packs: await getPacksView() });
   } catch (err) {
     return NextResponse.json({ error: errorMessage(err, 'Ekki tókst að eyða.') }, { status: 500 });
