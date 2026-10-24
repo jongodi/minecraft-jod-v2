@@ -430,14 +430,24 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
     };
   }, [full, closeFull]);
 
+  /* The place let go. Closed from inside the postcard (its ✕, Escape), the
+     keyboard goes to the place's tag on the rail, rather than staying on a
+     card that is on its way out and dropping to the top of the page. */
+  const letGo = useCallback(() => {
+    if (selected !== null && document.activeElement?.closest('.b-card')) {
+      places.current?.querySelector<HTMLElement>(`[data-rail-item="${selected}"]`)?.focus({ preventScroll: true });
+    }
+    setSelect(null);
+  }, [selected, places]);
+
   /* Escape lets the place go, unless something is open over the postcard:
      the album, a room. That one closes first, and the place stays picked. */
   useEffect(() => {
     if (selected === null || album || shut) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !modalOpen()) setSelect(null); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !modalOpen()) letGo(); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [selected, album, shut]);
+  }, [selected, album, shut, letGo]);
 
   const chosen = config.locations.find(l => l.id === selected) ?? null;
   /* the postcard stays up a beat after its place is let go, to leave the way it came */
@@ -660,7 +670,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
                 </span>
                 <span className="b-card__tools">
                   <button type="button" className="b-btn b-btn--small b-btn--ghost b-card__share" onClick={() => share(place.id, titleCase(place.label))}>Deila</button>
-                  <button type="button" className="b-card__x" onClick={() => setSelect(null)} aria-label="Loka póstkortinu"><CloseIcon /></button>
+                  <button type="button" className="b-card__x" onClick={letGo} aria-label="Loka póstkortinu"><CloseIcon /></button>
                 </span>
               </figcaption>
               {/* a place on this map's ground can be visited here, one at another

@@ -167,7 +167,15 @@ function Chat({ active, covered, server, onOpen }: Props) {
   const lines: Printed[] = open ? log.map(line => ({ line, key: keyOf(line), inMs: 0, outMs: 0, until: Infinity })) : shown;
   const held = open ? 0 : Math.max(0, lines.length - most);
   const visible = open ? lines : lines.slice(-most);
-  if (!visible.length && !open) return null;
+  /* The log stands even with nothing in it, so a screen reader hears each
+     line as it comes: a log put on the page already holding its first lines
+     is not read out. Closed from its own button, the keyboard goes to the
+     world's name rather than to the top of the page. */
+  const shut = () => {
+    setOpen(false);
+    const name = document.getElementById('heimur-title');
+    if (name) { if (!name.hasAttribute('tabindex')) name.setAttribute('tabindex', '-1'); name.focus({ preventScroll: true }); }
+  };
 
   return (
     <div className={`b-chat${open ? ' is-open' : ''}`} role="log" aria-label="Spjall">
@@ -183,7 +191,7 @@ function Chat({ active, covered, server, onOpen }: Props) {
           <Words line={s.line} />
         </Link>
       ))}
-      {open && <button type="button" className="b-btn b-btn--small b-btn--ghost b-chat__close" onClick={() => setOpen(false)}>Loka spjallinu</button>}
+      {open && <button type="button" className="b-btn b-btn--small b-btn--ghost b-chat__close" onClick={shut}>Loka spjallinu</button>}
     </div>
   );
 }

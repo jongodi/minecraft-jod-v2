@@ -1703,6 +1703,7 @@ html.is-map-full { overflow: hidden; }
    another. Open (T, or the note of lines held back), every line stays. Each
    line leads to where it happened, so it lights as a link does. */
 .b-chat { display: grid; justify-items: start; max-width: min(34rem, 100%); margin-bottom: var(--sp-2); }
+.b-chat:empty { position: absolute; margin: 0; }   /* the log stands empty between lines (Chat.tsx), out of the rail's grid and its gap, still there for a screen reader */
 .b-chat__line {
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
   max-width: 100%; padding: var(--px) var(--sp-2);
