@@ -42,8 +42,8 @@ function shelfLine(packs: ShelfPack[]): React.ReactNode {
   const added = packs.filter(p => p.added).length;
   const updated = packs.length - added;
   if (packs.length === 1) return added ? <>Nýr pakki á hillunni: <b>{packs[0].name}</b></> : <><b>{packs[0].name}</b> uppfærður á hillunni</>;
-  if (!updated) return `${added} nýir pakkar á hillunni`;
-  if (!added) return `${updated} pakkar uppfærðir á hillunni`;
+  if (!updated) return `${added} ${plural(added, 'nýr pakki', 'nýir pakkar')} á hillunni`;
+  if (!added) return `${updated} ${plural(updated, 'pakki uppfærður', 'pakkar uppfærðir')} á hillunni`;
   return `Á hillunni: ${added} ${plural(added, 'nýr pakki', 'nýir pakkar')} og ${updated} ${plural(updated, 'uppfærður', 'uppfærðir')}`;
 }
 

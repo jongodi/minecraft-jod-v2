@@ -36,6 +36,9 @@ const SEEN_AFTER_MS = 1500;
    hand for two seconds. */
 const STEP = 20;
 
+/** New replies under something older, counted as Icelandic counts: 21 takes the singular. */
+const newRepliesWords = (n: number) => (n === 1 ? 'Nýtt svar' : `${n} ${plural(n, 'nýtt svar', 'ný svör')}`);
+
 /** Whether a post calls the one looking by name: in its words, unless they
     wrote it, or in a reply someone else left under it, their own post included. */
 const callsMe = (item: BoardItem, me: string | null | undefined) =>
@@ -305,10 +308,10 @@ export default function Board({ room = false, open = true, initial = null, initi
                           <span className="t-tags" aria-hidden="true">
                             {calling && <span className="t-tag t-tag--me">Til þín</span>}
                             {isFresh && <span className="t-tag">Nýtt</span>}
-                            {!isFresh && replies > 0 && <span className="t-tag">{replies === 1 ? 'Nýtt svar' : `${replies} ný svör`}</span>}
+                            {!isFresh && replies > 0 && <span className="t-tag">{newRepliesWords(replies)}</span>}
                           </span>
                         )}
-                        {(isFresh || replies > 0 || calling) && <span className="b-visually-hidden">{[calling && 'Til þín', isFresh ? 'Nýtt' : replies > 0 && (replies === 1 ? 'Nýtt svar' : `${replies} ný svör`)].filter(Boolean).join(', ')}: </span>}
+                        {(isFresh || replies > 0 || calling) && <span className="b-visually-hidden">{[calling && 'Til þín', isFresh ? 'Nýtt' : replies > 0 && newRepliesWords(replies)].filter(Boolean).join(', ')}: </span>}
                         {item.kind === 'post' ? (
                           <Print username={item.who} entry={item.entry} places={places} me={me} isOwner={sameUser(me, item.who)}
                             coverPhotoId={null} shownCoverId={null} fresh={item.entry.id === fresh} byline

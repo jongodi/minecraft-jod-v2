@@ -111,7 +111,7 @@ export default function Composer({ username, places, onPinned, active = true, co
     const images = files.filter(isPicture);
     /* what was turned away is said, rather than vanishing: a dropped PDF did nothing at all */
     const others = files.length - images.length;
-    const turnedAway = others > 0 ? `${others === 1 ? 'Ein skrá var ekki mynd' : `${others} skrár voru ekki myndir`} og ${others === 1 ? 'fór' : 'fóru'} ekki með.` : '';
+    const turnedAway = others > 0 ? `${others === 1 ? 'Ein skrá var ekki mynd' : `${others} ${plural(others, 'skrá var ekki mynd', 'skrár voru ekki myndir')}`} og ${plural(others, 'fór', 'fóru')} ekki með.` : '';
     if (images.length === 0) { if (turnedAway) setError(`${turnedAway} Veldu PNG, JPEG eða WebP.`); return; }
     /* the slot holds still while what is in it goes up */
     if (pinningNow.current) { setError('Bíddu andartak, verið er að festa upp það sem er í hólfinu.'); return; }

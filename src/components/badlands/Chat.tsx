@@ -21,7 +21,7 @@ const FIRST_MS = 900;
 const LOG_KEEP = 20;
 
 const keyOf = (l: ChatLine) => `${l.kind}|${l.name}|${l.at}|${'text' in l ? l.text : 'title' in l ? l.title : ''}`;
-const prints = (n: number) => (n === 1 ? '[mynd]' : `[${n} myndir]`);
+const prints = (n: number) => (n === 1 ? '[mynd]' : `[${n} ${plural(n, 'mynd', 'myndir')}]`);
 
 /* The sentence the game prints, in its Icelandic (Mojang's is_is.json):
    chat.type.text, chat.type.advancement.*, multiplayer.player.joined/left.
