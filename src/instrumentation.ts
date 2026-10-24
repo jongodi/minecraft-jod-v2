@@ -9,8 +9,12 @@
 export function register() {
   if (process.env.NEXT_RUNTIME !== 'nodejs') return;
 
-  const emitWarning = process.emitWarning.bind(process) as (...args: unknown[]) => void;
-  process.emitWarning = ((...args: unknown[]) => {
+  /* Turbopack also builds this file for the Edge runtime, where it never gets
+     past the line above, and warns about Node APIs it reads off `process` by
+     name. Reached through globalThis it is the same object, unflagged. */
+  const node = globalThis.process;
+  const emitWarning = node.emitWarning.bind(node) as (...args: unknown[]) => void;
+  node.emitWarning = ((...args: unknown[]) => {
     /* emitWarning(warning, type, code) or emitWarning(warning, { type, code }) */
     const [warning, second, third] = args;
     const code = (warning as { code?: string } | null)?.code
