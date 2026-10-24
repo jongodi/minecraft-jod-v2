@@ -683,12 +683,13 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
         {/* the locator bar: the other bases and the crew, by where they stand from the way the camera faces */}
         <Locator bases={bases} players={players} sink={cameraSink} hidden={drawn || shut || (menu && ready)} />
 
+        {/* the place picked, said once as it comes: a live region on the card itself is a new one with every place, and one put up already holding its words is not read */}
+        <p className="b-visually-hidden" role="status">{chosen && !shut ? `Póstkort: ${titleCase(chosen.label)}` : ''}</p>
         {place && (
             <figure
               key={place.id}
               className={`b-card b-paper${leaving ? ' is-leaving' : ''}`}
               onAnimationEnd={e => { if (leaving && e.target === e.currentTarget) settle(); }}
-              aria-live="polite"
             >
               {plate ? (
                 // eslint-disable-next-line @next/next/no-img-element
