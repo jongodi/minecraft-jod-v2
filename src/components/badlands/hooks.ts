@@ -432,7 +432,9 @@ function keepTab(e: KeyboardEvent) {
   const first = items[0];
   const last = items[items.length - 1];
   if (!first) { e.preventDefault(); return; }
-  if (!box.contains(at)) { e.preventDefault(); (e.shiftKey ? last : first).focus(); }
+  /* focus on the dialog itself (where it opens) or on its words is no stop in
+     the round: Shift+Tab from there went out to the page behind */
+  if (!box.contains(at) || !items.includes(at as HTMLElement)) { e.preventDefault(); (e.shiftKey ? last : first).focus(); }
   else if (e.shiftKey && at === first) { e.preventDefault(); last.focus(); }
   else if (!e.shiftKey && at === last) { e.preventDefault(); first.focus(); }
 }
