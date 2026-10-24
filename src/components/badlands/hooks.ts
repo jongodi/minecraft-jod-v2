@@ -439,6 +439,17 @@ function keepTab(e: KeyboardEvent) {
   else if (!e.shiftKey && at === last) { e.preventDefault(); first.focus(); }
 }
 
+/** Focus goes back to `to`, or, where that is gone (a sign-in or a sign-out
+    swaps the very button that opened the dialog for others), to the page's
+    own heading, so the keyboard carries on from the page and not from its top. */
+export function landFocus(to: HTMLElement | null): void {
+  if (to?.isConnected) { to.focus({ preventScroll: true }); return; }
+  const heading = document.querySelector<HTMLElement>('main h1');
+  if (!heading) return;
+  if (!heading.hasAttribute('tabindex')) heading.setAttribute('tabindex', '-1');
+  heading.focus({ preventScroll: true });
+}
+
 /** A dialog takes the keyboard with it: focus moves to `ref` when it opens
     (unless a field inside already took it with autoFocus), Tab goes round
     inside it, and focus goes back to whatever opened it when it closes, so a
@@ -459,7 +470,7 @@ export function useDialogFocus<T extends HTMLElement>(ref: React.RefObject<T>): 
       if (traps.length === 0) document.removeEventListener('keydown', keepTab);
       /* only once the dialog has really gone: React's strict mode runs this
          with the dialog still standing, and the field inside keeps its focus */
-      if (!box.isConnected && opener?.isConnected) opener.focus({ preventScroll: true });
+      if (!box.isConnected) landFocus(opener);
     };
   // once, on open and close
   // eslint-disable-next-line react-hooks/exhaustive-deps

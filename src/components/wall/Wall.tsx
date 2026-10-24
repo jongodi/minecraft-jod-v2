@@ -19,7 +19,7 @@ import { CloseIcon, Lantern, Seal } from '@/components/badlands/Bits';
 import { PAGE_LINKS, STAT_TABS, type StatKey } from '@/components/badlands/data';
 import { outlaws } from '@/components/badlands/outlaws';
 import NightSky from '@/components/badlands/NightSky';
-import { seedSession, useBackCloses, useBackdropClose, useCrewSession, useDialogFocus, useScrollLock, type CrewSessionSeed } from '@/components/badlands/hooks';
+import { landFocus, seedSession, useBackCloses, useBackdropClose, useCrewSession, useDialogFocus, useScrollLock, type CrewSessionSeed } from '@/components/badlands/hooks';
 import { photoProps, PHOTO_SIZES } from '@/components/badlands/photo';
 import type { WallAdvancement } from '@/lib/advancements';
 import Advancements from './Advancements';
@@ -443,7 +443,7 @@ export default function Wall({ initial, places, initialStats = null, initialLed 
                   <>
                     <button className="b-btn b-btn--small" onClick={() => setShowPw(true)}>{hasPassword ? 'Breyta lykilorði' : 'Velja lykilorð'}</button>
                     <button className="b-btn b-btn--small" onClick={() => setShowEmail(true)}>Nafn og netfang</button>
-                    <button className="b-btn b-btn--small" onClick={signOut}>Skrá út</button>
+                    <button className="b-btn b-btn--small" onClick={() => { const at = document.activeElement as HTMLElement | null; signOut().then(() => landFocus(at)); }}>Skrá út</button>
                   </>
                 ) : me === null ? (
                   <button className="b-btn b-btn--small" onClick={() => setShowLogin(true)}>Þetta er ég</button>
