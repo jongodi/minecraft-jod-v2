@@ -14,7 +14,11 @@ const fake = {
 };
 let shelf: Array<{ id: number; name: string; currentVersion?: string; glyph: string | null; category: string }> = [];
 vi.mock('@/lib/redis', () => ({ getRedis: () => fake }));
-vi.mock('@/lib/datapacks-store', () => ({ getPublicPacks: async () => shelf }));
+/* a store whose settings fail to read: a strict read throws, as datapacks-store's does */
+let unreadable = false;
+vi.mock('@/lib/datapacks-store', () => ({
+  getPublicPacks: async (strict = false) => { if (unreadable && strict) throw new Error('Ekki tókst að lesa úr geymslunni'); return shelf; },
+}));
 
 process.env.REDIS_URL = 'redis://test';
 const { noteServerVersion, noteShelf, readServerNews, shelfNews, versionNews } = await import('@/lib/server-news');
@@ -24,7 +28,7 @@ afterAll(() => { delete process.env.REDIS_URL; });
 
 const pack = (id: number, name: string, currentVersion?: string) => ({ id, name, currentVersion, glyph: null, category: 'BUILD' });
 
-beforeEach(() => { store.clear(); lists.clear(); shelf = []; });
+beforeEach(() => { store.clear(); lists.clear(); shelf = []; unreadable = false; });
 
 describe('what changed', () => {
   it('tells a pack new to the shelf and a pack whose version moved, and nothing else', () => {
@@ -72,6 +76,17 @@ describe('the shelf', () => {
     expect((await readServerNews()).map(n => n.kind === 'pack' && `${n.name}:${n.added ? 'new' : `${n.was}>${n.version}`}`)).toEqual(['MVP:1.0>1.1', 'Ljós:new']);
     await noteShelf();
     expect(await readServerNews()).toHaveLength(2);
+  });
+
+  it('tells nothing, and forgets nothing, when the shelf cannot be read', async () => {
+    shelf = [pack(1, 'MVP', '1.0')];
+    await noteShelf();
+    const seen = store.get('server:shelf');
+    unreadable = true;
+    shelf = [pack(1, 'MVP', '1.0'), pack(2, 'Falinn')];
+    await noteShelf();
+    expect(store.get('server:shelf')).toBe(seen);
+    expect(await readServerNews()).toEqual([]);
   });
 });
 

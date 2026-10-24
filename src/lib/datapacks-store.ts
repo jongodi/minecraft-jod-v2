@@ -133,9 +133,10 @@ export async function saveSettings(patch: Record<number, Partial<Record<keyof Pa
 
 // ─── views ────────────────────────────────────────────────────────────────────
 
-/** Every pack with its settings applied, in shelf order. */
-export async function getPacksView(): Promise<PackView[]> {
-  const [all, settings] = await Promise.all([getAllPacks(), getSettings()]);
+/** Every pack with its settings applied, in shelf order. `strict` throws on
+    a storage error rather than falling back to the seed list (readKey). */
+export async function getPacksView(strict = false): Promise<PackView[]> {
+  const [all, settings] = await Promise.all([getAllPacks(strict), getSettings(strict)]);
   return all
     .map((p, i) => {
       const s = settings[p.id] ?? {};
@@ -153,8 +154,8 @@ export async function getPacksView(): Promise<PackView[]> {
 }
 
 /** What the public site shows: visible packs only. */
-export async function getPublicPacks(): Promise<PackView[]> {
-  return (await getPacksView()).filter(p => !p.hidden);
+export async function getPublicPacks(strict = false): Promise<PackView[]> {
+  return (await getPacksView(strict)).filter(p => !p.hidden);
 }
 
 /** The fields of a pack that visitors need, with nothing about how it was stored. */
