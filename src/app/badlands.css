@@ -1189,14 +1189,35 @@
    that exists only once the lantern has been pressed, so a visitor who
    never touches it never downloads it. */
 .b-world { position: relative; background: var(--dusk); scroll-margin-top: var(--bar); }
+/* No wooden band between the sunset and the world: the hero's ground runs
+   on over the top of it and ends in the blocks of its own edge (::after),
+   its shadow a hard step lower on the land below as the game draws one
+   (::before; a blurred drop-shadow on a masked edge is cut away by its own
+   mask), so the world is what lies beyond the plateau rather than a picture
+   hung under it. In the page, not the held frame, so the edge goes up and
+   away as the camera goes over it. */
+.b-world { --lip: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 8' preserveAspectRatio='none' shape-rendering='crispEdges'%3E%3Cpath d='M0 0H96V1H92V1H88V1H84V2H80V1H76V1H72V2H68V3H64V5H60V4H56V7H52V7H48V8H44V6H40V4H36V5H32V3H28V1H24V1H20V2H16V1H12V1H8V2H4V1H0Z'/%3E%3C/svg%3E"); }
+.b-world::before, .b-world::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  z-index: 1;
+  height: clamp(1.5rem, 4vw, 3rem);
+  background: var(--dusk);
+  -webkit-mask: var(--lip) 0 0 / 100% 100% no-repeat;
+          mask: var(--lip) 0 0 / 100% 100% no-repeat;
+  pointer-events: none;
+}
+.b-world::before { top: calc(var(--px) * 3); background: rgba(7, 6, 12, 0.55); }
+/* the whole screen has no sunset over it */
+.b-world:has(> .b-frame.is-full)::before, .b-world:has(> .b-frame.is-full)::after { display: none; }
 .b-frame {
   position: relative;
   height: calc(100svh - var(--bar));
   min-height: 34rem;
   isolation: isolate;
   background: var(--night);
-  border-block: calc(var(--px) * 4) solid var(--wood);
-  box-shadow: inset 0 0 0 var(--px) var(--wood-light), inset 0 0 0 calc(var(--px) * 2) var(--wood-dark);
   overflow: clip;
 }
 /* The still and the town's lights in one layer that settles as the world is
@@ -1215,20 +1236,30 @@
    frame lets go and goes on up with the page. The whole screen (.is-full)
    stays fixed over the page, as it always was. */
 .b-world.has-flight .b-frame:not(.is-full) { position: sticky; top: var(--bar); }
-/* Where the flight runs, the world's top for a scroll to it (a door, T, Back
-   out of a room, a /#heimur link) is the far end of its runway: landed, the
-   frame over the town with its lights on. Its own top is the flight's start,
-   high over everything, and every door pressed after landing flew the camera
-   all the way back up there. From above, the scroll down is the flight itself. */
-.b-world.has-flight { scroll-margin-top: calc(var(--bar) - 110svh); }
-.b-world__runway { height: 110svh; }   /* the world's scroll-margin-top lands past it */
+/* The runway is the flight (--flight) and then the stay (--hold): landed,
+   the frame is held over the town a while longer, its lights on and the way
+   into the live map set down, so a quick flick of the wheel or a thumb comes
+   to rest over the town instead of carrying on past it to the fire. Where
+   the flight runs, the world's top for a scroll to it (a door, T, Back out
+   of a room, a /#heimur link) is the landing: its own top is the flight's
+   start, high over everything, and every door pressed after landing flew
+   the camera all the way back up there. From above, the scroll down is the
+   flight itself. */
+.b-world.has-flight { --flight: 90svh; --hold: 45svh; scroll-margin-top: calc(var(--bar) - var(--flight)); }
+.b-world__runway { height: calc(var(--flight) + var(--hold)); }
+/* The landing mark (Flight.tsx reads where it is): a scroll that comes to a
+   stop near it settles on it, from above or from the fire, and only near
+   it. Nothing else on the page is a stop, so it never pulls at the sunset or
+   the fire, and the stay under it is the catch for a scroll that ran past. */
+.b-world__land { position: absolute; top: var(--flight); left: 0; width: 1px; height: 1px; pointer-events: none; scroll-snap-align: start; scroll-margin-top: var(--bar); }
+html:has(.b-world.has-flight) { scroll-snap-type: y proximity; }
 /* Two sheets, each a frame at the size it was taken, moved and faded by
    Flight.tsx: transform and opacity only, each on its own layer, so the
    scroll moves layers and paints nothing between frames. The night is under
    them for the margin a moved frame can leave. The frames carry the still's
    saturate(0.85) already (scripts/map-flight.mjs): no filter on a layer that
    changes. */
-.b-flight { position: absolute; inset: 0; overflow: clip; background: var(--night); visibility: hidden; }
+.b-flight { position: absolute; inset: 0; overflow: clip; background: var(--night); visibility: hidden; will-change: transform; }   /* leaned by Flight.tsx */
 .b-flight__sheet { position: absolute; left: 0; top: 0; display: block; transform-origin: 0 0; opacity: 0; will-change: transform, opacity; }
 /* With a flight the still is square at rest: the flight ends on it, and the
    live map takes over from it, at the very view each was drawn at. */
@@ -1239,6 +1270,22 @@
    over the last stretch down (Flight.tsx fades the layer), so the landing
    meets the still's own flat night. */
 .b-flight__sky { position: absolute; inset: 0; background: linear-gradient(180deg, var(--sky-night-top), var(--night) 80%); will-change: opacity; }
+/* The night air between the camera and the land: thick over the overview,
+   the far side of the world going into the dark as distant land does, and
+   thinning as the camera comes down until the town stands clear for its
+   lamps (Flight.tsx fades it). Over the stills, under the pins. */
+.b-flight__haze {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  opacity: 0;
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--sky-night-top) 55%, transparent) 0%,
+    color-mix(in srgb, var(--night) 26%, transparent) 34%,
+    color-mix(in srgb, var(--night) 6%, transparent) 64%,
+    transparent 85%);
+  will-change: opacity;
+}
 .b-flight__stars { position: absolute; inset: 0; width: 100%; height: 100%; color: var(--star); opacity: 0.55; }
 .b-flight__moon { position: absolute; right: 14%; top: 16%; width: 3rem; height: 3rem; color: var(--star); }
 @media (max-width: 759px) { .b-flight__moon { width: 2.25rem; height: 2.25rem; top: 22%; right: 12%; } }
@@ -1353,7 +1400,23 @@
 /* the world's own controls step back while a room is open */
 .b-hud__mid, .b-places { transition: opacity var(--dur-2) var(--ease-out); }
 .b-frame.is-room .b-hud__mid, .b-frame.is-room .b-places { opacity: 0; }
-.b-frame__shade { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, var(--veil) 0%, transparent 24%, transparent 60%, rgba(21, 16, 13, 0.72) 100%); }
+.b-frame__shade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  /* Under the title and the tools a scrim that thins as an eased curve, so
+     it never shows a lower edge as a band would; at the foot the world goes
+     into the page's night, the night the fire burns in, and the frame has
+     no edge there either when it goes on up with the page. */
+  background: linear-gradient(180deg,
+    var(--veil) 0,
+    rgba(21, 16, 13, 0.36) 4.5rem,
+    rgba(21, 16, 13, 0.14) 8rem,
+    transparent 11rem,
+    transparent 62%,
+    rgba(21, 16, 13, 0.55) 88%,
+    var(--night) 100%);
+}
 /* The still is dimmed by a layer of night over it rather than by a filter on
    the picture, so taking on the live map's light when the viewer is asked for
    is one opacity on the compositor, not a full-screen repaint per frame. */
@@ -1362,7 +1425,9 @@
 .b-frame__view { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; opacity: 0; transition: opacity var(--dur-3) var(--ease-out); }
 .b-frame.is-ready .b-frame__view { opacity: 1; }
 .b-frame.is-ready .b-frame__poster { opacity: 0; }
-.b-frame.is-ready .b-frame__shade { background: linear-gradient(180deg, var(--veil) 0%, transparent 18%, transparent 100%); }
+.b-frame.is-ready .b-frame__shade { background: linear-gradient(180deg, var(--veil) 0, rgba(21, 16, 13, 0.3) 4rem, transparent 9rem, transparent calc(100% - 7rem), rgba(21, 16, 13, 0.5) calc(100% - 2.5rem), var(--night) 100%); }
+/* the whole screen has nothing under it to go into */
+.b-frame.is-ready.is-full .b-frame__shade, .b-frame.is-ready:fullscreen .b-frame__shade { background: linear-gradient(180deg, var(--veil) 0, rgba(21, 16, 13, 0.3) 4rem, transparent 9rem); }
 .b-frame__sheet { position: absolute; inset: 0; z-index: 2; background: var(--map-water); }
 /* The town's lights coming on (World.tsx, scripts/map-lights.mjs): the still
    arrives in the dusk, a layer of night over it, and when the world is most
@@ -1394,8 +1459,8 @@
 /* The whole screen is the frame itself, HUD, places and all, so nothing reloads:
    the browser's own full screen, or fixed over the page where there is none
    (an iPhone). The album still opens over it; the bars stay under it. */
-.b-frame:fullscreen { height: 100%; min-height: 0; border-block-width: 0; }
-.b-frame.is-full { position: fixed; inset: 0; z-index: var(--z-drawer); height: 100vh; height: 100dvh; min-height: 0; border-block-width: 0; overscroll-behavior: contain; }
+.b-frame:fullscreen { height: 100%; min-height: 0; }
+.b-frame.is-full { position: fixed; inset: 0; z-index: var(--z-drawer); height: 100vh; height: 100dvh; min-height: 0; overscroll-behavior: contain; }
 .b-frame.is-full .b-hud { padding-top: max(var(--sp-4), env(safe-area-inset-top, 0px)); }
 .b-frame.is-full .b-places { padding-bottom: max(var(--sp-3), env(safe-area-inset-bottom, 0px)); }
 html.is-map-full { overflow: hidden; }

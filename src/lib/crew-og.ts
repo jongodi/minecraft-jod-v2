@@ -34,6 +34,8 @@ export async function skinDataUrl(username: string): Promise<string | null> {
 
 const TYPE_BY_EXT: Record<string, string> = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif', avif: 'image/avif' };
 const CARD_WIDTH = 1200;
+/* the page's night (--night), under whatever in a print is see-through */
+const NIGHT = '#15100D';
 
 /** The bytes of a print wherever storeImage() put it, or null. */
 async function printBytes(filename: string): Promise<{ bytes: Uint8Array; type: string } | null> {
@@ -53,6 +55,11 @@ async function printBytes(filename: string): Promise<{ bytes: Uint8Array; type: 
   if (filename === '/map-poster.webp') {
     return { bytes: new Uint8Array(await fs.readFile(path.join(process.cwd(), 'public', 'map-poster.webp'))), type: 'image/webp' };
   }
+  /* a still of the flight down, for a place's card seen from the air (src/app/stadur/[id]) */
+  const still = /^\/map-flight\/((?:wide|tall)-\d{1,3}\.webp)(?:\?v=[\w-]+)?$/.exec(filename);
+  if (still) {
+    return { bytes: new Uint8Array(await fs.readFile(path.join(process.cwd(), 'public', 'map-flight', still[1]))), type: 'image/webp' };
+  }
   if (filename.startsWith('/screenshots/')) {
     const file = path.join(process.cwd(), 'public', 'screenshots', path.basename(filename));
     const ext = file.split('.').pop()?.toLowerCase() ?? 'png';
@@ -63,14 +70,17 @@ async function printBytes(filename: string): Promise<{ bytes: Uint8Array; type: 
 
 /** A print as a data URL the card can draw, or null. Prints are stored as
     WebP, which the card renderer cannot read, so the backdrop is re-encoded
-    as a JPEG at the card's width by sharp (which Next brings along). */
-export async function printDataUrl(filename: string): Promise<string | null> {
+    as a JPEG at the card's width by sharp (which Next brings along). What
+    is see-through in it (the sky cut out of a flight's still, a PNG's
+    clear corners) is laid on the page's night, not JPEG's black. `width`
+    is how wide the card draws it, for one drawn larger than the card. */
+export async function printDataUrl(filename: string, width = CARD_WIDTH): Promise<string | null> {
   try {
     const got = await printBytes(filename);
     if (!got) return null;
     try {
       const sharp = (await import('sharp')).default;
-      const jpeg = await sharp(got.bytes).resize({ width: CARD_WIDTH, withoutEnlargement: true }).jpeg({ quality: 78 }).toBuffer();
+      const jpeg = await sharp(got.bytes).resize({ width: Math.round(width), withoutEnlargement: true }).flatten({ background: NIGHT }).jpeg({ quality: 78 }).toBuffer();
       return dataUrl(jpeg, 'image/jpeg');
     } catch {
       /* no sharp here: only formats the renderer reads itself */

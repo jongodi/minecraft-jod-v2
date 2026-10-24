@@ -101,6 +101,8 @@
     choose() {},
     follow() { return 'missing'; },
     unfollow() {},
+    /* glass: in view but not yet taken in hand, so BlueMap's own tools stay hidden (jod.css) */
+    glass(on) { document.documentElement.classList.toggle('jod-glass', !!on); },
   });
 
   /* ─── the plank (full screen only) ─────────────────────────── */
