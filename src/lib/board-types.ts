@@ -1,6 +1,7 @@
 /* Taflan: the board where everything on JOÐ is posted, newest first. What
    the crew pinned on their walls, what the server did (fires lit, nights
-   decided and held, advancements), and what changed on the map. The types
+   decided and held, advancements, a new version of the game, packs on the
+   shelf), and what changed on the map. The types
    and the pure helpers, with no server imports, so the board's components
    and its routes read the same definitions. The items are gathered on the
    server (src/lib/board.ts). */
@@ -27,7 +28,14 @@ export type BoardItem =
   /** the painted map painted again */
   | { kind: 'painted'; id: string; at: string; who: null; what: Painted[] }
   /** a fresh copy of the 3D map */
-  | { kind: 'synced'; id: string; at: string; who: null };
+  | { kind: 'synced'; id: string; at: string; who: null }
+  /** the game on the server moved to a new version */
+  | { kind: 'version'; id: string; at: string; who: null; from: string; to: string }
+  /** packs put on the shelf or updated there, a day to a slip; `was` is null for a pack new to it */
+  | { kind: 'shelf'; id: string; at: string; who: null; packs: ShelfPack[] };
+
+/** A pack on a shelf slip, with its glyph's rows drawn on the server, so the board never carries the whole glyph table. */
+export interface ShelfPack { id: number; name: string; version: string | null; was: string | null; added: boolean; glyph: readonly string[] }
 
 export type BoardKind = BoardItem['kind'];
 
@@ -64,7 +72,7 @@ export function inFilter(item: BoardItem, f: BoardFilter): boolean {
     case 'allt':      return true;
     case 'myndir':    return (item.kind === 'post' && item.entry.photos.length > 0) || item.kind === 'photo' || (item.kind === 'place' && item.photo !== null);
     case 'midar':     return item.kind === 'post' && (item.entry.text.trim() !== '' || !!item.entry.bounty || !!item.entry.poll);
-    case 'vidburdir': return item.kind === 'fire' || item.kind === 'decided' || item.kind === 'held' || item.kind === 'advancement';
+    case 'vidburdir': return item.kind === 'fire' || item.kind === 'decided' || item.kind === 'held' || item.kind === 'advancement' || item.kind === 'version' || item.kind === 'shelf';
     case 'kortid':    return item.kind === 'place' || item.kind === 'photo' || item.kind === 'painted' || item.kind === 'synced';
   }
 }

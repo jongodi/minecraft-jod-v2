@@ -1028,3 +1028,25 @@ The machine ran slower and noisier than it did for Part 13: the commit before ma
 
 1. **Told when your sign is given something**: items carry no time yet, so they are not news on the door.
 2. **The crew's favourite item** on the wanted posters, once there is a season of them.
+
+---
+
+## Part 15. The server's own news
+
+Idea 2 of the brainstorm on 24 October 2026, asked for the same day: Taflan says it carries everything that happens on JOÐ, but the two changes that most affect how the crew plays, a new version of the game and a new or updated pack on the shelf, were never on it.
+
+| Where | What | Why, in one sentence |
+|---|---|---|
+| Taflan, Viðburðir | **Þjónninn er kominn í 26.4**: a printed slip when the game on the server moves to a new version, saying what it was and that the game must be opened in the new one to join. | A member who opens the launcher on the old version cannot join, and nothing told them. |
+| Taflan, Viðburðir | **Á hillunni**: one slip a day for the shelf, each pack new to it or updated there on a line with its own glyph from the crates, from the version it was to the one it is. | The shelf changed without a word, so a pack that had been asked for could arrive unseen. |
+| The door | Both count on the door's lantern like the map's news. | They are news to everyone, so they belong in the count that brings the crew to the board. |
+
+How it notices, in `src/lib/server-news.ts`: the version from each live status read from exaroton (never from the public lookup, which writes it its own way and would read as a change whenever it stood in), and the shelf after every change made to it in the admin panel and once a day in the daily job, for packs that came with a deploy. What was seen is swapped in one step (`GETSET`), so two readers at once never tell a change twice, and the first look only remembers, so the fourteen packs already on the shelf were not announced as new. A pack added hidden is told the day it is shown. A pack taken off, renamed or given a new glyph is not news; one changed twice in a day is told once, from where it stood that morning to where it ended, and one changed and changed back is not told at all. The shelf is only looked at from the production side (the admin panel and the daily job), never on a page read, so a preview with a different list of packs sharing the store cannot set it telling the same pack again and again.
+
+### Found while building
+
+- **A pack's glyph pulled the whole glyph table into the board**: `PixelGlyph` read the glyphs' size from the table's module, so drawing one glyph on a slip shipped all 360 rows of it. It now sizes itself from its own rows, and the board's slips carry only the rows the server drew for them.
+
+### Checked
+
+`tsc`, `next lint` and the build are clean; 404 tests, 6 of them new (what counts as news, the version told once by two readers at once and never from the public lookup, the first look only remembering, a day of the shelf on one slip). In a production build against a local Redis, through the admin panel itself: the first change only remembered the shelf; a version moved, a pack added hidden and later shown, and a second version moved came out as one slip of three lines; the slips stood under Viðburðir and in the door's count, at 1440 and 390 with no sideways scroll and no console errors.

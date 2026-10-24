@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { requireAdmin, unauthorizedResponse } from '@/lib/auth';
 import { addCustomPack, getCustomPacks, getPacksView, saveSettings } from '@/lib/datapacks-store';
 import { parsePackBody } from './fields';
 import { errorMessage } from '@/lib/icelandic';
+import { noteShelf } from '@/lib/server-news';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,6 +22,8 @@ export async function POST(req: NextRequest) {
   try {
     const pack = await addCustomPack(parsed.fields as Parameters<typeof addCustomPack>[0]);
     if (parsed.settings) await saveSettings({ [pack.id]: parsed.settings });
+    /* the board tells what changed on the shelf, after the answer has gone (src/lib/server-news.ts) */
+    after(noteShelf);
     return NextResponse.json({ pack, packs: await getPacksView() }, { status: 201 });
   } catch (err) {
     return NextResponse.json({ error: errorMessage(err, 'Ekki tókst að vista.') }, { status: 500 });

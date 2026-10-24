@@ -1,6 +1,6 @@
 /* Taflan's items, gathered on the server: what the crew pinned on their
-   walls, the fires and the nights that were held, the game's advancements
-   and what changed on the map, newest first (src/lib/board-types.ts). The
+   walls, the fires and the nights that were held, the game's advancements,
+   what changed on the map and what the server changed, newest first (src/lib/board-types.ts). The
    same reads as the chat's (src/app/api/chat/route.ts), each with its own
    fallback, so a store that can't be read leaves its part out rather than
    the board. Server only. */
@@ -9,11 +9,13 @@ import type { MapConfig } from '@/lib/map-types';
 import type { GalleryPhoto } from '@/lib/gallery';
 import type { Night, PastNight } from '@/lib/play-night';
 import type { MapNews, Painted } from '@/lib/map-news';
-import type { BoardItem, BoardPlace, BoardResponse } from '@/lib/board-types';
+import type { ServerNews } from '@/lib/server-news';
+import type { BoardItem, BoardPlace, BoardResponse, ShelfPack } from '@/lib/board-types';
 import { advancementOf, type CrewAdvancements } from '@/lib/advancements';
 import { optionOf, decidesAt, EVENING_MS } from '@/lib/play-night';
 import { woodOf } from '@/lib/map-types';
 import { titleCase, sentenceCase } from '@/components/badlands/data';
+import { glyphFor } from '@/components/badlands/packGlyphs';
 
 /** How far back the server's own news reaches; the crew's posts go back further (POSTS_KEEP). */
 export const BOARD_DAYS = 60;
@@ -30,6 +32,8 @@ export interface BoardSources {
   past:         PastNight[];
   advancements: CrewAdvancements | null;
   news:         MapNews[];
+  /** what the server changed: its version, the shelf (src/lib/server-news.ts) */
+  server?:      ServerNews[];
   /** when the 3D map was last copied, if it ever was */
   syncedAt:     string | null;
   now?:         number;
@@ -40,7 +44,7 @@ export function boardPlaces(map: MapConfig | null): BoardPlace[] {
 }
 
 /** Everything on the board, newest first. */
-export function boardItems({ walls, map, gallery, nights, past, advancements, news, syncedAt, now = Date.now() }: BoardSources): BoardItem[] {
+export function boardItems({ walls, map, gallery, nights, past, advancements, news, server = [], syncedAt, now = Date.now() }: BoardSources): BoardItem[] {
   const since = now - BOARD_DAYS * 86_400_000;
   const recent = (at: string) => { const t = Date.parse(at); return t >= since && t <= now; };
   const places = new Map((map?.locations ?? []).map(l => [l.id, l]));
@@ -140,6 +144,34 @@ export function boardItems({ walls, map, gallery, nights, past, advancements, ne
 
   if (syncedAt && recent(syncedAt)) items.push({ kind: 'synced', id: `s-${syncedAt}`, at: syncedAt, who: null });
 
+  /* The server's own news. The shelf of one day is one slip: a pack changed
+     twice that day is told once, from where it stood that morning to where it
+     ended, and one put up and updated the same day is simply new. */
+  const shelves = new Map<string, { at: string; packs: Map<number, ShelfPack> }>();
+  for (const n of [...server].sort((a, b) => Date.parse(a.at) - Date.parse(b.at))) {
+    if (!recent(n.at)) continue;
+    if (n.kind === 'version') {
+      items.push({ kind: 'version', id: `v-${n.at}`, at: n.at, who: null, from: n.from, to: n.to });
+      continue;
+    }
+    const day = n.at.slice(0, 10);
+    const d = shelves.get(day) ?? { at: n.at, packs: new Map<number, ShelfPack>() };
+    const before = d.packs.get(n.packId);
+    d.packs.set(n.packId, {
+      id: n.packId, name: n.name, version: n.version,
+      was: before ? before.was : n.was,
+      added: before ? before.added : n.added,
+      glyph: glyphFor({ name: n.name, glyph: n.glyph, category: n.category }),
+    });
+    if (n.at > d.at) d.at = n.at;
+    shelves.set(day, d);
+  }
+  for (const [day, d] of shelves) {
+    /* the new ones first, then the updated, each in the order the shelf would name them */
+    const packs = [...d.packs.values()].filter(p => p.added || p.was !== p.version).sort((a, b) => Number(b.added) - Number(a.added) || a.name.localeCompare(b.name, 'is'));
+    if (packs.length) items.push({ kind: 'shelf', id: `k-${day}`, at: d.at, who: null, packs });
+  }
+
   return items.sort((a, b) => Date.parse(b.at) - Date.parse(a.at));
 }
 
@@ -162,19 +194,20 @@ async function readNightsForBoard(): Promise<{ nights: Night[]; past: PastNight[
 }
 
 export async function readBoard(): Promise<BoardResponse> {
-  const [{ readAllProfiles }, { readMap }, { readGallery }, { readStoredAdvancements }, { readNews }, snapshot] = await Promise.all([
-    import('@/lib/crew'), import('@/lib/map'), import('@/lib/gallery'), import('@/lib/advancements'), import('@/lib/map-news'), import('@/lib/bluemap-snapshot.json'),
+  const [{ readAllProfiles }, { readMap }, { readGallery }, { readStoredAdvancements }, { readNews }, { readServerNews }, snapshot] = await Promise.all([
+    import('@/lib/crew'), import('@/lib/map'), import('@/lib/gallery'), import('@/lib/advancements'), import('@/lib/map-news'), import('@/lib/server-news'), import('@/lib/bluemap-snapshot.json'),
   ]);
-  const [walls, map, gallery, advancements, news, { nights, past }] = await Promise.all([
+  const [walls, map, gallery, advancements, news, server, { nights, past }] = await Promise.all([
     readAllProfiles().catch(() => []),
     readMap().catch(() => null),
     readGallery().catch(() => []),
     readStoredAdvancements(),
     readNews().catch(() => []),
+    readServerNews().catch(() => []),
     readNightsForBoard().catch(() => ({ nights: [], past: [] })),
   ]);
   return {
-    items: boardItems({ walls, map, gallery, nights, past, advancements, news, syncedAt: (snapshot.default as { syncedAt?: string | null }).syncedAt ?? null }),
+    items: boardItems({ walls, map, gallery, nights, past, advancements, news, server, syncedAt: (snapshot.default as { syncedAt?: string | null }).syncedAt ?? null }),
     places: boardPlaces(map),
   };
 }
