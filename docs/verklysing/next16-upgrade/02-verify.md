@@ -1,6 +1,6 @@
 # Next.js 16 upgrade, Phase 2: verification
 
-Date: 24 October 2026. The same file is committed to all three repos.
+Date: 24 October 2026, updated the same evening with the merges and the follow-up fixes (the last two sections before "Known differences"). The same file is committed to all three repos.
 
 ## How this was checked, and the limit on it
 
@@ -58,7 +58,7 @@ Remote (preview against www.laugin.app):
 - **Pages** (`/`, `/hatid`, `/vikan`, 404): visible text is identical, and the CSP and the other five security headers are identical on every route.
 - **Files:** `/icon.svg` and `/laugin.webmanifest` are identical. `/sw.js` differs only in its stamped VERSION line, which carries the commit sha.
 - **APIs:** `/api/aurora` has the same shape. `/api/og/vikan` is a PNG on both.
-- **`/api/og` answers 500 on both hosts.** It already does so in production, so this is not caused by the upgrade.
+- **`/api/og` answers 500 on both hosts.** It already does so in production, so this is not caused by the upgrade. Fixed afterwards; see "Fixed after the upgrade".
 
 Local browser:
 
@@ -74,7 +74,7 @@ Local browser:
 
 Generated images: `/api/og` and `/api/og/vikan` are 0 px apart. `/api/og/hatid` is 52 px apart, scattered single anti-aliased text pixels.
 
-The bundle check on Vercel passes at 223.7 of 230 kB.
+The bundle check on Vercel passes at 223.7 of 230 kB. After the three.js fix it is 176.2 of 185 kB; see "Fixed after the upgrade".
 
 ## jodcraft.world (minecraft-jod-v2)
 
@@ -110,13 +110,47 @@ Generated images:
 - `/stadur/22/opengraph-image`: 191 px of scattered resampling in the screenshot backdrop.
 - `/api/mail-art`: 36 px, the same "J" mark rounding.
 
+## Merged and checked in production
+
+| Site | PR | Merge | Checked live after the deploy |
+|---|---|---|---|
+| godord.app | godord#28 | `27831e8` | The 16 build is serving; `/gragas/gragas.css` is byte-identical to the `prebuild` output; no runtime errors. |
+| laugin.app | swim-jod#90 | `0cdb850` | `/api/alfheimar-counts` answers 200 with live counts; `/sw.js` carries the new deploy's stamp; no runtime errors. |
+| jodcraft.world | minecraft-jod-v2#122 | `01a1d05` | `/admin` without a cookie lands on the login page through `proxy.ts`; `/bluemap/settings.json` and `/api/server-status` answer; no runtime errors. On production the `og:image` links point at jodcraft.world and the manifest link has no `crossorigin`, as expected (item 4 below). |
+
+## Fixed after the upgrade
+
+- **laugin.app `/api/og` answered 500** (swim-jod#91, merged as `3321d6d`). It had done so since at least 20 October, on Next 15 and 16, so shared links unfurled without a picture.
+  - Cause: the count in each pool row was a bare number child (`{row.count}`), and Satori refused the whole card ("Expected `<div>` to have explicit display: flex ... more than one child node"). The card only draws rows when Redis holds counts, which is always true in production and never true in a local build, so it never failed locally.
+  - Fix: `{String(row.count)}`.
+  - Once the card rendered, five rows ran past the bottom of the 630 px image, so it now shows the top four open pools and the footer with the update time is in view (agreed with Jón Goði).
+  - Live: `/api/og` answers 200 `image/png`.
+- **laugin.app had a 49 kB three.js chunk on the home page's first load** (swim-jod#92, merged as `0938404`).
+  - Cause: the depth gauge loads with the page and imports `cameraHeightAt` from `components/scene/camera.ts`, which imported `CatmullRomCurve3` and `Vector3` from `three`. Neither webpack nor Turbopack trimmed that down to the curve maths.
+  - Fix: `camera.ts` carries three's centripetal Catmull-Rom on plain numbers and imports nothing from three. The new `lib/camera-path.test.ts` requires exact equality with three's `CatmullRomCurve3` at 2,001 points of the descent.
+  - First-load JS for `/` went from 223.7 to 176.2 kB gz, below the 194.1 kB it was on Next 15. `BUDGET_KB` went from 230 to 185.
+  - Live: the home page renders and the depth gauge reads the same as before (0 m to −3,6).
+- **jodcraft.world CI ran on Node 20**, which reached end of life in April 2026 (minecraft-jod-v2#123, merged as `0a0a7b7`).
+  - Fix: `ci.yml`, `map-sync.yml`, `map-bases.yml` and `map-flight.yml` now use Node 24, the version Vercel builds with.
+  - CI's lint, tests and build, and the `flight` job, passed on Node 24.
+  - Because the PR changed `map-flight.yml`, the flight workflow re-recorded the map flight on the branch, as it is built to do, and that recording went out with the merge.
+- **The 404 page's font preloads (item 1 below) were traced to a Next.js bug.** Not fixed in the apps; see item 1.
+
 ## Known differences left as they are
 
 1. **The 404 page loses its font preloads on Next 16, on all three sites.** Next 16 puts font preloads in a `Link` header, and the prerendered not-found page gets neither that header nor the `<link>` tags 15 put in its HTML, although its font manifest lists the fonts.
    - On godord.app the fonts swap in late, with a layout shift of 0.17 at 390 px on a cold load.
    - On laugin.app, Inter Tight is set to `display: "optional"` on purpose, so on a cold load straight to a 404 the body text stays in the fallback font.
    - Any visit that already has the fonts cached is unaffected.
-   - It cannot be fixed from app code without hard-coding hashed font file names, so it is left for a Next.js patch.
+   - Cause, found after the upgrade:
+     - Under Turbopack the font manifest keys fonts by page entry (`[project]/app/_not-found/page`).
+     - For the 404, the renderer looks fonts up by `app/layout.tsx` and `app/not-found.tsx`, which are not keys.
+     - A bare four-file app on 16.4.3 shows it: one font preload on the home page, none on the 404. With `--webpack`, which keys by layout, both have one.
+     - `16.5.0-canary.26` has the same lookup.
+   - It cannot be fixed cleanly from app code:
+     - Building the preload URLs by hand means guessing the asset prefix, which differs locally and on Vercel.
+     - A catch-all page that calls `notFound()` would intercept jodcraft.world's `afterFiles` rewrites.
+   - An issue for vercel/next.js, with the minimal app, is drafted for Jón Goði to post. It is left for a Next.js fix.
 2. **jodcraft.world `/icon.svg` and `/opengraph-image` are now served with `cache-control: public, max-age=0, must-revalidate`** instead of `public, immutable, no-transform, max-age=31536000`. This is how Next 16 serves metadata files. Pages link them with a content hash, and they are small, so the cost is a revalidation round trip. Overriding Next's headers in config was not worth the risk.
 3. **The "J" mark** in jodcraft.world's OG image and mail art: the 32-unit SVG drawn with crisp edges at 2.25x rounds two edges one pixel differently in the new renderer. It cannot be seen at the size the image is shown, and fixing it would mean resizing the mark, which is a design change.
 4. **Header-level differences that are not visible:**
@@ -131,7 +165,7 @@ Generated images:
 ## Not tested, and why
 
 - **Real-browser checks on the preview deployments themselves:** console errors, rendering at 390 and 1440 px, keyboard path and visible focus, and Lighthouse and LCP against production. The network policy blocks the previews. They were checked against local production builds instead. Allowing the three domains and `*.vercel.app` under the environment's Network access would let them run here.
-- **Lighthouse mobile within 3 points, LCP within 0.3 s, CLS under 0.1 on the real sites:** not measured, for the same reason. The local layout-shift numbers are above; only godord's cold 404 exceeds 0.1. On laugin.app the extra 30 kB of first-load JS is the most likely place for an LCP regression.
+- **Lighthouse mobile within 3 points, LCP within 0.3 s, CLS under 0.1 on the real sites:** not measured, for the same reason. The local layout-shift numbers are above; only godord's cold 404 exceeds 0.1. On laugin.app, the extra 30 kB of first-load JS that was the likeliest place for an LCP regression is gone since the three.js fix: first load is now smaller than it was on Next 15.
 - **The 3D scenes and the live map in motion:**
   - The WebGL water on laugin.app ran only under software WebGL with reduced motion, so animation, lazy loading and pause-when-hidden were not exercised. godord's 3D film was not on any route checked.
   - The BlueMap viewer was compared as files, not run; a local build has no map data.
