@@ -7,12 +7,6 @@ import { getPasswordHash, verifyPassword } from '@/lib/crew-access';
 import { timingSafeEqual } from 'crypto';
 
 export async function POST(req: NextRequest) {
-  const ip = clientKey(req.headers);
-  const { limited } = await checkRateLimit(ip, 'crew-auth');
-  if (limited) {
-    return NextResponse.json({ error: 'Of margar tilraunir. Reyndu aftur síðar.' }, { status: 429 });
-  }
-
   const body = await jsonObject(req);
   if (!body) return badJson();
   const { username, token } = body;
@@ -20,8 +14,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Innskráningarupplýsingar vantar.' }, { status: 400 });
   }
 
-  /* the member's own password first, then the token from the environment as the fallback */
+  /* Tries are counted per address and per account tried, and a sign-in
+     forgets only its own account's count: counted per address alone, one
+     member's own sign-in wiped the count of guesses at another's password,
+     and four guesses and a sign-in could go round for ever. */
+  const ip = clientKey(req.headers);
   const known = isCrewUsername(username);
+  const action = `crew-auth:${known ? canonicalUsername(username).toLowerCase() : '?'}`;
+  const { limited } = await checkRateLimit(ip, action);
+  if (limited) {
+    return NextResponse.json({ error: 'Of margar tilraunir. Reyndu aftur síðar.' }, { status: 429 });
+  }
+
+  /* the member's own password first, then the token from the environment as the fallback */
   const byPassword = known && await verifyPassword(token, await getPasswordHash(username));
   const expected = known ? getCrewToken(username) : undefined;
   /* compared as bytes: a token with as many characters but more bytes (ð, þ)
@@ -32,7 +37,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Lykilorðið er ekki rétt.' }, { status: 401 });
   }
 
-  await clearRateLimit(ip, 'crew-auth');
+  await clearRateLimit(ip, action);
   const name = canonicalUsername(username);
   const sessionId = await createCrewSession(name);
   const res = NextResponse.json({ ok: true, username: name });
