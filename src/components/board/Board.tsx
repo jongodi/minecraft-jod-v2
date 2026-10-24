@@ -167,9 +167,11 @@ export default function Board({ room = false, open = true, initial = null, initi
     setFresh(entry.id);
     setAsk(null);
     const wood = places.find(p => p.id === entry.placeId)?.wood ?? 'oak';
-    edit({ pin: { kind: 'post', id: `p-${entry.id}`, at: entry.createdAt, who: me, wood, entry } });
-    /* what was just put up shows under the filter it was put up from, or the whole board if it does not belong there */
-    if (!(filter === 'allt' || filter === 'midar' || (filter === 'myndir' && entry.photos.length > 0))) choose('allt');
+    const pin: Post = { kind: 'post', id: `p-${entry.id}`, at: entry.createdAt, who: me, wood, entry };
+    edit({ pin });
+    /* what was just put up shows under the filter it was put up from, or the
+       whole board if it does not belong there (a picture alone is no note) */
+    if (filter === 'mer' || !inFilter(pin, filter)) choose('allt');
   }, [me, places, edit, filter, choose]);
 
   /* every picture the board as it is filtered shows, in its order, for the lightbox: the crew's prints and the map's */
