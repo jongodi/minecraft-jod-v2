@@ -346,7 +346,7 @@ export default function Board({ room = false, open = true, initial = null, initi
                   <button type="button" className="t-side__item" onClick={() => show(c.entry.id)}>
                     <PlayerHead name={c.who} size={16} alt="" />
                     <span className="t-side__what">{c.entry.text.split('\n')[0]}</span>
-                    <span className="t-side__pay">{c.entry.bounty!.reward}{c.entry.bounty!.takenBy && <> · {c.entry.bounty!.takenBy} er á slóðinni</>}</span>
+                    <span className="t-side__pay">{c.entry.bounty!.reward}{c.entry.bounty!.takenBy && <> · {me && sameUser(c.entry.bounty!.takenBy, me) ? 'þú ert' : `${c.entry.bounty!.takenBy} er`} á slóðinni</>}</span>
                   </button>
                 </li>
               ))}
