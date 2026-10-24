@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint src",
     "shots": "node scripts/shots.mjs",
     "map:sync": "node scripts/sync-map.mjs",
     "map:brand": "node scripts/bluemap-brand.mjs",
