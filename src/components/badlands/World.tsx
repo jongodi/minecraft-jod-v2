@@ -169,9 +169,15 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
   const tools  = useInert<HTMLDivElement>(shut);
   const mid    = useInert<HTMLDivElement>(shut);
   const back   = useInert<HTMLButtonElement>(shut);
+  const sheetRef = useRef<HTMLDivElement>(null);
   /* On phones the viewer opens full screen instead of inside the page, so
      BlueMap's drag and pinch never fight the page scroll. */
   const phone = useMediaQuery('(max-width: 899px)');
+  /* the painted map's pins and the 3D viewer under a room's dark take no keys
+     either; each may come after the room opened, so it is set as they do */
+  useEffect(() => {
+    for (const el of [viewRef.current, sheetRef.current]) if (el) (el as HTMLElement & { inert: boolean }).inert = shut;
+  }, [shut, live, drawn]);
 
   /* A link names its place: a wall's /?stadur=<id>#heimur, or a shared /stadur/<id>. */
   useEffect(() => {
@@ -541,7 +547,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
         )}
 
         {drawn && (
-          <div className="b-frame__sheet">
+          <div ref={sheetRef} className="b-frame__sheet">
             <MapSheet config={config} selectedId={selected} onSelect={choose} />
           </div>
         )}
