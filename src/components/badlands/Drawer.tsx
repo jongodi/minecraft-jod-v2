@@ -38,11 +38,16 @@ export default function Drawer({ id, open, title, note, onClose, children }: Pro
     } else if (!open && wasOpen.current) {
       const at = document.activeElement;
       const lost = !at || at === document.body || !!root.current?.contains(at);
-      if (lost && opener.current?.isConnected) opener.current.focus({ preventScroll: true });
+      /* Opened from inside another room (its link to the board, or a key
+         pressed in it), the opener is in a room that has gone inert since,
+         and cannot take focus: the room's own door in the bar does instead. */
+      const from = opener.current?.isConnected && !opener.current.closest('[inert]') ? opener.current : null;
+      const door = Array.from(document.querySelectorAll<HTMLElement>(`.b-doors a[href="#${id}"], .b-hotbar a[href="#${id}"]`)).find(d => d.getClientRects().length > 0);
+      if (lost) (from ?? door)?.focus({ preventScroll: true });
       opener.current = null;
     }
     wasOpen.current = open;
-  }, [open, root]);
+  }, [open, root, id]);
 
   /* The plank is a handle: pulled down, the room follows the finger, and let
      go far enough or fast enough it closes, as a sheet on a phone does;
