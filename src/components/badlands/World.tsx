@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import type { MapConfig, WorldPoint } from '@/lib/map-types';
@@ -135,6 +135,43 @@ interface Props {
     board, the crew, the shelf) rise from the foot of the frame when their door is opened,
     leaving the world in view above them. *Heill skjár* makes the frame itself
     the whole screen, so nothing reloads; on a phone the lantern does. */
+type Camera = { x: number; y: number; z: number; facing: string };
+
+/** Where the live map is looking. The viewer says it a few times a second
+    while it moves; it is kept here rather than in the world's state, so a
+    turn of the map draws two lines again and not the whole world under them
+    (every tag on the rail, and a room left open). */
+function cameraStore() {
+  let value: Camera | null = null;
+  const listeners = new Set<() => void>();
+  return {
+    set(next: Camera) {
+      if (value && value.x === next.x && value.y === next.y && value.z === next.z && value.facing === next.facing) return;
+      value = next;
+      listeners.forEach(l => l());
+    },
+    get: (): Camera | null => value,
+    subscribe(l: () => void) { listeners.add(l); return () => { listeners.delete(l); }; },
+  };
+}
+type CameraStore = ReturnType<typeof cameraStore>;
+
+/* The game's F3 lines while the live map is up: the block the map holds and
+   the way it faces, as a player reads them to find the same spot in the
+   game, each line on its own veil of dark. */
+const F3 = memo(function F3({ store }: { store: CameraStore }) {
+  const camera = useSyncExternalStore(store.subscribe, store.get, () => null);
+  if (!camera) return null;
+  return (
+    <p className="b-f3">
+      {/* said as a sentence; a label on a paragraph is not read */}
+      <span className="b-visually-hidden">Kortið horfir á {camera.x}, {camera.y}, {camera.z} og snýr í {FACING[camera.facing] ?? camera.facing}</span>
+      <span aria-hidden="true">XYZ: {camera.x} / {camera.y} / {camera.z}</span>
+      <span aria-hidden="true">Snýr í {FACING[camera.facing] ?? camera.facing}</span>
+    </p>
+  );
+});
+
 function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseRoom }: Props) {
   const [selected, setSelect] = useState<number | null>(null);
   const [drawn, setDrawn]     = useState(false);
@@ -145,8 +182,8 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
   /* the viewer's map has loaded and window.jod answers */
   const [viewer, setViewer]   = useState(false);
   const [tiles, setTiles]     = useState(0);
-  /* where the live map is looking, for the F3 lines */
-  const [camera, setCamera]   = useState<{ x: number; y: number; z: number; facing: string } | null>(null);
+  /* where the live map is looking, for the F3 lines (F3 below) */
+  const [camera] = useState(cameraStore);
   const [night, setNight]     = useState(false);
   /* BlueMap's own menu is open along the left edge of the frame */
   const [menu, setMenu]       = useState(false);
@@ -323,7 +360,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
       if (m.type === 'hello') setViewer(true);
       else if (m.type === 'progress') setTiles(m.tiles ?? 0);
       else if (m.type === 'camera' && typeof m.x === 'number' && typeof m.y === 'number' && typeof m.z === 'number') {
-        setCamera({ x: m.x, y: m.y, z: m.z, facing: m.facing ?? 'north' });
+        camera.set({ x: m.x, y: m.y, z: m.z, facing: m.facing ?? 'north' });
         /* asleep behind the flight, the viewer's camera is not the one on screen */
         if (typeof m.rotation === 'number' && !standbyRef.current) cameraSink.current?.([m.ex ?? m.x, m.ez ?? m.z], headingOf(m.rotation));
       }
@@ -723,17 +760,8 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
               <span />
             </p>
           )}
-          {/* The game's F3 lines while the live map is up: the block the map
-              holds and the way it faces, as a player reads them to find the
-              same spot in the game, each line on its own veil of dark. */}
-          {camera && shown && ready && !still && !drawn && (
-            <p className="b-f3">
-              {/* said as a sentence; a label on a paragraph is not read */}
-              <span className="b-visually-hidden">Kortið horfir á {camera.x}, {camera.y}, {camera.z} og snýr í {FACING[camera.facing] ?? camera.facing}</span>
-              <span aria-hidden="true">XYZ: {camera.x} / {camera.y} / {camera.z}</span>
-              <span aria-hidden="true">Snýr í {FACING[camera.facing] ?? camera.facing}</span>
-            </p>
-          )}
+          {/* the game's F3 lines while the live map is up (F3 above) */}
+          {shown && ready && !still && !drawn && <F3 store={camera} />}
           {/* a count, as the shelf counts its crates: each base's own tag already says it has its own map, and the rail's order says where */}
           <p className="b-places__head">{config.locations.length} {plural(config.locations.length, 'staður', 'staðir')}{bases.length > 0 && ` og ${bases.length} ${plural(bases.length, 'stöð', 'stöðvar')}`}</p>
           <Rail label="Staðir og stöðvar" prevLabel="Fyrri staðir" nextLabel="Næstu staðir" count={config.locations.length + bases.length}>

@@ -3,7 +3,7 @@
 import '@/app/board.css';
 import '@/app/wall.css';
 import '@/app/taflan.css';
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import type { CrewEntry } from '@/lib/crew-types';
@@ -70,7 +70,7 @@ interface Props {
     where they left off, and what calls them by name says Til þín. Under
     Myndir the pictures hang in item frames, a wall of them. Members put
     things up from the slot at the top; everyone can read it. */
-export default function Board({ room = false, open = true, initial = null, initialFilter = 'allt', session }: Props) {
+function Board({ room = false, open = true, initial = null, initialFilter = 'allt', session }: Props) {
   const { me } = useCrewSession(session);
   const mounted = useMounted();
   const [data, setData] = useState<BoardResponse | null>(initial);
@@ -392,3 +392,7 @@ export default function Board({ room = false, open = true, initial = null, initi
     </div>
   );
 }
+
+/* Memoised: over the world it stays mounted under a closed room, and the
+   world draws again for a hover on the rail or a word from the live map. */
+export default memo(Board);
