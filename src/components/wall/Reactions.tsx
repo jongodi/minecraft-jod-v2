@@ -109,7 +109,7 @@ function Slot({ id, count, popping, popKey, onPopped }: { id: ItemId; count: num
 }
 
 /** What has been given, in the sign's foot, and the slot that opens the inventory. */
-export function Hotbar({ gifts, panelId, plusRef }: { gifts: Gifts; panelId: string; plusRef: RefObject<HTMLButtonElement> }) {
+export function Hotbar({ gifts, panelId, plusRef }: { gifts: Gifts; panelId: string; plusRef: RefObject<HTMLButtonElement | null> }) {
   const list = given(gifts.reactions);
   if (!list.length && !gifts.me) return null;
   const openIt = (e: MouseEvent<HTMLButtonElement>) => gifts.setOpen(gifts.open ? false : e.detail === 0 ? 'keys' : 'pointer');
