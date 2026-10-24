@@ -34,13 +34,22 @@ export function shelfNews(prev: Shelf, next: Shelf, at: string): ServerNews[] {
   });
 }
 
-/** The version change, if there is one; the first version ever seen is only remembered. */
-export const versionNews = (prev: string | null, next: string, at: string): ServerNews[] =>
-  prev && prev !== next ? [{ kind: 'version', at, from: prev, to: next }] : [];
+/** The game's own version, without the build exaroton puts after it:
+    "26.3 (222)" is "26.3". exaroton moves a server to a new build of the same
+    version on its own, and the game connects to every build of it alike. */
+export const gameVersion = (v: string): string => v.replace(/\s*\([^)]*\)\s*$/, '').trim();
 
+/** The version change, if there is one; the first version ever seen is only remembered. */
+export function versionNews(prev: string | null, next: string, at: string): ServerNews[] {
+  const from = prev && gameVersion(prev), to = gameVersion(next);
+  return from && from !== to ? [{ kind: 'version', at, from, to }] : [];
+}
+
+/* one import shared by readers at once: two of a mocked module at the same time hang vitest */
+let redisModule: Promise<typeof import('@/lib/redis')> | undefined;
 async function redis() {
-  const { getRedis } = await import('@/lib/redis');
-  return getRedis();
+  redisModule ??= import('@/lib/redis');
+  return (await redisModule).getRedis();
 }
 
 async function record(news: ServerNews[]): Promise<void> {
@@ -59,7 +68,7 @@ let knownVersion: string | null = null;
     lookup's is whatever the server says it is, written its own way, and
     would read as a change every time the lookup stood in. */
 export async function noteServerVersion(body: { source: string; version?: string }): Promise<void> {
-  const version = body.version?.trim();
+  const version = body.version && gameVersion(body.version);
   if (!process.env.REDIS_URL || body.source !== 'exaroton' || !version || version === knownVersion) return;
   try {
     const r = await redis();

@@ -9,7 +9,7 @@ import type { MapConfig } from '@/lib/map-types';
 import type { GalleryPhoto } from '@/lib/gallery';
 import type { Night, PastNight } from '@/lib/play-night';
 import type { MapNews, Painted } from '@/lib/map-news';
-import type { ServerNews } from '@/lib/server-news';
+import { gameVersion, type ServerNews } from '@/lib/server-news';
 import type { BoardItem, BoardPlace, BoardResponse, ShelfPack } from '@/lib/board-types';
 import { advancementOf, type CrewAdvancements } from '@/lib/advancements';
 import { optionOf, decidesAt, EVENING_MS } from '@/lib/play-night';
@@ -151,7 +151,9 @@ export function boardItems({ walls, map, gallery, nights, past, advancements, ne
   for (const n of [...server].sort((a, b) => Date.parse(a.at) - Date.parse(b.at))) {
     if (!recent(n.at)) continue;
     if (n.kind === 'version') {
-      items.push({ kind: 'version', id: `v-${n.at}`, at: n.at, who: null, from: n.from, to: n.to });
+      /* told before builds were set aside, a new build of the same version is no news */
+      const from = gameVersion(n.from), to = gameVersion(n.to);
+      if (from !== to) items.push({ kind: 'version', id: `v-${n.at}`, at: n.at, who: null, from, to });
       continue;
     }
     const day = n.at.slice(0, 10);

@@ -45,6 +45,12 @@ describe('what changed', () => {
     expect(versionNews('26.3', '26.3', 'T')).toEqual([]);
     expect(versionNews('26.3', '26.4', 'T')).toEqual([{ kind: 'version', at: 'T', from: '26.3', to: '26.4' }]);
   });
+
+  it('takes a new build of the same version for no news, and tells a version without its build', () => {
+    expect(versionNews('26.3 (220)', '26.3 (222)', 'T')).toEqual([]);
+    expect(versionNews('26.3 (222)', '26.3', 'T')).toEqual([]);
+    expect(versionNews('26.3 (222)', '26.4 (1)', 'T')).toEqual([{ kind: 'version', at: 'T', from: '26.3', to: '26.4' }]);
+  });
 });
 
 describe('the version', () => {
@@ -62,6 +68,13 @@ describe('the version', () => {
     await noteServerVersion({ source: 'mcsrvstat', version: 'Paper 26.5' });
     await noteServerVersion({ source: 'exaroton' });
     expect(store.get('server:version')).toBe('26.5');
+    expect(await readServerNews()).toEqual([]);
+  });
+
+  it('keeps exaroton\'s build out of what it remembers', async () => {
+    store.set('server:version', '26.3 (220)');
+    await noteServerVersion({ source: 'exaroton', version: '26.3 (222)' });
+    expect(store.get('server:version')).toBe('26.3');
     expect(await readServerNews()).toEqual([]);
   });
 });
@@ -113,5 +126,13 @@ describe('on the board', () => {
     expect(today.kind === 'shelf' && today.packs.map(x => `${x.name}:${x.added ? `new ${x.version}` : `${x.was}>${x.version}`}`)).toEqual(['Nýr:new 0.2', 'MVP:1.0>1.2']);
     expect(today.kind === 'shelf' && today.packs[0].glyph).toHaveLength(12);
     expect(items.every(i => inFilter(i, 'vidburdir') && !inFilter(i, 'kortid'))).toBe(true);
+  });
+
+  it('drops a slip told before builds were set aside, when only the build moved', () => {
+    const items = boardItems({ ...base, server: [
+      { kind: 'version', at: at(1), from: '26.3 (220)', to: '26.3 (222)' },
+      { kind: 'version', at: at(2), from: '26.2 (40)', to: '26.3 (1)' },
+    ] });
+    expect(items.map(i => i.kind === 'version' && `${i.from}>${i.to}`)).toEqual(['26.2>26.3']);
   });
 });
