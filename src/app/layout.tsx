@@ -68,7 +68,9 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="is" className={`${display.variable} ${text.variable} ${data.variable}`}>
+    /* data-scroll-behavior: globals.css scrolls smoothly, and this keeps Next
+       from smooth-scrolling to the top on a route change */
+    <html lang="is" className={`${display.variable} ${text.variable} ${data.variable}`} data-scroll-behavior="smooth">
       <head>
         {/* Player portraits come from minotar; opening the connection while the
             page is still parsing saves a DNS + TLS round trip. mc-heads is only
