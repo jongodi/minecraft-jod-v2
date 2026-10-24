@@ -51,7 +51,12 @@ export interface BoardResponse {
 }
 
 /** What the door's lantern counts: when, and by whom (null for the server's own news). */
-export interface BoardStamp { at: string; who: string | null }
+export interface BoardStamp {
+  at: string;
+  who: string | null;
+  /** a reply's: the post it hangs under, which when itself new carries the reply's news */
+  under?: { at: string; who: string | null };
+}
 export interface BoardBrief { stamps: BoardStamp[] }
 
 /* ─── the filters ─────────────────────────────────────────────────────────── */
@@ -94,8 +99,11 @@ export function isNew(stamp: BoardStamp, seen: string | null, me: string | null 
   return Date.parse(stamp.at) > since;
 }
 
+/** How much is new, as the board itself counts it: a reply under a post
+    that is new is part of that post's news, not news of its own, so the
+    door's count and the board's line say the same number. */
 export const countNew = (stamps: BoardStamp[], seen: string | null, me: string | null | undefined, now = Date.now()) =>
-  stamps.reduce((n, s) => n + (isNew(s, seen, me, now) ? 1 : 0), 0);
+  stamps.reduce((n, s) => n + (isNew(s, seen, me, now) && !(s.under && isNew(s.under, seen, me, now)) ? 1 : 0), 0);
 
 /** When an item became news: when it reached the board, which for an
     advancement can be a day after the game's own moment. */
@@ -105,7 +113,7 @@ export const stampOf = (i: BoardItem): BoardStamp => ({ at: i.kind === 'advancem
     a post, since a reply under something older is news too. */
 export function stampsOf(items: BoardItem[]): BoardStamp[] {
   const out: BoardStamp[] = items.map(stampOf);
-  for (const i of items) if (i.kind === 'post') for (const r of i.entry.replies) out.push({ at: r.createdAt, who: r.username });
+  for (const i of items) if (i.kind === 'post') for (const r of i.entry.replies) out.push({ at: r.createdAt, who: r.username, under: { at: i.at, who: i.who } });
   return out;
 }
 
