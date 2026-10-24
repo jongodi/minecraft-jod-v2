@@ -216,15 +216,17 @@ export default function Board({ room = false, open = true, initial = null, initi
     return () => io.disconnect();
   }, [reveal, total, open]);
 
-  /* The red string: pinned across the board just above the first thing that
-     was already there when the visitor last looked, if anything came since.
-     A first look has no last time, so no string. */
+  /* The red string: pinned across the board under the last thing tagged Nýtt,
+     so all that came since the visitor last looked hangs above it. Placed by
+     when things happened, it could hang over an advancement that reached the
+     site with the next morning's copy, tagged new below it. A first look has
+     no last time, so no string. */
   const visible = shown.slice(0, reveal);
   const stringAt = useMemo(() => {
     if (!since || pictures) return null;
-    const t = Date.parse(since);
-    const first = shown.findIndex(i => Date.parse(i.at) <= t);
-    return first > 0 && shown.slice(0, first).some(i => fresher(i)) ? shown[first].id : null;
+    let last = -1;
+    shown.forEach((i, n) => { if (fresher(i)) last = n; });
+    return last >= 0 && last + 1 < shown.length ? shown[last + 1].id : null;
   }, [since, shown, pictures, fresher]);
 
   const H = room ? 'h3' : 'h2';
