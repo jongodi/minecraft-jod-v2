@@ -1031,7 +1031,30 @@ The machine ran slower and noisier than it did for Part 13: the commit before ma
 
 ---
 
-## Part 15. The server's own news
+## Part 15. Kvöldið í tölum
+
+Idea 4 of the brainstorm of 24 October 2026, on `feat/night-in-numbers`. The day after a play night, the daily job already reads the stats copies either side of the evening to settle who came, and threw the rest of the difference away; the annals told who and showed the pictures, and nothing of what the evening did.
+
+| Where | What | Why, in one sentence |
+|---|---|---|
+| The embers, the morning after | **A slip torn off by the fire**: the evening's totals as a poster lists its rewards (hours in the world all together, deaths, mobs felled, distance on foot), the night's outlaws in red under the board's names (*Draugur*, *Slátrari* and *Flakkari kvöldsins*), and the advancements given that evening in the game's frames. | The morning after is when the crew looks back at the night, and the embers are the one place the night is shown for its first week. |
+| The annals | The same slip in each evening, under who came. | The night is kept with its numbers once the embers burn out. |
+| The daily job | Counted when the night is settled and kept with it (`src/lib/night-numbers.ts`): each member's difference between the copies, and the advancements those who came were given from half an hour before the chosen time to the end of the evening, to the minute. Nights settled before are counted once, on the next run that can read the advancements, from the same copies (kept 400 days). | No extra read when the page is drawn, and the night keeps the numbers it had even when the copies change or expire. |
+
+### Rules kept
+
+- **An outlaw of the night only where one led outright**, of two or more counted, with more than nothing: two who died four times each make no ghost of the night, and one alone is no one's outlaw.
+- **Honest about the window**: the totals run from one daily copy to the next, so the slip says they are from the game's daily numbers before and after the evening; the advancements are the evening's own.
+- **A member missing from a copy, or whose counter went down** (a stats file started over), is left out of the totals rather than counted wrong.
+- **Only the summary goes to the page**; each member's counters stay on the server.
+
+### Measured
+
+Seven new tests (405 in all, from 398): the tally and its edges, the evening's advancements, the summary and its outlaw rule, the settlement keeping the numbers and the embers showing them, and earlier nights counted once in the fires and the annals. Seen at 390 and 1440 against a local Redis with staged nights: no sideways scroll, no console errors, and a night that was never counted shows no slip.
+
+---
+
+## Part 16. The server's own news
 
 Idea 2 of the brainstorm on 24 October 2026, asked for the same day: Taflan says it carries everything that happens on JOÐ, but the two changes that most affect how the crew plays, a new version of the game and a new or updated pack on the shelf, were never on it.
 
@@ -1049,4 +1072,4 @@ How it notices, in `src/lib/server-news.ts`: the version from each live status r
 
 ### Checked
 
-`tsc`, `next lint` and the build are clean; 404 tests, 6 of them new (what counts as news, the version told once by two readers at once and never from the public lookup, the first look only remembering, a day of the shelf on one slip). In a production build against a local Redis, through the admin panel itself: the first change only remembered the shelf; a version moved, a pack added hidden and later shown, and a second version moved came out as one slip of three lines; the slips stood under Viðburðir and in the door's count, at 1440 and 390 with no sideways scroll and no console errors.
+`tsc`, `next lint` and the build are clean; 411 tests with Part 15's, 6 of them new here (what counts as news, the version told once by two readers at once and never from the public lookup, the first look only remembering, a day of the shelf on one slip). In a production build against a local Redis, through the admin panel itself: the first change only remembered the shelf; a version moved, a pack added hidden and later shown, and a second version moved came out as one slip of three lines; the slips stood under Viðburðir and in the door's count, at 1440 and 390 with no sideways scroll and no console errors.

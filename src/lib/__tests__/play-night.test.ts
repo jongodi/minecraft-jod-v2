@@ -7,6 +7,7 @@ const hashes = new Map<string, Map<string, string>>();
 const sets = new Map<string, Set<string>>();
 const hash = (k: string) => { if (!hashes.has(k)) hashes.set(k, new Map()); return hashes.get(k)!; };
 vi.mock('@/lib/redis', () => ({
+  rGet: async (k: string) => (kv.has(k) ? JSON.parse(kv.get(k)!) : null),
   getRedis: () => ({
     get: async (k: string) => kv.get(k) ?? null,
     del: async (k: string) => (kv.delete(k) ? 1 : 0),
@@ -275,7 +276,72 @@ describe('/api/playnight', () => {
     expect(JSON.parse(hash('playnight:past').get(first.id)!)).toEqual({
       id: first.id, by: 'stebbias', note: '', at: '2026-10-01T20:00:00.000Z',
       yes: ['AmmaGaur', 'stebbias'], came: ['AmmaGaur'], noShows: ['stebbias'], startedBy: null,
+      numbers: { by: { AmmaGaur: { ticks: 0, deaths: 0, mobKills: 0, travelCm: 0 } }, advancements: [] },
     });
+  });
+
+  it('keeps what the game counted of the evening, and shows it on the embers', async () => {
+    await post({ action: 'propose', times: ['2026-10-01T20:00:00Z'] });
+    const [first] = (await view()).nights;
+    session = 'AmmaGaur';
+    await post({ action: 'vote', night: first.id, yes: ['a'] });
+    vi.setSystemTime(new Date('2026-10-01T21:00:00Z'));
+    await lib.noteSeen(['AmmaGaur', 'stebbias']);
+
+    const T = 72000;
+    kv.set('stats:day:2026-10-01', JSON.stringify({ day: '2026-10-01', takenAt: '2026-10-01T12:05:00Z', failed: [], counters: {
+      stebbias: { playTimeTicks: 10 * T, deaths: 5, mobKills: 100, travelCm: 1_000_000 },
+      AmmaGaur: { playTimeTicks: 2 * T, deaths: 0, mobKills: 10, travelCm: 0 },
+    } }));
+    kv.set('stats:day:2026-10-02', JSON.stringify({ day: '2026-10-02', takenAt: '2026-10-02T12:05:00Z', failed: [], counters: {
+      stebbias: { playTimeTicks: 13 * T, deaths: 11, mobKills: 140, travelCm: 2_200_000 },
+      AmmaGaur: { playTimeTicks: 4 * T, deaths: 2, mobKills: 70, travelCm: 500_000 },
+    } }));
+    /* the advancements as the daily job read them just before: one of the evening's, one from before it */
+    kv.set('adv:crew', JSON.stringify({ readAt: '2026-10-02T12:05:00Z', players: {
+      AmmaGaur: { 'minecraft:story/mine_diamond': '2026-10-01T22:15:00.000Z', 'minecraft:story/smelt_iron': '2026-09-01T20:00:00.000Z' },
+    } }));
+
+    vi.setSystemTime(new Date('2026-10-02T12:10:00Z'));
+    await lib.settleNights();
+    const [embers] = (await view()).nights;
+    expect(embers.phase).toBe('over');
+    expect(embers.numbers).toEqual({
+      hours: 5, deaths: 8, mobKills: 100, travelCm: 1_700_000,
+      outlaws: [
+        { nick: 'Draugur kvöldsins', charge: 'deaths', username: 'stebbias', value: 6 },
+        { nick: 'Slátrari kvöldsins', charge: 'mobKills', username: 'AmmaGaur', value: 60 },
+        { nick: 'Flakkari kvöldsins', charge: 'travelCm', username: 'stebbias', value: 1_200_000 },
+      ],
+      advancements: [{ username: 'AmmaGaur', title: 'Demantar!', description: 'Eignast demanta', frame: 'task' }],
+    });
+    /* the page is given the summary, never each member's counters */
+    expect(JSON.stringify(embers)).not.toContain('ticks');
+  });
+
+  it('counts nights settled before the numbers were kept, once, in the fires and the annals', async () => {
+    const H = 3600_000;
+    const at = Date.parse('2026-09-20T20:00:00Z');
+    const held = night({ id: 'old', chosen: 'a', options: [{ id: 'a', at: iso(at) }], outcome: { came: ['stebbias'], noShows: [] } });
+    hash('playnight:nights').set('old', JSON.stringify(held));
+    hash('playnight:past').set('older', JSON.stringify({ id: 'older', by: 'stebbias', note: '', at: iso(at - 7 * 24 * H), yes: [], came: ['stebbias'], noShows: [], startedBy: null }));
+    const copy = (day: string, deaths: number) => kv.set(`stats:day:${day}`, JSON.stringify({ day, takenAt: `${day}T12:05:00Z`, failed: [], counters: { stebbias: { playTimeTicks: deaths * 1000, deaths } } }));
+    copy('2026-09-20', 3); copy('2026-09-21', 7);
+    copy('2026-09-13', 1); copy('2026-09-14', 2);
+
+    vi.setSystemTime(new Date('2026-09-25T12:10:00Z'));
+    /* not while the advancements can't be read: they would be missing for good */
+    expect(await lib.settleNights()).toEqual([]);
+    expect(JSON.parse(hash('playnight:nights').get('old')!).outcome.numbers).toBeUndefined();
+    kv.set('adv:crew', JSON.stringify({ readAt: '2026-09-25T12:05:00Z', players: {} }));
+    expect(await lib.settleNights()).toEqual([]);
+    expect(JSON.parse(hash('playnight:nights').get('old')!).outcome.numbers.by).toEqual({ stebbias: { ticks: 4000, deaths: 4, mobKills: 0, travelCm: 0 } });
+    expect(JSON.parse(hash('playnight:past').get('older')!).numbers.by).toEqual({ stebbias: { ticks: 1000, deaths: 1, mobKills: 0, travelCm: 0 } });
+
+    /* counted once: copies that change later change nothing */
+    copy('2026-09-21', 70);
+    await lib.settleNights();
+    expect(JSON.parse(hash('playnight:nights').get('old')!).outcome.numbers.by.stebbias.deaths).toBe(4);
   });
 
   it('keeps every night held in the annals, newest first, and none put out', async () => {
