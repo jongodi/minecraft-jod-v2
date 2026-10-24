@@ -28,6 +28,8 @@ const nextConfig = {
      is hundreds of MB. */
   outputFileTracingExcludes: {
     '*': ['**/public/bluemap/**', '**/public/bluemap-data/**'],
+    /* the card seen from the air reads the flight's wide stills only; the tracer takes the whole folder */
+    '/stadur/[id]/opengraph-image': ['./public/map-flight/tall-*.webp'],
   },
 
   /* The link cards (and the pictures atop the letters) read their fonts and pictures by paths built at run time,

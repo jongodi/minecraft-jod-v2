@@ -56,9 +56,9 @@ async function printBytes(filename: string): Promise<{ bytes: Uint8Array; type: 
     return { bytes: new Uint8Array(await fs.readFile(path.join(process.cwd(), 'public', 'map-poster.webp'))), type: 'image/webp' };
   }
   /* a still of the flight down, for a place's card seen from the air (src/app/stadur/[id]) */
-  const still = /^\/map-flight\/((?:wide|tall)-\d{1,3}\.webp)(?:\?v=[\w-]+)?$/.exec(filename);
+  const still = /^\/map-flight\/wide-(\d{1,3})\.webp(?:\?v=[\w-]+)?$/.exec(filename);
   if (still) {
-    return { bytes: new Uint8Array(await fs.readFile(path.join(process.cwd(), 'public', 'map-flight', still[1]))), type: 'image/webp' };
+    return { bytes: new Uint8Array(await fs.readFile(path.join(process.cwd(), 'public', 'map-flight', `wide-${still[1]}.webp`))), type: 'image/webp' };
   }
   if (filename.startsWith('/screenshots/')) {
     const file = path.join(process.cwd(), 'public', 'screenshots', path.basename(filename));
