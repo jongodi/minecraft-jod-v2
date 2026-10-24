@@ -62,7 +62,7 @@ function Crew({ server }: { server: ServerState }) {
             the night, on the board) read as three things broken. */}
         <p className="b-note b-crew__who" aria-live="polite">
           {online === null ? 'athuga hver er inni' :
-           online ? (inside === 0 ? 'þjónninn er opinn en enginn kominn inn enn' : `${inside} úr hópnum inni núna${guests ? `, gestir: ${guests}` : ''}`) :
+           online ? (inside === 0 ? (guests ? `enginn úr hópnum inni, gestir: ${guests}` : 'þjónninn er opinn en enginn kominn inn enn') : `${inside} úr hópnum inni núna${guests ? `, gestir: ${guests}` : ''}`) :
            life === 'starting' || life === 'restarting' ? 'þjónninn er að vakna, komdu inn eftir augnablik' :
            life === 'stopping' ? 'þjónninn er að slokkna' :
            life === 'unknown' ? 'næ ekki sambandi við þjóninn í augnablikinu' :
