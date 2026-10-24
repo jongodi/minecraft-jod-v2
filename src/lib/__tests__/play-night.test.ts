@@ -148,6 +148,16 @@ describe('/api/playnight', () => {
     expect(v.nights[0].options[1].yes).toEqual(['AmmaGaur', 'stebbias']);
   });
 
+  it('tells a no from no answer at all', async () => {
+    await post({ action: 'propose', times: ['2026-10-02T20:00:00Z'] });
+    const id = (await view()).nights[0].id;
+    session = 'joenana';
+    await post({ action: 'vote', night: id, yes: [] });
+    const v = await view();
+    expect(v.nights[0].answered).toEqual(['joenana', 'stebbias']);
+    expect(v.nights[0].options[0].yes).toEqual(['stebbias']);
+  });
+
   it('holds up to five nights at once, soonest first, never two on one evening', async () => {
     for (const d of ['2026-12-18', '2026-10-09', '2026-11-13', '2026-10-16']) {
       expect((await post({ action: 'propose', times: [`${d}T20:00:00Z`] })).status).toBe(200);
