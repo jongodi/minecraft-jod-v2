@@ -7,7 +7,7 @@ import type { ChatResponse } from '@/app/api/chat/route';
 import { plural } from '@/lib/format';
 import { CREW } from './data';
 import type { ServerState } from './hooks';
-import { isLive, modalOpen, useMediaQuery } from './hooks';
+import { isLive, modalOpen, showWorld, useMediaQuery } from './hooks';
 
 /* When the chat was last read in this browser: the newest line it printed. */
 const SEEN_KEY = 'jod-chat-seen-v1';
@@ -156,11 +156,7 @@ function Chat({ active, covered, server, onOpen }: Props) {
       if (e.key === 'Escape' && open) { e.preventDefault(); e.stopImmediatePropagation(); setOpen(false); return; }
       if (e.key.toLowerCase() !== 't' || e.shiftKey || covered) return;
       e.preventDefault();
-      if (!open) {
-        const world = document.getElementById('heimur');
-        const top = world?.getBoundingClientRect().top ?? 0;
-        if (world && Math.abs(top) > 8) world.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
-      }
+      if (!open) showWorld();
       toggle();
     };
     /* in the capture phase, so an Escape that closes the chat reaches no other layer */

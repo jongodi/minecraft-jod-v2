@@ -511,6 +511,12 @@ export function useBackCloses(open: boolean, close: () => void): void {
     and the number keys are its own then: one press closes one layer. */
 export const modalOpen = () => document.querySelector('[aria-modal="true"]') !== null;
 
+/** Brings the world into view: landed, where the camera's flight down runs
+    (the world's scroll-margin-top in badlands.css). Smooth unless the visitor
+    asked for less motion, asked of the browser at the moment of scrolling. */
+export function showWorld(smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches): void {
+  document.getElementById('heimur')?.scrollIntoView({ block: 'start', behavior: smooth ? 'smooth' : 'auto' });
+}
 
 export function useInert<T extends HTMLElement>(inert: boolean): React.RefObject<T> {
   const ref = useRef<T>(null);

@@ -20,7 +20,7 @@ import { useLivePlayers } from './livePlayers';
 import { FLIGHT, headingOf } from '@/lib/map-flight';
 import { CREW, FACING, MAP_LIGHTS, MAP_POSTER, MAP_URL, SITE_NAME, handCase, plainClick, titleCase, type Plate, type RoomId } from './data';
 import type { ServerState } from './hooks';
-import { modalOpen, useEffectsAllowed, useInert, useMediaQuery, useReducedMotionPref, useRoomForEffects } from './hooks';
+import { modalOpen, showWorld, useEffectsAllowed, useInert, useMediaQuery, useReducedMotionPref, useRoomForEffects } from './hooks';
 import { photoProps, PHOTO_SIZES } from './photo';
 import { toast } from './Toast';
 
@@ -181,7 +181,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
     setSelect(wanted);
     const t = setTimeout(() => revealRailItem(wanted, places.current), 300);
     /* a shared link whose chat dropped the #heimur: the postcard is down in the world */
-    if (fromPath && !window.location.hash) document.getElementById('heimur')?.scrollIntoView({ block: 'start' });
+    if (fromPath && !window.location.hash) showWorld(false);
     return () => clearTimeout(t);
   // once, on arrival; places is a ref
   // eslint-disable-next-line react-hooks/exhaustive-deps

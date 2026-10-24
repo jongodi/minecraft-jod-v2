@@ -1215,7 +1215,13 @@
    frame lets go and goes on up with the page. The whole screen (.is-full)
    stays fixed over the page, as it always was. */
 .b-world.has-flight .b-frame:not(.is-full) { position: sticky; top: var(--bar); }
-.b-world__runway { height: 110svh; }
+/* Where the flight runs, the world's top for a scroll to it (a door, T, Back
+   out of a room, a /#heimur link) is the far end of its runway: landed, the
+   frame over the town with its lights on. Its own top is the flight's start,
+   high over everything, and every door pressed after landing flew the camera
+   all the way back up there. From above, the scroll down is the flight itself. */
+.b-world.has-flight { scroll-margin-top: calc(var(--bar) - 110svh); }
+.b-world__runway { height: 110svh; }   /* the world's scroll-margin-top lands past it */
 /* Two sheets, each a frame at the size it was taken, moved and faded by
    Flight.tsx: transform and opacity only, each on its own layer, so the
    scroll moves layers and paints nothing between frames. The night is under
