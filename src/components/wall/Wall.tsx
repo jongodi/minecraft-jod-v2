@@ -529,7 +529,8 @@ export default function Wall({ initial, places, initialStats = null, initialLed 
 
         <section className="w-wall" aria-label="Veggurinn">
           {profile.entries.length === 0 ? (
-            <p className="b-empty w-wall__empty">
+            /* the bar and its chains, with nothing hung on them yet */
+            <p className="w-sign w-wall__empty">
               {isOwner ? 'veggurinn er auður; hentu inn skjámynd eða skrifaðu miða hér fyrir ofan' : `${username} hefur ekki fest neitt upp enn`}
             </p>
           ) : (
