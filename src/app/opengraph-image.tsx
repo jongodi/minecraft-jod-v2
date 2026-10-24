@@ -15,8 +15,11 @@ const C = {
   lantern: '#F2A63B', night: '#15100D', sun: '#F4D394',
 };
 const FONT_DIR = join(process.cwd(), 'node_modules/@fontsource');
-/* The name's cut (badlands.css, .b-hero__mark): three pixels a band at this size. */
-const STRATA_CUT = [C.white, C.yellow, C.orange, C.red, C.brown].map((c, i) => `0 ${(i + 1) * 3}px 0 ${c}`).join(', ') + `, 0 21px 0 rgba(21, 16, 13, 0.35)`;
+/* The name's cut (badlands.css, .b-hero__mark): three pixels a band at this size.
+   Drawn as copies of the name set lower and lower behind it, which is what a
+   sharp text-shadow is: the Satori in Next 16 draws only the last shadow of a list. */
+const STRATA_CUT = [...[C.white, C.yellow, C.orange, C.red, C.brown].map((c, i) => ({ y: (i + 1) * 3, c })), { y: 21, c: 'rgba(21, 16, 13, 0.35)' }];
+const NAME = { fontSize: 230, lineHeight: 0.9, display: 'flex' } as const;
 
 export default async function Image() {
   const [display, data] = await Promise.all([
@@ -45,7 +48,10 @@ export default async function Image() {
             <div style={{ fontSize: 44, color: C.paper, display: 'flex' }}>{SITE_NAME} · Minecraft-heimurinn okkar</div>
           </div>
           {/* cut from the strata, as the hero sets it: the five clays under every edge that faces down */}
-          <div style={{ fontSize: 230, lineHeight: 0.9, color: C.paper, marginTop: 20, display: 'flex', textShadow: STRATA_CUT }}>JOÐ</div>
+          <div style={{ marginTop: 20, display: 'flex', position: 'relative' }}>
+            {[...STRATA_CUT].reverse().map(({ y, c }) => <div key={y} style={{ ...NAME, position: 'absolute', left: 0, top: y, color: c }}>JOÐ</div>)}
+            <div style={{ ...NAME, color: C.paper }}>JOÐ</div>
+          </div>
           <div style={{ marginTop: 28, display: 'flex', alignItems: 'center', padding: '14px 26px', border: `4px solid ${C.lantern}`, background: 'rgba(21, 16, 13, 0.55)', color: C.lantern, fontFamily: 'Silkscreen', fontSize: 40 }}>{SERVER_IP}</div>
         </div>
       </div>

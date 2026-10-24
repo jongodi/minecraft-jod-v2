@@ -30,7 +30,7 @@ function Shelf({ version }: { version: string | null }) {
   /* The label stays on the counter for a moment after the pointer leaves a
      crate, so walking along the shelf reads as one slip replacing another
      rather than the stock list flashing up between every two. */
-  const leaving = useRef<ReturnType<typeof setTimeout>>();
+  const leaving = useRef<ReturnType<typeof setTimeout>>(undefined);
   const point = (id: number) => { clearTimeout(leaving.current); setPointed(id); };
   const unpoint = (id: number) => {
     clearTimeout(leaving.current);

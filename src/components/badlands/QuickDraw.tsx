@@ -56,7 +56,7 @@ function QuickDraw({ onClose }: { onClose: () => void }) {
   const [round, setRound] = useState(0);
   const [best,  setBest]  = useState<number | null>(null);
   const [hole,  setHole]  = useState<{ x: number; y: number } | null>(null);
-  const timer = useRef<ReturnType<typeof setTimeout>>();
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const t0    = useRef(0);
   const fired = useRef(false);
 

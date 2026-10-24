@@ -3,7 +3,7 @@ import { ADMIN_COOKIE, isValidAdminToken } from '@/lib/auth';
 
 const ADMIN_PAGE_ROUTES = ['/admin'];
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   const isAdminPage = ADMIN_PAGE_ROUTES.some(

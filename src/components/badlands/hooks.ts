@@ -178,7 +178,7 @@ export function useScrollLock(active = true): void {
     `copied` flips back after a couple of seconds either way. */
 export function useCopy(text: string, { toast: withToast = true }: { toast?: boolean } = {}): [boolean, () => void] {
   const [copied, setCopied] = useState(false);
-  const timer = useRef<ReturnType<typeof setTimeout>>();
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const copy = useCallback(() => {
     const done = () => {
       setCopied(true);
@@ -454,7 +454,7 @@ export function landFocus(to: HTMLElement | null): void {
     (unless a field inside already took it with autoFocus), Tab goes round
     inside it, and focus goes back to whatever opened it when it closes, so a
     keyboard user is never left tabbing through the page hidden behind it. */
-export function useDialogFocus<T extends HTMLElement>(ref: React.RefObject<T>): void {
+export function useDialogFocus<T extends HTMLElement>(ref: React.RefObject<T | null>): void {
   /* read while rendering: by the time an effect runs, a field inside with
      autoFocus has taken focus and would be remembered as the opener */
   const [opener] = useState(() => (typeof document === 'undefined' ? null : document.activeElement as HTMLElement | null));
@@ -541,7 +541,7 @@ export function showWorld(smooth = !window.matchMedia('(prefers-reduced-motion: 
   document.getElementById('heimur')?.scrollIntoView({ block: 'start', behavior: smooth ? 'smooth' : 'auto' });
 }
 
-export function useInert<T extends HTMLElement>(inert: boolean): React.RefObject<T> {
+export function useInert<T extends HTMLElement>(inert: boolean): React.RefObject<T | null> {
   const ref = useRef<T>(null);
   useEffect(() => {
     const el = ref.current as (T & { inert: boolean }) | null;
