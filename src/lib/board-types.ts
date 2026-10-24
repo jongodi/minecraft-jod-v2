@@ -81,6 +81,8 @@ export function inFilter(item: BoardItem, f: BoardFilter): boolean {
 
 /** On a first look, with nothing seen yet, what came in these last days is new. */
 export const FIRST_LOOK_MS = 3 * 86_400_000;
+/** The same window in words, for a board that has no last look to count from. */
+export const FIRST_LOOK_WORDS = 'síðustu þrjá daga';
 
 /** Whether something is new to the one looking: posted after they last
     looked, and not by them. With nothing seen yet, the last few days are,

@@ -8,7 +8,7 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import type { CrewEntry } from '@/lib/crew-types';
 import { bountyState, mentionsIn, sameUser } from '@/lib/crew-types';
-import { FILTERS, byDay, dayLabel, inFilter, isNew, newReplies, newestAt, replay, stampOf, stampsOf, type BoardEdit as Edit, type BoardFilter, type BoardItem, type BoardResponse } from '@/lib/board-types';
+import { FILTERS, FIRST_LOOK_WORDS, byDay, dayLabel, inFilter, isNew, newReplies, newestAt, replay, stampOf, stampsOf, type BoardEdit as Edit, type BoardFilter, type BoardItem, type BoardResponse } from '@/lib/board-types';
 import { formatDate, plural } from '@/lib/format';
 import { useCrewSession, useMounted, type CrewSessionSeed } from '@/components/badlands/hooks';
 import { NightLine } from '@/components/badlands/NightLine';
@@ -233,9 +233,10 @@ export default function Board({ room = false, open = true, initial = null, initi
       <div className="t-board__main">
         <div className="t-board__head">
           <p className="t-board__news" aria-live="polite">
+            {/* a first look has no last time: what is new then is what came in the last few days (FIRST_LOOK_MS) */}
             {data === null ? (failed ? '' : 'sæki töfluna…') :
-             newCount > 0 ? <><b>{newCount} {plural(newCount, 'nýtt', 'ný')}</b> síðan þú leist síðast við</> :
-             looked ? 'Ekkert nýtt síðan þú leist síðast við' : ''}
+             newCount > 0 ? <><b>{newCount} {plural(newCount, 'nýtt', 'ný')}</b> {since ? 'síðan þú leist síðast við' : FIRST_LOOK_WORDS}</> :
+             looked ? `Ekkert nýtt ${since ? 'síðan þú leist síðast við' : FIRST_LOOK_WORDS}` : ''}
           </p>
           <div className="t-filters" role="group" aria-label="Sýna">
             {FILTERS.map(f => (
