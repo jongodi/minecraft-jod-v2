@@ -7,7 +7,7 @@ import type { ChatResponse } from '@/app/api/chat/route';
 import { plural } from '@/lib/format';
 import { CREW } from './data';
 import type { ServerState } from './hooks';
-import { modalOpen, useMediaQuery } from './hooks';
+import { isLive, modalOpen, showWorld, useMediaQuery } from './hooks';
 
 /* When the chat was last read in this browser: the newest line it printed. */
 const SEEN_KEY = 'jod-chat-seen-v1';
@@ -21,7 +21,7 @@ const FIRST_MS = 900;
 const LOG_KEEP = 20;
 
 const keyOf = (l: ChatLine) => `${l.kind}|${l.name}|${l.at}|${'text' in l ? l.text : 'title' in l ? l.title : ''}`;
-const prints = (n: number) => (n === 1 ? '[mynd]' : `[${n} myndir]`);
+const prints = (n: number) => (n === 1 ? '[mynd]' : `[${n} ${plural(n, 'mynd', 'myndir')}]`);
 
 /* The sentence the game prints, in its Icelandic (Mojang's is_is.json):
    chat.type.text, chat.type.advancement.*, multiplayer.player.joined/left.
@@ -98,11 +98,12 @@ function Chat({ active, covered, server, onOpen }: Props) {
   }, []);
 
   /* Who comes in and goes out while the page is open: the crew in the
-     status's player list, compared answer to answer. The first answer is
-     where the page starts, not news. */
+     status's player list, compared answer to answer. The first live answer
+     is where the page starts, not news; one that never came, or a cached
+     page's from long before, is neither (isLive). */
   const before = useRef<string[] | null>(null);
   useEffect(() => {
-    if (server.checkedAt === null || server.online === null) return;
+    if (!isLive(server) || server.checkedAt === null) return;
     const lower = server.online ? server.list.map(n => n.toLowerCase()) : [];
     const now = CREW.filter(n => lower.includes(n.toLowerCase()));
     if (before.current !== null) {
@@ -110,7 +111,7 @@ function Chat({ active, covered, server, onOpen }: Props) {
       if (news.length) setLog(cur => [...cur, ...news].slice(-LOG_KEEP));
     }
     before.current = now;
-  }, [server.checkedAt, server.online, server.list]);
+  }, [server]);
 
   /* In the world, whatever has not been printed is printed, one line after
      another, and the newest of it is remembered as read. */
@@ -155,11 +156,7 @@ function Chat({ active, covered, server, onOpen }: Props) {
       if (e.key === 'Escape' && open) { e.preventDefault(); e.stopImmediatePropagation(); setOpen(false); return; }
       if (e.key.toLowerCase() !== 't' || e.shiftKey || covered) return;
       e.preventDefault();
-      if (!open) {
-        const world = document.getElementById('heimur');
-        const top = world?.getBoundingClientRect().top ?? 0;
-        if (world && Math.abs(top) > 8) world.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
-      }
+      if (!open) showWorld();
       toggle();
     };
     /* in the capture phase, so an Escape that closes the chat reaches no other layer */
@@ -170,7 +167,15 @@ function Chat({ active, covered, server, onOpen }: Props) {
   const lines: Printed[] = open ? log.map(line => ({ line, key: keyOf(line), inMs: 0, outMs: 0, until: Infinity })) : shown;
   const held = open ? 0 : Math.max(0, lines.length - most);
   const visible = open ? lines : lines.slice(-most);
-  if (!visible.length && !open) return null;
+  /* The log stands even with nothing in it, so a screen reader hears each
+     line as it comes: a log put on the page already holding its first lines
+     is not read out. Closed from its own button, the keyboard goes to the
+     world's name rather than to the top of the page. */
+  const shut = () => {
+    setOpen(false);
+    const name = document.getElementById('heimur-title');
+    if (name) { if (!name.hasAttribute('tabindex')) name.setAttribute('tabindex', '-1'); name.focus({ preventScroll: true }); }
+  };
 
   return (
     <div className={`b-chat${open ? ' is-open' : ''}`} role="log" aria-label="Spjall">
@@ -186,7 +191,7 @@ function Chat({ active, covered, server, onOpen }: Props) {
           <Words line={s.line} />
         </Link>
       ))}
-      {open && <button type="button" className="b-btn b-btn--small b-btn--ghost b-chat__close" onClick={() => setOpen(false)}>Loka spjallinu</button>}
+      {open && <button type="button" className="b-btn b-btn--small b-btn--ghost b-chat__close" onClick={shut}>Loka spjallinu</button>}
     </div>
   );
 }

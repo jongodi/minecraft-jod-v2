@@ -141,7 +141,8 @@ export default memo(function Print({ username, entry, places, me, isOwner, cover
       const res = await api('/replies', { method: 'POST', body: JSON.stringify({ text: reply }) });
       if (!res.ok) throw new Error(await errorFrom(res));
       const r = await res.json() as CrewEntry['replies'][number];
-      onChange(entry.id, e => ({ ...e, replies: [...e.replies, r] }));
+      /* once: a board whose fetch read the walls after this reply went up does this again on what it brought */
+      onChange(entry.id, e => (e.replies.some(x => x.id === r.id) ? e : { ...e, replies: [...e.replies, r] }));
       setReply('');
     } catch (err) { setError(failure(err, 'Svarið komst ekki upp.')); }
     finally { setReplying(false); }
@@ -245,11 +246,11 @@ export default memo(function Print({ username, entry, places, me, isOwner, cover
         <time className="b-tip" dateTime={entry.createdAt} data-tip={date(entry.createdAt)}>{age(entry.createdAt)}<span className="b-visually-hidden">, {date(entry.createdAt)}</span></time>
         {place && <Link href={`/stadur/${place.id}#heimur`} className="w-print__place">{place.label}</Link>}
         <button type="button" className={`w-lantern b-tip${lit ? ' is-lit' : ''}`} onClick={toggleLantern} disabled={!me || busyLantern}
-          aria-pressed={lit} aria-label={`Lukt undir færslunni${entry.lanterns.length ? `, ${entry.lanterns.length} ${plural(entry.lanterns.length, 'logar', 'loga')}` : ''}${me ? '' : '. Skráðu þig inn til að kveikja á lukt'}`}
+          aria-pressed={lit} aria-label={`Lukt undir færslunni${entry.lanterns.length ? `, ${entry.lanterns.length} ${plural(entry.lanterns.length, 'logar', 'loga')}: ${entry.lanterns.join(', ')}` : ', engin lukt enn'}${me ? '' : '. Skráðu þig inn til að kveikja á lukt'}`}
           data-tip={me ? (lit ? 'Slökkva á luktinni' : 'Kveikja á lukt') : 'Skráðu þig inn til að kveikja á lukt'}>
+          {/* who lit them is in the name above: a name replaces what is inside, so words hidden in here were never read */}
           <Lantern lit={lit || entry.lanterns.length > 0} />
           {entry.lanterns.length > 0 && <span>{entry.lanterns.length}</span>}
-          <span className="b-visually-hidden">{entry.lanterns.length ? `luktir: ${entry.lanterns.join(', ')}` : 'engin lukt enn'}</span>
         </button>
         <Hotbar gifts={gifts} panelId={inventoryId} plusRef={plusBtn} />
         {isOwner && !edit && (
@@ -280,7 +281,7 @@ export default memo(function Print({ username, entry, places, me, isOwner, cover
           {me && (
             <form className="w-reply__form" onSubmit={sendReply}>
               <span className="w-reply__head"><PlayerHead name={me} size={24} /></span>
-              <input className="w-reply__input" value={reply} onChange={e => setReply(e.target.value)} maxLength={LIMITS.reply} placeholder="Svara…" aria-label="Svara" />
+              <input className="w-reply__input" value={reply} onChange={e => setReply(e.target.value)} readOnly={replying} maxLength={LIMITS.reply} placeholder="Svara…" aria-label="Svara" />
               <button type="submit" className="b-btn b-btn--small" disabled={!reply.trim() || replying}>{replying ? '…' : 'Senda'}</button>
             </form>
           )}

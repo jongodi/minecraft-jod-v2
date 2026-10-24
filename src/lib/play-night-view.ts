@@ -10,6 +10,8 @@ export interface PublicNight {
   note: string;
   phase: Phase;
   options: { id: string; at: string; yes: string[] }[];
+  /** everyone who has answered, yes or no: a member left off it has not said */
+  answered: string[];
   chosen: string | null;
   chosenBy: string | null;
   /** when an unchosen night is decided on its own */
@@ -35,6 +37,7 @@ export const NO_NIGHTS: PlayNightResponse = { nights: [], me: null, max: MAX_PLA
 export const publicOf = ({ night, votes, seen }: NightState, now: number): PublicNight => ({
   id: night.id, by: night.by, note: night.note, phase: phaseOf(night, now),
   options: night.options.map(o => ({ ...o, yes: yesFor(votes, o.id) })),
+  answered: Object.keys(votes).sort((a, b) => a.localeCompare(b)),
   chosen: night.chosen, chosenBy: night.chosenBy,
   decidesAt: new Date(decidesAt(night)).toISOString(),
   startedBy: night.startedBy,

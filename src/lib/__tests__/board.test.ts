@@ -140,6 +140,17 @@ describe('what is new, and where it goes', () => {
     expect(countNew(stampsOf([post]), ago(24), 'stebbias', NOW)).toBe(1);
   });
 
+  it('counts a new post with its replies once, on the door as on the board', () => {
+    const post: BoardItem = { kind: 'post', id: 'p-e', at: ago(3), who: 'stebbias', wood: 'oak', entry: { id: 'e', text: 'nýtt', photos: [], placeId: null, createdAt: ago(3), lanterns: [], replies: [
+      { id: 'r1', username: 'joenana', text: 'hæ', createdAt: ago(2) },
+      { id: 'r2', username: 'AmmaGaur', text: 'hæ hæ', createdAt: ago(1) },
+    ] } };
+    /* to anyone else: one post, its replies part of it */
+    expect(countNew(stampsOf([post]), ago(24), 'IMlonely', NOW)).toBe(1);
+    /* the writer's own post is no news to them, but the replies under it are */
+    expect(countNew(stampsOf([post]), ago(24), 'stebbias', NOW)).toBe(2);
+  });
+
   it('makes changes again on a board fetched before them, and never puts a post up twice', () => {
     const entry = (id: string) => ({ id, text: id, photos: [], placeId: null, createdAt: ago(1), lanterns: [], replies: [] });
     const post = (id: string): Extract<BoardItem, { kind: 'post' }> => ({ kind: 'post', id: `p-${id}`, at: ago(1), who: 'joenana', wood: 'oak', entry: entry(id) });

@@ -1,4 +1,4 @@
-import { BlobNotFoundError } from '@vercel/blob';
+import { BlobAccessError, BlobClientTokenExpiredError, BlobNotFoundError, BlobStoreNotFoundError, BlobStoreSuspendedError } from '@vercel/blob';
 import { mainCopy, parseDataPath } from '@/lib/bluemap-snapshot';
 import { baseCopyFor } from '@/lib/bluemap-bases';
 import { contentTypeOf, readCopy } from '@/lib/bluemap-copy';
@@ -58,6 +58,18 @@ const FROM_SERVER = 'public, max-age=86400, s-maxage=2592000, stale-while-revali
 /* once the store has refused, it isn't asked again for every tile */
 const REFUSED_FOR = 5 * 60_000;
 let refusedUntil = 0;
+/* A store that says no (paused for going over the plan, a token that no
+   longer fits) refuses every tile alike. A hiccup on one tile (a 5xx, a
+   dropped connection, a range it would not cut) is that tile's alone: it is
+   read off the server, and the store is asked for the next, unless the
+   hiccups keep coming. One sent every tile on the instance to exaroton for
+   five minutes, which turns the viewer's dozens of tiles at once away. */
+const MISSES_TO_REFUSE = 5;
+let misses = 0;
+const refuses = (err: unknown) =>
+  err instanceof BlobStoreSuspendedError || err instanceof BlobAccessError ||
+  err instanceof BlobStoreNotFoundError || err instanceof BlobClientTokenExpiredError ||
+  (err instanceof Error && /blob: 40[13]\b/i.test(err.message));   // a public store's own words (bluemap-copy.ts), never a byte range's
 
 type Context = { params: Promise<{ path: string[] }> };
 
@@ -90,6 +102,7 @@ export async function GET(req: Request, { params }: Context): Promise<Response> 
   const cache = current ? FOREVER : FOUND_BRIEF;
   try {
     const file = await readCopy(path, current ? undefined : req.headers.get('if-none-match') ?? undefined, copy);
+    misses = 0;
     if (!file) return answer(404, current ? FOREVER : MISSING_BRIEF);
     const etag = file.etag ? { ETag: file.etag } : undefined;
     if (file.status === 304) return answer(304, cache, null, etag);
@@ -100,8 +113,14 @@ export async function GET(req: Request, { params }: Context): Promise<Response> 
     });
   } catch (err) {
     if (err instanceof BlobNotFoundError) return answer(404, current ? FOREVER : MISSING_BRIEF);
-    refusedUntil = Date.now() + REFUSED_FOR;
-    console.warn(`[bluemap-data] ${err instanceof Error ? err.message : err}; reading the map off the server for the next ${REFUSED_FOR / 60_000} minutes`);
+    const why = err instanceof Error ? err.message : String(err);
+    if (refuses(err) || ++misses >= MISSES_TO_REFUSE) {
+      refusedUntil = Date.now() + REFUSED_FOR;
+      misses = 0;
+      console.warn(`[bluemap-data] ${why}; reading the map off the server for the next ${REFUSED_FOR / 60_000} minutes`);
+    } else {
+      console.warn(`[bluemap-data] ${why}; reading /${path} off the server`);
+    }
     return fromServer(path);
   }
 }

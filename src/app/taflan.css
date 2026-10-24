@@ -249,7 +249,8 @@
 .t-side__list { list-style: none; display: grid; gap: var(--sp-1); }
 .t-side__item { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0 var(--sp-2); align-items: start; width: 100%; min-height: var(--tap); padding: var(--sp-1) 0; text-align: left; color: var(--ink); }
 .t-side__item img { grid-row: span 2; width: 1rem; height: 1rem; margin-top: 0.2rem; image-rendering: pixelated; }
-.t-side__what { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+/* two lines of what is asked before it gives way, so a question is read rather than guessed at */
+.t-side__what { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; font-weight: 600; }
 .t-side__pay { font-size: var(--fs-sm); color: var(--ink-soft); overflow-wrap: anywhere; }
 @media (hover: hover) { .t-side__item:hover .t-side__what { color: var(--lantern-ink); text-decoration: underline var(--px); text-underline-offset: 0.3em; } }
 .t-side__item:focus-visible { outline: var(--px) solid var(--lantern-ink); outline-offset: var(--px); }

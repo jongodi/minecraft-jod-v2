@@ -6,7 +6,7 @@ import { Moon, Sun } from './Bits';
 import CopyAddress from './CopyAddress';
 import StatusLantern from './StatusLantern';
 import { NightLine } from './NightLine';
-import type { ServerState } from './hooks';
+import { isLive, type ServerState } from './hooks';
 import type { Season } from '@/lib/season';
 import type { PlayNightResponse } from '@/app/api/playnight/route';
 import { YuleLad, useMoonPhase } from './Season';
@@ -20,8 +20,8 @@ import { useRoster } from './roster';
    It pops as it comes, as the game's swells, once rather than for as long
    as the page is open; a press brings the next, so every fact can be read. */
 const SPLASHES = ['Aldrei endurræst!', 'Átta vinir!', 'Frá sumrinu 2024!', 'Aðgangur með boði!', 'Badlands við sólsetur!', 'Með armadillo!'];
-/* the hotbar's keys, said only where there is likely a keyboard to press them on */
-const KEYS_SPLASH = 'Ýttu á 1, 2 eða 3!';
+/* the hotbar's keys, one to a door (AddressBar.tsx), said only where there is likely a keyboard to press them on */
+const KEYS_SPLASH = 'Ýttu á 1, 2, 3 eða 4!';
 
 const shuffled = <T,>(a: T[]): T[] => {
   const b = [...a];
@@ -82,8 +82,8 @@ function Hero({ server, season, nights }: { server: ServerState; season: Season;
   const home = server.online === true && server.players > 0;
   const lower = server.list.map(n => n.toLowerCase());
   const inside = server.online ? CREW.filter(n => lower.includes(n.toLowerCase())) : [];
-  /* the names are an answer, so a change in them is someone coming or going */
-  const known = server.checkedAt !== null && server.online !== null;
+  /* the names are a live answer, so a change in them is someone coming or going (isLive) */
+  const known = isLive(server);
   const moon = useMoonPhase();
   return (
     <section id="top" className="b-hero" aria-label="Sólsetur">

@@ -79,7 +79,9 @@ export async function noteShelf(): Promise<void> {
   try {
     const { getPublicPacks } = await import('@/lib/datapacks-store');
     const next: Shelf = {};
-    for (const p of await getPublicPacks()) next[p.id] = { name: p.name, version: p.currentVersion?.trim() || null, glyph: p.glyph, category: p.category };
+    /* read strictly: the page's fallback, the seed list with no settings, would
+       be told as hidden packs arriving and versions moving, and back again */
+    for (const p of await getPublicPacks(true)) next[p.id] = { name: p.name, version: p.currentVersion?.trim() || null, glyph: p.glyph, category: p.category };
     const seen = JSON.stringify(next);
     const r = await redis();
     if ((await r.get(SHELF_KEY)) === seen) return;

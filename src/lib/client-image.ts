@@ -52,12 +52,18 @@ function toBlob(canvas: HTMLCanvasElement, type: string, quality: number): Promi
   return new Promise(resolve => canvas.toBlob(resolve, type, quality));
 }
 
+/* A picture by its type, or by its name where the browser gives no type: a
+   phone's HEIC often comes with none on Windows, Linux and Firefox, and is
+   let through to be redrawn, or to be told plainly that it cannot be. */
+const PICTURE_NAME = /\.(heic|heif|png|jpe?g|webp|gif|avif|bmp)$/i;
+export const isPicture = (f: File) => f.type.startsWith('image/') || (!f.type && PICTURE_NAME.test(f.name));
+
 /** Shrink and re-encode when it helps; otherwise hand the original back. GIFs are left alone (animation). */
 export async function prepareImage(file: File): Promise<PreparedImage> {
   const passthrough = (width = 0, height = 0): PreparedImage =>
     ({ blob: file, ext: extFor(file), contentType: file.type || 'image/png', width, height, resized: false });
 
-  if (!file.type.startsWith('image/')) throw new Error('Aðeins er hægt að hlaða upp myndum.');
+  if (!isPicture(file)) throw new Error('Aðeins er hægt að hlaða upp myndum.');
   if (file.type === 'image/gif') return passthrough();
   /* the store takes PNG, JPEG, WebP, GIF and AVIF only; anything else the
      browser can read (a phone's HEIC, say) is always redrawn as one of them */

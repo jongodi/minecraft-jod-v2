@@ -3,12 +3,12 @@
 import '@/app/board.css';
 import '@/app/wall.css';
 import '@/app/taflan.css';
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import type { CrewEntry } from '@/lib/crew-types';
 import { bountyState, mentionsIn, sameUser } from '@/lib/crew-types';
-import { FILTERS, byDay, dayLabel, inFilter, isNew, newReplies, newestAt, replay, stampOf, stampsOf, type BoardEdit as Edit, type BoardFilter, type BoardItem, type BoardResponse } from '@/lib/board-types';
+import { FILTERS, FIRST_LOOK_WORDS, byDay, dayLabel, inFilter, isNew, newReplies, newestAt, replay, stampOf, stampsOf, type BoardEdit as Edit, type BoardFilter, type BoardItem, type BoardResponse } from '@/lib/board-types';
 import { formatDate, plural } from '@/lib/format';
 import { useCrewSession, useMounted, type CrewSessionSeed } from '@/components/badlands/hooks';
 import { NightLine } from '@/components/badlands/NightLine';
@@ -35,6 +35,9 @@ const SEEN_AFTER_MS = 1500;
    replies and answers, and drawing ninety of them at once held a phone's
    hand for two seconds. */
 const STEP = 20;
+
+/** New replies under something older, counted as Icelandic counts: 21 takes the singular. */
+const newRepliesWords = (n: number) => (n === 1 ? 'Nýtt svar' : `${n} ${plural(n, 'nýtt svar', 'ný svör')}`);
 
 /** Whether a post calls the one looking by name: in its words, unless they
     wrote it, or in a reply someone else left under it, their own post included. */
@@ -67,7 +70,7 @@ interface Props {
     where they left off, and what calls them by name says Til þín. Under
     Myndir the pictures hang in item frames, a wall of them. Members put
     things up from the slot at the top; everyone can read it. */
-export default function Board({ room = false, open = true, initial = null, initialFilter = 'allt', session }: Props) {
+function Board({ room = false, open = true, initial = null, initialFilter = 'allt', session }: Props) {
   const { me } = useCrewSession(session);
   const mounted = useMounted();
   const [data, setData] = useState<BoardResponse | null>(initial);
@@ -167,9 +170,11 @@ export default function Board({ room = false, open = true, initial = null, initi
     setFresh(entry.id);
     setAsk(null);
     const wood = places.find(p => p.id === entry.placeId)?.wood ?? 'oak';
-    edit({ pin: { kind: 'post', id: `p-${entry.id}`, at: entry.createdAt, who: me, wood, entry } });
-    /* what was just put up shows under the filter it was put up from, or the whole board if it does not belong there */
-    if (!(filter === 'allt' || filter === 'midar' || (filter === 'myndir' && entry.photos.length > 0))) choose('allt');
+    const pin: Post = { kind: 'post', id: `p-${entry.id}`, at: entry.createdAt, who: me, wood, entry };
+    edit({ pin });
+    /* what was just put up shows under the filter it was put up from, or the
+       whole board if it does not belong there (a picture alone is no note) */
+    if (filter === 'mer' || !inFilter(pin, filter)) choose('allt');
   }, [me, places, edit, filter, choose]);
 
   /* every picture the board as it is filtered shows, in its order, for the lightbox: the crew's prints and the map's */
@@ -214,15 +219,17 @@ export default function Board({ room = false, open = true, initial = null, initi
     return () => io.disconnect();
   }, [reveal, total, open]);
 
-  /* The red string: pinned across the board just above the first thing that
-     was already there when the visitor last looked, if anything came since.
-     A first look has no last time, so no string. */
+  /* The red string: pinned across the board under the last thing tagged Nýtt,
+     so all that came since the visitor last looked hangs above it. Placed by
+     when things happened, it could hang over an advancement that reached the
+     site with the next morning's copy, tagged new below it. A first look has
+     no last time, so no string. */
   const visible = shown.slice(0, reveal);
   const stringAt = useMemo(() => {
     if (!since || pictures) return null;
-    const t = Date.parse(since);
-    const first = shown.findIndex(i => Date.parse(i.at) <= t);
-    return first > 0 && shown.slice(0, first).some(i => fresher(i)) ? shown[first].id : null;
+    let last = -1;
+    shown.forEach((i, n) => { if (fresher(i)) last = n; });
+    return last >= 0 && last + 1 < shown.length ? shown[last + 1].id : null;
   }, [since, shown, pictures, fresher]);
 
   const H = room ? 'h3' : 'h2';
@@ -233,9 +240,10 @@ export default function Board({ room = false, open = true, initial = null, initi
       <div className="t-board__main">
         <div className="t-board__head">
           <p className="t-board__news" aria-live="polite">
+            {/* a first look has no last time: what is new then is what came in the last few days (FIRST_LOOK_MS) */}
             {data === null ? (failed ? '' : 'sæki töfluna…') :
-             newCount > 0 ? <><b>{newCount} {plural(newCount, 'nýtt', 'ný')}</b> síðan þú leist síðast við</> :
-             looked ? 'Ekkert nýtt síðan þú leist síðast við' : ''}
+             newCount > 0 ? <><b>{newCount} {plural(newCount, 'nýtt', 'ný')}</b> {since ? 'síðan þú leist síðast við' : FIRST_LOOK_WORDS}</> :
+             looked ? `Ekkert nýtt ${since ? 'síðan þú leist síðast við' : FIRST_LOOK_WORDS}` : ''}
           </p>
           <div className="t-filters" role="group" aria-label="Sýna">
             {FILTERS.map(f => (
@@ -300,10 +308,10 @@ export default function Board({ room = false, open = true, initial = null, initi
                           <span className="t-tags" aria-hidden="true">
                             {calling && <span className="t-tag t-tag--me">Til þín</span>}
                             {isFresh && <span className="t-tag">Nýtt</span>}
-                            {!isFresh && replies > 0 && <span className="t-tag">{replies === 1 ? 'Nýtt svar' : `${replies} ný svör`}</span>}
+                            {!isFresh && replies > 0 && <span className="t-tag">{newRepliesWords(replies)}</span>}
                           </span>
                         )}
-                        {(isFresh || replies > 0 || calling) && <span className="b-visually-hidden">{[calling && 'Til þín', isFresh ? 'Nýtt' : replies > 0 && (replies === 1 ? 'Nýtt svar' : `${replies} ný svör`)].filter(Boolean).join(', ')}: </span>}
+                        {(isFresh || replies > 0 || calling) && <span className="b-visually-hidden">{[calling && 'Til þín', isFresh ? 'Nýtt' : replies > 0 && newRepliesWords(replies)].filter(Boolean).join(', ')}: </span>}
                         {item.kind === 'post' ? (
                           <Print username={item.who} entry={item.entry} places={places} me={me} isOwner={sameUser(me, item.who)}
                             coverPhotoId={null} shownCoverId={null} fresh={item.entry.id === fresh} byline
@@ -345,7 +353,7 @@ export default function Board({ room = false, open = true, initial = null, initi
                   <button type="button" className="t-side__item" onClick={() => show(c.entry.id)}>
                     <PlayerHead name={c.who} size={16} alt="" />
                     <span className="t-side__what">{c.entry.text.split('\n')[0]}</span>
-                    <span className="t-side__pay">{c.entry.bounty!.reward}{c.entry.bounty!.takenBy && <> · {c.entry.bounty!.takenBy} er á slóðinni</>}</span>
+                    <span className="t-side__pay">{c.entry.bounty!.reward}{c.entry.bounty!.takenBy && <> · {me && sameUser(c.entry.bounty!.takenBy, me) ? 'þú ert' : `${c.entry.bounty!.takenBy} er`} á slóðinni</>}</span>
                   </button>
                 </li>
               ))}
@@ -384,3 +392,7 @@ export default function Board({ room = false, open = true, initial = null, initi
     </div>
   );
 }
+
+/* Memoised: over the world it stays mounted under a closed room, and the
+   world draws again for a hover on the rail or a word from the live map. */
+export default memo(Board);

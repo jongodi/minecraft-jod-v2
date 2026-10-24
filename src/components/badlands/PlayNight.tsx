@@ -152,9 +152,14 @@ function NightFire({ night, kicker, me, server, busy, err, picked, letter, onRun
   onRun: (body: Record<string, unknown>) => void; onShare: () => void;
   onLetter: (yes: string[]) => void; onDropLetter: () => void;
 }) {
-  const mine = me ? night.options.filter(o => o.yes.some(y => lower(y) === lower(me))).map(o => o.id) : [];
-  const mineIsBy = !!me && lower(night.by) === lower(me);
   const chosen = chosenOf(night);
+  /* Once a time is chosen only it is answered: a yes the store keeps for a
+     time that was not chosen is no yes to the night, and the server would
+     refuse its holder the start. */
+  const mine = me ? night.options.filter(o => (!chosen || o.id === chosen.id) && o.yes.some(y => lower(y) === lower(me))).map(o => o.id) : [];
+  /* said they cannot come, rather than not said at all (a page drawn before answers were told apart has no list) */
+  const saidNo = !!me && mine.length === 0 && (night.answered ?? []).some(a => lower(a) === lower(me));
+  const mineIsBy = !!me && lower(night.by) === lower(me);
   const online = !!server.online;
   const inGame = (n: string) => online && server.list.some(p => lower(p) === lower(n));
   const came = (n: string) => inGame(n) || night.came.some(c => lower(c) === lower(n));
@@ -225,7 +230,7 @@ function NightFire({ night, kicker, me, server, busy, err, picked, letter, onRun
           {night.phase !== 'open' && night.phase !== 'live' && (
             <>
               <button type="button" className={`b-btn b-btn--small${mine.length ? ' b-btn--solid' : ''}`} aria-pressed={mine.length > 0} disabled={busy} onClick={() => onRun({ action: 'vote', yes: [chosen!.id] })}>Mæti</button>
-              <button type="button" className={`b-btn b-btn--small${!mine.length ? ' is-on' : ''}`} aria-pressed={mine.length === 0} disabled={busy} onClick={() => onRun({ action: 'vote', yes: [] })}>Kemst ekki</button>
+              <button type="button" className={`b-btn b-btn--small${saidNo ? ' is-on' : ''}`} aria-pressed={saidNo} disabled={busy} onClick={() => onRun({ action: 'vote', yes: [] })}>Kemst ekki</button>
             </>
           )}
           {night.phase === 'open' && mine.length > 0 && (

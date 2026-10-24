@@ -2,6 +2,7 @@ import { errorMessage } from '@/lib/icelandic';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin, unauthorizedResponse } from '@/lib/auth';
 import { getExarotonServerId, type ExarotonServer } from '@/lib/exaroton';
+import { forgetStatus } from '@/lib/server-status';
 
 const ALLOWED_ACTIONS = ['start', 'stop', 'restart'] as const;
 type ServerAction = typeof ALLOWED_ACTIONS[number];
@@ -32,6 +33,8 @@ export async function POST(
       method: 'GET', // Exaroton uses GET for server actions
       headers: { Authorization: `Bearer ${token}` },
       cache: 'no-store',
+      /* capped, as every other call to exaroton is: a hung one held the panel's button until the function's limit */
+      signal: AbortSignal.timeout(8000),
     });
 
     if (!res.ok) {
@@ -39,8 +42,11 @@ export async function POST(
       return NextResponse.json({ error: `Villa frá Exaroton: ${errBody}` }, { status: res.status });
     }
 
+    /* the status is asked for afresh, so the lantern sees the change rather than the answer from before it */
+    forgetStatus();
     return NextResponse.json({ ok: true, action });
   } catch (err) {
+    if (err instanceof Error && err.name === 'TimeoutError') return NextResponse.json({ error: 'Exaroton svaraði ekki í tæka tíð. Athugaðu stöðuna áður en þú reynir aftur.' }, { status: 504 });
     return NextResponse.json({ error: errorMessage(err) }, { status: 500 });
   }
 }
@@ -66,6 +72,7 @@ export async function GET(
     const res = await fetch(`https://api.exaroton.com/v1/servers/${id}/`, {
       headers: { Authorization: `Bearer ${token}` },
       cache: 'no-store',
+      signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) throw new Error(`Villa frá Exaroton: ${res.status}`);
     const { data } = await res.json() as { data: ExarotonServer };

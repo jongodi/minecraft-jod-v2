@@ -135,9 +135,10 @@ export default function RollCall({ initialPlayers }: { initialPlayers: StatRow[]
               const isMost = m.username.toLowerCase() === most && !!outlaw;
               return (
               <div key={m.username} className={`b-hang${isIn(m.username) ? ' is-in' : ''}${isMost ? ' b-rollcall__most' : ''}`}>
-                {/* someone in the game now: a lit lantern hung over their poster, its light on the paper */}
+                {/* someone in the game now: a lit lantern hung over their poster, its light on the paper; said after
+                    their name, since a name for the whole link replaced the charge and the bounty it carries */}
                 {isIn(m.username) && <span className="b-poster__lamp" aria-hidden="true"><Lantern lit /></span>}
-                <Link href={`/crew/${m.username}`} className={`b-paper b-paper--torn b-poster b-poster--crew${isMost ? ' b-poster--most' : ''}${m.cover ? ' has-cover' : ''}`} aria-label={isIn(m.username) ? `${m.username}, inni í leiknum núna` : undefined}>
+                <Link href={`/crew/${m.username}`} className={`b-paper b-paper--torn b-poster b-poster--crew${isMost ? ' b-poster--most' : ''}${m.cover ? ' has-cover' : ''}`}>
                   {m.cover && (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img className="b-poster__cover" {...photoProps(m.cover, isMost ? PHOTO_SIZES.board : PHOTO_SIZES.strip)} alt="" aria-hidden="true" loading="lazy" decoding="async" />
@@ -149,7 +150,7 @@ export default function RollCall({ initialPlayers }: { initialPlayers: StatRow[]
                     {/* the board's own outlaw: the whole figure, as on their wall, and the aliases their charges earn them */}
                     <span className="b-poster__kicker">Mest eftirlýst á JOÐ</span>
                     <div className="b-poster__img b-poster__img--full"><PlayerHead name={m.username} size={96} full alt="" /></div>
-                    <div className="b-poster__name">{m.username}</div>
+                    <div className="b-poster__name">{m.username}{isIn(m.username) && <span className="b-visually-hidden">, inni í leiknum núna</span>}</div>
                     <span className="b-poster__aliases">{outlaw.led.slice(0, 3).map(id => <span key={id}>„{whole(tabOf(id).nick)}“</span>)}</span>
                     <span className="b-poster__charge">eftirlýst fyrir {outlaw.led.length} {plural(outlaw.led.length, 'sök', 'sakir')}</span>
                     {/* the rewards, set as a printed poster sets them: each charge, a run of dots, the bounty in red */}
@@ -162,7 +163,7 @@ export default function RollCall({ initialPlayers }: { initialPlayers: StatRow[]
                     </ul>
                   </>) : (<>
                     <div className="b-poster__img"><PlayerHead name={m.username} size={128} alt="" /></div>
-                    <div className="b-poster__name">{m.username}</div>
+                    <div className="b-poster__name">{m.username}{isIn(m.username) && <span className="b-visually-hidden">, inni í leiknum núna</span>}</div>
                     <Charge outlaw={outlaw} waiting={players === null} />
                   </>)}
                   {crew === null ? (<>

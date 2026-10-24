@@ -10,6 +10,7 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import type { CrewEntry } from '@/lib/crew-types';
 import { LIMITS } from '@/lib/crew-types';
 import { fetchStorageInfo, uploadPrint, errorFrom, failure, type StorageInfo, type UploadedPrint } from '@/lib/crew-upload';
+import { isPicture } from '@/lib/client-image';
 import { formatDate, plural } from '@/lib/format';
 import { CloseIcon } from '@/components/badlands/Bits';
 import PlayerHead from '@/components/badlands/PlayerHead';
@@ -55,11 +56,6 @@ const typingName = (text: string, caret: number) => /(?:^|[^\p{L}\p{N}_@])@([A-Z
 
 const newKey = () => Math.random().toString(36).slice(2);
 
-/* A picture by its type, or by its name where the browser gives no type: a
-   phone's HEIC often comes with none on Windows, Linux and Firefox, and is
-   let through so prepareImage can redraw it or say plainly that it cannot. */
-const PICTURE_NAME = /\.(heic|heif|png|jpe?g|webp|gif|avif|bmp)$/i;
-const isPicture = (f: File) => f.type.startsWith('image/') || (!f.type && PICTURE_NAME.test(f.name));
 
 export default function Composer({ username, places, onPinned, active = true, compact = false, ask = null }: Props) {
   const [storage, setStorage] = useState<StorageInfo | null>(null);
@@ -115,7 +111,7 @@ export default function Composer({ username, places, onPinned, active = true, co
     const images = files.filter(isPicture);
     /* what was turned away is said, rather than vanishing: a dropped PDF did nothing at all */
     const others = files.length - images.length;
-    const turnedAway = others > 0 ? `${others === 1 ? 'Ein skrá var ekki mynd' : `${others} skrár voru ekki myndir`} og ${others === 1 ? 'fór' : 'fóru'} ekki með.` : '';
+    const turnedAway = others > 0 ? `${others === 1 ? 'Ein skrá var ekki mynd' : `${others} ${plural(others, 'skrá var ekki mynd', 'skrár voru ekki myndir')}`} og ${plural(others, 'fór', 'fóru')} ekki með.` : '';
     if (images.length === 0) { if (turnedAway) setError(`${turnedAway} Veldu PNG, JPEG eða WebP.`); return; }
     /* the slot holds still while what is in it goes up */
     if (pinningNow.current) { setError('Bíddu andartak, verið er að festa upp það sem er í hólfinu.'); return; }

@@ -784,6 +784,18 @@
   @supports (animation-timeline: scroll()) {
     .b-hero__sun { animation: b-hero-sun-set linear both; animation-timeline: scroll(root); animation-range: 0 60svh; }
   }
+  /* With the crew standing on the name their tags rise into the foot of the
+     open row, and on a short phone the Ð's tag stood on the sun. The sun then
+     hangs in the room left above the tags; with too little for it to read as
+     a sun (a phone of 667 px or less, or a planned night's line above) it is
+     not out tonight: who is in comes first. */
+  .b-hero__stage:has(.b-hero__climbers) .b-hero__sun {
+    --tags: calc(var(--fs-hero) * 0.4 + var(--sp-2));
+    container: sun / size;
+    height: min(4.5rem, 100% - var(--tags));
+    margin-bottom: var(--tags);
+  }
+  @container sun (max-height: 2.5rem) { .b-hero__sun svg { display: none; } }
 }
 @media (prefers-reduced-motion: reduce) { .b-hero__sun { display: none; } }
 /* A phone on its side has no height for a title card: the name at the foot
@@ -1203,7 +1215,13 @@
    frame lets go and goes on up with the page. The whole screen (.is-full)
    stays fixed over the page, as it always was. */
 .b-world.has-flight .b-frame:not(.is-full) { position: sticky; top: var(--bar); }
-.b-world__runway { height: 110svh; }
+/* Where the flight runs, the world's top for a scroll to it (a door, T, Back
+   out of a room, a /#heimur link) is the far end of its runway: landed, the
+   frame over the town with its lights on. Its own top is the flight's start,
+   high over everything, and every door pressed after landing flew the camera
+   all the way back up there. From above, the scroll down is the flight itself. */
+.b-world.has-flight { scroll-margin-top: calc(var(--bar) - 110svh); }
+.b-world__runway { height: 110svh; }   /* the world's scroll-margin-top lands past it */
 /* Two sheets, each a frame at the size it was taken, moved and faded by
    Flight.tsx: transform and opacity only, each on its own layer, so the
    scroll moves layers and paints nothing between frames. The night is under
@@ -1685,6 +1703,7 @@ html.is-map-full { overflow: hidden; }
    another. Open (T, or the note of lines held back), every line stays. Each
    line leads to where it happened, so it lights as a link does. */
 .b-chat { display: grid; justify-items: start; max-width: min(34rem, 100%); margin-bottom: var(--sp-2); }
+.b-chat:empty { position: absolute; margin: 0; }   /* the log stands empty between lines (Chat.tsx), out of the rail's grid and its gap, still there for a screen reader */
 .b-chat__line {
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
   max-width: 100%; padding: var(--px) var(--sp-2);

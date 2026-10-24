@@ -12,7 +12,7 @@ import Hero from './Hero';
 import World from './World';
 import Footer from './Footer';
 import { SECTIONS, isRoom, plainClick, type DoorId, type RoomId } from './data';
-import { modalOpen, seedStatus, useEffectsAllowed, useReducedMotionPref, useScrollSpy, useServerStatus } from './hooks';
+import { modalOpen, seedStatus, showWorld, useEffectsAllowed, useReducedMotionPref, useScrollSpy, useServerStatus } from './hooks';
 import { seedNights } from './night';
 import { seasonClass, useSeason } from './Season';
 
@@ -44,13 +44,6 @@ export default function BadlandsHome({ syncedOn, bases, initial }: { syncedOn: s
   const [pressed, setPressed] = useState<DoorId | null>(null);
   const { plates, map, pinned, nights } = initial;
 
-  /* Asked of the browser at the moment of scrolling, not held in state: as a
-     dependency it changed once after hydration, ran the hash below a second
-     time and scrolled a reduced-motion visitor to the world twice. */
-  const showWorld = useCallback(() => {
-    const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    document.getElementById('heimur')?.scrollIntoView({ block: 'start', behavior: still ? 'auto' : 'smooth' });
-  }, []);
 
   /* The hash is the source of truth: read it on arrival, on the back button,
      and on any plain anchor to a room (#taflan, #hopur, #hillan: the status lantern, the crew
@@ -69,7 +62,7 @@ export default function BadlandsHome({ syncedOn, bases, initial }: { syncedOn: s
     read();
     window.addEventListener('hashchange', read);
     return () => window.removeEventListener('hashchange', read);
-  }, [showWorld]);
+  }, []);
 
   /* A door in the bar: the world itself, or a room over it. Opening a room
      makes one history entry, marked as the doors' own; going from that room
@@ -88,7 +81,7 @@ export default function BadlandsHome({ syncedOn, bases, initial }: { syncedOn: s
     setRoom(next);
     setPressed(next ?? 'heimur');
     showWorld();
-  }, [showWorld]);
+  }, []);
   /* ✕, Escape or a tap on the dark world. The entry a door made is taken
      back, so Back afterwards does not open the room again; a room arrived at
      by a link (/#hopur, /kvold/<id>#hopur) just loses its hash. */

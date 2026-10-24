@@ -17,6 +17,11 @@ const SEEDED_POLL_MS = 10_000;
 const HIDDEN_POLL_MS = 3 * 60_000;
 /* how long the browser waits on its own questions: the routes cap what they ask upstream, so a longer wait is a hung connection */
 const STATUS_WAIT_MS = 12_000;
+/* An answer that does not come (a phone back from its pocket before its
+   network is, a hiccup upstream) is no news: the last real answer stands
+   this long, asked again often, before the lantern says it lost touch. The
+   lantern says how old the answer it shows is from two minutes on. */
+const KEEP_ON_MISS_MS = 5 * 60_000;
 const STATS_WAIT_MS = 25_000;
 const COPIED_MS = 2400;
 
@@ -32,6 +37,8 @@ let statusInFlight: Promise<void> | null = null;
 let startingUntil = 0;
 let pollTimer: ReturnType<typeof setTimeout> | undefined;
 let polling = 0;   // how many are listening
+/* the last question went unanswered, and the answer before it was kept */
+let missed = false;
 const statusListeners = new Set<() => void>();
 const notifyStatus = () => statusListeners.forEach(l => l());
 const subscribeStatus = (l: () => void) => { statusListeners.add(l); return () => { statusListeners.delete(l); }; };
@@ -48,6 +55,9 @@ async function loadStatus(): Promise<void> {
   } catch {
     next = unreachable();
   }
+  missed = next.life === 'unknown' && statusValue.life !== null && statusValue.life !== 'unknown' &&
+    statusValue.checkedAt !== null && Date.now() - statusValue.checkedAt < KEEP_ON_MISS_MS;
+  if (missed) return;
   /* the site asked for a start a moment ago: an answer from before it does not put the lantern out again */
   if (startingUntil && Date.now() < startingUntil && (next.life === 'off' || next.life === 'unknown')) next = { ...next, life: 'starting' };
   else if (next.life !== 'starting') startingUntil = 0;
@@ -61,8 +71,16 @@ function schedulePoll(): void {
   /* A tab in the background asks every few minutes rather than every one,
      for the tab's own lantern; it asks at once when it is looked at again. */
   pollTimer = setTimeout(refreshStatus,
-    document.hidden ? HIDDEN_POLL_MS : isChanging(statusValue.life) ? CHANGING_POLL_MS : STATUS_POLL_MS);
+    document.hidden ? HIDDEN_POLL_MS : missed || isChanging(statusValue.life) ? CHANGING_POLL_MS : STATUS_POLL_MS);
 }
+
+/** Whether an answer can be where who comes and goes is counted from: a real
+    answer, and a recent one. A failed question said everyone had left, and a
+    page served from the cache carries an answer from long before the visit;
+    either, as a starting point, made the next answer tell old comings and
+    goings (or none) as news. */
+export const isLive = (s: ServerState): boolean =>
+  s.checkedAt !== null && s.online !== null && s.life !== 'unknown' && Date.now() - s.checkedAt <= STATUS_POLL_MS + STATUS_WAIT_MS;
 
 /** Asks the server's status now; one request at a time. */
 export function refreshStatus(): Promise<void> {
@@ -328,6 +346,9 @@ let meHasPassword = false;
 /* the first answer came with the page rather than from asking; it is checked once, quietly */
 let meSeeded = false;
 let meInFlight: Promise<void> | null = null;
+/* every question is numbered and only the latest one's answer counts, so a
+   check sent before a sign-in or a sign-out never undoes it when it lands */
+let meAsked = 0;
 const meListeners = new Set<() => void>();
 const notifyMe = () => meListeners.forEach(l => l());
 
@@ -335,24 +356,30 @@ const notifyMe = () => meListeners.forEach(l => l());
    comes back, the answer stands, rather than signing a member out of their
    own wall over a dropped request. */
 async function fetchMe(quiet = false): Promise<void> {
+  const asked = ++meAsked;
   try {
     const res = await fetch('/api/crew/me', { cache: 'no-store' });
     if (!res.ok) throw new Error(`crew/me ${res.status}`);
     const data = await res.json() as { username: string | null; hasPassword?: boolean };
+    if (asked !== meAsked) return;
     meValue = data.username ?? null;
     meHasPassword = !!data.hasPassword;
   } catch {
-    if (quiet) return;
+    if (quiet || asked !== meAsked) return;
     meValue = null;
     meHasPassword = false;
   }
   notifyMe();
 }
-function askMe(quiet: boolean): Promise<void> {
-  if (!meInFlight) meInFlight = fetchMe(quiet).finally(() => { meInFlight = null; });
-  return meInFlight;
+/* Everyone asking as the page opens shares one question; a sign-in asks
+   afresh (`fresh`), since a question already out was sent before its cookie. */
+function askMe(quiet: boolean, fresh = false): Promise<void> {
+  if (meInFlight && !fresh) return meInFlight;
+  const asking: Promise<void> = fetchMe(quiet).finally(() => { if (meInFlight === asking) meInFlight = null; });
+  meInFlight = asking;
+  return asking;
 }
-const refreshMe = () => askMe(false);
+const refreshMe = () => askMe(false, true);
 const subscribeMe = (l: () => void) => { meListeners.add(l); return () => { meListeners.delete(l); }; };
 
 /** Who the server found signed in when it drew the page. */
@@ -379,12 +406,13 @@ export function useCrewSession(seed?: CrewSessionSeed): { me: Me; hasPassword: b
   const me = useSyncExternalStore(subscribeMe, () => meValue, () => seed?.me);
   const hasPassword = useSyncExternalStore(subscribeMe, () => meHasPassword, () => seed?.hasPassword ?? false);
   useEffect(() => {
-    if (meValue === undefined) refreshMe();
+    if (meValue === undefined) askMe(false);
     /* the browser still asks once, which puts right a session the server could not read */
     else if (meSeeded) { meSeeded = false; askMe(true); }
   }, []);
   const signOut = useCallback(async () => {
     await fetch('/api/crew/auth', { method: 'DELETE' }).catch(() => {});
+    meAsked++;
     meValue = null;
     meHasPassword = false;
     notifyMe();
@@ -404,9 +432,22 @@ function keepTab(e: KeyboardEvent) {
   const first = items[0];
   const last = items[items.length - 1];
   if (!first) { e.preventDefault(); return; }
-  if (!box.contains(at)) { e.preventDefault(); (e.shiftKey ? last : first).focus(); }
+  /* focus on the dialog itself (where it opens) or on its words is no stop in
+     the round: Shift+Tab from there went out to the page behind */
+  if (!box.contains(at) || !items.includes(at as HTMLElement)) { e.preventDefault(); (e.shiftKey ? last : first).focus(); }
   else if (e.shiftKey && at === first) { e.preventDefault(); last.focus(); }
   else if (!e.shiftKey && at === last) { e.preventDefault(); first.focus(); }
+}
+
+/** Focus goes back to `to`, or, where that is gone (a sign-in or a sign-out
+    swaps the very button that opened the dialog for others), to the page's
+    own heading, so the keyboard carries on from the page and not from its top. */
+export function landFocus(to: HTMLElement | null): void {
+  if (to?.isConnected) { to.focus({ preventScroll: true }); return; }
+  const heading = document.querySelector<HTMLElement>('main h1');
+  if (!heading) return;
+  if (!heading.hasAttribute('tabindex')) heading.setAttribute('tabindex', '-1');
+  heading.focus({ preventScroll: true });
 }
 
 /** A dialog takes the keyboard with it: focus moves to `ref` when it opens
@@ -429,7 +470,7 @@ export function useDialogFocus<T extends HTMLElement>(ref: React.RefObject<T>): 
       if (traps.length === 0) document.removeEventListener('keydown', keepTab);
       /* only once the dialog has really gone: React's strict mode runs this
          with the dialog still standing, and the field inside keeps its focus */
-      if (!box.isConnected && opener?.isConnected) opener.focus({ preventScroll: true });
+      if (!box.isConnected) landFocus(opener);
     };
   // once, on open and close
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -492,6 +533,13 @@ export function useBackCloses(open: boolean, close: () => void): void {
 /** A dialog is open over the page (the duel, the album, a picture). Escape
     and the number keys are its own then: one press closes one layer. */
 export const modalOpen = () => document.querySelector('[aria-modal="true"]') !== null;
+
+/** Brings the world into view: landed, where the camera's flight down runs
+    (the world's scroll-margin-top in badlands.css). Smooth unless the visitor
+    asked for less motion, asked of the browser at the moment of scrolling. */
+export function showWorld(smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches): void {
+  document.getElementById('heimur')?.scrollIntoView({ block: 'start', behavior: smooth ? 'smooth' : 'auto' });
+}
 
 export function useInert<T extends HTMLElement>(inert: boolean): React.RefObject<T> {
   const ref = useRef<T>(null);
