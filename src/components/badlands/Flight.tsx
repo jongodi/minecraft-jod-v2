@@ -2,7 +2,7 @@
 
 import { memo, useEffect, useRef, type MutableRefObject, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
 import type { WorldPoint } from '@/lib/map-types';
-import { cameraAt, cover, depthScale, easeFlight, facing, fetchOrder, flightFrame, flightShape, heading, horizonPoint, projectPoint, warp, type Flight as FlightData, type FlightShape } from '@/lib/map-flight';
+import { cameraAt, cover, depthScale, easeFlight, facing, fetchOrder, flightFrame, flightProgress, flightShape, follow, heading, horizonPoint, projectPoint, warp, type Flight as FlightData, type FlightShape } from '@/lib/map-flight';
 import { Lantern, Moon, Stars } from './Bits';
 import { FACING, titleCase } from './data';
 import PlayerHead from './PlayerHead';
@@ -18,7 +18,8 @@ interface Props {
       Otherwise the still stands alone, the places pinned on it. */
   fly: boolean;
   /** the stretch of page the frame is held over while the camera comes down
-      (World.tsx); its top is where the flight starts */
+      and then stays landed (World.tsx); the world's landing mark in it is
+      where the camera touches down */
   runway: RefObject<HTMLDivElement | null>;
   /** the F3 lines over the places (World.tsx): where the camera is while it comes down */
   f3: RefObject<HTMLParagraphElement | null>;
@@ -52,6 +53,13 @@ const AROUND = [-1, 0, 1, 2, 3];
 const EDGE = 24;
 /* how far down the path the live map is woken, behind the flight */
 const APPROACH = 0.55;
+/* the camera sets off while the frame is still rising, this much of its
+   height short of being held, so the world is moving from the moment it is seen */
+const LEAD = 0.5;
+/* The bank, in degrees: the stills only close in, straight ahead, so the
+   camera is given a glider's lean over the overview, levelling out as it
+   comes down and level for the landing, where the still takes over. */
+const BANK = -2.5;
 
 type Moved = ReturnType<typeof warp>;
 interface Sheet { el: HTMLCanvasElement; ctx: CanvasRenderingContext2D | null; frame: number; shape: string; z: string }
@@ -117,21 +125,32 @@ function Flight({ flight, fly, runway, f3, places, players, selected, onChoose, 
     const sky = scene?.querySelector<HTMLElement>('.b-flight__sky') ?? null;
     const glow = scene?.querySelector<HTMLElement>('.b-flight__glow') ?? null;
 
+    /* altitude: the night air between the camera and the land, thick over the overview and gone at the landing */
+    const haze = scene?.querySelector<HTMLElement>('.b-flight__haze') ?? null;
+    /* the landing mark: the scroll at which the camera is down (World.tsx, badlands.css) */
+    const land = section.querySelector<HTMLElement>(':scope > .b-world__land');
+
     /* where the world is on the page and how big the frame is: measured on resize, never while scrolling */
-    const geo = { top: 0, stick: 0, length: 0, w: 0, h: 0, glow: 0 };
+    const geo = { top: 0, stick: 0, length: 0, lead: 0, w: 0, h: 0, glow: 0 };
     const measure = () => {
       geo.top = section.getBoundingClientRect().top + window.scrollY;
       geo.stick = parseFloat(getComputedStyle(frame).top) || 0;
-      geo.length = strip?.offsetHeight ?? 0;
+      geo.length = land?.offsetTop ?? strip?.offsetHeight ?? 0;
+      geo.lead = LEAD * box.clientHeight;
       geo.w = box.clientWidth;
       geo.h = box.clientHeight;
       geo.glow = glow?.offsetHeight ?? 0;
     };
-    /* how far down the runway the page is, 0 at the overview and 1 landed */
-    const progress = () => {
-      if (!fly || geo.length <= 0) return 1;
-      return Math.min(1, Math.max(0, (window.scrollY + geo.stick - geo.top) / geo.length));
-    };
+    /* how far down the flight the page is, 0 at the overview and 1 landed */
+    const progress = () => (!fly || geo.length <= 0 ? 1 : flightProgress(window.scrollY, geo.top, geo.stick, geo.lead, geo.length));
+    /* The camera follows the scroll rather than jumping with it: a wheel
+       notch moves the page a tenth of the way down at once, which jumped the
+       camera four stills; followed, it glides there in a moment. -1 until the
+       camera is placed, and again when the world comes back into reach, so
+       arriving from far off does not fly the whole way in view. */
+    let cur = -1;
+    let lastT = 0;
+    let lastTarget = -1;
 
     let gone = false;
     let raf = 0;
@@ -215,7 +234,18 @@ function Flight({ flight, fly, runway, f3, places, players, selected, onChoose, 
 
       /* where the camera is on the path, and the stills that stand in for it:
          the nearest here at or before it, and the nearest after */
-      const p = progress();
+      const now = performance.now();
+      const target = progress();
+      /* The first frame after the camera has been at rest counts as one
+         frame, not the whole rest, so the first notch glides too; after that
+         the time that really passed, so a device drawing few frames a second
+         still keeps up with the scroll. */
+      const dt = cur === lastTarget ? 16 : Math.min(250, now - lastT);
+      cur = cur < 0 ? target : follow(cur, target, dt);
+      lastT = now;
+      lastTarget = target;
+      if (cur !== target) schedule();
+      const p = cur;
       const along = easeFlight(p);
       const at = along * last;
       const i = Math.min(last, Math.floor(at));
@@ -276,6 +306,20 @@ function Flight({ flight, fly, runway, f3, places, players, selected, onChoose, 
       }
       if (scene && flying !== showing) { showing = flying; scene.style.visibility = flying ? 'visible' : 'hidden'; }
 
+      /* The lean: the whole flight turned about the middle of the frame,
+         and drawn as much larger as keeps its corners out of sight; the pins
+         are carried round with it below, standing upright. One transform on
+         the stage, so the compositor does it. */
+      const lean = flying ? BANK * (1 - along) ** 2 : 0;
+      const rad = (lean * Math.PI) / 180;
+      const cos = Math.cos(rad), sin = Math.sin(rad);
+      const fit = cos + (Math.max(w, h) / Math.min(w, h)) * Math.abs(sin);
+      if (scene) scene.style.transform = lean ? `rotate(${lean.toFixed(3)}deg) scale(${fit.toFixed(4)})` : '';
+      const leaned = (pos: { x: number; y: number }) => (lean ? {
+        x: w / 2 + fit * (cos * (pos.x - w / 2) - sin * (pos.y - h / 2)),
+        y: h / 2 + fit * (sin * (pos.x - w / 2) + cos * (pos.y - h / 2)),
+      } : pos);
+
       /* where a point in the world falls on what is showing, moved as its still is */
       const pointAt = (k: number, wp: Moved, point: readonly number[]) => {
         const pr = projectPoint(shots[k].m, point);
@@ -299,10 +343,13 @@ function Flight({ flight, fly, runway, f3, places, players, selected, onChoose, 
         const horizon = onScreen(horizonPoint(cam.eye, cam.look));
         const stars = Math.min(1, Math.max(0, (1 - along) / 0.3));
         const light = Math.min(1, Math.max(0, (1 - p) / 0.35));
-        const look = `${horizon ? horizon.y.toFixed(1) : 'x'} ${stars.toFixed(3)} ${light.toFixed(3)}`;
+        /* the air thins slowly at first and is gone a little before the town's lamps come on */
+        const air = Math.min(1, Math.max(0, (0.9 - along) / 0.9)) ** 1.5;
+        const look = `${horizon ? horizon.y.toFixed(1) : 'x'} ${stars.toFixed(3)} ${light.toFixed(3)} ${air.toFixed(3)}`;
         if (look !== skyLook) {
           skyLook = look;
           sky.style.opacity = stars.toFixed(3);
+          if (haze) haze.style.opacity = air.toFixed(3);
           glow.style.opacity = horizon ? light.toFixed(3) : '0';
           if (horizon) glow.style.transform = `translateY(${(horizon.y - geo.glow).toFixed(1)}px)`;
         }
@@ -310,7 +357,8 @@ function Flight({ flight, fly, runway, f3, places, players, selected, onChoose, 
 
       /* each pin where its point stands, smaller the farther it is from the camera */
       for (const pin of pins.current) {
-        const pos = onScreen(pin.at);
+        const seen = onScreen(pin.at);
+        const pos = seen && leaned(seen);
         const { el } = pin;
         if (!pos || pos.x < -EDGE || pos.x > w + EDGE || pos.y < -EDGE || pos.y > h + EDGE) { el.style.visibility = 'hidden'; continue; }
         el.style.visibility = '';
@@ -361,7 +409,7 @@ function Flight({ flight, fly, runway, f3, places, players, selected, onChoose, 
       window.addEventListener('scroll', onScroll, { passive: true });
       const start = () => { if (!fetching) { fetching = true; if (shape) fetchSet(shape); lastKey = ''; } };
       if ('IntersectionObserver' in window) {
-        io = new IntersectionObserver(([e]) => { inReach = e.isIntersecting; if (inReach) { start(); schedule(); } }, { rootMargin: '100% 0px' });
+        io = new IntersectionObserver(([e]) => { inReach = e.isIntersecting; if (inReach) { cur = -1; start(); schedule(); } }, { rootMargin: '100% 0px' });
         io.observe(section);
       } else { inReach = true; start(); }
     }
@@ -393,6 +441,7 @@ function Flight({ flight, fly, runway, f3, places, players, selected, onChoose, 
           <div className="b-flight__glow" />
           <canvas className="b-flight__sheet" />
           <canvas className="b-flight__sheet" />
+          <div className="b-flight__haze" />
         </div>
       )}
       {/* The pins are for a pointer: each is the place's chip on the rail,

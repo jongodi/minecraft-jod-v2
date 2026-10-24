@@ -33,8 +33,8 @@ const nextConfig = {
   /* The link cards (and the pictures atop the letters) read their fonts and pictures by paths built at run time,
      which the tracer cannot follow, so without these they were missing from
      the functions and every card answered 500. Only the latin woff files the
-     renderer reads (it takes woff, not woff2), the map's still, and the
-     screenshots the bundled gallery points at. */
+     renderer reads (it takes woff, not woff2), the map's still, the
+     flight's stills and the screenshots the bundled gallery points at. */
   outputFileTracingIncludes: {
     '/crew/[username]/opengraph-image': [
       './node_modules/@fontsource/{alfa-slab-one,silkscreen,pixelify-sans}/files/*-latin-400-normal.woff',
@@ -50,6 +50,8 @@ const nextConfig = {
       './node_modules/@fontsource/{alfa-slab-one,silkscreen,pixelify-sans}/files/*-latin-400-normal.woff',
       './public/screenshots/*.webp',
       './public/map-poster.webp',
+      /* a place without a photo is seen from the air, on the flight's wide stills (about 4 MB) */
+      './public/map-flight/wide-*.webp',
     ],
   },
 

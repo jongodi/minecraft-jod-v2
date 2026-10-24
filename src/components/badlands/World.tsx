@@ -42,6 +42,8 @@ interface JodViewer {
   /** 'outside': beyond the rendered world; 'missing': not on the map right now */
   follow: (name: string) => 'ok' | 'outside' | 'missing';
   unfollow: () => void;
+  /** in view but not yet taken in hand: BlueMap's own tools stay hidden (an older jod.js has none) */
+  glass?: (on: boolean) => void;
 }
 type ViewerMessage = {
   source?: string; type?: string; tiles?: number; id?: number; on?: boolean; open?: boolean;
@@ -423,6 +425,8 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
   const still = phone && !full;
   const hidden = !inView || shut || album || drawn || still || standby;
   useEffect(() => { if (viewer) jod()?.pause(hidden); }, [viewer, hidden, jod]);
+  /* landed in the live map but not yet taken hold of, its zoom and menu would be keys that do nothing */
+  useEffect(() => { if (viewer) jod()?.glass?.(auto); }, [viewer, auto, jod]);
 
   /* The viewer says when its first view is drawn, which is usually well under
      a second. Should it not have said so in four (a slow texture download, or
@@ -813,8 +817,13 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
           {visited.hillan && <Shelf version={server.version} />}
         </Drawer>
       </div>
-      {/* the stretch of page the frame is held over while the camera comes down */}
+      {/* The stretch of page the frame is held over while the camera comes
+          down, and then a while longer, landed, so a quick scroll comes to
+          rest over the town rather than carrying on past it to the fire. The
+          landing mark is where the camera touches down: a scroll that stops
+          near it settles on it (badlands.css), and a door lands there. */}
       {fly && <div ref={runway} className="b-world__runway" aria-hidden="true" />}
+      {fly && <div className="b-world__land" aria-hidden="true" />}
 
       {album && <Album plates={plates} onClose={closeAlbum} />}
     </section>

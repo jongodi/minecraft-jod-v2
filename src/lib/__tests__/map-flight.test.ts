@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bearing, cameraAt, cover, depthScale, easeFlight, facing, fetchOrder, flightShape, frameFor, heading, headingOf, horizonPoint, project, projectPoint, warp, type Flight, type FlightShot } from '../map-flight';
+import { bearing, cameraAt, cardShot, cover, depthScale, easeFlight, facing, fetchOrder, flightProgress, flightShape, follow, frameFor, heading, headingOf, horizonPoint, project, projectPoint, warp, type Flight, type FlightShot } from '../map-flight';
 
 const IDENTITY = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
 /* w = z, as a camera at the origin looking down +z would give */
@@ -60,6 +60,32 @@ describe('the flight', () => {
     expect(easeFlight(0.5)).toBe(0.5);
     expect(easeFlight(0.05)).toBeLessThan(0.05);
     expect(easeFlight(0.95)).toBeGreaterThan(0.95);
+  });
+
+  it('sets off while the frame rises and lands where the stay begins', () => {
+    /* the world at 900, held 56 from the top, setting off 400 early, landing 800 after it is held */
+    expect(flightProgress(444, 900, 56, 400, 800)).toBe(0);
+    expect(flightProgress(0, 900, 56, 400, 800)).toBe(0);
+    expect(flightProgress(844, 900, 56, 400, 800)).toBeCloseTo(400 / 1200);
+    expect(flightProgress(1644, 900, 56, 400, 800)).toBe(1);
+    /* the stay past the landing is still landed */
+    expect(flightProgress(2000, 900, 56, 400, 800)).toBe(1);
+    expect(flightProgress(500, 900, 56, 0, 0)).toBe(1);
+  });
+
+  it('glides the camera after the scroll and arrives exactly', () => {
+    const one = follow(0, 1, 16);
+    expect(one).toBeGreaterThan(0);
+    expect(one).toBeLessThan(0.2);
+    /* most of the way in a few tenths of a second, the same however the frames fall */
+    let a = 0; for (let i = 0; i < 30; i++) a = follow(a, 1, 10);
+    let b = 0; for (let i = 0; i < 10; i++) b = follow(b, 1, 30);
+    expect(a).toBeCloseTo(b, 6);
+    expect(a).toBeGreaterThan(0.85);
+    let c = 0; for (let i = 0; i < 200 && c !== 1; i++) c = follow(c, 1, 16);
+    expect(c).toBe(1);
+    expect(follow(0.4, 0.2, 16)).toBeLessThan(0.4);
+    expect(follow(0.3, 0.3, 16)).toBe(0.3);
   });
 
   it('reads the way the camera faces by the game\'s compass', () => {
@@ -149,5 +175,64 @@ describe('a corner of the world on a wall', () => {
 
   it('has nothing to show for no places', () => {
     expect(frameFor(set, [])).toBeNull();
+  });
+});
+
+describe("a place's card seen from the air", () => {
+  const at = (span: number): FlightShot => {
+    const m = [...IDENTITY];
+    m[0] = 1 / span; m[5] = 1 / span;
+    return { m, eye: [0, 0, 0], look: [0, 0, 0], d: span };
+  };
+  /* the overview, then nearer and nearer */
+  const set = { width: 1280, height: 720, shots: [at(100), at(10), at(3)] };
+  const CARD = { width: 1200, height: 630 };
+  const anywhere = () => true;
+
+  it('takes the nearest still, cropped to bring the place up toward the aim', () => {
+    const s = cardShot(set, [0, 0, 0], CARD, anywhere)!;
+    expect(s.k).toBe(2);
+    expect(s.width).toBeCloseTo(1200);
+    expect(s.height).toBeCloseTo(675);
+    /* the still is 45 px taller than the card, all of it spent lifting the place */
+    expect(s.top).toBeCloseTo(-45);
+    expect(s.x).toBeCloseTo(600);
+    expect(s.y).toBeCloseTo(337.5 - 45);
+  });
+
+  it('takes the nearest still where the lantern stands clear of the postcard', () => {
+    /* far left: the nearest still puts it under the postcard, the next one clear of it */
+    const s = cardShot(set, [-2.4, 0, 0], CARD, (x) => x >= 400 && x <= 700)!;
+    expect(s.k).toBe(1);
+    expect(s.x).toBeGreaterThanOrEqual(400);
+  });
+
+  it('draws a still a little closer when that brings the lantern clear', () => {
+    /* three quarters across the nearest still: 900 on the card at the least
+       scale, short of the clear ground, which starts at 920 */
+    const s = cardShot(set, [1.5, 1.5, 0], CARD, (x, y) => x >= 920 && y <= 250)!;
+    expect(s.k).toBe(2);
+    expect(s.width).toBeGreaterThan(1200);
+    expect(s.width).toBeLessThanOrEqual(1280 * 1.2 + 1e-9);
+    expect(s.x).toBeGreaterThanOrEqual(920);
+    expect(s.y).toBeLessThanOrEqual(250);
+  });
+
+  it('falls back to the nearest still that has it on the card at all', () => {
+    expect(cardShot(set, [0, 0, 0], CARD, () => false)!.k).toBe(2);
+  });
+
+  it("never crops past the still's edge", () => {
+    for (const point of [[0, 0, 0], [2.9, 2.9, 0], [-2.9, -2.9, 0]]) {
+      const s = cardShot(set, point, CARD, anywhere)!;
+      expect(s.left).toBeLessThanOrEqual(0);
+      expect(s.left).toBeGreaterThanOrEqual(CARD.width - s.width - 1e-9);
+      expect(s.top).toBeLessThanOrEqual(0);
+      expect(s.top).toBeGreaterThanOrEqual(CARD.height - s.height - 1e-9);
+    }
+  });
+
+  it('has no card from the air for a place no still shows', () => {
+    expect(cardShot(set, [500, 0, 0], CARD, anywhere)).toBeNull();
   });
 });

@@ -69,6 +69,28 @@ export function fetchOrder(frames: number): number[] {
 /** The scroll onto the path: the overview holds a moment, the landing settles. */
 export const easeFlight = (p: number): number => p * p * (3 - 2 * p);
 
+/** How far down the flight the page is, 0 high over the world and 1 landed.
+    The camera sets off while the frame is still rising, `lead` pixels before
+    it is held at `stick` from the top of the screen, and lands `length`
+    pixels after; the page past the landing is the time spent there. */
+export function flightProgress(scrollY: number, top: number, stick: number, lead: number, length: number): number {
+  const span = lead + length;
+  if (!(span > 0)) return 1;
+  return Math.min(1, Math.max(0, (scrollY + stick - top + lead) / span));
+}
+
+/* how long the camera takes to make up most of the way to where the scroll
+   is, in ms: about a wheel notch's worth of glide, short enough that a drag
+   or a trackpad still feels held */
+export const FOLLOW_MS = 140;
+
+/** The camera after `ms` of following the scroll from `from` towards `to`:
+    a wheel notch's jump becomes a glide, and it arrives exactly. */
+export function follow(from: number, to: number, ms: number, tau = FOLLOW_MS): number {
+  const next = from + (to - from) * (1 - Math.exp(-Math.max(0, ms) / tau));
+  return Math.abs(to - next) < 1e-4 ? to : next;
+}
+
 /** Where a world point falls in a still, as a fraction of its width and height
     (0 to 1 inside it), or null behind the camera. */
 export function projectPoint(m: readonly number[], [x, y, z]: readonly number[]): { x: number; y: number } | null {
@@ -156,6 +178,60 @@ export function bearing(from: readonly [number, number], way: readonly [number, 
 export function horizonPoint(eye: readonly number[], look: readonly number[]): [number, number, number] {
   const [fx, fz] = heading(eye, look);
   return [eye[0] + fx * 100000, eye[1], eye[2] + fz * 100000];
+}
+
+/** A place's link card seen from the air: the still, how it is laid on the
+    card, and where the place's lantern stands on the card. */
+export interface CardShot {
+  k: number;
+  /** the still drawn at `width`×`height` with its corner at `left`, `top` (zero or less) */
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+  /** the place on the card, in its pixels */
+  x: number;
+  y: number;
+}
+
+/** The still that shows a place nearest with its lantern clear of what the
+    card lays over it (`clear`, in the card's pixels), and how it is cropped.
+    The still covers the card, drawn no larger than it needs to be: at the
+    least that covers, and only where that leaves the lantern under the
+    postcard, a little closer (up to `zoom` times the still's own size), the
+    spare width and height used to bring the place toward `aim`. The nearest
+    still where it stands clear wins; failing that the nearest that shows it
+    on the card at all, away from the very edge; null where none does. */
+export function cardShot(
+  set: FlightSet,
+  point: readonly number[],
+  card: { width: number; height: number },
+  clear: (x: number, y: number) => boolean,
+  aim: { x: number; y: number } = { x: card.width * 0.78, y: card.height * 0.34 },
+  zoom = 1.2,
+): CardShot | null {
+  const least = Math.max(card.width / set.width, card.height / set.height);
+  const scales = [least, ...[1, 1.1, zoom].filter(z => z > least && z <= zoom)];
+  const place = (k: number, scale: number): CardShot | null => {
+    const p = projectPoint(set.shots[k].m, point);
+    if (!p || p.x < 0 || p.x > 1 || p.y < 0 || p.y > 1) return null;
+    const width = set.width * scale, height = set.height * scale;
+    const px = p.x * width, py = p.y * height;
+    const left = -Math.min(width - card.width, Math.max(0, px - aim.x));
+    const top = -Math.min(height - card.height, Math.max(0, py - aim.y));
+    return { k, left, top, width, height, x: px + left, y: py + top };
+  };
+  const margin = 40;
+  let seen: CardShot | null = null;
+  for (let k = set.shots.length - 1; k >= 0; k--) {
+    for (const scale of scales) {
+      const s = place(k, scale);
+      if (!s) break;
+      if (clear(s.x, s.y)) return s;
+      if (!seen && scale === least && s.x >= margin && s.x <= card.width - margin && s.y >= margin && s.y <= card.height - margin) seen = s;
+    }
+  }
+  return seen;
 }
 
 /** The still of a flight that shows these points best, for a member's wall:

@@ -468,7 +468,7 @@ html:not(.jod-embed) .control-bar .pos-input { width: 14em; }
    places along the foot; BlueMap's own tools gather under the HUD on the
    right, and the zoom buttons clear the places. */
 html.jod-embed .control-bar {
-  top: 4.75rem;
+  top: 6rem;
   left: auto;
   right: clamp(0.75rem, 3vw, 3rem);
   width: auto;
@@ -478,6 +478,10 @@ html.jod-embed .control-bar {
 html.jod-embed .control-bar .space.greedy,
 html.jod-embed .control-bar .pos-input { display: none; }
 html.jod-embed #zoom-buttons { right: clamp(0.25rem, 3vw - 0.5rem, 2.5rem); bottom: 8rem; }
+/* Landed in the live map, it is glass until the lantern is pressed (the
+   page's World.tsx): its own tools would be keys that do nothing, so they
+   come only once it is taken in hand. */
+html.jod-glass .control-bar, html.jod-glass #zoom-buttons { visibility: hidden; }
 html.jod-embed #map-container::after { background: radial-gradient(ellipse 80% 75% at 50% 50%, transparent 65%, rgba(21, 16, 13, 0.35) 100%); }
 /* A phone: the HUD's keys sit in one row across the top, so BlueMap's gather
    at the foot on the right, over the places, where a thumb is anyway: the same
