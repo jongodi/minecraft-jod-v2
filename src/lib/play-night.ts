@@ -21,7 +21,11 @@
 
    A night that was held is kept for good once it leaves the fires: the
    annals (Annáll in the crew's room) hold when it was, who lit it, who said
-   they'd come and who came. */
+   they'd come and who came, and what the game counted of the evening
+   (src/lib/night-numbers.ts). */
+
+import { eveningAdvancements, tallyOf, type NightNumbers } from '@/lib/night-numbers';
+import type { Done } from '@/lib/advancements';
 
 export const MAX_OPTIONS = 3;
 /** nights planned at once: lit and not yet over */
@@ -53,8 +57,8 @@ export interface Night {
   chosenAt?: string;
   cancelled: boolean;
   startedBy: string | null;
-  /** filled in the day after, by the daily job */
-  outcome:   { came: string[]; noShows: string[] } | null;
+  /** filled in the day after, by the daily job; the numbers left out on a night settled before they were kept, until the next job counts them */
+  outcome:   { came: string[]; noShows: string[]; numbers?: NightNumbers } | null;
 }
 
 /** username → the option ids they can make; [] is kemst ekki */
@@ -163,6 +167,8 @@ export interface PastNight {
   came:      string[];
   noShows:   string[];
   startedBy: string | null;
+  /** what the game counted of the evening, once it is settled */
+  numbers?:  NightNumbers;
 }
 
 /** What the annals keep of a night: one that was held, settled or not (then
@@ -176,6 +182,7 @@ export function pastOf(night: Night, votes: Votes, seen: string[]): PastNight | 
     came: night.outcome?.came ?? [...seen].sort((a, b) => a.localeCompare(b)),
     noShows: night.outcome?.noShows ?? [],
     startedBy: night.startedBy,
+    ...(night.outcome?.numbers ? { numbers: night.outcome.numbers } : {}),
   };
 }
 
@@ -342,43 +349,91 @@ export async function pastNight(id: string): Promise<PastNight | null> {
   return (await pastNights()).find(p => p.id === id) ?? null;
 }
 
+/** The last daily copy taken before an evening began, and the first after it ended. */
+async function copiesAround(start: number, end: number) {
+  const { readDay, dayOf } = await import('@/lib/daily-stats');
+  let before = null;
+  for (const d of [dayOf(new Date(start)), dayOf(new Date(start - DAY))]) { const c = await readDay(d); if (c && t(c.takenAt) <= start) { before = c; break; } }
+  let after = null;
+  for (const d of [dayOf(new Date(end)), dayOf(new Date(end + DAY))]) { const c = await readDay(d); if (c && t(c.takenAt) >= end) { after = c; break; } }
+  return { before, after };
+}
+
+/** What the game counted of an evening at `at` for those who came: the copies
+    either side, and the advancements from when the server could be started
+    until the evening was over. */
+function numbersOf(came: string[], at: string, copies: Awaited<ReturnType<typeof copiesAround>>, advancements: Record<string, Done> | null): NightNumbers {
+  const start = t(at);
+  return {
+    by: tallyOf(came, copies.before?.counters ?? null, copies.after?.counters ?? null),
+    advancements: eveningAdvancements(came, advancements, start - START_BEFORE_MS, start + EVENING_MS),
+  };
+}
+
 /** The day after: once a daily copy taken after a night's evening exists, who
-    came and who didn't is settled and the no-shows are counted. */
-async function settleOne(night: Night, now: number): Promise<{ id: string; came: string[]; noShows: string[] } | null> {
+    came and who didn't is settled, the no-shows are counted, and what the
+    game counted of the evening is kept with it. */
+async function settleOne(night: Night, now: number, advancements: Record<string, Done> | null): Promise<{ id: string; came: string[]; noShows: string[] } | null> {
   const chosen = optionOf(night, night.chosen)!;
   const start = t(chosen.at);
   const end = start + EVENING_MS;
 
-  const { readDay, dayOf } = await import('@/lib/daily-stats');
-  /* the last copy taken before the evening began, and the first after it ended */
-  const before = [dayOf(new Date(start)), dayOf(new Date(start - DAY))];
-  const after = [dayOf(new Date(end)), dayOf(new Date(end + DAY))];
-  let copyBefore = null;
-  for (const d of before) { const c = await readDay(d); if (c && t(c.takenAt) <= start) { copyBefore = c; break; } }
-  let copyAfter = null;
-  for (const d of after) { const c = await readDay(d); if (c && t(c.takenAt) >= end) { copyAfter = c; break; } }
+  const copies = await copiesAround(start, end);
   /* the copy after the evening isn't there yet: tomorrow, then */
-  if (!copyAfter && now < end + 2 * DAY) return null;
+  if (!copies.after && now < end + 2 * DAY) return null;
 
   /* claimed before anything is counted: a daily job delivered twice must not
      charge anyone twice for the same night */
   const r = await redis();
   if (!(await r.set(`${SETTLED_PREFIX}${night.id}`, '1', 'EX', KEEP_S, 'NX'))) return null;
   const votes = await readVotes(night.id);
-  const outcome = outcomeOf(yesFor(votes, chosen.id), await readSeen(night.id), copyBefore?.counters ?? null, copyAfter?.counters ?? null);
-  await writeNight({ ...night, outcome });
+  const outcome = outcomeOf(yesFor(votes, chosen.id), await readSeen(night.id), copies.before?.counters ?? null, copies.after?.counters ?? null);
+  await writeNight({ ...night, outcome: { ...outcome, numbers: numbersOf(outcome.came, chosen.at, copies, advancements) } });
   for (const u of outcome.noShows) await r.hincrby(NO_SHOWS_KEY, u, 1);
   return { id: night.id, ...outcome };
 }
 
-/** Settles every night whose evening is over and not yet settled. Called by
-    the daily job; returns what it settled (empty if there was nothing to do yet). */
+/** Nights settled before their numbers were kept are counted once, from the
+    same daily copies (kept for 400 days): those whose embers still glow, and
+    those in the annals. A night whose copies are gone keeps what could be
+    counted, its advancements at least, and is not tried again. */
+async function countEarlier(nights: Night[], advancements: Record<string, Done>): Promise<void> {
+  for (const night of nights) {
+    const chosen = optionOf(night, night.chosen);
+    if (night.cancelled || !chosen || !night.outcome || night.outcome.numbers) continue;
+    const start = t(chosen.at);
+    const numbers = numbersOf(night.outcome.came, chosen.at, await copiesAround(start, start + EVENING_MS), advancements);
+    await writeNight({ ...night, outcome: { ...night.outcome, numbers } });
+  }
+  const r = await redis();
+  for (const [id, raw] of Object.entries(await r.hgetall(PAST_KEY))) {
+    let past: PastNight;
+    try { past = JSON.parse(raw) as PastNight; } catch { continue; }
+    if (past.numbers) continue;
+    const start = t(past.at);
+    past.numbers = numbersOf(past.came, past.at, await copiesAround(start, start + EVENING_MS), advancements);
+    await r.hset(PAST_KEY, id, JSON.stringify(past));
+  }
+}
+
+/** Settles every night whose evening is over and not yet settled, and counts
+    any settled before the numbers were kept. Called by the daily job, after
+    the day's copy and the advancements are read; returns what it settled
+    (empty if there was nothing to do yet). */
 export async function settleNights(now = Date.now()): Promise<{ id: string; came: string[]; noShows: string[] }[]> {
+  const { readStoredAdvancements } = await import('@/lib/advancements');
+  const advancements = (await readStoredAdvancements())?.players ?? null;
   const done = [];
   for (const night of await readNights()) {
     if (night.cancelled || night.outcome || !night.chosen || phaseOf(night, now) !== 'over') continue;
-    const out = await settleOne(night, now);
+    const out = await settleOne(night, now, advancements);
     if (out) done.push(out);
+  }
+  /* earlier nights wait for a day the advancements can be read, so none is
+     kept without them for good; and a failure there leaves the settling done */
+  if (advancements) {
+    try { await countEarlier(await readNights(), advancements); }
+    catch (e) { console.error('[playnight] could not count the earlier nights:', e instanceof Error ? e.message : e); }
   }
   return done;
 }

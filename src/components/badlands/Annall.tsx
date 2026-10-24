@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import type { AnnalNight, AnnalsResponse } from '@/app/api/playnight/past/route';
 import { Fire, Heads } from './NightLine';
+import NightNumbers from './NightNumbers';
 import PlayerHead from './PlayerHead';
 import Rail, { revealRailItem } from './Rail';
 import { dayOf, sinceAt } from './night';
@@ -14,8 +15,9 @@ import { woodClass } from '@/lib/sign-wood';
 /* Annáll: the play nights that have been, at the foot of the crew's room.
    Each is a burnt-out fire on one strip of ground, newest first; a press
    opens that evening under them: who lit it, who came, who said they would
-   and didn't, and Myndir kvöldsins, the screenshots the crew took that
-   evening and pinned to their walls (src/lib/night-photos.ts). Fetched when
+   and didn't, what the game counted of it (NightNumbers.tsx), and Myndir
+   kvöldsins, the screenshots the crew took that evening and pinned to their
+   walls (src/lib/night-photos.ts). Fetched when
    the room is first opened; a room with no past nights shows nothing. */
 
 const cap = (s: string) => s.charAt(0).toLocaleUpperCase('is-IS') + s.slice(1);
@@ -113,6 +115,7 @@ function Evening({ night }: { night: AnnalNight }) {
           {night.noShows.length > 0 && <p className="b-note">Sögðust mæta en komu ekki: {night.noShows.join(', ')}</p>}
         </div>
       </div>
+      {night.numbers && <NightNumbers numbers={night.numbers} />}
       <div className="b-annall__pics">
         <p className="b-night__kicker">Myndir kvöldsins</p>
         {night.photos.length === 0 ? (
