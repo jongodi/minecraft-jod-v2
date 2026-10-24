@@ -102,4 +102,21 @@ describe('/bluemap-data', () => {
     expect((await ask(settings)).status).toBe(200);
     expect(get).toHaveBeenCalledTimes(2);
   });
+
+  it('reads one tile off the server for a hiccup, and asks the store for the next', async () => {
+    get.mockRejectedValueOnce(new Error('Vercel Blob: Failed to fetch blob: 503 Service Unavailable'));
+    get.mockResolvedValue({ statusCode: 200, stream: new Response('{}').body!, headers: new Headers({ 'content-type': 'application/json' }) } as unknown as Got);
+    fetchMock.mockImplementation(async () => new Response('{"map":1}'));
+    expect(await (await ask(settings)).text()).toBe('{"map":1}');
+    expect(await (await ask(settings)).text()).toBe('{}');
+    expect(get).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('gives up on the store for a while when the hiccups keep coming', async () => {
+    get.mockRejectedValue(new Error('socket hang up'));
+    fetchMock.mockImplementation(async () => new Response('{"map":1}'));
+    for (let i = 0; i < 6; i++) expect((await ask(settings)).status).toBe(200);
+    expect(get).toHaveBeenCalledTimes(5);
+  });
 });
