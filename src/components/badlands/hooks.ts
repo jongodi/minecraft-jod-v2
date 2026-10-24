@@ -346,6 +346,9 @@ let meHasPassword = false;
 /* the first answer came with the page rather than from asking; it is checked once, quietly */
 let meSeeded = false;
 let meInFlight: Promise<void> | null = null;
+/* every question is numbered and only the latest one's answer counts, so a
+   check sent before a sign-in or a sign-out never undoes it when it lands */
+let meAsked = 0;
 const meListeners = new Set<() => void>();
 const notifyMe = () => meListeners.forEach(l => l());
 
@@ -353,24 +356,30 @@ const notifyMe = () => meListeners.forEach(l => l());
    comes back, the answer stands, rather than signing a member out of their
    own wall over a dropped request. */
 async function fetchMe(quiet = false): Promise<void> {
+  const asked = ++meAsked;
   try {
     const res = await fetch('/api/crew/me', { cache: 'no-store' });
     if (!res.ok) throw new Error(`crew/me ${res.status}`);
     const data = await res.json() as { username: string | null; hasPassword?: boolean };
+    if (asked !== meAsked) return;
     meValue = data.username ?? null;
     meHasPassword = !!data.hasPassword;
   } catch {
-    if (quiet) return;
+    if (quiet || asked !== meAsked) return;
     meValue = null;
     meHasPassword = false;
   }
   notifyMe();
 }
-function askMe(quiet: boolean): Promise<void> {
-  if (!meInFlight) meInFlight = fetchMe(quiet).finally(() => { meInFlight = null; });
-  return meInFlight;
+/* Everyone asking as the page opens shares one question; a sign-in asks
+   afresh (`fresh`), since a question already out was sent before its cookie. */
+function askMe(quiet: boolean, fresh = false): Promise<void> {
+  if (meInFlight && !fresh) return meInFlight;
+  const asking: Promise<void> = fetchMe(quiet).finally(() => { if (meInFlight === asking) meInFlight = null; });
+  meInFlight = asking;
+  return asking;
 }
-const refreshMe = () => askMe(false);
+const refreshMe = () => askMe(false, true);
 const subscribeMe = (l: () => void) => { meListeners.add(l); return () => { meListeners.delete(l); }; };
 
 /** Who the server found signed in when it drew the page. */
@@ -397,12 +406,13 @@ export function useCrewSession(seed?: CrewSessionSeed): { me: Me; hasPassword: b
   const me = useSyncExternalStore(subscribeMe, () => meValue, () => seed?.me);
   const hasPassword = useSyncExternalStore(subscribeMe, () => meHasPassword, () => seed?.hasPassword ?? false);
   useEffect(() => {
-    if (meValue === undefined) refreshMe();
+    if (meValue === undefined) askMe(false);
     /* the browser still asks once, which puts right a session the server could not read */
     else if (meSeeded) { meSeeded = false; askMe(true); }
   }, []);
   const signOut = useCallback(async () => {
     await fetch('/api/crew/auth', { method: 'DELETE' }).catch(() => {});
+    meAsked++;
     meValue = null;
     meHasPassword = false;
     notifyMe();
