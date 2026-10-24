@@ -1073,3 +1073,66 @@ How it notices, in `src/lib/server-news.ts`: the version from each live status r
 ### Checked
 
 `tsc`, `next lint` and the build are clean; 411 tests with Part 15's, 6 of them new here (what counts as news, the version told once by two readers at once and never from the public lookup, the first look only remembering, a day of the shelf on one slip). In a production build against a local Redis, through the admin panel itself: the first change only remembered the shelf; a version moved, a pack added hidden and later shown, and a second version moved came out as one slip of three lines; the slips stood under Viðburðir and in the door's count, at 1440 and 390 with no sideways scroll and no console errors.
+
+---
+
+## Part 17. The review pass: what the eye and three readers found
+
+A pass on 24 October 2026, on `improve/oct-24-pass`, asked for bugs found and fixed, and a review of the design, the style and the layout on phones and wide screens. Every page was looked at in a production build against a local Redis with staged posts, calls, questions, replies and items, at 360 to 1920 px; three independent read-only audits went through the home page, the walls and the board, and the server. Every finding was traced to a real path before it was fixed, and each fix is a commit of its own.
+
+### The world and the home page
+
+| Where | What | Why, in one sentence |
+|---|---|---|
+| The world | **Doors, T and Back out of a room keep the camera landed**: where the flight runs, the world's scroll margin makes the far end of its runway its top. | Every way into the world scrolled to its top, which is where the flight starts, so a door pressed after landing flew the camera back up over everything, put the town's lights out and put a woken 3D map back to sleep. |
+| The lantern, the chat, the ridge | **A status answer that never came is no news**: the last real answer stands for up to five minutes, asked again every fifteen seconds, and only a live, recent answer is where comings and goings are counted from. | One failed question (a phone back from its pocket before its network) printed everyone in as leaving, climbed them all down and put the windows out, and the next answer brought them back as news; a cached page's old answer did the same. |
+| The fires | **A chosen night counts only its own time as yours**, and the night carries who has answered. | A yes kept for a time that was not chosen pressed Mæti and offered the start the server then refused; a member who had not answered saw Kemst ekki pressed. |
+| The hero, a phone | **The sun keeps above the crew's name tags**, and is not drawn where there is no room for it. | On 360 × 740 and 375 × 667 the Ð's climber's tag stood on the sun. |
+| The hero | The splash says **1, 2, 3 eða 4**. | Four doors since Taflan, one key each. |
+| The live map | **The F3 lines keep their own small store.** | Each camera message set the world's state, so the rail and a board left mounted drew again about seven times a second while the map turned. |
+| Keys and readers | A room opened from another gives focus back to its own door; the postcard and the chat give it to the place's tag or the world's name; the painted map and the viewer under a room's dark take no keys; the chat's log and the picked place are read out as they come. | Each left a keyboard at the top of the page, or under the dark, or a screen reader told nothing. |
+| The crew's room | Guests in and none of the crew is said as it is. | It said nobody was in. |
+
+### The walls and the board
+
+| Where | What | Why, in one sentence |
+|---|---|---|
+| Signing in | **Tries are counted per account**, and a sign-in forgets only its own. | A member could guess at another's password four times, sign in as themselves, and go round again without end. |
+| Signing in | A sign-in asks afresh who is in, and only the latest answer counts. | A check sent before the cookie answered for the sign-in, and the wall stayed a visitor's. |
+| A wall, empty | **The bar and the chains a sign will hang from**, with nothing on them yet. | Most walls start empty, and an empty one was a faint line beside the poster. |
+| A wall | The welcome note is solid over the night. | The moon showed through its corner, over its words. |
+| The board | A first look says **síðustu þrjá daga**, not "since you last looked". | A visitor who had never looked was told nothing was new since they last did. |
+| The board | The red string hangs under the last thing tagged Nýtt; a picture pinned from under Miðar opens the whole board; the door counts a new post with its replies once, as the board does. | An advancement could hang tagged new below the string; a picture with no words vanished; the door said 3 where the board said 1. |
+| Á döfinni | A call or a question gets two lines, and the one on its trail reads **þú ert á slóðinni**. | Every question was cut mid-word at 1440. |
+| The pin slot | A picture with no type (a phone's HEIC on Windows or Firefox) is redrawn, or told plainly it can't be. | It was let in by its name and then told it was not a picture. |
+| Replies, lanterns | A reply goes up once and what is typed while it goes stays; who lit a lantern is read out; a poster of someone in keeps its charge for a screen reader; 21 takes the singular. | Each was a small thing said wrong or done twice. |
+
+### The server
+
+| Where | What | Why, in one sentence |
+|---|---|---|
+| The 3D map | **One hiccup from the store no longer sends the map to exaroton**: only a refusal, or five misses in a row, does. | A single 503 sent every tile on the instance off the Minecraft server for five minutes, and exaroton turns the viewer's dozens of tiles at once away. |
+| The shelf's news | Read strictly, or nothing is told. | A failed read of the settings would be told as hidden packs arriving and versions moving, and back again. |
+| The admin panel | Start, stop and restart give up after eight seconds and say so, and ask the status afresh. | A hung call held the button until the function's limit. |
+
+### Not done
+
+1. **Two nights on one day share their daily copies**, so their totals on the slip are the same and who came is read from the whole day. It only ever errs toward not charging a no-show, and the slip says where its numbers come from; the fix is a call for the owner: forbid a second fire on a day, or leave such nights without totals.
+2. **The mail art's `v` is not checked.** Checking it would cost every letter already sent its picture the next time the design version moves, and any other parameter busts the cache as well.
+3. **An idempotency key for Resend**, Part 8's item 1, still stands.
+4. **Races the crew will not meet**: a night decided by a reader in the same instant it is put out, two fires lit for one evening at the same moment, a claim to settle a night left behind by a store error, a member who changes only the case of their Minecraft name. Each was traced and is written down here rather than built for.
+5. **A deleted gallery picture stays at its address for a year**: the addresses are made never to change, and purging the CDN on delete is its own piece of work.
+
+### Measured
+
+Production builds of `main` (`f9f7b20`) and this branch, served side by side on this machine against the same Redis and data, Lighthouse 12 mobile preset, ten alternating runs on `/`.
+
+| | `main` | this branch |
+|---|---|---|
+| Lighthouse `/` | 94 to 99, TBT median 80 ms, CLS 0 | 95 to 98, TBT median 80 ms, CLS 0 |
+| Lighthouse `/crew`, `/taflan`, a wall | 95; 96; 94 to 97 | 96; 96; 96 to 97 |
+| First Load JS `/`, `/crew`, `/crew/[username]`, `/taflan` | 162, 140, 169, 173 kB | 162, 140, 170, 173 kB |
+| Scroll probe, phone 390 × 844, 4× CPU (two runs) | mean 17.2 to 17.7 ms, p95 24.4 to 25.9 ms, 10 to 17 long | mean 17.0 to 17.3 ms, p95 24.3 to 25.6 ms, 8 to 12 long |
+| Tests | 411 | 421 |
+
+Accessibility, Best Practices and SEO hold at 100 on `/`; the other pages lose Best Practices only to the skin and head hosts the sandbox blocks. `tsc`, `next lint` and the build are clean at every commit. No sideways scroll at 360, 390, 768, 1024, 1440 and 1920; the console is clean apart from what the sandbox cannot reach (exaroton, minotar). Walked in the browser: a door, T and Escape out of a room after landing, on a wide screen and a phone; a failed status answer; focus after each room, the postcard and the chat; an empty wall at 390 and 1440.
