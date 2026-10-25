@@ -391,8 +391,10 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
          own fails quietly; one that was asked for says so, back on the page
          if it was opened as the whole screen. */
       else if (m.type === 'failed') {
-        closeFull();
-        setLive(false); setReady(false); setViewer(false); setTiles(0); setSlow(false);
+        /* under a layer opened over the whole screen (the album), going
+           back would close the layer instead: the screen stays, still and lantern */
+        if (!modalOpen()) closeFull();
+        setLive(false); setReady(false); setViewer(false); setTiles(0); setSlow(false); setMenu(false);
         setFailed(!autoRef.current);
         setAuto(false);
       }
