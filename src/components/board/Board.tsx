@@ -118,13 +118,15 @@ function Board({ room = false, open = true, initial = null, initialFilter = 'all
      shared link and Back keep it; over the world it is the room's own. A
      new filter starts drawn from its top again. */
   const choose = useCallback((f: Shown) => {
+    /* the slot already in hand keeps what is drawn, and a reply half typed far down the board with it */
+    if (f === filter) return;
     setFilter(f);
     setReveal(STEP);
     if (room) return;
     const url = new URL(window.location.href);
     if (f === 'allt' || f === 'mer') url.searchParams.delete('syna'); else url.searchParams.set('syna', f);
     history.replaceState(history.state, '', url);
-  }, [room]);
+  }, [room, filter]);
 
   /* What was seen as this look began, for the tags and the string; the mark
      itself moves up a moment after the board is looked at, so the door's
@@ -205,7 +207,7 @@ function Board({ room = false, open = true, initial = null, initialFilter = 'all
   const show = useCallback((entryId: string) => {
     choose('allt');
     const at = items.findIndex(i => i.kind === 'post' && i.entry.id === entryId);
-    if (at >= STEP) setReveal(at + STEP);
+    if (at >= STEP) setReveal(r => Math.max(r, at + STEP));
     requestAnimationFrame(() => requestAnimationFrame(() => {
       const el = document.getElementById(entryId);
       if (!el) return;
