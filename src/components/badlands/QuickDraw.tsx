@@ -190,7 +190,9 @@ function QuickDraw({ onClose }: { onClose: () => void }) {
               <div><div className="b-duel__k">Meðaltal leiks</div><div className="b-duel__v">{gameAvg !== null ? `${gameAvg} ms` : '·'}</div></div>
               <div><div className="b-duel__k">Staða</div><div className="b-duel__v">{gameBest !== null && gameBest < 200 && <Star className="b-star" />}{gameBest !== null ? rankOf(gameBest) : '·'}</div></div>
             </div>
-            <button type="button" className="b-btn b-btn--solid" onClick={() => tap()} disabled={phase === 'result'}>
+            {/* aria-disabled, not disabled: a disabled button lets go of the keyboard,
+                and the next draw's Space or Enter went nowhere (tap() waits out 'result' itself) */}
+            <button type="button" className="b-btn b-btn--solid" onClick={() => tap()} aria-disabled={phase === 'result'}>
               {phase === 'idle' ? 'Hefja einvígi' : phase === 'done' ? 'Spila aftur' : phase === 'draw' ? 'Skjóttu' : phase === 'result' ? 'Hleð aftur…' : 'Bíddu…'}
             </button>
             <p className="b-duel__rules">Sýslumaður undir 200 ms, aðstoðarsýslumaður undir 300 og kúreki undir 450. Annars ertu nýliði.</p>

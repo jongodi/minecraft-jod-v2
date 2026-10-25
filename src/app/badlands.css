@@ -238,7 +238,7 @@
 @media (max-width: 399px) { .b-btn { white-space: normal; text-align: center; } }
 .b-btn:focus-visible { background: var(--lantern); color: var(--night); }
 @media (hover: hover) { .b-btn:hover { background: var(--lantern); color: var(--night); } }
-.b-btn[disabled] { opacity: 0.45; cursor: default; }
+.b-btn[disabled], .b-btn[aria-disabled='true'] { opacity: 0.45; cursor: default; }
 .b-btn--solid { background: var(--lantern); color: var(--night); box-shadow: var(--bevel); }
 .b-btn--solid:active { box-shadow: var(--bevel-in); }
 @media (hover: hover) { .b-btn--solid:hover { background: var(--lantern-deep); border-color: var(--lantern-deep); color: var(--night); } }

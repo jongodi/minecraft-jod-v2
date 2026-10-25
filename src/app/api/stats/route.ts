@@ -3,7 +3,8 @@
 // When offline, serves the last cached snapshot with a timestamp.
 import { NextResponse } from 'next/server';
 import { CREW_USERNAMES } from '@/lib/crew';
-import { EMPTY, getCachedStats, readGameStats, readWeek, setCachedStats, withCharges, type PlayerStat, type StatsResponse } from '@/lib/stats';
+import { EMPTY, getCachedStats, readGameStats, readWeek, withCharges, type PlayerStat, type StatsResponse } from '@/lib/stats';
+import { keepSnapshot } from '@/lib/stats-snapshot';
 
 export type { PlayerStat, StatsResponse, WeekPlayer, WeekStats } from '@/lib/stats';
 
@@ -11,6 +12,10 @@ export type { PlayerStat, StatsResponse, WeekPlayer, WeekStats } from '@/lib/sta
 const hasCharge = (p: PlayerStat) => p.drawMs > 0 || p.firsts > 0 || p.bounties > 0 || p.noShows > 0;
 
 export const dynamic = 'force-dynamic';
+
+/* A fallback answer is kept a minute at the CDN: while exaroton is failing,
+   every view of the home page, a wall or the roll call asked it again. */
+const FALLBACK = { headers: { 'Cache-Control': 's-maxage=60, stale-while-revalidate=60' } };
 
 export async function GET() {
   const token = process.env.EXAROTON_API_KEY;
@@ -25,28 +30,18 @@ export async function GET() {
     if (cached) {
       return NextResponse.json({
         players: await withCharges(cached.players), source: 'cached', cachedAt: cached.cachedAt, week,
-      } satisfies StatsResponse);
+      } satisfies StatsResponse, FALLBACK);
     }
     /* no game stats at all, but the board still has the charges kept beside them */
     const draws = await withCharges(CREW_USERNAMES.map(username => ({ username, ...EMPTY })));
-    return NextResponse.json({ players: draws.some(hasCharge) ? draws : [], source: 'unavailable', cachedAt: null, week } satisfies StatsResponse);
+    return NextResponse.json({ players: draws.some(hasCharge) ? draws : [], source: 'unavailable', cachedAt: null, week } satisfies StatsResponse, FALLBACK);
   }
 
   try {
     const [read, week] = await Promise.all([readGameStats(token), weekRead]);
-    let players = read.players;
+    /* a file that could not be read this time is not a member who never played: they keep their last numbers */
+    const players = await keepSnapshot(read);
     const now = new Date().toISOString();
-
-    if (read.failed.length) {
-      /* A file that could not be read this time is not a member who never
-         played: they keep their last numbers, and the snapshot (the board's
-         fallback and the wall's bounty) is not written over with zeros. */
-      const last = new Map((await getCachedStats())?.players.map(p => [p.username, p]));
-      players = players.map(p => (read.failed.includes(p.username) && last.get(p.username)) || p);
-    } else if (players.some(p => p.playTimeTicks > 0 || p.deaths > 0 || p.mobKills > 0)) {
-      // Only cache if we got meaningful data
-      await setCachedStats(players);
-    }
 
     return NextResponse.json({
       players: await withCharges(players), source: 'live', cachedAt: now, week,
@@ -63,10 +58,10 @@ export async function GET() {
     if (cached && cached.players.some(p => p.playTimeTicks > 0 || p.deaths > 0 || p.mobKills > 0)) {
       return NextResponse.json({
         players: await withCharges(cached.players), source: 'cached', cachedAt: cached.cachedAt, week,
-      } satisfies StatsResponse);
+      } satisfies StatsResponse, FALLBACK);
     }
 
     const draws = await withCharges(CREW_USERNAMES.map(username => ({ username, ...EMPTY })));
-    return NextResponse.json({ players: draws.some(hasCharge) ? draws : [], source: 'unavailable', cachedAt: null, week } satisfies StatsResponse);
+    return NextResponse.json({ players: draws.some(hasCharge) ? draws : [], source: 'unavailable', cachedAt: null, week } satisfies StatsResponse, FALLBACK);
   }
 }

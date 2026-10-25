@@ -8,7 +8,7 @@ import { useState } from 'react';
 import type { CrewPoll } from '@/lib/crew-types';
 import { sameUser } from '@/lib/crew-types';
 import { errorFrom, failure } from '@/lib/crew-upload';
-import { plural } from '@/lib/format';
+import { andList, plural } from '@/lib/format';
 import PlayerHead from '@/components/badlands/PlayerHead';
 
 interface Props {
@@ -54,7 +54,7 @@ export default function Poll({ username, entryId, poll, me, isOwner, onChange }:
                 <span className="w-poll__fill" aria-hidden="true" />
                 <span className="w-poll__text">{c.text}{won && <span className="w-poll__won">flest völdu</span>}</span>
                 <span className="w-poll__heads" aria-hidden="true">{c.votes.map(v => <PlayerHead key={v} name={v} size={16} alt="" />)}</span>
-                <span className="w-poll__count">{c.votes.length}<span className="b-visually-hidden"> atkvæði{c.votes.length ? `: ${c.votes.join(', ')}` : ''}</span></span>
+                <span className="w-poll__count">{c.votes.length}<span className="b-visually-hidden"> atkvæði{c.votes.length ? `: ${andList(c.votes)}` : ''}</span></span>
               </button>
             </li>
           );

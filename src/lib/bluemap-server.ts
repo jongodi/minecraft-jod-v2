@@ -39,13 +39,26 @@ export async function isOnline(id: string, token: string): Promise<boolean> {
   return online;
 }
 
-/** A file under BlueMap's web folder, as exaroton hands it out. */
-export function fetchFile(id: string, token: string, path: string): Promise<Response> {
+/* How long exaroton may take to start answering for a file. Only the wait
+   for the answer is capped, not the body: the texture atlas takes a while to
+   stream, and that is fine once it has begun. A hung call held each of the
+   viewer's once-a-second asks for players until the function's own limit. */
+const ANSWER_WITHIN_MS = 8000;
+
+/** A file under BlueMap's web folder, as exaroton hands it out. Throws when exaroton cannot be reached or does not answer in time. */
+export async function fetchFile(id: string, token: string, path: string): Promise<Response> {
   const encoded = `${WEBROOT}/${path}`.split('/').map(encodeURIComponent).join('/');
-  return fetch(`${SERVERS_API}/${id}/files/data/${encoded}`, {
-    headers: { Authorization: `Bearer ${token}` },
-    cache: 'no-store',
-  });
+  const giveUp = new AbortController();
+  const timer = setTimeout(() => giveUp.abort(), ANSWER_WITHIN_MS);
+  try {
+    return await fetch(`${SERVERS_API}/${id}/files/data/${encoded}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: 'no-store',
+      signal: giveUp.signal,
+    });
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 /* exaroton answers a missing file with a 4xx; which one isn't documented,

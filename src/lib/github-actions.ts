@@ -11,7 +11,10 @@ import { getExarotonServerId } from '@/lib/exaroton';
 
 const REPO = (process.env.MAP_SYNC_REPO || 'jongodi/minecraft-jod-v2').trim();
 
-export const NO_TOKEN = 'MAP_SYNC_GITHUB_TOKEN hefur ekki verið stilltur í Vercel. Hann þarf aðganginn „Actions: Read and write“ að repóinu.';
+/* how long GitHub or exaroton may take to answer one of the panel's calls */
+const CALL_WITHIN_MS = 8000;
+
+export const NO_TOKEN ='MAP_SYNC_GITHUB_TOKEN hefur ekki verið stilltur í Vercel. Hann þarf aðganginn „Actions: Read and write“ að repóinu.';
 
 /** A call to one workflow's part of the GitHub API (/runs, /dispatches). */
 export function workflowApi(workflow: string) {
@@ -26,7 +29,17 @@ export function workflowApi(workflow: string) {
       ...init.headers,
     },
     cache: 'no-store',
+    /* a hung call held the panel's button until the function's own limit */
+    signal: init.signal ?? AbortSignal.timeout(CALL_WITHIN_MS),
   });
+}
+
+/** A dispatch that timed out may still have been taken: GitHub can start
+    the run and answer late. Said so, so the button is not pressed twice. */
+export function dispatchError(err: unknown): string | null {
+  return err instanceof Error && err.name === 'TimeoutError'
+    ? 'GitHub svaraði ekki í tæka tíð en keyrslan gæti samt hafa farið af stað. Endurhlaðaðu og sjáðu stöðuna áður en þú reynir aftur.'
+    : null;
 }
 
 export async function githubError(res: Response): Promise<string> {
@@ -72,6 +85,8 @@ export async function serverStopped(): Promise<boolean> {
     const res = await fetch(`https://api.exaroton.com/v1/servers/${id}/`, {
       headers: { Authorization: `Bearer ${token}` },
       cache: 'no-store',
+      /* asked before every dispatch: a hung exaroton held the GitHub buttons too */
+      signal: AbortSignal.timeout(CALL_WITHIN_MS),
     });
     if (!res.ok) return false;
     const { data } = await res.json() as { data: { status: number } };

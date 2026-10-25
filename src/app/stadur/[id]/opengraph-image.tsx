@@ -6,6 +6,7 @@ import { onMap, type MapBounds } from '@/lib/base-links';
 import { FLIGHT, cardShot, flightFrame, type CardShot } from '@/lib/map-flight';
 import type { MapLocation } from '@/lib/map-types';
 import viewerFiles from '@/lib/bluemap-viewer.json';
+import { andList } from '@/lib/format';
 
 export const alt = 'Póstkort af stað í Minecraft-heimi JOÐ';
 export const size = CARD;
@@ -91,7 +92,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
           <div style={{ display: 'flex', fontSize: long ? 58 : 76, lineHeight: 1.05, color: C.ink, marginTop: 8 }}>{name}</div>
           {sub && <div style={{ display: 'flex', fontFamily: 'Pixelify Sans', fontSize: 32, lineHeight: 1.3, color: C.inkSoft, marginTop: 10 }}>{sub}</div>}
           {builders.length > 0 && (
-            <div style={{ display: 'flex', fontFamily: 'Silkscreen', fontSize: 20, letterSpacing: 1, color: C.red, marginTop: 14 }}>{`BYGGT AF ${builders.join(', ').toUpperCase()}`}</div>
+            <div style={{ display: 'flex', fontFamily: 'Silkscreen', fontSize: 20, letterSpacing: 1, color: C.red, marginTop: 14 }}>{`BYGGT AF ${andList(builders).toUpperCase()}`}</div>
           )}
         </div>
 

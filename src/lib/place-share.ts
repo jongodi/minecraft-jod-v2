@@ -5,6 +5,7 @@ import { readMap } from '@/lib/map';
 import { readGallery, type GalleryPhoto } from '@/lib/gallery';
 import type { MapLocation } from '@/lib/map-types';
 import { handCase, titleCase } from '@/components/badlands/data';
+import { andList } from '@/lib/format';
 
 export interface SharedPlace {
   place: MapLocation;
@@ -32,7 +33,7 @@ export async function sharedPlace(idText: string): Promise<SharedPlace | null> {
   }
 
   const sub = handCase(place.sublabel).replace(/\s*·\s*/g, ', ').trim();
-  const built = place.builders?.length ? `byggt af ${place.builders.join(', ')}` : '';
+  const built = place.builders?.length ? `byggt af ${andList(place.builders)}` : '';
   const title = titleCase(place.label.trim() || 'Staður');
   const description = [sub, built].filter(Boolean).join(' · ') || 'Staður í Minecraft-heimi JOÐ';
   return { place, photo, title, sub, description };

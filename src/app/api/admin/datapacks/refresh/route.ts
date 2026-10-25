@@ -42,7 +42,8 @@ export async function POST() {
 
     const listRes = await fetch(
       `https://api.exaroton.com/v1/servers/${id}/files/info/world/datapacks`,
-      { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' }
+      /* capped, so a hung exaroton answers as an error instead of holding the panel's Refresh */
+      { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store', signal: AbortSignal.timeout(8000) }
     );
     if (!listRes.ok) {
       return NextResponse.json(

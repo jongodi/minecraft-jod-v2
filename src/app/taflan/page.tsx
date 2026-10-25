@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import type { Metadata } from 'next';
 import { SITE_NAME } from '@/components/badlands/data';
 import { readBoard } from '@/lib/board';
@@ -25,5 +26,6 @@ export default async function Taflan({ searchParams }: Props) {
   const [board, session, query] = await Promise.all([readBoard().catch(() => null), getCrewSession(), searchParams]);
   const seed = { me: session?.username ?? null, hasPassword: session ? await hasPassword(session.username).catch(() => false) : false };
   const syna = typeof query.syna === 'string' ? query.syna : null;
-  return <BoardPage initial={board} session={seed} initialFilter={isFilter(syna) ? syna : 'allt'} />;
+  /* which drawing this is, so Back to it is told from a fresh one (useRestored) */
+  return <BoardPage initial={board} session={seed} initialFilter={isFilter(syna) ? syna : 'allt'} drawn={randomUUID()} />;
 }

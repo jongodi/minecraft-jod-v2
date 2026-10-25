@@ -9,7 +9,7 @@ import type { PlacePrints } from '@/lib/crew-places';
 import { baseUrl, mapAt, onMap, type BaseLink, type MapBounds } from '@/lib/base-links';
 import viewerFiles from '@/lib/bluemap-viewer.json';
 import { BackIcon, CloseIcon, FoldedMapIcon, FullScreenIcon, Lantern, MoonIcon, PictureIcon, Sun } from './Bits';
-import { plural } from '@/lib/format';
+import { andList, plural } from '@/lib/format';
 import Drawer from './Drawer';
 import PlayerHead from './PlayerHead';
 import Rail, { revealRailItem } from './Rail';
@@ -18,7 +18,7 @@ import Flight, { type FlightPlace } from './Flight';
 import Locator, { type CameraSink } from './Locator';
 import { useLivePlayers } from './livePlayers';
 import { FLIGHT, headingOf } from '@/lib/map-flight';
-import { CREW, FACING, MAP_LIGHTS, MAP_POSTER, MAP_URL, SITE_NAME, handCase, plainClick, titleCase, type Plate, type RoomId } from './data';
+import { CREW, FACING, MAP_LIGHTS, MAP_POSTER, MAP_URL, SITE_NAME, handCase, isRoom, plainClick, titleCase, type Plate, type RoomId } from './data';
 import type { ServerState } from './hooks';
 import { modalOpen, showWorld, useEffectsAllowed, useInert, useMediaQuery, useReducedMotionPref, useRoomForEffects } from './hooks';
 import { photoProps, PHOTO_SIZES } from './photo';
@@ -184,6 +184,8 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
   /* the viewer's map has loaded and window.jod answers */
   const [viewer, setViewer]   = useState(false);
   const [tiles, setTiles]     = useState(0);
+  /* the live map was asked for and would not come; said until it is asked again */
+  const [failed, setFailed]   = useState(false);
   /* where the live map is looking, for the F3 lines (F3 below) */
   const [camera] = useState(cameraStore);
   const [night, setNight]     = useState(false);
@@ -275,13 +277,28 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
   const reduce = useReducedMotionPref();
   const capable = useRoomForEffects();
   const fly = FLIGHT !== null && capable && !reduce;
+  /* A link that arrives in the world (/#heimur, a room's /#hopur, a place's
+     /stadur/<id>) is scrolled to before the flight is decided, when the
+     world's top is still where the camera sets off: it stopped a third of
+     the way down, high over the town with the lights out. Once the runway
+     is laid, the arrival is taken on to the landing, as a door is. */
+  const arriving = useRef(true);
+  useEffect(() => {
+    if (!capable || !arriving.current) return;
+    arriving.current = false;
+    const h = window.location.hash.slice(1);
+    if (fly && (h === 'heimur' || isRoom(h) || /^\/stadur\/\d+\/?$/.test(window.location.pathname))) showWorld(false);
+  }, [capable, fly]);
   const runway = useRef<HTMLDivElement>(null);
   const flightF3 = useRef<HTMLParagraphElement>(null);
   const [landed, setLanded] = useState(true);
-  /* Landing in the live map, on a wide screen: past halfway down, the viewer
-     is woken behind the flight, loading and drawing nothing (standby), and
-     at the landing it takes over from the still at the very view the flight
-     ends on, alive (water moving, the crew walking). It stays glass until the
+  /* Landing in the live map, on a wide screen: from the visitor's first
+     scroll, the viewer is woken behind the flight, loading and drawing
+     nothing (standby). Its start holds the page's thread for half a second,
+     which halfway down froze the flight; up at the sunset the sky moves on
+     its own and nothing waits on it. At the landing it takes over from the
+     still at the very view the flight ends on, alive (water moving, the
+     crew walking). It stays glass until the
      lantern is pressed, so the wheel still scrolls the page past it; climbing
      back up puts it to sleep behind the flight again. `auto` is that viewer,
      woken by the flight and not yet taken hold of. */
@@ -353,6 +370,8 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
      that it is drawn, night and day, and a place's lantern pressed in 3D. */
   const standbyRef = useRef(standby);
   standbyRef.current = standby;
+  const autoRef = useRef(auto);
+  autoRef.current = auto;
   useEffect(() => {
     if (!live) return;
     const onMessage = (e: MessageEvent) => {
@@ -367,6 +386,18 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
         if (typeof m.rotation === 'number' && !standbyRef.current) cameraSink.current?.([m.ex ?? m.x, m.ez ?? m.z], headingOf(m.rotation));
       }
       else if (m.type === 'ready') setReady(true);
+      /* the map would not come: the viewer is put away, the still and the
+         lantern stay, and the lantern asks again. One the flight woke on its
+         own fails quietly; one that was asked for says so, back on the page
+         if it was opened as the whole screen. */
+      else if (m.type === 'failed') {
+        /* under a layer opened over the whole screen (the album), going
+           back would close the layer instead: the screen stays, still and lantern */
+        if (!modalOpen()) closeFull();
+        setLive(false); setReady(false); setViewer(false); setTiles(0); setSlow(false); setMenu(false);
+        setFailed(!autoRef.current);
+        setAuto(false);
+      }
       else if (m.type === 'night') setNight(!!m.on);
       else if (m.type === 'menu') setMenu(!!m.open);
       else if (m.type === 'place' && typeof m.id === 'number') { setSelect(m.id); revealRailItem(m.id, places.current); }
@@ -443,6 +474,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
   /* ─── the whole screen ─── */
   const openFull = useCallback(() => {
     setAuto(false);
+    setFailed(false);
     setLive(true);
     const el = frameRef.current;
     if (el?.requestFullscreen && document.fullscreenEnabled) {
@@ -460,11 +492,15 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
     if ((window.history.state as { jodFull?: boolean } | null)?.jodFull) window.history.back();
     else setFull(false);
   }, []);
+  /* Escape closes one thing at a time: a postcard or a room open in the
+     whole screen closes first (their own keys do it), and the screen stays */
+  const overFull = useRef(false);
+  overFull.current = selected !== null || shut;
   useEffect(() => {
     if (!full) return;
     const onFs = () => { if (!document.fullscreenElement && full === 'native') setFull(false); };
     const onPop = () => { if (full === 'overlay' && !(window.history.state as { jodFull?: boolean } | null)?.jodFull) setFull(false); };
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && full === 'overlay' && !modalOpen()) closeFull(); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && full === 'overlay' && !modalOpen() && !overFull.current) closeFull(); };
     document.addEventListener('fullscreenchange', onFs);
     window.addEventListener('popstate', onPop);
     window.addEventListener('keydown', onKey);
@@ -521,8 +557,8 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
   const onLand = useMemo(() => players.filter(p => !MAIN_BOUNDS || onMap(MAIN_BOUNDS, p)), [players]);
   /* The live map, taken hold of: from the lantern, the postcard or the whole
      screen. A viewer the flight woke is the same one, now let go of as glass. */
-  const takeHold = useCallback(() => { setAuto(false); setLive(true); }, []);
-  /* past halfway down on a wide screen: wake the live map behind the flight */
+  const takeHold = useCallback(() => { setAuto(false); setFailed(false); setLive(true); }, []);
+  /* set off down the page on a wide screen: wake the live map behind the flight */
   const liveRef = useRef(live);
   liveRef.current = live;
   const approach = useCallback(() => {
@@ -617,7 +653,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
                     <span className="b-hud__dot" aria-hidden="true" />
                     <span className="b-hud__inword">inni núna</span>
                     {/* the names in words: a label on a bare span is not read */}
-                    <span className="b-visually-hidden">: {inside.join(', ')}</span>
+                    <span className="b-visually-hidden">: {andList(inside)}</span>
                     {inside.map(n => headsLive ? (
                       <button key={n} type="button" className={`b-hud__head b-tip b-tip--below${following?.toLowerCase() === n.toLowerCase() ? ' is-on' : ''}`}
                         aria-pressed={following?.toLowerCase() === n.toLowerCase()} aria-label={`Elta ${n}`}
@@ -675,6 +711,9 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
                 onClick={e => { if (plainClick(e)) { e.preventDefault(); if (phone) openFull(); else takeHold(); } }}>
                 <Signpost here={shown && auto && ready} />
               </a>
+            )}
+            {failed && !live && (
+              <p className="b-boot__wait" role="status">kortið náði ekki að hlaðast · reyndu aftur eftir smástund</p>
             )}
             {shown && !ready && !still && slow && (
               <p className="b-boot__wait" role="status">

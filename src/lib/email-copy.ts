@@ -13,7 +13,7 @@
 // on their wall, Hópurinn in the admin panel), or else by their Minecraft name.
 import { optionOf, yesFor, type Night, type Votes } from '@/lib/play-night';
 import { dayTime } from '@/lib/night-share';
-import { plural } from '@/lib/format';
+import { andList, plural } from '@/lib/format';
 import type { Names } from '@/lib/crew-email';
 
 /** What the letters call the site: in the sender's name, the picture, the foot and the subjects. */
@@ -168,7 +168,7 @@ export type NightNotice = Exclude<MailKind, 'signin' | 'mention'>;
 
 /** Who is coming, as one sentence; nothing when nobody is. */
 const coming = (names: string[]) => names.length
-  ? [`${names.length} ${plural(names.length, 'ætlar', 'ætla')} að mæta: ${[...names].sort((a, b) => a.localeCompare(b, 'is')).join(', ')}.`]
+  ? [`${names.length} ${plural(names.length, 'ætlar', 'ætla')} að mæta: ${andList([...names].sort((a, b) => a.localeCompare(b, 'is')))}.`]
   : [];
 
 /** An answer link for this reader and night (src/lib/night-answer.ts): `svar`

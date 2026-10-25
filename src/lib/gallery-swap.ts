@@ -47,7 +47,7 @@ async function onDisk(name: string, ext: Ext): Promise<boolean> {
     counts as a miss. */
 async function overHttp(url: string, origin: string): Promise<boolean> {
   try {
-    const res = await fetch(new URL(url, origin), { method: 'HEAD', cache: 'no-store' });
+    const res = await fetch(new URL(url, origin), { method: 'HEAD', cache: 'no-store', signal: AbortSignal.timeout(5000) });
     return res.ok;
   } catch {
     return false;

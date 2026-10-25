@@ -6,6 +6,7 @@ import { CREW } from './data';
 import { useAgo, type ServerState } from './hooks';
 import { sinceAt } from './night';
 import type { ServerLife } from '@/lib/server-state';
+import { andList } from '@/lib/format';
 
 /* What the lantern says in each state the server can be in: the word in
    the pixel face, a line under it, and how the lantern burns. A server on
@@ -67,7 +68,7 @@ export default function StatusLantern({ server }: { server: ServerState }) {
         {(version || heads.length > 0) && (
           <span className="b-status__row b-status__meta">
             {heads.length > 0 && (
-              <span className={`b-status__heads b-tip${online ? '' : ' b-status__heads--then'}`} data-tip={`${online ? 'inni' : 'síðast inni'}: ${heads.join(', ')}`} aria-hidden="true">
+              <span className={`b-status__heads b-tip${online ? '' : ' b-status__heads--then'}`} data-tip={`${online ? 'inni' : 'síðast inni'}: ${andList(heads)}`} aria-hidden="true">
                 {heads.map(n => <PlayerHead key={n} name={n} size={16} />)}
               </span>
             )}

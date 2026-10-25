@@ -72,7 +72,7 @@ export default function AdminPage() {
       <header className="a-bar">
         <div className="a-wrap a-bar__inner">
           <Link href="/" className="a-bar__mark" onClick={guardLeave}><Mark />JOÐ</Link>
-          <span className="a-bar__title">Stjórnborð</span>
+          <h1 className="a-bar__title">Stjórnborð</h1>
           <div className="a-bar__actions">
             <Link href="/" className="a-btn a-btn--ghost a-btn--small" onClick={guardLeave}>Forsíðan</Link>
             <Button tone="ghost" small onClick={logout}>Skrá út</Button>

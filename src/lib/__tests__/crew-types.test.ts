@@ -49,6 +49,15 @@ describe('cleanText', () => {
     expect(cleanText('x'.repeat(600), LIMITS.bio)).toHaveLength(LIMITS.bio);
     expect(cleanText(42, 10)).toBe('');
   });
+
+  it('is empty when nothing that shows was typed, so no blank sign goes up', () => {
+    expect(cleanText('​​', 100)).toBe('');
+    expect(cleanText(' ​ ﻿⁠ ', 100)).toBe('');
+  });
+
+  it('keeps the joiners inside what does show', () => {
+    expect(cleanText('a‍b', 10)).toBe('a‍b');
+  });
 });
 
 describe('takenAtFromFilename', () => {

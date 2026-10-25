@@ -183,12 +183,16 @@
 
   /* ─── once the map is there ────────────────────────────────── */
 
-  function whenLoaded(cb) {
+  /* A map that will not come (its settings or textures could not be
+     fetched) leaves BlueMap errored, or still waiting after a minute: the
+     page is told, so it keeps its still rather than an empty viewer. */
+  function whenLoaded(cb, failed) {
     const started = Date.now();
     const check = () => {
       const app = window.bluemap;
       if (app?.mapViewer?.map && app.mapViewer.data.mapState === 'loaded') return cb(app);
-      if (Date.now() - started < 60000) setTimeout(check, 100);
+      if (app?.mapViewer?.data.mapState === 'errored' || Date.now() - started >= 60000) return failed();
+      setTimeout(check, 100);
     };
     check();
   }
@@ -736,5 +740,5 @@
   }
 
   if (!embedded) plank();
-  whenLoaded(setup);
+  whenLoaded(setup, () => tell('failed', {}));
 })();
