@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cronAuthorised } from '@/lib/cron';
 import { dayOf, saveDay } from '@/lib/daily-stats';
-import { readGameStats, setCachedStats } from '@/lib/stats';
+import { readGameStats } from '@/lib/stats';
+import { keepSnapshot } from '@/lib/stats-snapshot';
 import { sweepUnpinned } from '@/lib/crew-sweep';
 import { noteShelf } from '@/lib/server-news';
 
@@ -60,8 +61,8 @@ export async function GET(req: NextRequest) {
   const now = new Date();
   const day = dayOf(now);
   await saveDay({ day, takenAt: now.toISOString(), counters: stats.counters, failed: stats.failed });
-  /* the board's own copy is freshened too, while every file came through */
-  if (stats.failed.length === 0) await setCachedStats(stats.players);
+  /* the board's own copy is freshened too, a member whose file did not come through keeping their last numbers */
+  await keepSnapshot(stats);
   if (stats.failed.length) console.warn(`[cron/daily] ${day}: could not read ${stats.failed.join(', ')}`);
 
   /* the game's advancements, for the walls and the wanted board (src/lib/advancements.ts) */
