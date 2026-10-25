@@ -219,26 +219,34 @@ async function serve(req: Request, segments: string[]): Promise<Response> {
   let file: Response;
   let packed = false;
 
-  if (PACKED_FIRST.test(path)) {
-    file = await fetchFile(id, token, `${path}.gz`);
-    packed = file.ok;
-    if (isMissing(file.status)) {
-      await discard(file);
-      file = await fetchFile(id, token, path);
-    }
-  } else {
-    file = await fetchFile(id, token, path);
-    /* anything else under maps/ may still turn out to be stored gzipped */
-    if (isMissing(file.status) && path.startsWith('maps/') && !path.endsWith('.gz')) {
-      const gz = await fetchFile(id, token, `${path}.gz`);
-      if (gz.ok) {
+  try {
+    if (PACKED_FIRST.test(path)) {
+      file = await fetchFile(id, token, `${path}.gz`);
+      packed = file.ok;
+      if (isMissing(file.status)) {
         await discard(file);
-        file = gz;
-        packed = true;
-      } else {
-        await discard(gz);
+        file = await fetchFile(id, token, path);
+      }
+    } else {
+      file = await fetchFile(id, token, path);
+      /* anything else under maps/ may still turn out to be stored gzipped */
+      if (isMissing(file.status) && path.startsWith('maps/') && !path.endsWith('.gz')) {
+        const gz = await fetchFile(id, token, `${path}.gz`);
+        if (gz.ok) {
+          await discard(file);
+          file = gz;
+          packed = true;
+        } else {
+          await discard(gz);
+        }
       }
     }
+  } catch (err) {
+    /* exaroton out of reach or too slow to answer: the map is whatever was
+       synced last, as when the server is stopped, rather than a bare 500 */
+    console.warn(`[bluemap] exaroton: ${err instanceof Error ? err.message : err} on /${path}`);
+    if (path.startsWith('maps/')) return fromSnapshot(path);
+    return empty(502, 'no-store');
   }
 
   if (isMissing(file.status)) {
