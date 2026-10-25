@@ -39,20 +39,24 @@ interface Props {
   /** the camera is down: the still is what is on screen, at the very view the
       town's lights were taken off, and the way into the live map stands again */
   onLanded: (landed: boolean) => void;
-  /** the camera is past halfway down, once: time to wake the live map behind it (World.tsx) */
+  /** the visitor has set off down the page, once: time to wake the live map
+      behind the flight (World.tsx), while the sky above still moves on its own */
   onApproach?: () => void;
 }
 
 /* frames fetched at once: enough to keep ahead of a quick scroll, few enough
    that the first ones arrive first */
 const AT_ONCE = 4;
+/* fetched as soon as the world is in reach: the overview and the landing.
+   The rest wait for the visitor's first scroll, since the world is in reach
+   from the first screen and a visitor who reads the sunset and goes paid
+   for the whole flight, nearly 4 MB on a phone. */
+const FIRST = 2;
 /* the frames kept decoded: the overview, and round the camera the one it has
    passed and the next few ahead of it */
 const AROUND = [-1, 0, 1, 2, 3];
 /* a pin this far past the frame's edge is out of sight */
 const EDGE = 24;
-/* how far down the path the live map is woken, behind the flight */
-const APPROACH = 0.55;
 /* the camera sets off while the frame is still rising, this much of its
    height short of being held, so the world is moving from the moment it is seen */
 const LEAD = 0.5;
@@ -85,10 +89,10 @@ interface Pin { el: HTMLElement; at: [number, number, number]; least: number; de
     painted once onto a sheet of their own, at the size they were taken, when
     they come on; the scroll only moves and fades the sheets and the sky's
     layers, which the compositor does without painting. The stills are fetched
-    as they are, a few MB, once the world is near (the overview, the landing,
-    then ever finer between, so a quick scroll always has one near, moved to
-    where the camera is), and only those round the camera are decoded, off the
-    main thread, ahead of it. */
+    as they are: the overview and the landing once the world is near, and the
+    rest, a few MB, from the visitor's first scroll, ever finer between, so a
+    quick scroll always has one near, moved to where the camera is. Only those
+    round the camera are decoded, off the main thread, ahead of it. */
 function Flight({ flight, fly, runway, f3, places, players, selected, onChoose, near, onNear, camera, hidden, onLanded, onApproach }: Props) {
   const layer = useRef<HTMLDivElement>(null);
   const stage = useRef<HTMLDivElement>(null);
@@ -97,6 +101,8 @@ function Flight({ flight, fly, runway, f3, places, players, selected, onChoose, 
   const latest = useRef({ onLanded, onApproach });
   const pins = useRef<Pin[]>([]);
   const redraw = useRef<() => void>(() => {});
+  /* the visitor has scrolled since the page came: the whole flight is wanted, and the live map behind it */
+  const scrolled = useRef(false);
 
   /* the pins as they are in the page, and a fresh look at them */
   useEffect(() => {
@@ -193,24 +199,29 @@ function Flight({ flight, fly, runway, f3, places, players, selected, onChoose, 
       ready.forEach((bitmap, k) => { if (!wanted.has(k)) { bitmap.close(); ready.delete(k); } });
       wanted.forEach(decode);
     };
+    /* starts what may be fetched now: up to AT_ONCE at a time, and past the
+       first two only once the visitor has scrolled */
+    let more = () => {};
     const fetchSet = (s: FlightShape) => {
       const mine = round;
       bytes = new Array(flight.frames).fill(null);
       const queue = fetchOrder(flight.frames);
-      const one = () => {
-        if (gone || mine !== round) return;
-        const n = queue.shift();
-        if (n === undefined) return;
-        fetch(flightFrame(flight, s, n), { priority: n === 0 ? 'high' : 'low' } as RequestInit)
-          .then(r => { if (!r.ok) throw new Error(`${r.status}`); return r.blob(); })
-          .then(
-            (blob) => { if (mine === round) { bytes[n] = blob; if (wanted.has(n)) decode(n); } },
-            /* without the overview there is no flight to fly: the still stands */
-            () => { if (n === 0 && mine === round) { failed = true; schedule(); } },
-          )
-          .finally(one);
+      let out = 0;
+      more = () => {
+        while (!gone && mine === round && out < AT_ONCE && queue.length > 0 && (scrolled.current || flight.frames - queue.length < FIRST)) {
+          const n = queue.shift()!;
+          out++;
+          fetch(flightFrame(flight, s, n), { priority: n === 0 ? 'high' : 'low' } as RequestInit)
+            .then(r => { if (!r.ok) throw new Error(`${r.status}`); return r.blob(); })
+            .then(
+              (blob) => { if (mine === round) { bytes[n] = blob; if (wanted.has(n)) decode(n); } },
+              /* without the overview there is no flight to fly: the still stands */
+              () => { if (n === 0 && mine === round) { failed = true; schedule(); } },
+            )
+            .finally(() => { if (mine === round) { out--; more(); } });
+        }
       };
-      for (let i = 0; i < AT_ONCE; i++) one();
+      more();
     };
 
     const draw = () => {
@@ -250,7 +261,7 @@ function Flight({ flight, fly, runway, f3, places, players, selected, onChoose, 
       const at = along * last;
       const i = Math.min(last, Math.floor(at));
       if (fly && fetching && p < 1 && i !== keptAt) { keptAt = i; keep(i); }
-      if (fly && !approached && p >= APPROACH && p < 1) { approached = true; latest.current.onApproach?.(); }
+      if (fly && !approached && scrolled.current && p < 1) { approached = true; latest.current.onApproach?.(); }
       let lo = -1, hi = -1;
       if (fly && p < 1 && !failed) {
         for (let k = i; k >= 0; k--) if (ready.has(k)) { lo = k; break; }
@@ -403,7 +414,11 @@ function Flight({ flight, fly, runway, f3, places, players, selected, onChoose, 
 
     /* the scroll is only listened to, and the stills only fetched, while the world is near */
     let inReach = false;
-    const onScroll = () => { if (inReach) schedule(); };
+    if (window.scrollY > 0) scrolled.current = true;
+    const onScroll = () => {
+      if (!scrolled.current && window.scrollY > 0) { scrolled.current = true; more(); }
+      if (inReach) schedule();
+    };
     let io: IntersectionObserver | null = null;
     if (fly) {
       window.addEventListener('scroll', onScroll, { passive: true });

@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "jodcraft-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 3000
+    },
+    {
+      "name": "jodcraft-prod",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "start"],
+      "port": 3000
+    },
+    {
+      "name": "jodcraft-main-prod",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["node_modules/next/dist/bin/next", "start", "C:/Users/jongo/AppData/Local/Temp/claude/C--Users-jongo-OneDrive-Desktop-projects-minecraft-jod-v2/0c1754e7-68d6-42d0-b717-f514734ac0f1/scratchpad/jod-main", "-p", "3001"],
+      "port": 3001
+    }
+  ]
+}
