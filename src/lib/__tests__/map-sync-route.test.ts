@@ -71,6 +71,17 @@ describe('/api/admin/map-sync', () => {
     expect(runs.map((r: { offline: boolean }) => r.offline)).toEqual([true, false]);
   });
 
+  it('says a dispatch that timed out may still have started', async () => {
+    fetchMock.mockImplementation(async (url: string) => {
+      if (url.startsWith('https://api.exaroton.com/')) return Response.json({ data: { status: 1 } });
+      if (url === DISPATCH) throw new DOMException('The operation timed out.', 'TimeoutError');
+      return new Response(null, { status: 404 });
+    });
+    const res = await start();
+    expect(res.status).toBe(500);
+    expect((await res.json()).error).toMatch(/gæti samt hafa farið af stað/);
+  });
+
   it('says what is missing without a GitHub token', async () => {
     vi.stubEnv('MAP_SYNC_GITHUB_TOKEN', '');
     expect((await start()).status).toBe(503);

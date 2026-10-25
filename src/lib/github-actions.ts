@@ -34,6 +34,14 @@ export function workflowApi(workflow: string) {
   });
 }
 
+/** A dispatch that timed out may still have been taken: GitHub can start
+    the run and answer late. Said so, so the button is not pressed twice. */
+export function dispatchError(err: unknown): string | null {
+  return err instanceof Error && err.name === 'TimeoutError'
+    ? 'GitHub svaraði ekki í tæka tíð en keyrslan gæti samt hafa farið af stað. Endurhlaðaðu og sjáðu stöðuna áður en þú reynir aftur.'
+    : null;
+}
+
 export async function githubError(res: Response): Promise<string> {
   if (res.status === 401) return 'GitHub hafnaði MAP_SYNC_GITHUB_TOKEN. Er hann útrunninn?';
   if (res.status === 403 || res.status === 404) return 'MAP_SYNC_GITHUB_TOKEN hefur ekki aðgang að Actions í repóinu („Actions: Read and write“).';

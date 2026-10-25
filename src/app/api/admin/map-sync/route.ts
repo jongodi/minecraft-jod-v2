@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { requireAdmin, unauthorizedResponse } from '@/lib/auth';
 import { errorMessage } from '@/lib/icelandic';
 import { snapshot } from '@/lib/bluemap-snapshot';
-import { NO_TOKEN, githubError, serverStopped, workflowApi, type WorkflowRun } from '@/lib/github-actions';
+import { NO_TOKEN, dispatchError, githubError, serverStopped, workflowApi, type WorkflowRun } from '@/lib/github-actions';
 
 /* The map copy, started from the admin panel. The copy is made by the
    "Map sync" GitHub Action (.github/workflows/map-sync.yml): it takes minutes
@@ -67,6 +67,6 @@ export async function POST() {
     if (!res.ok) return NextResponse.json({ error: await githubError(res) }, { status: 502 });
     return NextResponse.json({ ok: true, offline });
   } catch (err) {
-    return NextResponse.json({ error: errorMessage(err) }, { status: 500 });
+    return NextResponse.json({ error: dispatchError(err) ?? errorMessage(err) }, { status: 500 });
   }
 }

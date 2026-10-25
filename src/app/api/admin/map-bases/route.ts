@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin, unauthorizedResponse } from '@/lib/auth';
 import { errorMessage } from '@/lib/icelandic';
 import { BASES } from '@/lib/bluemap-bases';
-import { NO_TOKEN, githubError, readBasesRunName, serverStopped, workflowApi, type WorkflowRun } from '@/lib/github-actions';
+import { NO_TOKEN, dispatchError, githubError, readBasesRunName, serverStopped, workflowApi, type WorkflowRun } from '@/lib/github-actions';
 import { freezeBases, redrawBases } from '@/lib/bluemap-redraw';
 
 /* The base maps' copies, started from the admin panel (Þjónn → Grunnkortin).
@@ -115,7 +115,7 @@ export async function POST(req: NextRequest) {
     if (!res.ok) return NextResponse.json({ error: await githubError(res) }, { status: 502 });
     return NextResponse.json({ ok: true, offline });
   } catch (err) {
-    return NextResponse.json({ error: errorMessage(err) }, { status: 500 });
+    return NextResponse.json({ error: dispatchError(err) ?? errorMessage(err) }, { status: 500 });
   }
 }
 
