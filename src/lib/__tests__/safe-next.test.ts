@@ -14,6 +14,10 @@ describe('safeNext', () => {
     ['a backslash the browser reads as a slash', '/\\evil.example'],
     ['a tab the browser drops', '/\t/evil.example'],
     ['a line break the browser drops', '/\n/evil.example'],
+    ['a dot segment read away', '/.//evil.example'],
+    ['a parent segment read away', '/..//evil.example'],
+    ['an escaped dot segment', '/%2e//evil.example'],
+    ['a folder and its parent read away', '/a/..//evil.example'],
     ['script', 'javascript:alert(1)'],
   ])('sends %s to the panel instead', (_what, v) => {
     expect(safeNext(v)).toBe('/admin');
