@@ -231,7 +231,8 @@ async function serve(req: Request, segments: string[]): Promise<Response> {
       file = await fetchFile(id, token, path);
       /* anything else under maps/ may still turn out to be stored gzipped */
       if (isMissing(file.status) && path.startsWith('maps/') && !path.endsWith('.gz')) {
-        const gz = await fetchFile(id, token, `${path}.gz`);
+        /* the 404 is let go of whatever the second ask comes to */
+        const gz = await fetchFile(id, token, `${path}.gz`).catch(async (err: unknown) => { await discard(file); throw err; });
         if (gz.ok) {
           await discard(file);
           file = gz;
