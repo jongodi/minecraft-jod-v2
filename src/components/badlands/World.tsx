@@ -18,7 +18,7 @@ import Flight, { type FlightPlace } from './Flight';
 import Locator, { type CameraSink } from './Locator';
 import { useLivePlayers } from './livePlayers';
 import { FLIGHT, headingOf } from '@/lib/map-flight';
-import { CREW, FACING, MAP_LIGHTS, MAP_POSTER, MAP_URL, SITE_NAME, handCase, plainClick, titleCase, type Plate, type RoomId } from './data';
+import { CREW, FACING, MAP_LIGHTS, MAP_POSTER, MAP_URL, SITE_NAME, handCase, isRoom, plainClick, titleCase, type Plate, type RoomId } from './data';
 import type { ServerState } from './hooks';
 import { modalOpen, showWorld, useEffectsAllowed, useInert, useMediaQuery, useReducedMotionPref, useRoomForEffects } from './hooks';
 import { photoProps, PHOTO_SIZES } from './photo';
@@ -275,6 +275,18 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
   const reduce = useReducedMotionPref();
   const capable = useRoomForEffects();
   const fly = FLIGHT !== null && capable && !reduce;
+  /* A link that arrives in the world (/#heimur, a room's /#hopur, a place's
+     /stadur/<id>) is scrolled to before the flight is decided, when the
+     world's top is still where the camera sets off: it stopped a third of
+     the way down, high over the town with the lights out. Once the runway
+     is laid, the arrival is taken on to the landing, as a door is. */
+  const arriving = useRef(true);
+  useEffect(() => {
+    if (!capable || !arriving.current) return;
+    arriving.current = false;
+    const h = window.location.hash.slice(1);
+    if (fly && (h === 'heimur' || isRoom(h) || /^\/stadur\/\d+\/?$/.test(window.location.pathname))) showWorld(false);
+  }, [capable, fly]);
   const runway = useRef<HTMLDivElement>(null);
   const flightF3 = useRef<HTMLParagraphElement>(null);
   const [landed, setLanded] = useState(true);
