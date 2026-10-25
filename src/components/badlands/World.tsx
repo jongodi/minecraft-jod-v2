@@ -9,7 +9,7 @@ import type { PlacePrints } from '@/lib/crew-places';
 import { baseUrl, mapAt, onMap, type BaseLink, type MapBounds } from '@/lib/base-links';
 import viewerFiles from '@/lib/bluemap-viewer.json';
 import { BackIcon, CloseIcon, FoldedMapIcon, FullScreenIcon, Lantern, MoonIcon, PictureIcon, Sun } from './Bits';
-import { plural } from '@/lib/format';
+import { andList, plural } from '@/lib/format';
 import Drawer from './Drawer';
 import PlayerHead from './PlayerHead';
 import Rail, { revealRailItem } from './Rail';
@@ -633,7 +633,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
                     <span className="b-hud__dot" aria-hidden="true" />
                     <span className="b-hud__inword">inni núna</span>
                     {/* the names in words: a label on a bare span is not read */}
-                    <span className="b-visually-hidden">: {inside.join(', ')}</span>
+                    <span className="b-visually-hidden">: {andList(inside)}</span>
                     {inside.map(n => headsLive ? (
                       <button key={n} type="button" className={`b-hud__head b-tip b-tip--below${following?.toLowerCase() === n.toLowerCase() ? ' is-on' : ''}`}
                         aria-pressed={following?.toLowerCase() === n.toLowerCase()} aria-label={`Elta ${n}`}

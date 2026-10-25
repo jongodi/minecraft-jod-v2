@@ -122,7 +122,7 @@ describe('the letters', () => {
   it('a night decided carries the calendar entry and who is coming', () => {
     const m = nightLetter('chosen', night({ chosen: 'b', chosenBy: 'auto' }), { stebbias: ['b'], AmmaGaur: ['b'] }, reader);
     expect(m.subject).toMatch(/^Kvöldið er ákveðið: /);
-    expect(m.text).toContain('2 ætla að mæta: AmmaGaur, stebbias.');
+    expect(m.text).toContain('2 ætla að mæta: AmmaGaur og stebbias.');
     expect(m.text).toContain('https://jodcraft.world/kvold/n1/dagatal.ics');
   });
 
@@ -141,7 +141,7 @@ describe('the letters', () => {
     expect(lit.text).toContain('STEFÁN KALLAR SAMAN HÓPINN');
     const soon = nightLetter('soon', night({ chosen: 'a' }), { stebbias: ['a'], AmmaGaur: ['a'], ingunnbirta: ['a'], joenana: ['a'] }, reader, 'campfire', named);
     expect(soon.text).toContain('SÖÐLAÐU HESTINN, JÓNA');
-    expect(soon.text).toContain('3 ætla að mæta: Amma, ingunnbirta, Stefán.');
+    expect(soon.text).toContain('3 ætla að mæta: Amma, ingunnbirta og Stefán.');
     expect(soon.text).toContain('https://jodcraft.world/crew/joenana');
   });
 

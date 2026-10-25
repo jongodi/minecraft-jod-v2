@@ -8,7 +8,7 @@
 import Link from 'next/link';
 import { ADV_SHOWN, type BoardItem, type ShelfPack } from '@/lib/board-types';
 import type { Painted } from '@/lib/map-news';
-import { plural } from '@/lib/format';
+import { andList, plural } from '@/lib/format';
 import { Campfire, CalendarIcon, FoldedMapIcon, PictureIcon } from '@/components/badlands/Bits';
 import PlayerHead from '@/components/badlands/PlayerHead';
 import PixelGlyph from '@/components/badlands/PixelGlyph';
@@ -18,7 +18,6 @@ import { photoProps } from '@/components/badlands/photo';
 type Notice = Exclude<BoardItem, { kind: 'post' }>;
 
 const PAINTED: Record<Painted, string> = { land: 'landslagið', zones: 'svæðin', lines: 'leiðirnar' };
-const listed = (words: string[]) => (words.length < 2 ? words.join('') : `${words.slice(0, -1).join(', ')} og ${words[words.length - 1]}`);
 /* the map's picture on its slip, held up like a postcard: 12rem beside the words, the slip's width under them on a phone */
 const POSTCARD = '(min-width: 480px) 192px, calc(100vw - 6rem)';
 
@@ -101,7 +100,7 @@ export default function Notice({ item, room, mounted, onOpen }: { item: Notice; 
         <span className="t-notice__line">Spilakvöld að baki{item.note && <>: <q>{item.note}</q></>}</span>
         <span className="t-notice__sub">
           {item.came.length ? <>{item.came.length} {plural(item.came.length, 'mætti', 'mættu')} <span className="t-notice__heads">{item.came.map(n => <PlayerHead key={n} name={n} size={16} alt={n} />)}</span></> : 'enginn sást'}
-          {item.noShows.length > 0 && <> · <span className="t-notice__red">sögðust mæta en komu ekki: {listed(item.noShows)}</span></>}
+          {item.noShows.length > 0 && <> · <span className="t-notice__red">sögðust mæta en komu ekki: {andList(item.noShows)}</span></>}
         </span>
       </>;
       break;
@@ -142,7 +141,7 @@ export default function Notice({ item, room, mounted, onOpen }: { item: Notice; 
       href = '/#heimur';
       body = <>
         <span className="t-notice__line">Teiknaða kortið var málað upp á nýtt</span>
-        {item.what.length > 0 && <span className="t-notice__sub">{listed(item.what.map(w => PAINTED[w]))}</span>}
+        {item.what.length > 0 && <span className="t-notice__sub">{andList(item.what.map(w => PAINTED[w]))}</span>}
       </>;
       break;
     case 'synced':

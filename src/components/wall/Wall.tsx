@@ -10,7 +10,7 @@ import type { SignWood } from '@/lib/sign-wood';
 import { nameEm } from '@/lib/name-width';
 import { LIMITS, NAME_MAX, PASSWORD_MIN, allPhotos, coverPhoto, sameUser } from '@/lib/crew-types';
 import type { PlayerStat, StatsResponse } from '@/app/api/stats/route';
-import { formatDate } from '@/lib/format';
+import { andList, formatDate } from '@/lib/format';
 import { errorFrom, failure, OFFLINE } from '@/lib/crew-upload';
 import AddressBar from '@/components/badlands/AddressBar';
 import Footer from '@/components/badlands/Footer';
@@ -502,7 +502,7 @@ export default function Wall({ initial, places, initialStats = null, initialLed 
             {corner && corner.pins.length > 0 && (
               <figure className="w-corner">
                 {/* eslint-disable-next-line @next/next/no-img-element -- a still of the flight, drawn at the size it was taken */}
-                <img src={corner.src} alt={`${corner.pins.map(p => p.label).join(', ')} í heiminum, séð úr lofti`} width={1280} height={720} loading="lazy" decoding="async" />
+                <img src={corner.src} alt={`${andList(corner.pins.map(p => p.label))} í heiminum, séð úr lofti`} width={1280} height={720} loading="lazy" decoding="async" />
                 {corner.pins.map(p => (
                   <Link key={p.id} href={`/?stadur=${p.id}#heimur`} className="w-corner__pin" style={{ left: `${(p.x * 100).toFixed(2)}%`, top: `${(p.y * 100).toFixed(2)}%` }}>
                     <Lantern lit />
