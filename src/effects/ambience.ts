@@ -12,6 +12,15 @@ const FADE_S = 1.2;
 interface Engine { ctx: AudioContext; master: GainNode; crackle: ReturnType<typeof setInterval> }
 let engine: Engine | null = null;
 
+/* The wind and the fire belong to the page being looked at. A tab left in
+   the background, which is where the site waits on a play night, kept
+   playing them over the game; desktop browsers do not hush it on their own. */
+const onVisibility = () => {
+  if (!engine) return;
+  if (document.hidden) engine.ctx.suspend().catch(() => {});
+  else engine.ctx.resume().catch(() => {});
+};
+
 function brownNoise(ctx: AudioContext, seconds: number): AudioBuffer {
   const buf = ctx.createBuffer(1, ctx.sampleRate * seconds, ctx.sampleRate);
   const data = buf.getChannelData(0);
@@ -77,6 +86,7 @@ export function startAmbience(): boolean {
   swell.start();
   master.gain.linearRampToValueAtTime(1, ctx.currentTime + FADE_S);
   engine = { ctx, master, crackle };
+  document.addEventListener('visibilitychange', onVisibility);
   return true;
 }
 
@@ -119,6 +129,7 @@ export function stopAmbience() {
   if (!engine) return;
   const { ctx, master, crackle } = engine;
   engine = null;
+  document.removeEventListener('visibilitychange', onVisibility);
   clearInterval(crackle);
   master.gain.linearRampToValueAtTime(0, ctx.currentTime + FADE_S);
   setTimeout(() => ctx.close(), FADE_S * 1000 + 100);
