@@ -472,11 +472,15 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
     if ((window.history.state as { jodFull?: boolean } | null)?.jodFull) window.history.back();
     else setFull(false);
   }, []);
+  /* Escape closes one thing at a time: a postcard or a room open in the
+     whole screen closes first (their own keys do it), and the screen stays */
+  const overFull = useRef(false);
+  overFull.current = selected !== null || shut;
   useEffect(() => {
     if (!full) return;
     const onFs = () => { if (!document.fullscreenElement && full === 'native') setFull(false); };
     const onPop = () => { if (full === 'overlay' && !(window.history.state as { jodFull?: boolean } | null)?.jodFull) setFull(false); };
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && full === 'overlay' && !modalOpen()) closeFull(); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && full === 'overlay' && !modalOpen() && !overFull.current) closeFull(); };
     document.addEventListener('fullscreenchange', onFs);
     window.addEventListener('popstate', onPop);
     window.addEventListener('keydown', onKey);
