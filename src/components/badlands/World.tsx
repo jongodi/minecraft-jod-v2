@@ -184,6 +184,8 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
   /* the viewer's map has loaded and window.jod answers */
   const [viewer, setViewer]   = useState(false);
   const [tiles, setTiles]     = useState(0);
+  /* the live map was asked for and would not come; said until it is asked again */
+  const [failed, setFailed]   = useState(false);
   /* where the live map is looking, for the F3 lines (F3 below) */
   const [camera] = useState(cameraStore);
   const [night, setNight]     = useState(false);
@@ -368,6 +370,8 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
      that it is drawn, night and day, and a place's lantern pressed in 3D. */
   const standbyRef = useRef(standby);
   standbyRef.current = standby;
+  const autoRef = useRef(auto);
+  autoRef.current = auto;
   useEffect(() => {
     if (!live) return;
     const onMessage = (e: MessageEvent) => {
@@ -382,6 +386,16 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
         if (typeof m.rotation === 'number' && !standbyRef.current) cameraSink.current?.([m.ex ?? m.x, m.ez ?? m.z], headingOf(m.rotation));
       }
       else if (m.type === 'ready') setReady(true);
+      /* the map would not come: the viewer is put away, the still and the
+         lantern stay, and the lantern asks again. One the flight woke on its
+         own fails quietly; one that was asked for says so, back on the page
+         if it was opened as the whole screen. */
+      else if (m.type === 'failed') {
+        closeFull();
+        setLive(false); setReady(false); setViewer(false); setTiles(0); setSlow(false);
+        setFailed(!autoRef.current);
+        setAuto(false);
+      }
       else if (m.type === 'night') setNight(!!m.on);
       else if (m.type === 'menu') setMenu(!!m.open);
       else if (m.type === 'place' && typeof m.id === 'number') { setSelect(m.id); revealRailItem(m.id, places.current); }
@@ -458,6 +472,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
   /* ─── the whole screen ─── */
   const openFull = useCallback(() => {
     setAuto(false);
+    setFailed(false);
     setLive(true);
     const el = frameRef.current;
     if (el?.requestFullscreen && document.fullscreenEnabled) {
@@ -540,7 +555,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
   const onLand = useMemo(() => players.filter(p => !MAIN_BOUNDS || onMap(MAIN_BOUNDS, p)), [players]);
   /* The live map, taken hold of: from the lantern, the postcard or the whole
      screen. A viewer the flight woke is the same one, now let go of as glass. */
-  const takeHold = useCallback(() => { setAuto(false); setLive(true); }, []);
+  const takeHold = useCallback(() => { setAuto(false); setFailed(false); setLive(true); }, []);
   /* set off down the page on a wide screen: wake the live map behind the flight */
   const liveRef = useRef(live);
   liveRef.current = live;
@@ -694,6 +709,9 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
                 onClick={e => { if (plainClick(e)) { e.preventDefault(); if (phone) openFull(); else takeHold(); } }}>
                 <Signpost here={shown && auto && ready} />
               </a>
+            )}
+            {failed && !live && (
+              <p className="b-boot__wait" role="status">kortið náði ekki að hlaðast · reyndu aftur eftir smástund</p>
             )}
             {shown && !ready && !still && slow && (
               <p className="b-boot__wait" role="status">
