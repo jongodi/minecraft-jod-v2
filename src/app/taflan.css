@@ -272,6 +272,9 @@
   .t-day + .t-day { margin-top: 0; }
   .t-side__title { grid-column: 1 / -1; }
   .t-side__block.is-empty { display: none; }
+  /* and with no night planned and every block empty, the heading goes too:
+     it stood over nothing between the filters and the first day */
+  .t-board__side:not(:has(.t-side__block:not(.is-empty), .b-nightline)) { display: none; }
 }
 
 /* the board's own page */
