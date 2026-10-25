@@ -26,6 +26,8 @@ async function exaroton(token: string, id: string, path: string, init: RequestIn
     ...init,
     headers: { Authorization: `Bearer ${token}`, ...init.headers },
     cache: 'no-store',
+    /* a hung call held the panel's Redraw until the function's own limit */
+    signal: init.signal ?? AbortSignal.timeout(10_000),
   });
   if (!res.ok) {
     res.body?.cancel().catch(() => undefined);
