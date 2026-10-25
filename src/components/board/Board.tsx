@@ -134,11 +134,20 @@ function Board({ room = false, open = true, initial = null, initialFilter = 'all
     if (!open) { setSince(undefined); return; }
     if (since === undefined && seen !== undefined && data) setSince(seen);
   }, [open, seen, data, since]);
+  /* Only under Allt, which shows everything, and only while the tab is in
+     front: under Myndir the mark went past every note it hid, and a board
+     opened in a background tab was marked read without being looked at. */
   useEffect(() => {
-    if (!open || !data || since === undefined || me === undefined) return;
-    const t = setTimeout(() => markSeen(newestAt(stampsOf(data.items)), me), SEEN_AFTER_MS);
-    return () => clearTimeout(t);
-  }, [open, data, since, me]);
+    if (!open || !data || since === undefined || me === undefined || filter !== 'allt') return;
+    let t: ReturnType<typeof setTimeout> | undefined;
+    const arm = () => {
+      clearTimeout(t);
+      if (document.visibilityState === 'visible') t = setTimeout(() => markSeen(newestAt(stampsOf(data.items)), me), SEEN_AFTER_MS);
+    };
+    arm();
+    document.addEventListener('visibilitychange', arm);
+    return () => { clearTimeout(t); document.removeEventListener('visibilitychange', arm); };
+  }, [open, data, since, me, filter]);
 
   const items = useMemo(() => data?.items ?? [], [data]);
   const places = useMemo(() => data?.places ?? [], [data]);
