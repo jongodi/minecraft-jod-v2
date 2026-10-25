@@ -22,11 +22,14 @@ vi.mock('@/lib/crew', async (orig) => ({
   getCrewSession: async () => ({ username: 'stebbias' }),
 }));
 vi.mock('@/lib/crew-photos', async (orig) => ({ ...(await orig<typeof import('@/lib/crew-photos')>()), removePhotos: async () => {} }));
+const deleted = vi.fn(async () => {});
+vi.mock('@/lib/blob-store', async (orig) => ({ ...(await orig<typeof import('@/lib/blob-store')>()), deleteStoredImage: deleted }));
 
 process.env.REDIS_URL = 'redis://test';
 const { PATCH: edit, DELETE: takeDown } = await import('../../app/api/crew/[username]/entries/[id]/route');
 const { POST: lantern } = await import('../../app/api/crew/[username]/entries/[id]/lantern/route');
 const { POST: reply } = await import('../../app/api/crew/[username]/entries/[id]/replies/route');
+const { DELETE: dropDraft } = await import('../../app/api/crew/[username]/upload/route');
 afterAll(() => { delete process.env.REDIS_URL; });
 
 const KEY = 'crew:profile:joenana';
@@ -61,6 +64,33 @@ describe('a wall whose store is down', () => {
     const res = await edit(req('PATCH', { photos: [null, 3, { id: 'p1', caption: 'salurinn' }] }), onEntry);
     expect(res.status).toBe(200);
     expect((await res.json()).photos).toMatchObject([{ id: 'p1', caption: 'salurinn' }]);
+  });
+});
+
+describe('a print taken out of the slot before it was pinned', () => {
+  const id = '0b9c6a52-5d55-4c39-9f4c-0a6b2f1d1e11';
+  const draft = { id, url: `/api/blob/crew/joenana/${id}.webp` };
+  const onWall = { params: Promise.resolve({ username: 'joenana' }) };
+  beforeEach(() => { deleted.mockClear(); });
+
+  it('stays in the store when the wall cannot be read, since it may hang there', async () => {
+    down = true;
+    const res = await dropDraft(req('DELETE', draft), onWall);
+    expect(res.status).toBe(503);
+    expect(deleted).not.toHaveBeenCalled();
+  });
+
+  it('stays while it hangs on the wall', async () => {
+    const w = JSON.parse(store.get(KEY)!);
+    w.entries[0].photos = [{ id, filename: draft.url, caption: '', uploadedAt: '2026-01-01T00:00:00.000Z', takenAt: null }];
+    store.set(KEY, JSON.stringify(w));
+    expect((await dropDraft(req('DELETE', draft), onWall)).status).toBe(409);
+    expect(deleted).not.toHaveBeenCalled();
+  });
+
+  it('goes when the wall is read and it is not on it', async () => {
+    expect((await dropDraft(req('DELETE', draft), onWall)).status).toBe(200);
+    expect(deleted).toHaveBeenCalledWith(draft.url);
   });
 });
 

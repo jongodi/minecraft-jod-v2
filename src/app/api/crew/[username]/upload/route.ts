@@ -10,7 +10,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { badJson, jsonObject } from '@/lib/http';
 import { handleUpload, type HandleUploadBody } from '@vercel/blob/client';
-import { requireOwner, isCrewUsername, readProfile, allPhotos, CREW_PATH, crewBlobPath } from '@/lib/crew';
+import { requireOwner, isCrewUsername, updateProfile, wallError, allPhotos, CREW_PATH, crewBlobPath } from '@/lib/crew';
 import { detectBlobAccess, storageMode, storeImage, deleteStoredImage, imageExt, IMAGE_CONTENT_TYPES, MAX_UPLOAD_BYTES, UPLOAD_TYPE_ERROR } from '@/lib/blob-store';
 import { photoFromDraft } from '@/lib/crew-photos';
 import { randomUUID } from 'crypto';
@@ -113,8 +113,16 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   /* the same check a pin runs: only this member's own folder */
   const photo = photoFromDraft(username, body);
   if (!photo) return NextResponse.json({ error: 'Þessi mynd er ekki úr þinni möppu.' }, { status: 400 });
-  /* a print that is already pinned is taken down through its entry, not here */
-  if (allPhotos(await readProfile(username)).some(p => p.id === photo.id)) return NextResponse.json({ error: 'Myndin hangir á veggnum; taktu hana niður þar.' }, { status: 409 });
+  /* A print that is already pinned is taken down through its entry, not
+     here. The wall is read strictly (a change that changes nothing writes
+     nothing): the lenient read gives an empty wall when the store stumbles,
+     and a pinned print would have been deleted from under its sign. */
+  try {
+    const wall = await updateProfile(username, () => {});
+    if (allPhotos(wall).some(p => p.id === photo.id)) return NextResponse.json({ error: 'Myndin hangir á veggnum; taktu hana niður þar.' }, { status: 409 });
+  } catch (e) {
+    return wallError(e, 'Ekki tókst að lesa vegginn.', 'DELETE draft');
+  }
   await deleteStoredImage(photo.filename);
   return NextResponse.json({ ok: true });
 }
