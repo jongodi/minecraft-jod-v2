@@ -15,8 +15,9 @@ const TYPE: Record<MapLocation['type'], string> = {
 
 const MIN_Z = 1, MAX_Z = 3.2;
 
-const spring = (mv: MotionValue<number>, to: number) =>
-  animate(mv.get(), to, { ...SPRING, onUpdate: (v: number) => mv.set(v) });
+/* run on the value itself, so the hand taking hold again (mv.stop()) or the
+   next spring stops it; one run beside the value kept pulling under the drag */
+const spring = (mv: MotionValue<number>, to: number) => animate(mv, to, SPRING);
 
 interface Props {
   config: MapConfig;
