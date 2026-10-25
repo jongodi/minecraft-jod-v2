@@ -313,9 +313,12 @@ export function splitMentions(text: string): Array<string | { name: string; raw:
 }
 
 /** A bio or a note is stored as the text that was typed. Rendering escapes
-    it; stored entities would be escaped a second time and shown as code. */
+    it; stored entities would be escaped a second time and shown as code.
+    Text with nothing in it that shows (spaces and invisible format marks
+    such as U+200B alone) is empty, so every check for an empty note holds. */
 export function cleanText(text: unknown, max: number): string {
-  return (typeof text === 'string' ? text : '').replace(/\r\n?/g, '\n').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '').trim().slice(0, max);
+  const out = (typeof text === 'string' ? text : '').replace(/\r\n?/g, '\n').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '').trim().slice(0, max);
+  return out.replace(/[\s\p{Cf}]/gu, '') ? out : '';
 }
 
 /* ─── Minecraft's screenshot names ───────────────────────────────────────── */
