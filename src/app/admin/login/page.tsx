@@ -40,7 +40,7 @@ function LoginForm() {
         <div className="a-login__mark">
           <Mark />
           <div>
-            <p className="a-panel__title">Stjórnborð</p>
+            <h1 className="a-panel__title">Stjórnborð</h1>
             <p className="a-muted">{SITE_NAME} · {SERVER_IP}</p>
           </div>
         </div>

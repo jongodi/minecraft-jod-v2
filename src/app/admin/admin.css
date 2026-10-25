@@ -9,7 +9,8 @@
 /* ─── top bar and tabs ────────────────────────────────────────── */
 .a-bar { position: sticky; top: 0; z-index: var(--z-bar); background: var(--dusk); border-bottom: var(--line) solid rgba(209, 178, 161, 0.14); }
 .a-bar__inner { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-4); min-height: 3.25rem; padding-block: var(--sp-1); }
-@media (max-width: 480px) { .a-bar__title { display: none; } }
+/* on a narrow phone the bar has no room for it, but it stays the page's heading */
+@media (max-width: 480px) { .a-bar__title { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; } }
 .a-bar__mark { display: inline-flex; align-items: center; gap: var(--sp-2); font-family: var(--font-display); font-size: var(--fs-lg); color: var(--paper); text-decoration: none; }
 .a-bar__mark svg { width: 1.5rem; height: 1.5rem; shape-rendering: crispEdges; }
 .a-bar__mark:hover { color: var(--lantern); }
