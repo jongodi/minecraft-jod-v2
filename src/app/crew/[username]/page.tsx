@@ -1,6 +1,7 @@
 import '@/app/badlands.css';
 import '@/app/board.css';
 import '@/app/wall.css';
+import { randomUUID } from 'node:crypto';
 import { cache } from 'react';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -76,7 +77,8 @@ export default async function CrewWallPage({ params, searchParams }: Props) {
   /* only this member's, with their names: the list of every advancement stays on the server */
   const advancements = crewAdvancements ? { list: wallAdvancements(profile.username, crewAdvancements), of: ADVANCEMENT_COUNT } : null;
   const places: WallPlace[] = (map?.locations ?? []).map(l => ({ id: l.id, label: l.label, sublabel: l.sublabel, builders: l.builders ?? [], wood: woodOf(l) }));
-  return <Wall initial={profile} places={places} initialStats={stats} initialLed={led} advancements={advancements} justSignedIn={query.innskrad === '1'} corner={cornerOf(map?.locations ?? [], profile.username)} session={session} />;
+  /* drawn: which drawing this is, so Back to it is told from a fresh one (useRestored) */
+  return <Wall initial={profile} places={places} initialStats={stats} initialLed={led} advancements={advancements} justSignedIn={query.innskrad === '1'} corner={cornerOf(map?.locations ?? [], profile.username)} session={session} drawn={randomUUID()} />;
 }
 
 /* The main map's rendered edges, as map:brand wrote them */

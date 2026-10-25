@@ -550,6 +550,19 @@ export function useInert<T extends HTMLElement>(inert: boolean): React.RefObject
   return ref;
 }
 
+/* Next keeps a page as the server first drew it and shows it again on Back
+   and Forward, asking nothing anew. Each drawing of a page that is drawn per
+   request carries an id; one already mounted once in this tab is that kept
+   drawing, and what it shows is as old as the visit it came from. */
+const mountedDrawings = new Set<string>();
+
+/** Whether this drawing was mounted before in this tab: Back brought it from Next's keep, not the server. */
+export function useRestored(drawn: string | undefined): boolean {
+  const [restored] = useState(() => !!drawn && mountedDrawings.has(drawn));
+  useEffect(() => { if (drawn) mountedDrawings.add(drawn); }, [drawn]);
+  return restored;
+}
+
 /** False on the server and for the first client render, true after mount.
     Dates and ages are formatted by the browser's own locale data, which the
     server's may not match, so they are drawn only once the page is mounted. */

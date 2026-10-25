@@ -11,7 +11,7 @@ import Board from './Board';
 
 /** The board on its own page, an hour on into the night like the walls:
     the bar with the board's door lit, the night sky, and the campfire at the foot. */
-export default function BoardPage({ initial, session, initialFilter }: { initial: BoardResponse | null; session: CrewSessionSeed; initialFilter: BoardFilter }) {
+export default function BoardPage({ initial, session, initialFilter, drawn }: { initial: BoardResponse | null; session: CrewSessionSeed; initialFilter: BoardFilter; drawn: string }) {
   /* who the server found looking, so a member's slot is in the markup */
   seedSession(session);
   return (
@@ -26,7 +26,7 @@ export default function BoardPage({ initial, session, initialFilter }: { initial
             <p className="b-lede">Það sem gerist á JOÐ, nýjast efst: myndir og miðar hópsins, óskir og spurningar, bálin og kvöldin, afrekin og það sem bættist við kortið.</p>
           </div>
         </div>
-        <Board initial={initial} initialFilter={initialFilter} session={session} />
+        <Board initial={initial} initialFilter={initialFilter} session={session} drawn={drawn} />
       </main>
       <Footer />
     </div>

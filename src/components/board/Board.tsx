@@ -8,9 +8,9 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import type { CrewEntry } from '@/lib/crew-types';
 import { bountyState, mentionsIn, sameUser } from '@/lib/crew-types';
-import { FILTERS, FIRST_LOOK_WORDS, byDay, dayLabel, inFilter, isNew, newReplies, newestAt, replay, stampOf, stampsOf, type BoardEdit as Edit, type BoardFilter, type BoardItem, type BoardResponse } from '@/lib/board-types';
+import { FILTERS, FIRST_LOOK_WORDS, byDay, dayLabel, inFilter, isFilter, isNew, newReplies, newestAt, replay, stampOf, stampsOf, type BoardEdit as Edit, type BoardFilter, type BoardItem, type BoardResponse } from '@/lib/board-types';
 import { formatDate, plural } from '@/lib/format';
-import { useCrewSession, useMounted, type CrewSessionSeed } from '@/components/badlands/hooks';
+import { useCrewSession, useMounted, useRestored, type CrewSessionSeed } from '@/components/badlands/hooks';
 import { NightLine } from '@/components/badlands/NightLine';
 import PlayerHead from '@/components/badlands/PlayerHead';
 import { CREW } from '@/components/badlands/data';
@@ -59,6 +59,8 @@ interface Props {
   initialFilter?: BoardFilter;
   /** who the server found looking when it drew the board's page, so a member's slot is in its markup */
   session?: CrewSessionSeed;
+  /** which drawing of the board's page this is (useRestored) */
+  drawn?: string;
 }
 
 /** Taflan: everything that happens on JOÐ, newest first, on one notice
@@ -70,20 +72,26 @@ interface Props {
     where they left off, and what calls them by name says Til þín. Under
     Myndir the pictures hang in item frames, a wall of them. Members put
     things up from the slot at the top; everyone can read it. */
-function Board({ room = false, open = true, initial = null, initialFilter = 'allt', session }: Props) {
+function Board({ room = false, open = true, initial = null, initialFilter = 'allt', session, drawn }: Props) {
   const { me } = useCrewSession(session);
   const mounted = useMounted();
+  /* Back to the board's page brings the board as it was first drawn: asked
+     for again at once, and the filter read from the address as it stands */
+  const restored = useRestored(drawn);
   const [data, setData] = useState<BoardResponse | null>(initial);
   const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
-  const [filter, setFilter] = useState<Shown>(initialFilter);
+  const [filter, setFilter] = useState<Shown>(() => {
+    const syna = restored && !room ? new URLSearchParams(window.location.search).get('syna') : null;
+    return restored && !room ? (isFilter(syna) ? syna : 'allt') : initialFilter;
+  });
   const [reveal, setReveal] = useState(STEP);
   /* the sign just put up from here, which swings in on its chains */
   const [fresh, setFresh] = useState<string | null>(null);
   /* a call or a question asked for from Á döfinni: the slot turns to it */
   const [ask, setAsk] = useState<Ask | null>(null);
   /* a board drawn on the server is fresh: it is not asked for again the moment it arrives */
-  const loadedAt = useRef(initial ? Date.now() : 0);
+  const loadedAt = useRef(initial && !restored ? Date.now() : 0);
   /* the last "Reyna aftur" answered, so a retry asks at once and the next opening still waits its minute */
   const asked = useRef(0);
   /* while a fetch is out, what is done on the board is kept to be done again on its answer, which was read before it */

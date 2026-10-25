@@ -19,7 +19,7 @@ import { CloseIcon, Lantern, Seal } from '@/components/badlands/Bits';
 import { PAGE_LINKS, STAT_TABS, type StatKey } from '@/components/badlands/data';
 import { outlaws } from '@/components/badlands/outlaws';
 import NightSky from '@/components/badlands/NightSky';
-import { landFocus, seedSession, useBackCloses, useBackdropClose, useCrewSession, useDialogFocus, useScrollLock, type CrewSessionSeed } from '@/components/badlands/hooks';
+import { landFocus, seedSession, useBackCloses, useBackdropClose, useCrewSession, useDialogFocus, useRestored, useScrollLock, type CrewSessionSeed } from '@/components/badlands/hooks';
 import { photoProps, PHOTO_SIZES } from '@/components/badlands/photo';
 import type { WallAdvancement } from '@/lib/advancements';
 import Advancements from './Advancements';
@@ -259,10 +259,26 @@ interface Props {
   corner?: WallCorner | null;
   /** who the server found signed in, so the owner's own wall is drawn whole from the first paint */
   session: CrewSessionSeed;
+  /** which drawing of the wall this is (useRestored) */
+  drawn?: string;
 }
 
-export default function Wall({ initial, places, initialStats = null, initialLed = [], advancements = null, justSignedIn = false, corner = null, session }: Props) {
+export default function Wall({ initial, places, initialStats = null, initialLed = [], advancements = null, justSignedIn = false, corner = null, session, drawn }: Props) {
   const [profile, setProfile] = useState<CrewProfile>(initial);
+  /* Back to a wall brings it as it was first drawn: a sign pinned since, or
+     one taken down, was missing or back. The wall is read again at once. */
+  const restored = useRestored(drawn);
+  useEffect(() => {
+    if (!restored) return;
+    let live = true;
+    fetch(`/api/crew/${encodeURIComponent(initial.username)}`, { cache: 'no-store', signal: AbortSignal.timeout(15_000) })
+      .then(r => (r.ok ? r.json() : null))
+      .then((p: CrewProfile | null) => { if (live && p && Array.isArray(p.entries)) { setProfile(p); setBioText(p.bio); } })
+      .catch(() => {});
+    return () => { live = false; };
+  // once, as the kept drawing comes back
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restored]);
   /* The session the server drew the page for is the store's first answer, so
      the pin slot, the banner and the reply lines are in the markup and the
      signs under them do not drop a moment in. */
