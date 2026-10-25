@@ -290,10 +290,13 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
   const runway = useRef<HTMLDivElement>(null);
   const flightF3 = useRef<HTMLParagraphElement>(null);
   const [landed, setLanded] = useState(true);
-  /* Landing in the live map, on a wide screen: past halfway down, the viewer
-     is woken behind the flight, loading and drawing nothing (standby), and
-     at the landing it takes over from the still at the very view the flight
-     ends on, alive (water moving, the crew walking). It stays glass until the
+  /* Landing in the live map, on a wide screen: from the visitor's first
+     scroll, the viewer is woken behind the flight, loading and drawing
+     nothing (standby). Its start holds the page's thread for half a second,
+     which halfway down froze the flight; up at the sunset the sky moves on
+     its own and nothing waits on it. At the landing it takes over from the
+     still at the very view the flight ends on, alive (water moving, the
+     crew walking). It stays glass until the
      lantern is pressed, so the wheel still scrolls the page past it; climbing
      back up puts it to sleep behind the flight again. `auto` is that viewer,
      woken by the flight and not yet taken hold of. */
@@ -538,7 +541,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
   /* The live map, taken hold of: from the lantern, the postcard or the whole
      screen. A viewer the flight woke is the same one, now let go of as glass. */
   const takeHold = useCallback(() => { setAuto(false); setLive(true); }, []);
-  /* past halfway down on a wide screen: wake the live map behind the flight */
+  /* set off down the page on a wide screen: wake the live map behind the flight */
   const liveRef = useRef(live);
   liveRef.current = live;
   const approach = useCallback(() => {
