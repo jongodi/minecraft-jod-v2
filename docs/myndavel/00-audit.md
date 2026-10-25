@@ -157,17 +157,20 @@ To check before Phase 1, not a measurement:
 - Heap: full chunk copies at about 160 KB each, so about 20 MB for 120 chunks, under the 50 MB cap.
 - Skins: put each player's `textures` profile property (the skin URL) in the snapshot. Framköllun then downloads the PNG by URL and caches it, with no Mojang profile lookups, and the photo shows the skin as it was.
 
-## Open questions for Jón Goði
+## Decided by Jón Goði (25 October 2026)
 
-1. Photo posts as `CrewEntry` with a `shot` field (recommended), or a separate board kind?
-2. The exaroton API key on the NAS: reuse the site's key, or make a second one if exaroton allows it?
-3. Does a capture waiting on its dialog count towards the 2 in flight? Proposal: only from shutter until the snapshot is on disk. Memory is freed then, and the dialog waits without holding anything.
-4. Unanswered dialog: discard after 5 minutes and on quit (paper spent). Fine?
-5. Queue cap of 50 snapshots on the server's disk. Fine?
-6. Recipe cost: keep the proposal, or make it dearer?
-7. Myndavél name colour: yellow (the recovery compass's default) or white?
-8. The live Paper build number.
-9. Fixtures for Phase 1: capture on live with a capture-only build, or synthesize players on the smoke server?
+- **Phase 1 runs in a new desktop session**, where the `jodcraft` repo, the Docker smoke server and the cached 26.3 jar are. This cloud session could not build or test it: it had Java 21 only, no Paper API (PaperMC's Maven repo blocked), no Docker daemon and no `jodcraft` repo.
+- **In flight means shutter to snapshot on disk.** A capture counts towards the limit of 2 only until its snapshot is written; the dialog then waits holding nothing. An unanswered dialog is discarded after 5 minutes and when the player quits, and the paper stays spent.
+- **The recipe stays as proposed:** ` R ` / `CGC` / `CCC`, with paper as film the running cost.
+- **Fixtures are synthesized on the smoke server.** Snapshots are taken there and synthetic players added; nothing touches live in Phase 1.
+
+## Still open for Jón Goði
+
+1. Photo posts as `CrewEntry` with a `shot` field (recommended), or a separate board kind? Needed by Phase 3.
+2. The exaroton API key on the NAS: reuse the site's key, or make a second one if exaroton allows it? Needed by Phase 3.
+3. Queue cap of 50 snapshots on the server's disk. Fine?
+4. Myndavél name colour: yellow (the recovery compass's default) or white?
+5. The live Paper build number.
 
 ## Confirm first (nothing invented)
 
@@ -178,4 +181,4 @@ To check before Phase 1, not a measurement:
 - Pack formats as the repo declares them; the pack-side recipe and tag checks; the repo tools ignoring the two new folders.
 - Blob headroom under the $1 cap. A photo is at most 700 KB plus one `put`. The map packs share the store, so check the current month's usage before Phase 3.
 
-STOP. Waiting for a go-ahead before Phase 1.
+Phase 0 is done. Phase 1 has the go-ahead and starts in a new desktop session. Its first steps: finish the pack-side recipe and tag checks, and copy this file to `jodcraft/docs/myndavel/`.
