@@ -53,7 +53,7 @@ export function NightLine({ initial, href = '#hopur' }: { initial?: PlayNightRes
   let text: string;
   if (night.phase === 'open') {
     const most = Math.max(...night.options.map(o => o.yes.length));
-    text = `Kvöld í kortunum · ${night.options.length} ${plural(night.options.length, 'tími', 'tímar')}${most ? ` · allt að ${most} geta` : ''}`;
+    text = `Kvöld í kortunum · ${night.options.length} ${plural(night.options.length, 'tími', 'tímar')}${most ? ` · allt að ${most} ${plural(most, 'getur', 'geta')}` : ''}`;
   } else if (night.phase === 'live') {
     text = `Kvöldið er hafið · ${night.came.filter(n => yes.some(y => lower(y) === lower(n))).length} af ${yes.length} komin`;
   } else if (night.phase === 'over') {
