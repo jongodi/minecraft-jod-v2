@@ -60,13 +60,16 @@ function Locator({ bases, players, sink, hidden }: Props) {
     return () => { sink.current = null; };
   }, [sink, place]);
 
-  /* the marks as they are in the page, placed at once */
+  /* the marks as they are in the page, placed at once; and again when the
+     bar comes back from under the painted map or the viewer's menu, since
+     React writing its class back took `is-up` with it, and a camera at rest
+     sends nothing that would put it back */
   useEffect(() => {
     marks.current = Array.from(bar.current?.querySelectorAll<HTMLElement>('[data-x]') ?? []).map(el => ({
       el, at: [Number(el.dataset.x), Number(el.dataset.z)], name: el.dataset.name ?? '',
     }));
     place();
-  }, [bases, players, place]);
+  }, [bases, players, hidden, place]);
 
   if (bases.length === 0 && players.length === 0) return null;
   /* For a pointer and the eye: the bases are on the rail and the crew in
