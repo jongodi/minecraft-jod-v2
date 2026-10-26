@@ -69,6 +69,18 @@ export interface CrewPoll {
   closed:  boolean;
 }
 
+/** Where in the world a Myndavél photo was taken, to the block. */
+export interface CrewShotSpot { x: number; y: number; z: number }
+
+/** A photo taken with the Myndavél in the game, which Framköllun developed and
+    pinned to the photographer's wall. Its print is named by `job`. */
+export interface CrewShot {
+  /** the photo's id in the game; a second delivery of the same photo finds it here and pins nothing new */
+  job:  string;
+  /** set only when the photographer chose to show the spot and it is on the map */
+  spot: CrewShotSpot | null;
+}
+
 /** One thing pinned to the wall: a note, a print, or a note with prints;
     or a call for something (bounty) or a question (poll), which are notes too. */
 export interface CrewEntry {
@@ -87,6 +99,8 @@ export interface CrewEntry {
   poll?:     CrewPoll;
   /** the items the crew have given it (src/lib/reactions.ts); only once something has been */
   reactions?: Reactions;
+  /** set on a photo from the Myndavél */
+  shot?:     CrewShot;
 }
 
 export interface CrewProfile {
@@ -187,6 +201,18 @@ export function normalizeReactions(raw: unknown): Reactions | null {
   return Object.keys(out).length ? out : null;
 }
 
+const JOB = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+/* past the world border is no place in the world */
+const coord = (v: unknown, max: number) => (typeof v === 'number' && Number.isInteger(v) && Math.abs(v) <= max ? v : null);
+
+export function normalizeShot(raw: unknown): CrewShot | null {
+  const s = raw as Partial<CrewShot> | null;
+  if (!s || typeof s !== 'object' || typeof s.job !== 'string' || !JOB.test(s.job)) return null;
+  const at = s.spot as Partial<CrewShotSpot> | null | undefined;
+  const x = coord(at?.x, 30_000_000), y = coord(at?.y, 4096), z = coord(at?.z, 30_000_000);
+  return { job: s.job, spot: x !== null && y !== null && z !== null ? { x, y, z } : null };
+}
+
 export function normalizeEntry(raw: unknown): CrewEntry | null {
   const e = raw as Partial<CrewEntry> | null;
   if (!e || typeof e.id !== 'string') return null;
@@ -197,6 +223,7 @@ export function normalizeEntry(raw: unknown): CrewEntry | null {
   const poll = text.trim() ? normalizePoll(e.poll) : null;
   const bounty = text.trim() && !poll ? normalizeBounty(e.bounty) : null;
   const reactions = normalizeReactions(e.reactions);
+  const shot = normalizeShot(e.shot);
   return {
     id:        e.id,
     text,
@@ -214,6 +241,7 @@ export function normalizeEntry(raw: unknown): CrewEntry | null {
     ...(bounty ? { bounty } : {}),
     ...(poll ? { poll } : {}),
     ...(reactions ? { reactions } : {}),
+    ...(shot ? { shot } : {}),
   };
 }
 
