@@ -193,6 +193,8 @@ Afritaðu `.env.local.example` sem `.env.local` og fylltu inn gildin.
 | `MAP_SYNC_GITHUB_TOKEN` | Fínstilltur GitHub-aðgangslykill að þessu repói með „Actions: Read and write“; hnappurinn sem afritar þrívíddarkortið úr stjórnborðinu ræsir Map sync-verkið með honum |
 | `GITHUB_TOKEN` | Hefðbundinn GitHub-aðgangslykill án aðgangssviða; hækkar fyrirspurnamörk við athugun gagnapakka, valfrjálst |
 | `CREW_TOKEN_<USERNAME>` | Aðgangslykill hvers félaga, t.d. `CREW_TOKEN_STEBBIAS=...`; varaleið, innskráningartenglar úr stjórnborðinu þurfa engan |
+| `MYNDAVEL_INGEST_SECRET` | Lykill sem Framköllun á NAS-inu undirritar myndir Myndavélarinnar með þegar hún sendir þær á `/api/myndavel`; sami strengur og í `.env` Framköllunar. Án hans tekur vefurinn ekki við myndum úr leiknum |
+| `MYNDAVEL_OFFLINE_UUIDS` | Aðeins í þróun: `1` tekur líka við myndum frá leikmönnum prufuþjónsins, sem er í offline-ham. Hunsað í Production |
 | `NEXT_PUBLIC_SITE_URL` | Valfrjálst; slóð vefsins í innskráningartenglum og pósti, annars slóðin sem stjórnborðið var opnað á (og `https://jodcraft.world` í pósti) |
 | `RESEND_API_KEY` | Resend-lykill („Sending access“, aðeins `jodcraft.world`) fyrir innskráningartengla og bréf um spilakvöld; merktur „Sensitive“ og aðeins fyrir Production. Án hans er enginn póstur sendur |
 | `EMAIL_FROM` | Valfrjálst; sendandi bréfanna, sjálfgefið `JOÐcraft <hallo@jodcraft.world>` |

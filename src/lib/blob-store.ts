@@ -108,8 +108,10 @@ export function isBlobHost(url: string): boolean {
 /**
  * Store an image and return the URL to show it from.
  * `pathname` is the blob path (e.g. gallery/<id>.png); locally the basename lands in /public/screenshots.
+ * `overwrite` stores over a blob already at that path, which Blob otherwise refuses: for a
+ * photo whose path is its own id, sent again after an answer went missing.
  */
-export async function storeImage(pathname: string, file: Blob, contentType: string): Promise<string> {
+export async function storeImage(pathname: string, file: Blob, contentType: string, { overwrite = false } = {}): Promise<string> {
   const mode = storageMode();
   if (mode === 'none') {
     throw new Error('Myndageymsla er ekki stillt: vantar BLOB_READ_WRITE_TOKEN á Vercel.');
@@ -117,7 +119,7 @@ export async function storeImage(pathname: string, file: Blob, contentType: stri
   if (mode === 'blob') {
     const { put } = await import('@vercel/blob');
     const access = await detectBlobAccess();
-    const opts = { access, contentType, addRandomSuffix: false } as const;
+    const opts = { access, contentType, addRandomSuffix: false, allowOverwrite: overwrite } as const;
     try {
       const blob = await put(pathname, file, opts);
       return displayUrlFor(blob, access);

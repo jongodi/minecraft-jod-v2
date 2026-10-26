@@ -23,6 +23,7 @@ import PlayerHead from '@/components/badlands/PlayerHead';
 import { photoProps, PHOTO_SIZES } from '@/components/badlands/photo';
 import { errorFrom, failure, OFFLINE } from '@/lib/crew-upload';
 import { woodClass } from '@/lib/sign-wood';
+import { mapAt } from '@/components/badlands/data';
 import type { WallPlace } from './Wall';
 
 interface Props {
@@ -245,6 +246,8 @@ export default memo(function Print({ username, entry, places, me, isOwner, cover
         {/* the day is in the tip for the eye and after the age for a screen reader, which does not read a tip */}
         <time className="b-tip" dateTime={entry.createdAt} data-tip={date(entry.createdAt)}>{age(entry.createdAt)}<span className="b-visually-hidden">, {date(entry.createdAt)}</span></time>
         {place && <Link href={`/stadur/${place.id}#heimur`} className="w-print__place">{place.label}</Link>}
+        {/* a Myndavél photo whose photographer showed where it was taken; the viewer is a page of its own, not a route */}
+        {entry.shot?.spot && <a href={mapAt(entry.shot.spot.x, entry.shot.spot.y, entry.shot.spot.z)} className="w-print__place">Sjá á korti</a>}
         <button type="button" className={`w-lantern b-tip${lit ? ' is-lit' : ''}`} onClick={toggleLantern} disabled={!me || busyLantern}
           aria-pressed={lit} aria-label={`Lukt undir færslunni${entry.lanterns.length ? `, ${entry.lanterns.length} ${plural(entry.lanterns.length, 'logar', 'loga')}: ${andList(entry.lanterns)}` : ', engin lukt enn'}${me ? '' : '. Skráðu þig inn til að kveikja á lukt'}`}
           data-tip={me ? (lit ? 'Slökkva á luktinni' : 'Kveikja á lukt') : 'Skráðu þig inn til að kveikja á lukt'}>

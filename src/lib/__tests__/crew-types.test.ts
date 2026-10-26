@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeProfile, allPhotos, coverPhoto, cleanText, takenAtFromFilename, canonicalUsername, isCrewUsername, LIMITS } from '@/lib/crew-types';
+import { normalizeProfile, normalizeEntry, allPhotos, coverPhoto, cleanText, takenAtFromFilename, canonicalUsername, isCrewUsername, LIMITS } from '@/lib/crew-types';
 
 describe('normalizeProfile', () => {
   it('turns the old posts and photos into entries, newest first', () => {
@@ -79,5 +79,22 @@ describe('usernames', () => {
     expect(isCrewUsername('AMMAGAUR')).toBe(true);
     expect(isCrewUsername('nobody')).toBe(false);
     expect(canonicalUsername('ammagaur')).toBe('AmmaGaur');
+  });
+});
+
+describe('a photo from the Myndavél', () => {
+  const base = { id: 'e', text: '', photos: [{ id: 'p', filename: '/screenshots/upload-p.jpg', caption: '', uploadedAt: '2026-10-26T00:00:00.000Z' }], placeId: null, createdAt: '2026-10-26T00:00:00.000Z' };
+  const job = '3f0c0d9e-6a1b-4c63-9d0e-2b8f6a7c1e55';
+
+  it('keeps its job and spot', () => {
+    expect(normalizeEntry({ ...base, shot: { job, spot: { x: -6420, y: 70, z: -8410 } } })?.shot).toEqual({ job, spot: { x: -6420, y: 70, z: -8410 } });
+    expect(normalizeEntry({ ...base, shot: { job, spot: null } })?.shot).toEqual({ job, spot: null });
+  });
+
+  it('drops a spot that is no block in the world, and a shot with no job', () => {
+    expect(normalizeEntry({ ...base, shot: { job, spot: { x: 1.5, y: 70, z: 0 } } })?.shot).toEqual({ job, spot: null });
+    expect(normalizeEntry({ ...base, shot: { job, spot: { x: 4e7, y: 70, z: 0 } } })?.shot).toEqual({ job, spot: null });
+    expect(normalizeEntry({ ...base, shot: { job: 'nope', spot: null } })).not.toHaveProperty('shot');
+    expect(normalizeEntry(base)).not.toHaveProperty('shot');
   });
 });
