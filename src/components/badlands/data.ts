@@ -61,6 +61,9 @@ export const FACING: Record<string, string> = { north: 'norður', south: 'suður
    has to survive the server, the sync and whatever the viewer remembered. */
 export const MAP_START_VIEW = 'world:-6890:57:-8919:65:2.03:1.08:0:0:perspective';
 export const MAP_URL = `/bluemap/index.html#${MAP_START_VIEW}`;
+/** The map looking at one block from close by, at the start view's angle: where a
+    Myndavél photo was taken. /heimskort keeps the part after # through its redirect. */
+export const mapAt = (x: number, y: number, z: number) => `/heimskort#world:${x}:${y}:${z}:40:2.03:1.08:0:0:perspective`;
 
 /* The still the world opens as: one screenshot of the start view, taken by
    `npm run map:poster`. The viewer itself only loads when someone asks for it. */
