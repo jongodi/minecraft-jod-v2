@@ -42,6 +42,21 @@ describe('summarize', () => {
     expect(summarize(base, next)).toBe('Nýr staður: Bankinn, eytt: Vitinn, hnit í heiminum: Feneyjar, landslag málað');
   });
 
+  it('counts as Icelandic counts, one for 21 and 31 as for 1', () => {
+    /* a restore can differ from the map in that many places */
+    const many = Array.from({ length: 31 }, (_, i) => loc(i + 1));
+    const first21 = (over: Partial<MapConfig['locations'][number]>) => many.map((l, i) => (i < 21 ? { ...l, ...over } : l));
+    expect(summarize(map(many.slice(0, 10)), map(many))).toBe('21 nýr staður');
+    expect(summarize(map(many), map(many.slice(21)))).toBe('21 stað eytt');
+    expect(summarize(map(many), map(first21({ x: 999 })))).toBe('21 staður færður');
+    expect(summarize(map(many), map(first21({ sublabel: 'nýtt' })))).toBe('21 stað breytt');
+    expect(summarize(map(many), map(first21({ world: { x: 1, y: 70, z: 2 } })))).toBe('Hnit í heiminum á 21 stað');
+    expect(summarize(map(many), map(first21({ photoId: 'p' })))).toBe('Myndir á 21 stað');
+    expect(summarize(map(many), map(many.map(l => ({ ...l, x: 999 }))))).toBe('31 staður færður');
+    expect(summarize(map(many), map(many.map((l, i) => (i < 22 ? { ...l, x: 999 } : l))))).toBe('22 staðir færðir');
+    expect(summarize(map(many.slice(0, 20)), map(many.slice(0, 31)))).toBe('11 nýir staðir');
+  });
+
   it('says so when nothing changed', () => {
     expect(summarize(base, base)).toBe('Vistað án breytinga');
     expect(summarize(null, base)).toBe('Kortið eins og það var');

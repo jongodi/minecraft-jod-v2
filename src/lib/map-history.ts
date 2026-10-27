@@ -5,6 +5,7 @@
    is itself saved as a new version, so a restore can be undone too. Kept in
    Redis only: without it the map lives in a file and there is no history. */
 import type { MapConfig, MapLocation } from '@/lib/map-types';
+import { plural } from '@/lib/format';
 
 export const HISTORY_KEY = 'map:history';
 export const HISTORY_SIZE = 30;
@@ -18,7 +19,8 @@ export interface MapVersion {
 
 export type MapVersionInfo = Omit<MapVersion, 'config'>;
 
-const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+/* counted as Icelandic counts: 21 and 31 take the one form, as 1 does */
+const count = (n: number, one: string, many: string) => `${n} ${plural(n, one, many)}`;
 const nameOf = (l: MapLocation) => l.label.trim() || `staður ${l.id}`;
 const same = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
 
@@ -44,12 +46,12 @@ export function summarize(prev: MapConfig | null, next: MapConfig): string {
     const loc = Array.isArray(first) ? (first as readonly [MapLocation, MapLocation])[1] : first as MapLocation;
     parts.push(list.length === 1 ? one(nameOf(loc)) : many(list.length));
   };
-  say(added, n => `nýr staður: ${n}`, k => `${k} nýir staðir`);
-  say(removed, n => `eytt: ${n}`, k => `${plural(k, 'stað', 'stöðum')} eytt`);
-  say(moved, n => `staður færður: ${n}`, k => `${k} staðir færðir`);
-  say(edited, n => `breytt: ${n}`, k => `${plural(k, 'stað', 'stöðum')} breytt`);
-  say(placed, n => `hnit í heiminum: ${n}`, k => `hnit í heiminum á ${plural(k, 'stað', 'stöðum')}`);
-  say(photo, n => `mynd: ${n}`, k => `myndir á ${plural(k, 'stað', 'stöðum')}`);
+  say(added, n => `nýr staður: ${n}`, k => count(k, 'nýr staður', 'nýir staðir'));
+  say(removed, n => `eytt: ${n}`, k => `${count(k, 'stað', 'stöðum')} eytt`);
+  say(moved, n => `staður færður: ${n}`, k => count(k, 'staður færður', 'staðir færðir'));
+  say(edited, n => `breytt: ${n}`, k => `${count(k, 'stað', 'stöðum')} breytt`);
+  say(placed, n => `hnit í heiminum: ${n}`, k => `hnit í heiminum á ${count(k, 'stað', 'stöðum')}`);
+  say(photo, n => `mynd: ${n}`, k => `myndir á ${count(k, 'stað', 'stöðum')}`);
 
   if (!same(prev.zones, next.zones)) parts.push('svæði');
   if (!same(prev.paths ?? [], next.paths ?? [])) parts.push('línur');
