@@ -176,6 +176,13 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
   const updatePin  = (id: number, patch: Partial<MapLocation>) => commit(d => ({ ...d, locations: d.locations.map(l => l.id === id ? { ...l, ...patch } : l) }));
   const updateZone = (id: string, patch: Partial<MapZone>)     => commit(d => ({ ...d, zones: d.zones.map(z => z.id === id ? { ...z, ...patch } : z) }));
   const updatePath = (id: string, patch: Partial<MapPath>)     => commit(d => ({ ...d, paths: d.paths.map(p => p.id === id ? { ...p, ...patch } : p) }));
+  /* A name typed is one step, begun as its field is entered and settled as it
+     is left: every letter was a step of its own, so undo took a name back a
+     letter at a time, and a long one pushed the strokes before it out of the sixty. */
+  const typing = { onFocus: () => mark(), onBlur: () => h.settle() };
+  const typePin  = (id: number, patch: Partial<MapLocation>) => replace(d => ({ ...d, locations: d.locations.map(l => l.id === id ? { ...l, ...patch } : l) }));
+  const typeZone = (id: string, patch: Partial<MapZone>)     => replace(d => ({ ...d, zones: d.zones.map(z => z.id === id ? { ...z, ...patch } : z) }));
+  const typePath = (id: string, patch: Partial<MapPath>)     => replace(d => ({ ...d, paths: d.paths.map(p => p.id === id ? { ...p, ...patch } : p) }));
 
   function deleteSelected() {
     if (!selected) return;
@@ -378,7 +385,11 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
       /* The editor stays in hand while it saves: what was done meanwhile (a
          name typed on after Ctrl+S, a stroke) is kept, and shows as unsaved,
          where taking the stored map in its place threw it away. */
-      if (serialize(h.current.current) === serialize(edited)) h.reset(stored);
+      if (serialize(h.current.current) === serialize(edited)) {
+        h.reset(stored);
+        /* a name still being typed begins its step again, from the map as saved */
+        if (document.activeElement?.closest('.a-editor__side input')) mark();
+      }
       setSaved(serialize(stored));
       loadPhotos();
       return true;
@@ -589,8 +600,8 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
           ) : selPin ? (
             <div className="a-side">
               <p className="a-side__title"><span>Staður {selPin.id}</span><Button tone="ghost" small onClick={() => duplicatePin(selPin)}>Afrita</Button></p>
-              <Field label="Heiti"><input className="a-input" value={selPin.label} onChange={e => updatePin(selPin.id, { label: e.target.value })} maxLength={100} /></Field>
-              <Field label="Undirtitill"><input className="a-input" value={selPin.sublabel} onChange={e => updatePin(selPin.id, { sublabel: e.target.value })} maxLength={100} /></Field>
+              <Field label="Heiti"><input className="a-input" value={selPin.label} {...typing} onChange={e => typePin(selPin.id, { label: e.target.value })} maxLength={100} /></Field>
+              <Field label="Undirtitill"><input className="a-input" value={selPin.sublabel} {...typing} onChange={e => typePin(selPin.id, { sublabel: e.target.value })} maxLength={100} /></Field>
               <Field label="Tegund">
                 <select className="a-select" value={selPin.type} onChange={e => updatePin(selPin.id, { type: e.target.value as MapLocation['type'] })}>
                   {(['surface', 'underground', 'island', 'aerial'] as const).map(t => <option key={t} value={t}>{mapLabel(t)}</option>)}
@@ -645,7 +656,7 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
           ) : selZone ? (
             <div className="a-side">
               <p className="a-side__title"><span>{mapLabel(selZone.kind)}</span></p>
-              <Field label="Heiti"><input className="a-input" value={selZone.label} onChange={e => updateZone(selZone.id, { label: e.target.value })} maxLength={100} /></Field>
+              <Field label="Heiti"><input className="a-input" value={selZone.label} {...typing} onChange={e => typeZone(selZone.id, { label: e.target.value })} maxLength={100} /></Field>
               <div className="a-inline">
                 <Field label="Miðja X"><NumField value={selZone.cx} min={0} max={MAP_W} onCommit={cx => updateZone(selZone.id, { cx })} /></Field>
                 <Field label="Miðja Y"><NumField value={selZone.cy} min={0} max={MAP_H} onCommit={cy => updateZone(selZone.id, { cy })} /></Field>
@@ -660,7 +671,7 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
           ) : selPath ? (
             <div className="a-side">
               <p className="a-side__title"><span>{mapLabel(selPath.kind)}</span></p>
-              <Field label="Heiti"><input className="a-input" value={selPath.label} onChange={e => updatePath(selPath.id, { label: e.target.value })} maxLength={100} /></Field>
+              <Field label="Heiti"><input className="a-input" value={selPath.label} {...typing} onChange={e => typePath(selPath.id, { label: e.target.value })} maxLength={100} /></Field>
               <Field label="Tegund">
                 <select className="a-select" value={selPath.kind} onChange={e => updatePath(selPath.id, { kind: e.target.value as MapPath['kind'] })}>
                   {(['river', 'road', 'border'] as const).map(k => <option key={k} value={k}>{mapLabel(k)}</option>)}
