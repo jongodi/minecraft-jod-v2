@@ -111,6 +111,25 @@ export function terrainPaths(grid: readonly string[]): Record<string, string> {
   return out;
 }
 
+/** Every block on the straight way from one to another, both ends with it,
+    one step at a time: a brush dragged faster than the pointer is sampled
+    paints them all, where painting only the samples left every other block. */
+export function blocksBetween(from: readonly [number, number], to: readonly [number, number]): [number, number][] {
+  const [x1, y1] = to;
+  let [x, y] = from;
+  const dx = Math.abs(x1 - x), dy = -Math.abs(y1 - y);
+  const sx = x < x1 ? 1 : -1, sy = y < y1 ? 1 : -1;
+  const out: [number, number][] = [[x, y]];
+  let err = dx + dy;
+  while (x !== x1 || y !== y1) {
+    const e2 = 2 * err;
+    if (e2 >= dy) { err += dy; x += sx; }
+    if (e2 <= dx) { err += dx; y += sy; }
+    out.push([x, y]);
+  }
+  return out;
+}
+
 /** Paint a square brush centred on one block. Returns a new grid. */
 export function paint(grid: readonly string[], c0: number, r0: number, size: number, to: Material): string[] {
   const half = Math.floor((size - 1) / 2);

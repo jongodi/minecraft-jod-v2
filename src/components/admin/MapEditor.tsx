@@ -8,7 +8,7 @@ import { mapLabel } from '@/lib/icelandic';
 import { SIGN_WOODS, WOOD_LABELS, type SignWood } from '@/lib/sign-wood';
 import {
   DEFAULT_TERRAIN, MATERIALS, TERRAIN_CELL, TERRAIN_COLS, TERRAIN_ROWS,
-  fill as floodFill, normalizeTerrain, paint as paintBrush, terrainCounts,
+  blocksBetween, fill as floodFill, normalizeTerrain, paint as paintBrush, terrainCounts,
   type Material,
 } from '@/lib/terrain';
 import { MapDefs, MapMarks, Terrain, MAP_H, MAP_W } from '@/components/badlands/MapArt';
@@ -190,17 +190,29 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
   }
 
   /* ─── painting the ground ─── */
+  /* the block a stroke last painted, so a fast drag paints the way between two samples */
+  const lastBlock = useRef<[number, number] | null>(null);
+  /* the axis a Shift stroke keeps, chosen once it has moved a whole block from where it began */
+  const strokeAxis = useRef<'row' | 'column' | null>(null);
   const applyBrush = useCallback((cx: number, cy: number, straight = false) => {
     let [c, r] = toCell(cx, cy);
-    /* Shift keeps a stroke on one axis, which is how a straight coast gets drawn. */
+    /* the ground's last row ends ten units above the map's foot: that strip is the last row */
+    if (r === TERRAIN_ROWS && toSvg(cx, cy)[1] < MAP_H) r = TERRAIN_ROWS - 1;
+    /* Shift keeps a stroke on one axis, which is how a straight coast gets
+       drawn: the axis it first moves along, kept for the stroke, where
+       choosing it again at every step painted a stub off the line, and a
+       drag near the diagonal flipped between the two. */
     const start = strokeStart.current;
     if (straight && start) {
-      if (Math.abs(c - start[0]) >= Math.abs(r - start[1])) r = start[1];
-      else c = start[0];
+      if (!strokeAxis.current && (c !== start[0] || r !== start[1])) strokeAxis.current = Math.abs(c - start[0]) >= Math.abs(r - start[1]) ? 'row' : 'column';
+      if (strokeAxis.current !== 'column') r = start[1];
+      if (strokeAxis.current !== 'row') c = start[0];
     }
-    if (c < 0 || c >= TERRAIN_COLS || r < 0 || r >= TERRAIN_ROWS) return;
-    replace(d => ({ ...d, terrain: paintBrush(d.terrain, c, r, brush, material) }));
-  }, [toCell, replace, brush, material]);
+    const from = lastBlock.current ?? [c, r];
+    lastBlock.current = [c, r];
+    /* a centre off the ground still paints what its brush covers of it */
+    replace(d => ({ ...d, terrain: blocksBetween(from, [c, r]).reduce((t, [bc, br]) => paintBrush(t, bc, br, brush, material), d.terrain) }));
+  }, [toCell, toSvg, replace, brush, material]);
 
   /* ─── pointer: drag, place, draw ─── */
   const startDrag = (e: React.PointerEvent, d: Exclude<Drag, null>) => {
@@ -236,6 +248,8 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
     painting.current = true;
     moved.current = true;
     strokeStart.current = toCell(e.clientX, e.clientY);
+    lastBlock.current = null;
+    strokeAxis.current = null;
     mark();
     applyBrush(e.clientX, e.clientY, e.shiftKey);
   };
@@ -254,7 +268,7 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
       replace(doc => ({ ...doc, zones: doc.zones.map(z => z.id === d.id ? { ...z, [d.axis]: Math.max(10, snapTo(d.start + delta)) } : z) }));
     } else if (d.kind === 'point') replace(doc => ({ ...doc, paths: doc.paths.map(p => p.id === d.id ? { ...p, points: p.points.map((pt, i) => i === d.idx ? [clampX(snapTo(mx - d.ox)), clampY(snapTo(my - d.oy))] as [number, number] : pt) } : p) }));
   };
-  const onUp = () => { drag.current = null; painting.current = false; strokeStart.current = null; h.settle(); };
+  const onUp = () => { drag.current = null; painting.current = false; strokeStart.current = null; lastBlock.current = null; strokeAxis.current = null; h.settle(); };
 
   const onClick = (e: React.MouseEvent<SVGSVGElement>) => {
     const wasPressed = pressed.current;
