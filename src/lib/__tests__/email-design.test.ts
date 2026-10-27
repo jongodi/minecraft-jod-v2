@@ -106,6 +106,16 @@ describe('the heading in the picture', () => {
     expect(html).toContain('>Bál í kvöld</h1>');
     expect(html).not.toContain('&amp;h=');
   });
+
+  it('never signs with the admin password, which every letter would carry signatures over', async () => {
+    vi.stubEnv('CRON_SECRET', '');
+    vi.stubEnv('MAIL_ART_SECRET', '');
+    vi.stubEnv('ADMIN_TOKEN', 'the-admin-password');
+    const { html } = renderLetter(letter({ heading: 'Bál í kvöld' }), 'sunset', SITE);
+    expect(html).not.toContain('&amp;h=');
+    const { canAnswerByLink } = await import('@/lib/night-answer');
+    expect(canAnswerByLink()).toBe(false);
+  });
 });
 
 describe('the chosen looks', () => {
