@@ -138,6 +138,11 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
     catch { setPhotosError('Ekki tókst að sækja myndasafnið.'); }
   }, []);
   useEffect(() => { loadPhotos(); }, [loadPhotos]);
+  /* The picker asks the gallery again as it opens: the editor stays mounted
+     behind the other tabs while it holds unsaved work, and offered the
+     photos as they were when the map was opened, without one uploaded in
+     Myndasafn since and with one deleted there, which the save then dropped. */
+  const openPicker = () => { loadPhotos(); setPicker(true); };
 
   useEffect(() => { setUnsaved('map', dirty); return () => setUnsaved('map', false); }, [dirty]);
 
@@ -620,13 +625,13 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <div className="a-photo"><img src={selPhoto.filename} alt={selPhoto.title} /></div>
                     <p className="a-muted">{selPhoto.title}{!selPhoto.active && '. Falin í albúminu, birtist því ekki á kortinu fyrr en hún er sýnd aftur.'}</p>
-                    <div className="a-inline"><Button small onClick={() => setPicker(true)}>Skipta um mynd</Button><Button small tone="ghost" onClick={() => linkPhoto(selPin.id, null)}>Aftengja</Button></div>
+                    <div className="a-inline"><Button small onClick={openPicker}>Skipta um mynd</Button><Button small tone="ghost" onClick={() => linkPhoto(selPin.id, null)}>Aftengja</Button></div>
                   </>
                 ) : (
                   <>
                     <p className="a-muted">{selPin.photoId ? (photosError || 'Tengda myndin fannst ekki í myndasafninu.') : 'Engin mynd tengd þessum stað.'}</p>
                     <div className="a-inline">
-                      <Button small onClick={() => setPicker(true)}>Velja úr myndasafni</Button>
+                      <Button small onClick={openPicker}>Velja úr myndasafni</Button>
                       <label className="a-btn a-btn--small a-btn--ghost" style={{ cursor: uploading ? 'wait' : 'pointer' }}>
                         {uploading ? 'Hleð upp' : 'Hlaða upp nýrri'}
                         <input type="file" accept="image/*" disabled={uploading} className="a-sr" onChange={e => { const f = e.target.files?.[0]; e.target.value = ''; if (f) uploadForPin(selPin, f); }} />
