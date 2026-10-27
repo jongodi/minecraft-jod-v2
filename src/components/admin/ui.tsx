@@ -24,7 +24,8 @@ type Tone = 'default' | 'primary' | 'ghost' | 'danger';
 export function Button({ tone = 'default', small, icon, on, className, type = 'button', ...rest }:
   React.ButtonHTMLAttributes<HTMLButtonElement> & { tone?: Tone; small?: boolean; icon?: boolean; on?: boolean }) {
   const cls = ['a-btn', tone !== 'default' ? `a-btn--${tone}` : '', small ? 'a-btn--small' : '', icon ? 'a-btn--icon' : '', on ? 'is-on' : '', className ?? ''].filter(Boolean).join(' ');
-  return <button type={type} className={cls} {...rest} />;
+  /* a button that is on or off says so, not only in its colour (the gallery's filters, the map's tools) */
+  return <button type={type} className={cls} aria-pressed={on === undefined ? undefined : on} {...rest} />;
 }
 
 export function Field({ label, help, children }: { label: string; help?: ReactNode; children: ReactNode }) {
@@ -37,10 +38,11 @@ export function Field({ label, help, children }: { label: string; help?: ReactNo
   );
 }
 
-export function Toggle({ checked, onChange, label, disabled }: { checked: boolean; onChange: (v: boolean) => void; label: ReactNode; disabled?: boolean }) {
+/** `name` is what the switch does, where its label says only how it stands. */
+export function Toggle({ checked, onChange, label, name, disabled }: { checked: boolean; onChange: (v: boolean) => void; label: ReactNode; name?: string; disabled?: boolean }) {
   return (
     <label className="a-toggle">
-      <input type="checkbox" checked={checked} disabled={disabled} onChange={e => onChange(e.target.checked)} />
+      <input type="checkbox" checked={checked} disabled={disabled} aria-label={name} onChange={e => onChange(e.target.checked)} />
       <span className="a-toggle__box" aria-hidden="true" />
       <span>{label}</span>
     </label>

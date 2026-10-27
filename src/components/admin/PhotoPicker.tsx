@@ -29,7 +29,7 @@ export default function PhotoPicker({ photos, locations, currentId, pin, error, 
     <Modal title={`Mynd fyrir stað ${pin.id}, ${pin.label || 'án heitis'}`} onClose={onClose} width="56rem">
       <div className="a-stack">
         <div className="a-inline">
-          <input className="a-input" style={{ flex: 1, minWidth: '10rem' }} value={query} onChange={e => setQuery(e.target.value)} placeholder="Leita eftir titli" autoFocus />
+          <input className="a-input" style={{ flex: 1, minWidth: '10rem' }} value={query} onChange={e => setQuery(e.target.value)} placeholder="Leita eftir titli" aria-label="Leita að mynd eftir titli" autoFocus />
           <label className="a-btn a-btn--small" style={{ cursor: uploading ? 'wait' : 'pointer' }}>
             {uploading ? 'Hleð upp' : 'Hlaða upp nýrri'}
             <input type="file" accept="image/*" disabled={uploading} className="a-sr" onChange={e => { const f = e.target.files?.[0]; e.target.value = ''; if (f) onUpload(f); }} />

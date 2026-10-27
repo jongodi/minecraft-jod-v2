@@ -75,7 +75,7 @@ export default function EmailPanel() {
                 </div>
                 <div className="a-inline" role="group" aria-label={`Útlit: ${m.name}`}>
                   {data.themes.map(t => (
-                    <Button key={t.id} small on={m.theme === t.id} aria-pressed={m.theme === t.id} onClick={() => choose(m.kind, t.id)}>{t.name}</Button>
+                    <Button key={t.id} small on={m.theme === t.id} onClick={() => choose(m.kind, t.id)}>{t.name}</Button>
                   ))}
                 </div>
               </div>

@@ -180,9 +180,9 @@ export default function DatapacksPanel() {
                       </span>
                     </div>
                     <div className="a-row__actions">
-                      <Toggle checked={!p.hidden} onChange={v => setHidden(p, !v)} label={p.hidden ? 'Falinn' : 'Sýndur'} disabled={shelving} />
-                      <Button tone="ghost" small icon onClick={() => move(p, -1)} disabled={shelving || i === 0} aria-label="Færa ofar">↑</Button>
-                      <Button tone="ghost" small icon onClick={() => move(p, 1)} disabled={shelving || i === packs.length - 1} aria-label="Færa neðar">↓</Button>
+                      <Toggle checked={!p.hidden} onChange={v => setHidden(p, !v)} label={p.hidden ? 'Falinn' : 'Sýndur'} name={`Sýna ${p.name} á vefnum`} disabled={shelving} />
+                      <Button tone="ghost" small icon onClick={() => move(p, -1)} disabled={shelving || i === 0} aria-label={`Færa ${p.name} ofar`}>↑</Button>
+                      <Button tone="ghost" small icon onClick={() => move(p, 1)} disabled={shelving || i === packs.length - 1} aria-label={`Færa ${p.name} neðar`}>↓</Button>
                       <Button tone="ghost" small onClick={() => setEditing({ pack: p })}>{p.isCustom ? 'Breyta' : 'Mynd'}</Button>
                       {p.isCustom && <Button tone="danger" small onClick={() => remove(p)}>Eyða</Button>}
                     </div>
