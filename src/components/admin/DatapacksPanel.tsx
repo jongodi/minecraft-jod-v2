@@ -68,7 +68,10 @@ export default function DatapacksPanel() {
 
   useEffect(() => { load().then(check); }, [load, check]);
 
-  const changed = useMemo(() => packs.filter(p => (versions[p.id] ?? '') !== (p.currentVersion ?? '')), [packs, versions]);
+  /* as the server keeps it: trimmed, and an empty one back to the pack's own,
+     so a version typed with a space is saved once and not unsaved for ever */
+  const typedOf = (p: PackView) => (versions[p.id] ?? '').trim();
+  const changed = useMemo(() => packs.filter(p => (versions[p.id] ?? '').trim() !== (p.currentVersion ?? '')), [packs, versions]);
   /* typed versions are lost with the panel, so leaving it asks first */
   const unsaved = changed.length > 0;
   useEffect(() => { setUnsaved('datapacks', unsaved); return () => setUnsaved('datapacks', false); }, [unsaved]);
@@ -76,22 +79,32 @@ export default function DatapacksPanel() {
   async function saveVersions() {
     setSaving(true); setMsg('');
     try {
-      const settings = Object.fromEntries(changed.map(p => [p.id, { version: versions[p.id] }]));
+      const settings = Object.fromEntries(changed.map(p => [p.id, { version: typedOf(p) }]));
       const r = await api<{ packs: PackView[] }>('/api/admin/datapacks', { method: 'PUT', body: JSON.stringify({ settings }) });
       apply(r.packs);
+      /* what was saved reads as the server stored it */
+      const saved = new Map(r.packs.map(p => [p.id, p.currentVersion ?? '']));
+      setVersions(v => ({ ...v, ...Object.fromEntries(changed.map(p => [p.id, saved.get(p.id) ?? ''])) }));
       setMsg(`✓ ${changed.length} ${plural(changed.length, 'útgáfa vistuð', 'útgáfur vistaðar')}.`);
       check();
     } catch (e) { setMsg(errText(e)); }
     finally { setSaving(false); }
   }
 
+  /* One change to the shelf at a time. Each answers with the whole list, and
+     an earlier answer landing after a later click put the screen back: a pack
+     just hidden came back, one moved three places jumped back, and the next
+     click built its order from that. The rows wait while one is out. */
+  const [shelving, setShelving] = useState(false);
   async function setHidden(p: PackView, hidden: boolean) {
+    setShelving(true);
     setPacks(ps => ps.map(x => x.id === p.id ? { ...x, hidden } : x));
     try {
       const r = await api<{ packs: PackView[] }>('/api/admin/datapacks', { method: 'PUT', body: JSON.stringify({ settings: { [p.id]: { hidden } } }) });
       apply(r.packs);
       setMsg(hidden ? `✓ ${p.name} er falinn á vefnum.` : `✓ ${p.name} birtist á vefnum.`);
     } catch (e) { setMsg(errText(e)); load(); }
+    finally { setShelving(false); }
   }
 
   async function move(p: PackView, dir: -1 | 1) {
@@ -100,12 +113,14 @@ export default function DatapacksPanel() {
     if (j < 0 || j >= packs.length) return;
     const next = [...packs];
     [next[i], next[j]] = [next[j], next[i]];
+    setShelving(true);
     setPacks(next);
     try {
       const settings = Object.fromEntries(next.map((x, k) => [x.id, { order: k + 1 }]));
       const r = await api<{ packs: PackView[] }>('/api/admin/datapacks', { method: 'PUT', body: JSON.stringify({ settings }) });
       apply(r.packs);
     } catch (e) { setMsg(errText(e)); load(); }
+    finally { setShelving(false); }
   }
 
   async function syncServer() {
@@ -165,9 +180,9 @@ export default function DatapacksPanel() {
                       </span>
                     </div>
                     <div className="a-row__actions">
-                      <Toggle checked={!p.hidden} onChange={v => setHidden(p, !v)} label={p.hidden ? 'Falinn' : 'Sýndur'} />
-                      <Button tone="ghost" small icon onClick={() => move(p, -1)} disabled={i === 0} aria-label="Færa ofar">↑</Button>
-                      <Button tone="ghost" small icon onClick={() => move(p, 1)} disabled={i === packs.length - 1} aria-label="Færa neðar">↓</Button>
+                      <Toggle checked={!p.hidden} onChange={v => setHidden(p, !v)} label={p.hidden ? 'Falinn' : 'Sýndur'} disabled={shelving} />
+                      <Button tone="ghost" small icon onClick={() => move(p, -1)} disabled={shelving || i === 0} aria-label="Færa ofar">↑</Button>
+                      <Button tone="ghost" small icon onClick={() => move(p, 1)} disabled={shelving || i === packs.length - 1} aria-label="Færa neðar">↓</Button>
                       <Button tone="ghost" small onClick={() => setEditing({ pack: p })}>{p.isCustom ? 'Breyta' : 'Mynd'}</Button>
                       {p.isCustom && <Button tone="danger" small onClick={() => remove(p)}>Eyða</Button>}
                     </div>
