@@ -76,7 +76,17 @@ export default function BadlandsHome({ syncedOn, bases, initial }: { syncedOn: s
     const hash = next ? `#${next}` : '#heimur';
     if (window.location.hash !== hash) {
       if (isRoom(window.location.hash.slice(1))) history.replaceState({ jodRoom: !!next && !!history.state?.jodRoom }, '', hash);
-      else history.pushState({ jodRoom: !!next }, '', hash);
+      else if (next) {
+        /* The entry left behind keeps no scroll to go back to. The room opens
+           over the landed world, and ✕ (which goes back) or Back out of it
+           glided the page up to wherever the door was pressed, the sunset as
+           often as not: the camera flew back up and the town's lights went
+           out. Manual for that one entry; every other stays the browser's. */
+        history.scrollRestoration = 'manual';
+        history.pushState({ jodRoom: true }, '', hash);
+        history.scrollRestoration = 'auto';
+      }
+      else history.pushState({ jodRoom: false }, '', hash);
     }
     setRoom(next);
     setPressed(next ?? 'heimur');
