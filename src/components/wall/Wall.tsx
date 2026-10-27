@@ -307,7 +307,8 @@ export default function Wall({ initial, places, initialStats = null, initialLed 
   const [stats,       setStats]       = useState<PlayerStat | null>(initialStats);
   const [statsMeta,   setStatsMeta]   = useState<{ source: string; cachedAt: string | null } | null>(null);
   const [led,         setLed]         = useState<StatKey[]>(initialLed);
-  const [lightbox,    setLightbox]    = useState<number | null>(null);
+  /* the print held up, by its own id (see onOpen) */
+  const [held,        setHeld]        = useState<string | null>(null);
   const [origin,      setOrigin]      = useState<DOMRect | null>(null);
   const [welcome,     setWelcome]     = useState(justSignedIn);
   /* Come from the board's heads (?skra=inn): the way in opens by itself for
@@ -409,11 +410,22 @@ export default function Wall({ initial, places, initialStats = null, initialLed 
      did not change are not drawn again. */
   const printsNow = useRef(prints);
   printsNow.current = prints;
-  const onOpen    = useCallback((photoId: string, rect: DOMRect) => { const i = printsNow.current.findIndex(p => p.id === photoId); if (i >= 0) { setOrigin(rect); setLightbox(i); } }, []);
+  /* Held by its own id, and where it stands worked out as the wall is drawn:
+     the wall asked again on the way back to it moves the prints along, and
+     kept by its place the lightbox swapped the print for another under the
+     finger. One no longer on the wall is put down. */
+  const heldAt    = held === null ? -1 : prints.findIndex(p => p.id === held);
+  const lightbox  = heldAt < 0 ? null : heldAt;
+  const onOpen    = useCallback((photoId: string, rect: DOMRect) => { if (printsNow.current.some(p => p.id === photoId)) { setOrigin(rect); setHeld(photoId); } }, []);
 
-  const closeLightbox = useCallback(() => setLightbox(null), []);
-  const prevPhoto     = useCallback(() => setLightbox(i => (i !== null && prints.length ? (i - 1 + prints.length) % prints.length : null)), [prints.length]);
-  const nextPhoto     = useCallback(() => setLightbox(i => (i !== null && prints.length ? (i + 1) % prints.length : null)), [prints.length]);
+  const closeLightbox = useCallback(() => setHeld(null), []);
+  const stepPhoto     = useCallback((by: number) => setHeld(id => {
+    const ps = printsNow.current;
+    const i = ps.findIndex(p => p.id === id);
+    return i < 0 ? null : ps[(i + by + ps.length) % ps.length].id;
+  }), []);
+  const prevPhoto     = useCallback(() => stepPhoto(-1), [stepPhoto]);
+  const nextPhoto     = useCallback(() => stepPhoto(1), [stepPhoto]);
 
   return (
     <div className="b">

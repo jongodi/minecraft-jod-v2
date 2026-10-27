@@ -231,13 +231,24 @@ function Board({ room = false, open = true, initial = null, initialFilter = 'all
   const frames = useMemo(() => framesOf(shown), [shown]);
   const framesNow = useRef(frames);
   framesNow.current = frames;
-  const [lightbox, setLightbox] = useState<number | null>(null);
+  /* The picture held up, by its own id, and where it stands worked out as the
+     board is drawn: a fetch landing while it was open moved the pictures
+     along, and kept by its place the lightbox swapped it for another under
+     the finger. One no longer on the board is put down. */
+  const [held, setHeld] = useState<string | null>(null);
+  const heldAt = held === null ? -1 : frames.findIndex(p => p.id === held);
+  const lightbox = heldAt < 0 ? null : heldAt;
   const [origin, setOrigin] = useState<DOMRect | null>(null);
-  const onOpen = useCallback((photoId: string, rect: DOMRect) => { const i = framesNow.current.findIndex(p => p.id === photoId); if (i >= 0) { setOrigin(rect); setLightbox(i); } }, []);
+  const onOpen = useCallback((photoId: string, rect: DOMRect) => { if (framesNow.current.some(p => p.id === photoId)) { setOrigin(rect); setHeld(photoId); } }, []);
   const lightboxPhotos = useMemo(() => frames.map(p => ({ src: p.src, title: p.caption || undefined, sub: [p.who ?? 'á kortinu', p.takenAt ? `tekin ${formatDate(p.takenAt)}` : formatDate(p.at)].join(' · ') })), [frames]);
-  const closeLightbox = useCallback(() => setLightbox(null), []);
-  const prevPhoto = useCallback(() => setLightbox(i => (i !== null && frames.length ? (i - 1 + frames.length) % frames.length : null)), [frames.length]);
-  const nextPhoto = useCallback(() => setLightbox(i => (i !== null && frames.length ? (i + 1) % frames.length : null)), [frames.length]);
+  const closeLightbox = useCallback(() => setHeld(null), []);
+  const stepPhoto = useCallback((by: number) => setHeld(id => {
+    const fs = framesNow.current;
+    const i = fs.findIndex(p => p.id === id);
+    return i < 0 ? null : fs[(i + by + fs.length) % fs.length].id;
+  }), []);
+  const prevPhoto = useCallback(() => stepPhoto(-1), [stepPhoto]);
+  const nextPhoto = useCallback(() => stepPhoto(1), [stepPhoto]);
 
   /* A pinned call or question is a press away: its sign is drawn if it is
      further down than the board has drawn yet, and brought into view where
