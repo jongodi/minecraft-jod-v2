@@ -161,7 +161,7 @@ function Board({ room = false, open = true, initial = null, initialFilter = 'all
     let t: ReturnType<typeof setTimeout> | undefined;
     const arm = () => {
       clearTimeout(t);
-      if (document.visibilityState === 'visible') t = setTimeout(() => markSeen(newestAt(stampsOf(data.items)), me), SEEN_AFTER_MS);
+      if (document.visibilityState === 'visible') t = setTimeout(() => markSeen(newestAt(stampsOf(data.items), me), me), SEEN_AFTER_MS);
     };
     arm();
     document.addEventListener('visibilitychange', arm);

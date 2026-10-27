@@ -8,7 +8,7 @@
    their computer, or a visitor's in their browser. Opening the board moves
    the mark up to the newest thing it shows. */
 import { useEffect, useSyncExternalStore } from 'react';
-import { countNew, newestAt, type BoardBrief, type BoardStamp } from '@/lib/board-types';
+import { countNew, type BoardBrief, type BoardStamp } from '@/lib/board-types';
 import { useCrewSession } from '@/components/badlands/hooks';
 
 const LOCAL_KEY = 'jod-board-seen-v1';
@@ -65,7 +65,6 @@ export function markSeen(at: string | null, me: string | null | undefined): void
   if (me) fetch('/api/board/seen', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ at }) }).catch(() => {});
 }
 
-export const newest = () => newestAt(state.stamps ?? []);
 /** When this visitor had last looked, as it stood before this look: for the board's own "new" tags. */
 export const seenNow = () => state.seen;
 

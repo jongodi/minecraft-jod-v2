@@ -121,9 +121,16 @@ export function stampsOf(items: BoardItem[]): BoardStamp[] {
 export const newReplies = (item: BoardItem, seen: string | null, me: string | null | undefined, now = Date.now()) =>
   item.kind === 'post' ? item.entry.replies.filter(r => isNew({ at: r.createdAt, who: r.username }, seen, me, now)).length : 0;
 
-/** The newest moment on the board, which is what "seen" moves up to. */
-export const newestAt = (stamps: BoardStamp[]): string | null =>
-  stamps.reduce<string | null>((max, s) => (!max || Date.parse(s.at) > Date.parse(max) ? s.at : max), null);
+/** The newest moment on the board, which is what "seen" moves up to: of what
+    others put there, when `me` is the one looking. Their own posts and
+    replies are never news to them, and one just put up from the board is
+    newer than the board they last fetched, so a mark moved up to it went
+    past whatever others pinned in between, never shown as new. */
+export const newestAt = (stamps: BoardStamp[], me?: string | null): string | null =>
+  stamps.reduce<string | null>((max, s) => {
+    if (me && s.who && s.who.toLowerCase() === me.toLowerCase()) return max;
+    return !max || Date.parse(s.at) > Date.parse(max) ? s.at : max;
+  }, null);
 
 /* ─── changes made in the browser ─────────────────────────────────────────── */
 
