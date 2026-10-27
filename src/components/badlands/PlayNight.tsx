@@ -381,7 +381,7 @@ function LightFire({ busy, err, onLight, onCancel }: { busy: boolean; err: strin
             <span className="b-night__daytext">{dayLabel(r.day, new Date(now))}</span>
             <ChevronIcon dir="down" className="b-night__daycaret" />
           </button>
-          <select className="b-input b-night__select" aria-label={`Klukkan ${i + 1}`} value={r.time} onChange={e => set(i, 'time', e.target.value)}>
+          <select className="b-input b-night__select" aria-label={`Tími ${i + 1}, klukkan`} value={r.time} onChange={e => set(i, 'time', e.target.value)}>
             {TIME_CHOICES.map(t => <option key={t} value={t} disabled={late(r.day, t)}>kl. {t}</option>)}
           </select>
           {rows.length > 1 && <button type="button" className="b-btn b-btn--small b-btn--ghost b-night__drop" aria-label={`Fjarlægja tíma ${i + 1}`} onClick={() => { setOpen(null); setRows(rs => rs.filter((_, k) => k !== i)); }}><CloseIcon className="b-btn__icon" /></button>}

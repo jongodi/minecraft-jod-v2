@@ -62,7 +62,7 @@ export default function Wanted({ stats }: { stats: StatsState }) {
               <span className="b-paper__nail b-paper__nail--r" aria-hidden="true" />
               <span className="b-poster__mast">Eftirlýst</span>
               <Link href={`/crew/${first.name}`} className="b-poster__lead">
-                <span className="b-poster__img"><PlayerHead name={first.name} size={96} /></span>
+                <span className="b-poster__img"><PlayerHead name={first.name} size={96} alt="" /></span>
                 <span className="b-poster__name">{first.name}</span>
               </Link>
               <span className="b-poster__alias">„{meta.nick}“</span>
@@ -76,7 +76,7 @@ export default function Wanted({ stats }: { stats: StatsState }) {
                       <li key={r.name}>
                         <Link href={`/crew/${r.name}`} className="b-poster__row">
                           <span className="b-poster__rank">{i + 2}.</span>
-                          <span className="b-poster__head"><PlayerHead name={r.name} size={32} /></span>
+                          <span className="b-poster__head"><PlayerHead name={r.name} size={32} alt="" /></span>
                           <span className="b-poster__who">{r.name}</span>
                           <span className="b-poster__num">{meta.unit(r.val)}</span>
                         </Link>
@@ -91,7 +91,7 @@ export default function Wanted({ stats }: { stats: StatsState }) {
                   <span className="b-poster__rule b-poster__rule--week" aria-hidden="true" />
                   <span className="b-poster__weekhead" aria-hidden="true">Í vikunni <span className="b-poster__weekspan">{span}</span></span>
                   <Link href={`/crew/${week.name}`} className="b-poster__row b-poster__row--week" aria-label={`Í vikunni, ${span}: ${week.name}, ${meta.unit(week.val)}`}>
-                    <span className="b-poster__head"><PlayerHead name={week.name} size={32} /></span>
+                    <span className="b-poster__head"><PlayerHead name={week.name} size={32} alt="" /></span>
                     <span className="b-poster__who">{week.name}</span>
                     <span className="b-poster__num">{meta.unit(week.val)}</span>
                   </Link>
