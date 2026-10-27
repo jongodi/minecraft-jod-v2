@@ -62,7 +62,10 @@ export default function DatapacksPanel() {
     try {
       const list = await api<DatapackUpdateResult[]>('/api/datapacks/check-updates');
       setUpdates(Object.fromEntries(list.map(u => [u.id, u])));
-    } catch { /* the row shows nothing until the next check */ }
+    } catch (e) {
+      /* said, not swallowed: an expired session or a failed check looked like no news */
+      setMsg(errText(e, 'Ekki tókst að athuga uppfærslur.'));
+    }
     finally { setChecking(false); }
   }, []);
 

@@ -21,7 +21,8 @@ export default function CrewPanel() {
   const [notice, setNotice] = useState('');
   const [invite, setInvite] = useState<(InviteResponse & { username: string }) | null>(null);
   const [busy, setBusy]     = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  /* the dialog's copy: done, or refused by the browser, said in the dialog itself */
+  const [copied, setCopied] = useState<boolean | 'refused'>(false);
   const [editing, setEditing] = useState<AdminCrewRow | null>(null);
 
   const load = useCallback(async () => {
@@ -61,14 +62,13 @@ export default function CrewPanel() {
     catch (e) { setNotice(errText(e)); }
   }
 
-  /* from the new link's dialog, the button itself says so; from a row, the notice at the top does */
+  /* from the new link's dialog, the dialog says so (a refusal went to the panel's notice, behind it); from a row, the notice at the top does */
   async function copy(url: string, fromRow = false) {
     try {
       await navigator.clipboard.writeText(url);
       if (fromRow) setNotice('✓ Tengillinn er afritaður.'); else setCopied(true);
     } catch {
-      setCopied(false);
-      setNotice(`✗ Vafrinn leyfði ekki að afrita. Tengillinn: ${url}`);
+      if (fromRow) setNotice(`✗ Vafrinn leyfði ekki að afrita. Tengillinn: ${url}`); else setCopied('refused');
     }
   }
 
@@ -136,9 +136,10 @@ export default function CrewPanel() {
             <div className="a-qr" role="img" dangerouslySetInnerHTML={{ __html: invite.svg }} aria-label="QR-kóði með tenglinum" />
             <input className="a-input a-input--data" readOnly value={invite.url} onFocus={e => e.target.select()} aria-label="Tengill" />
             <div className="a-inline">
-              <Button tone="primary" small onClick={() => copy(invite.url)}>{copied ? 'Afritað' : 'Afrita tengil'}</Button>
+              <Button tone="primary" small onClick={() => copy(invite.url)}>{copied === true ? 'Afritað' : 'Afrita tengil'}</Button>
               <Button tone="ghost" small onClick={() => setInvite(null)}>Loka</Button>
             </div>
+            {copied === 'refused' && <Notice text="✗ Vafrinn leyfði ekki að afrita. Tengillinn er í reitnum hér fyrir ofan, valinn þegar ýtt er á hann." />}
           </div>
         </Modal>
       )}

@@ -17,6 +17,8 @@ export default function EmailPanel() {
   const [to, setTo]         = useState('');
   const [notice, setNotice] = useState('');
   const [busy, setBusy]     = useState<string | null>(null);
+  /* a test's answer, said beside the button that sent it: the notice at the top of the tab was a screen or more above it */
+  const [sent, setSent]     = useState<{ kind: MailKind; text: string } | null>(null);
   /* Gmail and Outlook show no fonts of their own; this shows the letters as they do */
   const [plain, setPlain]   = useState(false);
 
@@ -44,11 +46,11 @@ export default function EmailPanel() {
   }
 
   async function test(kind: MailKind, theme: Theme, name: string) {
-    setBusy(kind); setNotice('');
+    setBusy(kind); setSent(null);
     try {
       await api('/api/admin/email', { method: 'POST', body: JSON.stringify({ kind, theme, to }) });
-      setNotice(`✓ Prufa af „${name}“ var send á ${to.trim()}.`);
-    } catch (e) { setNotice(errText(e)); }
+      setSent({ kind, text: `✓ Prufa af „${name}“ var send á ${to.trim()}.` });
+    } catch (e) { setSent({ kind, text: errText(e) }); }
     finally { setBusy(null); }
   }
 
@@ -87,6 +89,7 @@ export default function EmailPanel() {
                   {busy === m.kind ? 'Sendi…' : `Senda prufu (${themeName(m.theme)})`}
                 </Button>
               </div>
+              {sent?.kind === m.kind && <Notice text={sent.text} />}
             </section>
           ))}
         </div>
