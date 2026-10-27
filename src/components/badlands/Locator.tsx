@@ -37,6 +37,10 @@ function Locator({ bases, players, sink, hidden }: Props) {
   const bar = useRef<HTMLDivElement>(null);
   const cam = useRef<{ from: readonly [number, number]; way: readonly [number, number] } | null>(null);
   const marks = useRef<{ el: HTMLElement; at: [number, number]; name: string }[]>([]);
+  /* The bar's width, measured as it changes, so each frame of the flight
+     moves the marks along it with a transform: a left in per cent laid the
+     bar out again on every frame the camera turned. */
+  const span = useRef(0);
 
   const place = useCallback(() => {
     const c = cam.current;
@@ -47,7 +51,7 @@ function Locator({ bases, players, sink, hidden }: Props) {
       const { angle, blocks } = bearing(c.from, c.way, m.at);
       const off = Math.abs(angle) > SPAN;
       const u = Math.min(1, Math.max(0, 0.5 + angle / (2 * SPAN)));
-      m.el.style.left = `${(u * 100).toFixed(2)}%`;
+      m.el.style.transform = `translateX(${(u * span.current).toFixed(1)}px)`;
       m.el.classList.toggle('is-off', off);
       m.el.classList.toggle('is-left', off && angle < 0);
       /* kubbar, as the map's own viewer counts them (is.conf); rounded to tens, so never one */
@@ -69,8 +73,17 @@ function Locator({ bases, players, sink, hidden }: Props) {
     marks.current = Array.from(bar.current?.querySelectorAll<HTMLElement>('[data-x]') ?? []).map(el => ({
       el, at: [Number(el.dataset.x), Number(el.dataset.z)], name: el.dataset.name ?? '',
     }));
+    span.current = bar.current?.clientWidth ?? 0;
     place();
   }, [bases, players, hidden, place]);
+  const shown = bases.length + players.length > 0;
+  useEffect(() => {
+    const el = bar.current;
+    if (!el || !('ResizeObserver' in window)) return;
+    const ro = new ResizeObserver(() => { span.current = el.clientWidth; place(); });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [shown, place]);
 
   if (bases.length === 0 && players.length === 0) return null;
   /* For a pointer and the eye: the bases are on the rail and the crew in
