@@ -306,8 +306,9 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
       if (!svgRef.current || svgRef.current.closest('[hidden]')) return;
       const typing = (e.target as HTMLElement | null)?.closest('input, textarea, select');
       const mod = e.ctrlKey || e.metaKey;
-      /* saving works from a name field too, instead of opening the browser's Save dialog */
-      if (mod && e.key.toLowerCase() === 's') { e.preventDefault(); save(); return; }
+      /* saving works from a name field too, instead of opening the browser's
+         Save dialog; once for a press held down, as the key repeats */
+      if (mod && e.key.toLowerCase() === 's') { e.preventDefault(); if (!e.repeat) save(); return; }
       if (e.key === 'Escape') { setPlacing(null); setDrawing(null); setDrawPoints([]); if (!typing) setSelected(null); return; }
       if (typing) return;
       if (mod && e.key.toLowerCase() === 'z') { e.preventDefault(); if (e.shiftKey) h.redo(); else h.undo(); return; }
@@ -338,7 +339,13 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
   });
 
   /* ─── save ─── */
+  /* one save at a time: every save is a version in the map's history, and a
+     held Ctrl+S sent a dozen at once, filling the history's thirty with
+     "Vistað án breytinga" and pushing every real version out */
+  const inFlight = useRef(false);
   async function persist(edited: Doc): Promise<boolean> {
+    if (inFlight.current) return false;
+    inFlight.current = true;
     setSaving(true);
     try {
       /* the gallery may have linked photos to places since this copy was
@@ -348,14 +355,32 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
       const cfg = current ? { ...edited, locations: withCurrentLinks(edited.locations, base, current.locations) } : edited;
       const r = await api<{ config?: MapConfig }>('/api/admin/map', { method: 'PUT', body: JSON.stringify(cfg) });
       const stored = r.config ? toDoc(r.config) : cfg;
-      h.reset(stored);
+      /* The editor stays in hand while it saves: what was done meanwhile (a
+         name typed on after Ctrl+S, a stroke) is kept, and shows as unsaved,
+         where taking the stored map in its place threw it away. */
+      if (serialize(h.current.current) === serialize(edited)) h.reset(stored);
       setSaved(serialize(stored));
       loadPhotos();
       return true;
     } catch (e) { setMsg(errText(e)); return false; }
-    finally { setSaving(false); }
+    finally { inFlight.current = false; setSaving(false); }
   }
-  async function save() { setMsg(''); if (await persist(doc)) setMsg('✓ Kortið er vistað og komið á vefinn.'); }
+  async function save() {
+    if (inFlight.current) return;
+    setMsg('');
+    /* a field that keeps what is typed until it is left (the coordinates)
+       is left first, so the save carries it, and taken up again at once
+       with the caret where it was, so the typing goes on */
+    const field = document.activeElement;
+    if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement) {
+      const at = [field.selectionStart, field.selectionEnd] as const;
+      field.blur();
+      field.focus({ preventScroll: true });
+      try { if (at[0] !== null && at[1] !== null) field.setSelectionRange(at[0], at[1]); } catch { /* a field with no caret */ }
+    }
+    if (serialize(h.current.current) === saved) { setMsg('Engar óvistaðar breytingar á kortinu.'); return; }
+    if (await persist(h.current.current)) setMsg('✓ Kortið er vistað og komið á vefinn.');
+  }
   async function discard() {
     if (!confirm('Henda óvistuðum breytingum og sækja síðustu vistuðu útgáfu kortsins?')) return;
     try {
