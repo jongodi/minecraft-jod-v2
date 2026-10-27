@@ -1,5 +1,6 @@
 'use client';
 
+import { createPortal } from 'react-dom';
 import { AnimatePresence } from 'framer-motion';
 import Lightbox, { type LightboxPhoto } from '@/components/badlands/Lightbox';
 
@@ -16,13 +17,17 @@ interface Props {
 /** The wall's lightbox, in a chunk of its own with the motion library its
     throw needs, so a visitor who only reads the wall never downloads it.
     It stays mounted, empty, so a print can still fly back to where it came
-    from when it is let go. */
+    from when it is let go. It is hung straight on the page's body: the
+    board draws it from inside the page's wrap and the world's frame, each a
+    layer of its own, and there it came up under the bar and the phone's
+    hotbar, its ✕ out of reach. Loaded only in the browser, so the body is there. */
 export default function WallLightbox({ photos, index, origin, onClose, onPrev, onNext }: Props) {
-  return (
+  return createPortal(
     <AnimatePresence>
       {index !== null && photos[index] && (
         <Lightbox key="lb" photos={photos} index={index} origin={origin} onClose={onClose} onPrev={onPrev} onNext={onNext} />
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }
