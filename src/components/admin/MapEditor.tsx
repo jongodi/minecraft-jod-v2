@@ -148,9 +148,12 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
     const r = svg.getBoundingClientRect();
     return [(cx - r.left) * (MAP_W / r.width), (cy - r.top) * (MAP_H / r.height)];
   }, []);
+  /* the ground's last row ends ten units above the map's foot: that strip
+     is the last row, for the brush, a stroke's start, its outline and the fill */
   const toCell = useCallback((cx: number, cy: number): [number, number] => {
     const [x, y] = toSvg(cx, cy);
-    return [Math.floor(x / TERRAIN_CELL), Math.floor(y / TERRAIN_CELL)];
+    const r = Math.floor(y / TERRAIN_CELL);
+    return [Math.floor(x / TERRAIN_CELL), r === TERRAIN_ROWS && y < MAP_H ? TERRAIN_ROWS - 1 : r];
   }, [toSvg]);
 
   /* ─── selection helpers ─── */
@@ -196,8 +199,6 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
   const strokeAxis = useRef<'row' | 'column' | null>(null);
   const applyBrush = useCallback((cx: number, cy: number, straight = false) => {
     let [c, r] = toCell(cx, cy);
-    /* the ground's last row ends ten units above the map's foot: that strip is the last row */
-    if (r === TERRAIN_ROWS && toSvg(cx, cy)[1] < MAP_H) r = TERRAIN_ROWS - 1;
     /* Shift keeps a stroke on one axis, which is how a straight coast gets
        drawn: the axis it first moves along, kept for the stroke, where
        choosing it again at every step painted a stub off the line, and a
@@ -212,7 +213,7 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
     lastBlock.current = [c, r];
     /* a centre off the ground still paints what its brush covers of it */
     replace(d => ({ ...d, terrain: blocksBetween(from, [c, r]).reduce((t, [bc, br]) => paintBrush(t, bc, br, brush, material), d.terrain) }));
-  }, [toCell, toSvg, replace, brush, material]);
+  }, [toCell, replace, brush, material]);
 
   /* ─── pointer: drag, place, draw ─── */
   const startDrag = (e: React.PointerEvent, d: Exclude<Drag, null>) => {
