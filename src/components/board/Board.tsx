@@ -37,7 +37,16 @@ const SEEN_AFTER_MS = 1500;
 const STEP = 20;
 
 /** New replies under something older, counted as Icelandic counts: 21 takes the singular. */
-const newRepliesWords = (n: number) => (n === 1 ? 'Nýtt svar' : `${n} ${plural(n, 'nýtt svar', 'ný svör')}`);
+/* The height a day further down holds, in rem, until it is first drawn
+   (taflan.css): its heading, a slip's line or two, a sign's words, the
+   pictures a sign carries, a line a reply. With one height for every day,
+   a day of one slip held more than a screen, so the board's foot and the
+   fire stood far below where they were and came up as each day was drawn.
+   Once drawn a day keeps its own height, so this only has to be near. */
+const dayHeld = (items: BoardItem[]) => 3 + items.reduce((rem, item) =>
+  rem + (item.kind === 'post' ? 14 + (item.entry.photos.length > 0 ? 34 : 0) + item.entry.replies.length * 4 : 7), 0);
+
+const newRepliesWords =(n: number) => (n === 1 ? 'Nýtt svar' : `${n} ${plural(n, 'nýtt svar', 'ný svör')}`);
 
 /** Whether a post calls the one looking by name: in its words, unless they
     wrote it, or in a reply someone else left under it, their own post included. */
@@ -308,7 +317,7 @@ function Board({ room = false, open = true, initial = null, initialFilter = 'all
           <PrintWall frames={frames.slice(0, reveal)} isFresh={f => looked && isNew({ at: f.at, who: f.who }, since ?? null, me)} H={H} now={now} onOpen={onOpen} />
         ) : (
           byDay(visible).map(({ day, items: dayItems }) => (
-            <section key={day} className="t-day">
+            <section key={day} className="t-day" style={{ containIntrinsicBlockSize: `auto ${dayHeld(dayItems)}rem` }}>
               <H className="t-day__head" suppressHydrationWarning>{dayLabel(day, now)}</H>
               <ul className="t-list">
                 {dayItems.map(item => {

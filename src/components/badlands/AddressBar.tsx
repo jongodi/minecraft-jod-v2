@@ -29,11 +29,11 @@ interface Props {
 
 const SOLID_AFTER = 40; // px of scroll before the bar takes a surface
 
-/* The bar's lantern says the server's state in a word or two: the hero's
-   lantern says it in full. Chat colours: green in, gold on the way, the
-   lantern's own dark when out. */
+/* The bar's lantern says on or off by its flame alone, and puts a word
+   beside it only for who is in or a change under way: the hero's lantern
+   says it in full. Chat colours: green in, gold on the way. */
 const SHORT: Record<ServerLife, string> = {
-  on: 'opið', off: 'slökkt', starting: 'vaknar', restarting: 'vaknar', stopping: 'slokknar', crashed: 'hrundi', unknown: '',
+  on: '', off: '', starting: 'vaknar', restarting: 'vaknar', stopping: 'slokknar', crashed: 'hrundi', unknown: '',
 };
 const LONG: Record<ServerLife, string> = {
   on: 'Kveikt á þjóninum', off: 'Slökkt á þjóninum', starting: 'Þjónninn er að vakna', restarting: 'Þjónninn endurræsist',
@@ -51,7 +51,8 @@ function BarLantern({ server, home }: { server: ServerState; home: boolean }) {
   const name = !life ? 'Staða þjónsins' : `${LONG[life]}${online ? `, ${players === 0 ? 'enginn inni' : `${players} inni`}` : ''}`;
   return (
     <a href={home ? '#hopur' : '/#hopur'} className={`b-bar__status b-tip b-tip--below ${burn}`} data-tip={name}>
-      <Lantern lit={online} className={burn === 'is-kindling' ? 'is-kindling' : undefined} />
+      {/* hung from the plank by a chain, as the game hangs a lantern, so it is never taken for a fifth door */}
+      <span className="b-bar__hang"><Lantern lit={online} className={burn === 'is-kindling' ? 'is-kindling' : undefined} /></span>
       {/* the word that shows is the first of the name, so what a screen reader hears starts with what is seen */}
       <span className="b-bar__state">{word}</span>
       <span className="b-visually-hidden">{word ? ': ' : ''}{name}. Sjá hver er inni.</span>
