@@ -577,10 +577,11 @@
 @media (hover: hover) { .b-door:hover { color: var(--lantern); } }
 .b-door.is-here { color: var(--lantern); border-bottom-color: var(--lantern); }
 
-/* The server's lantern in the bar, on every page: the lantern and a word or a
-   count beside it, in the chat colours the hero's lantern uses. One width in
-   every state, so nothing beside it moves when the answer comes. */
-.b-bar__status { display: inline-flex; align-items: center; gap: var(--sp-2); min-height: var(--tap); padding-inline: var(--sp-1); color: var(--tc-white); text-decoration: none; text-shadow: 0 var(--px) 0 var(--night); }
+/* The server's lantern in the bar, on every page: the lantern, and a count or
+   a word beside it while someone is in or the server is on its way, in the
+   chat colours the hero's lantern uses. On or off with nobody in, the flame
+   says it alone and the word's room closes. */
+.b-bar__status { display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2); min-width: var(--tap); min-height: var(--tap); padding-inline: var(--sp-1); color: var(--tc-white); text-decoration: none; text-shadow: 0 var(--px) 0 var(--night); }
 /* Over the sunset the hero's own lantern says the same thing, larger and right
    below it, so the bar's waits until the bar takes its surface; it keeps its
    width meanwhile, so nothing beside it moves when it comes. Every other page's
@@ -588,7 +589,23 @@
 .b-bar:not(.is-solid) .b-bar__status { visibility: hidden; opacity: 0; }
 .b-bar__status { transition: opacity var(--dur-2) var(--ease-out), visibility var(--dur-2); }
 .b-bar__status .b-lantern { width: 1.1rem; height: 1.65rem; }
+/* The doors' lanterns stand on the plank's line; the server's hangs from its
+   top edge by a chain of iron links, a pixel each with a pixel between, as
+   the boot's lantern hangs from its post. The chain reaches the plank's edge
+   from wherever the bar centres the lantern. */
+.b-bar__hang { position: relative; display: flex; }
+.b-bar__hang::before {
+  content: '';
+  position: absolute;
+  bottom: calc(100% - var(--px));
+  left: calc(50% - var(--px) / 2);
+  width: var(--px);
+  height: calc((var(--bar) - 1.65rem) / 2 + var(--px));
+  background: repeating-linear-gradient(0deg, var(--night) 0 var(--px), transparent var(--px) calc(var(--px) * 2));
+  pointer-events: none;
+}
 .b-bar__state { min-width: 4.25rem; font-weight: 600; font-size: var(--fs-sm); white-space: nowrap; }
+.b-bar__state:empty { display: none; }
 .b-bar__status.is-on .b-bar__state { color: var(--online); }
 .b-bar__status.is-kindling .b-bar__state { color: var(--lantern); }
 .b-bar__status.is-off .b-bar__state { color: var(--tc-white); }
