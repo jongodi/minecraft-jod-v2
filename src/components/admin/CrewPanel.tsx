@@ -41,10 +41,17 @@ export default function CrewPanel() {
     finally { setBusy(null); }
   }
 
-  async function close(url: string) {
+  /* A link handed out in the group chat dies with this, so it asks first,
+     once at a time; and the list is read again whatever the answer, so a
+     link already gone (run out, or closed in another tab) leaves the list. */
+  const [closing, setClosing] = useState<string | null>(null);
+  async function close(url: string, username: string) {
+    if (closing || !confirm(`Loka innskráningartengli ${username}? Hann hættir strax að virka, á hvaða tæki sem hann hefur ekki enn verið opnaður.`)) return;
     setNotice('');
-    try { await api('/api/admin/crew', { method: 'DELETE', body: JSON.stringify({ url }) }); setNotice('✓ Tenglinum var lokað.'); load(); }
+    setClosing(url);
+    try { await api('/api/admin/crew', { method: 'DELETE', body: JSON.stringify({ url }) }); setNotice('✓ Tenglinum var lokað.'); }
     catch (e) { setNotice(errText(e)); }
+    finally { setClosing(null); load(); }
   }
 
   async function clearPassword(username: string) {
@@ -100,7 +107,7 @@ export default function CrewPanel() {
                         <li key={inv.url}>
                           <span className="a-muted">{inv.uses} af {inv.maxUses} notuð · til {when(inv.expiresAt)}</span>
                           <Button tone="ghost" small onClick={() => copy(inv.url, true)}>Afrita</Button>
-                          <Button tone="ghost" small onClick={() => close(inv.url)}>Loka</Button>
+                          <Button tone="ghost" small onClick={() => close(inv.url, r.username)} disabled={closing !== null}>Loka tengli</Button>
                         </li>
                       ))}
                     </ul>
