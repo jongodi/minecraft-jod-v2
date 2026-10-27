@@ -13,14 +13,16 @@ import { canSendEmail, sendEmails, siteUrl } from '@/lib/email';
 
 const CLAIM_S = 3600;
 
-/** True for the first letter from `by` to `to` within the hour; with no store to ask, every letter goes. */
-async function claim(by: string, to: string): Promise<boolean> {
-  if (!process.env.REDIS_URL) return true;
+const claimKey = (by: string, to: string) => `mention:mailed:${by.toLowerCase()}:${to.toLowerCase()}`;
+
+/** The store the hour is kept in, asked for once; none without one, and then every letter goes. */
+async function store() {
+  if (!process.env.REDIS_URL) return null;
   try {
     const { getRedis } = await import('@/lib/redis');
-    return (await getRedis().set(`mention:mailed:${by.toLowerCase()}:${to.toLowerCase()}`, '1', 'EX', CLAIM_S, 'NX')) === 'OK';
+    return getRedis();
   } catch {
-    return true;
+    return null;
   }
 }
 
@@ -35,7 +37,10 @@ export async function mailMentions({ by, owner, entryId, text, reply }: { by: st
   if (readers.length === 0) return 0;
   /* one letter a writer may send a member for being named, an hour at most:
      a reply put up, taken down and put up again calls nobody a second time */
-  const due = await Promise.all(readers.map(r => claim(by, r.username)));
+  const r = await store();
+  const due = r
+    ? await Promise.all(readers.map(x => r.set(claimKey(by, x.username), '1', 'EX', CLAIM_S, 'NX').then(ok => ok === 'OK', () => true)))
+    : readers.map(() => true);
   const to = readers.filter((_, i) => due[i]);
   if (to.length === 0) return 0;
   const [names, themes] = await Promise.all([getNames(), readThemes()]);
@@ -46,6 +51,11 @@ export async function mailMentions({ by, owner, entryId, text, reply }: { by: st
     const { subject, html, text: plain } = renderLetter(mentionLetter({ by: who(by), reader: who(r.username), text, url, reply, site }), themes.mention, site);
     return { to: r.address, subject, html, text: plain };
   }));
-  if (!res.sent) { console.error(`[mention-mail] did not go: ${res.reason}`); return 0; }
+  if (!res.sent) {
+    console.error(`[mention-mail] did not go: ${res.reason}`);
+    /* the hour is let go, so the next time they are named they are told */
+    if (r) await r.del(...to.map(x => claimKey(by, x.username))).catch(() => 0);
+    return 0;
+  }
   return to.length;
 }
