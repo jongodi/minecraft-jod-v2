@@ -1,13 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { plural } from '@/lib/format';
 import type { GalleryPhoto } from '@/lib/gallery';
 import type { MapConfig, MapLocation } from '@/lib/map-types';
 import GalleryUploader from './GalleryUploader';
 import ScreenshotFormat from './ScreenshotFormat';
 import { Button, Field, Notice, Panel, api, errText } from './ui';
-import { setUnsaved } from './unsaved';
+import { confirmLeave, setUnsaved } from './unsaved';
 
 /** A gallery photo as the admin API returns it: with the id of the map pin it is linked to. */
 export type AdminPhoto = GalleryPhoto & { locationId: number | null };
@@ -29,6 +29,8 @@ export default function GalleryPanel() {
   const open = editing ? photos.find(p => p.id === editing) : undefined;
   const unsaved = !!open && (draft.title !== open.title || draft.sublabel !== open.sublabel || draft.locationId !== open.locationId);
   useEffect(() => { setUnsaved('gallery', unsaved); return () => setUnsaved('gallery', false); }, [unsaved]);
+  const unsavedNow = useRef(unsaved);
+  unsavedNow.current = unsaved;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -117,11 +119,16 @@ export default function GalleryPanel() {
     reorder(next);
   }
 
-  const startEdit = (p: AdminPhoto) => { setEditing(p.id); setDraft({ title: p.title, sublabel: p.sublabel, locationId: p.locationId }); };
+  /* another photo opened for editing, or the first of an upload landing, took the place of one with
+     changes in it without a word: the open one asks first, and an upload leaves it open */
+  const startEdit = (p: AdminPhoto) => {
+    if (p.id !== editing && unsaved && !confirmLeave(['gallery'])) return;
+    setEditing(p.id); setDraft({ title: p.title, sublabel: p.sublabel, locationId: p.locationId });
+  };
   const onUploaded = useCallback((p: AdminPhoto, first: boolean) => {
     setPhotos(ps => (ps.some(x => x.id === p.id) ? ps : [...ps, p]));
     setMsg('✓ Mynd komin í safnið. Gefðu henni titil og tengdu hana við stað á kortinu.');
-    if (first) { setEditing(p.id); setDraft({ title: p.title, sublabel: p.sublabel, locationId: p.locationId }); }
+    if (first && !unsavedNow.current) { setEditing(p.id); setDraft({ title: p.title, sublabel: p.sublabel, locationId: p.locationId }); }
   }, []);
 
   const counts = { shown: photos.filter(p => p.active).length, linked: photos.filter(p => p.locationId !== null).length };
