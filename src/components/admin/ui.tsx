@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, type ReactNode } from 'react';
-import { useBackdropClose, useDialogFocus, useScrollLock } from '@/components/badlands/hooks';
+import { useBackCloses, useBackdropClose, useDialogFocus, useScrollLock } from '@/components/badlands/hooks';
 
 /* The small vocabulary every admin panel is built from. */
 
@@ -59,6 +59,10 @@ export function Modal({ title, onClose, width, children, foot }: { title: string
   const backdrop = useBackdropClose(onClose);
   useScrollLock();
   useDialogFocus(box);
+  /* Back closes the dialog, as it does the site's own: it used to move the
+     tabs instead, and a dialog left open on the hidden map kept the page
+     from scrolling and Tab from going anywhere */
+  useBackCloses(true, onClose);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', onKey);
