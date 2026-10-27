@@ -41,4 +41,11 @@ describe('/bluemap, live', () => {
     const res = await ask('assets/logo.png');
     expect(res.status).toBe(502);
   });
+
+  it("turns BlueMap's live event stream away quietly, without asking exaroton", async () => {
+    /* the viewer polls instead either way; a 404 was an error in the console on every visit */
+    const res = await ask('maps/world/live/sse');
+    expect(res.status).toBe(204);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
 });

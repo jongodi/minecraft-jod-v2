@@ -77,6 +77,13 @@ function answer(status: number, cache: string, body: BodyInit | null = null, hea
   return new Response(body, { status, headers: { 'Cache-Control': cache, ...headers } });
 }
 
+/* A tile the copy does not hold is an empty patch of map, as BlueMap's own
+   server and /bluemap answer it, rather than an error: the viewer asks for
+   every tile round the camera, and a 404 put an error in the console for
+   each one past the edge of the rendered world. Anything else is missing. */
+const TILE = /^maps\/[^/]+\/tiles\//;
+const missing = (path: string, cache: string) => answer(TILE.test(path) ? 204 : 404, cache);
+
 export async function GET(req: Request, { params }: Context): Promise<Response> {
   const segments = (await params).path ?? [];
   if (segments.length === 0 || segments.length > MAX_DEPTH || !segments.every(s => SEGMENT.test(s))) {
@@ -89,7 +96,7 @@ export async function GET(req: Request, { params }: Context): Promise<Response> 
 
   /* The copy lists every file it holds, so anything else is missing without
      asking the store: the tiles past the edge of the rendered world, mostly. */
-  if (copy.hasFiles && !copy.has(path)) return answer(404, current ? FOREVER : MISSING_BRIEF);
+  if (copy.hasFiles && !copy.has(path)) return missing(path, current ? FOREVER : MISSING_BRIEF);
 
   const blob = copy.blob;
   if (!blob?.base) return answer(404, MISSING_BRIEF);
@@ -103,7 +110,7 @@ export async function GET(req: Request, { params }: Context): Promise<Response> 
   try {
     const file = await readCopy(path, current ? undefined : req.headers.get('if-none-match') ?? undefined, copy);
     misses = 0;
-    if (!file) return answer(404, current ? FOREVER : MISSING_BRIEF);
+    if (!file) return missing(path, current ? FOREVER : MISSING_BRIEF);
     const etag = file.etag ? { ETag: file.etag } : undefined;
     if (file.status === 304) return answer(304, cache, null, etag);
     return answer(200, cache, file.body, {
@@ -112,7 +119,7 @@ export async function GET(req: Request, { params }: Context): Promise<Response> 
       ...etag,
     });
   } catch (err) {
-    if (err instanceof BlobNotFoundError) return answer(404, current ? FOREVER : MISSING_BRIEF);
+    if (err instanceof BlobNotFoundError) return missing(path, current ? FOREVER : MISSING_BRIEF);
     const why = err instanceof Error ? err.message : String(err);
     if (refuses(err) || ++misses >= MISSES_TO_REFUSE) {
       refusedUntil = Date.now() + REFUSED_FOR;
@@ -132,7 +139,7 @@ async function fromServer(path: string): Promise<Response> {
     const file = await fetchFile(await resolveServerId(token), token, path);
     if (isMissing(file.status)) {
       await discard(file);
-      return answer(404, MISSING_BRIEF);
+      return missing(path, MISSING_BRIEF);
     }
     if (!file.ok) {
       console.warn(`[bluemap-data] exaroton answered ${file.status} for /${path}`);
