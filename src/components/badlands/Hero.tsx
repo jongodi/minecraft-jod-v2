@@ -18,8 +18,10 @@ import { useRoster } from './roster';
    facts about this world, in the game's exclaiming voice; what is true
    tonight (who is in, a night planned) is picked first when there is any.
    It pops as it comes, as the game's swells, once rather than for as long
-   as the page is open; a press brings the next, so every fact can be read. */
-const SPLASHES = ['Aldrei endurræst!', 'Átta vinir!', 'Frá sumrinu 2024!', 'Aðgangur með boði!', 'Badlands við sólsetur!', 'Með armadillo!'];
+   as the page is open; a press brings the next, so every fact can be read.
+   None repeats the line printed just above the name (eight friends, since
+   2024, by invitation): a splash is a fact the visitor has not read yet. */
+const SPLASHES = ['Aldrei endurræst!', 'Eigin gagnapakkar!', 'Útlitspakki fylgir!', 'Heimurinn í þrívídd!', 'Badlands við sólsetur!', 'Með armadillo!'];
 /* the hotbar's keys, one to a door (AddressBar.tsx), said only where there is likely a keyboard to press them on */
 const KEYS_SPLASH = 'Ýttu á 1, 2, 3 eða 4!';
 
