@@ -6,6 +6,8 @@ const kv = new Map<string, string>();
 const hashes = new Map<string, Map<string, string>>();
 const sets = new Map<string, Set<string>>();
 const hash = (k: string) => { if (!hashes.has(k)) hashes.set(k, new Map()); return hashes.get(k)!; };
+/* a key whose next read fails, once: the store dropping out part of the way through */
+let failOnce: string | null = null;
 vi.mock('@/lib/redis', () => ({
   rGet: async (k: string) => (kv.has(k) ? JSON.parse(kv.get(k)!) : null),
   getRedis: () => ({
@@ -13,7 +15,7 @@ vi.mock('@/lib/redis', () => ({
     del: async (k: string) => (kv.delete(k) ? 1 : 0),
     hdel: async (k: string, f: string) => (hash(k).delete(f) ? 1 : 0),
     set: async (k: string, v: string, ...opts: unknown[]) => { if (opts.includes('NX') && kv.has(k)) return null; kv.set(k, v); return 'OK'; },
-    hgetall: async (k: string) => Object.fromEntries(hash(k)),
+    hgetall: async (k: string) => { if (k === failOnce) { failOnce = null; throw new Error('store down'); } return Object.fromEntries(hash(k)); },
     hset: async (k: string, f: string, v: string) => { hash(k).set(f, v); return 1; },
     hincrby: async (k: string, f: string, n: number) => { const v = Number(hash(k).get(f) ?? 0) + n; hash(k).set(f, String(v)); return v; },
     sadd: async (k: string, ...v: string[]) => { if (!sets.has(k)) sets.set(k, new Set()); v.forEach(x => sets.get(k)!.add(x)); return v.length; },
@@ -288,6 +290,26 @@ describe('/api/playnight', () => {
       yes: ['AmmaGaur', 'stebbias'], came: ['AmmaGaur'], noShows: ['stebbias'], startedBy: null,
       numbers: { by: { AmmaGaur: { ticks: 0, deaths: 0, mobKills: 0, travelCm: 0 } }, advancements: [] },
     });
+  });
+
+  it('settles a night again the next day when the store fails part of the way, and the nights after it still', async () => {
+    await post({ action: 'propose', times: ['2026-10-01T20:00:00Z'] });
+    await post({ action: 'propose', times: ['2026-10-02T20:00:00Z'] });
+    const [first, second] = (await view()).nights;
+    const day = (d: string, takenAt: string, play: number) => kv.set(`stats:day:${d}`, JSON.stringify({ day: d, takenAt, failed: [], counters: { stebbias: { playTimeTicks: play } } }));
+    day('2026-10-01', '2026-10-01T12:05:00Z', 100);
+    day('2026-10-02', '2026-10-02T12:05:00Z', 100);
+    day('2026-10-03', '2026-10-03T12:05:00Z', 100);
+    vi.setSystemTime(new Date('2026-10-03T12:10:00Z'));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    /* the first night's answers cannot be read: it is left unsettled, unclaimed, and the second is settled */
+    failOnce = `playnight:votes:${first.id}`;
+    expect(await lib.settleNights()).toEqual([{ id: second.id, came: [], noShows: ['stebbias'] }]);
+    expect(kv.has(`playnight:settled:${first.id}`)).toBe(false);
+    /* the next day's run settles it */
+    expect(await lib.settleNights()).toEqual([{ id: first.id, came: [], noShows: ['stebbias'] }]);
+    expect(await lib.readNoShows()).toEqual({ stebbias: 2 });
   });
 
   it('keeps what the game counted of the evening, and shows it on the embers', async () => {
