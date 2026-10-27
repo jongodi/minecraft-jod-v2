@@ -250,12 +250,18 @@ function Board({ room = false, open = true, initial = null, initialFilter = 'all
     requestAnimationFrame(() => requestAnimationFrame(() => {
       const el = document.getElementById(entryId);
       if (!el) return;
-      el.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+      const behavior = matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+      /* Over the world only the room scrolls, as it does to a fire:
+         scrollIntoView moved the page as well, and without the flight's
+         hold the room's plank and its ✕ went up under the bar. */
+      const body = room ? el.closest<HTMLElement>('.b-room__body') : null;
+      if (body) body.scrollTo({ top: el.getBoundingClientRect().top - body.getBoundingClientRect().top + body.scrollTop - parseFloat(getComputedStyle(el).scrollMarginTop || '0'), behavior });
+      else el.scrollIntoView({ block: 'start', behavior });
       /* the keyboard follows the eye to the sign */
       if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '-1');
       el.focus({ preventScroll: true });
     }));
-  }, [choose, items]);
+  }, [choose, items, room]);
 
   /* the foot of what is drawn: when it comes within a screen or so, the next stretch is drawn */
   const foot = useRef<HTMLDivElement>(null);
@@ -264,10 +270,15 @@ function Board({ room = false, open = true, initial = null, initialFilter = 'all
   useEffect(() => {
     const el = foot.current;
     if (!el || !open || reveal >= total || !('IntersectionObserver' in window)) return;
-    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) setReveal(r => r + STEP); }, { rootMargin: '0px 0px 1200px 0px' });
+    /* In the room the board scrolls inside the room, where a margin on the
+       page's own view never applied: the next stretch waited until the foot
+       was in sight, and "Sýna eldra" flashed before twenty signs came in
+       under the thumb. There the margin is on the room's own view. */
+    const root = room ? el.closest<HTMLElement>('.b-room__body') : null;
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) setReveal(r => r + STEP); }, { root, rootMargin: '0px 0px 1200px 0px' });
     io.observe(el);
     return () => io.disconnect();
-  }, [reveal, total, open]);
+  }, [reveal, total, open, room]);
 
   /* The red string: pinned across the board under the last thing tagged Nýtt,
      so all that came since the visitor last looked hangs above it. Placed by
