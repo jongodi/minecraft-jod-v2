@@ -42,6 +42,11 @@ export default function GalleryPanel() {
   useEffect(() => { load(); }, [load]);
 
   const sorted = useMemo(() => [...photos].sort((a, b) => a.order - b.order), [photos]);
+  /* A photo's place is where it stands in the order, counted from one. The
+     stored number is not that: a deleted photo leaves a gap in the numbers,
+     and moving by them sent a photo to the end, or nowhere. */
+  const places = useMemo(() => new Map(sorted.map((p, i) => [p.id, i + 1])), [sorted]);
+  const placeOf = (photo: AdminPhoto) => places.get(photo.id) ?? photo.order;
   const shown = sorted.filter(p => filter === 'all' || (filter === 'shown' && p.active) || (filter === 'hidden' && !p.active) || (filter === 'unlinked' && p.locationId === null));
   const locById = (id: number | null) => (id === null ? null : locations.find(l => l.id === id) ?? null);
 
@@ -89,8 +94,8 @@ export default function GalleryPanel() {
   function placeAt(photo: AdminPhoto, input: HTMLInputElement) {
     const raw = input.value.trim();
     const v = Number(raw);
-    if (!raw || !Number.isInteger(v)) { input.value = String(photo.order); return; }
-    if (v !== photo.order) moveTo(photo, v);
+    if (!raw || !Number.isInteger(v)) { input.value = String(placeOf(photo)); return; }
+    if (v !== placeOf(photo)) moveTo(photo, v);
   }
   function moveTo(photo: AdminPhoto, pos: number) {
     const target = Math.max(1, Math.min(sorted.length, Math.round(pos))) - 1;
@@ -101,7 +106,7 @@ export default function GalleryPanel() {
     next.splice(target, 0, moved);
     reorder(next);
   }
-  const moveBy = (photo: AdminPhoto, dir: -1 | 1) => moveTo(photo, photo.order + dir);
+  const moveBy = (photo: AdminPhoto, dir: -1 | 1) => moveTo(photo, placeOf(photo) + dir);
   function drop(targetId: string) {
     if (!dragId || dragId === targetId) { setDragId(null); setOverId(null); return; }
     const next = [...sorted];
@@ -159,8 +164,8 @@ export default function GalleryPanel() {
                         type="number"
                         min={1}
                         max={sorted.length}
-                        defaultValue={photo.order}
-                        key={`pos-${photo.id}-${photo.order}`}
+                        defaultValue={placeOf(photo)}
+                        key={`pos-${photo.id}-${placeOf(photo)}`}
                         onClick={e => e.stopPropagation()}
                         onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); placeAt(photo, e.currentTarget); } }}
                         onBlur={e => placeAt(photo, e.currentTarget)}
@@ -196,10 +201,10 @@ export default function GalleryPanel() {
                           <Button tone="ghost" small onClick={() => startEdit(photo)}>Breyta</Button>
                           <Button tone="ghost" small onClick={() => patch(photo, { active: !photo.active }, photo.active ? '✓ Myndin er falin á vefnum og á kortinu.' : '✓ Myndin er sýnd á vefnum.')}>{photo.active ? 'Fela' : 'Sýna'}</Button>
                           <span className="a-card__order">
-                            <Button tone="ghost" small icon onClick={() => moveTo(photo, 1)} disabled={photo.order === 1} aria-label="Fremst" title="Fremst">⇤</Button>
-                            <Button tone="ghost" small icon onClick={() => moveBy(photo, -1)} disabled={photo.order === 1} aria-label="Færa framar" title="Færa framar">←</Button>
-                            <Button tone="ghost" small icon onClick={() => moveBy(photo, 1)} disabled={photo.order === sorted.length} aria-label="Færa aftar" title="Færa aftar">→</Button>
-                            <Button tone="ghost" small icon onClick={() => moveTo(photo, sorted.length)} disabled={photo.order === sorted.length} aria-label="Aftast" title="Aftast">⇥</Button>
+                            <Button tone="ghost" small icon onClick={() => moveTo(photo, 1)} disabled={placeOf(photo) === 1} aria-label="Fremst" title="Fremst">⇤</Button>
+                            <Button tone="ghost" small icon onClick={() => moveBy(photo, -1)} disabled={placeOf(photo) === 1} aria-label="Færa framar" title="Færa framar">←</Button>
+                            <Button tone="ghost" small icon onClick={() => moveBy(photo, 1)} disabled={placeOf(photo) === sorted.length} aria-label="Færa aftar" title="Færa aftar">→</Button>
+                            <Button tone="ghost" small icon onClick={() => moveTo(photo, sorted.length)} disabled={placeOf(photo) === sorted.length} aria-label="Aftast" title="Aftast">⇥</Button>
                           </span>
                           <Button tone="danger" small onClick={() => remove(photo)}>Eyða</Button>
                         </div>
