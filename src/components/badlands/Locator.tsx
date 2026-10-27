@@ -50,7 +50,8 @@ function Locator({ bases, players, sink, hidden }: Props) {
       m.el.style.left = `${(u * 100).toFixed(2)}%`;
       m.el.classList.toggle('is-off', off);
       m.el.classList.toggle('is-left', off && angle < 0);
-      const tip = `${m.name} · ${formatNumber(Math.round(blocks / 10) * 10)} blokkir`;
+      /* kubbar, as the map's own viewer counts them (is.conf); rounded to tens, so never one */
+      const tip = `${m.name} · ${formatNumber(Math.round(blocks / 10) * 10)} kubbar`;
       if (m.el.dataset.tip !== tip) m.el.dataset.tip = tip;
     }
   }, []);

@@ -335,7 +335,9 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
       try { await nav.share({ title: `${title} · ${SITE_NAME}`, url }); return; }
       catch (e) { if ((e as DOMException)?.name === 'AbortError') return; }
     }
-    try { await navigator.clipboard.writeText(url); toast('Afritað', `hlekkur á ${title}`); }
+    /* the place by its name alone: after "hlekkur á" it had to bend, and
+       Kastali Goða, Joðbær and Sveppaeyja stood there unbent */
+    try { await navigator.clipboard.writeText(url); toast('Afritað', title); }
     catch { window.prompt('Afritaðu hlekkinn:', url); }
   }, []);
 
