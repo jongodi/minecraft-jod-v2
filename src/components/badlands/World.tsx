@@ -472,7 +472,11 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
   }, [live, ready]);
 
   /* ─── the whole screen ─── */
+  /* the way in that was pressed, which goes as the screen opens and is drawn anew as it closes */
+  const opener = useRef<string | null>(null);
   const openFull = useCallback(() => {
+    const at = document.activeElement;
+    opener.current = at?.closest('.b-card__fly') ? '.b-card__fly' : at?.closest('.b-boot') ? '.b-boot' : at?.closest('.b-hud__tools a') ? '.b-hud__tools a[href]' : null;
     setAuto(false);
     setFailed(false);
     setLive(true);
@@ -512,6 +516,32 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
       document.documentElement.classList.remove('is-map-full');
     };
   }, [full, closeFull]);
+  /* The whole screen is a place of its own. The way in goes as it opens, so
+     the keyboard is given its way out; and nothing behind it is in reach, where
+     a Tab or a screen reader's swipe went on into the bar and the sunset, out
+     of sight. The album, which hangs beside the frame, and the toasts' live
+     words stay. Closed, the keyboard goes back to the way in, drawn anew. */
+  useEffect(() => {
+    const frame = frameRef.current;
+    if (!frame) return;
+    if (!full) {
+      const way = opener.current;
+      opener.current = null;
+      if (way && (!document.activeElement || document.activeElement === document.body)) frame.querySelector<HTMLElement>(way)?.focus({ preventScroll: true });
+      return;
+    }
+    if (!frame.contains(document.activeElement)) back.current?.focus({ preventScroll: true });
+    const aside: Element[] = [];
+    for (let el = frame.closest('section') as Element | null; el?.parentElement; el = el.parentElement) {
+      for (const sib of el.parentElement.children) {
+        if (sib === el || sib.hasAttribute('inert') || sib.matches('[aria-live], script')) continue;
+        sib.setAttribute('inert', '');
+        aside.push(sib);
+      }
+      if (el.parentElement === document.body) break;
+    }
+    return () => aside.forEach(el => el.removeAttribute('inert'));
+  }, [full, back]);
 
   /* The place let go. Closed from inside the postcard (its ✕, Escape), the
      keyboard goes to the place's tag on the rail, rather than staying on a
