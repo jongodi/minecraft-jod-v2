@@ -17,6 +17,9 @@ const STATUS: Record<number, { label: string; tone: 'online' | 'offline' | 'busy
   3: { label: 'Stöðvast', tone: 'busy' }, 4: { label: 'Endurræsist', tone: 'busy' }, 5: { label: 'Vistar', tone: 'busy' },
   6: { label: 'Hleður', tone: 'busy' }, 7: { label: 'Hrundi', tone: 'offline' }, 8: { label: 'Bíður', tone: 'busy' }, 10: { label: 'Undirbýr', tone: 'busy' },
 };
+/* the state each action puts the server in on its way, as exaroton numbers them */
+const IN_BETWEEN: Record<string, number> = { start: 2, restart: 4, stop: 3 };
+
 const ACTIONS = [
   { id: 'start',   label: 'Ræsa',       confirm: null },
   { id: 'restart', label: 'Endurræsa',  confirm: 'Endurræsa þjóninn? Allir sem eru inni detta út í nokkrar mínútur.' },
@@ -60,6 +63,11 @@ export default function ServerPanel() {
     setActing(action.id); setMsg('');
     try {
       await api(`/api/admin/server/${action.id}`, { method: 'POST' });
+      /* The change under way at once, as exaroton will report it: the buttons
+         came back against the status from before, Ræsa on again beside
+         "Slökkt", and a second press got exaroton's refusal, which read as if
+         the first had failed. The next refresh tells how it really stands. */
+      setInfo(i => (i ? { ...i, status: IN_BETWEEN[action.id] } : i));
       setMsg(`✓ Beiðni send: ${action.label.toLowerCase()}. Staðan uppfærist á næstu sekúndum.`);
       followUps.current.push(setTimeout(load, 3000), setTimeout(load, 10000));
     } catch (e) {
