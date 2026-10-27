@@ -106,9 +106,31 @@ function Board({ room = false, open = true, initial = null, initialFilter = 'all
   /* while a fetch is out, what is done on the board is kept to be done again on its answer, which was read before it */
   const edits = useRef<Edit[] | null>(null);
   const { seen } = useBoardNews();
-  useEffect(() => { if (initial) takeStamps(stampsOf(initial.items)); }, [initial]);
+  /* A board the server draws again (its own door pressed on its own page) is
+     taken as it stands, with what was done here since made again on it. */
+  const drawnWith = useRef(initial);
+  useEffect(() => {
+    if (!initial) return;
+    takeStamps(stampsOf(initial.items));
+    if (initial === drawnWith.current) return;
+    drawnWith.current = initial;
+    loadedAt.current = Date.now();
+    setData({ ...initial, items: replay(initial.items, edits.current ?? []) });
+  }, [initial]);
 
-  /* asked when the board is first looked at, and again when it is opened after standing a while */
+  /* A board left open in a tab is asked for again when it is looked at after
+     standing a while, as the room is when it is opened again: the door's
+     count is asked every few minutes, and said there was something new that
+     the board under it did not show. */
+  const [look, setLook] = useState(0);
+  useEffect(() => {
+    if (!open) return;
+    const back = () => { if (document.visibilityState === 'visible' && loadedAt.current && Date.now() - loadedAt.current >= STALE_MS) setLook(n => n + 1); };
+    document.addEventListener('visibilitychange', back);
+    return () => document.removeEventListener('visibilitychange', back);
+  }, [open]);
+
+  /* asked when the board is first looked at, and again when it is opened or looked at after standing a while */
   useEffect(() => {
     if (!open) return;
     const retry = attempt !== asked.current;
@@ -129,7 +151,7 @@ function Board({ room = false, open = true, initial = null, initialFilter = 'all
       .catch(() => { if (live) setFailed(true); })
       .finally(() => { if (live) edits.current = null; });
     return () => { live = false; };
-  }, [open, attempt]);
+  }, [open, attempt, look]);
 
   /* The filter is in the page's address (?syna=myndir), so a refresh, a
      shared link and Back keep it; over the world it is the room's own. A
