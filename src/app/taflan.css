@@ -226,7 +226,9 @@
 
 /* Days further down are laid out only as they come near: the signs' grain,
    chains and pictures cost nothing off screen. Each keeps the height it was
-   last drawn at, so the scrollbar does not jump. */
+   last drawn at, so the scrollbar does not jump; until then the board's
+   days hold what they carry (dayHeld in Board.tsx), and 60rem is the
+   picture wall's. */
 /* the height only: a size given for both stood in for the width too, and widened the board's column to 60rem */
 .t-day + .t-day + .t-day { content-visibility: auto; contain-intrinsic-block-size: auto 60rem; }
 
