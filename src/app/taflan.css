@@ -14,7 +14,9 @@
 
 /* the head: how much is new, and the filters, as the hotbar's slots in a row */
 .t-board__head { display: grid; gap: var(--sp-3); }
-.t-board__news { min-height: 1.5em; font-size: var(--fs-md); color: var(--text-soft); }
+/* one whole line held while the board works out what is new: 1.5em of a 1.7
+   line grew as the words came and shifted the board under it (CLS 0.057) */
+.t-board__news { min-height: 1lh; font-size: var(--fs-md); color: var(--text-soft); }
 .t-board__news b { color: var(--lantern); font-weight: 600; }
 .t-filters { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
 .t-filter {
