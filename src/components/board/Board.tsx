@@ -316,8 +316,10 @@ function Board({ room = false, open = true, initial = null, initialFilter = 'all
           <div className="t-join">
             <p className="t-join__text">Allir sjá töfluna; félagarnir festa upp miða, myndir, óskir og spurningar. Ertu í hópnum? Ýttu á hausinn þinn og skráðu þig inn.</p>
             <ul className="t-join__heads" aria-label="Skrá inn sem">
+              {/* not fetched ahead: one of the eight is pressed now and then, and
+                  each was asked for twice on every look, a wall drawn on demand each time */}
               {CREW.map(n => (
-                <li key={n}><Link href={`/crew/${n}?skra=inn`} className="t-join__head b-tip" data-tip={n} aria-label={`Skrá inn sem ${n}`}><PlayerHead name={n} size={32} alt="" /></Link></li>
+                <li key={n}><Link href={`/crew/${n}?skra=inn`} prefetch={false} className="t-join__head b-tip" data-tip={n} aria-label={`Skrá inn sem ${n}`}><PlayerHead name={n} size={32} alt="" /></Link></li>
               ))}
             </ul>
           </div>
