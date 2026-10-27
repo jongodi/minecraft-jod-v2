@@ -385,12 +385,23 @@ async function settleOne(night: Night, now: number, advancements: Record<string,
   /* claimed before anything is counted: a daily job delivered twice must not
      charge anyone twice for the same night */
   const r = await redis();
-  if (!(await r.set(`${SETTLED_PREFIX}${night.id}`, '1', 'EX', KEEP_S, 'NX'))) return null;
-  const votes = await readVotes(night.id);
-  const outcome = outcomeOf(yesFor(votes, chosen.id), await readSeen(night.id), copies.before?.counters ?? null, copies.after?.counters ?? null);
-  await writeNight({ ...night, outcome: { ...outcome, numbers: numbersOf(outcome.came, chosen.at, copies, advancements) } });
-  for (const u of outcome.noShows) await r.hincrby(NO_SHOWS_KEY, u, 1);
-  return { id: night.id, ...outcome };
+  const claim = `${SETTLED_PREFIX}${night.id}`;
+  if (!(await r.set(claim, '1', 'EX', KEEP_S, 'NX'))) return null;
+  let kept = false;
+  try {
+    const votes = await readVotes(night.id);
+    const outcome = outcomeOf(yesFor(votes, chosen.id), await readSeen(night.id), copies.before?.counters ?? null, copies.after?.counters ?? null);
+    await writeNight({ ...night, outcome: { ...outcome, numbers: numbersOf(outcome.came, chosen.at, copies, advancements) } });
+    kept = true;
+    for (const u of outcome.noShows) await r.hincrby(NO_SHOWS_KEY, u, 1);
+    return { id: night.id, ...outcome };
+  } catch (e) {
+    /* Failed before the outcome was kept: nobody is charged yet, so the
+       claim is let go and the next day's run settles it from the same
+       copies. A claim held on a failure kept the night unsettled for good. */
+    if (!kept) await r.del(claim).catch(() => 0);
+    throw e;
+  }
 }
 
 /** Nights settled before their numbers were kept are counted once, from the
@@ -426,8 +437,13 @@ export async function settleNights(now = Date.now()): Promise<{ id: string; came
   const done = [];
   for (const night of await readNights()) {
     if (night.cancelled || night.outcome || !night.chosen || phaseOf(night, now) !== 'over') continue;
-    const out = await settleOne(night, now, advancements);
-    if (out) done.push(out);
+    /* each night on its own: one that fails no longer leaves every night after it for another day */
+    try {
+      const out = await settleOne(night, now, advancements);
+      if (out) done.push(out);
+    } catch (e) {
+      console.error(`[playnight] could not settle ${night.id}, the next run tries again:`, e instanceof Error ? e.message : e);
+    }
   }
   /* earlier nights wait for a day the advancements can be read, so none is
      kept without them for good; and a failure there leaves the settling done */

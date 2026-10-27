@@ -106,9 +106,31 @@ function Board({ room = false, open = true, initial = null, initialFilter = 'all
   /* while a fetch is out, what is done on the board is kept to be done again on its answer, which was read before it */
   const edits = useRef<Edit[] | null>(null);
   const { seen } = useBoardNews();
-  useEffect(() => { if (initial) takeStamps(stampsOf(initial.items)); }, [initial]);
+  /* A board the server draws again (its own door pressed on its own page) is
+     taken as it stands, with what was done here since made again on it. */
+  const drawnWith = useRef(initial);
+  useEffect(() => {
+    if (!initial) return;
+    takeStamps(stampsOf(initial.items));
+    if (initial === drawnWith.current) return;
+    drawnWith.current = initial;
+    loadedAt.current = Date.now();
+    setData({ ...initial, items: replay(initial.items, edits.current ?? []) });
+  }, [initial]);
 
-  /* asked when the board is first looked at, and again when it is opened after standing a while */
+  /* A board left open in a tab is asked for again when it is looked at after
+     standing a while, as the room is when it is opened again: the door's
+     count is asked every few minutes, and said there was something new that
+     the board under it did not show. */
+  const [look, setLook] = useState(0);
+  useEffect(() => {
+    if (!open) return;
+    const back = () => { if (document.visibilityState === 'visible' && loadedAt.current && Date.now() - loadedAt.current >= STALE_MS) setLook(n => n + 1); };
+    document.addEventListener('visibilitychange', back);
+    return () => document.removeEventListener('visibilitychange', back);
+  }, [open]);
+
+  /* asked when the board is first looked at, and again when it is opened or looked at after standing a while */
   useEffect(() => {
     if (!open) return;
     const retry = attempt !== asked.current;
@@ -129,7 +151,7 @@ function Board({ room = false, open = true, initial = null, initialFilter = 'all
       .catch(() => { if (live) setFailed(true); })
       .finally(() => { if (live) edits.current = null; });
     return () => { live = false; };
-  }, [open, attempt]);
+  }, [open, attempt, look]);
 
   /* The filter is in the page's address (?syna=myndir), so a refresh, a
      shared link and Back keep it; over the world it is the room's own. A
@@ -161,7 +183,7 @@ function Board({ room = false, open = true, initial = null, initialFilter = 'all
     let t: ReturnType<typeof setTimeout> | undefined;
     const arm = () => {
       clearTimeout(t);
-      if (document.visibilityState === 'visible') t = setTimeout(() => markSeen(newestAt(stampsOf(data.items)), me), SEEN_AFTER_MS);
+      if (document.visibilityState === 'visible') t = setTimeout(() => markSeen(newestAt(stampsOf(data.items), me), me), SEEN_AFTER_MS);
     };
     arm();
     document.addEventListener('visibilitychange', arm);
@@ -209,13 +231,24 @@ function Board({ room = false, open = true, initial = null, initialFilter = 'all
   const frames = useMemo(() => framesOf(shown), [shown]);
   const framesNow = useRef(frames);
   framesNow.current = frames;
-  const [lightbox, setLightbox] = useState<number | null>(null);
+  /* The picture held up, by its own id, and where it stands worked out as the
+     board is drawn: a fetch landing while it was open moved the pictures
+     along, and kept by its place the lightbox swapped it for another under
+     the finger. One no longer on the board is put down. */
+  const [held, setHeld] = useState<string | null>(null);
+  const heldAt = held === null ? -1 : frames.findIndex(p => p.id === held);
+  const lightbox = heldAt < 0 ? null : heldAt;
   const [origin, setOrigin] = useState<DOMRect | null>(null);
-  const onOpen = useCallback((photoId: string, rect: DOMRect) => { const i = framesNow.current.findIndex(p => p.id === photoId); if (i >= 0) { setOrigin(rect); setLightbox(i); } }, []);
+  const onOpen = useCallback((photoId: string, rect: DOMRect) => { if (framesNow.current.some(p => p.id === photoId)) { setOrigin(rect); setHeld(photoId); } }, []);
   const lightboxPhotos = useMemo(() => frames.map(p => ({ src: p.src, title: p.caption || undefined, sub: [p.who ?? 'á kortinu', p.takenAt ? `tekin ${formatDate(p.takenAt)}` : formatDate(p.at)].join(' · ') })), [frames]);
-  const closeLightbox = useCallback(() => setLightbox(null), []);
-  const prevPhoto = useCallback(() => setLightbox(i => (i !== null && frames.length ? (i - 1 + frames.length) % frames.length : null)), [frames.length]);
-  const nextPhoto = useCallback(() => setLightbox(i => (i !== null && frames.length ? (i + 1) % frames.length : null)), [frames.length]);
+  const closeLightbox = useCallback(() => setHeld(null), []);
+  const stepPhoto = useCallback((by: number) => setHeld(id => {
+    const fs = framesNow.current;
+    const i = fs.findIndex(p => p.id === id);
+    return i < 0 ? null : fs[(i + by + fs.length) % fs.length].id;
+  }), []);
+  const prevPhoto = useCallback(() => stepPhoto(-1), [stepPhoto]);
+  const nextPhoto = useCallback(() => stepPhoto(1), [stepPhoto]);
 
   /* A pinned call or question is a press away: its sign is drawn if it is
      further down than the board has drawn yet, and brought into view where
@@ -228,12 +261,18 @@ function Board({ room = false, open = true, initial = null, initialFilter = 'all
     requestAnimationFrame(() => requestAnimationFrame(() => {
       const el = document.getElementById(entryId);
       if (!el) return;
-      el.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+      const behavior = matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+      /* Over the world only the room scrolls, as it does to a fire:
+         scrollIntoView moved the page as well, and without the flight's
+         hold the room's plank and its ✕ went up under the bar. */
+      const body = room ? el.closest<HTMLElement>('.b-room__body') : null;
+      if (body) body.scrollTo({ top: el.getBoundingClientRect().top - body.getBoundingClientRect().top + body.scrollTop - parseFloat(getComputedStyle(el).scrollMarginTop || '0'), behavior });
+      else el.scrollIntoView({ block: 'start', behavior });
       /* the keyboard follows the eye to the sign */
       if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '-1');
       el.focus({ preventScroll: true });
     }));
-  }, [choose, items]);
+  }, [choose, items, room]);
 
   /* the foot of what is drawn: when it comes within a screen or so, the next stretch is drawn */
   const foot = useRef<HTMLDivElement>(null);
@@ -242,10 +281,15 @@ function Board({ room = false, open = true, initial = null, initialFilter = 'all
   useEffect(() => {
     const el = foot.current;
     if (!el || !open || reveal >= total || !('IntersectionObserver' in window)) return;
-    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) setReveal(r => r + STEP); }, { rootMargin: '0px 0px 1200px 0px' });
+    /* In the room the board scrolls inside the room, where a margin on the
+       page's own view never applied: the next stretch waited until the foot
+       was in sight, and "Sýna eldra" flashed before twenty signs came in
+       under the thumb. There the margin is on the room's own view. */
+    const root = room ? el.closest<HTMLElement>('.b-room__body') : null;
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) setReveal(r => r + STEP); }, { root, rootMargin: '0px 0px 1200px 0px' });
     io.observe(el);
     return () => io.disconnect();
-  }, [reveal, total, open]);
+  }, [reveal, total, open, room]);
 
   /* The red string: pinned across the board under the last thing tagged Nýtt,
      so all that came since the visitor last looked hangs above it. Placed by
@@ -294,8 +338,10 @@ function Board({ room = false, open = true, initial = null, initialFilter = 'all
           <div className="t-join">
             <p className="t-join__text">Allir sjá töfluna; félagarnir festa upp miða, myndir, óskir og spurningar. Ertu í hópnum? Ýttu á hausinn þinn og skráðu þig inn.</p>
             <ul className="t-join__heads" aria-label="Skrá inn sem">
+              {/* not fetched ahead: one of the eight is pressed now and then, and
+                  each was asked for twice on every look, a wall drawn on demand each time */}
               {CREW.map(n => (
-                <li key={n}><Link href={`/crew/${n}?skra=inn`} className="t-join__head b-tip" data-tip={n} aria-label={`Skrá inn sem ${n}`}><PlayerHead name={n} size={32} alt="" /></Link></li>
+                <li key={n}><Link href={`/crew/${n}?skra=inn`} prefetch={false} className="t-join__head b-tip" data-tip={n} aria-label={`Skrá inn sem ${n}`}><PlayerHead name={n} size={32} alt="" /></Link></li>
               ))}
             </ul>
           </div>

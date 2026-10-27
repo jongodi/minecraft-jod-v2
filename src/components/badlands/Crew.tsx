@@ -65,6 +65,7 @@ function Crew({ server }: { server: ServerState }) {
            online ? (inside === 0 ? (guests ? `enginn úr hópnum inni, gestir: ${guests}` : 'þjónninn er opinn en enginn kominn inn enn') : `${inside} úr hópnum inni núna${guests ? `, gestir: ${guests}` : ''}`) :
            life === 'starting' || life === 'restarting' ? 'þjónninn er að vakna, komdu inn eftir augnablik' :
            life === 'stopping' ? 'þjónninn er að slokkna' :
+           life === 'crashed' ? 'þjónninn hrundi, það þarf að kveikja aftur á honum' :
            life === 'unknown' ? 'næ ekki sambandi við þjóninn í augnablikinu' :
            life === 'off' && lastOnline ? `slökkt á þjóninum, síðast kveikt ${sinceAt(lastOnline.at)}` :
            'slökkt á þjóninum, allir í pásu'}

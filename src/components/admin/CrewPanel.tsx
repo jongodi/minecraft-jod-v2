@@ -21,7 +21,8 @@ export default function CrewPanel() {
   const [notice, setNotice] = useState('');
   const [invite, setInvite] = useState<(InviteResponse & { username: string }) | null>(null);
   const [busy, setBusy]     = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  /* the dialog's copy: done, or refused by the browser, said in the dialog itself */
+  const [copied, setCopied] = useState<boolean | 'refused'>(false);
   const [editing, setEditing] = useState<AdminCrewRow | null>(null);
 
   const load = useCallback(async () => {
@@ -41,10 +42,17 @@ export default function CrewPanel() {
     finally { setBusy(null); }
   }
 
-  async function close(url: string) {
+  /* A link handed out in the group chat dies with this, so it asks first,
+     once at a time; and the list is read again whatever the answer, so a
+     link already gone (run out, or closed in another tab) leaves the list. */
+  const [closing, setClosing] = useState<string | null>(null);
+  async function close(url: string, username: string) {
+    if (closing || !confirm(`Loka innskráningartengli ${username}? Hann hættir strax að virka, á hvaða tæki sem hann hefur ekki enn verið opnaður.`)) return;
     setNotice('');
-    try { await api('/api/admin/crew', { method: 'DELETE', body: JSON.stringify({ url }) }); setNotice('✓ Tenglinum var lokað.'); load(); }
+    setClosing(url);
+    try { await api('/api/admin/crew', { method: 'DELETE', body: JSON.stringify({ url }) }); setNotice('✓ Tenglinum var lokað.'); }
     catch (e) { setNotice(errText(e)); }
+    finally { setClosing(null); load(); }
   }
 
   async function clearPassword(username: string) {
@@ -54,14 +62,13 @@ export default function CrewPanel() {
     catch (e) { setNotice(errText(e)); }
   }
 
-  /* from the new link's dialog, the button itself says so; from a row, the notice at the top does */
+  /* from the new link's dialog, the dialog says so (a refusal went to the panel's notice, behind it); from a row, the notice at the top does */
   async function copy(url: string, fromRow = false) {
     try {
       await navigator.clipboard.writeText(url);
       if (fromRow) setNotice('✓ Tengillinn er afritaður.'); else setCopied(true);
     } catch {
-      setCopied(false);
-      setNotice(`✗ Vafrinn leyfði ekki að afrita. Tengillinn: ${url}`);
+      if (fromRow) setNotice(`✗ Vafrinn leyfði ekki að afrita. Tengillinn: ${url}`); else setCopied('refused');
     }
   }
 
@@ -78,7 +85,7 @@ export default function CrewPanel() {
               <tr key={r.username}>
                 <td>
                   <a href={`/crew/${r.username}`} target="_blank" rel="noreferrer">{r.username}</a>
-                  <div className="a-muted">síðast {when(r.lastEntry)}</div>
+                  <div className="a-muted">{r.lastEntry ? <>síðast {when(r.lastEntry)}</> : 'engin færsla enn'}</div>
                 </td>
                 <td>
                   {r.name ? <div className="a-crew__name">{r.name}</div> : <div className="a-muted">ekkert nafn, bréfin segja {r.username}</div>}
@@ -100,7 +107,7 @@ export default function CrewPanel() {
                         <li key={inv.url}>
                           <span className="a-muted">{inv.uses} af {inv.maxUses} notuð · til {when(inv.expiresAt)}</span>
                           <Button tone="ghost" small onClick={() => copy(inv.url, true)}>Afrita</Button>
-                          <Button tone="ghost" small onClick={() => close(inv.url)}>Loka</Button>
+                          <Button tone="ghost" small onClick={() => close(inv.url, r.username)} disabled={closing !== null}>Loka tengli</Button>
                         </li>
                       ))}
                     </ul>
@@ -129,9 +136,10 @@ export default function CrewPanel() {
             <div className="a-qr" role="img" dangerouslySetInnerHTML={{ __html: invite.svg }} aria-label="QR-kóði með tenglinum" />
             <input className="a-input a-input--data" readOnly value={invite.url} onFocus={e => e.target.select()} aria-label="Tengill" />
             <div className="a-inline">
-              <Button tone="primary" small onClick={() => copy(invite.url)}>{copied ? 'Afritað' : 'Afrita tengil'}</Button>
+              <Button tone="primary" small onClick={() => copy(invite.url)}>{copied === true ? 'Afritað' : 'Afrita tengil'}</Button>
               <Button tone="ghost" small onClick={() => setInvite(null)}>Loka</Button>
             </div>
+            {copied === 'refused' && <Notice text="✗ Vafrinn leyfði ekki að afrita. Tengillinn er í reitnum hér fyrir ofan, valinn þegar ýtt er á hann." />}
           </div>
         </Modal>
       )}

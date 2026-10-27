@@ -224,4 +224,21 @@ describe('sending, once', () => {
     expect(await mailNights(NOW)).toEqual([{ id: 'n5', kind: 'out', to: 1 }]);
     expect(await mailNights(NOW + 5 * 60_000)).toEqual([]);
   });
+
+  it("keeps trying the 'out' letter while the chosen night is ahead, though an earlier time it offered has passed", async () => {
+    fetchMock.mockResolvedValueOnce(new Response('{"message":"down"}', { status: 500 })).mockResolvedValue(ok());
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const n = night({ id: 'n6', createdAt: iso(NOW - 72 * H), chosen: 'b', chosenBy: 'auto', options: [{ id: 'a', at: iso(NOW - 24 * H) }, { id: 'b', at: iso(NOW + 72 * H) }] });
+    expect(await mailNightOut(n, { joenana: ['b'] })).toEqual([]);
+    expect(await mailNights(NOW)).toEqual([{ id: 'n6', kind: 'out', to: 1 }]);
+  });
+
+  it("lets the 'out' letter go once the chosen night would have begun", async () => {
+    fetchMock.mockResolvedValueOnce(new Response('{"message":"down"}', { status: 500 })).mockResolvedValue(ok());
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const n = night({ id: 'n7', createdAt: iso(NOW - 72 * H), chosen: 'a', chosenBy: 'auto', options: [{ id: 'a', at: iso(NOW - H) }, { id: 'b', at: iso(NOW + 72 * H) }] });
+    expect(await mailNightOut(n, { joenana: ['a'] })).toEqual([]);
+    expect(await mailNights(NOW)).toEqual([]);
+    expect(hash('playnight:out-pending').size).toBe(0);
+  });
 });

@@ -127,6 +127,16 @@ describe('what is new, and where it goes', () => {
     expect(newestAt(stamps)).toBe(ago(1));
   });
 
+  it("moves the mark up to the newest thing someone else put up, never to the one looking's own", () => {
+    /* a member's own pin or reply is newer than the board they last fetched:
+       a mark moved up to it went past whatever others pinned in between */
+    const stamps = [{ at: ago(1), who: 'stebbias' }, { at: ago(2), who: null }, { at: ago(3), who: 'joenana' }];
+    expect(newestAt(stamps, 'stebbias')).toBe(ago(2));
+    expect(newestAt(stamps, 'StebbiAs')).toBe(ago(2));
+    expect(newestAt(stamps, null)).toBe(ago(1));
+    expect(newestAt([{ at: ago(1), who: 'stebbias' }], 'stebbias')).toBe(null);
+  });
+
   it('counts a reply under something older as news, and not one of your own', () => {
     const post: BoardItem = { kind: 'post', id: 'p-e', at: ago(48), who: 'stebbias', wood: 'oak', entry: { id: 'e', text: 'gamalt', photos: [], placeId: null, createdAt: ago(48), lanterns: [], replies: [
       { id: 'r1', username: 'joenana', text: 'hæ', createdAt: ago(2) },

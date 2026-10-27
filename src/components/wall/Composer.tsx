@@ -61,7 +61,19 @@ export default function Composer({ username, places, onPinned, active = true, co
   const [storage, setStorage] = useState<StorageInfo | null>(null);
   const [kind, setKind]       = useState<Kind>('note');
   const [reward, setReward]   = useState('');
-  const [choices, setChoices] = useState<string[]>(['', '']);
+  /* each answer with an id of its own, so taking one out leaves the others' rows, and their focus, where they were */
+  const choiceSeq = useRef(2);
+  const [choices, setChoices] = useState(() => [{ id: 1, text: '' }, { id: 2, text: '' }]);
+  const freshChoices = () => [{ id: ++choiceSeq.current, text: '' }, { id: ++choiceSeq.current, text: '' }];
+  /* An answer taken out gives the keyboard to the one before it (the one
+     after, for the first): the rows' remove buttons go with the third
+     answer, and the keyboard fell to the top of the page, or stayed on the
+     next row's remove, where a second press took another answer out. */
+  const dropChoice = (i: number) => {
+    const next = choices[i - 1] ?? choices[i + 1];
+    setChoices(cs => cs.filter((_, j) => j !== i));
+    if (next) requestAnimationFrame(() => document.querySelector<HTMLInputElement>(`[data-choice="${next.id}"]`)?.focus());
+  };
   const [text, setText]       = useState('');
   /* who could be meant by the name being typed after an @ */
   const [caret, setCaret]     = useState(0);
@@ -198,7 +210,7 @@ export default function Composer({ username, places, onPinned, active = true, co
   /* pinning past a failed print would leave it out and then clear it from the slot without a word */
   const failed = drafts.some(d => d.error);
   const ready = drafts.filter(d => d.done);
-  const filled = choices.map(c => c.trim()).filter(Boolean);
+  const filled = choices.map(c => c.text.trim()).filter(Boolean);
   const canPin = !pinning && !uploading && !failed && (
     kind === 'call' ? text.trim().length > 0 && reward.trim().length > 0 :
     kind === 'ask' ? text.trim().length > 0 && filled.length >= LIMITS.choicesMin :
@@ -248,7 +260,7 @@ export default function Composer({ username, places, onPinned, active = true, co
       onPinned(entry);
       ready.forEach(d => URL.revokeObjectURL(d.preview));
       setDrafts(ds => ds.filter(d => !pinned.has(d.key)));
-      setText(''); setPlaceId(null); setReward(''); setChoices(['', '']); setKind('note');
+      setText(''); setPlaceId(null); setReward(''); setChoices(freshChoices()); setKind('note');
     } catch (err) {
       setError(failure(err, 'Ekki tókst að festa þetta upp.'));
     } finally {
@@ -306,15 +318,15 @@ export default function Composer({ username, places, onPinned, active = true, co
       {kind === 'ask' && (
         <div className="w-pin__choices">
           {choices.map((c, i) => (
-            <div key={i} className="w-pin__choice">
-              <input className="b-input" value={c} readOnly={pinning} maxLength={LIMITS.choice} placeholder={`Svar ${i + 1}`} aria-label={`Svarkostur ${i + 1}`}
-                onChange={e => setChoices(cs => cs.map((x, j) => (j === i ? e.target.value : x)))} />
+            <div key={c.id} className="w-pin__choice">
+              <input className="b-input" data-choice={c.id} value={c.text} readOnly={pinning} maxLength={LIMITS.choice} placeholder={`Svar ${i + 1}`} aria-label={`Svarkostur ${i + 1}`}
+                onChange={e => setChoices(cs => cs.map(x => (x.id === c.id ? { ...x, text: e.target.value } : x)))} />
               {choices.length > LIMITS.choicesMin && (
-                <button type="button" className="w-pin__drop" onClick={() => setChoices(cs => cs.filter((_, j) => j !== i))} disabled={pinning} aria-label={`Taka svar ${i + 1} út`}><CloseIcon /></button>
+                <button type="button" className="w-pin__drop" onClick={() => dropChoice(i)} disabled={pinning} aria-label={`Taka svar ${i + 1} út`}><CloseIcon /></button>
               )}
             </div>
           ))}
-          {choices.length < LIMITS.choicesMax && <button type="button" className="w-tool w-pin__more" onClick={() => setChoices(cs => [...cs, ''])} disabled={pinning}>bæta við svari</button>}
+          {choices.length < LIMITS.choicesMax && <button type="button" className="w-tool w-pin__more" onClick={() => setChoices(cs => [...cs, { id: ++choiceSeq.current, text: '' }])} disabled={pinning}>bæta við svari</button>}
         </div>
       )}
 

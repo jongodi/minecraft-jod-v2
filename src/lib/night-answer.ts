@@ -17,7 +17,7 @@ import type { Night } from '@/lib/play-night';
 
 /* the site's existing secret, as the letters' pictures use (src/lib/email-design.ts);
    the purpose is part of what is signed, so one key never stands in for the other */
-const key = () => process.env.MAIL_ART_SECRET || process.env.CRON_SECRET || process.env.ADMIN_TOKEN || '';
+const key = () => process.env.MAIL_ART_SECRET || process.env.CRON_SECRET || '';
 const sign = (night: string, user: string, exp: number) =>
   createHmac('sha256', key()).update(`night-answer|${night}|${user.toLowerCase()}|${exp}`).digest('base64url').slice(0, 22);
 

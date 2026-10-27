@@ -1514,7 +1514,8 @@ html.is-map-full { overflow: hidden; }
 .b-locator.is-hidden, .b-frame.is-room .b-locator { opacity: 0; visibility: hidden; transition: opacity var(--dur-2) var(--ease-out), visibility 0s linear var(--dur-2); }
 .b-locator::before { content: ''; position: absolute; inset: 0; background: rgba(14, 12, 9, 0.6); clip-path: var(--notch); }
 .b-locator__ahead { position: absolute; left: 50%; top: 0; bottom: 0; width: var(--px); translate: -50% 0; background: rgba(232, 220, 196, 0.35); }
-.b-locator .b-locator__mark { position: absolute; top: 50%; display: grid; place-items: center; translate: -50% -50%; line-height: 0; }
+/* moved along the bar by a transform from its left end (Locator.tsx), centred on the spot by translate */
+.b-locator .b-locator__mark { position: absolute; left: 0; top: 50%; display: grid; place-items: center; translate: -50% -50%; line-height: 0; }
 .b-locator__mark--base { width: 1.25rem; height: 1.75rem; color: var(--lantern); }
 .b-locator__mark--base .b-lantern { width: 0.75rem; height: 1.125rem; color: var(--lantern); filter: drop-shadow(0 0 2px var(--lantern-glow)); }
 .b-locator__mark--player img { width: 0.875rem; height: 0.875rem; image-rendering: pixelated; box-shadow: 0 0 0 1px var(--night); }
@@ -2809,6 +2810,7 @@ html.is-map-full { overflow: hidden; }
   background: radial-gradient(closest-side circle, rgba(242, 166, 59, 0.10), transparent 70%);
   mix-blend-mode: screen;
   will-change: transform;
+  transition: opacity var(--dur-2) var(--ease-out);
 }
 .b-light.is-on { opacity: 1; }
 

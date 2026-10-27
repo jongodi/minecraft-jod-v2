@@ -102,11 +102,12 @@ describe('the base maps\' copies', () => {
   });
 
   it('knows what a base copy does not hold without asking the store', async () => {
+    /* a tile it does not hold is an empty patch of map, as BlueMap answers one */
     const res = await askData('vbase', 'maps/jodville/tiles/0/x9/z9.prbm.gz');
-    expect(res.status).toBe(404);
+    expect(res.status).toBe(204);
     expect(res.headers.get('Cache-Control')).toContain('immutable');
     /* a base map's file is never looked for in the main map's copy, nor the other way round */
-    expect((await askData('vmain', 'maps/world/tiles/0/x4/z-3.prbm.gz')).status).toBe(404);
+    expect((await askData('vmain', 'maps/world/tiles/0/x4/z-3.prbm.gz')).status).toBe(204);
     expect(get).not.toHaveBeenCalled();
   });
 

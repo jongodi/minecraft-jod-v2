@@ -8,7 +8,7 @@ import { mapLabel } from '@/lib/icelandic';
 import { SIGN_WOODS, WOOD_LABELS, type SignWood } from '@/lib/sign-wood';
 import {
   DEFAULT_TERRAIN, MATERIALS, TERRAIN_CELL, TERRAIN_COLS, TERRAIN_ROWS,
-  fill as floodFill, normalizeTerrain, paint as paintBrush, terrainCounts,
+  blocksBetween, fill as floodFill, normalizeTerrain, paint as paintBrush, terrainCounts,
   type Material,
 } from '@/lib/terrain';
 import { MapDefs, MapMarks, Terrain, MAP_H, MAP_W } from '@/components/badlands/MapArt';
@@ -138,6 +138,11 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
     catch { setPhotosError('Ekki tókst að sækja myndasafnið.'); }
   }, []);
   useEffect(() => { loadPhotos(); }, [loadPhotos]);
+  /* The picker asks the gallery again as it opens: the editor stays mounted
+     behind the other tabs while it holds unsaved work, and offered the
+     photos as they were when the map was opened, without one uploaded in
+     Myndasafn since and with one deleted there, which the save then dropped. */
+  const openPicker = () => { loadPhotos(); setPicker(true); };
 
   useEffect(() => { setUnsaved('map', dirty); return () => setUnsaved('map', false); }, [dirty]);
 
@@ -148,9 +153,12 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
     const r = svg.getBoundingClientRect();
     return [(cx - r.left) * (MAP_W / r.width), (cy - r.top) * (MAP_H / r.height)];
   }, []);
+  /* the ground's last row ends ten units above the map's foot: that strip
+     is the last row, for the brush, a stroke's start, its outline and the fill */
   const toCell = useCallback((cx: number, cy: number): [number, number] => {
     const [x, y] = toSvg(cx, cy);
-    return [Math.floor(x / TERRAIN_CELL), Math.floor(y / TERRAIN_CELL)];
+    const r = Math.floor(y / TERRAIN_CELL);
+    return [Math.floor(x / TERRAIN_CELL), r === TERRAIN_ROWS && y < MAP_H ? TERRAIN_ROWS - 1 : r];
   }, [toSvg]);
 
   /* ─── selection helpers ─── */
@@ -168,6 +176,13 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
   const updatePin  = (id: number, patch: Partial<MapLocation>) => commit(d => ({ ...d, locations: d.locations.map(l => l.id === id ? { ...l, ...patch } : l) }));
   const updateZone = (id: string, patch: Partial<MapZone>)     => commit(d => ({ ...d, zones: d.zones.map(z => z.id === id ? { ...z, ...patch } : z) }));
   const updatePath = (id: string, patch: Partial<MapPath>)     => commit(d => ({ ...d, paths: d.paths.map(p => p.id === id ? { ...p, ...patch } : p) }));
+  /* A name typed is one step, begun as its field is entered and settled as it
+     is left: every letter was a step of its own, so undo took a name back a
+     letter at a time, and a long one pushed the strokes before it out of the sixty. */
+  const typing = { onFocus: () => mark(), onBlur: () => h.settle() };
+  const typePin  = (id: number, patch: Partial<MapLocation>) => replace(d => ({ ...d, locations: d.locations.map(l => l.id === id ? { ...l, ...patch } : l) }));
+  const typeZone = (id: string, patch: Partial<MapZone>)     => replace(d => ({ ...d, zones: d.zones.map(z => z.id === id ? { ...z, ...patch } : z) }));
+  const typePath = (id: string, patch: Partial<MapPath>)     => replace(d => ({ ...d, paths: d.paths.map(p => p.id === id ? { ...p, ...patch } : p) }));
 
   function deleteSelected() {
     if (!selected) return;
@@ -190,16 +205,26 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
   }
 
   /* ─── painting the ground ─── */
+  /* the block a stroke last painted, so a fast drag paints the way between two samples */
+  const lastBlock = useRef<[number, number] | null>(null);
+  /* the axis a Shift stroke keeps, chosen once it has moved a whole block from where it began */
+  const strokeAxis = useRef<'row' | 'column' | null>(null);
   const applyBrush = useCallback((cx: number, cy: number, straight = false) => {
     let [c, r] = toCell(cx, cy);
-    /* Shift keeps a stroke on one axis, which is how a straight coast gets drawn. */
+    /* Shift keeps a stroke on one axis, which is how a straight coast gets
+       drawn: the axis it first moves along, kept for the stroke, where
+       choosing it again at every step painted a stub off the line, and a
+       drag near the diagonal flipped between the two. */
     const start = strokeStart.current;
     if (straight && start) {
-      if (Math.abs(c - start[0]) >= Math.abs(r - start[1])) r = start[1];
-      else c = start[0];
+      if (!strokeAxis.current && (c !== start[0] || r !== start[1])) strokeAxis.current = Math.abs(c - start[0]) >= Math.abs(r - start[1]) ? 'row' : 'column';
+      if (strokeAxis.current !== 'column') r = start[1];
+      if (strokeAxis.current !== 'row') c = start[0];
     }
-    if (c < 0 || c >= TERRAIN_COLS || r < 0 || r >= TERRAIN_ROWS) return;
-    replace(d => ({ ...d, terrain: paintBrush(d.terrain, c, r, brush, material) }));
+    const from = lastBlock.current ?? [c, r];
+    lastBlock.current = [c, r];
+    /* a centre off the ground still paints what its brush covers of it */
+    replace(d => ({ ...d, terrain: blocksBetween(from, [c, r]).reduce((t, [bc, br]) => paintBrush(t, bc, br, brush, material), d.terrain) }));
   }, [toCell, replace, brush, material]);
 
   /* ─── pointer: drag, place, draw ─── */
@@ -236,6 +261,8 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
     painting.current = true;
     moved.current = true;
     strokeStart.current = toCell(e.clientX, e.clientY);
+    lastBlock.current = null;
+    strokeAxis.current = null;
     mark();
     applyBrush(e.clientX, e.clientY, e.shiftKey);
   };
@@ -254,7 +281,7 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
       replace(doc => ({ ...doc, zones: doc.zones.map(z => z.id === d.id ? { ...z, [d.axis]: Math.max(10, snapTo(d.start + delta)) } : z) }));
     } else if (d.kind === 'point') replace(doc => ({ ...doc, paths: doc.paths.map(p => p.id === d.id ? { ...p, points: p.points.map((pt, i) => i === d.idx ? [clampX(snapTo(mx - d.ox)), clampY(snapTo(my - d.oy))] as [number, number] : pt) } : p) }));
   };
-  const onUp = () => { drag.current = null; painting.current = false; strokeStart.current = null; h.settle(); };
+  const onUp = () => { drag.current = null; painting.current = false; strokeStart.current = null; lastBlock.current = null; strokeAxis.current = null; h.settle(); };
 
   const onClick = (e: React.MouseEvent<SVGSVGElement>) => {
     const wasPressed = pressed.current;
@@ -306,8 +333,9 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
       if (!svgRef.current || svgRef.current.closest('[hidden]')) return;
       const typing = (e.target as HTMLElement | null)?.closest('input, textarea, select');
       const mod = e.ctrlKey || e.metaKey;
-      /* saving works from a name field too, instead of opening the browser's Save dialog */
-      if (mod && e.key.toLowerCase() === 's') { e.preventDefault(); save(); return; }
+      /* saving works from a name field too, instead of opening the browser's
+         Save dialog; once for a press held down, as the key repeats */
+      if (mod && e.key.toLowerCase() === 's') { e.preventDefault(); if (!e.repeat) save(); return; }
       if (e.key === 'Escape') { setPlacing(null); setDrawing(null); setDrawPoints([]); if (!typing) setSelected(null); return; }
       if (typing) return;
       if (mod && e.key.toLowerCase() === 'z') { e.preventDefault(); if (e.shiftKey) h.redo(); else h.undo(); return; }
@@ -338,7 +366,13 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
   });
 
   /* ─── save ─── */
+  /* one save at a time: every save is a version in the map's history, and a
+     held Ctrl+S sent a dozen at once, filling the history's thirty with
+     "Vistað án breytinga" and pushing every real version out */
+  const inFlight = useRef(false);
   async function persist(edited: Doc): Promise<boolean> {
+    if (inFlight.current) return false;
+    inFlight.current = true;
     setSaving(true);
     try {
       /* the gallery may have linked photos to places since this copy was
@@ -348,14 +382,36 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
       const cfg = current ? { ...edited, locations: withCurrentLinks(edited.locations, base, current.locations) } : edited;
       const r = await api<{ config?: MapConfig }>('/api/admin/map', { method: 'PUT', body: JSON.stringify(cfg) });
       const stored = r.config ? toDoc(r.config) : cfg;
-      h.reset(stored);
+      /* The editor stays in hand while it saves: what was done meanwhile (a
+         name typed on after Ctrl+S, a stroke) is kept, and shows as unsaved,
+         where taking the stored map in its place threw it away. */
+      if (serialize(h.current.current) === serialize(edited)) {
+        h.reset(stored);
+        /* a name still being typed begins its step again, from the map as saved */
+        if (document.activeElement?.closest('.a-editor__side input')) mark();
+      }
       setSaved(serialize(stored));
       loadPhotos();
       return true;
     } catch (e) { setMsg(errText(e)); return false; }
-    finally { setSaving(false); }
+    finally { inFlight.current = false; setSaving(false); }
   }
-  async function save() { setMsg(''); if (await persist(doc)) setMsg('✓ Kortið er vistað og komið á vefinn.'); }
+  async function save() {
+    if (inFlight.current) return;
+    setMsg('');
+    /* a field that keeps what is typed until it is left (the coordinates)
+       is left first, so the save carries it, and taken up again at once
+       with the caret where it was, so the typing goes on */
+    const field = document.activeElement;
+    if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement) {
+      const at = [field.selectionStart, field.selectionEnd] as const;
+      field.blur();
+      field.focus({ preventScroll: true });
+      try { if (at[0] !== null && at[1] !== null) field.setSelectionRange(at[0], at[1]); } catch { /* a field with no caret */ }
+    }
+    if (serialize(h.current.current) === saved) { setMsg('Engar óvistaðar breytingar á kortinu.'); return; }
+    if (await persist(h.current.current)) setMsg('✓ Kortið er vistað og komið á vefinn.');
+  }
   async function discard() {
     if (!confirm('Henda óvistuðum breytingum og sækja síðustu vistuðu útgáfu kortsins?')) return;
     try {
@@ -512,8 +568,8 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
             <span className="a-editor__hint">
               {placing ? `Smelltu þar sem ${mapLabel(placing).toLowerCase()} á að vera. Esc hættir við.`
                 : drawing ? `Smelltu til að bæta við punktum (${drawPoints.length}). Tvísmelltu eða Enter lýkur, Esc hættir við.`
-                : tool === 'fill' ? `Smelltu á svæði til að fylla það af: ${MATERIALS.find(m => m.code === material)?.label.toLowerCase()}.`
-                : `Dragðu til að mála: ${MATERIALS.find(m => m.code === material)?.label.toLowerCase()}, pensill ${brush}×${brush}. Haltu Shift niðri fyrir beina línu.`}
+                : tool === 'fill' ? `Smelltu á svæði til að breyta því í ${MATERIALS.find(m => m.code === material)?.as}.`
+                : `Dragðu til að mála ${MATERIALS.find(m => m.code === material)?.as}, pensill ${brush}×${brush}. Haltu Shift niðri fyrir beina línu.`}
             </span>
           )}
         </div>
@@ -544,8 +600,8 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
           ) : selPin ? (
             <div className="a-side">
               <p className="a-side__title"><span>Staður {selPin.id}</span><Button tone="ghost" small onClick={() => duplicatePin(selPin)}>Afrita</Button></p>
-              <Field label="Heiti"><input className="a-input" value={selPin.label} onChange={e => updatePin(selPin.id, { label: e.target.value })} maxLength={100} /></Field>
-              <Field label="Undirtitill"><input className="a-input" value={selPin.sublabel} onChange={e => updatePin(selPin.id, { sublabel: e.target.value })} maxLength={100} /></Field>
+              <Field label="Heiti"><input className="a-input" value={selPin.label} {...typing} onChange={e => typePin(selPin.id, { label: e.target.value })} maxLength={100} /></Field>
+              <Field label="Undirtitill"><input className="a-input" value={selPin.sublabel} {...typing} onChange={e => typePin(selPin.id, { sublabel: e.target.value })} maxLength={100} /></Field>
               <Field label="Tegund">
                 <select className="a-select" value={selPin.type} onChange={e => updatePin(selPin.id, { type: e.target.value as MapLocation['type'] })}>
                   {(['surface', 'underground', 'island', 'aerial'] as const).map(t => <option key={t} value={t}>{mapLabel(t)}</option>)}
@@ -580,13 +636,13 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <div className="a-photo"><img src={selPhoto.filename} alt={selPhoto.title} /></div>
                     <p className="a-muted">{selPhoto.title}{!selPhoto.active && '. Falin í albúminu, birtist því ekki á kortinu fyrr en hún er sýnd aftur.'}</p>
-                    <div className="a-inline"><Button small onClick={() => setPicker(true)}>Skipta um mynd</Button><Button small tone="ghost" onClick={() => linkPhoto(selPin.id, null)}>Aftengja</Button></div>
+                    <div className="a-inline"><Button small onClick={openPicker}>Skipta um mynd</Button><Button small tone="ghost" onClick={() => linkPhoto(selPin.id, null)}>Aftengja</Button></div>
                   </>
                 ) : (
                   <>
                     <p className="a-muted">{selPin.photoId ? (photosError || 'Tengda myndin fannst ekki í myndasafninu.') : 'Engin mynd tengd þessum stað.'}</p>
                     <div className="a-inline">
-                      <Button small onClick={() => setPicker(true)}>Velja úr myndasafni</Button>
+                      <Button small onClick={openPicker}>Velja úr myndasafni</Button>
                       <label className="a-btn a-btn--small a-btn--ghost" style={{ cursor: uploading ? 'wait' : 'pointer' }}>
                         {uploading ? 'Hleð upp' : 'Hlaða upp nýrri'}
                         <input type="file" accept="image/*" disabled={uploading} className="a-sr" onChange={e => { const f = e.target.files?.[0]; e.target.value = ''; if (f) uploadForPin(selPin, f); }} />
@@ -600,7 +656,7 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
           ) : selZone ? (
             <div className="a-side">
               <p className="a-side__title"><span>{mapLabel(selZone.kind)}</span></p>
-              <Field label="Heiti"><input className="a-input" value={selZone.label} onChange={e => updateZone(selZone.id, { label: e.target.value })} maxLength={100} /></Field>
+              <Field label="Heiti"><input className="a-input" value={selZone.label} {...typing} onChange={e => typeZone(selZone.id, { label: e.target.value })} maxLength={100} /></Field>
               <div className="a-inline">
                 <Field label="Miðja X"><NumField value={selZone.cx} min={0} max={MAP_W} onCommit={cx => updateZone(selZone.id, { cx })} /></Field>
                 <Field label="Miðja Y"><NumField value={selZone.cy} min={0} max={MAP_H} onCommit={cy => updateZone(selZone.id, { cy })} /></Field>
@@ -615,7 +671,7 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
           ) : selPath ? (
             <div className="a-side">
               <p className="a-side__title"><span>{mapLabel(selPath.kind)}</span></p>
-              <Field label="Heiti"><input className="a-input" value={selPath.label} onChange={e => updatePath(selPath.id, { label: e.target.value })} maxLength={100} /></Field>
+              <Field label="Heiti"><input className="a-input" value={selPath.label} {...typing} onChange={e => typePath(selPath.id, { label: e.target.value })} maxLength={100} /></Field>
               <Field label="Tegund">
                 <select className="a-select" value={selPath.kind} onChange={e => updatePath(selPath.id, { kind: e.target.value as MapPath['kind'] })}>
                   {(['river', 'road', 'border'] as const).map(k => <option key={k} value={k}>{mapLabel(k)}</option>)}

@@ -196,7 +196,9 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
   const [followNote, setFollowNote] = useState<string | null>(null);
   /* the frame as the whole screen: the browser's own full screen, or fixed over the page where there is none (iPhone) */
   const [full, setFull]       = useState<false | 'native' | 'overlay'>(false);
-  const [inView, setInView]   = useState(true);
+  /* out of view until the observer says otherwise: in view from the start, the
+     page asked for who is on the map at every load, up at the sunset */
+  const [inView, setInView]   = useState(false);
   /* the chat is open to be read, and the lantern in the middle steps aside for it */
   const [chatOpen, setChatOpen] = useState(false);
   const frameRef = useRef<HTMLDivElement>(null);
@@ -335,7 +337,9 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
       try { await nav.share({ title: `${title} · ${SITE_NAME}`, url }); return; }
       catch (e) { if ((e as DOMException)?.name === 'AbortError') return; }
     }
-    try { await navigator.clipboard.writeText(url); toast('Afritað', `hlekkur á ${title}`); }
+    /* the place by its name alone: after "hlekkur á" it had to bend, and
+       Kastali Goða, Joðbær and Sveppaeyja stood there unbent */
+    try { await navigator.clipboard.writeText(url); toast('Afritað', title); }
     catch { window.prompt('Afritaðu hlekkinn:', url); }
   }, []);
 
@@ -425,10 +429,19 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
   }, [viewer, standby, selected, config.locations, bases, jod]);
 
   /* The viewer draws nothing while nobody can see it: scrolled away, under a
-     room, the album or the painted map. */
+     room, the album or the painted map, or in a tab in the background, where
+     BlueMap went on asking for its players every second. */
+  const [away, setAway] = useState(false);
+  useEffect(() => {
+    const look = () => setAway(document.hidden);
+    look();
+    document.addEventListener('visibilitychange', look);
+    return () => document.removeEventListener('visibilitychange', look);
+  }, []);
   useEffect(() => {
     const el = frameRef.current;
-    if (!el || !('IntersectionObserver' in window)) return;
+    if (!el) return;
+    if (!('IntersectionObserver' in window)) { setInView(true); return; }
     /* by ratio: a frame whose edge only touches the viewport counts as intersecting */
     const io = new IntersectionObserver(([entry]) => setInView(entry.intersectionRatio >= 0.02), { threshold: [0, 0.02] });
     io.observe(el);
@@ -454,7 +467,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
   /* On a phone the map is only live as the whole screen: back in the page it
      is a still again, so a thumb scrolls the page, and the lantern reopens it. */
   const still = phone && !full;
-  const hidden = !inView || shut || album || drawn || still || standby;
+  const hidden = away || !inView || shut || album || drawn || still || standby;
   useEffect(() => { if (viewer) jod()?.pause(hidden); }, [viewer, hidden, jod]);
   /* landed in the live map but not yet taken hold of, its zoom and menu would be keys that do nothing */
   useEffect(() => { if (viewer) jod()?.glass?.(auto); }, [viewer, auto, jod]);
@@ -472,7 +485,11 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
   }, [live, ready]);
 
   /* ─── the whole screen ─── */
+  /* the way in that was pressed, which goes as the screen opens and is drawn anew as it closes */
+  const opener = useRef<string | null>(null);
   const openFull = useCallback(() => {
+    const at = document.activeElement;
+    opener.current = at?.closest('.b-card__fly') ? '.b-card__fly' : at?.closest('.b-boot') ? '.b-boot' : at?.closest('.b-hud__tools a') ? '.b-hud__tools a[href]' : null;
     setAuto(false);
     setFailed(false);
     setLive(true);
@@ -512,6 +529,32 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
       document.documentElement.classList.remove('is-map-full');
     };
   }, [full, closeFull]);
+  /* The whole screen is a place of its own. The way in goes as it opens, so
+     the keyboard is given its way out; and nothing behind it is in reach, where
+     a Tab or a screen reader's swipe went on into the bar and the sunset, out
+     of sight. The album, which hangs beside the frame, and the toasts' live
+     words stay. Closed, the keyboard goes back to the way in, drawn anew. */
+  useEffect(() => {
+    const frame = frameRef.current;
+    if (!frame) return;
+    if (!full) {
+      const way = opener.current;
+      opener.current = null;
+      if (way && (!document.activeElement || document.activeElement === document.body)) frame.querySelector<HTMLElement>(way)?.focus({ preventScroll: true });
+      return;
+    }
+    if (!frame.contains(document.activeElement)) back.current?.focus({ preventScroll: true });
+    const aside: Element[] = [];
+    for (let el = frame.closest('section') as Element | null; el?.parentElement; el = el.parentElement) {
+      for (const sib of el.parentElement.children) {
+        if (sib === el || sib.hasAttribute('inert') || sib.matches('[aria-live], script')) continue;
+        sib.setAttribute('inert', '');
+        aside.push(sib);
+      }
+      if (el.parentElement === document.body) break;
+    }
+    return () => aside.forEach(el => el.removeAttribute('inert'));
+  }, [full, back]);
 
   /* The place let go. Closed from inside the postcard (its ✕, Escape), the
      keyboard goes to the place's tag on the rail, rather than staying on a

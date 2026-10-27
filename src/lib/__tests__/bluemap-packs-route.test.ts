@@ -144,8 +144,15 @@ describe('/bluemap-data, packed copy', () => {
   });
 
   it('knows a file the copy does not hold without asking the store', async () => {
-    const res = await ask('maps/world/tiles/0/x9/z9.prbm.gz');
+    const res = await ask('maps/world/settings-old.json');
     expect(res.status).toBe(404);
+    expect(get).not.toHaveBeenCalled();
+  });
+
+  it('answers a tile past the edge of the rendered world as an empty patch of map, as BlueMap does', async () => {
+    /* a 404 was an error in the console for every tile the viewer asks for past the edge */
+    const res = await ask('maps/world/tiles/0/x9/z9.prbm.gz');
+    expect(res.status).toBe(204);
     expect(get).not.toHaveBeenCalled();
   });
 });

@@ -1,13 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { plural } from '@/lib/format';
 import type { GalleryPhoto } from '@/lib/gallery';
 import type { MapConfig, MapLocation } from '@/lib/map-types';
 import GalleryUploader from './GalleryUploader';
 import ScreenshotFormat from './ScreenshotFormat';
 import { Button, Field, Notice, Panel, api, errText } from './ui';
-import { setUnsaved } from './unsaved';
+import { confirmLeave, setUnsaved } from './unsaved';
 
 /** A gallery photo as the admin API returns it: with the id of the map pin it is linked to. */
 export type AdminPhoto = GalleryPhoto & { locationId: number | null };
@@ -29,6 +29,8 @@ export default function GalleryPanel() {
   const open = editing ? photos.find(p => p.id === editing) : undefined;
   const unsaved = !!open && (draft.title !== open.title || draft.sublabel !== open.sublabel || draft.locationId !== open.locationId);
   useEffect(() => { setUnsaved('gallery', unsaved); return () => setUnsaved('gallery', false); }, [unsaved]);
+  const unsavedNow = useRef(unsaved);
+  unsavedNow.current = unsaved;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -42,6 +44,11 @@ export default function GalleryPanel() {
   useEffect(() => { load(); }, [load]);
 
   const sorted = useMemo(() => [...photos].sort((a, b) => a.order - b.order), [photos]);
+  /* A photo's place is where it stands in the order, counted from one. The
+     stored number is not that: a deleted photo leaves a gap in the numbers,
+     and moving by them sent a photo to the end, or nowhere. */
+  const places = useMemo(() => new Map(sorted.map((p, i) => [p.id, i + 1])), [sorted]);
+  const placeOf = (photo: AdminPhoto) => places.get(photo.id) ?? photo.order;
   const shown = sorted.filter(p => filter === 'all' || (filter === 'shown' && p.active) || (filter === 'hidden' && !p.active) || (filter === 'unlinked' && p.locationId === null));
   const locById = (id: number | null) => (id === null ? null : locations.find(l => l.id === id) ?? null);
 
@@ -89,8 +96,8 @@ export default function GalleryPanel() {
   function placeAt(photo: AdminPhoto, input: HTMLInputElement) {
     const raw = input.value.trim();
     const v = Number(raw);
-    if (!raw || !Number.isInteger(v)) { input.value = String(photo.order); return; }
-    if (v !== photo.order) moveTo(photo, v);
+    if (!raw || !Number.isInteger(v)) { input.value = String(placeOf(photo)); return; }
+    if (v !== placeOf(photo)) moveTo(photo, v);
   }
   function moveTo(photo: AdminPhoto, pos: number) {
     const target = Math.max(1, Math.min(sorted.length, Math.round(pos))) - 1;
@@ -101,7 +108,7 @@ export default function GalleryPanel() {
     next.splice(target, 0, moved);
     reorder(next);
   }
-  const moveBy = (photo: AdminPhoto, dir: -1 | 1) => moveTo(photo, photo.order + dir);
+  const moveBy = (photo: AdminPhoto, dir: -1 | 1) => moveTo(photo, placeOf(photo) + dir);
   function drop(targetId: string) {
     if (!dragId || dragId === targetId) { setDragId(null); setOverId(null); return; }
     const next = [...sorted];
@@ -112,11 +119,16 @@ export default function GalleryPanel() {
     reorder(next);
   }
 
-  const startEdit = (p: AdminPhoto) => { setEditing(p.id); setDraft({ title: p.title, sublabel: p.sublabel, locationId: p.locationId }); };
+  /* another photo opened for editing, or the first of an upload landing, took the place of one with
+     changes in it without a word: the open one asks first, and an upload leaves it open */
+  const startEdit = (p: AdminPhoto) => {
+    if (p.id !== editing && unsaved && !confirmLeave(['gallery'])) return;
+    setEditing(p.id); setDraft({ title: p.title, sublabel: p.sublabel, locationId: p.locationId });
+  };
   const onUploaded = useCallback((p: AdminPhoto, first: boolean) => {
     setPhotos(ps => (ps.some(x => x.id === p.id) ? ps : [...ps, p]));
     setMsg('✓ Mynd komin í safnið. Gefðu henni titil og tengdu hana við stað á kortinu.');
-    if (first) { setEditing(p.id); setDraft({ title: p.title, sublabel: p.sublabel, locationId: p.locationId }); }
+    if (first && !unsavedNow.current) { setEditing(p.id); setDraft({ title: p.title, sublabel: p.sublabel, locationId: p.locationId }); }
   }, []);
 
   const counts = { shown: photos.filter(p => p.active).length, linked: photos.filter(p => p.locationId !== null).length };
@@ -159,8 +171,8 @@ export default function GalleryPanel() {
                         type="number"
                         min={1}
                         max={sorted.length}
-                        defaultValue={photo.order}
-                        key={`pos-${photo.id}-${photo.order}`}
+                        defaultValue={placeOf(photo)}
+                        key={`pos-${photo.id}-${placeOf(photo)}`}
                         onClick={e => e.stopPropagation()}
                         onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); placeAt(photo, e.currentTarget); } }}
                         onBlur={e => placeAt(photo, e.currentTarget)}
@@ -196,10 +208,10 @@ export default function GalleryPanel() {
                           <Button tone="ghost" small onClick={() => startEdit(photo)}>Breyta</Button>
                           <Button tone="ghost" small onClick={() => patch(photo, { active: !photo.active }, photo.active ? '✓ Myndin er falin á vefnum og á kortinu.' : '✓ Myndin er sýnd á vefnum.')}>{photo.active ? 'Fela' : 'Sýna'}</Button>
                           <span className="a-card__order">
-                            <Button tone="ghost" small icon onClick={() => moveTo(photo, 1)} disabled={photo.order === 1} aria-label="Fremst" title="Fremst">⇤</Button>
-                            <Button tone="ghost" small icon onClick={() => moveBy(photo, -1)} disabled={photo.order === 1} aria-label="Færa framar" title="Færa framar">←</Button>
-                            <Button tone="ghost" small icon onClick={() => moveBy(photo, 1)} disabled={photo.order === sorted.length} aria-label="Færa aftar" title="Færa aftar">→</Button>
-                            <Button tone="ghost" small icon onClick={() => moveTo(photo, sorted.length)} disabled={photo.order === sorted.length} aria-label="Aftast" title="Aftast">⇥</Button>
+                            <Button tone="ghost" small icon onClick={() => moveTo(photo, 1)} disabled={placeOf(photo) === 1} aria-label="Fremst" title="Fremst">⇤</Button>
+                            <Button tone="ghost" small icon onClick={() => moveBy(photo, -1)} disabled={placeOf(photo) === 1} aria-label="Færa framar" title="Færa framar">←</Button>
+                            <Button tone="ghost" small icon onClick={() => moveBy(photo, 1)} disabled={placeOf(photo) === sorted.length} aria-label="Færa aftar" title="Færa aftar">→</Button>
+                            <Button tone="ghost" small icon onClick={() => moveTo(photo, sorted.length)} disabled={placeOf(photo) === sorted.length} aria-label="Aftast" title="Aftast">⇥</Button>
                           </span>
                           <Button tone="danger" small onClick={() => remove(photo)}>Eyða</Button>
                         </div>

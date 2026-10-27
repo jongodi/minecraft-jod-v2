@@ -42,7 +42,9 @@ const LIVE     = /^maps\/[^/]+\/live\//;
 const PLAYERS  = /^maps\/[^/]+\/live\/players\.json$/;
 const MARKERS  = /^maps\/[^/]+\/live\/markers\.json$/;
 /* BlueMap's live event stream; exaroton's file API can't carry one, and the
-   viewer falls back to polling the moment it is refused */
+   viewer falls back to polling the moment it is refused. Refused with a 204,
+   which closes the stream for good as a 404 does, without an error in the
+   console on every visit. */
 const EVENTS   = /^maps\/[^/]+\/live\/sse$/;
 const TILES    = /^maps\/[^/]+\/tiles\//;
 const TEXTURES = /^maps\/[^/]+\/textures\.json(\.gz)?$/;
@@ -182,7 +184,7 @@ async function serve(req: Request, segments: string[]): Promise<Response> {
   }
 
   const path = segments.join('/');
-  if (EVENTS.test(path)) return empty(404, 'public, max-age=3600, s-maxage=86400');
+  if (EVENTS.test(path)) return empty(204, 'public, max-age=3600, s-maxage=86400');
 
   const token = process.env.EXAROTON_API_KEY;
   if (!token) {

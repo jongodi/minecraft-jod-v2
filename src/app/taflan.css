@@ -14,7 +14,9 @@
 
 /* the head: how much is new, and the filters, as the hotbar's slots in a row */
 .t-board__head { display: grid; gap: var(--sp-3); }
-.t-board__news { min-height: 1.5em; font-size: var(--fs-md); color: var(--text-soft); }
+/* one whole line held while the board works out what is new: 1.5em of a 1.7
+   line grew as the words came and shifted the board under it (CLS 0.057) */
+.t-board__news { min-height: 1lh; font-size: var(--fs-md); color: var(--text-soft); }
 .t-board__news b { color: var(--lantern); font-weight: 600; }
 .t-filters { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
 .t-filter {
@@ -44,11 +46,28 @@
 /* a visitor: who the board belongs to, and their heads, each the way in */
 .t-join { display: grid; gap: var(--sp-3); padding: var(--sp-4); background: var(--pane); box-shadow: 0 0 0 var(--px) var(--wood-dark); clip-path: var(--notch); }
 .t-join__text { max-width: 60ch; font-size: var(--fs-sm); line-height: var(--lh-night); color: var(--text-soft); }
-.t-join__heads { list-style: none; display: flex; flex-wrap: wrap; gap: var(--sp-2); }
-.t-join__head { display: block; padding: var(--px); background: var(--tc-brown); }
+/* The crew to sign in as, each head in a slot of the game's hotbar, sunk side
+   by side into one strip as the items under a sign are: a thumb's reach each
+   (they were 36 px), all eight in a row where they fit, and four and four on
+   a phone, as the crew's room stands its portraits, where the eighth used to
+   wrap alone under the other seven. */
+.t-join__heads { list-style: none; display: grid; grid-template-columns: repeat(8, var(--tap)); gap: var(--px); justify-content: start; }
+@media (max-width: 479px) { .t-join__heads { grid-template-columns: repeat(4, var(--tap)); } }
+.t-join__head {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: var(--tap);
+  height: var(--tap);
+  background: var(--dusk-2);
+  box-shadow: var(--bevel-in), 0 0 0 var(--px) var(--wood-dark);
+}
 .t-join__head img { display: block; width: 2rem; height: 2rem; image-rendering: pixelated; }
-@media (hover: hover) { .t-join__head:hover { background: var(--lantern); } }
-.t-join__head:focus-visible { outline: var(--px) solid var(--lantern); outline-offset: var(--px); }
+/* lit up under the pointer as the game's slot is, and the head sinks while pressed */
+.t-join__head::before { content: ''; position: absolute; inset: 0; background: rgba(255, 240, 210, 0.32); opacity: 0; pointer-events: none; }
+@media (hover: hover) { .t-join__head:hover::before { opacity: 1; } }
+.t-join__head:active img { translate: var(--press); }
+.t-join__head:focus-visible { z-index: 1; outline: var(--px) solid var(--lantern); outline-offset: calc(var(--px) * 3); }
 
 /* ─── the days ─────────────────────────────────────────────────── */
 .t-day { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-3); }

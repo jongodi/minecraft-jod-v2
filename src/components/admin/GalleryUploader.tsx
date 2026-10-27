@@ -4,7 +4,7 @@
 // browser, sent straight to Vercel Blob (or to the server in local dev) and then registered.
 import { useCallback, useEffect, useRef, useState, type DragEvent } from 'react';
 import { plural } from '@/lib/format';
-import { prepareImage, formatBytes, MAX_EDGE } from '@/lib/client-image';
+import { prepareImage, formatBytes, isPicture, MAX_EDGE } from '@/lib/client-image';
 import { errorFrom, newId, sendToBlob, type StorageInfo } from '@/lib/crew-upload';
 import type { AdminPhoto } from './GalleryPanel';
 
@@ -98,12 +98,15 @@ export default function GalleryUploader({ onUploaded }: { onUploaded: (photo: Ad
 
   const run = useCallback(async (files: File[]) => {
     if (!storage || storage.mode === 'none' || busyRef.current) return;
-    const images = files.filter(f => f.type.startsWith('image/'));
-    if (images.length === 0) { setJobs([{ key: newId(), name: files[0]?.name ?? '', size: 0, stage: 'error', progress: 0, note: 'Aðeins er hægt að hlaða upp myndum.' }]); return; }
+    /* a picture as the wall's slot knows one, a phone's HEIC with no type too; and what is no picture
+       is listed as left out, where it was dropped from a batch without a word */
+    const images = files.filter(isPicture);
+    const left = files.filter(f => !isPicture(f)).map(f => ({ key: newId(), name: f.name, size: f.size, stage: 'error' as Stage, progress: 0, note: 'Ekki mynd, skránni var sleppt.' }));
+    if (images.length === 0) { setJobs(left.length ? left : [{ key: newId(), name: '', size: 0, stage: 'error', progress: 0, note: 'Aðeins er hægt að hlaða upp myndum.' }]); return; }
 
     busyRef.current = true;
     const queue = images.map(f => ({ file: f, key: newId() }));
-    setJobs(queue.map(({ file, key }) => ({ key, name: file.name, size: file.size, stage: 'queued' as Stage, progress: 0 })));
+    setJobs([...queue.map(({ file, key }) => ({ key, name: file.name, size: file.size, stage: 'queued' as Stage, progress: 0 })), ...left]);
     let first = true;
     for (const { file, key } of queue) {
       try {

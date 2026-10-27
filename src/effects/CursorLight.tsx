@@ -38,7 +38,10 @@ export default function CursorLight() {
       if (!seen) { seen = true; cx = tx; cy = ty; draw(); el.classList.add('is-on'); }
       if (!raf) raf = requestAnimationFrame(step);
     };
-    const onLeave = () => { tx = -9999; ty = -9999; if (!raf) raf = requestAnimationFrame(step); };
+    /* The light goes out where the pointer leaves, and comes on again where
+       it comes back: sent off to a far corner, it came back sweeping in
+       across the page from there. */
+    const onLeave = () => { seen = false; el.classList.remove('is-on'); cancelAnimationFrame(raf); raf = 0; };
     window.addEventListener('pointermove', onMove, { passive: true });
     document.documentElement.addEventListener('pointerleave', onLeave);
     return () => {

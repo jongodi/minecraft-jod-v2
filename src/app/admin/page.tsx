@@ -1,7 +1,7 @@
 'use client';
 
 import './admin.css';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
@@ -30,16 +30,27 @@ type Tab = typeof TABS[number]['id'];
 
 const isTab = (v: string): v is Tab => TABS.some(t => t.id === v);
 
-/** The tab lives in the URL hash, so a reload or a shared link lands on the same one. */
+/** The tab lives in the URL hash, so a reload or a shared link lands on the same one.
+    Back and Forward move between the tabs too, and ask first, as a click on a
+    tab does, when the panel being left has unsaved work; told to stay, the
+    address goes back to that panel's tab. */
 function useHashTab(): [Tab, (t: Tab) => void] {
   const [tab, setTabState] = useState<Tab>('server');
+  const shown = useRef<Tab>('server');
   useEffect(() => {
-    const read = () => { const h = window.location.hash.slice(1); if (isTab(h)) setTabState(h); };
+    const read = (e?: HashChangeEvent) => {
+      const h = window.location.hash.slice(1);
+      if (!isTab(h) || h === shown.current) return;
+      /* the map keeps its work behind the other tabs; every other panel goes with its tab */
+      if (e && shown.current !== 'map' && !confirmLeave([shown.current])) { history.pushState(null, '', `#${shown.current}`); return; }
+      shown.current = h;
+      setTabState(h);
+    };
     read();
     window.addEventListener('hashchange', read);
     return () => window.removeEventListener('hashchange', read);
   }, []);
-  const setTab = useCallback((t: Tab) => { window.location.hash = t; setTabState(t); }, []);
+  const setTab = useCallback((t: Tab) => { shown.current = t; window.location.hash = t; setTabState(t); }, []);
   return [tab, setTab];
 }
 

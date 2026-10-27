@@ -15,7 +15,7 @@
 // hour before. Each letter is claimed in Redis before it goes, so the two
 // never send it twice; one that fails to go is let go again for the next run
 // (an 'out' letter, whose night is cleared away, is kept for it).
-import { START_BEFORE_MS, currentNights, optionOf, phaseOf, yesFor, type Night, type Votes } from '@/lib/play-night';
+import { START_BEFORE_MS, currentNights, optionOf, phaseOf, whenOf, yesFor, type Night, type Votes } from '@/lib/play-night';
 import { getNames, nightReaders, type Names } from '@/lib/crew-email';
 import { nightLetter as nightWords, type NightNotice, type Reader } from '@/lib/email-copy';
 import { DEFAULT_THEMES, renderLetter, type Theme } from '@/lib/email-design';
@@ -109,14 +109,16 @@ async function deliver(kind: NightNotice, night: Night, votes: Votes, readers: R
 }
 
 /** The 'out' letters that did not go when their fire was put out, sent
-    again; one whose night would already have begun is old news and let go. */
+    again; one whose night would already have begun is old news and let go.
+    That is the chosen time once there is one: an earlier time the fire also
+    offered has nothing to do with it. */
 async function mailPendingOut(now: number, readers: Reader[], dress: Dress): Promise<Mailed[]> {
   const r = await redis();
   const done: Mailed[] = [];
   for (const [id, raw] of Object.entries(await r.hgetall(OUT_PENDING) as Record<string, string>)) {
     let held: { night: Night; votes: Votes } | null = null;
     try { held = JSON.parse(raw); } catch { /* unreadable: let go below */ }
-    if (!held || Math.min(...held.night.options.map(o => t(o.at))) < now) { await r.hdel(OUT_PENDING, id); continue; }
+    if (!held || whenOf(held.night) < now) { await r.hdel(OUT_PENDING, id); continue; }
     const to = await deliver('out', held.night, held.votes, readers, dress);
     if (to) done.push({ id, kind: 'out', to });
   }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, type ReactNode } from 'react';
-import { useBackdropClose, useDialogFocus, useScrollLock } from '@/components/badlands/hooks';
+import { useBackCloses, useBackdropClose, useDialogFocus, useScrollLock } from '@/components/badlands/hooks';
 
 /* The small vocabulary every admin panel is built from. */
 
@@ -24,7 +24,8 @@ type Tone = 'default' | 'primary' | 'ghost' | 'danger';
 export function Button({ tone = 'default', small, icon, on, className, type = 'button', ...rest }:
   React.ButtonHTMLAttributes<HTMLButtonElement> & { tone?: Tone; small?: boolean; icon?: boolean; on?: boolean }) {
   const cls = ['a-btn', tone !== 'default' ? `a-btn--${tone}` : '', small ? 'a-btn--small' : '', icon ? 'a-btn--icon' : '', on ? 'is-on' : '', className ?? ''].filter(Boolean).join(' ');
-  return <button type={type} className={cls} {...rest} />;
+  /* a button that is on or off says so, not only in its colour (the gallery's filters, the map's tools) */
+  return <button type={type} className={cls} aria-pressed={on === undefined ? undefined : on} {...rest} />;
 }
 
 export function Field({ label, help, children }: { label: string; help?: ReactNode; children: ReactNode }) {
@@ -37,10 +38,11 @@ export function Field({ label, help, children }: { label: string; help?: ReactNo
   );
 }
 
-export function Toggle({ checked, onChange, label, disabled }: { checked: boolean; onChange: (v: boolean) => void; label: ReactNode; disabled?: boolean }) {
+/** `name` is what the switch does, where its label says only how it stands. */
+export function Toggle({ checked, onChange, label, name, disabled }: { checked: boolean; onChange: (v: boolean) => void; label: ReactNode; name?: string; disabled?: boolean }) {
   return (
     <label className="a-toggle">
-      <input type="checkbox" checked={checked} disabled={disabled} onChange={e => onChange(e.target.checked)} />
+      <input type="checkbox" checked={checked} disabled={disabled} aria-label={name} onChange={e => onChange(e.target.checked)} />
       <span className="a-toggle__box" aria-hidden="true" />
       <span>{label}</span>
     </label>
@@ -59,6 +61,10 @@ export function Modal({ title, onClose, width, children, foot }: { title: string
   const backdrop = useBackdropClose(onClose);
   useScrollLock();
   useDialogFocus(box);
+  /* Back closes the dialog, as it does the site's own: it used to move the
+     tabs instead, and a dialog left open on the hidden map kept the page
+     from scrolling and Tab from going anywhere */
+  useBackCloses(true, onClose);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', onKey);

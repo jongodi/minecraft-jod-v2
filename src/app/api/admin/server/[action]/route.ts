@@ -38,8 +38,11 @@ export async function POST(
     });
 
     if (!res.ok) {
+      /* exaroton's own words, not its whole answer: the panel showed the raw JSON */
       const errBody = await res.text();
-      return NextResponse.json({ error: `Villa frá Exaroton: ${errBody}` }, { status: res.status });
+      let said = errBody.trim().slice(0, 200);
+      try { const j = JSON.parse(errBody) as { error?: unknown }; if (typeof j.error === 'string' && j.error) said = j.error; } catch { /* not JSON: as it came */ }
+      return NextResponse.json({ error: `Villa frá Exaroton: ${said || res.status}` }, { status: res.status });
     }
 
     /* the status is asked for afresh, so the lantern sees the change rather than the answer from before it */

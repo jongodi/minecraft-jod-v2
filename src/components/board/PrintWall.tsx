@@ -55,7 +55,8 @@ export default function PrintWall({ frames, isFresh, H, now, onOpen }: Props) {
             {items.map(f => (
               <li key={f.id} className="t-frame">
                 {isFresh(f) && <span className="t-tags" aria-hidden="true"><span className="t-tag">Nýtt</span></span>}
-                <button type="button" className="t-frame__pic" onClick={e => onOpen(f.id, e.currentTarget.getBoundingClientRect())} aria-label={f.caption ? `Stækka: ${f.caption}` : 'Stækka myndina'}>
+                {/* said as the list says it: the tag over the frame is for the eye */}
+                <button type="button" className="t-frame__pic" onClick={e => onOpen(f.id, e.currentTarget.getBoundingClientRect())} aria-label={`${isFresh(f) ? 'Nýtt: ' : ''}${f.caption ? `Stækka: ${f.caption}` : 'Stækka myndina'}`}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img {...photoProps(f.src, SIZES)} alt={f.caption} loading="lazy" decoding="async" />
                 </button>

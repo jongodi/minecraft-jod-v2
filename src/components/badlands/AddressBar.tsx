@@ -93,20 +93,32 @@ export default function AddressBar({ links, activeId, onDoor, always = false, st
     if (CSS.supports('animation-timeline: scroll()')) return;
     let raf = 0;
     let last = -1;
+    /* How far the page scrolls is measured when the page changes size, not
+       in the frame: read there, right after the evening had written to the
+       ridges, it made the browser lay the page out mid-frame on every one. */
+    let max = 0;
+    let fills: HTMLElement[] = [];
+    const measure = () => {
+      max = document.documentElement.scrollHeight - window.innerHeight;
+      fills = Array.from(document.querySelectorAll<HTMLElement>('.b-xp__fill'));
+    };
     const fill = () => {
       raf = 0;
-      const max = document.documentElement.scrollHeight - window.innerHeight;
       const t = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
       const next = Math.round(t * 1000);
       if (next === last) return;
       last = next;
-      document.querySelectorAll<HTMLElement>('.b-xp__fill').forEach(el => { el.style.transform = `scaleX(${t})`; });
+      fills.forEach(el => { el.style.transform = `scaleX(${t})`; });
     };
     const onScroll = () => { if (!raf) raf = requestAnimationFrame(fill); };
+    const onSize = () => { measure(); last = -1; onScroll(); };
+    measure();
     fill();
+    const ro = 'ResizeObserver' in window ? new ResizeObserver(onSize) : null;
+    ro?.observe(document.body);
     window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll, { passive: true });
-    return () => { window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', onScroll); cancelAnimationFrame(raf); };
+    window.addEventListener('resize', onSize, { passive: true });
+    return () => { ro?.disconnect(); window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', onSize); cancelAnimationFrame(raf); };
   }, []);
 
   /* The game's hotbar keys: 1 to 4 take the four doors, as they take the

@@ -31,7 +31,14 @@ const shuffled = <T,>(a: T[]): T[] => {
   return b;
 };
 
-function Splash({ inside, planned }: { inside: number; planned: boolean }) {
+/* What is true tonight stands in the round as itself, and is said as it
+   stands when it comes up: the count of who is in was written once from the
+   page's first answer, which can be hours old, and said "3 inni núna!" all
+   evening to a page whose lantern had long since gone dark. */
+const INSIDE = 'inside';
+const PLANNED = 'planned';
+
+function Splash({ inside, planned, live }: { inside: number; planned: boolean; live: boolean }) {
   /* picked in the browser, once: a pick in the server's markup would differ
      from the browser's. The first as the game picks it, the rest in a
      shuffled round, so a press never brings the same line twice running. */
@@ -39,18 +46,21 @@ function Splash({ inside, planned }: { inside: number; planned: boolean }) {
   const [at, setAt] = useState(0);
   useEffect(() => {
     const tonight = [
-      ...(inside > 0 ? [`${inside} inni núna!`] : []),
-      ...(planned ? ['Spilakvöld á dagskrá!'] : []),
+      ...(live && inside > 0 ? [INSIDE] : []),
+      ...(planned ? [PLANNED] : []),
     ];
     const keys = window.matchMedia('(hover: hover) and (pointer: fine)').matches ? [KEYS_SPLASH] : [];
-    const all = [...tonight, ...SPLASHES, ...keys];
+    const all = [INSIDE, PLANNED, ...SPLASHES, ...keys];
     const first = shuffled(tonight.length > 0 && Math.random() < 0.6 ? tonight : [...SPLASHES, ...keys])[0];
     setLines([first, ...shuffled(all.filter(l => l !== first))]);
   // the title screen picks once, as the game does
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   if (!lines) return null;
-  const line = lines[at % lines.length];
+  /* tonight's lines only while they are true, the count as it stands */
+  const shown = lines.filter(l => (l !== INSIDE || (live && inside > 0)) && (l !== PLANNED || planned));
+  const pick = shown[at % shown.length];
+  const line = pick === INSIDE ? `${inside} inni núna!` : pick === PLANNED ? 'Spilakvöld á dagskrá!' : pick;
   return (
     <span className="b-hero__splash">
       <button type="button" className="b-hero__splashbtn" onClick={() => setAt(v => v + 1)}>
@@ -124,7 +134,7 @@ function Hero({ server, season, nights }: { server: ServerState; season: Season;
         </div>
         {/* after the address and the lantern in the page's order, so the one
             action comes first to the keyboard; drawn over the Ð all the same */}
-        <Splash inside={inside.length} planned={(nights?.nights ?? []).some(n => n.phase !== 'over')} />
+        <Splash inside={inside.length} planned={(nights?.nights ?? []).some(n => n.phase !== 'over')} live={known} />
       </div>
       <Mesa snow={season.snow} halloween={season.halloween} heads={inside} known={known} />
       <YuleLad season={season} spot="mesa" />

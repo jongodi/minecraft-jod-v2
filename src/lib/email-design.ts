@@ -83,7 +83,7 @@ function hash(s: string): string {
 /* The key a picture's heading is signed with: a secret the site already
    keeps, so there is nothing new to set up. Changing it only costs old
    letters their heading; their picture falls back to the plain one. */
-const artKey = () => process.env.MAIL_ART_SECRET || process.env.CRON_SECRET || process.env.ADMIN_TOKEN || '';
+const artKey = () => process.env.MAIL_ART_SECRET || process.env.CRON_SECRET || '';
 const sign = (theme: Theme, kind: MailKind, heading: string) =>
   createHmac('sha256', artKey()).update(`mail-art|${DESIGN_VERSION}|${theme}|${kind}|${heading}`).digest('base64url').slice(0, 22);
 

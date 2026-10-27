@@ -8,16 +8,18 @@ export const TERRAIN_ROWS = 32;
 export type Material = '~' | 's' | 'l' | 'g' | 'r' | 'f';
 export const WATER: Material = '~';
 
-export interface MaterialDef { code: Material; label: string; fill: string; hint: string }
+/* `as` is the material after "mála" and "í": the editor's hints said
+   "fylla það af: klettar", the bare word after a colon to dodge the case */
+export interface MaterialDef { code: Material; label: string; as: string; fill: string; hint: string }
 
 /** What the brush can paint. `fill` is the CSS variable the map draws it with. */
 export const MATERIALS: readonly MaterialDef[] = [
-  { code: '~', label: 'Sjór',   fill: 'var(--map-water)',  hint: 'Haf og vötn' },
-  { code: 'l', label: 'Land',   fill: 'var(--map-land)',   hint: 'Slétta' },
-  { code: 'g', label: 'Gras',   fill: 'var(--map-grass)',  hint: 'Gróið land' },
-  { code: 'f', label: 'Skógur', fill: 'var(--map-forest)', hint: 'Tré' },
-  { code: 'r', label: 'Klettar', fill: 'var(--map-rock)',  hint: 'Terracotta-klettar' },
-  { code: 's', label: 'Sandur', fill: 'var(--map-sand)',   hint: 'Eyðimörk og strönd' },
+  { code: '~', label: 'Sjór',   as: 'sjó',   fill: 'var(--map-water)',  hint: 'Haf og vötn' },
+  { code: 'l', label: 'Land',   as: 'land',  fill: 'var(--map-land)',   hint: 'Slétta' },
+  { code: 'g', label: 'Gras',   as: 'gras',  fill: 'var(--map-grass)',  hint: 'Gróið land' },
+  { code: 'f', label: 'Skógur', as: 'skóg',  fill: 'var(--map-forest)', hint: 'Tré' },
+  { code: 'r', label: 'Klettar', as: 'kletta', fill: 'var(--map-rock)', hint: 'Terracotta-klettar' },
+  { code: 's', label: 'Sandur', as: 'sand',  fill: 'var(--map-sand)',   hint: 'Eyðimörk og strönd' },
 ];
 
 const CODES = new Set<string>(MATERIALS.map(m => m.code));
@@ -108,6 +110,25 @@ export function terrainPaths(grid: readonly string[]): Record<string, string> {
       c += w;
     }
   });
+  return out;
+}
+
+/** Every block on the straight way from one to another, both ends with it,
+    one step at a time: a brush dragged faster than the pointer is sampled
+    paints them all, where painting only the samples left every other block. */
+export function blocksBetween(from: readonly [number, number], to: readonly [number, number]): [number, number][] {
+  const [x1, y1] = to;
+  let [x, y] = from;
+  const dx = Math.abs(x1 - x), dy = -Math.abs(y1 - y);
+  const sx = x < x1 ? 1 : -1, sy = y < y1 ? 1 : -1;
+  const out: [number, number][] = [[x, y]];
+  let err = dx + dy;
+  while (x !== x1 || y !== y1) {
+    const e2 = 2 * err;
+    if (e2 >= dy) { err += dy; x += sx; }
+    if (e2 <= dx) { err += dx; y += sy; }
+    out.push([x, y]);
+  }
   return out;
 }
 
