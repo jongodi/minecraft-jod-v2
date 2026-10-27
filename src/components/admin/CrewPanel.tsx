@@ -78,7 +78,7 @@ export default function CrewPanel() {
               <tr key={r.username}>
                 <td>
                   <a href={`/crew/${r.username}`} target="_blank" rel="noreferrer">{r.username}</a>
-                  <div className="a-muted">síðast {when(r.lastEntry)}</div>
+                  <div className="a-muted">{r.lastEntry ? <>síðast {when(r.lastEntry)}</> : 'engin færsla enn'}</div>
                 </td>
                 <td>
                   {r.name ? <div className="a-crew__name">{r.name}</div> : <div className="a-muted">ekkert nafn, bréfin segja {r.username}</div>}

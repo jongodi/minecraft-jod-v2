@@ -61,7 +61,7 @@ export default function EmailPanel() {
           <input className="a-input" type="email" value={to} onChange={e => rememberTo(e.target.value)} placeholder="nafn@dæmi.is" autoComplete="email" />
         </Field>
         </div>
-        <Toggle checked={plain} onChange={setPlain} label="Sýna eins og Gmail (án letur vefsins; myndin efst helst eins)" />
+        <Toggle checked={plain} onChange={setPlain} label="Sýna eins og Gmail (án leturs vefsins; myndin efst helst eins)" />
       </div>
 
       {data === null ? <p className="a-muted">Sæki bréfin…</p> : (

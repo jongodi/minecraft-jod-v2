@@ -8,16 +8,18 @@ export const TERRAIN_ROWS = 32;
 export type Material = '~' | 's' | 'l' | 'g' | 'r' | 'f';
 export const WATER: Material = '~';
 
-export interface MaterialDef { code: Material; label: string; fill: string; hint: string }
+/* `as` is the material after "mála" and "í": the editor's hints said
+   "fylla það af: klettar", the bare word after a colon to dodge the case */
+export interface MaterialDef { code: Material; label: string; as: string; fill: string; hint: string }
 
 /** What the brush can paint. `fill` is the CSS variable the map draws it with. */
 export const MATERIALS: readonly MaterialDef[] = [
-  { code: '~', label: 'Sjór',   fill: 'var(--map-water)',  hint: 'Haf og vötn' },
-  { code: 'l', label: 'Land',   fill: 'var(--map-land)',   hint: 'Slétta' },
-  { code: 'g', label: 'Gras',   fill: 'var(--map-grass)',  hint: 'Gróið land' },
-  { code: 'f', label: 'Skógur', fill: 'var(--map-forest)', hint: 'Tré' },
-  { code: 'r', label: 'Klettar', fill: 'var(--map-rock)',  hint: 'Terracotta-klettar' },
-  { code: 's', label: 'Sandur', fill: 'var(--map-sand)',   hint: 'Eyðimörk og strönd' },
+  { code: '~', label: 'Sjór',   as: 'sjó',   fill: 'var(--map-water)',  hint: 'Haf og vötn' },
+  { code: 'l', label: 'Land',   as: 'land',  fill: 'var(--map-land)',   hint: 'Slétta' },
+  { code: 'g', label: 'Gras',   as: 'gras',  fill: 'var(--map-grass)',  hint: 'Gróið land' },
+  { code: 'f', label: 'Skógur', as: 'skóg',  fill: 'var(--map-forest)', hint: 'Tré' },
+  { code: 'r', label: 'Klettar', as: 'kletta', fill: 'var(--map-rock)', hint: 'Terracotta-klettar' },
+  { code: 's', label: 'Sandur', as: 'sand',  fill: 'var(--map-sand)',   hint: 'Eyðimörk og strönd' },
 ];
 
 const CODES = new Set<string>(MATERIALS.map(m => m.code));

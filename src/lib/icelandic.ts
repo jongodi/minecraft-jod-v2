@@ -6,7 +6,7 @@ const CATEGORIES: Record<string, string> = {
 };
 export const categoryLabel = (value: string): string => CATEGORIES[value] ?? value;
 const MAP_LABELS: Record<string, string> = {
-  pin: 'Pinni', zone: 'Svæði', land: 'Landspilda', lake: 'Vatn', mountain: 'Fjall',
+  pin: 'Staður', zone: 'Svæði', land: 'Landspilda', lake: 'Vatn', mountain: 'Fjall',
   river: 'Á', road: 'Vegur', border: 'Mörk', surface: 'Á yfirborði',
   underground: 'Neðanjarðar', island: 'Eyja', aerial: 'Úr lofti',
   blue: 'Blár', orange: 'Appelsínugulur', green: 'Grænn', purple: 'Fjólublár',

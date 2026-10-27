@@ -557,8 +557,8 @@ export default function MapEditor({ initialConfig }: { initialConfig: MapConfig 
             <span className="a-editor__hint">
               {placing ? `Smelltu þar sem ${mapLabel(placing).toLowerCase()} á að vera. Esc hættir við.`
                 : drawing ? `Smelltu til að bæta við punktum (${drawPoints.length}). Tvísmelltu eða Enter lýkur, Esc hættir við.`
-                : tool === 'fill' ? `Smelltu á svæði til að fylla það af: ${MATERIALS.find(m => m.code === material)?.label.toLowerCase()}.`
-                : `Dragðu til að mála: ${MATERIALS.find(m => m.code === material)?.label.toLowerCase()}, pensill ${brush}×${brush}. Haltu Shift niðri fyrir beina línu.`}
+                : tool === 'fill' ? `Smelltu á svæði til að breyta því í ${MATERIALS.find(m => m.code === material)?.as}.`
+                : `Dragðu til að mála ${MATERIALS.find(m => m.code === material)?.as}, pensill ${brush}×${brush}. Haltu Shift niðri fyrir beina línu.`}
             </span>
           )}
         </div>
