@@ -12,13 +12,16 @@ let value: State = undefined;
 let inFlight: Promise<void> | null = null;
 /* counts the answers to actions: a poll that set out before one is older than it, and is dropped */
 let acted = 0;
+/* how long the browser waits on a question: longer is a hung connection, and the button it held stayed "Kveiki…" for good */
+const WAIT_MS = 12_000;
 const listeners = new Set<() => void>();
 const notify = () => listeners.forEach(l => l());
 
 async function load(): Promise<void> {
   const asOf = acted;
   try {
-    const res = await fetch('/api/playnight', { cache: 'no-store' });
+    /* capped: the next poll waits on this one, so one that never answered stopped the fires for good */
+    const res = await fetch('/api/playnight', { cache: 'no-store', signal: AbortSignal.timeout(WAIT_MS) });
     const data = res.ok ? await res.json() as PlayNightResponse : null;
     if (asOf !== acted) return;
     if (data) value = data;
@@ -68,7 +71,7 @@ export function usePlayNight(initial?: PlayNightResponse) {
   /** Posts an action; the answer is the night as it now stands, or an Icelandic error. */
   const act = useCallback(async (body: Record<string, unknown>): Promise<string | null> => {
     try {
-      const res = await fetch('/api/playnight', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const res = await fetch('/api/playnight', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: AbortSignal.timeout(WAIT_MS) });
       const data = await res.json().catch(() => null) as (PlayNightResponse & { error?: string }) | null;
       if (!res.ok) return data?.error ?? `Villa ${res.status}`;
       if (data) { acted++; value = data; notify(); }

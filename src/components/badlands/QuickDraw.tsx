@@ -149,7 +149,8 @@ function QuickDraw({ onClose }: { onClose: () => void }) {
             role="button"
             tabIndex={0}
             aria-label="Einvígi: prófaðu viðbragðstímann"
-            onKeyDown={e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); tap(); } }}
+            /* a held key is one press: its repeats drew before the light and fouled the round */
+            onKeyDown={e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); if (!e.repeat) tap(); } }}
           >
             <svg viewBox="0 0 800 450" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
               {MOON.map(([x, y, w]) => <rect key={`${x}-${y}`} x={x} y={y} width={w} height="6" fill="var(--sun)" />)}
@@ -192,7 +193,7 @@ function QuickDraw({ onClose }: { onClose: () => void }) {
             </div>
             {/* aria-disabled, not disabled: a disabled button lets go of the keyboard,
                 and the next draw's Space or Enter went nowhere (tap() waits out 'result' itself) */}
-            <button type="button" className="b-btn b-btn--solid" onClick={() => tap()} aria-disabled={phase === 'result'}>
+            <button type="button" className="b-btn b-btn--solid" onClick={() => tap()} onKeyDown={e => { if (e.repeat) e.preventDefault(); }} aria-disabled={phase === 'result'}>
               {phase === 'idle' ? 'Hefja einvígi' : phase === 'done' ? 'Spila aftur' : phase === 'draw' ? 'Skjóttu' : phase === 'result' ? 'Hleð aftur…' : 'Bíddu…'}
             </button>
             <p className="b-duel__rules">Sýslumaður undir 200 ms, aðstoðarsýslumaður undir 300 og kúreki undir 450. Annars ertu nýliði.</p>

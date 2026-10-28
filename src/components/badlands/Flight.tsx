@@ -180,7 +180,7 @@ function Flight({ flight, fly, runway, f3, places, players, selected, onChoose, 
 
     const decode = (k: number) => {
       const blob = bytes[k];
-      if (!blob || ready.has(k) || making.has(k) || failed) return;
+      if (!blob || ready.has(k) || making.has(k) || failed || gone) return;
       making.add(k);
       const mine = round;
       createImageBitmap(blob).then(
@@ -202,8 +202,15 @@ function Flight({ flight, fly, runway, f3, places, players, selected, onChoose, 
     /* starts what may be fetched now: up to AT_ONCE at a time, and past the
        first two only once the visitor has scrolled */
     let more = () => {};
+    /* the stills on their way for the shape being flown: let go when the
+       shape changes or the flight is torn down, rather than downloaded and
+       decoded into a bitmap that is closed at once */
+    let inflight: AbortController | null = null;
     const fetchSet = (s: FlightShape) => {
       const mine = round;
+      inflight?.abort();
+      const ac = new AbortController();
+      inflight = ac;
       bytes = new Array(flight.frames).fill(null);
       const queue = fetchOrder(flight.frames);
       let out = 0;
@@ -211,12 +218,12 @@ function Flight({ flight, fly, runway, f3, places, players, selected, onChoose, 
         while (!gone && mine === round && out < AT_ONCE && queue.length > 0 && (scrolled.current || flight.frames - queue.length < FIRST)) {
           const n = queue.shift()!;
           out++;
-          fetch(flightFrame(flight, s, n), { priority: n === 0 ? 'high' : 'low' } as RequestInit)
+          fetch(flightFrame(flight, s, n), { priority: n === 0 ? 'high' : 'low', signal: ac.signal } as RequestInit)
             .then(r => { if (!r.ok) throw new Error(`${r.status}`); return r.blob(); })
             .then(
               (blob) => { if (mine === round) { bytes[n] = blob; if (wanted.has(n)) decode(n); } },
               /* without the overview there is no flight to fly: the still stands */
-              () => { if (n === 0 && mine === round) { failed = true; schedule(); } },
+              () => { if (n === 0 && mine === round && !ac.signal.aborted) { failed = true; schedule(); } },
             )
             .finally(() => { if (mine === round) { out--; more(); } });
         }
@@ -430,6 +437,7 @@ function Flight({ flight, fly, runway, f3, places, players, selected, onChoose, 
     }
     return () => {
       gone = true;
+      inflight?.abort();
       cancelAnimationFrame(raf);
       if (scene) scene.style.visibility = 'hidden';
       ready.forEach(bitmap => bitmap.close());

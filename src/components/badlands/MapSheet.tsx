@@ -114,9 +114,9 @@ export default function MapSheet({ config, selectedId, onSelect }: Props) {
          hold of the paper again, from where it is, and a tap on a flag just
          after is not taken for one */
       pinch.current = null;
-      settle();
       const left = Array.from(fingers.current.entries())[0];
       if (left) drag.current = { id: left[0], sx: left[1].x, sy: left[1].y, ox: x.get(), oy: y.get(), moved: true };
+      else settle();
       return;
     }
     if (drag.current?.id !== e.pointerId) return;

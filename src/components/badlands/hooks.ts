@@ -358,7 +358,8 @@ const notifyMe = () => meListeners.forEach(l => l());
 async function fetchMe(quiet = false): Promise<void> {
   const asked = ++meAsked;
   try {
-    const res = await fetch('/api/crew/me', { cache: 'no-store' });
+    /* capped: everyone asking shares this one question, and one that never answered left the whole page not knowing who was in */
+    const res = await fetch('/api/crew/me', { cache: 'no-store', signal: AbortSignal.timeout(STATUS_WAIT_MS) });
     if (!res.ok) throw new Error(`crew/me ${res.status}`);
     const data = await res.json() as { username: string | null; hasPassword?: boolean };
     if (asked !== meAsked) return;
