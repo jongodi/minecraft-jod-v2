@@ -281,7 +281,7 @@
 .t-side__start:focus-visible { outline: var(--px) solid var(--lantern-ink); outline-offset: var(--px); }
 @media (min-width: 1100px) {
   /* and no taller than the screen under the bar, scrolling inside itself: with many calls open on a short laptop its foot could not be reached until the board ended */
-  .t-board__side { position: sticky; top: calc(var(--bar) + 12px + var(--sp-6)); max-height: calc(100svh - var(--bar) - 12px - var(--sp-6) * 2); overflow-y: auto; scrollbar-width: thin; }
+  .t-board__side { position: sticky; top: calc(var(--bar-safe) + 12px + var(--sp-6)); max-height: calc(100svh - var(--bar-safe) - 12px - var(--sp-6) * 2); overflow-y: auto; scrollbar-width: thin; }
   .t-board--room .t-board__side { top: 0; }
 }
 /* Narrower, the pinned things hang across the board between the slot and

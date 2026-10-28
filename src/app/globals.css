@@ -95,7 +95,7 @@ img, video { max-width: 100%; height: auto; }
 }
 .b-skip:focus-visible { transform: none; outline-color: var(--paper); outline-offset: calc(var(--px) * -3); }
 /* the landmark it leads to stops short of the bar fixed across the top */
-#efni { scroll-margin-top: var(--bar); }
+#efni { scroll-margin-top: var(--bar-safe); }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }

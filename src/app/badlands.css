@@ -192,7 +192,7 @@
    a scroll box and the wall's poster still rides down beside the signs. */
 .b { position: relative; isolation: isolate; color: var(--text); overflow-x: clip; }
 /* room for the hotbar at the foot of a phone */
-@media (max-width: 759.98px) { .b { padding-bottom: calc(var(--doorbar) + env(safe-area-inset-bottom, 0px)); } }
+@media (max-width: 759.98px) { .b { padding-bottom: calc(var(--doorbar) + var(--safe-bottom)); } }
 .b-wrap { position: relative; z-index: 1; width: 100%; max-width: var(--wrap); margin-inline: auto; padding-inline: var(--gutter); }
 .b-title { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-2xl); line-height: var(--lh-tight); color: var(--paper); letter-spacing: -0.02em; }
 .b-title--small { font-size: var(--fs-xl); }
@@ -377,7 +377,7 @@
 .b-toasts {
   position: fixed;
   z-index: var(--z-toast);
-  top: calc(var(--bar) + env(safe-area-inset-top, 0px) + var(--sp-3));
+  top: calc(var(--bar-safe) + var(--sp-3));
   right: var(--gutter);
   left: var(--gutter);
   display: grid;
@@ -477,7 +477,7 @@
   inset-inline: 0;
   top: 0;
   z-index: var(--z-bar);
-  padding-top: env(safe-area-inset-top, 0px);
+  padding-top: var(--safe-top);
   transition: background var(--dur-3) var(--ease-out), box-shadow var(--dur-3) var(--ease-out);
 }
 /* Over the sunset the bar is only its contents. Once the page moves it becomes
@@ -655,7 +655,7 @@
   z-index: var(--z-bar);
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  padding: var(--sp-2) var(--sp-2) calc(var(--sp-2) + env(safe-area-inset-bottom, 0px));
+  padding: var(--sp-2) calc(var(--sp-2) + var(--safe-right)) calc(var(--sp-2) + var(--safe-bottom)) calc(var(--sp-2) + var(--safe-left));
   background: var(--night);
   box-shadow: 0 calc(var(--line) * -1) 0 rgba(209, 178, 161, 0.14);
 }
@@ -663,7 +663,7 @@
 /* A phone on its side has height to spare for nothing: the slots lay the
    lantern beside the name, a tap tall, and the strip gives back a third. */
 @media (max-height: 500.98px) {
-  .b-hotbar { padding-block: var(--sp-1) calc(var(--sp-1) + env(safe-area-inset-bottom, 0px)); }
+  .b-hotbar { padding-block: var(--sp-1) calc(var(--sp-1) + var(--safe-bottom)); }
   .b-hotbar .b-slot { flex-direction: row; gap: var(--sp-2); min-height: var(--tap); }
   .b-hotbar .b-slot .b-lantern { width: 0.9rem; height: 1.35rem; }
 }
@@ -762,7 +762,7 @@
   isolation: isolate;
   min-height: 100svh;
   display: grid;
-  padding-block: calc(var(--bar) + clamp(var(--sp-5), 7svh, var(--sp-8))) calc(var(--mesa-h) * var(--mark-sink));
+  padding-block: calc(var(--bar-safe) + clamp(var(--sp-5), 7svh, var(--sp-8))) calc(var(--mesa-h) * var(--mark-sink));
   overflow: clip;
 }
 @media (min-width: 900px) { .b-hero { --mark-sink: 0.3; } }
@@ -770,7 +770,7 @@
 /* On a phone the hotbar is fixed over the foot of the screen: the sunset
    ends where it begins, so the mesas stand on the bar instead of one plateau
    peeking out over it like a stray grey rule. */
-@media (max-width: 759.98px) { .b-hero { min-height: calc(100svh - var(--doorbar) - env(safe-area-inset-bottom, 0px)); } }
+@media (max-width: 759.98px) { .b-hero { min-height: calc(100svh - var(--doorbar) - var(--safe-bottom)); } }
 .b-hero__stage { display: grid; grid-template-rows: auto minmax(var(--sp-7), 1fr) auto; }
 .b-hero__sun { display: none; }
 /* The phone's sun sets too: pulled down a quarter faster than the page lifts
@@ -1207,7 +1207,7 @@
    The frame opens as a still of the home area. The viewer is an iframe
    that exists only once the lantern has been pressed, so a visitor who
    never touches it never downloads it. */
-.b-world { position: relative; background: var(--dusk); scroll-margin-top: var(--bar); }
+.b-world { position: relative; background: var(--dusk); scroll-margin-top: var(--bar-safe); }
 /* No wooden band between the sunset and the world: the hero's ground runs
    on over the top of it and ends in the blocks of its own edge (::after),
    its shadow a hard step lower on the land below as the game draws one
@@ -1233,7 +1233,7 @@
 .b-world:has(> .b-frame.is-full)::before, .b-world:has(> .b-frame.is-full)::after { display: none; }
 .b-frame {
   position: relative;
-  height: calc(100svh - var(--bar));
+  height: calc(100svh - var(--bar-safe));
   min-height: 34rem;
   isolation: isolate;
   background: var(--night);
@@ -1254,7 +1254,7 @@
    view as it does, the frames drawn on a canvas over the still. Landed, the
    frame lets go and goes on up with the page. The whole screen (.is-full)
    stays fixed over the page, as it always was. */
-.b-world.has-flight .b-frame:not(.is-full) { position: sticky; top: var(--bar); }
+.b-world.has-flight .b-frame:not(.is-full) { position: sticky; top: var(--bar-safe); }
 /* The runway is the flight (--flight) and then the stay (--hold): landed,
    the frame is held over the town a while longer, its lights on and the way
    into the live map set down, so a quick flick of the wheel or a thumb comes
@@ -1264,13 +1264,13 @@
    start, high over everything, and every door pressed after landing flew
    the camera all the way back up there. From above, the scroll down is the
    flight itself. */
-.b-world.has-flight { --flight: 90svh; --hold: 45svh; scroll-margin-top: calc(var(--bar) - var(--flight)); }
+.b-world.has-flight { --flight: 90svh; --hold: 45svh; scroll-margin-top: calc(var(--bar-safe) - var(--flight)); }
 .b-world__runway { height: calc(var(--flight) + var(--hold)); }
 /* The landing mark (Flight.tsx reads where it is): a scroll that comes to a
    stop near it settles on it, from above or from the fire, and only near
    it. Nothing else on the page is a stop, so it never pulls at the sunset or
    the fire, and the stay under it is the catch for a scroll that ran past. */
-.b-world__land { position: absolute; top: var(--flight); left: 0; width: 1px; height: 1px; pointer-events: none; scroll-snap-align: start; scroll-margin-top: var(--bar); }
+.b-world__land { position: absolute; top: var(--flight); left: 0; width: 1px; height: 1px; pointer-events: none; scroll-snap-align: start; scroll-margin-top: var(--bar-safe); }
 html:has(.b-world.has-flight) { scroll-snap-type: y proximity; }
 /* Two sheets, each a frame at the size it was taken, moved and faded by
    Flight.tsx: transform and opacity only, each on its own layer, so the
@@ -1983,9 +1983,9 @@ html.is-map-full { overflow: hidden; }
 @media (max-width: 899.98px) {
   /* the whole screen between the two bars: the world is the phone's window */
   /* and never taller than that room: 30 rem on a short phone (an SE, a phone on its side) ran the rail under the hotbar */
-  .b-frame { height: calc(100svh - var(--bar) - var(--doorbar) - env(safe-area-inset-bottom, 0px)); min-height: min(30rem, calc(100svh - var(--bar) - var(--doorbar) - env(safe-area-inset-bottom, 0px))); }
+  .b-frame { height: calc(100svh - var(--bar-safe) - var(--doorbar) - var(--safe-bottom)); min-height: min(30rem, calc(100svh - var(--bar-safe) - var(--doorbar) - var(--safe-bottom))); }
   /* a tablet's doors are in the bar, so its frame runs to the foot of the screen */
-  @media (min-width: 760px) { .b-frame { height: calc(100svh - var(--bar)); } }
+  @media (min-width: 760px) { .b-frame { height: calc(100svh - var(--bar-safe)); } }
   .b-hud { padding: var(--sp-3) var(--gutter); }
   /* the lantern in the middle already opens the viewer full screen on a phone */
   .b-hud__tools a { display: none; }
@@ -2278,7 +2278,7 @@ html.is-map-full { overflow: hidden; }
 .b-shelf__lede { font-size: var(--fs-md); }
 
 /* ─── duel: the arena at night, behind the fire ───────────────── */
-.b-duelbox { position: fixed; inset: 0; z-index: var(--z-modal); display: grid; place-items: center; padding: var(--sp-4); background: var(--scrim); overflow-y: auto; }
+.b-duelbox { position: fixed; inset: 0; z-index: var(--z-modal); display: grid; place-items: center; padding: calc(var(--sp-4) + var(--safe-top)) var(--gutter) calc(var(--sp-4) + var(--safe-bottom)); background: var(--scrim); overflow-y: auto; }
 .b-duelbox__in { width: 100%; max-width: 64rem; }
 .b-duelpanel { padding: var(--sp-5); background: var(--dusk-2); box-shadow: var(--bevel); clip-path: var(--notch); }
 .b-duel { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-5); }

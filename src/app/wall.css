@@ -134,7 +134,7 @@
    strata's red, as the game sets a challenge apart; nothing else is coloured.
    The day sits under the title at every width: the portrait poster beside a
    wide wall is narrower than a phone. */
-.w-adv { margin-top: var(--sp-5); scroll-margin-top: calc(var(--bar) + var(--sp-4)); }
+.w-adv { margin-top: var(--sp-5); scroll-margin-top: calc(var(--bar-safe) + var(--sp-4)); }
 .w-adv__head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-3); }
 .w-adv__count { font-family: var(--font-data); font-size: var(--fs-data); color: var(--ink-soft); }
 .w-adv__list { margin-top: var(--sp-2); list-style: none; }
@@ -307,7 +307,7 @@
 }
 /* the chains end in the open, a link short of where a board would take them */
 .w-sign.w-wall__empty::after { height: calc(var(--hang) + var(--px) - var(--bar-h) - var(--px) * 6); }
-.w-print { padding: var(--sp-4); display: grid; gap: var(--sp-3); scroll-margin-top: calc(var(--bar) + var(--sp-4) + var(--hang)); }
+.w-print { padding: var(--sp-4); display: grid; gap: var(--sp-3); scroll-margin-top: calc(var(--bar-safe) + var(--sp-4) + var(--hang)); }
 /* a few words and nothing else are lettered the way a sign is: larger, on the
    middle of the board */
 .w-print--word { padding-top: var(--sp-5); }

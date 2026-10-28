@@ -219,13 +219,13 @@
 .b-counter__desc { margin-top: var(--sp-1); font-size: var(--fs-sm); line-height: 1.45; color: var(--ink-soft); }
 
 /* ─── crew pages ──────────────────────────────────────────────── */
-.b-page { padding-block: clamp(5rem, 9vw, 7rem) clamp(3rem, 8vw, 6rem); }
+.b-page { padding-block: calc(clamp(5rem, 9vw, 7rem) + var(--safe-top)) clamp(3rem, 8vw, 6rem); }
 /* the night behind the top of the crew's pages (NightSky.tsx): the sky from
    its darkest at the top to the page's own night at the ridge, the stars, and
    the far ridge standing on the line where the page's night begins; the
    posters hang in front of it */
 :root { --nightsky: clamp(19rem, 14rem + 12vw, 26rem); }
-.b-nightsky { position: absolute; inset-inline: 0; top: 0; height: var(--nightsky); z-index: 0; overflow: clip; pointer-events: none; background: linear-gradient(180deg, var(--sky-night-top), var(--night) 92%); --ground: 0px; }
+.b-nightsky { position: absolute; inset-inline: 0; top: 0; height: calc(var(--nightsky) + var(--safe-top)); z-index: 0; overflow: clip; pointer-events: none; background: linear-gradient(180deg, var(--sky-night-top), var(--night) 92%); --ground: 0px; }
 .b-nightsky__stars { position: absolute; inset: 0; width: 100%; height: 100%; color: var(--star); opacity: 0.55; }
 .b-nightsky .b-ridge { height: clamp(3.5rem, 8vw, 6rem); }
 /* tonight's moon, risen: high on the right, where the sun stood at the top of the evening */
@@ -382,7 +382,7 @@
 .b-stat.is-led .b-stat__v { color: var(--tc-red); }
 
 /* taller than the screen (a phone on its side, the keyboard up) it scrolls from its top rather than losing both ends */
-.b-modal { position: fixed; inset: 0; z-index: var(--z-modal); background: var(--scrim); display: grid; place-items: safe center; padding: var(--sp-4); overflow-y: auto; }
+.b-modal { position: fixed; inset: 0; z-index: var(--z-modal); background: var(--scrim); display: grid; place-items: safe center; padding: calc(var(--sp-4) + var(--safe-top)) var(--gutter) calc(var(--sp-4) + var(--safe-bottom)); overflow-y: auto; }
 /* the backdrop holds focus only until a field inside can take it; no ring around the whole screen */
 .b-modal:focus { outline: none; }
 .b-modal__box { width: 100%; max-width: 22rem; padding: var(--sp-5); }
