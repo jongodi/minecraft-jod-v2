@@ -412,7 +412,11 @@ export function useCrewSession(seed?: CrewSessionSeed): { me: Me; hasPassword: b
     else if (meSeeded) { meSeeded = false; askMe(true); }
   }, []);
   const signOut = useCallback(async () => {
-    await fetch('/api/crew/auth', { method: 'DELETE' }).catch(() => {});
+    /* the cookie is the server's to take away: a page that said "signed out"
+       while the request never got there was still signed in on reload, on a
+       shared computer as much as any */
+    const ok = await fetch('/api/crew/auth', { method: 'DELETE', signal: AbortSignal.timeout(STATUS_WAIT_MS) }).then(r => r.ok, () => false);
+    if (!ok) { toast('Útskráning tókst ekki', 'Reyndu aftur eftir smástund.'); return; }
     meAsked++;
     meValue = null;
     meHasPassword = false;

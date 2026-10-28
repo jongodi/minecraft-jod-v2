@@ -59,7 +59,10 @@ async function loadSeen(me: string | null): Promise<void> {
 /** The board was looked at up to `at` (the newest thing it showed). */
 export function markSeen(at: string | null, me: string | null | undefined): void {
   if (!at) return;
-  if (state.seen && Date.parse(state.seen) >= Date.parse(at)) return;
+  /* a mark is only a reason to stay put when it is the looker's own: a
+     visitor's browser mark, left over from before a sign-in, kept a member's
+     own mark from moving and their phone's count from going down */
+  if (state.seen && state.whose === me && Date.parse(state.seen) >= Date.parse(at)) return;
   set({ seen: at });
   writeLocal(at);
   if (me) fetch('/api/board/seen', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ at }) }).catch(() => {});
@@ -90,5 +93,7 @@ export function useBoardNews(): { count: number | null; seen: string | null | un
     loadSeen(me);
   }, [me]);
   const known = s.stamps !== null && s.seen !== undefined && s.whose === me;
-  return { count: known ? countNew(s.stamps!, s.seen!, me) : null, seen: s.seen };
+  /* the mark handed out is the looker's own, or not yet known: the board took
+     a visitor's mark for a member's after a sign-in and tagged the wrong things new */
+  return { count: known ? countNew(s.stamps!, s.seen!, me) : null, seen: s.whose === me ? s.seen : undefined };
 }

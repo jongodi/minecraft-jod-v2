@@ -5,7 +5,7 @@ import { canSendEmail } from '@/lib/email';
 import { exarotonStatus, startExaroton } from '@/lib/exaroton';
 import { forgetStatus } from '@/lib/server-status';
 import { errorMessage } from '@/lib/icelandic';
-import { jsonObject } from '@/lib/http';
+import { jsonObject, tooManyWrites } from '@/lib/http';
 import {
   MAX_NOTE, MAX_PLANNED, START_BEFORE_MS, checkTimes, clashOf, currentNights, isPlanned, optionOf, phaseOf, readNights,
   writeNight, writeVote, yesFor, type Night,
@@ -57,6 +57,7 @@ export async function POST(req: NextRequest) {
   const action = body.action;
   /* an unknown action is the request's fault, whichever night it names */
   if (typeof action !== 'string' || !ACTIONS.has(action)) return json({ error: 'Óþekkt aðgerð.' }, 400);
+  if (session && await tooManyWrites(session)) return json({ error: 'Of margt í einu. Reyndu aftur eftir smástund.' }, 429);
   const now = Date.now();
   /* An answer from a letter carries its key (src/lib/night-answer.ts): it
      answers that night for the letter's reader, whoever is signed in here,

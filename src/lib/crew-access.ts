@@ -138,23 +138,51 @@ export async function createInvite(username: string, maxUses = INVITE_USES): Pro
   return inv;
 }
 
+/* The use count is moved in the store itself, in one step: read here and
+   written back, two phones opening the last use at once both got in, and a
+   use counted after the admin had shut the link opened it again. The link's
+   life is left as it is. Returns the link as it stands, or nothing for one
+   that is unknown, used up or shut. */
+const SPEND_USE = `
+local raw = redis.call('GET', KEYS[1])
+if not raw then return nil end
+local inv = cjson.decode(raw)
+if ARGV[1] == 'close' then inv.uses = inv.maxUses
+elseif inv.uses >= inv.maxUses then return nil
+else inv.uses = inv.uses + 1 end
+local out = cjson.encode(inv)
+redis.call('SET', KEYS[1], out, 'KEEPTTL')
+return out
+`;
+async function spendInvite(key: string, how: 'use' | 'close'): Promise<Invite | null> {
+  if (!KEY_SHAPE.test(key)) return null;
+  if (hasKV()) {
+    const { getRedis } = await import('./redis');
+    const raw = await getRedis().eval(SPEND_USE, 1, inviteKey(key), how) as string | null;
+    if (!raw) return null;
+    try { return JSON.parse(raw) as Invite; } catch { return null; }
+  }
+  const inv = memInvites.get(key);
+  if (!inv) return null;
+  if (how === 'close') inv.uses = inv.maxUses;
+  else if (inv.uses >= inv.maxUses) return null;
+  else inv.uses += 1;
+  return inv;
+}
+
 /** Spend one use of a key. Returns the member it is for, or null if it is
     unknown, closed, used up or past its week. */
 export async function consumeInvite(key: string): Promise<string | null> {
-  const inv = await readInvite(key);
-  if (!alive(inv)) return null;
-  inv.uses += 1;
-  await writeInvite(inv);
-  return inv.username;
+  /* a link past its week is gone from the store on its own; the check here is for the file in development */
+  const before = await readInvite(key);
+  if (!alive(before)) return null;
+  const inv = await spendInvite(key, 'use');
+  return inv ? inv.username : null;
 }
 
 /** Shut a link before its time: used up on the spot. */
 export async function closeInvite(key: string): Promise<boolean> {
-  const inv = await readInvite(key);
-  if (!inv) return false;
-  inv.uses = inv.maxUses;
-  await writeInvite(inv);
-  return true;
+  return (await spendInvite(key, 'close')) !== null;
 }
 
 /** A member's open links, newest first, for the admin panel. */

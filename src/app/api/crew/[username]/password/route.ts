@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { badJson, jsonObject } from '@/lib/http';
-import { requireOwner, isCrewUsername } from '@/lib/crew';
+import { requireOwner, isCrewUsername, revokeCrewSessions, currentSessionId } from '@/lib/crew';
 import { hashPassword, passwordProblem, setPasswordHash } from '@/lib/crew-access';
 
 export const dynamic = 'force-dynamic';
@@ -21,7 +21,10 @@ export async function PUT(req: NextRequest, { params }: Params) {
   if (problem) return NextResponse.json({ error: problem }, { status: 400 });
 
   await setPasswordHash(username, await hashPassword(body.password as string));
-  return NextResponse.json({ ok: true, hasPassword: true });
+  /* a new password is the member taking the account: whoever else got in on
+     an old link or the old password is signed out, this device stays in */
+  const others = await revokeCrewSessions(username, await currentSessionId());
+  return NextResponse.json({ ok: true, hasPassword: true, signedOut: others });
 }
 
 export async function DELETE(_req: NextRequest, { params }: Params) {
@@ -29,5 +32,6 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   if (!isCrewUsername(username)) return NextResponse.json({ error: 'Fannst ekki.' }, { status: 404 });
   if (!(await requireOwner(username))) return NextResponse.json({ error: 'Þú þarft að skrá þig inn með réttum aðgangi.' }, { status: 401 });
   await setPasswordHash(username, null);
-  return NextResponse.json({ ok: true, hasPassword: false });
+  const others = await revokeCrewSessions(username, await currentSessionId());
+  return NextResponse.json({ ok: true, hasPassword: false, signedOut: others });
 }

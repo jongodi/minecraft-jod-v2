@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse, after } from 'next/server';
-import { badJson, jsonObject } from '@/lib/http';
+import { badJson, jsonObject, tooMany, tooManyWrites } from '@/lib/http';
 import { randomUUID } from 'crypto';
 import { updateProfile, requireOwner, isCrewUsername, cleanText, LIMITS, Refusal, wallError, type CrewBounty, type CrewEntry, type CrewPoll } from '@/lib/crew';
 import { canSendEmail } from '@/lib/email';
@@ -40,6 +40,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   if (!isCrewUsername(username)) return NextResponse.json({ error: 'Fannst ekki.' }, { status: 404 });
   const session = await requireOwner(username);
   if (!session) return NextResponse.json({ error: 'Þú þarft að skrá þig inn með réttum aðgangi.' }, { status: 401 });
+  if (await tooManyWrites(session.username)) return tooMany();
 
   let body: { text?: unknown; photos?: unknown; placeId?: unknown; bounty?: unknown; poll?: unknown };
   { const parsed = await jsonObject(req); if (!parsed) return badJson(); body = parsed; }
