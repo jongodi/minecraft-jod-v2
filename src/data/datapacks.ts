@@ -180,6 +180,19 @@ export const DATAPACKS: DatapackMeta[] = [
     gameVersion:    '1.21.11',
     serverFile:     'Wabi-Sabi Structures',     // "Wabi-Sabi Structures-3.0.5-1.21.11 Datapack"
   },
+  {
+    /* JOÐ's own: the camera in the game. Framköllun on the NAS develops each
+       photo and posts it to /api/myndavel, where it goes up on the
+       photographer's wall and the board. Not on Modrinth; the version is the
+       admin's to set when it changes. */
+    id:             15,
+    name:           'Myndavél',
+    description:    'Taktu myndir inni í leiknum: þær framkallast og fara upp á vegginn þinn og töfluna',
+    category:       'SOCIAL',
+    source:         'manual',
+    gameVersion:    '26.1',
+    serverFile:     'myndav',                   // "myndavel" or "myndavél", however the folder is spelt
+  },
 ];
 
 export const CATEGORY_COLORS: Record<string, string> = {
