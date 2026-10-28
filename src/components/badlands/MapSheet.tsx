@@ -140,6 +140,17 @@ export default function MapSheet({ config, selectedId, onSelect }: Props) {
     go(y, clamp(ny, h - h * s1, 0));
   };
   const resetView = () => { go(z, 1); go(x, 0); go(y, 0); };
+  /* two taps on a spot bring it up close, as a phone's map does; two more lay
+     the whole sheet out again (the fit button does the same) */
+  const onDoubleClick = (e: React.MouseEvent) => {
+    if (z.get() > 1.01) { resetView(); return; }
+    const r = e.currentTarget.getBoundingClientRect();
+    const px = e.clientX - r.left, py = e.clientY - r.top;
+    const s1 = Math.min(MAX_Z, 2.2);
+    go(z, s1);
+    go(x, clamp(px - px * s1, r.width - r.width * s1, 0));
+    go(y, clamp(py - py * s1, r.height - r.height * s1, 0));
+  };
 
   /* At the sheet's own size a finger's up-and-down scrolls the page past it
      (badlands.css, touch-action); zoomed in, the paper is bigger than its
@@ -176,7 +187,7 @@ export default function MapSheet({ config, selectedId, onSelect }: Props) {
   return (
     <div ref={sheet} className="b-sheet"
       onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}
-      onDoubleClick={resetView}>
+      onDoubleClick={onDoubleClick}>
       <motion.div className="b-sheet__view" style={{ x, y, scale: z, transformOrigin: '0 0' }}>
         <svg viewBox={`0 0 ${MAP_W} ${MAP_H}`} xmlns="http://www.w3.org/2000/svg" role="group" aria-label="Teiknað kort af JOÐ-heiminum">
           <MapDefs />
