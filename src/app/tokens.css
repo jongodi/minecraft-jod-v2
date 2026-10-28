@@ -48,6 +48,9 @@
   --text:       var(--paper);
   --text-soft:  var(--tc-white);
   --text-faint: #9A8272;
+  /* a hairline on the night: the soft text at a seventh, the one rule drawn
+     under the hotbar, between the hero's lines and round the admin's panels */
+  --hairline:   color-mix(in srgb, var(--tc-white) 14%, transparent);
 
   /* ── sky ── */
   --sky-sunset-top:     #3B1A20;
