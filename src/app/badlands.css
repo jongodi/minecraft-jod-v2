@@ -140,7 +140,7 @@
    between the words and the name (.b-hero__sun below), sized to the room that
    row has: the words above grow with a planned night or a dark lantern's
    last-seen line, and a sun pinned to the sky at one height ran under them. */
-@media (max-width: 899px) { .b-sky__sun { display: none; } }
+@media (max-width: 899.98px) { .b-sky__sun { display: none; } }
 .b-sky svg { display: block; shape-rendering: crispEdges; }
 
 /* The clouds: the game's flat slabs, far off, in the band of sky between the
@@ -176,7 +176,7 @@
 .b-cloud--3 { left: 64%; top: 11.1%; }   /* clear of the sun's path as it sets */
 .b-cloud--4 { left: 89%; top: 33.3%; }
 /* a phone: two, left of the sun in the hero's open row, smaller (57 % and 63 % of the screen) */
-@media (max-width: 899px) {
+@media (max-width: 899.98px) {
   .b-sky__clouds { --cpx: 4px; }
   .b-cloud--1 { left: 4%;  top: 66.7%; }
   .b-cloud--2 { left: 24%; top: 83.3%; }
@@ -192,7 +192,7 @@
    a scroll box and the wall's poster still rides down beside the signs. */
 .b { position: relative; isolation: isolate; color: var(--text); overflow-x: clip; }
 /* room for the hotbar at the foot of a phone */
-@media (max-width: 759px) { .b { padding-bottom: calc(var(--doorbar) + env(safe-area-inset-bottom, 0px)); } }
+@media (max-width: 759.98px) { .b { padding-bottom: calc(var(--doorbar) + env(safe-area-inset-bottom, 0px)); } }
 .b-wrap { position: relative; z-index: 1; width: 100%; max-width: var(--wrap); margin-inline: auto; padding-inline: var(--gutter); }
 .b-title { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-2xl); line-height: var(--lh-tight); color: var(--paper); letter-spacing: -0.02em; }
 .b-title--small { font-size: var(--fs-xl); }
@@ -617,7 +617,7 @@
    tag is the glyph and the verb (the address is still its name, and the toast
    shows it), and it does not give way to a signed-in member's head: from
    760 px the doors close up instead (below). */
-@media (max-width: 759px) {
+@media (max-width: 759.98px) {
   .b-bar--home .b-bar__addr { display: none; }
   /* the server's lantern is then the last thing on the plank */
   .b-bar--home .b-bar__status::after { left: auto; right: 0; --tip-x: 0%; }
@@ -627,21 +627,21 @@
    glyph and the verb, and until 1100 px the glyph alone (the address is
    still its name, and the toast shows it), the doors set close and their
    letters unspaced, so the plank holds everything without a scroll. */
-@media (min-width: 760px) and (max-width: 1099px) {
+@media (min-width: 760px) and (max-width: 1099.98px) {
   .b-doors { gap: var(--sp-3); }
   .b-door { gap: var(--sp-1); letter-spacing: 0; }
   .b-door .b-news { left: calc(1.1rem - var(--sp-3) - var(--sp-1)); }
   .b-bar__addr b { display: none; }
 }
 /* the narrowest of them, with a member's head on the plank too */
-@media (min-width: 760px) and (max-width: 899px) {
+@media (min-width: 760px) and (max-width: 899.98px) {
   .b-doors { gap: var(--sp-2); }
   .b-bar__state { min-width: 3.5rem; }
 }
-@media (max-width: 1199px) {
+@media (max-width: 1199.98px) {
   .b-bar__ip { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 }
-@media (min-width: 760px) and (max-width: 899px) { .b-bar__mark span { display: none; } }
+@media (min-width: 760px) and (max-width: 899.98px) { .b-bar__mark span { display: none; } }
 
 /* ─── the hotbar: the doors at the foot of a phone ───────────────
    The game's own inventory bar: four slots sunk into a strip, the one in
@@ -662,7 +662,7 @@
 @media (min-width: 760px) { .b-hotbar { display: none; } }
 /* A phone on its side has height to spare for nothing: the slots lay the
    lantern beside the name, a tap tall, and the strip gives back a third. */
-@media (max-height: 500px) {
+@media (max-height: 500.98px) {
   .b-hotbar { padding-block: var(--sp-1) calc(var(--sp-1) + env(safe-area-inset-bottom, 0px)); }
   .b-hotbar .b-slot { flex-direction: row; gap: var(--sp-2); min-height: var(--tap); }
   .b-hotbar .b-slot .b-lantern { width: 0.9rem; height: 1.35rem; }
@@ -687,7 +687,9 @@
 .b-slot svg { flex-shrink: 0; }
 /* the label: the kicker's face (Pixelify 600, capitals), the same on every
    slot from a 360 px phone up */
-.b-slot__label { font-weight: 600; font-size: var(--fs-sm); line-height: 1.2; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; }
+.b-slot__label { font-weight: 600; font-size: var(--fs-sm); line-height: 1.2; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; max-width: 100%; overflow: hidden; }
+/* at 320 px HEIMURINN ran into the next slot: the letters close up and come down a size */
+@media (max-width: 359.98px) { .b-slot__label { letter-spacing: 0; font-size: 0.75rem; } }
 /* the slot in hand: a light frame over the slot's edge, notched, a pixel of
    night inside it so it reads against the slot, and the lantern lit inside */
 .b-slot.is-here { z-index: 1; color: var(--lantern); }
@@ -744,10 +746,10 @@
 @keyframes b-xp-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 .b-hotbar > .b-xp { grid-column: 1 / -1; margin: 0 0 var(--sp-1); }
 /* a phone on its side has no height to give it */
-@media (max-height: 500px) { .b-hotbar > .b-xp { display: none; } }
+@media (max-height: 500.98px) { .b-hotbar > .b-xp { display: none; } }
 .b-bar > .b-xp { position: absolute; left: 50%; top: calc(100% + 12px + var(--sp-2)); width: 22.75rem; translate: -50% 0; opacity: 0; transition: opacity var(--dur-3) var(--ease-out); }
 .b-bar.is-solid > .b-xp { opacity: 1; }
-@media (max-width: 759px) { .b-bar > .b-xp { display: none; } }
+@media (max-width: 759.98px) { .b-bar > .b-xp { display: none; } }
 
 /* ─── arrival: sunset over the mesa ───────────────────────────── */
 .b-hero {
@@ -768,7 +770,7 @@
 /* On a phone the hotbar is fixed over the foot of the screen: the sunset
    ends where it begins, so the mesas stand on the bar instead of one plateau
    peeking out over it like a stray grey rule. */
-@media (max-width: 759px) { .b-hero { min-height: calc(100svh - var(--doorbar) - env(safe-area-inset-bottom, 0px)); } }
+@media (max-width: 759.98px) { .b-hero { min-height: calc(100svh - var(--doorbar) - env(safe-area-inset-bottom, 0px)); } }
 .b-hero__stage { display: grid; grid-template-rows: auto minmax(var(--sp-7), 1fr) auto; }
 .b-hero__sun { display: none; }
 /* The phone's sun sets too: pulled down a quarter faster than the page lifts
@@ -780,7 +782,7 @@
   70%  { opacity: 1; }
   100% { transform: translateY(75svh); opacity: 0; }
 }
-@media (max-width: 899px) {
+@media (max-width: 899.98px) {
   .b-hero__sun {
     display: block;
     grid-row: 2;
@@ -824,7 +826,7 @@
    mesas take the name's row as their containing block, and the ground is the
    hero's ::after, laid across the rows below. Held upright, a phone keeps
    the title card: the sunset and the name fill the screen. */
-@media (max-width: 899px) and (max-height: 500px) {
+@media (max-width: 899.98px) and (max-height: 500.98px) {
   .b-hero { grid-template-rows: auto auto auto; padding-bottom: 0; }
   .b-hero > .b-hero__stage, .b-hero .b-hero__lead { display: contents; }
   /* one column for everything: an item placed by row alone is moved aside, into
@@ -977,7 +979,7 @@
 .b-hero__side .b-nightline .b-night__fire { width: 2.75rem; height: 2.75rem; }
 /* Held upright, a phone stacks them: the address and the lantern are one
    column, one width, the button over the plate. */
-@media (max-width: 899px) and (min-height: 501px) {
+@media (max-width: 899.98px) and (min-height: 501px) {
   .b-hero__action { flex-direction: column; align-items: stretch; gap: var(--sp-3); max-width: 26rem; }
   .b-hero__action .b-copy { display: grid; }
   .b-hero__action .b-copy__btn { width: 100%; }
@@ -1026,7 +1028,7 @@
   pointer-events: auto;
 }
 /* on a phone the plateau stands in front of the name's feet; there the crew climb the name (below) */
-@media (max-width: 899px) { .b-mesa__riders { display: none; } }
+@media (max-width: 899.98px) { .b-mesa__riders { display: none; } }
 .b-mesa__rider, .b-hero__climber { position: relative; display: block; width: calc(var(--u) * 12); line-height: 0; }
 /* a tap target larger than a narrow figure */
 .b-mesa__rider::before, .b-hero__climber::before { content: ''; position: absolute; inset: -0.5rem calc(var(--u) * -1); }
@@ -1085,7 +1087,7 @@
    stage (an absolute grid item takes its row as its frame), in front of it,
    with the sky over them free for their tags. */
 .b-hero__climbers { display: none; }
-@media (max-width: 899px) {
+@media (max-width: 899.98px) {
   .b-hero__stage { position: relative; }
   .b-hero__climbers {
     --u: calc(0.135em / 12);
@@ -1153,15 +1155,15 @@
 @media (hover: hover) { .b-hero__splashbtn:hover .b-hero__splashword { scale: 1.08; } }
 .b-hero__splashbtn:focus-visible { outline: var(--px) solid var(--lantern); outline-offset: 0; }
 .b-hero__splashbtn:active { translate: var(--press); }
-@media (max-width: 899px) {
+@media (max-width: 899.98px) {
   .b-hero__splash { left: 1.5em; top: 0.66em; }
   .b-hero__splashbtn { font-size: var(--fs-data); }
 }
-@media (max-width: 899px) and (max-height: 500px) { .b-hero__splash { display: none; } }
+@media (max-width: 899.98px) and (max-height: 500.98px) { .b-hero__splash { display: none; } }
 @media (prefers-reduced-motion: reduce) { .b-hero__splashword { animation: none; } }
 
 /* a phone on its side stands the name in the ridges with no sky over it to climb into */
-@media (max-width: 899px) and (max-height: 500px) { .b-hero__climbers { display: none; } }
+@media (max-width: 899.98px) and (max-height: 500.98px) { .b-hero__climbers { display: none; } }
 
 /* The armadillo on the ground strip (Mesa.tsx): fourteen units long, the
    land's own scale, walking from past the right edge to past the left over
@@ -1305,7 +1307,7 @@ html:has(.b-world.has-flight) { scroll-snap-type: y proximity; }
 }
 .b-flight__stars { position: absolute; inset: 0; width: 100%; height: 100%; color: var(--star); opacity: 0.55; }
 .b-flight__moon { position: absolute; right: 14%; top: 16%; width: 3rem; height: 3rem; color: var(--star); }
-@media (max-width: 759px) { .b-flight__moon { width: 2.25rem; height: 2.25rem; top: 22%; right: 12%; } }
+@media (max-width: 759.98px) { .b-flight__moon { width: 2.25rem; height: 2.25rem; top: 22%; right: 12%; } }
 /* The last of the evening on the horizon: the sunset's colours low over the
    land's far edge, its foot set on the horizon line by Flight.tsx (a
    transform) and fading as the camera comes down (opacity). */
@@ -1524,14 +1526,14 @@ html.is-map-full { overflow: hidden; }
 .b-locator__mark.is-off::before { content: ''; position: absolute; top: 50%; right: -0.5rem; width: 0; height: 0; translate: 0 -50%; border-block: 0.25rem solid transparent; border-left: 0.25rem solid var(--text-soft); }
 .b-locator__mark.is-off.is-left::before { right: auto; left: -0.5rem; border-left: 0; border-right: 0.25rem solid var(--text-soft); }
 @media (hover: hover) { .b-locator__mark--base:hover .b-lantern { color: var(--paper); } }
-@media (max-width: 759px) { .b-locator { width: min(18rem, 72%); } }
+@media (max-width: 759.98px) { .b-locator { width: min(18rem, 72%); } }
 
 /* the sheet: the painted map, drag to pan, pinch or buttons to zoom */
 .b-sheet { position: absolute; inset: 0; overflow: clip; cursor: grab; touch-action: none; }
 .b-sheet:active { cursor: grabbing; }
 /* a finger's up-and-down scrolls the page past the sheet, until the sheet has
    been pinched bigger than its frame: then the finger moves the paper */
-@media (max-width: 1199px), (pointer: coarse) { .b-sheet { touch-action: pan-y; } .b-sheet.is-zoomed { touch-action: none; } }
+@media (max-width: 1199.98px), (pointer: coarse) { .b-sheet { touch-action: pan-y; } .b-sheet.is-zoomed { touch-action: none; } }
 .b-sheet__view { position: absolute; inset: 0; display: grid; place-items: center; will-change: transform; }
 .b-sheet__view svg { width: 100%; height: 100%; display: block; }
 .b-sheet__zoom { position: absolute; right: var(--gutter); bottom: 7.5rem; z-index: 4; display: flex; gap: var(--sp-1); }
@@ -1694,7 +1696,7 @@ html.is-map-full { overflow: hidden; }
 /* what it does, on a paper tag pinned under the sign */
 .b-boot__sub { margin-top: var(--px); padding: var(--px) var(--sp-3); background: var(--paper); color: var(--ink-soft); clip-path: var(--notch); font-size: var(--fs-sm); line-height: 1.5; }
 /* in place on a wide screen, the whole screen below 900 px (World's phone query) */
-@media (max-width: 899px) { .b-boot__sub--wide { display: none; } }
+@media (max-width: 899.98px) { .b-boot__sub--wide { display: none; } }
 @media (min-width: 900px) { .b-boot__sub--phone { display: none; } }
 .b-boot:focus-visible { outline: none; }
 .b-boot:focus-visible .b-boot__word { outline: var(--px) solid var(--lantern); outline-offset: var(--px); clip-path: none; }
@@ -1754,7 +1756,7 @@ html.is-map-full { overflow: hidden; }
 .b-card__emptytext { position: relative; font-size: var(--fs-sm); color: var(--ink-soft); }
 .b-card__cap { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-2); margin-top: var(--sp-3); padding-inline: var(--sp-1); }
 .b-card__cap > span { display: grid; gap: var(--px); min-width: 0; }
-.b-card__name { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-lg); line-height: 1.15; color: var(--ink); }
+.b-card__name { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-lg); line-height: 1.15; color: var(--ink); overflow-wrap: break-word; hyphens: auto; }
 .b-card__sub { font-size: var(--fs-sm); color: var(--ink-soft); line-height: 1.35; }
 .b-card__x { flex-shrink: 0; display: grid; place-items: center; width: var(--tap); height: var(--tap); margin: calc(var(--sp-2) * -1) calc(var(--sp-2) * -1) 0 0; color: var(--ink-faint); }
 .b-card__x svg { width: 1rem; height: 1rem; }
@@ -1770,7 +1772,7 @@ html.is-map-full { overflow: hidden; }
 /* the places: a rail of chips along the foot of the frame */
 .b-places { position: absolute; inset-inline: 0; bottom: 0; z-index: 3; display: grid; gap: var(--sp-2); padding: var(--sp-6) var(--gutter) var(--sp-4); pointer-events: none; }
 .b-places > * { pointer-events: auto; }
-@media (max-width: 899px) { .b-places { padding-bottom: var(--sp-3); } }
+@media (max-width: 899.98px) { .b-places { padding-bottom: var(--sp-3); } }
 /* on a plate, the hard band of shadow the game lays its chat on: the live map
    under it is as bright as its sky, and the still's dark foot is gone with the still */
 /* The F3 lines (World.tsx): the game's debug text, white on a veil of dark,
@@ -1823,7 +1825,7 @@ html.is-map-full { overflow: hidden; }
   transform: translateY(calc(var(--px) * -16));
   transition: opacity var(--dur-1) var(--ease-out), transform var(--dur-2) var(--ease-out), visibility 0s linear var(--dur-2);
 }
-@media (max-width: 899px) { .b-chat { margin-bottom: var(--sp-1); } }
+@media (max-width: 899.98px) { .b-chat { margin-bottom: var(--sp-1); } }
 
 .b-places__head { justify-self: start; padding: var(--px) var(--sp-2); background: var(--plate); clip-path: var(--notch); font-size: var(--fs-sm); color: var(--paper); text-shadow: 0 var(--px) 0 var(--night); }
 /* min-width: a grid item would otherwise grow to fit every chip instead of scrolling */
@@ -1916,7 +1918,21 @@ html.is-map-full { overflow: hidden; }
 .b-chip--base { text-decoration: none; }
 .b-chip__thumb--lantern { display: grid; place-items: center; background: var(--dusk-2); }
 .b-chip__thumb--lantern .b-lantern { width: 1.25rem; height: 1.875rem; }
-.b-chip--base:focus-visible .b-chip__name, .b-chip--base:hover .b-chip__name { color: var(--lantern); }
+.b-chip--base:focus-visible .b-chip__name { color: var(--lantern); }
+@media (hover: hover) { .b-chip--base:hover .b-chip__name { color: var(--lantern); } }
+
+/* the small controls a thumb has to land on: the heads in the HUD, the base
+   on the locator, the lad, the splash: each is given a tap's square round it,
+   as the pins have, without growing on the screen */
+@media (pointer: coarse) {
+  .b-hud__head, .b-locator__mark--base, .b-lad__who, .b-hero__splashbtn { position: relative; }
+  .b-hud__head::before, .b-locator__mark--base::before, .b-lad__who::before, .b-hero__splashbtn::before {
+    content: '';
+    position: absolute;
+    inset: calc((var(--tap) - 100%) / -2);
+  }
+  .b-cal__day { min-height: var(--tap); }
+}
 
 /* ─── the tag: what a thing is, on paper, when pointed at or focused ──
    In place of the browser's grey box, which a touch screen never shows and
@@ -1964,9 +1980,10 @@ html.is-map-full { overflow: hidden; }
 .b-card__more { font-size: var(--fs-sm); color: var(--ink-faint); margin-left: var(--sp-1); }
 .b-card__builders { font-size: var(--fs-sm); color: var(--ink-faint); }
 
-@media (max-width: 899px) {
+@media (max-width: 899.98px) {
   /* the whole screen between the two bars: the world is the phone's window */
-  .b-frame { height: calc(100svh - var(--bar) - var(--doorbar) - env(safe-area-inset-bottom, 0px)); min-height: 30rem; }
+  /* and never taller than that room: 30 rem on a short phone (an SE, a phone on its side) ran the rail under the hotbar */
+  .b-frame { height: calc(100svh - var(--bar) - var(--doorbar) - env(safe-area-inset-bottom, 0px)); min-height: min(30rem, calc(100svh - var(--bar) - var(--doorbar) - env(safe-area-inset-bottom, 0px))); }
   /* a tablet's doors are in the bar, so its frame runs to the foot of the screen */
   @media (min-width: 760px) { .b-frame { height: calc(100svh - var(--bar)); } }
   .b-hud { padding: var(--sp-3) var(--gutter); }
@@ -2114,7 +2131,7 @@ html.is-map-full { overflow: hidden; }
 }
 .b-room.is-open { transform: none; visibility: visible; transition: transform var(--dur-3) var(--ease-out), visibility 0s; }
 @media (prefers-reduced-motion: reduce) { .b-room { transition: none; } }
-@media (max-width: 899px) { .b-room { max-height: calc(100% - 4rem); } }
+@media (max-width: 899.98px) { .b-room { max-height: calc(100% - 4rem); } }
 /* the plank: the same wood the bar is hung from once the page has moved */
 /* On a touch screen the plank is the room's handle (Drawer.tsx): a grip
    cut into the wood at its middle says it can be pulled down. */
@@ -2149,8 +2166,8 @@ html.is-map-full { overflow: hidden; }
 .b-room__close:focus-visible { background: var(--lantern); color: var(--night); }
 @media (hover: hover) { .b-room__close:hover { background: var(--lantern); color: var(--night); } }
 .b-room__body { overflow-y: auto; overscroll-behavior: contain; padding-block: var(--sp-5) var(--sp-6); scrollbar-width: thin; scrollbar-color: var(--wood-light) transparent; }
-@media (max-width: 899px) { .b-room__body { padding-block: var(--sp-4) var(--sp-5); } }
-@media (max-width: 479px) { .b-room__note { display: none; } }
+@media (max-width: 899.98px) { .b-room__body { padding-block: var(--sp-4) var(--sp-5); } }
+@media (max-width: 479.98px) { .b-room__note { display: none; } }
 
 /* Paper hung on a wall stands off it: a hard shadow a pixel or two under it,
    the site's only kind. On a wrapper, because paper is cut to its notched or
@@ -2302,7 +2319,7 @@ html.is-map-full { overflow: hidden; }
 /* A phone's arena is 4:3 and a thumb wide: the call starts below the corner
    labels and its small line drops a size, so the round count, the call and
    the instructions no longer sit on top of one another. */
-@media (max-width: 639px) {
+@media (max-width: 639.98px) {
   .b-arena__call { padding: 2.25rem var(--sp-3) 18%; }
   .b-arena__small { font-size: var(--fs-sm); line-height: 1.5; }
   .b-duelpanel { padding: var(--sp-4); }
@@ -2655,7 +2672,7 @@ html.is-map-full { overflow: hidden; }
   width: 46rem;
   height: 13rem;
   margin-left: -23rem;
-  background: radial-gradient(closest-side, rgba(224, 96, 42, 0.30), rgba(224, 96, 42, 0.08) 60%, transparent);
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--ember) 30%, transparent), color-mix(in srgb, var(--ember) 8%, transparent) 60%, transparent);
   animation: b-flicker var(--dur-lantern) ease-in-out infinite;
   pointer-events: none;
 }
@@ -2663,7 +2680,7 @@ html.is-map-full { overflow: hidden; }
    width is kept as an empty margin on the fire's other side, so the fire
    stays the middle of the band and its light falls where it burns. */
 .b-foot__fire { --sign: 7rem; display: flex; align-items: flex-end; margin-left: var(--sign); padding: 0; border: 0; background: none; cursor: pointer; }
-@media (max-width: 1023px) { .b-foot__fire { --sign: 6.25rem; } }
+@media (max-width: 1023.98px) { .b-foot__fire { --sign: 6.25rem; } }
 /* a short plank on a post, the word burnt in lantern light, as the world's
    lantern has its sign nailed under it; the post stands in the ground the
    fire stands on */
@@ -2691,7 +2708,7 @@ html.is-map-full { overflow: hidden; }
 .b-fire { position: relative; display: block; width: 5.5rem; height: 5.5rem; margin-bottom: calc(var(--px) * -2); transition: transform var(--dur-2) var(--ease-out); }
 /* the footer's own fire: eight times its pixels, six on a phone, standing on the ground in its stones */
 .b-foot .b-fire { width: 8rem; height: 8rem; margin-bottom: 0; }
-@media (max-width: 719px) { .b-foot .b-fire { width: 6rem; height: 6rem; } }
+@media (max-width: 719.98px) { .b-foot .b-fire { width: 6rem; height: 6rem; } }
 .b-fire svg { width: 100%; height: 100%; display: block; shape-rendering: crispEdges; overflow: visible; }
 .b-fire__frame { opacity: 0; animation: b-frames 900ms steps(1, end) infinite; }
 /* The campfire's smoke: six square puffs of the fire's own lit grey, warm,
@@ -2734,7 +2751,7 @@ html.is-map-full { overflow: hidden; }
   55%  { opacity: 0.25; }
   100% { transform: translate(1.75rem, -5rem) scale(1.6); opacity: 0; }
 }
-@media (max-width: 1023px) {
+@media (max-width: 1023.98px) {
   .b-foot__inner { row-gap: var(--sp-8); }
   .b-fire__smoke i { width: 1rem; height: 1rem; animation-name: b-smoke-short; animation-duration: 5.4s; }
 }
@@ -2765,7 +2782,7 @@ html.is-map-full { overflow: hidden; }
 .b-foot__sound:focus-visible { background: var(--lantern); color: var(--night); }
 @media (hover: hover) { .b-foot__sound:hover { background: var(--lantern); color: var(--night); } }
 .b-foot__sound.is-on { background: var(--lantern); color: var(--night); box-shadow: var(--bevel); }
-@media (max-width: 559px) {
+@media (max-width: 559.98px) {
   .b-foot__sound { padding-inline: 0; }
   .b-sound__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 }
@@ -2809,7 +2826,7 @@ html.is-map-full { overflow: hidden; }
   z-index: var(--z-light);
   pointer-events: none;
   opacity: 0;
-  background: radial-gradient(closest-side circle, rgba(242, 166, 59, 0.10), transparent 70%);
+  background: radial-gradient(closest-side circle, color-mix(in srgb, var(--lantern) 10%, transparent), transparent 70%);
   mix-blend-mode: screen;
   will-change: transform;
   transition: opacity var(--dur-2) var(--ease-out);

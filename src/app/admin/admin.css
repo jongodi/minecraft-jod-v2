@@ -118,7 +118,7 @@
 
 /* ─── gallery cards ───────────────────────────────────────────── */
 .a-drop { display: flex; flex-wrap: wrap; gap: var(--sp-3); align-items: center; padding: var(--sp-3); border: var(--px) dashed rgba(209, 178, 161, 0.3); }
-.a-drop.is-over { border-color: var(--lantern); background: rgba(242, 166, 59, 0.06); }
+.a-drop.is-over { border-color: var(--lantern); background: color-mix(in srgb, var(--lantern) 6%, transparent); }
 .a-progress { height: 4px; background: var(--night); position: relative; overflow: hidden; }
 .a-progress > span { position: absolute; inset: 0; width: var(--p, 0%); background: var(--lantern); transition: width var(--dur-2) var(--ease-out); }
 .a-progress.is-err > span { background: var(--tc-red); }
@@ -135,7 +135,7 @@
 .a-card__posinput:focus { border-color: var(--lantern); outline: none; }
 .a-card__img { position: relative; aspect-ratio: 16 / 9; overflow: hidden; background: var(--dusk-2); }
 .a-card__img img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.a-card__badge { position: absolute; top: var(--sp-1); left: var(--sp-1); padding: 0 var(--sp-1); background: rgba(21, 16, 13, 0.8); font-family: var(--font-data); font-size: 0.6rem; color: var(--paper); }
+.a-card__badge { position: absolute; top: var(--sp-1); left: var(--sp-1); padding: 0 var(--sp-1); background: var(--pane); font-family: var(--font-data); font-size: 0.6rem; color: var(--paper); }
 .a-card__badge--r { left: auto; right: var(--sp-1); }
 .a-card__body { padding: var(--sp-3); display: grid; gap: var(--sp-1); align-content: start; }
 .a-card__title { font-weight: 600; color: var(--paper); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -196,7 +196,7 @@
 .a-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .a-picker { display: grid; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); gap: var(--sp-2); }
 .a-picker__item { text-align: left; padding: 0; background: var(--night); border: var(--px) solid transparent; cursor: pointer; font: inherit; color: inherit; }
-.a-picker__item:hover { border-color: rgba(242, 166, 59, 0.5); }
+.a-picker__item:hover { border-color: color-mix(in srgb, var(--lantern) 50%, transparent); }
 .a-picker__item.is-current { border-color: var(--lantern); }
 .a-picker__item.is-off { opacity: 0.55; }
 .a-picker__item img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block; }

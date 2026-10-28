@@ -81,7 +81,7 @@ img, video { max-width: 100%; height: auto; }
   position: fixed;
   top: var(--sp-2);
   left: var(--sp-2);
-  z-index: 100;
+  z-index: var(--z-skip);
   padding: var(--sp-2) var(--sp-4);
   background: var(--lantern);
   color: var(--night);

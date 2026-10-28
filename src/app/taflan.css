@@ -52,7 +52,7 @@
    a phone, as the crew's room stands its portraits, where the eighth used to
    wrap alone under the other seven. */
 .t-join__heads { list-style: none; display: grid; grid-template-columns: repeat(8, var(--tap)); gap: var(--px); justify-content: start; }
-@media (max-width: 479px) { .t-join__heads { grid-template-columns: repeat(4, var(--tap)); } }
+@media (max-width: 479.98px) { .t-join__heads { grid-template-columns: repeat(4, var(--tap)); } }
 .t-join__head {
   position: relative;
   display: grid;
@@ -213,7 +213,7 @@
    leather, the picture inside it, a hard shadow on the boards behind.
    Lit, like everything that can be pressed, when pointed at. */
 .t-frames { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 12.5rem), 1fr)); gap: var(--sp-5) var(--sp-4); }
-@media (max-width: 479px) { .t-frames { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-4) var(--sp-3); } }
+@media (max-width: 479.98px) { .t-frames { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-4) var(--sp-3); } }
 .t-frame { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: var(--sp-2); min-width: 0; }
 .t-frame .t-tags { top: calc(var(--sp-2) * -1); right: var(--sp-2); }
 .t-frame__pic {
@@ -234,6 +234,7 @@
 .t-frame__pic:active img { translate: var(--press); }
 .t-frame__line { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; min-height: 2rem; font-size: var(--fs-sm); color: var(--text-soft); text-decoration: none; }
 .t-frame__line img { width: 1rem; height: 1rem; image-rendering: pixelated; flex-shrink: 0; }
+@media (pointer: coarse) { .t-frame__line { min-height: var(--tap); } }
 .t-frame__cap { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (hover: hover) { .t-frame__line:hover .t-frame__cap { color: var(--paper); text-decoration: underline var(--px); text-underline-offset: 0.3em; } }
 .t-frame__line:focus-visible { outline: var(--px) solid var(--lantern); outline-offset: var(--px); }
@@ -279,13 +280,14 @@
 @media (hover: hover) { .t-side__start:hover { color: var(--ink); } }
 .t-side__start:focus-visible { outline: var(--px) solid var(--lantern-ink); outline-offset: var(--px); }
 @media (min-width: 1100px) {
-  .t-board__side { position: sticky; top: calc(var(--bar) + 12px + var(--sp-6)); }
+  /* and no taller than the screen under the bar, scrolling inside itself: with many calls open on a short laptop its foot could not be reached until the board ended */
+  .t-board__side { position: sticky; top: calc(var(--bar) + 12px + var(--sp-6)); max-height: calc(100svh - var(--bar) - 12px - var(--sp-6) * 2); overflow-y: auto; scrollbar-width: thin; }
   .t-board--room .t-board__side { top: 0; }
 }
 /* Narrower, the pinned things hang across the board between the slot and
    the days, side by side where there is room, and an empty block gives its
    room to the board: what is new stays the first thing under the filters. */
-@media (max-width: 1099px) {
+@media (max-width: 1099.98px) {
   .t-board__main { display: contents; }
   .t-board__head, .t-board .w-pin, .t-join { order: 0; }
   .t-board__side { order: 1; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }

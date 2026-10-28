@@ -211,6 +211,7 @@
   --z-toast: 50;
   --z-lightbox: 60;
   --z-modal: 70;
+  --z-skip: 100;      /* the skip link: over everything, a dialog included */
 }
 /* The woods. A post tied to a place hangs on that place's wood, and the
    place's tag on the world's rail is tinted with it (src/lib/sign-wood.ts). The pale ones keep the dark ink; the dark ones take
@@ -232,4 +233,4 @@
 
 @media (min-width: 900px) { :root { --fs-hero: clamp(12rem, min(23vw, 40svh), 24rem); } }
 /* on a phone on its side the hotbar's slots lay their lantern beside the name, a tap tall (badlands.css) */
-@media (max-height: 500px) { :root { --doorbar: 3.25rem; } }
+@media (max-height: 500.98px) { :root { --doorbar: 3.25rem; } }
