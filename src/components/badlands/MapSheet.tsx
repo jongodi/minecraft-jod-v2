@@ -36,6 +36,10 @@ export default function MapSheet({ config, selectedId, onSelect }: Props) {
   const go = (mv: MotionValue<number>, to: number) => { if (reduce) mv.set(to); else spring(mv, to); };
   const drag = useRef<{ id: number; sx: number; sy: number; ox: number; oy: number; moved: boolean } | null>(null);
   const lastMoved = useRef(false);
+  /* every finger on the sheet, where it is now (viewport px); two of them
+     make a pinch, which zooms about the point between them */
+  const fingers = useRef(new Map<number, { x: number; y: number }>());
+  const pinch = useRef<{ dist: number; z: number; mx: number; my: number; ox: number; oy: number } | null>(null);
 
   /* pan limits for the current zoom, in CSS px of the sheet */
   const limits = () => {
@@ -51,11 +55,44 @@ export default function MapSheet({ config, selectedId, onSelect }: Props) {
 
   /* A drag is the hand moving the paper, not the page animating, so it works
      under reduced motion too; only the spring back into bounds is dropped. */
+  /* the two fingers: how far apart, and the point between them in the sheet's own px */
+  const span = (el: Element) => {
+    const [a, b] = Array.from(fingers.current.values());
+    const r = el.getBoundingClientRect();
+    return { dist: Math.hypot(b.x - a.x, b.y - a.y) || 1, mx: (a.x + b.x) / 2 - r.left, my: (a.y + b.y) / 2 - r.top };
+  };
+  /* A second finger down turns the drag into a pinch: the paper is held at the
+     point between the fingers and scaled with the distance between them, so
+     whatever was under them stays under them. */
+  const startPinch = (el: Element) => {
+    pinch.current = { ...span(el), z: z.get(), ox: x.get(), oy: y.get() };
+    drag.current = null;
+    lastMoved.current = true;
+  };
   const onPointerDown = (e: React.PointerEvent) => {
+    if (e.pointerType === 'touch') {
+      fingers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* pointer may already be gone */ }
+      if (fingers.current.size === 2) { x.stop(); y.stop(); z.stop(); startPinch(e.currentTarget); return; }
+      if (fingers.current.size > 2) return;
+    }
     drag.current = { id: e.pointerId, sx: e.clientX, sy: e.clientY, ox: x.get(), oy: y.get(), moved: false };
     x.stop(); y.stop();
   };
   const onPointerMove = (e: React.PointerEvent) => {
+    if (e.pointerType === 'touch' && fingers.current.has(e.pointerId)) {
+      fingers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      const p = pinch.current;
+      if (p && fingers.current.size >= 2) {
+        const { dist, mx, my } = span(e.currentTarget);
+        const s1 = clamp(p.z * (dist / p.dist), MIN_Z, MAX_Z);
+        /* the point of the paper that was between the fingers, carried to where they are now */
+        x.set(mx - (p.mx - p.ox) * (s1 / p.z));
+        y.set(my - (p.my - p.oy) * (s1 / p.z));
+        z.set(s1);
+        return;
+      }
+    }
     const d = drag.current;
     if (!d || d.id !== e.pointerId) return;
     const dx = e.clientX - d.sx, dy = e.clientY - d.sy;
@@ -72,6 +109,16 @@ export default function MapSheet({ config, selectedId, onSelect }: Props) {
     x.set(nx); y.set(ny);
   };
   const onPointerUp = (e: React.PointerEvent) => {
+    if (fingers.current.delete(e.pointerId) && pinch.current) {
+      /* the pinch ends with the first finger lifted; the one still down takes
+         hold of the paper again, from where it is, and a tap on a flag just
+         after is not taken for one */
+      pinch.current = null;
+      settle();
+      const left = Array.from(fingers.current.entries())[0];
+      if (left) drag.current = { id: left[0], sx: left[1].x, sy: left[1].y, ox: x.get(), oy: y.get(), moved: true };
+      return;
+    }
     if (drag.current?.id !== e.pointerId) return;
     lastMoved.current = drag.current.moved;
     drag.current = null;
@@ -93,6 +140,15 @@ export default function MapSheet({ config, selectedId, onSelect }: Props) {
     go(y, clamp(ny, h - h * s1, 0));
   };
   const resetView = () => { go(z, 1); go(x, 0); go(y, 0); };
+
+  /* At the sheet's own size a finger's up-and-down scrolls the page past it
+     (badlands.css, touch-action); zoomed in, the paper is bigger than its
+     frame, and the finger moves the paper instead. */
+  useEffect(() => {
+    const el = sheet.current;
+    if (!el) return;
+    return z.on('change', v => el.classList.toggle('is-zoomed', v > 1.01));
+  }, [z]);
 
   /* trackpad pinch arrives as ctrl+wheel; a plain wheel scrolls the page */
   useEffect(() => {

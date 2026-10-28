@@ -1529,7 +1529,9 @@ html.is-map-full { overflow: hidden; }
 /* the sheet: the painted map, drag to pan, pinch or buttons to zoom */
 .b-sheet { position: absolute; inset: 0; overflow: clip; cursor: grab; touch-action: none; }
 .b-sheet:active { cursor: grabbing; }
-@media (max-width: 1199px), (pointer: coarse) { .b-sheet { touch-action: pan-y; } }
+/* a finger's up-and-down scrolls the page past the sheet, until the sheet has
+   been pinched bigger than its frame: then the finger moves the paper */
+@media (max-width: 1199px), (pointer: coarse) { .b-sheet { touch-action: pan-y; } .b-sheet.is-zoomed { touch-action: none; } }
 .b-sheet__view { position: absolute; inset: 0; display: grid; place-items: center; will-change: transform; }
 .b-sheet__view svg { width: 100%; height: 100%; display: block; }
 .b-sheet__zoom { position: absolute; right: var(--gutter); bottom: 7.5rem; z-index: 4; display: flex; gap: var(--sp-1); }
