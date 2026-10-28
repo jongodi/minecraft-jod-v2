@@ -6,6 +6,11 @@ import { checkRateLimit, clearRateLimit, clientKey } from '@/lib/rateLimit';
 import { getPasswordHash, verifyPassword } from '@/lib/crew-access';
 import { timingSafeEqual } from 'crypto';
 
+/* longer than any password (PASSWORD_MAX is 128) or token the site hands out */
+const TOKEN_MAX = 256;
+/* tries at one account an hour, from everywhere together */
+const ACCOUNT_TRIES = 20;
+
 export async function POST(req: NextRequest) {
   const body = await jsonObject(req);
   if (!body) return badJson();
@@ -13,6 +18,8 @@ export async function POST(req: NextRequest) {
   if (typeof username !== 'string' || typeof token !== 'string' || !username || !token) {
     return NextResponse.json({ error: 'Innskráningarupplýsingar vantar.' }, { status: 400 });
   }
+  /* nothing that long is a password or a token, and scrypt was run on whatever came */
+  if (token.length > TOKEN_MAX) return NextResponse.json({ error: 'Lykilorðið er ekki rétt.' }, { status: 401 });
 
   /* Tries are counted per address and per account tried, and a sign-in
      forgets only its own account's count: counted per address alone, one
@@ -22,7 +29,9 @@ export async function POST(req: NextRequest) {
   const known = isCrewUsername(username);
   const action = `crew-auth:${known ? canonicalUsername(username).toLowerCase() : '?'}`;
   const { limited } = await checkRateLimit(ip, action);
-  if (limited) {
+  /* and per account whatever the address: a guesser with addresses to spare got five tries from each */
+  const account = known ? await checkRateLimit(canonicalUsername(username).toLowerCase(), 'crew-auth-account', ACCOUNT_TRIES, 60 * 60) : { limited: false };
+  if (limited || account.limited) {
     return NextResponse.json({ error: 'Of margar tilraunir. Reyndu aftur síðar.' }, { status: 429 });
   }
 

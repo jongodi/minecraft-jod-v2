@@ -358,7 +358,8 @@ const notifyMe = () => meListeners.forEach(l => l());
 async function fetchMe(quiet = false): Promise<void> {
   const asked = ++meAsked;
   try {
-    const res = await fetch('/api/crew/me', { cache: 'no-store' });
+    /* capped: everyone asking shares this one question, and one that never answered left the whole page not knowing who was in */
+    const res = await fetch('/api/crew/me', { cache: 'no-store', signal: AbortSignal.timeout(STATUS_WAIT_MS) });
     if (!res.ok) throw new Error(`crew/me ${res.status}`);
     const data = await res.json() as { username: string | null; hasPassword?: boolean };
     if (asked !== meAsked) return;
@@ -411,7 +412,11 @@ export function useCrewSession(seed?: CrewSessionSeed): { me: Me; hasPassword: b
     else if (meSeeded) { meSeeded = false; askMe(true); }
   }, []);
   const signOut = useCallback(async () => {
-    await fetch('/api/crew/auth', { method: 'DELETE' }).catch(() => {});
+    /* the cookie is the server's to take away: a page that said "signed out"
+       while the request never got there was still signed in on reload, on a
+       shared computer as much as any */
+    const ok = await fetch('/api/crew/auth', { method: 'DELETE', signal: AbortSignal.timeout(STATUS_WAIT_MS) }).then(r => r.ok, () => false);
+    if (!ok) { toast('Útskráning tókst ekki', 'Reyndu aftur eftir smástund.'); return; }
     meAsked++;
     meValue = null;
     meHasPassword = false;

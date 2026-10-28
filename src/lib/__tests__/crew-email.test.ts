@@ -14,6 +14,18 @@ vi.mock('@/lib/redis', () => {
     hdel: async (k: string, f: string) => (hash(k).delete(f) ? 1 : 0),
     set: async (k: string, v: string) => { kv.set(k, v); return 'OK'; },
     del: async (k: string) => (kv.delete(k) ? 1 : 0),
+    /* the one script the links run: a use spent or the link shut, in the store itself (crew-access.ts) */
+    eval: async (_script: string, _n: number, k: string, how: string) => {
+      const raw = kv.get(k);
+      if (!raw) return null;
+      const inv = JSON.parse(raw);
+      if (how === 'close') inv.uses = inv.maxUses;
+      else if (inv.uses >= inv.maxUses) return null;
+      else inv.uses += 1;
+      const out = JSON.stringify(inv);
+      kv.set(k, out);
+      return out;
+    },
     lrange: async (k: string) => lists.get(k) ?? [],
     multi: () => {
       const chain = {

@@ -5,10 +5,10 @@ import { canSendEmail } from '@/lib/email';
 import { exarotonStatus, startExaroton } from '@/lib/exaroton';
 import { forgetStatus } from '@/lib/server-status';
 import { errorMessage } from '@/lib/icelandic';
-import { jsonObject } from '@/lib/http';
+import { jsonObject, tooManyWrites } from '@/lib/http';
 import {
-  MAX_NOTE, MAX_PLANNED, START_BEFORE_MS, checkTimes, clashOf, currentNights, isPlanned, optionOf, phaseOf, readNights,
-  writeNight, writeVote, yesFor, type Night,
+  MAX_NOTE, MAX_PLANNED, START_BEFORE_MS, checkTimes, clashOf, currentNights, isPlanned, optionOf, phaseOf,
+  changeNight, writeNight, writeVote, yesFor, type Night,
 } from '@/lib/play-night';
 import { NO_NIGHTS, viewNights, type PlayNightResponse } from '@/lib/play-night-view';
 import { answerUser } from '@/lib/night-answer';
@@ -57,6 +57,7 @@ export async function POST(req: NextRequest) {
   const action = body.action;
   /* an unknown action is the request's fault, whichever night it names */
   if (typeof action !== 'string' || !ACTIONS.has(action)) return json({ error: 'Óþekkt aðgerð.' }, 400);
+  if (session && await tooManyWrites(session)) return json({ error: 'Of margt í einu. Reyndu aftur eftir smástund.' }, 429);
   const now = Date.now();
   /* An answer from a letter carries its key (src/lib/night-answer.ts): it
      answers that night for the letter's reader, whoever is signed in here,
@@ -108,15 +109,20 @@ export async function POST(req: NextRequest) {
 
     if (action === 'choose' || action === 'cancel') {
       if (night.by !== me) return json({ error: 'Aðeins sá sem kveikti bálið getur þetta.' }, 403);
+      /* each on the night as it stands in the store at that moment, not as it
+         was read a moment ago: the auto-choice or another tab may have had it since */
       if (action === 'choose') {
         if (night.chosen) return json({ error: 'Kvöldið er þegar valið.' }, 409);
         const option = optionOf(night, typeof body.option === 'string' ? body.option : null);
         if (!option) return json({ error: 'Tíminn fannst ekki.' }, 400);
-        await writeNight({ ...night, chosen: option.id, chosenBy: me, chosenAt: new Date(now).toISOString() });
+        const after = await changeNight(night.id, n => (n.chosen || n.cancelled ? null : { ...n, chosen: option.id, chosenBy: me, chosenAt: new Date(now).toISOString() }));
+        if (!after || after.cancelled) return json({ error: 'Kvöldið fannst ekki; það gæti hafa verið fellt niður.' }, 404);
+        if (after.chosenBy !== me) return json({ error: 'Kvöldið er þegar valið.' }, 409);
         mailAfter(m => m.mailNights());
       } else {
         if (phase === 'live' || phase === 'over') return json({ error: 'Kvöldið er hafið.' }, 409);
-        await writeNight({ ...night, cancelled: true });
+        const after = await changeNight(night.id, n => (n.cancelled ? null : { ...n, cancelled: true }));
+        if (!after) return json({ error: 'Kvöldið fannst ekki; það gæti hafa verið fellt niður.' }, 404);
         mailAfter(m => m.mailNightOut(night, votes));
       }
       return json(await viewNights(session));
@@ -137,8 +143,7 @@ export async function POST(req: NextRequest) {
       forgetStatus();
       /* the night as it is now, not as it was before Exaroton answered: a fire
          put out in those seconds stayed out rather than coming back lit */
-      const latest = (await readNights()).find(n => n.id === night.id);
-      if (latest && !latest.cancelled && !latest.startedBy) await writeNight({ ...latest, startedBy: me });
+      await changeNight(night.id, n => (n.cancelled || n.startedBy ? null : { ...n, startedBy: me }));
       return json(await viewNights(session));
     }
 

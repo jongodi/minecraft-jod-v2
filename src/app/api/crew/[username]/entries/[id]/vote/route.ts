@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { badJson, jsonObject } from '@/lib/http';
+import { badJson, jsonObject, tooMany, tooManyWrites } from '@/lib/http';
 import { updateProfile, getCrewSession, isCrewUsername, sameUser, Refusal, wallError, type CrewPoll } from '@/lib/crew';
 
 export const dynamic = 'force-dynamic';
@@ -15,6 +15,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   if (!isCrewUsername(username)) return NextResponse.json({ error: 'Fannst ekki.' }, { status: 404 });
   const session = await getCrewSession();
   if (!session) return NextResponse.json({ error: 'Skráðu þig inn til að svara.' }, { status: 401 });
+  if (await tooManyWrites(session.username)) return tooMany();
   const body = await jsonObject(req);
   if (!body) return badJson();
   const closing = typeof body.closed === 'boolean';

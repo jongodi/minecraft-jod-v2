@@ -226,12 +226,19 @@ export const SESSION_TTL = 60 * 60 * 24 * 365;
 const g = globalThis as typeof globalThis & { __jodSessions?: Map<string, { username: string; expires: number }> };
 const memSessions = (g.__jodSessions ??= new Map());
 
+/* every session a member holds, by name, so they can all be let go at once */
+const sessionIndex = (name: string) => `crew-sessions:${name.toLowerCase()}`;
+
 export async function createCrewSession(username: string): Promise<string> {
   const sessionId = randomUUID();
   const name = canonicalUsername(username);
   if (hasKV()) {
     const { getRedis } = await import('./redis');
-    await getRedis().set(`crew-session:${sessionId}`, JSON.stringify({ username: name }), 'EX', SESSION_TTL);
+    await getRedis().multi()
+      .set(`crew-session:${sessionId}`, JSON.stringify({ username: name }), 'EX', SESSION_TTL)
+      .sadd(sessionIndex(name), sessionId)
+      .expire(sessionIndex(name), SESSION_TTL)
+      .exec();
   } else {
     memSessions.set(sessionId, { username: name, expires: Date.now() + SESSION_TTL * 1000 });
   }
@@ -240,11 +247,39 @@ export async function createCrewSession(username: string): Promise<string> {
 
 export async function deleteCrewSession(sessionId: string): Promise<void> {
   if (hasKV()) {
-    const { getRedis } = await import('./redis');
-    await getRedis().del(`crew-session:${sessionId}`);
+    const { getRedis, rGet } = await import('./redis');
+    const data = await rGet<{ username: string }>(`crew-session:${sessionId}`);
+    const redis = getRedis();
+    if (data?.username) await redis.multi().del(`crew-session:${sessionId}`).srem(sessionIndex(data.username), sessionId).exec();
+    else await redis.del(`crew-session:${sessionId}`);
   } else {
     memSessions.delete(sessionId);
   }
+}
+
+/** Every session a member holds is let go, but for `keep` (the one a password
+    was just chosen on): a new password, or the admin clearing one, means
+    whoever else got in on an old link or password is out. Returns how many went. */
+export async function revokeCrewSessions(username: string, keep?: string): Promise<number> {
+  const name = canonicalUsername(username);
+  if (hasKV()) {
+    const { getRedis } = await import('./redis');
+    const redis = getRedis();
+    const ids = (await redis.smembers(sessionIndex(name))).filter(id => id !== keep);
+    if (ids.length === 0) return 0;
+    await redis.multi().del(...ids.map(id => `crew-session:${id}`)).srem(sessionIndex(name), ...ids).exec();
+    return ids.length;
+  }
+  let n = 0;
+  for (const [id, s] of memSessions) {
+    if (id !== keep && s.username.toLowerCase() === name.toLowerCase()) { memSessions.delete(id); n++; }
+  }
+  return n;
+}
+
+/** The id of the session the request carries, for revokeCrewSessions' `keep`. */
+export async function currentSessionId(): Promise<string | undefined> {
+  try { return (await cookies()).get(CREW_COOKIE)?.value; } catch { return undefined; }
 }
 
 /** The signed-in member, or null. A store that cannot be read counts as

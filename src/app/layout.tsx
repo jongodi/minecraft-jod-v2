@@ -64,6 +64,9 @@ export const viewport: Viewport = {
   themeColor: '#15100D',
   width: 'device-width',
   initialScale: 1,
+  /* a phone draws the page under its notch and home bar, and the bar, the
+     gutters, the hotbar and the frame keep out of them (tokens.css, --safe-*) */
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

@@ -52,7 +52,10 @@ export async function POST(req: NextRequest) {
   if (!canSendEmail()) return NextResponse.json({ error: 'Vefurinn sendir ekki póst eins og er. Biddu stjórnandann um tengil.' }, { status: 503 });
 
   const username = canonicalUsername(body.username);
-  if ((await checkRateLimit(username.toLowerCase(), 'crew-mail-link-member', 3, 60 * 60)).limited) {
+  /* a few an hour for a member from one address: counted for the member
+     alone, anyone could spend them from anywhere and keep the member's own
+     ask turned away all day; the address's own limit above caps the rest */
+  if ((await checkRateLimit(`${ip}|${username.toLowerCase()}`, 'crew-mail-link-member', 3, 60 * 60)).limited) {
     return NextResponse.json({ error: 'Nokkrir tenglar hafa þegar verið sendir á síðasta klukkutíma. Kíktu í pósthólfið, eða reyndu aftur síðar.' }, { status: 429 });
   }
   const origin = process.env.NEXT_PUBLIC_SITE_URL ?? req.nextUrl.origin;

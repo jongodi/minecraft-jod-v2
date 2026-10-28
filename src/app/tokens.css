@@ -48,6 +48,9 @@
   --text:       var(--paper);
   --text-soft:  var(--tc-white);
   --text-faint: #9A8272;
+  /* a hairline on the night: the soft text at a seventh, the one rule drawn
+     under the hotbar, between the hero's lines and round the admin's panels */
+  --hairline:   color-mix(in srgb, var(--tc-white) 14%, transparent);
 
   /* ── sky ── */
   --sky-sunset-top:     #3B1A20;
@@ -175,9 +178,18 @@
   --sp-6: 2rem;
   --sp-7: 3rem;
   --sp-8: 4rem;
-  --gutter: clamp(1rem, 0.5rem + 3vw, 3rem);
+  /* The screen's own edges on a phone that draws under its notch and home
+     bar (viewport-fit cover, layout.tsx): nothing on the site is laid under
+     them. The bar grows by the top one; the gutter is never narrower than
+     the sides; the hotbar and the frame pad for the foot. */
+  --safe-top:    env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left:   env(safe-area-inset-left, 0px);
+  --safe-right:  env(safe-area-inset-right, 0px);
+  --gutter: max(clamp(1rem, 0.5rem + 3vw, 3rem), var(--safe-left), var(--safe-right));
   --wrap:   1160px;
   --bar:    3.5rem;     /* the bar at the top */
+  --bar-safe: calc(var(--bar) + var(--safe-top));   /* the bar as it stands on the screen: what sticks under it or scrolls up to it reads this */
   --xp:      10px;      /* the experience bar over the hotbar: the game's five pixels, at two a pixel */
   --doorbar: calc(4.5rem + var(--xp) + var(--sp-1));    /* the hotbar at the foot of a phone, with its strip and the experience bar over it */
   --slot:    3.5rem;    /* one of its slots */
@@ -211,6 +223,7 @@
   --z-toast: 50;
   --z-lightbox: 60;
   --z-modal: 70;
+  --z-skip: 100;      /* the skip link: over everything, a dialog included */
 }
 /* The woods. A post tied to a place hangs on that place's wood, and the
    place's tag on the world's rail is tinted with it (src/lib/sign-wood.ts). The pale ones keep the dark ink; the dark ones take
@@ -232,4 +245,4 @@
 
 @media (min-width: 900px) { :root { --fs-hero: clamp(12rem, min(23vw, 40svh), 24rem); } }
 /* on a phone on its side the hotbar's slots lay their lantern beside the name, a tap tall (badlands.css) */
-@media (max-height: 500px) { :root { --doorbar: 3.25rem; } }
+@media (max-height: 500.98px) { :root { --doorbar: 3.25rem; } }

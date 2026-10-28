@@ -17,6 +17,9 @@ vi.mock('@/lib/redis', () => ({
     set: async (k: string, v: string, ...opts: unknown[]) => { if (opts.includes('NX') && kv.has(k)) return null; kv.set(k, v); return 'OK'; },
     hgetall: async (k: string) => { if (k === failOnce) { failOnce = null; throw new Error('store down'); } return Object.fromEntries(hash(k)); },
     hset: async (k: string, f: string, v: string) => { hash(k).set(f, v); return 1; },
+    hget: async (k: string, f: string) => hash(k).get(f) ?? null,
+    /* the one script the nights run: written back only over what was read (play-night.ts, changeNight) */
+    eval: async (_s: string, _n: number, k: string, f: string, was: string, next: string) => { if ((hash(k).get(f) ?? '') !== was) return 0; hash(k).set(f, next); return 1; },
     hincrby: async (k: string, f: string, n: number) => { const v = Number(hash(k).get(f) ?? 0) + n; hash(k).set(f, String(v)); return v; },
     sadd: async (k: string, ...v: string[]) => { if (!sets.has(k)) sets.set(k, new Set()); v.forEach(x => sets.get(k)!.add(x)); return v.length; },
     smembers: async (k: string) => [...(sets.get(k) ?? [])],
@@ -374,6 +377,31 @@ describe('/api/playnight', () => {
     copy('2026-09-21', 70);
     await lib.settleNights();
     expect(JSON.parse(hash('playnight:nights').get('old')!).outcome.numbers.by.stebbias.deaths).toBe(4);
+  });
+
+  /* at the decide moment the proposer's cancel and a visitor's read (which
+     chooses the leading time) could land together, and the read's whole
+     night, chosen and not cancelled, was written over the cancel */
+  it('a cancel is kept when the auto-choice lands at the same moment', async () => {
+    await post({ action: 'propose', times: ['2026-10-02T20:00:00Z', '2026-10-03T20:00:00Z'] });
+    const { id } = (await view()).nights[0];
+    const stored = () => JSON.parse(hash('playnight:nights').get(id)!) as import('@/lib/play-night').Night;
+    /* the decide moment has come, and a visitor's read has the night in hand */
+    vi.setSystemTime(new Date(lib.decidesAt(stored()) + 1000));
+    const read = stored();
+    expect(lib.autoChoice(read, { stebbias: ['a', 'b'] }, Date.now())).not.toBeNull();
+    /* the proposer's cancel lands first */
+    expect((await lib.changeNight(id, n => ({ ...n, cancelled: true })))?.cancelled).toBe(true);
+    /* the read's choice is decided on the night as it now stands, which is out, so nothing is written */
+    const after = await lib.changeNight(id, n => { const a = lib.autoChoice(n, { stebbias: ['a', 'b'] }, Date.now()); return a && a !== 'out' ? { ...n, chosen: a.id, chosenBy: 'auto' } : null; });
+    expect(after).toMatchObject({ cancelled: true, chosen: null });
+    expect(stored()).toMatchObject({ cancelled: true, chosen: null });
+    /* and a write over a night someone else wrote since is made again on the newer one */
+    let runs = 0;
+    const out = await lib.changeNight(id, n => { if (runs++ === 0) hash('playnight:nights').set(id, JSON.stringify({ ...n, note: 'breytt' })); return { ...n, startedBy: 'joenana' }; });
+    expect(runs).toBe(2);
+    expect(out).toMatchObject({ note: 'breytt', startedBy: 'joenana' });
+    expect(await lib.changeNight('nowhere', n => n)).toBeNull();
   });
 
   it('keeps every night held in the annals, newest first, and none put out', async () => {
