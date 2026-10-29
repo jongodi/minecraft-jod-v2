@@ -72,9 +72,9 @@
    weathering over it, so the poster still reads as paper and not as a photo */
 .w-poster__cover { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.22; filter: saturate(0.6) contrast(0.9); pointer-events: none; }
 .w-poster.has-cover::before { background:
-    linear-gradient(180deg, rgba(232, 220, 196, 0.35), rgba(232, 220, 196, 0.7) 60%, rgba(232, 220, 196, 0.85)),
-    radial-gradient(60% 40% at 90% 10%, rgba(77, 51, 35, 0.12), transparent 70%),
-    repeating-linear-gradient(90deg, rgba(77, 51, 35, 0.025) 0 1px, transparent 1px 3px); }
+    linear-gradient(180deg, rgb(from var(--paper) r g b / 0.35), rgb(from var(--paper) r g b / 0.7) 60%, rgb(from var(--paper) r g b / 0.85)),
+    radial-gradient(60% 40% at 90% 10%, rgb(from var(--tc-brown) r g b / 0.12), transparent 70%),
+    repeating-linear-gradient(90deg, rgb(from var(--tc-brown) r g b / 0.025) 0 1px, transparent 1px 3px); }
 .w-poster__skin { width: 8.5rem; padding: calc(var(--px) * 2); background: var(--wood); box-shadow: inset 0 0 0 var(--px) var(--wood-light); }
 .w-poster__skin img { width: 100%; aspect-ratio: 1 / 2; image-rendering: pixelated; object-fit: contain; object-position: center bottom; background: var(--paper-2); }
 .w-poster__body { min-width: 0; }
@@ -116,7 +116,7 @@
    shows behind the land as it does on the home page, and on it a lantern on
    each place they built, its name on a paper tag. A lantern is pressable, so
    it is amber; pressed, it opens the place in the world. */
-.w-corner { position: relative; margin: var(--sp-4) 0 0; aspect-ratio: 16 / 9; background: linear-gradient(180deg, var(--sky-night-top), var(--night) 80%); box-shadow: 0 0 0 var(--px) var(--tc-brown), 0 calc(var(--px) * 2) 0 var(--px) rgba(30, 22, 17, 0.35); }
+.w-corner { position: relative; margin: var(--sp-4) 0 0; aspect-ratio: 16 / 9; background: linear-gradient(180deg, var(--sky-night-top), var(--night) 80%); box-shadow: 0 0 0 var(--px) var(--tc-brown), 0 calc(var(--px) * 2) 0 var(--px) rgb(from var(--ink) r g b / 0.35); }
 .w-corner img { display: block; width: 100%; height: 100%; }
 .w-corner__pin { position: absolute; display: grid; justify-items: center; gap: 2px; translate: -50% -1.5rem; color: inherit; text-decoration: none; }
 .w-corner__pin .b-lantern { width: 1rem; height: 1.5rem; color: var(--paper); filter: drop-shadow(0 0 3px var(--lantern-glow)); transition: transform var(--dur-1) var(--ease-out); }
@@ -124,7 +124,7 @@
 .w-corner__pin:focus-visible { outline: none; }
 .w-corner__pin:focus-visible .w-corner__label { background: var(--lantern); outline: var(--px) solid var(--ink); }
 @media (hover: hover) { .w-corner__pin:hover .b-lantern { transform: translateY(-2px) scale(1.15); } .w-corner__pin:hover .w-corner__label { background: var(--lantern); } }
-.w-corner__cap { position: absolute; left: var(--sp-2); bottom: var(--sp-2); padding: 1px var(--sp-2) 2px; background: rgba(14, 12, 9, 0.6); color: var(--paper); font-size: var(--fs-sm); }
+.w-corner__cap { position: absolute; left: var(--sp-2); bottom: var(--sp-2); padding: 1px var(--sp-2) 2px; background: rgb(from var(--pitch) r g b / 0.6); color: var(--paper); font-size: var(--fs-sm); }
 .w-corner__cap .b-paper__kicker { color: var(--lantern); margin-right: var(--sp-1); }
 @media (prefers-reduced-motion: reduce) { .w-corner__pin .b-lantern { transition: none; } }
 
@@ -167,7 +167,7 @@
 }
 .w-pin.has-prints { border-style: solid; border-color: var(--wood-dark); box-shadow: var(--bevel); }
 .w-pin.is-over { border-color: var(--lantern); border-style: solid; box-shadow: 0 0 0 calc(var(--px) * 2) var(--lantern-glow); }
-.w-pin__text { width: 100%; min-height: 3.5rem; padding: var(--sp-2) var(--sp-1); background: transparent; border: 0; border-bottom: var(--px) solid rgba(77, 51, 35, 0.35); color: var(--ink); font-family: var(--font-text); font-size: var(--fs-md); line-height: 1.5; resize: vertical; outline: none; }
+.w-pin__text { width: 100%; min-height: 3.5rem; padding: var(--sp-2) var(--sp-1); background: transparent; border: 0; border-bottom: var(--px) solid rgb(from var(--tc-brown) r g b / 0.35); color: var(--ink); font-family: var(--font-text); font-size: var(--fs-md); line-height: 1.5; resize: vertical; outline: none; }
 .w-pin__text::placeholder, .w-draft__cap::placeholder { color: var(--sign-soft); }
 .w-pin__text:focus { border-bottom-color: var(--sign-lantern); }
 .w-pin__row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-3); }
@@ -190,7 +190,7 @@
 .w-draft__pic img { width: 100%; height: 100%; object-fit: cover; opacity: 0.6; transition: opacity var(--dur-2) var(--ease-out); }
 .w-draft.is-done .w-draft__pic img { opacity: 1; }
 .w-draft.is-error .w-draft__pic img { opacity: 0.3; filter: sepia(1); }
-.w-draft__bar { position: absolute; left: 0; right: 0; bottom: 0; height: calc(var(--px) * 2); background: rgba(30, 22, 17, 0.25); }
+.w-draft__bar { position: absolute; left: 0; right: 0; bottom: 0; height: calc(var(--px) * 2); background: rgb(from var(--ink) r g b / 0.25); }
 .w-draft__bar::after { content: ''; position: absolute; inset: 0; background: var(--lantern-deep); transform: scaleX(var(--p, 0)); transform-origin: left center; transition: transform var(--dur-2) var(--ease-out); }
 .w-draft__x { position: absolute; top: var(--px); right: var(--px); width: 1.75rem; height: 1.75rem; display: grid; place-items: center; background: var(--pane); color: var(--paper); }
 .w-draft__x svg { width: 0.75rem; height: 0.75rem; }
@@ -198,7 +198,7 @@
 .w-draft__x::before { content: ''; position: absolute; inset: -0.5rem; }
 .w-draft__x:focus-visible { background: var(--tc-red); }
 @media (hover: hover) { .w-draft__x:hover { background: var(--tc-red); } }
-.w-draft__cap { width: 100%; padding: var(--sp-1) var(--sp-2); background: transparent; border: 0; border-bottom: var(--px) solid rgba(77, 51, 35, 0.35); color: var(--ink); font-family: var(--font-text); font-size: var(--fs-sm); outline: none; }
+.w-draft__cap { width: 100%; padding: var(--sp-1) var(--sp-2); background: transparent; border: 0; border-bottom: var(--px) solid rgb(from var(--tc-brown) r g b / 0.35); color: var(--ink); font-family: var(--font-text); font-size: var(--fs-sm); outline: none; }
 .w-draft__cap:focus { border-bottom-color: var(--sign-lantern); }
 .w-draft__meta { font-size: var(--fs-sm); color: var(--sign-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* a failed print says why in full, and how to send it again */
@@ -232,7 +232,7 @@
   /* the board's edge: dark wood outside, a lighter bead inside it, lit from
      above like every block on the site, and a hard shadow on the night behind */
   border: var(--px) solid var(--wood-dark);
-  box-shadow: inset 0 0 0 var(--px) var(--sign-rim), inset 0 calc(var(--px) * 2) 0 rgba(255, 240, 210, 0.22), inset 0 calc(var(--px) * -2) 0 rgba(77, 51, 35, 0.25), 0 calc(var(--px) * 2) 0 rgba(21, 16, 13, 0.5);
+  box-shadow: inset 0 0 0 var(--px) var(--sign-rim), inset 0 calc(var(--px) * 2) 0 rgb(from var(--glint) r g b / 0.22), inset 0 calc(var(--px) * -2) 0 rgb(from var(--tc-brown) r g b / 0.25), 0 calc(var(--px) * 2) 0 rgb(from var(--night) r g b / 0.5);
 }
 .w-sign::before, .w-sign::after { content: ''; position: absolute; pointer-events: none; }
 /* the bar: the plank the bar at the top of the page is cut from, a shade
@@ -242,8 +242,8 @@
   right: calc(var(--bar-out) * -1);
   top: calc(var(--hang) * -1 - var(--px));
   height: var(--bar-h);
-  background: linear-gradient(180deg, rgba(255, 240, 210, 0.3) 0 var(--px), transparent var(--px)), linear-gradient(180deg, var(--wood-light) calc(100% - var(--px)), var(--wood-dark) calc(100% - var(--px)));
-  box-shadow: 0 var(--px) 0 rgba(21, 16, 13, 0.5);
+  background: linear-gradient(180deg, rgb(from var(--glint) r g b / 0.3) 0 var(--px), transparent var(--px)), linear-gradient(180deg, var(--wood-light) calc(100% - var(--px)), var(--wood-dark) calc(100% - var(--px)));
+  box-shadow: 0 var(--px) 0 rgb(from var(--night) r g b / 0.5);
 }
 /* the chains, counted up from the board so a link always meets the wood whole */
 .w-sign::after {
@@ -385,7 +385,7 @@
 .w-tool { --w-star: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Cpath d='M7 1h2v4h4v2h-2v2h2v2h-2v2h-2v2H7v-2H5v-2H3V9h2V7H3V5h4V1z'/%3E%3C/svg%3E"); }
 
 /* replies: a line each, under a seam in the board, as if a plank were added for them */
-.w-replies { display: grid; gap: var(--sp-2); margin-top: var(--sp-1); margin-inline: calc(var(--sp-4) * -1); padding: var(--sp-3) var(--sp-4) 0; border-top: var(--px) solid var(--sign-line); box-shadow: inset 0 var(--px) 0 rgba(255, 240, 210, 0.3); }
+.w-replies { display: grid; gap: var(--sp-2); margin-top: var(--sp-1); margin-inline: calc(var(--sp-4) * -1); padding: var(--sp-3) var(--sp-4) 0; border-top: var(--px) solid var(--sign-line); box-shadow: inset 0 var(--px) 0 rgb(from var(--glint) r g b / 0.3); }
 .w-reply, .w-reply__form { display: grid; grid-template-columns: 1.5rem minmax(0, 1fr); gap: var(--sp-3); align-items: start; }
 .w-reply__form { grid-template-columns: 1.5rem minmax(0, 1fr) auto; align-items: center; }
 .w-reply__head { width: 1.5rem; height: 1.5rem; box-shadow: 0 0 0 1px var(--wood-dark); }
@@ -602,7 +602,7 @@
   pointer-events: none;
 }
 /* the light over a slot pointed at, laid over the item as the game lays it */
-.w-slot::before { content: ''; position: absolute; z-index: 1; inset: 0; background: rgba(255, 240, 210, 0.32); opacity: 0; pointer-events: none; }
+.w-slot::before { content: ''; position: absolute; z-index: 1; inset: 0; background: rgb(from var(--glint) r g b / 0.32); opacity: 0; pointer-events: none; }
 @media (hover: hover) { .w-slot:not([disabled]):hover::before { opacity: 1; } }
 .w-slot:not([disabled]):active .w-item, .w-slot:not([disabled]):active .w-slot__plus { translate: var(--press); }
 .w-slot:focus-visible { outline: var(--px) solid var(--lantern); outline-offset: calc(var(--px) * 3); }
@@ -615,7 +615,7 @@
 /* An item given pops into its slot the way the game's do when one is picked
    up: drawn half as wide and half as tall again, coming back to itself over
    five of the game's ticks, from its foot, at the game's even pace. */
-.w-item.is-popping { transform-origin: 50% 75%; animation: w-pop 250ms linear both; }
+.w-item.is-popping { transform-origin: 50% 75%; animation: w-pop var(--dur-2) linear both; }
 @keyframes w-pop { 0% { transform: scale(0.5, 1.5); } 50% { transform: scale(0.67, 1.25); } }
 @media (prefers-reduced-motion: reduce) { .w-item.is-popping { animation: none; } }
 /* the empty slot after them: a plus in the slot, lit while the inventory is open */
@@ -640,7 +640,7 @@
   margin-inline: calc(var(--sp-4) * -1);
   padding: var(--sp-3) var(--sp-4) 0;
   border-top: var(--px) solid var(--sign-line);
-  box-shadow: inset 0 var(--px) 0 rgba(255, 240, 210, 0.3);
+  box-shadow: inset 0 var(--px) 0 rgb(from var(--glint) r g b / 0.3);
   animation: w-inv-in var(--dur-2) var(--ease-out) both;
 }
 @keyframes w-inv-in { from { opacity: 0; transform: translateY(calc(var(--px) * -3)); } }
