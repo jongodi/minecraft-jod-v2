@@ -23,7 +23,7 @@ import { useRoster } from './roster';
    2024, by invitation): a splash is a fact the visitor has not read yet. */
 const SPLASHES = ['Aldrei endurræst!', 'Eigin gagnapakkar!', 'Útlitspakki fylgir!', 'Heimurinn í þrívídd!', 'Badlands við sólsetur!', 'Með armadillo!'];
 /* the hotbar's keys, one to a door (AddressBar.tsx), said only where there is likely a keyboard to press them on */
-const KEYS_SPLASH = 'Ýttu á 1, 2, 3 eða 4!';
+const KEYS_SPLASH = 'Ýttu á 1, 2 eða 3!';
 
 const shuffled = <T,>(a: T[]): T[] => {
   const b = [...a];
@@ -89,7 +89,7 @@ function Climbers({ names, known }: { names: string[]; known: boolean }) {
   );
 }
 
-function Hero({ server, season, nights }: { server: ServerState; season: Season; nights?: PlayNightResponse }) {
+function Hero({ server, season, nights, packs }: { server: ServerState; season: Season; nights?: PlayNightResponse; packs: number }) {
   /* someone's home: the server is up and somebody is in it */
   const home = server.online === true && server.players > 0;
   const lower = server.list.map(n => n.toLowerCase());
@@ -126,7 +126,7 @@ function Hero({ server, season, nights }: { server: ServerState; season: Season;
           <div className="b-hero__action">
             <CopyAddress />
             <div className="b-hero__side">
-              <StatusLantern server={server} />
+              <StatusLantern server={server} packs={packs} />
               <NightLine initial={nights} />
               <YuleLad season={season} spot="hero" />
             </div>

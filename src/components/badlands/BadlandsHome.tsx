@@ -11,7 +11,7 @@ import AddressBar from './AddressBar';
 import Hero from './Hero';
 import World from './World';
 import Footer from './Footer';
-import { SECTIONS, isRoom, plainClick, type DoorId, type RoomId } from './data';
+import { SECTIONS, isRoom, plainClick, type PlaceId, type RoomId } from './data';
 import { modalOpen, seedStatus, showWorld, useEffectsAllowed, useReducedMotionPref, useScrollSpy, useServerStatus } from './hooks';
 import { seedNights } from './night';
 import { seasonClass, useSeason } from './Season';
@@ -41,8 +41,8 @@ export default function BadlandsHome({ syncedOn, bases, initial }: { syncedOn: s
   const reduce = useReducedMotionPref();
   const reached = useScrollSpy(['heimur']) === 'heimur';
   const [room, setRoom] = useState<RoomId | null>(null);
-  const [pressed, setPressed] = useState<DoorId | null>(null);
-  const { plates, map, pinned, nights } = initial;
+  const [pressed, setPressed] = useState<PlaceId | null>(null);
+  const { plates, map, pinned, nights, packs } = initial;
 
 
   /* The hash is the source of truth: read it on arrival, on the back button,
@@ -127,15 +127,16 @@ export default function BadlandsHome({ syncedOn, bases, initial }: { syncedOn: s
 
   /* One lantern is lit at a time, the door the visitor is behind: an open
      room's, otherwise the world's. Up at the sunset none is, even with a room
-     left open below. A pressed door lights at once and holds while the page
-     is still on its way down to the frame. */
+     left open below, and none while the shelf is open, which has no door. A
+     pressed door lights at once and holds while the page is still on its way
+     down to the frame. */
   useEffect(() => {
     if (!pressed) return;
     if (reached) { setPressed(null); return; }
     const t = setTimeout(() => setPressed(null), PRESSED_HOLD_MS);
     return () => clearTimeout(t);
   }, [pressed, reached]);
-  const active: DoorId | null = pressed ?? (reached ? room ?? 'heimur' : null);
+  const active: PlaceId | null = pressed ?? (reached ? room ?? 'heimur' : null);
 
   return (
     <div className={`b${seasonClass(season)}`}>
@@ -146,7 +147,7 @@ export default function BadlandsHome({ syncedOn, bases, initial }: { syncedOn: s
       {effects && !reduce && <CursorLight />}
       <AddressBar links={SECTIONS} activeId={active} onDoor={openDoor} status={initial.status} />
       <main id="efni">
-        <Hero server={server} season={season} nights={nights} />
+        <Hero server={server} season={season} nights={nights} packs={packs} />
         <World plates={plates} config={map} pinned={pinned} server={server} syncedOn={syncedOn} bases={bases} room={room} onCloseRoom={closeRoom} />
       </main>
       <Footer season={season} />

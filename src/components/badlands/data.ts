@@ -24,20 +24,24 @@ export const bodyFallback = (name: string, size = 256) => `https://mc-heads.net/
 
 export interface NavLink { label: string; href: string; id?: string }
 
-/* The four doors of the evening, each a lantern in the bar (a hotbar slot on phones).
-   The first is the world itself; the other three are rooms that open over it.
+/* The three doors of the evening, each a lantern in the bar (a hotbar slot on phones).
+   The first is the world itself; the other two are rooms that open over it.
    The board comes second: it is where whatever happens on JOÐ is posted, and
    the door a returning member reaches for first. A door's id is also the
-   hash that opens it, so /#taflan works from anywhere. */
-export type DoorId = 'heimur' | 'taflan' | 'hopur' | 'hillan';
+   hash that opens it, so /#taflan works from anywhere. The shelf is a room
+   too (#hillan), but not a door: it is reached from the server's lantern in
+   the hero, beside the version it belongs to, so the bar and the hotbar hold
+   three lanterns and a thumb has a third more slot to land on. */
+export type DoorId = 'heimur' | 'taflan' | 'hopur';
 export const SECTIONS: (NavLink & { id: DoorId })[] = [
   { label: 'Heimurinn', href: '#heimur', id: 'heimur' },
   { label: 'Taflan',    href: '#taflan', id: 'taflan' },   /* the notice board: posts, prints, calls, questions, fires and the map's news */
   { label: 'Eftirlýst', href: '#hopur',  id: 'hopur'  },   /* the crew's room: the wanted board is what it is named for */
-  { label: 'Hillan',    href: '#hillan', id: 'hillan' },
 ];
 export const ROOMS = ['taflan', 'hopur', 'hillan'] as const;
 export type RoomId = typeof ROOMS[number];
+/** A place the visitor can be behind: a door, or the shelf, which is a room without one. */
+export type PlaceId = DoorId | RoomId;
 export const isRoom = (s: string | null | undefined): s is RoomId => (ROOMS as readonly string[]).includes(s ?? '');
 /** A plain click: one with a modifier keeps the link's own meaning (a new tab, a new window), so the doors open in place only on this. */
 export const plainClick = (e: { button: number; metaKey: boolean; ctrlKey: boolean; shiftKey: boolean; altKey: boolean }) =>

@@ -15,6 +15,8 @@ import { placePrints, type PlacePrints } from '@/lib/crew-places';
 import { DEFAULT_CONFIG, woodOf, type MapConfig } from '@/lib/map-types';
 import { PLATES, sentenceCase, titleCase, type Plate } from '@/components/badlands/data';
 import { seasonAt, type Season } from '@/lib/season';
+import { getPublicPacks } from '@/lib/datapacks-store';
+import { DATAPACKS } from '@/data/datapacks';
 
 export interface HomeData {
   status: ServerState;
@@ -23,6 +25,8 @@ export interface HomeData {
   map: MapConfig;
   pinned: Record<string, PlacePrints>;
   season: Season;
+  /** how many packs stand on the shelf, for its way in under the hero's lantern */
+  packs: number;
 }
 
 const WAIT_MS = 5000;
@@ -37,12 +41,13 @@ async function within<T>(work: Promise<T>, fallback: T): Promise<T> {
 
 export async function loadHomeData(): Promise<HomeData> {
   const now = Date.now();
-  const [status, nights, gallery, map, pinned] = await Promise.all([
+  const [status, nights, gallery, map, pinned, packs] = await Promise.all([
     within(getStatus({ live: false }).then(s => toServerState(s, now)), { ...NO_STATUS, online: false, life: 'unknown', checkedAt: now }),
     within(viewNights(null, now), NO_NIGHTS),
     within(readGallery(), []),
     within(readMap(), DEFAULT_CONFIG),
     within(placePrints(), {}),
+    within(getPublicPacks().then(l => l.length), DATAPACKS.length),
   ]);
   const shown = gallery.filter(p => p.active).sort((a, b) => a.order - b.order);
   return {
@@ -53,5 +58,6 @@ export async function loadHomeData(): Promise<HomeData> {
     map: map.locations.length ? { locations: map.locations.map(l => ({ ...l, wood: woodOf(l) })), zones: map.zones ?? [], paths: map.paths ?? [], terrain: map.terrain } : DEFAULT_CONFIG,
     pinned,
     season: seasonAt(new Date(now)),
+    packs,
   };
 }

@@ -69,7 +69,7 @@ function Xp() {
   return <span className="b-xp" aria-hidden="true"><span className="b-xp__fill" /></span>;
 }
 
-/** The bar: the mark, the four doors as lanterns, the server's lantern and
+/** The bar: the mark, the three doors as lanterns, the server's lantern and
     the address with its copy action. On the home page it lies over the sunset
     and takes a surface once the page has scrolled; elsewhere it is solid from
     the start. On phones the doors move to a hotbar at the foot of the screen,
@@ -121,7 +121,7 @@ export default function AddressBar({ links, activeId, onDoor, always = false, st
     return () => { ro?.disconnect(); window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', onSize); cancelAnimationFrame(raf); };
   }, []);
 
-  /* The game's hotbar keys: 1 to 4 take the four doors, as they take the
+  /* The game's hotbar keys: 1 to 3 take the three doors, as they take the
      first slots in the game. Not while a field is being typed in,
      nor under a dialog, and never with a modifier, which belongs to the
      browser. Inside the 3D map the keys are the viewer's own: it is a frame
@@ -129,8 +129,8 @@ export default function AddressBar({ links, activeId, onDoor, always = false, st
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.defaultPrevented || e.repeat || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
-      const i = ['1', '2', '3', '4'].indexOf(e.key);
-      const l = links[i];
+      if (!/^[1-9]$/.test(e.key)) return;
+      const l = links[Number(e.key) - 1];
       if (!l) return;
       const at = e.target instanceof HTMLElement ? e.target : null;
       if (at && (at.isContentEditable || at.closest('input, textarea, select'))) return;
@@ -216,7 +216,7 @@ export default function AddressBar({ links, activeId, onDoor, always = false, st
       </header>
       <ToastHost />
 
-      {/* The hotbar at the foot of a phone, on every page: the four doors as
+      {/* The hotbar at the foot of a phone, on every page: the three doors as
           its slots, the one the visitor is behind framed the way the game
           frames the slot in hand. */}
       <nav className="b-hotbar" aria-label="Efnisyfirlit">
