@@ -390,7 +390,7 @@
   gap: var(--sp-3);
   width: min(22rem, 100%);
   padding: var(--sp-3) var(--sp-4) var(--sp-3) var(--sp-3);
-  box-shadow: 0 var(--px) 0 var(--tc-brown), 0 8px 0 rgb(from var(--night) r g b / 0.35);
+  box-shadow: 0 var(--px) 0 var(--tc-brown), var(--lift-3);
   animation: b-toast-in var(--dur-3) var(--ease-out) both;
 }
 .b-toast.is-leaving { animation: b-toast-out var(--dur-2) var(--ease-in) forwards; }
@@ -470,7 +470,8 @@
 .b-status.is-on .b-status__word { color: var(--online); }
 .b-status.is-off .b-status__word { color: var(--tc-white); }
 .b-status.is-kindling .b-status__word { color: var(--lantern); }
-.b-status__row { font-size: var(--fs-sm); color: var(--tc-white); line-height: 1.5; }
+/* live counts keep their width as they change (tabular numerals), so a line that counts never shifts */
+.b-status__row { font-size: var(--fs-sm); color: var(--tc-white); line-height: 1.5; font-variant-numeric: tabular-nums; }
 .b-status__row b { font-family: var(--font-data); font-weight: 400; font-size: var(--fs-data); color: var(--paper); }
 .b-status__meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-3); margin-top: var(--sp-1); color: var(--tc-white); }
 .b-status__heads { display: inline-flex; gap: var(--px); }
@@ -496,7 +497,7 @@
   box-shadow: inset 0 0 0 var(--px) rgb(from var(--night) r g b / 0.35);
 }
 .b-bar__strata { pointer-events: none; opacity: 0; transition: opacity var(--dur-3) var(--ease-out); }
-.b-bar .b-bar__strata { top: 100%; height: 12px; transform: none; filter: drop-shadow(0 4px 0 rgb(from var(--night) r g b / 0.45)); }
+.b-bar .b-bar__strata { top: 100%; height: 12px; transform: none; filter: drop-shadow(var(--lift-2)); }
 .b-bar.is-solid .b-bar__strata { opacity: 1; }
 .b-bar.is-solid .b-bar__mark { color: var(--paper); text-shadow: 0 var(--px) 0 var(--wood-dark); }
 @media (hover: hover) { .b-bar.is-solid .b-bar__mark:hover { color: var(--lantern); } }
@@ -1661,7 +1662,7 @@ html.is-map-full { overflow: hidden; }
   width: calc(var(--arm) + var(--px) * 7);
   height: calc(var(--px) * 4);
   background: var(--plank);
-  box-shadow: 0 var(--px) 0 rgb(from var(--night) r g b / 0.45);
+  box-shadow: var(--lift-1);
 }
 /* its foot, a block of the ground it is planted in */
 .b-boot::after {
@@ -1745,7 +1746,7 @@ html.is-map-full { overflow: hidden; }
   flex-direction: column;
   overflow: hidden;
   padding: var(--sp-2) var(--sp-2) var(--sp-3);
-  box-shadow: 0 var(--px) 0 var(--tc-brown), 0 8px 0 rgb(from var(--night) r g b / 0.35);
+  box-shadow: 0 var(--px) 0 var(--tc-brown), var(--lift-3);
 }
 /* it comes up from the foot of the frame, and leaves the same way: World keeps it a beat after its place is let go */
 @keyframes b-card-in  { from { opacity: 0; transform: translateY(12px); } }
@@ -2088,7 +2089,7 @@ html.is-map-full { overflow: hidden; }
     inset: 100% 0 auto;
     height: 6px;
     background: linear-gradient(180deg, var(--tc-red) 0 25%, var(--tc-orange) 25% 50%, var(--tc-yellow) 50% 75%, var(--tc-white) 75%);
-    filter: drop-shadow(0 3px 0 rgb(from var(--night) r g b / 0.4));
+    filter: drop-shadow(var(--lift-2));
   }
   .b-frame.is-full .b-hud__title .b-title, .b-frame:fullscreen .b-hud__title .b-title { grid-area: 1 / 2; align-self: end; font-size: var(--fs-lg); line-height: 1.1; text-shadow: 0 var(--px) 0 var(--wood-dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .b-frame.is-full .b-hud__meta, .b-frame:fullscreen .b-hud__meta { grid-area: 2 / 2 / 3 / 3; align-self: start; gap: 0 var(--sp-2); line-height: 1.35; text-shadow: 0 1px 0 var(--wood-dark); }
@@ -2407,7 +2408,7 @@ html.is-map-full { overflow: hidden; }
   display: flex; align-items: center; gap: var(--sp-3);
   max-width: 22rem; padding-block: var(--sp-1);
   color: var(--text-soft); text-decoration: none; text-shadow: 0 var(--px) 0 var(--night);
-  font-size: var(--fs-sm); line-height: 1.5;
+  font-size: var(--fs-sm); line-height: 1.5; font-variant-numeric: tabular-nums;
 }
 .b-nightline:focus-visible .b-nightline__kicker { text-decoration: underline var(--px); text-underline-offset: 0.35em; }
 @media (hover: hover) { .b-nightline:hover .b-nightline__kicker { text-decoration: underline var(--px); text-underline-offset: 0.35em; } }

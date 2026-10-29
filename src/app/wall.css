@@ -243,7 +243,7 @@
   top: calc(var(--hang) * -1 - var(--px));
   height: var(--bar-h);
   background: linear-gradient(180deg, rgb(from var(--glint) r g b / 0.3) 0 var(--px), transparent var(--px)), linear-gradient(180deg, var(--wood-light) calc(100% - var(--px)), var(--wood-dark) calc(100% - var(--px)));
-  box-shadow: 0 var(--px) 0 rgb(from var(--night) r g b / 0.5);
+  box-shadow: var(--lift-1);
 }
 /* the chains, counted up from the board so a link always meets the wood whole */
 .w-sign::after {

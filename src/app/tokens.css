@@ -229,12 +229,13 @@
   --notch: polygon(var(--px) 0, calc(100% - var(--px)) 0, 100% var(--px), 100% calc(100% - var(--px)), calc(100% - var(--px)) 100%, var(--px) 100%, 0 calc(100% - var(--px)), 0 var(--px));
 
   /* ── elevation: what lifts off the surface casts a hard shadow straight
-     down, in the night's colour, one, two or four pixels deep: a tag on a
-     plank, a card or a sign, the plank or a room itself. No blur: the sun is
-     low and nothing in a pixel world has a soft edge ── */
-  --lift-1: 0 var(--px) 0 rgb(from var(--night) r g b / 0.35);
+     down in the night's colour, one, two or four of the art's pixels deep,
+     and the higher it hangs the fainter its shadow: a tag or a slip on a
+     plank, a card or the strata under the bar, a sign hung on its chains.
+     No blur: nothing in a pixel world has a soft edge ── */
+  --lift-1: 0 var(--px) 0 rgb(from var(--night) r g b / 0.5);
   --lift-2: 0 calc(var(--px) * 2) 0 rgb(from var(--night) r g b / 0.45);
-  --lift-3: 0 calc(var(--px) * 4) 0 rgb(from var(--night) r g b / 0.55);
+  --lift-3: 0 calc(var(--px) * 4) 0 rgb(from var(--night) r g b / 0.35);
 
   /* ── motion. Four durations, each twice the last; the shortest is a tap's
      own answer, under a tenth of a second. What moves in the world moves as

@@ -19,6 +19,9 @@
 html {
   background: var(--night);
   color: var(--text);
+  /* the page's own scrollbar, where the browser lets it be coloured: the
+     plank's wood on the night, not a white track down a dark page */
+  scrollbar-color: var(--wood-light) var(--night);
   line-height: 1.5;
   -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
@@ -62,6 +65,11 @@ button, [role='button'] { cursor: pointer; }
 ::-webkit-search-decoration { -webkit-appearance: none; }
 ::-webkit-file-upload-button { -webkit-appearance: button; font: inherit; }
 ::placeholder { opacity: 1; color: var(--text-faint); }
+/* A select wears the site's clothes, not the platform's: no native arrow,
+   and in its place a chevron drawn on the pixel grid in the ink (the
+   notice's paper is what every select on the site stands on). */
+select { appearance: none; padding-right: 2.25rem; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6' shape-rendering='crispEdges'%3E%3Cpath fill='%231E1611' d='M0 0h2v2h2v2h2V2h2V0h2v2H8v2H6v2H4V4H2V2H0z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.75rem center; background-size: 10px 6px; }
+select:-moz-focusring { color: transparent; text-shadow: 0 0 0 var(--ink); }
 textarea { resize: vertical; }
 summary { display: list-item; }
 progress { vertical-align: baseline; }
