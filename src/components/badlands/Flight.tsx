@@ -423,13 +423,28 @@ function Flight({ flight, fly, runway, f3, places, players, selected, onChoose, 
     let inReach = false;
     if (window.scrollY > 0) scrolled.current = true;
     const onScroll = () => {
-      if (!scrolled.current && window.scrollY > 0) { scrolled.current = true; more(); }
+      if (!scrolled.current && window.scrollY > 0) { scrolled.current = true; if (asked) start(); else more(); }
       if (inReach) schedule();
     };
     let io: IntersectionObserver | null = null;
+    /* The first stills are not asked for until the page has loaded: on a
+       phone the world is in reach from the first screen, and the overview
+       and the landing, a sixth of a megabyte, were fetched beside the hero's
+       own fonts and stylesheet and slowed them. A visitor who has already
+       scrolled is on the way down, and gets them at once. */
+    const onLoad = () => { loaded = true; if (asked) start(); };
+    let loaded = document.readyState === 'complete';
+    let asked = false;
+    const start = () => {
+      if (fetching) return;
+      if (!loaded && !scrolled.current) { asked = true; return; }
+      fetching = true;
+      if (shape) fetchSet(shape);
+      lastKey = '';
+    };
     if (fly) {
       window.addEventListener('scroll', onScroll, { passive: true });
-      const start = () => { if (!fetching) { fetching = true; if (shape) fetchSet(shape); lastKey = ''; } };
+      if (!loaded) window.addEventListener('load', onLoad, { once: true });
       if ('IntersectionObserver' in window) {
         io = new IntersectionObserver(([e]) => { inReach = e.isIntersecting; if (inReach) { cur = -1; start(); schedule(); } }, { rootMargin: '100% 0px' });
         io.observe(section);
@@ -437,6 +452,7 @@ function Flight({ flight, fly, runway, f3, places, players, selected, onChoose, 
     }
     return () => {
       gone = true;
+      window.removeEventListener('load', onLoad);
       inflight?.abort();
       cancelAnimationFrame(raf);
       if (scene) scene.style.visibility = 'hidden';

@@ -630,10 +630,10 @@
   .b-bar--home .b-bar__status::after { left: auto; right: 0; --tip-x: 0%; }
 }
 .b-bar__addr { flex-shrink: 0; }
-/* Four doors want the room the address had: until 1200 px the tag is the
-   glyph and the verb, and until 1100 px the glyph alone (the address is
-   still its name, and the toast shows it), the doors set close and their
-   letters unspaced, so the plank holds everything without a scroll. */
+/* The doors want the room the address had: until 1100 px the tag is the
+   glyph alone (the address is still its name, and the toast shows it), the
+   doors set close and their letters unspaced, so the plank holds everything
+   without a scroll; from 1100 px, with three doors, the whole address. */
 @media (min-width: 760px) and (max-width: 1099.98px) {
   .b-doors { gap: var(--sp-3); }
   .b-door { gap: var(--sp-1); letter-spacing: 0; }
@@ -645,7 +645,7 @@
   .b-doors { gap: var(--sp-2); }
   .b-bar__state { min-width: 3.5rem; }
 }
-@media (max-width: 1199.98px) {
+@media (max-width: 1099.98px) {
   .b-bar__ip { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 }
 @media (min-width: 760px) and (max-width: 899.98px) { .b-bar__mark span { display: none; } }
