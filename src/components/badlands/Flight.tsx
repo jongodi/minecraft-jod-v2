@@ -55,6 +55,8 @@ const FIRST = 2;
 /* the frames kept decoded: the overview, and round the camera the one it has
    passed and the next few ahead of it */
 const AROUND = [-1, 0, 1, 2, 3];
+/* how often the F3 lines are rewritten while the camera moves */
+const F3_EVERY_MS = 120;
 /* a pin this far past the frame's edge is out of sight */
 const EDGE = 24;
 /* the camera sets off while the frame is still rising, this much of its
@@ -175,6 +177,9 @@ function Flight({ flight, fly, runway, f3, places, players, selected, onChoose, 
     let approached = false;
     let showing = false;
     let f3Text = ['', ''];
+    /* the F3 lines are rewritten a few times a second, not on every frame:
+       each rewrite is a text node laid out and painted in the scroll's frame */
+    let f3At = 0;
     let skyLook = '';
     const stacked = new Map<HTMLElement, string>();
 
@@ -397,7 +402,8 @@ function Flight({ flight, fly, runway, f3, places, players, selected, onChoose, 
       const lines = f3.current;
       const xyz = flying ? `XYZ: ${cam.eye.map(Math.floor).join(' / ')}` : '';
       const way = flying ? `Snýr í ${FACING[facing(cam.eye, cam.look)]}` : '';
-      if (lines && (xyz !== f3Text[0] || way !== f3Text[1])) {
+      if (lines && (xyz !== f3Text[0] || way !== f3Text[1]) && (!flying || now - f3At >= F3_EVERY_MS)) {
+        f3At = now;
         f3Text = [xyz, way];
         lines.hidden = !flying;
         if (lines.children[0]) lines.children[0].textContent = xyz;

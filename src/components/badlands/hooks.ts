@@ -209,6 +209,21 @@ function legacyCopy(text: string) {
   document.body.removeChild(ta);
 }
 
+/** Marks an element `is-away` while none of it is on screen, so the
+    stylesheet can hold the ambient loops in it still (the critters on the
+    ground, the fire's frames and smoke): an animation off screen still
+    invalidates style on every frame of a scroll elsewhere. The class is
+    written straight to the element, since nothing rendered reads it. */
+export function useAway<T extends HTMLElement>(ref: React.RefObject<T | null>): void {
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || !('IntersectionObserver' in window)) return;
+    const io = new IntersectionObserver(([e]) => el.classList.toggle('is-away', !e.isIntersecting));
+    io.observe(el);
+    return () => { io.disconnect(); el.classList.remove('is-away'); };
+  }, [ref]);
+}
+
 /** Which of the given section ids is closest above the marker line.
 
     The section tops are measured once and re-measured only when the page

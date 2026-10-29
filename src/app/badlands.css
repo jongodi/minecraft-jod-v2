@@ -420,6 +420,16 @@
   pointer-events: none;
 }
 @keyframes b-flicker { 0%, 100% { opacity: 0.7; } 50% { opacity: 1; } }
+/* Every glow that flickers is its own layer, so the flicker runs on the
+   compositor: on the main thread each lit lantern's glow had style worked
+   out again on every frame of a scroll, a dozen of them at once. */
+.b-lantern.is-lit::before, .b-lantern.is-kindling::before, .b-pin .b-pin__lamp::before, .b-bar__me::before, .b-folk__item.is-in .b-folk__frame::before { will-change: opacity; }
+/* What nobody can see holds still (useAway in hooks.ts): the critters on
+   the hero's ground and the lantern's glow once the sunset is scrolled past,
+   the fire's frames and smoke until the campfire is in view. The sky's and
+   the ridges' scroll-driven animations are not these: they are the scroll. */
+.b-hero.is-away :is(.b-critter, .b-critter__step, .b-lantern__flame), .b-hero.is-away .b-lantern::before,
+.b-foot.is-away :is(.b-fire__frame, .b-fire__smoke i, .b-foot__fire::before) { animation-play-state: paused; }
 /* kindling: the server on its way up (or down). The glass takes the deeper
    amber, a small flame comes and goes behind it, and the glow is half what a
    lit lantern throws. */
@@ -737,6 +747,7 @@
 .b-xp__fill {
   position: absolute;
   inset: 0;
+  will-change: transform;   /* the scroll moves it on the compositor, so no frame repaints the bar */
   background: linear-gradient(180deg, #C8FF7A 0 var(--px), #80E020 var(--px) calc(100% - var(--px)), #3F7A12 calc(100% - var(--px)));
   transform: scaleX(0);
   transform-origin: left;
@@ -1470,8 +1481,8 @@ html:has(.b-world.has-flight) { scroll-snap-type: y proximity; }
    lifted but the lamps wait: they were taken off the still, and light the
    town once it is what is on screen. */
 .b-frame__town { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
-.b-frame__dusk { position: absolute; inset: 0; background: var(--night); opacity: 0.5; transition: opacity 1200ms var(--ease-out); }
-.b-frame__lights { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 45%; opacity: 0; transition: opacity var(--dur-3) var(--ease-out); }
+.b-frame__dusk { position: absolute; inset: 0; background: var(--night); opacity: 0.5; transition: opacity calc(var(--dur-4) + var(--dur-2)) var(--ease-out); will-change: opacity; }
+.b-frame__lights { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 45%; opacity: 0; transition: opacity var(--dur-3) var(--ease-out); will-change: opacity; }
 .b-frame__town.is-lit .b-frame__dusk, .b-frame__town.is-dawn .b-frame__dusk { opacity: 0; }
 .b-frame__town.is-lit .b-frame__lights { opacity: 1; }
 .b-frame__town.is-lit .b-frame__lights--2 { transition-delay: var(--dur-2); }
@@ -1519,6 +1530,9 @@ html.is-map-full { overflow: hidden; }
   opacity: 0;
   visibility: hidden;
   transition: opacity var(--dur-2) var(--ease-out), visibility 0s linear var(--dur-2);
+  /* its own layer: the marks move along it on every frame of the flight, and
+     each move repainted the whole frame under the bar instead of the bar */
+  will-change: transform;
 }
 .b-locator.is-up { opacity: 1; visibility: visible; transition: opacity var(--dur-2) var(--ease-out), visibility 0s linear 0s; }
 .b-locator.is-hidden, .b-frame.is-room .b-locator { opacity: 0; visibility: hidden; transition: opacity var(--dur-2) var(--ease-out), visibility 0s linear var(--dur-2); }

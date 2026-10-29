@@ -1,12 +1,12 @@
 'use client';
 
-import { memo, useEffect, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import Mesa, { Rider } from './Mesa';
 import { Moon, Sun } from './Bits';
 import CopyAddress from './CopyAddress';
 import StatusLantern from './StatusLantern';
 import { NightLine } from './NightLine';
-import { isLive, type ServerState } from './hooks';
+import { isLive, useAway, type ServerState } from './hooks';
 import type { Season } from '@/lib/season';
 import type { PlayNightResponse } from '@/app/api/playnight/route';
 import { YuleLad, useMoonPhase } from './Season';
@@ -97,8 +97,11 @@ function Hero({ server, season, nights, packs }: { server: ServerState; season: 
   /* the names are a live answer, so a change in them is someone coming or going (isLive) */
   const known = isLive(server);
   const moon = useMoonPhase();
+  /* scrolled past, the hero's critters and lantern hold still (useAway) */
+  const root = useRef<HTMLElement>(null);
+  useAway(root);
   return (
-    <section id="top" className="b-hero" aria-label="Sólsetur">
+    <section ref={root} id="top" className="b-hero" aria-label="Sólsetur">
       {/* the afterglow: the last of the sunset held on the horizon behind the
           ridges, after the night has taken the top of the sky (badlands.css) */}
       <div className="b-hero__glow" aria-hidden="true" />
