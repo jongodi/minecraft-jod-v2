@@ -55,6 +55,8 @@ const FIRST = 2;
 /* the frames kept decoded: the overview, and round the camera the one it has
    passed and the next few ahead of it */
 const AROUND = [-1, 0, 1, 2, 3];
+/* how often the F3 lines are rewritten while the camera moves */
+const F3_EVERY_MS = 120;
 /* a pin this far past the frame's edge is out of sight */
 const EDGE = 24;
 /* the camera sets off while the frame is still rising, this much of its
@@ -175,6 +177,9 @@ function Flight({ flight, fly, runway, f3, places, players, selected, onChoose, 
     let approached = false;
     let showing = false;
     let f3Text = ['', ''];
+    /* the F3 lines are rewritten a few times a second, not on every frame:
+       each rewrite is a text node laid out and painted in the scroll's frame */
+    let f3At = 0;
     let skyLook = '';
     const stacked = new Map<HTMLElement, string>();
 
@@ -397,7 +402,8 @@ function Flight({ flight, fly, runway, f3, places, players, selected, onChoose, 
       const lines = f3.current;
       const xyz = flying ? `XYZ: ${cam.eye.map(Math.floor).join(' / ')}` : '';
       const way = flying ? `Snýr í ${FACING[facing(cam.eye, cam.look)]}` : '';
-      if (lines && (xyz !== f3Text[0] || way !== f3Text[1])) {
+      if (lines && (xyz !== f3Text[0] || way !== f3Text[1]) && (!flying || now - f3At >= F3_EVERY_MS)) {
+        f3At = now;
         f3Text = [xyz, way];
         lines.hidden = !flying;
         if (lines.children[0]) lines.children[0].textContent = xyz;
@@ -423,13 +429,28 @@ function Flight({ flight, fly, runway, f3, places, players, selected, onChoose, 
     let inReach = false;
     if (window.scrollY > 0) scrolled.current = true;
     const onScroll = () => {
-      if (!scrolled.current && window.scrollY > 0) { scrolled.current = true; more(); }
+      if (!scrolled.current && window.scrollY > 0) { scrolled.current = true; if (asked) start(); else more(); }
       if (inReach) schedule();
     };
     let io: IntersectionObserver | null = null;
+    /* The first stills are not asked for until the page has loaded: on a
+       phone the world is in reach from the first screen, and the overview
+       and the landing, a sixth of a megabyte, were fetched beside the hero's
+       own fonts and stylesheet and slowed them. A visitor who has already
+       scrolled is on the way down, and gets them at once. */
+    const onLoad = () => { loaded = true; if (asked) start(); };
+    let loaded = document.readyState === 'complete';
+    let asked = false;
+    const start = () => {
+      if (fetching) return;
+      if (!loaded && !scrolled.current) { asked = true; return; }
+      fetching = true;
+      if (shape) fetchSet(shape);
+      lastKey = '';
+    };
     if (fly) {
       window.addEventListener('scroll', onScroll, { passive: true });
-      const start = () => { if (!fetching) { fetching = true; if (shape) fetchSet(shape); lastKey = ''; } };
+      if (!loaded) window.addEventListener('load', onLoad, { once: true });
       if ('IntersectionObserver' in window) {
         io = new IntersectionObserver(([e]) => { inReach = e.isIntersecting; if (inReach) { cur = -1; start(); schedule(); } }, { rootMargin: '100% 0px' });
         io.observe(section);
@@ -437,6 +458,7 @@ function Flight({ flight, fly, runway, f3, places, players, selected, onChoose, 
     }
     return () => {
       gone = true;
+      window.removeEventListener('load', onLoad);
       inflight?.abort();
       cancelAnimationFrame(raf);
       if (scene) scene.style.visibility = 'hidden';

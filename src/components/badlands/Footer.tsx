@@ -1,13 +1,13 @@
 'use client';
 
-import { memo, useCallback, useEffect, useState } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { Campfire, ChevronIcon } from './Bits';
 import { Ridge } from './Mesa';
 import { SERVER_IP, SITE_NAME } from './data';
 import AmbienceToggle from '@/effects/AmbienceToggle';
-import { useBackCloses, useBackdropClose, useScrollLock } from './hooks';
+import { useAway, useBackCloses, useBackdropClose, useScrollLock } from './hooks';
 import { YuleLad, seasonClass, useSeason } from './Season';
 import type { Season } from '@/lib/season';
 
@@ -33,6 +33,9 @@ function Footer({ season: initial }: { season?: Season } = {}) {
   const closeDuel = useCallback(() => setDuel(false), []);
   const backdrop = useBackdropClose(closeDuel);
   useBackCloses(duel, closeDuel);
+  /* out of sight, the fire's frames and its smoke hold still (useAway) */
+  const root = useRef<HTMLElement>(null);
+  useAway(root);
 
   useEffect(() => {
     if (!duel) return;
@@ -42,7 +45,7 @@ function Footer({ season: initial }: { season?: Season } = {}) {
   }, [duel]);
 
   return (
-    <footer id="campfire" className={`b-foot${seasonClass(season)}`}>
+    <footer ref={root} id="campfire" className={`b-foot${seasonClass(season)}`}>
       {/* the camp: the fire in the middle of the band, standing on the ground,
           the way back up and the wind on the ground either side of it, the
           ridge behind lit at its foot by the fire */}

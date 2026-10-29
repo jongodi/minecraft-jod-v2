@@ -129,13 +129,13 @@
   aspect-ratio: 1;
   background:
     /* the slats across the crate's face */
-    repeating-linear-gradient(180deg, transparent 0 calc(25% - var(--px)), rgba(21, 16, 13, 0.3) calc(25% - var(--px)) 25%),
+    repeating-linear-gradient(180deg, transparent 0 calc(25% - var(--px)), rgb(from var(--night) r g b / 0.3) calc(25% - var(--px)) 25%),
     var(--wood-light);
   box-shadow: inset 0 0 0 calc(var(--px) * 3) var(--wood), inset 0 0 0 calc(var(--px) * 4) var(--wood-light), var(--bevel);
   transition: transform var(--dur-2) var(--ease-out), box-shadow var(--dur-3) var(--ease-out);
 }
 /* the tag, nailed to the front: the pack's drawing on paper, a pixel nail at its top */
-.b-stock__label { position: relative; z-index: 1; display: grid; place-items: center; width: 58%; aspect-ratio: 1; padding: calc(var(--px) * 3) calc(var(--px) * 2) calc(var(--px) * 2); background: var(--paper); clip-path: var(--notch); box-shadow: 0 var(--px) 0 rgba(21, 16, 13, 0.45); }
+.b-stock__label { position: relative; z-index: 1; display: grid; place-items: center; width: 58%; aspect-ratio: 1; padding: calc(var(--px) * 3) calc(var(--px) * 2) calc(var(--px) * 2); background: var(--paper); clip-path: var(--notch); box-shadow: 0 var(--px) 0 rgb(from var(--night) r g b / 0.45); }
 .b-stock__label::before { content: ''; position: absolute; top: var(--px); left: calc(50% - var(--px)); width: calc(var(--px) * 2); height: calc(var(--px) * 2); background: var(--ink-faint); }
 .b-stock__label svg { width: 100%; height: 100%; display: block; }
 /* the crate being read lifts off the shelf and takes a rim of lantern light;
@@ -157,7 +157,7 @@
   top: calc(var(--px) * -1);
   height: 15%;
   background: var(--plank);
-  box-shadow: inset 0 0 0 var(--px) rgba(21, 16, 13, 0.35), 0 var(--px) 0 rgba(21, 16, 13, 0.45);
+  box-shadow: inset 0 0 0 var(--px) rgb(from var(--night) r g b / 0.35), var(--lift-1);
   transform-origin: 0 100%;
   transition: transform var(--dur-2) var(--ease-out);
 }
@@ -185,12 +185,12 @@
   100% { transform: rotate(0deg); }
 }
 .b-room.is-open .b-posters .b-hang, .b-rollcall > .b-hang { transform-origin: 50% 0.75rem; animation: b-swing 1.3s var(--ease-out) both; }
-.b-room.is-open .b-posters .b-hang:nth-child(2), .b-rollcall > .b-hang:nth-child(2) { animation-delay: 70ms; }
-.b-room.is-open .b-posters .b-hang:nth-child(3), .b-rollcall > .b-hang:nth-child(3) { animation-delay: 140ms; }
-.b-room.is-open .b-posters .b-hang:nth-child(4), .b-rollcall > .b-hang:nth-child(4) { animation-delay: 210ms; }
-.b-room.is-open .b-posters .b-hang:nth-child(5), .b-rollcall > .b-hang:nth-child(5) { animation-delay: 280ms; }
-.b-room.is-open .b-posters .b-hang:nth-child(6), .b-rollcall > .b-hang:nth-child(6) { animation-delay: 350ms; }
-.b-room.is-open .b-posters .b-hang:nth-child(n + 7), .b-rollcall > .b-hang:nth-child(n + 7) { animation-delay: 420ms; }
+.b-room.is-open .b-posters .b-hang:nth-child(2), .b-rollcall > .b-hang:nth-child(2) { animation-delay: calc(var(--stagger) * 1); }
+.b-room.is-open .b-posters .b-hang:nth-child(3), .b-rollcall > .b-hang:nth-child(3) { animation-delay: calc(var(--stagger) * 2); }
+.b-room.is-open .b-posters .b-hang:nth-child(4), .b-rollcall > .b-hang:nth-child(4) { animation-delay: calc(var(--stagger) * 3); }
+.b-room.is-open .b-posters .b-hang:nth-child(5), .b-rollcall > .b-hang:nth-child(5) { animation-delay: calc(var(--stagger) * 4); }
+.b-room.is-open .b-posters .b-hang:nth-child(6), .b-rollcall > .b-hang:nth-child(6) { animation-delay: calc(var(--stagger) * 5); }
+.b-room.is-open .b-posters .b-hang:nth-child(n + 7), .b-rollcall > .b-hang:nth-child(n + 7) { animation-delay: calc(var(--stagger) * 6); }
 @media (prefers-reduced-motion: reduce) { .b-room.is-open .b-posters .b-hang, .b-rollcall > .b-hang { animation: none; } }
 
 /* the counter: one label at a time, on paper like every other notice */
@@ -203,7 +203,7 @@
 .b-stock > .b-hang { max-width: 34rem; }
 @media (min-width: 900px) { .b-stock > .b-hang { position: sticky; top: 0; } .b-counter { min-height: 9rem; } .b-counter__slip { align-items: flex-start; } }
 .b-counter__slip { display: flex; align-items: center; gap: var(--sp-4); animation: b-slip var(--dur-3) var(--ease-out) both; }
-.b-counter__glyph { flex-shrink: 0; display: grid; place-items: center; width: 3rem; height: 3rem; padding: var(--sp-1); background: var(--paper-2); box-shadow: inset 0 0 0 var(--px) rgba(30, 22, 17, 0.2); animation: b-land var(--dur-3) var(--ease-out) both; animation-delay: 60ms; }
+.b-counter__glyph { flex-shrink: 0; display: grid; place-items: center; width: 3rem; height: 3rem; padding: var(--sp-1); background: var(--paper-2); box-shadow: inset 0 0 0 var(--px) rgb(from var(--ink) r g b / 0.2); animation: b-land var(--dur-3) var(--ease-out) both; animation-delay: 60ms; }
 .b-counter__text { animation: b-slip var(--dur-3) var(--ease-out) both; }
 @keyframes b-slip { from { opacity: 0; transform: translateX(calc(var(--px) * -6)); } to { opacity: 1; transform: none; } }
 @keyframes b-land { from { opacity: 0; transform: translateY(calc(var(--px) * -4)); } to { opacity: 1; transform: none; } }
@@ -211,7 +211,7 @@
 /* nothing picked: the game's own empty slot, sunk into the paper (shade above
    and left, light below and right, the bevel turned inside out), where the
    hatching stood in for a picture that had not loaded */
-.b-counter__glyph:empty { background: color-mix(in oklab, var(--paper-2), var(--ink) 8%); box-shadow: inset var(--px) var(--px) 0 rgba(30, 22, 17, 0.32), inset calc(var(--px) * -1) calc(var(--px) * -1) 0 rgba(255, 248, 232, 0.7); }
+.b-counter__glyph:empty { background: color-mix(in oklab, var(--paper-2), var(--ink) 8%); box-shadow: inset var(--px) var(--px) 0 rgb(from var(--ink) r g b / 0.32), inset calc(var(--px) * -1) calc(var(--px) * -1) 0 rgba(255, 248, 232, 0.7); }
 .b-counter__glyph svg { width: 100%; height: 100%; display: block; }
 .b-counter__text { display: grid; gap: var(--px); min-width: 0; }
 .b-counter__name { font-weight: 600; font-size: var(--fs-md); line-height: 1.3; color: var(--ink); }
@@ -245,7 +245,7 @@
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background: linear-gradient(180deg, rgba(96, 0, 0, 0.34), rgba(150, 36, 24, 0.58));
+  background: linear-gradient(180deg, oklch(0.307 0.126 29.2 / 0.34), oklch(0.445 0.152 30.1 / 0.58));
   animation: b-died-in 1.2s var(--ease-out) both;
 }
 @keyframes b-died-in { from { opacity: 0; } }
@@ -263,8 +263,8 @@
     0 calc(var(--cut) * 3) 0 var(--tc-orange),
     0 calc(var(--cut) * 4) 0 var(--tc-red),
     0 calc(var(--cut) * 5) 0 var(--tc-brown),
-    0 calc(var(--cut) * 5 + var(--px) * 2) 0 rgba(21, 16, 13, 0.45);
-  animation: b-died-title 900ms var(--ease-out) 200ms both;
+    0 calc(var(--cut) * 5 + var(--px) * 2) 0 rgb(from var(--night) r g b / 0.45);
+  animation: b-died-title var(--dur-4) var(--ease-out) var(--dur-2) both;
 }
 @keyframes b-died-title { from { opacity: 0; transform: translateY(var(--sp-3)); } }
 .b-stray__cause { margin-top: var(--sp-4); font-size: var(--fs-lg); color: var(--paper); text-shadow: 0 var(--px) 0 var(--night); }
@@ -291,7 +291,7 @@
   padding: var(--sp-5) var(--sp-3) var(--sp-6);
   background: var(--plank);
   background-size: 100% 2.75rem;
-  box-shadow: 0 calc(var(--px) * -4) 0 var(--wood-dark), inset 0 0 0 var(--px) rgba(21, 16, 13, 0.35), 0 calc(var(--px) * 3) 0 rgba(21, 16, 13, 0.45);
+  box-shadow: 0 calc(var(--px) * -4) 0 var(--wood-dark), inset 0 0 0 var(--px) rgb(from var(--night) r g b / 0.35), 0 calc(var(--px) * 3) 0 rgb(from var(--night) r g b / 0.45);
 }
 .b-rollcall::before, .b-rollcall::after {
   content: '';
@@ -317,7 +317,7 @@
 .b-poster__lamp { position: absolute; z-index: 2; top: -3.25rem; right: calc(var(--sp-2) * -1); width: 2rem; pointer-events: none; filter: drop-shadow(0 0 0.75rem color-mix(in srgb, var(--lantern) 70%, transparent)); }
 .b-poster__lamp::before { content: ''; display: block; width: var(--px); height: 1rem; margin-inline: auto; background: repeating-linear-gradient(180deg, var(--ink-faint) 0 var(--px), transparent var(--px) calc(var(--px) * 2)); }
 .b-poster__lamp .b-lantern { width: 2rem; height: 3rem; }
-.b-rollcall > .b-hang.is-in { filter: drop-shadow(0 calc(var(--px) * 2) 0 rgba(21, 16, 13, 0.55)) drop-shadow(0 0 1.75rem color-mix(in srgb, var(--lantern) 50%, transparent)); }
+.b-rollcall > .b-hang.is-in { filter: drop-shadow(0 calc(var(--px) * 2) 0 rgb(from var(--night) r g b / 0.55)) drop-shadow(0 0 1.75rem color-mix(in srgb, var(--lantern) 50%, transparent)); }
 .b-poster--crew { padding: var(--sp-6) var(--sp-3) var(--sp-4); text-decoration: none; }
 /* the torn edge cuts off a ring drawn outside the poster, so it is drawn inside, clear of the tears */
 .b-poster--crew:focus-visible { outline: calc(var(--px) * 2) solid var(--lantern-ink); outline-offset: calc(var(--px) * -6); }

@@ -1,12 +1,12 @@
 'use client';
 
-import { memo, useEffect, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import Mesa, { Rider } from './Mesa';
 import { Moon, Sun } from './Bits';
 import CopyAddress from './CopyAddress';
 import StatusLantern from './StatusLantern';
 import { NightLine } from './NightLine';
-import { isLive, type ServerState } from './hooks';
+import { isLive, useAway, type ServerState } from './hooks';
 import type { Season } from '@/lib/season';
 import type { PlayNightResponse } from '@/app/api/playnight/route';
 import { YuleLad, useMoonPhase } from './Season';
@@ -23,7 +23,7 @@ import { useRoster } from './roster';
    2024, by invitation): a splash is a fact the visitor has not read yet. */
 const SPLASHES = ['Aldrei endurræst!', 'Eigin gagnapakkar!', 'Útlitspakki fylgir!', 'Heimurinn í þrívídd!', 'Badlands við sólsetur!', 'Með armadillo!'];
 /* the hotbar's keys, one to a door (AddressBar.tsx), said only where there is likely a keyboard to press them on */
-const KEYS_SPLASH = 'Ýttu á 1, 2, 3 eða 4!';
+const KEYS_SPLASH = 'Ýttu á 1, 2 eða 3!';
 
 const shuffled = <T,>(a: T[]): T[] => {
   const b = [...a];
@@ -89,7 +89,7 @@ function Climbers({ names, known }: { names: string[]; known: boolean }) {
   );
 }
 
-function Hero({ server, season, nights }: { server: ServerState; season: Season; nights?: PlayNightResponse }) {
+function Hero({ server, season, nights, packs }: { server: ServerState; season: Season; nights?: PlayNightResponse; packs: number }) {
   /* someone's home: the server is up and somebody is in it */
   const home = server.online === true && server.players > 0;
   const lower = server.list.map(n => n.toLowerCase());
@@ -97,8 +97,11 @@ function Hero({ server, season, nights }: { server: ServerState; season: Season;
   /* the names are a live answer, so a change in them is someone coming or going (isLive) */
   const known = isLive(server);
   const moon = useMoonPhase();
+  /* scrolled past, the hero's critters and lantern hold still (useAway) */
+  const root = useRef<HTMLElement>(null);
+  useAway(root);
   return (
-    <section id="top" className="b-hero" aria-label="Sólsetur">
+    <section ref={root} id="top" className="b-hero" aria-label="Sólsetur">
       {/* the afterglow: the last of the sunset held on the horizon behind the
           ridges, after the night has taken the top of the sky (badlands.css) */}
       <div className="b-hero__glow" aria-hidden="true" />
@@ -126,7 +129,7 @@ function Hero({ server, season, nights }: { server: ServerState; season: Season;
           <div className="b-hero__action">
             <CopyAddress />
             <div className="b-hero__side">
-              <StatusLantern server={server} />
+              <StatusLantern server={server} packs={packs} />
               <NightLine initial={nights} />
               <YuleLad season={season} spot="hero" />
             </div>

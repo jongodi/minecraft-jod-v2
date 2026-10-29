@@ -6,7 +6,7 @@ import { CREW } from './data';
 import { useAgo, type ServerState } from './hooks';
 import { sinceAt } from './night';
 import type { ServerLife } from '@/lib/server-state';
-import { andList } from '@/lib/format';
+import { andList, plural } from '@/lib/format';
 
 /* What the lantern says in each state the server can be in: the word in
    the pixel face, a line under it, and how the lantern burns. A server on
@@ -31,11 +31,14 @@ const launcherVersion = (v: string) => v.replace(/\s*\([^)]*\)\s*$/, '');
 
 /** The server's own lantern. Lit with the player count and the heads of who is
     in when the server is up, kindling while it is on its way up or down, dark
-    and labelled when it is not. It carries the version too, and opens the
-    crew's room, where the same people are shown by name. A plain anchor: the
-    hash is what opens the room, so it works before the page's script has run
-    and from any other page as /#hopur. */
-export default function StatusLantern({ server }: { server: ServerState }) {
+    and labelled when it is not, and it opens the crew's room, where the same
+    people are shown by name. Under it, on the same plate, the version the
+    game is opened in and what is on the shelf, which is the shelf's way in:
+    the shelf is a room without a door in the bar (data.ts). Plain anchors:
+    the hash is what opens a room, so they work before the page's script has
+    run and from any other page as /#hopur and /#hillan.
+    `packs` is what the shelf holds, counted on the server (home-data.ts). */
+export default function StatusLantern({ server, packs }: { server: ServerState; packs: number }) {
   const { online, life, players, list, version, lastOnline, checkedAt } = server;
   /* '' until the page has hydrated (useAgo), so the first render matches the markup however old the cached page is */
   const ago = useAgo(checkedAt);
@@ -53,7 +56,8 @@ export default function StatusLantern({ server }: { server: ServerState }) {
      a label written beside the text drifted from it (the moment it was
      checked was on the screen but not in the name). */
   return (
-    <a href="#hopur" className={`b-status${state}`}>
+    <div className={`b-status${state}`}>
+      <a href="#hopur" className="b-status__link">
       <Lantern lit={burn === 'lit'} className={burn === 'kindling' ? 'is-kindling' : undefined} />
       <span className="b-status__text">
         <span className="b-status__word" role="status" aria-live="polite">{word}</span>
@@ -65,18 +69,22 @@ export default function StatusLantern({ server }: { server: ServerState }) {
            said.row}
           {stale && ago && burn !== 'kindling' ? `, athugað ${ago}` : ''}
         </span>
-        {(version || heads.length > 0) && (
+        {heads.length > 0 && (
           <span className="b-status__row b-status__meta">
-            {heads.length > 0 && (
-              <span className={`b-status__heads b-tip${online ? '' : ' b-status__heads--then'}`} data-tip={`${online ? 'inni' : 'síðast inni'}: ${andList(heads)}`} aria-hidden="true">
-                {heads.map(n => <PlayerHead key={n} name={n} size={16} />)}
-              </span>
-            )}
-            {version && <span>Minecraft {launcherVersion(version)} · Java</span>}
+            <span className={`b-status__heads b-tip${online ? '' : ' b-status__heads--then'}`} data-tip={`${online ? 'inni' : 'síðast inni'}: ${andList(heads)}`} aria-hidden="true">
+              {heads.map(n => <PlayerHead key={n} name={n} size={16} />)}
+            </span>
           </span>
         )}
         <span className="b-visually-hidden">. Sjá hver er inni og eftirlýsingaspjöldin.</span>
       </span>
-    </a>
+      </a>
+      {/* the version a player opens the game in, and the shelf: the packs are
+          part of what the server is, and the word that can be pressed is lit */}
+      <a href="#hillan" className="b-status__shelf">
+        {version && <span className="b-nowrap">Minecraft {launcherVersion(version)} · Java</span>}
+        <span className="b-nowrap">{packs} {plural(packs, 'gagnapakki', 'gagnapakkar')} <b className="b-status__shelfword">á hillunni</b></span>
+      </a>
+    </div>
   );
 }
