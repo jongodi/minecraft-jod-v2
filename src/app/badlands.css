@@ -277,7 +277,7 @@
 .b-poster__row:active, .b-poster__lead:active .b-poster__name { color: var(--lantern-ink); }
 .b-input, .b-textarea {
   width: 100%;
-  background: var(--paper);
+  background-color: var(--paper);   /* the colour alone: a select's chevron is its background image (globals.css) */
   border: var(--line) solid var(--ink-faint);
   border-radius: var(--radius);
   color: var(--ink);
@@ -1947,7 +1947,10 @@ html.is-map-full { overflow: hidden; }
    on the locator, the lad, the splash: each is given a tap's square round it,
    as the pins have, without growing on the screen */
 @media (pointer: coarse) {
-  .b-hud__head, .b-locator__mark--base, .b-lad__who, .b-hero__splashbtn { position: relative; }
+  /* the splash is already positioned (absolute, at its anchor): made relative
+     here it fell into its zero-height wrapper's line box, one em of the
+     name's size down, below the hero's clip, and no phone ever saw it */
+  .b-hud__head, .b-locator__mark--base, .b-lad__who { position: relative; }
   .b-hud__head::before, .b-locator__mark--base::before, .b-lad__who::before, .b-hero__splashbtn::before {
     content: '';
     position: absolute;
@@ -2485,7 +2488,7 @@ html.is-map-full { overflow: hidden; }
 /* during the evening, those who said yes and aren't in yet stand in the dark */
 .b-night--live .b-night__head:not(.is-in) img { filter: sepia(1) brightness(0.55); }
 .b-night__head.is-in img { box-shadow: 0 0 0 1px var(--night), 0 0 0 calc(1px + var(--px)) var(--online); }
-.b-night__row .b-night__select { flex: 1 1 8rem; width: auto; max-width: 11rem; }
+.b-night__row .b-night__select { flex: 1 1 8rem; width: auto; max-width: 11rem; padding-right: 2.25rem; }   /* room for the chevron (globals.css), which the field's own padding would cover */
 /* the day is a button that opens a month on paper under its row */
 .b-night__day {
   display: inline-flex; align-items: center; gap: var(--sp-2);

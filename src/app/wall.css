@@ -180,7 +180,7 @@
 }
 .w-pin__go { margin-left: auto; }
 .w-pin__place { display: inline-flex; }
-.w-pin__select { min-height: 2.25rem; padding: var(--sp-1) var(--sp-3); background: var(--paper); border: var(--line) solid var(--sign-rim); color: var(--ink); font-size: var(--fs-sm); }
+.w-pin__select { min-height: 2.25rem; padding: var(--sp-1) 2.25rem var(--sp-1) var(--sp-3); background-color: var(--paper); border: var(--line) solid var(--sign-rim); color: var(--ink); font-size: var(--fs-sm); }
 .w-pin__select:focus { outline: none; border-color: var(--sign-lantern); box-shadow: 0 0 0 var(--px) var(--lantern-glow); }
 
 /* the prints on their way up: a thumbnail, a caption line, a progress bar */

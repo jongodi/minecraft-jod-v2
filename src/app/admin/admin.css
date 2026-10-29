@@ -68,7 +68,7 @@
 .a-label { font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-faint); }
 .a-input, .a-select {
   width: 100%; min-height: var(--tap); padding: var(--sp-2) var(--sp-3);
-  background: var(--night); border: var(--line) solid rgba(209, 178, 161, 0.3); border-radius: var(--radius);
+  background-color: var(--night); border: var(--line) solid rgba(209, 178, 161, 0.3); border-radius: var(--radius);
   color: var(--paper); font: inherit; font-size: var(--fs-sm); outline: none;
 }
 .a-input:focus, .a-select:focus { border-color: var(--lantern); box-shadow: 0 0 0 var(--px) var(--lantern-glow); }
@@ -76,7 +76,8 @@
 .a-input--data { font-family: var(--font-data); font-size: 0.8rem; }
 .a-input--short { width: 7.5rem; }
 .a-input--num { width: 5.5rem; font-variant-numeric: tabular-nums; }
-.a-select { cursor: pointer; }
+/* the panel's selects stand on the night, so the chevron globals.css draws for every select is in paper here */
+.a-select { cursor: pointer; padding-right: 2.25rem; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6' shape-rendering='crispEdges'%3E%3Cpath fill='%23E8DCC4' d='M0 0h2v2h2v2h2V2h2V0h2v2H8v2H6v2H4V4H2V2H0z'/%3E%3C/svg%3E"); }
 .a-help { color: var(--text-faint); font-size: var(--fs-xs); line-height: 1.5; }
 .a-form-row { display: grid; gap: var(--sp-3); grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); }
 .a-toggle { display: inline-flex; align-items: center; gap: var(--sp-2); min-height: var(--tap); cursor: pointer; color: var(--text-soft); font-size: var(--fs-sm); }
