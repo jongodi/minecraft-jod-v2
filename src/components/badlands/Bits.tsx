@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import { MOON_COLUMNS, MOON_CRATERS } from '@/lib/moon';
 
 /* Small pixel-drawn things shared across the site. Every shape is made of
    whole-unit rectangles so it stays crisp at any integer scale. */
@@ -71,31 +72,7 @@ export function Sun() {
   );
 }
 
-/* The moon's lit share of its face in each of the game's eight phases: the
-   rows lit in each of the ten columns of its 10 by 10 body, left to right,
-   as [first, last] runs. Waxing from the right, waning from the left, as it
-   is seen from the north. The terminator bows: a crescent is thickest across
-   its middle, and a gibbous moon's dark share is too, so neither reads as a
-   bar (a three-column bar with a crater in it read as an exclamation mark). */
-type MoonColumn = ReadonlyArray<readonly [number, number]>;
-const D: MoonColumn = [];
-const F: MoonColumn = [[1, 10]];
-const MID: MoonColumn = [[4, 7]];
-const TALL: MoonColumn = [[2, 9]];
-const ENDS: MoonColumn = [[1, 2], [9, 10]];
-const MOON_COLUMNS: ReadonlyArray<ReadonlyArray<MoonColumn>> = [
-  [D, D, D, D, D, D, D, D, D, D],
-  [D, D, D, D, D, D, MID, TALL, F, F],
-  [D, D, D, D, D, F, F, F, F, F],
-  [D, D, ENDS, F, F, F, F, F, F, F],
-  [F, F, F, F, F, F, F, F, F, F],
-  [F, F, F, F, F, F, F, ENDS, D, D],
-  [F, F, F, F, F, D, D, D, D, D],
-  [F, F, TALL, MID, D, D, D, D, D, D],
-];
-/* the craters on its face, [x, y, w, h] on the 12 grid, drawn where the light reaches all of them */
-const MOON_CRATERS: ReadonlyArray<readonly [number, number, number, number]> = [[3, 3, 2, 2], [7, 2, 1, 1], [6, 6, 2, 1], [8, 8, 2, 1], [2, 8, 1, 1], [4, 9, 1, 1]];
-
+/* the moon's phases and craters are the moon's own (src/lib/moon.ts), shared with the 3D map's sky */
 /** The moon as the game draws it: a square, like the sun, with craters, lit
     in one of eight phases (src/lib/moon.ts). As in the game, the unlit share
     of its face is not drawn, and a new moon is not drawn at all. */

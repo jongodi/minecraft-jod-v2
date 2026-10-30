@@ -52,7 +52,8 @@ try { await fetch(`${BASE}/bluemap/settings.json`); } catch {
 }
 const browser = await launch();
 const page = await (await browser.newContext({ viewport: { width: WIDTH, height: HEIGHT }, deviceScaleFactor: SCALE })).newPage();
-await page.goto(`${BASE}/bluemap/index.html#${view}`, { waitUntil: 'load' });
+/* ?upptaka: a recording, so the sky stays BlueMap's flat night; the page's stars and moon come out over the live map once it has taken over from this still (jod.js) */
+await page.goto(`${BASE}/bluemap/index.html?upptaka#${view}`, { waitUntil: 'load' });
 /* The picture is the terrain alone, at night like the live map opens: none of
    the viewer's controls, JOÐ's plank, the places' lanterns or the dusk at the
    edges (the page draws its own shade over the still). */
