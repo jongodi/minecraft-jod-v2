@@ -1252,6 +1252,16 @@
 .b-world:has(> .b-frame.is-full)::before, .b-world:has(> .b-frame.is-full)::after { display: none; }
 .b-frame {
   position: relative;
+  /* the shade over the still: a scrim under the title and the tools, and the
+     page's night at the foot (the shade below); the live map has its own */
+  --shade-still: linear-gradient(180deg,
+    var(--veil) 0,
+    rgb(from var(--night) r g b / 0.36) 4.5rem,
+    rgb(from var(--night) r g b / 0.14) 8rem,
+    transparent 11rem,
+    transparent 62%,
+    rgb(from var(--night) r g b / 0.55) 88%,
+    var(--night) 100%);
   height: calc(100svh - var(--bar-safe));
   min-height: 34rem;
   isolation: isolate;
@@ -1446,14 +1456,7 @@ html:has(.b-world.has-flight) { scroll-snap-type: y proximity; }
      it never shows a lower edge as a band would; at the foot the world goes
      into the page's night, the night the fire burns in, and the frame has
      no edge there either when it goes on up with the page. */
-  background: linear-gradient(180deg,
-    var(--veil) 0,
-    rgb(from var(--night) r g b / 0.36) 4.5rem,
-    rgb(from var(--night) r g b / 0.14) 8rem,
-    transparent 11rem,
-    transparent 62%,
-    rgb(from var(--night) r g b / 0.55) 88%,
-    var(--night) 100%);
+  background: var(--shade-still);
 }
 /* The still is dimmed by a layer of night over it rather than by a filter on
    the picture, so taking on the live map's light when the viewer is asked for
@@ -1488,6 +1491,17 @@ html:has(.b-world.has-flight) { scroll-snap-type: y proximity; }
 .b-frame__town.is-lit .b-frame__lights--2 { transition-delay: var(--dur-2); }
 .b-frame__town.is-lit .b-frame__lights--3 { transition-delay: var(--dur-3); }
 .b-frame.is-ready .b-frame__town, .b-frame.is-drawn .b-frame__town { visibility: hidden; }
+/* Asked for, drawn, but never yet on screen (World.tsx, is-unseen): a phone
+   whose whole screen was left before the first view came, or whose browser
+   would not give it. The viewer is paused the moment it is ready, and a
+   viewer paused before it ever drew is a black canvas; so the still stands,
+   with its dusk and its lights, and the viewer waits out of sight until the
+   lantern opens the whole screen again. */
+.b-frame.is-unseen .b-frame__view { visibility: hidden; }
+.b-frame.is-unseen .b-frame__poster { opacity: 1; }
+.b-frame.is-unseen .b-frame__town { visibility: visible; }
+.b-frame.is-unseen .b-frame__shade { background: var(--shade-still); }
+.b-frame.is-unseen .b-frame__shade::before { opacity: 1; }
 @media (prefers-reduced-motion: reduce) { .b-frame__dusk, .b-frame__lights { transition: none; } }
 .b-frame.is-drawn .b-frame__poster, .b-frame.is-drawn .b-frame__shade, .b-frame.is-drawn .b-frame__view { visibility: hidden; }
 /* While the viewer loads, the still takes on the live map's light (the layer

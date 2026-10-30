@@ -491,8 +491,19 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
   const still = phone && !full;
   const hidden = away || !inView || shut || album || drawn || still || standby;
   useEffect(() => { if (viewer) jod()?.pause(hidden); }, [viewer, hidden, jod]);
-  /* landed in the live map but not yet taken hold of, its zoom and menu would be keys that do nothing */
-  useEffect(() => { if (viewer) jod()?.glass?.(auto); }, [viewer, auto, jod]);
+  /* The live map has been on screen since it was asked for. Until then the
+     still stands in for it (badlands.css, is-unseen): a phone that left the
+     whole screen before the first view came, or whose browser would not give
+     it, paused the viewer before it had ever drawn, and the still had already
+     faded for a black canvas. */
+  const [viewed, setViewed] = useState(false);
+  useEffect(() => {
+    if (!live) setViewed(false);
+    else if (ready && !hidden) setViewed(true);
+  }, [live, ready, hidden]);
+  /* landed in the live map but not yet taken hold of, or a still again on a
+     phone, its zoom and menu would be keys that do nothing */
+  useEffect(() => { if (viewer) jod()?.glass?.(auto || still); }, [viewer, auto, still, jod]);
 
   /* The viewer says when its first view is drawn, which is usually well under
      a second. Should it not have said so in four (a slow texture download, or
@@ -655,7 +666,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
 
   return (
     <section id="heimur" className={`b-world${fly ? ' has-flight' : ''}`} aria-labelledby="heimur-title">
-      <div ref={frameRef} className={`b-frame${shown ? ' is-live' : ''}${shown && ready ? ' is-ready' : ''}${standby ? ' is-standby' : ''}${shown && auto ? ' is-glass' : ''}${held ? ' is-held' : ''}${drawn ? ' is-drawn' : ''}${shut ? ' is-room' : ''}${full === 'overlay' ? ' is-full' : ''}${shown && still ? ' is-still' : ''}${menu && ready ? ' is-menu' : ''}${chatOpen ? ' is-chat' : ''}${flying ? ' is-flying' : ''}`}>
+      <div ref={frameRef} className={`b-frame${shown ? ' is-live' : ''}${shown && ready ? ' is-ready' : ''}${shown && !viewed ? ' is-unseen' : ''}${standby ? ' is-standby' : ''}${shown && auto ? ' is-glass' : ''}${held ? ' is-held' : ''}${drawn ? ' is-drawn' : ''}${shut ? ' is-room' : ''}${full === 'overlay' ? ' is-full' : ''}${shown && still ? ' is-still' : ''}${menu && ready ? ' is-menu' : ''}${chatOpen ? ' is-chat' : ''}${flying ? ' is-flying' : ''}`}>
         {/* The still and its lights settle together as the world is
             reached, the camera coming down into the valley with the scroll
             (badlands.css). On a device with room for the effects, until the
