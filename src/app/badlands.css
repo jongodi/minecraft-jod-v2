@@ -1513,6 +1513,13 @@ html.is-map-full { overflow: hidden; }
    still scrolls the page past it. */
 .b-frame.is-standby .b-frame__view { visibility: hidden; }
 .b-frame.is-glass .b-frame__view { pointer-events: none; }
+/* Taken in hand in the page (.is-held, World.tsx), the viewer has the wheel
+   across the middle of a frame that fills the screen, and the page could not
+   be scrolled from anywhere. The frame's two edges, the HUD's plank at the
+   top and the places' rail at the foot, are the page's own again: the wheel
+   over them scrolls the page, as it does over the rest of it, and the map
+   is dragged and zoomed from the world between them. */
+.b-frame.is-held .b-hud__top, .b-frame.is-held .b-places { pointer-events: auto; }
 /* The locator bar (Locator.tsx), as the game hangs one over the hotbar: a
    strip of the F3 lines' dark under the HUD's top row, a notch for straight
    ahead, the other bases as lanterns (pressed, each opens its own map, so

@@ -623,6 +623,21 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
   /* The live map, taken hold of: from the lantern, the postcard or the whole
      screen. A viewer the flight woke is the same one, now let go of as glass. */
   const takeHold = useCallback(() => { setAuto(false); setFailed(false); setLive(true); }, []);
+  /* The live map let go of, in the page on a wide screen: it stays alive and
+     in view but is glass again, so the wheel scrolls the page past it and
+     the lantern takes it back in hand. Pressed (Sleppa in the HUD), with
+     Escape when nothing else is open over the world, and on its own when the
+     world is scrolled out of sight, so coming back down never lands on a map
+     that holds the wheel. */
+  const held = shown && !auto && !full && !still;
+  const letGoMap = useCallback(() => setAuto(true), []);
+  useEffect(() => {
+    if (!held || selected !== null || album || shut) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !modalOpen()) letGoMap(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [held, selected, album, shut, letGoMap]);
+  useEffect(() => { if (held && !inView) letGoMap(); }, [held, inView, letGoMap]);
   /* set off down the page on a wide screen: wake the live map behind the flight */
   const liveRef = useRef(live);
   liveRef.current = live;
@@ -640,7 +655,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
 
   return (
     <section id="heimur" className={`b-world${fly ? ' has-flight' : ''}`} aria-labelledby="heimur-title">
-      <div ref={frameRef} className={`b-frame${shown ? ' is-live' : ''}${shown && ready ? ' is-ready' : ''}${standby ? ' is-standby' : ''}${shown && auto ? ' is-glass' : ''}${drawn ? ' is-drawn' : ''}${shut ? ' is-room' : ''}${full === 'overlay' ? ' is-full' : ''}${shown && still ? ' is-still' : ''}${menu && ready ? ' is-menu' : ''}${chatOpen ? ' is-chat' : ''}${flying ? ' is-flying' : ''}`}>
+      <div ref={frameRef} className={`b-frame${shown ? ' is-live' : ''}${shown && ready ? ' is-ready' : ''}${standby ? ' is-standby' : ''}${shown && auto ? ' is-glass' : ''}${held ? ' is-held' : ''}${drawn ? ' is-drawn' : ''}${shut ? ' is-room' : ''}${full === 'overlay' ? ' is-full' : ''}${shown && still ? ' is-still' : ''}${menu && ready ? ' is-menu' : ''}${chatOpen ? ' is-chat' : ''}${flying ? ' is-flying' : ''}`}>
         {/* The still and its lights settle together as the world is
             reached, the camera coming down into the valley with the scroll
             (badlands.css). On a device with room for the effects, until the
@@ -739,6 +754,12 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
                 never wrap down into the world among the places' name tags
                 (badlands.css, the HUD on a phone). */}
             <div ref={tools} className="b-hud__tools">
+              {held && !drawn && (
+                <button type="button" className="b-btn b-btn--small b-btn--ghost b-hud__tool b-hud__letgo b-tip b-tip--below"
+                  data-tip="Síðan flettist aftur með hjólinu · Esc" onClick={letGoMap}>
+                  <CloseIcon className="b-btn__icon" /><span className="b-hud__word">Sleppa korti</span>
+                </button>
+              )}
               {viewer && shown && !drawn && !still && (
                 <button type="button" className={`b-btn b-btn--small b-btn--ghost b-hud__tool b-tip b-tip--below${night ? ' is-on' : ''}`} aria-pressed={night}
                   data-tip="Sólin sest og ljósin í bænum loga" onClick={() => jod()?.setNight(!night)}>
