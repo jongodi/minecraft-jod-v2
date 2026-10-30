@@ -485,11 +485,14 @@ html.jod-glass .control-bar, html.jod-glass #zoom-buttons { visibility: hidden; 
 html.jod-embed #map-container::after { background: radial-gradient(ellipse 80% 75% at 50% 50%, transparent 65%, rgba(21, 16, 13, 0.35) 100%); }
 /* A phone: the HUD's keys sit in one row across the top, so BlueMap's gather
    at the foot on the right, over the places, where a thumb is anyway: the same
-   44px keys, on the same right edge (the site's --gutter). Pinch zooms. */
+   44px keys, on the same right edge (the site's --gutter), standing in a
+   column as the zoom keys stand on a wide screen, so a row of them no longer
+   lies across the F3 lines and the chat at the foot (the page keeps those
+   clear of the column, badlands.css). Pinch zooms. */
 @media (max-width: 899px) {
   html.jod-embed #app { font-size: 1.375rem; }
   html.jod-embed .side-menu { font-size: 1rem; }
-  html.jod-embed .control-bar { top: auto; bottom: 8.25rem; right: clamp(1rem, 0.5rem + 3vw, 3rem); width: auto; background: none; }
+  html.jod-embed .control-bar { top: auto; bottom: 8.25rem; right: clamp(1rem, 0.5rem + 3vw, 3rem); width: auto; height: auto; flex-direction: column; background: none; }
   html.jod-embed .control-bar .thin-hide { display: initial; }
   html.jod-embed .control-bar .space.thin-hide { display: none; }
   html.jod-embed .control-bar .controls-switch.thin-hide { display: flex; }
@@ -506,7 +509,7 @@ html.jod-embed #map-container::after { background: radial-gradient(ellipse 80% 7
     filter: none;
   }
   html.jod-embed .control-bar > :not(:first-child) { border-left: 0; }
-  html.jod-embed .control-bar .controls-switch { gap: var(--jod-px); }
+  html.jod-embed .control-bar .controls-switch { flex-direction: column; gap: var(--jod-px); }
   html.jod-embed .control-bar .svg-button { background: var(--jod-dusk-2); box-shadow: var(--jod-bevel-in); }
   html.jod-embed .control-bar .svg-button svg { fill: var(--jod-white); }
   html.jod-embed .control-bar .compass svg .south { fill: var(--jod-white); }

@@ -1,7 +1,6 @@
 'use client';
 
 import '@/app/badlands.css';
-import '@/app/board.css';
 import type { ReactNode } from 'react';
 import AddressBar from './AddressBar';
 import Footer from './Footer';

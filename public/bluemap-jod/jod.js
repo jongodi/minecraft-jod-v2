@@ -21,7 +21,9 @@
      map (named for the base on a base map's viewer, /kort/<id>), and turns a
      place's lantern into its postcard;
    - opens the map at night, the hour the site is set in, under the page's
-     own warm night rather than BlueMap's grey-blue one;
+     own night rather than BlueMap's grey-blue one: its warm dark at the
+     horizon up to the top of its sky, its tiled pixel stars and tonight's
+     square moon in its phase, which come out once the map is alive;
    - and, inside the home page's frame, answers the page: when the first view
      is on screen (so the still can hand over), when its menu is open, pausing
      while the frame is out of sight, night and day, flying to a place, and
@@ -210,11 +212,243 @@
     requestAnimationFrame(step);
   }
 
+  /* ─── the sky: the page's own night over the world ─────────── */
+
+  /* BlueMap paints its sky as one colour times the light, and the void past
+     the world's edge as another. At night that left the land under a flat
+     dark card where the flight down (the home page) had hung it in the
+     page's night: the top of its sky, its stars and tonight's moon. So the
+     sky's shader is given the page's night as well, in the sky's own
+     directions: the warm dark at the horizon (the skyColor paintSky sets)
+     up to --sky-night-top at the zenith; the hero's stars, the sky cut into
+     six faces as a cube is and each face into cells about the size the
+     page's tile gives one star, a square of one or two of the screen's own
+     pixels in most of them, so they stand still as the camera turns and
+     never twinkle; and the moon as the game draws it, a square of ten by
+     ten with its craters, lit in the phase the real one is in tonight
+     (src/lib/moon.ts, src/components/badlands/Bits.tsx), low in the sky a
+     little left of where the start view faces. By day the game's own sky comes back, deeper
+     overhead with the lighter band at the horizon the game draws, and the
+     stars and the moon go with the sun. They come out once the map is alive
+     (starsOut), after the still has handed over, as lamps come on before
+     the stars do. A recording (?upptaka: the flight's stills and the poster)
+     keeps BlueMap's flat sky, which the stills key out and the poster hands
+     over from. Values mirror tokens.css. */
+  const SKY = {
+    jodNight: { value: 0 },   /* 0 by day, 1 at night (paintSky) */
+    jodStars: { value: 0 },   /* how far the stars have come out */
+    jodZenith: { value: [0x0c / 255, 0x0a / 255, 0x14 / 255] },   /* --sky-night-top */
+    jodStar: { value: [0xe8 / 255, 0xdc / 255, 0xc4 / 255] },     /* --star, the paper */
+    jodCrater: { value: [0.72, 0.65, 0.55] },                      /* .b-moon__crater: the paper into the faint ink */
+    jodMoonDir: { value: [0, 1, 0] },
+    jodMoonRight: { value: [1, 0, 0] },
+    jodMoonUp: { value: [0, 0, 1] },
+    /* half the moon's width in the sky, as the tangent of the angle: seven degrees across, a little under the game's */
+    jodMoonSize: { value: Math.tan((3.5 * Math.PI) / 180) },
+    jodMoonCols: { value: new Array(10).fill(0) },
+  };
+  /* The moon's lit share of its face in each of the game's eight phases, as
+     Bits.tsx draws it: the rows lit in each of the ten columns of its body,
+     [first, last], waxing from the right. Checked against Bits.tsx by a test. */
+  const D = [], F = [[1, 10]], MID = [[4, 7]], TALL = [[2, 9]], ENDS = [[1, 2], [9, 10]];
+  const MOON_COLUMNS = [
+    [D, D, D, D, D, D, D, D, D, D],
+    [D, D, D, D, D, D, MID, TALL, F, F],
+    [D, D, D, D, D, F, F, F, F, F],
+    [D, D, ENDS, F, F, F, F, F, F, F],
+    [F, F, F, F, F, F, F, F, F, F],
+    [F, F, F, F, F, F, F, ENDS, D, D],
+    [F, F, F, F, F, D, D, D, D, D],
+    [F, F, TALL, MID, D, D, D, D, D, D],
+  ];
+  /* the phase tonight, as src/lib/moon.ts counts it: the moon's age from a known new moon, in eighths of the mean month */
+  const NEW_MOON = Date.UTC(2000, 0, 6, 18, 14);
+  const SYNODIC = 29.530588853;
+  const moonPhase = (d) => {
+    const forced = params.get('tungl');
+    if (forced !== null && /^[0-7]$/.test(forced)) return Number(forced);
+    const days = (d.getTime() - NEW_MOON) / 864e5;
+    return Math.round((((days % SYNODIC) + SYNODIC) % SYNODIC) / SYNODIC * 8) % 8;
+  };
+  /* each column's lit rows as bits, row one the lowest */
+  const moonCols = (phase) => (MOON_COLUMNS[phase] ?? MOON_COLUMNS[0]).map((runs) => runs.reduce((m, [a, b]) => { for (let r = a; r <= b; r++) m |= 1 << (r - 1); return m; }, 0));
+  /* Where the moon stands: sixteen degrees left of the way the start view
+     faces (BlueMap's rotation, 0 facing north), seven degrees over the
+     horizon: in the strip of sky over the water as the map opens, where the
+     town's towers stand to the right, and higher as the camera levels out.
+     One evening, one moon: it does not move. */
+  const moonBasis = (start) => {
+    const rotation = Number(String(start ?? '').split(':')[5]) || 0;
+    const h = [Math.sin(rotation), -Math.cos(rotation)];
+    const right = [-h[1], h[0]];
+    const az = (-16 * Math.PI) / 180, el = (7 * Math.PI) / 180;
+    const xz = [Math.cos(az) * h[0] + Math.sin(az) * right[0], Math.cos(az) * h[1] + Math.sin(az) * right[1]];
+    const dir = [xz[0] * Math.cos(el), Math.sin(el), xz[1] * Math.cos(el)];
+    /* the camera's right as it looks at the moon (right of facing north is east), and its up */
+    const r = [-dir[2], 0, dir[0]];
+    const rl = Math.hypot(r[0], r[2]) || 1;
+    const rt = [r[0] / rl, 0, r[2] / rl];
+    const up = [rt[1] * dir[2] - rt[2] * dir[1], rt[2] * dir[0] - rt[0] * dir[2], rt[0] * dir[1] - rt[1] * dir[0]];
+    return { dir, right: rt, up };
+  };
+
+  const SKY_SHADER = `
+uniform float sunlightStrength;
+uniform float ambientLight;
+uniform vec3 skyColor;
+uniform vec3 voidColor;
+uniform float jodNight;
+uniform float jodStars;
+uniform vec3 jodZenith;
+uniform vec3 jodStar;
+uniform vec3 jodCrater;
+uniform vec3 jodMoonDir;
+uniform vec3 jodMoonRight;
+uniform vec3 jodMoonUp;
+uniform float jodMoonSize;
+uniform float jodMoonCols[10];
+
+varying vec3 vPosition;
+
+vec3 adjustColor(vec3 color) {
+	return vec3(color * max(sunlightStrength * sunlightStrength, ambientLight));
+}
+
+float hash21(vec2 p) {
+	p = fract(p * vec2(123.34, 456.21));
+	p += dot(p, p + 45.32);
+	return fract(p.x * p.y);
+}
+
+/* the stars: how much of this pixel one covers */
+float stars(vec3 d) {
+	vec3 a = abs(d);
+	vec2 uv;
+	float face;
+	if (a.y >= a.x && a.y >= a.z) { uv = d.xz / a.y; face = d.y > 0.0 ? 0.0 : 1.0; }
+	else if (a.x >= a.z) { uv = d.zy / a.x; face = d.x > 0.0 ? 2.0 : 3.0; }
+	else { uv = d.xy / a.z; face = d.z > 0.0 ? 4.0 : 5.0; }
+	vec2 g = (uv * 0.5 + 0.5) * 22.0;
+	vec2 cell = floor(g);
+	vec2 seed = cell + face * 101.0;
+	float h = hash21(seed);
+	if (h < 0.18) return 0.0;
+	vec2 c = vec2(0.15 + 0.7 * hash21(seed + 7.0), 0.15 + 0.7 * hash21(seed + 13.0));
+	/* one of the screen's pixels, in cells; held down where a face's edge makes the derivative jump */
+	vec2 px = min(fwidth(g), vec2(0.08));
+	vec2 s = px * (h > 0.6 ? 1.0 : 0.5);
+	vec2 dd = abs(g - cell - c);
+	float ax = 1.0 - smoothstep(s.x, s.x + px.x * 0.75, dd.x);
+	float ay = 1.0 - smoothstep(s.y, s.y + px.y * 0.75, dd.y);
+	return ax * ay;
+}
+
+/* whether a cell of the moon's body is lit: column and row counted from one, as Bits.tsx counts them */
+float moonLit(int col, int row) {
+	if (col < 1 || col > 10 || row < 1 || row > 10) return 0.0;
+	return mod(floor(jodMoonCols[col - 1] / exp2(float(row - 1))), 2.0);
+}
+
+/* a crater, drawn only where every cell of it is lit, as on the page */
+float craterAt(int cx, int cy, int x, int y, int w, int h) {
+	if (cx < x || cx >= x + w || cy < y || cy >= y + h) return 0.0;
+	for (int i = 0; i < 2; i++) for (int j = 0; j < 2; j++) {
+		if (i < w && j < h && moonLit(x + i, y + j) < 0.5) return 0.0;
+	}
+	return 1.0;
+}
+
+/* the moon: its colour where this direction falls on a lit cell of its face */
+vec4 moon(vec3 d) {
+	float along = dot(d, jodMoonDir);
+	if (along < 0.5) return vec4(0.0);
+	vec3 p = d / along - jodMoonDir;
+	float x = dot(p, jodMoonRight) / jodMoonSize;
+	float y = dot(p, jodMoonUp) / jodMoonSize;
+	if (abs(x) >= 1.0 || abs(y) >= 1.0) return vec4(0.0);
+	int cx = int(floor((x + 1.0) * 6.0));
+	int cy = int(floor((1.0 - y) * 6.0));
+	if (moonLit(cx, cy) < 0.5) return vec4(0.0);
+	float crater = 0.0;
+	crater = max(crater, craterAt(cx, cy, 3, 3, 2, 2));
+	crater = max(crater, craterAt(cx, cy, 7, 2, 1, 1));
+	crater = max(crater, craterAt(cx, cy, 6, 6, 2, 1));
+	crater = max(crater, craterAt(cx, cy, 8, 8, 2, 1));
+	crater = max(crater, craterAt(cx, cy, 2, 8, 1, 1));
+	crater = max(crater, craterAt(cx, cy, 4, 9, 1, 1));
+	return vec4(mix(jodStar, jodCrater, crater), 1.0);
+}
+
+void main() {
+	float horizonWidth = 0.005;
+	float horizonHeight = 0.0;
+
+	vec3 d = normalize(vPosition);
+	float up = clamp(d.y, 0.0, 1.0);
+	vec3 adjustedSkyColor = adjustColor(skyColor);
+	vec3 adjustedVoidColor = adjustColor(voidColor);
+
+	/* by day the game's sky: deeper overhead, a lighter band on the horizon */
+	vec3 day = mix(adjustedSkyColor, adjustedSkyColor * 0.8, smoothstep(0.0, 0.9, up));
+	day = mix(day, day + (vec3(1.0) - day) * 0.12, 1.0 - smoothstep(0.0, 0.22, up));
+	/* by night the page's: its night on the horizon up to the top of its sky */
+	vec3 night = mix(adjustedSkyColor, jodZenith, smoothstep(0.0, 0.8, up));
+	vec3 sky = mix(day, night, jodNight);
+
+	float out_ = jodNight * jodStars;
+	if (up > 0.0 && out_ > 0.0) {
+		float st = stars(d) * smoothstep(0.0, 0.1, up) * 0.55;
+		sky = mix(sky, jodStar, st * out_);
+		vec4 m = moon(d);
+		sky = mix(sky, m.rgb, m.a * out_);
+	}
+
+	float voidMultiplier = (clamp(d.y - horizonHeight, -horizonWidth, horizonWidth) + horizonWidth) / (horizonWidth * 2.0);
+	gl_FragColor = vec4(mix(adjustedVoidColor, sky, voidMultiplier), 1.0);
+}
+`;
+
+  /* Gives BlueMap's sky the shader above. Nothing is replaced but the
+     fragment program; the uniforms are added to the map's own, which every
+     material shares. A BlueMap whose sky is built another way is left as it
+     is. */
+  function nightSky(viewer) {
+    try {
+      const mesh = viewer.skyboxScene?.children?.find((c) => c.isMesh && c.material && typeof c.material.fragmentShader === 'string');
+      if (!mesh || !mesh.material.uniforms) return false;
+      const basis = moonBasis(facts.start);
+      SKY.jodMoonDir.value = basis.dir;
+      SKY.jodMoonRight.value = basis.right;
+      SKY.jodMoonUp.value = basis.up;
+      SKY.jodMoonCols.value = moonCols(moonPhase(new Date()));
+      Object.assign(mesh.material.uniforms, SKY);
+      mesh.material.fragmentShader = SKY_SHADER;
+      mesh.material.needsUpdate = true;
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   function setup(app) {
     const viewer = app.mapViewer;
     const cm = viewer.controlsManager;
 
     quality(app);
+    const starry = !params.has('upptaka') && nightSky(viewer);
+    /* the stars come out over a moment once the map is alive; told by the
+       page in the frame (progress, when the still hands over), and on its own
+       in the whole-screen viewer */
+    let starsOut = () => {};
+    if (starry) {
+      let out = false;
+      starsOut = () => {
+        if (out) return;
+        out = true;
+        animate(1600, (k) => { SKY.jodStars.value = k; viewer.redraw(); });
+      };
+      if (!embedded) setTimeout(starsOut, 600);
+    }
 
     /* The sky. BlueMap draws it as the map's sky colour times the light (the
        larger of the sun's strength squared and the ambient light), so at
@@ -238,6 +472,7 @@
       const t = Math.min(1, Math.max(0, (1 - sunValue) / (1 - NIGHT)));
       const at = (i) => daySky[i] + (Math.min(1, NIGHT_SKY[i] / nightLight) - daySky[i]) * t;
       skyColor.setRGB(at(0), at(1), at(2));
+      SKY.jodNight.value = t;
       if (voidFollows) voidColor.setRGB(skyColor.r * 0.62, skyColor.g * 0.6, skyColor.b * 0.66);
     };
 
@@ -422,7 +657,7 @@
 
     jod.ready = true;
     tell('hello', {});
-    if (embedded) progress(app);
+    if (embedded) progress(app, starsOut);
   }
 
   /* ─── quality: the one setting ─────────────────────────────── */
@@ -702,7 +937,7 @@
      the page swaps its still for the live map, and the detailed tiles stream
      in from there, the way the map always opened. Waiting for every detailed
      tile made opening feel slow. */
-  function progress(app) {
+  function progress(app, starsOut) {
     const started = Date.now();
     /* lowresTileManager[0] is the nearest of the low-detail layers */
     const near = () => app.mapViewer.map?.lowresTileManager?.[0] ?? null;
@@ -720,7 +955,7 @@
       if ((tiles > 0 && busy === 0) || Date.now() - started > 600) {
         /* one more frame so what arrived is on screen before the still goes */
         app.mapViewer.redraw();
-        requestAnimationFrame(() => tell('ready', { tiles }));
+        requestAnimationFrame(() => { tell('ready', { tiles }); starsOut(); });
         return;
       }
       setTimeout(tick, 100);
