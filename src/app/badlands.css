@@ -1868,7 +1868,12 @@ html.is-map-full { overflow: hidden; }
   transform: translateY(calc(var(--px) * -16));
   transition: opacity var(--dur-1) var(--ease-out), transform var(--dur-2) var(--ease-out), visibility 0s linear var(--dur-2);
 }
-@media (max-width: 899.98px) { .b-chat { margin-bottom: var(--sp-1); } }
+@media (max-width: 899.98px) {
+  .b-chat { margin-bottom: var(--sp-1); }
+  /* while the live map is up, BlueMap's keys stand in a column at the right
+     edge over the places (jod.css): the F3 lines and the chat stop short of it */
+  .b-frame.is-live .b-f3, .b-frame.is-live .b-chat { margin-right: calc(var(--tap) + var(--sp-4)); }
+}
 
 .b-places__head { justify-self: start; padding: var(--px) var(--sp-2); background: var(--plate); clip-path: var(--notch); font-size: var(--fs-sm); color: var(--paper); text-shadow: 0 var(--px) 0 var(--night); }
 /* min-width: a grid item would otherwise grow to fit every chip instead of scrolling */
