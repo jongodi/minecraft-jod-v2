@@ -31,7 +31,11 @@ export function useLivePlayers(active: boolean, crew: readonly string[]): LivePl
       try {
         /* capped: the next question waits on this one, and one that never answered froze the heads where they stood */
         const r = await fetch(URL, { cache: 'no-store', signal: AbortSignal.timeout(EVERY * 2) });
-        const body = r.ok ? await r.json() as { players?: BlueMapPlayer[] } : { players: [] };
+        /* an error is no answer, and the last list stands: a stopped server
+           says so with an empty list of its own, and a miss between two
+           answers took every head off the land for five seconds */
+        if (!r.ok) throw new Error(String(r.status));
+        const body = await r.json() as { players?: BlueMapPlayer[] };
         const list = (body.players ?? []).flatMap((p): LivePlayer[] => {
           const name = names.get(String(p.name ?? '').toLowerCase());
           const at = p.position;
