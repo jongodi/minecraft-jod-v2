@@ -56,6 +56,12 @@ type ViewerMessage = {
   name?: string | null; outside?: string;
 };
 
+/* The rooms' code is warmed without a move from the visitor this long after
+   the page has loaded, at the browser's next idle moment, and by this long
+   after that at the latest. */
+const WARM_AFTER_LOAD_MS = 5000;
+const WARM_IDLE_MS = 10_000;
+
 /* The main map's rendered edges, as map:brand wrote them; null before a copy is synced. */
 const MAIN_BOUNDS = (viewerFiles as { bounds?: MapBounds | null }).bounds ?? null;
 
@@ -315,15 +321,31 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
   const [near, setNear] = useState<number | null>(null);
   const lit = reached && effects && landed;
 
-  /* The rooms' code is fetched once the browser is truly idle, so a door
-     opens at once later and the first seconds, when a slow phone is still
-     drawing the hero, pay nothing for rooms nobody has opened. */
+  /* The rooms' code is fetched at the visitor's first move (a scroll, a
+     touch, a key), so a door opens at once by the time one is reached for,
+     and otherwise once the page has loaded and sat idle a while. Each room
+     brings a stylesheet, and a stylesheet arriving restyles the whole page:
+     taken at the browser's first idle moment, as it was, that fell in the
+     first seconds on a slow phone, which were the hero's. */
   useEffect(() => {
-    const w = window as Window & { requestIdleCallback?: (cb: () => void) => number; cancelIdleCallback?: (id: number) => void };
-    const warm = () => { import('@/components/board/Board'); import('./Crew'); import('./Shelf'); };
-    if (w.requestIdleCallback) { const id = w.requestIdleCallback(warm); return () => w.cancelIdleCallback?.(id); }
-    const id = setTimeout(warm, 6000);
-    return () => clearTimeout(id);
+    const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void };
+    const moves = ['pointerdown', 'touchstart', 'keydown', 'scroll', 'wheel'] as const;
+    let done = false;
+    let idle = 0;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const off = () => { moves.forEach(m => window.removeEventListener(m, warm)); if (idle) w.cancelIdleCallback?.(idle); clearTimeout(timer); };
+    const warm = () => {
+      if (done) return;
+      done = true;
+      off();
+      import('@/components/board/Board'); import('./Crew'); import('./Shelf');
+    };
+    moves.forEach(m => window.addEventListener(m, warm, { passive: true }));
+    const later = () => { if (w.requestIdleCallback) idle = w.requestIdleCallback(warm, { timeout: WARM_IDLE_MS }); else timer = setTimeout(warm, WARM_IDLE_MS); };
+    const settled = () => { timer = setTimeout(later, WARM_AFTER_LOAD_MS); };
+    if (document.readyState === 'complete') settled();
+    else window.addEventListener('load', settled, { once: true });
+    return () => { done = true; off(); window.removeEventListener('load', settled); };
   }, []);
 
   /* Deila: a place's own link, whose preview in a chat is its postcard

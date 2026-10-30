@@ -18,38 +18,49 @@
 
 :root {
   /* ── surfaces ── */
-  --night:      #15100D;
-  --dusk:       #2A1A14;
-  --dusk-2:     #21150F;
+  --night:      oklch(0.178 0.01 52.8);
+  --dusk:       oklch(0.237 0.028 41.4);
+  --dusk-2:     oklch(0.209 0.023 47.6);
+
+  /* the deepest dark: the chat's plate and the track of the experience bar,
+     where the night itself would read as a surface */
+  --pitch:      oklch(0.156 0.007 78.3);
+  /* the light on a bevel's top and left edges, the sun on a block's face */
+  --glint:      oklch(0.959 0.042 84.6);
 
   /* ── terracotta strata (badlands) ── */
-  --tc-red:     #8F3D2E;
-  --tc-orange:  #A15325;
-  --tc-yellow:  #BA8523;
-  --tc-white:   #D1B2A1;
-  --tc-brown:   #4D3323;
+  --tc-red:     oklch(0.467 0.115 32.2);
+  --tc-orange:  oklch(0.529 0.119 48.3);
+  --tc-yellow:  oklch(0.653 0.125 77.6);
+  --tc-white:   oklch(0.786 0.043 50.5);
+  --tc-brown:   oklch(0.347 0.046 52.3);
 
   /* ── lantern: interactive only ── */
-  --lantern:      #F2A63B;
-  --lantern-deep: #C9801F;
-  --lantern-glow: rgba(242, 166, 59, 0.35);
+  --lantern:      oklch(0.782 0.147 71.1);
+  --lantern-deep: oklch(0.662 0.1362 67.3);
+  --lantern-glow: rgb(from var(--lantern) r g b / 0.35);
   /* the same light written on paper: dark enough to read there (5.4:1), where
      --lantern-deep is 2.35:1 */
-  --lantern-ink:  #794D13;
+  --lantern-ink:  oklch(0.46 0.0915 68.2);
 
   /* ── paper and ink: notices ── */
-  --paper:      #E8DCC4;
-  --paper-2:    #DCCDB0;
-  --ink:        #1E1611;
-  --ink-soft:   #5A4634;
-  --ink-faint:  #6E5A45;
+  --paper:      oklch(0.898 0.035 84.6);
+  --paper-2:    oklch(0.853 0.042 83.9);
+  --ink:        oklch(0.208 0.016 53.6);
+  --ink-soft:   oklch(0.41 0.039 63.4);
+  --ink-faint:  oklch(0.482 0.041 68);
 
   /* ── text on night ── */
   --text:       var(--paper);
   --text-soft:  var(--tc-white);
-  --text-faint: #9A8272;
+  --text-faint: oklch(0.624 0.038 55.6);
+  /* a hairline on the night: the soft text at a seventh, the one rule drawn
+     under the hotbar, between the hero's lines and round the admin's panels */
+  --hairline:   color-mix(in srgb, var(--tc-white) 14%, transparent);
 
-  /* ── sky ── */
+  /* ── sky ── (in sRGB: the four stops were tuned by eye for the gradient
+     drawn between them, which interpolates in sRGB only while every stop is
+     written in it) */
   --sky-sunset-top:     #3B1A20;
   --sky-sunset-mid:     #8F3D2E;
   --sky-sunset-low:     #D8712F;
@@ -60,79 +71,92 @@
   /* ── the night, translucent: a veil over the sky or the map under a panel's
      words, a pane solid enough to read a control on, the dark behind a
      dialog, and the deep dark of an album or a lightbox ── */
-  --veil:       rgba(21, 16, 13, 0.6);
-  --pane:       rgba(21, 16, 13, 0.8);
-  --plate:      rgba(21, 16, 13, 0.72);   /* the hard band of shadow small words sit on over a bright sky */
-  --scrim:      rgba(21, 16, 13, 0.8);
-  --scrim-deep: rgba(21, 16, 13, 0.94);
-  --sun:                #F4D394;
-  --star:               #E8DCC4;
-  --dust:               #C99A5A;
-  --ember:              #E0602A;
+  --veil:       rgb(from var(--night) r g b / 0.6);
+  --pane:       rgb(from var(--night) r g b / 0.8);
+  --plate:      rgb(from var(--night) r g b / 0.72);   /* the hard band of shadow small words sit on over a bright sky */
+  --scrim:      rgb(from var(--night) r g b / 0.8);
+  --scrim-deep: rgb(from var(--night) r g b / 0.94);
+  --sun:                oklch(0.88 0.088 83.1);
+  --star:               oklch(0.898 0.035 84.6);
+  --dust:               oklch(0.717 0.099 73.6);
+  --ember:              oklch(0.643 0.173 41.1);
 
   /* ── map sheet ── */
-  --map-land:   #D9C79E;
-  --map-land-2: #CDB98C;
-  --map-grass:  #A8AE79;
-  --map-grass-2:#939A66;
-  --map-sand:   #E6D8B4;
-  --map-rock:   #B07048;
-  --map-rock-2: #96593A;
-  --map-forest: #6E8055;
-  --map-forest-2:#56653F;
-  --map-water:  #5F7378;
-  --map-water-2:#566A6F;
-  --map-ink:    #3B2719;
+  --map-land:   oklch(0.834 0.058 87.1);
+  --map-land-2: oklch(0.792 0.064 86.8);
+  --map-grass:  oklch(0.733 0.072 113.5);
+  --map-grass-2:oklch(0.668 0.072 114.6);
+  --map-sand:   oklch(0.884 0.05 89.3);
+  --map-rock:   oklch(0.605 0.098 51.9);
+  --map-rock-2: oklch(0.527 0.092 47);
+  --map-forest: oklch(0.574 0.066 126.8);
+  --map-forest-2:oklch(0.484 0.06 126.1);
+  --map-water:  oklch(0.541 0.025 214.6);
+  --map-water-2:oklch(0.51 0.025 214.6);
+  --map-ink:    oklch(0.293 0.038 55.6);
   --map-pin:    var(--tc-yellow);
   --map-wax:    var(--tc-red);
 
   /* ── wood: frames, shelves, crates ── */
   --wood:       var(--tc-brown);
-  --wood-light: #6B4A2E;
-  --wood-dark:  #35221A;
+  --wood-light: oklch(0.439 0.061 60.5);
+  --wood-dark:  oklch(0.273 0.033 43.7);
   /* a plank: its grain, a lighter board every so often, and a bevelled edge
      (the bar, the full-screen map's plank, the signpost, the rooms' walls) */
   --plank:
-    repeating-linear-gradient(90deg, rgba(21, 16, 13, 0.18) 0 var(--px), transparent var(--px) 13px),
-    repeating-linear-gradient(90deg, transparent 0 37px, rgba(255, 240, 210, 0.04) 37px 39px),
+    repeating-linear-gradient(90deg, rgb(from var(--night) r g b / 0.18) 0 var(--px), transparent var(--px) 13px),
+    repeating-linear-gradient(90deg, transparent 0 37px, rgb(from var(--glint) r g b / 0.04) 37px 39px),
     linear-gradient(180deg, var(--wood-light) 0 var(--px), var(--wood) var(--px) calc(100% - var(--px) * 2), var(--wood-dark) calc(100% - var(--px) * 2));
   /* a wall of boards standing side by side, in the dark of the room: within a
      few per cent of --dusk, so what is written straight on it reads as it did */
   --wall:
-    linear-gradient(rgba(21, 16, 13, 0.6), rgba(21, 16, 13, 0.6)),
-    repeating-linear-gradient(90deg, rgba(21, 16, 13, 0.45) 0 var(--px), transparent var(--px) 3rem),
-    repeating-linear-gradient(90deg, transparent 0 9rem, rgba(255, 240, 210, 0.05) 9rem 12rem),
+    linear-gradient(rgb(from var(--night) r g b / 0.6), rgb(from var(--night) r g b / 0.6)),
+    repeating-linear-gradient(90deg, rgb(from var(--night) r g b / 0.45) 0 var(--px), transparent var(--px) 3rem),
+    repeating-linear-gradient(90deg, transparent 0 9rem, rgb(from var(--glint) r g b / 0.05) 9rem 12rem),
     var(--wood);
   /* the same wood standing up: a post, its grain running down it */
   --plank-up:
-    repeating-linear-gradient(180deg, rgba(21, 16, 13, 0.18) 0 var(--px), transparent var(--px) 11px),
+    repeating-linear-gradient(180deg, rgb(from var(--night) r g b / 0.18) 0 var(--px), transparent var(--px) 11px),
     linear-gradient(90deg, var(--wood-light) 0 var(--px), var(--wood) var(--px) calc(100% - var(--px) * 2), var(--wood-dark) calc(100% - var(--px) * 2));
 
   /* ── a sign: what the crew put up, an oak board hung on iron chains. The
      board is paler than the frames so the words burnt into it read; every
      colour written on it is checked against it ── */
-  --sign:         #C9A872;
-  --sign-2:       #B99760;   /* the grain, and the board behind a picture still loading */
+  --sign:         oklch(0.749 0.081 79.3);
+  --sign-2:       oklch(0.695 0.083 78.8);   /* the grain, and the board behind a picture still loading */
   --sign-rim:     var(--wood-light);
   --sign-ink:     var(--ink);        /* the words, 7.9:1 */
   --sign-soft:    var(--tc-brown);   /* small print on the board, 5.1:1 */
-  --sign-line:    rgba(77, 51, 35, 0.4);   /* a seam, a ruled line to write on */
+  --sign-line:    rgb(from var(--tc-brown) r g b / 0.4);   /* a seam, a ruled line to write on */
   /* the lantern's light burnt into the wood: what can be pressed on a board, 4.9:1 */
-  --sign-lantern: #563409;
-  --sign-err:     #6E2A1E;           /* 4.6:1 */
-  --iron:         #5E544C;           /* the chains; drawn into the chain's tile in wall.css */
-  --iron-light:   #AFA191;   /* the chains catch the light; dark iron vanished on the night */
+  --sign-lantern: oklch(0.359 0.073 66.6);
+  --sign-err:     oklch(0.381 0.1 32);           /* 4.6:1 */
+  --iron:         oklch(0.453 0.018 61);           /* the chains; drawn into the chain's tile in wall.css */
+  --iron-light:   oklch(0.717 0.028 71.1);   /* the chains catch the light; dark iron vanished on the night */
 
   /* ── the game's own tooltip: the dark violet box an item's name comes up
      in, its rim the game's two violets laid over it at the game's strength
      (the inventory on a sign, wall.css) ── */
-  --game-tip:       #100010;
-  --game-tip-rim:   #2E0A78;   /* the rim at the top */
-  --game-tip-rim-2: #1C0546;   /* and at the foot */
-  --game-tip-lore:  #A8A8A8;   /* what an item says, 8.6:1 */
+  --game-tip:       oklch(0.121 0.056 328.4);
+  --game-tip-rim:   oklch(0.299 0.162 285.9);   /* the rim at the top */
+  --game-tip-rim-2: oklch(0.213 0.109 290);   /* and at the foot */
+  --game-tip-lore:  oklch(0.732 0 0);   /* what an item says, 8.6:1 */
+
+  /* ── the game's chat colours, as the game writes them: each with the hard
+     shadow the game draws under it, the colour at a quarter (the F3 lines,
+     the chat, the splash, the title screen's yellow) ── */
+  --chat-white:  oklch(1 0 0);
+  --chat-grey:   oklch(0.931 0 0);
+  --chat-yellow: oklch(0.971 0.183 109.4);
+  --chat-green:  oklch(0.88 0.252 143.1);
+  --chat-red:    oklch(0.682 0.206 24.4);
+  --chat-white-shadow:  rgb(from var(--chat-white) calc(r / 4) calc(g / 4) calc(b / 4));
+  --chat-yellow-shadow: rgb(from var(--chat-yellow) calc(r / 4) calc(g / 4) calc(b / 4));
+  --chat-green-shadow:  rgb(from var(--chat-green) calc(r / 4) calc(g / 4) calc(b / 4));
+  --chat-red-shadow:    rgb(from var(--chat-red) calc(r / 4) calc(g / 4) calc(b / 4));
 
   /* ── status ── */
-  --online:  #8FB06A;
+  --online:  oklch(0.716 0.102 129.3);
   --offline: var(--tc-red);
 
   /* ── type ──
@@ -175,9 +199,18 @@
   --sp-6: 2rem;
   --sp-7: 3rem;
   --sp-8: 4rem;
-  --gutter: clamp(1rem, 0.5rem + 3vw, 3rem);
+  /* The screen's own edges on a phone that draws under its notch and home
+     bar (viewport-fit cover, layout.tsx): nothing on the site is laid under
+     them. The bar grows by the top one; the gutter is never narrower than
+     the sides; the hotbar and the frame pad for the foot. */
+  --safe-top:    env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left:   env(safe-area-inset-left, 0px);
+  --safe-right:  env(safe-area-inset-right, 0px);
+  --gutter: max(clamp(1rem, 0.5rem + 3vw, 3rem), var(--safe-left), var(--safe-right));
   --wrap:   1160px;
   --bar:    3.5rem;     /* the bar at the top */
+  --bar-safe: calc(var(--bar) + var(--safe-top));   /* the bar as it stands on the screen: what sticks under it or scrolls up to it reads this */
   --xp:      10px;      /* the experience bar over the hotbar: the game's five pixels, at two a pixel */
   --doorbar: calc(4.5rem + var(--xp) + var(--sp-1));    /* the hotbar at the foot of a phone, with its strip and the experience bar over it */
   --slot:    3.5rem;    /* one of its slots */
@@ -188,19 +221,37 @@
   --line:   1px;
   --px:     2px;        /* one "pixel" of the pixel art at 1x */
   /* a block's bevel: light on the top and left, shadow below and right */
-  --bevel:    inset var(--px) var(--px) 0 rgba(255, 240, 210, 0.35), inset calc(var(--px) * -1) calc(var(--px) * -1) 0 rgba(21, 16, 13, 0.35);
-  --bevel-in: inset var(--px) var(--px) 0 rgba(21, 16, 13, 0.35), inset calc(var(--px) * -1) calc(var(--px) * -1) 0 rgba(255, 240, 210, 0.2);
+  --bevel:    inset var(--px) var(--px) 0 rgb(from var(--glint) r g b / 0.35), inset calc(var(--px) * -1) calc(var(--px) * -1) 0 rgb(from var(--night) r g b / 0.35);
+  --bevel-in: inset var(--px) var(--px) 0 rgb(from var(--night) r g b / 0.35), inset calc(var(--px) * -1) calc(var(--px) * -1) 0 rgb(from var(--glint) r g b / 0.2);
   /* a press: one of the art's pixels down, as a stone button sinks into its block (badlands.css, the press) */
   --press: 0 var(--px);
   /* notched corners, one pixel each */
   --notch: polygon(var(--px) 0, calc(100% - var(--px)) 0, 100% var(--px), 100% calc(100% - var(--px)), calc(100% - var(--px)) 100%, var(--px) 100%, 0 calc(100% - var(--px)), 0 var(--px));
 
-  /* ── motion ── */
+  /* ── elevation: what lifts off the surface casts a hard shadow straight
+     down in the night's colour, one, two or four of the art's pixels deep,
+     and the higher it hangs the fainter its shadow: a tag or a slip on a
+     plank, a card or the strata under the bar, a sign hung on its chains.
+     No blur: nothing in a pixel world has a soft edge ── */
+  --lift-1: 0 var(--px) 0 rgb(from var(--night) r g b / 0.5);
+  --lift-2: 0 calc(var(--px) * 2) 0 rgb(from var(--night) r g b / 0.45);
+  --lift-3: 0 calc(var(--px) * 4) 0 rgb(from var(--night) r g b / 0.35);
+
+  /* ── motion. Four durations, each twice the last; the shortest is a tap's
+     own answer, under a tenth of a second. What moves in the world moves as
+     the game does, in whole pixel steps: --ease-step is one walk of four,
+     and --dur-step one of its steps. --stagger is the beat between things
+     that come in one after another (the posters on the crew's wall). ── */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in:  cubic-bezier(0.55, 0, 1, 0.45);
+  --ease-step: steps(4, end);
+  --dur-0: 60ms;
   --dur-1: 120ms;
   --dur-2: 240ms;
   --dur-3: 480ms;
+  --dur-4: 960ms;
+  --dur-step: 160ms;
+  --stagger: 70ms;
   --dur-lantern: 3400ms;
 
   /* ── layers ── */
@@ -211,25 +262,26 @@
   --z-toast: 50;
   --z-lightbox: 60;
   --z-modal: 70;
+  --z-skip: 100;      /* the skip link: over everything, a dialog included */
 }
 /* The woods. A post tied to a place hangs on that place's wood, and the
    place's tag on the world's rail is tinted with it (src/lib/sign-wood.ts). The pale ones keep the dark ink; the dark ones take
    paper for their words and the lantern itself for what can be pressed, the
    way every control on the night does. Every ink is checked on its board. */
-.w-sign--birch    { --sign: #DCCD9C; --sign-2: #CBB983; --sign-rim: #9C8A5A; }   /* ink 11.3:1, soft 7.3:1 */
-.w-sign--cherry   { --sign: #EBC6BE; --sign-2: #DDAFA6; --sign-rim: #B98680; }   /* ink 11.3:1, soft 7.4:1 */
+.w-sign--birch    { --sign: oklch(0.849 0.066 93.1); --sign-2: oklch(0.788 0.074 91.8); --sign-rim: oklch(0.638 0.069 89.7); }   /* ink 11.3:1, soft 7.3:1 */
+.w-sign--cherry   { --sign: oklch(0.856 0.044 32.2); --sign-2: oklch(0.793 0.056 31.1); --sign-rim: oklch(0.668 0.064 26.5); }   /* ink 11.3:1, soft 7.4:1 */
 .w-sign--spruce, .w-sign--mangrove, .w-sign--dark-oak {
   --sign-ink: var(--paper);
   --sign-soft: var(--tc-white);
   --sign-lantern: var(--lantern);
-  --sign-err: #F5A88A;
-  --sign-line: rgba(255, 240, 210, 0.22);
+  --sign-err: oklch(0.799 0.1 42.1);
+  --sign-line: rgb(from var(--glint) r g b / 0.22);
   --sign-lamp: var(--tc-white);   /* a lit lantern's iron, which dark wood would swallow */
 }
-.w-sign--spruce   { --sign: #523A23; --sign-2: #654A30; --sign-rim: #6E5236; }   /* paper 7.8:1, soft 5.3:1, lantern 5.2:1 */
-.w-sign--mangrove { --sign: #5F3730; --sign-2: #71443B; --sign-rim: #7D4C42; }   /* paper 7.5:1, soft 5.1:1, lantern 5.0:1; the brown side of its red, so it never reads as a warning */
-.w-sign--dark-oak { --sign: #3F2819; --sign-2: #523624; --sign-rim: #5A3B26; }   /* paper 10.1:1, soft 6.9:1, lantern 6.7:1 */
+.w-sign--spruce   { --sign: oklch(0.37 0.049 64.1); --sign-2: oklch(0.432 0.054 64.5); --sign-rim: oklch(0.461 0.056 65.7); }   /* paper 7.8:1, soft 5.3:1, lantern 5.2:1 */
+.w-sign--mangrove { --sign: oklch(0.384 0.059 30.7); --sign-2: oklch(0.437 0.065 32); --sign-rim: oklch(0.47 0.069 32.2); }   /* paper 7.5:1, soft 5.1:1, lantern 5.0:1; the brown side of its red, so it never reads as a warning */
+.w-sign--dark-oak { --sign: oklch(0.301 0.043 53.5); --sign-2: oklch(0.361 0.05 53.3); --sign-rim: oklch(0.383 0.055 54.4); }   /* paper 10.1:1, soft 6.9:1, lantern 6.7:1 */
 
 @media (min-width: 900px) { :root { --fs-hero: clamp(12rem, min(23vw, 40svh), 24rem); } }
 /* on a phone on its side the hotbar's slots lay their lantern beside the name, a tap tall (badlands.css) */
-@media (max-height: 500px) { :root { --doorbar: 3.25rem; } }
+@media (max-height: 500.98px) { :root { --doorbar: 3.25rem; } }

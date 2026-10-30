@@ -252,6 +252,38 @@ export async function writeNight(night: Night): Promise<void> {
   await (await redis()).hset(NIGHTS_KEY, night.id, JSON.stringify(night));
 }
 
+/* A night as it stands is written back only if nobody wrote it since it was
+   read; otherwise it is read and changed again. Written whole, a cancel and
+   the page's own auto-choice at the decide moment each wrote over the other:
+   the fire went out, the put-out letter went, and a visitor's read lit it again. */
+const NIGHT_CAS = `
+local cur = redis.call('HGET', KEYS[1], ARGV[1])
+if (cur or '') ~= ARGV[2] then return 0 end
+redis.call('HSET', KEYS[1], ARGV[1], ARGV[3])
+return 1
+`;
+const CAS_TRIES = 4;
+
+/** Changes one night in the store: `change` is given the night as it stands
+    now and returns the night as it should be, or null to leave it. May run
+    more than once, so it must only read the night it is given. Returns the
+    night as it stands after, or null for one that is gone. */
+export async function changeNight(id: string, change: (night: Night) => Night | null): Promise<Night | null> {
+  const r = await redis();
+  for (let attempt = 0; attempt < CAS_TRIES; attempt++) {
+    const raw = await r.hget(NIGHTS_KEY, id);
+    if (raw === null) return null;
+    let night: Night;
+    try { night = JSON.parse(raw) as Night; } catch { return null; }
+    const next = change(night);
+    if (!next) return night;
+    const out = JSON.stringify(next);
+    if (out === raw) return next;
+    if (await r.eval(NIGHT_CAS, 1, NIGHTS_KEY, id, raw, out) === 1) return next;
+  }
+  throw new Error('Kvöldið breyttist á meðan; reyndu aftur.');
+}
+
 function votesOf(raw: Record<string, string>): Votes {
   const votes: Votes = {};
   for (const [u, v] of Object.entries(raw)) { try { votes[u] = JSON.parse(v) as string[]; } catch { /* skip */ } }
@@ -303,9 +335,16 @@ export async function currentNights(now = Date.now()): Promise<{ all: Night[]; s
   const answers = new Map(await Promise.all(read.map(async n => [n.id, votesOf(await r.hgetall(votesKey(n.id)))] as const)));
   const all: Night[] = [];
   for (let night of read) {
-    const auto = autoChoice(night, answers.get(night.id) ?? {}, now);
-    if (auto === 'out') { night = { ...night, cancelled: true }; await writeNight(night); }
-    else if (auto) { night = { ...night, chosen: auto.id, chosenBy: 'auto', chosenAt: new Date(now).toISOString() }; await writeNight(night); }
+    if (autoChoice(night, answers.get(night.id) ?? {}, now)) {
+      /* decided on the night as it stands in the store, not as it was read: a
+         cancel landing in between is kept, and the fire stays out */
+      night = await changeNight(night.id, latest => {
+        const auto = autoChoice(latest, answers.get(latest.id) ?? {}, now);
+        if (auto === 'out') return { ...latest, cancelled: true };
+        if (auto) return { ...latest, chosen: auto.id, chosenBy: 'auto', chosenAt: new Date(now).toISOString() };
+        return null;
+      }) ?? night;
+    }
     /* an unsettled one is kept for the daily job, unless it never came round in a month */
     const gone = !isShown(night, now) && (night.cancelled || !!night.outcome || now > whenOf(night) + EVENING_MS + 30 * DAY);
     if (gone) {

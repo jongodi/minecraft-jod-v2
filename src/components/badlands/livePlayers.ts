@@ -29,7 +29,8 @@ export function useLivePlayers(active: boolean, crew: readonly string[]): LivePl
     const ask = async () => {
       if (document.hidden) { timer = window.setTimeout(ask, EVERY); return; }
       try {
-        const r = await fetch(URL, { cache: 'no-store' });
+        /* capped: the next question waits on this one, and one that never answered froze the heads where they stood */
+        const r = await fetch(URL, { cache: 'no-store', signal: AbortSignal.timeout(EVERY * 2) });
         const body = r.ok ? await r.json() as { players?: BlueMapPlayer[] } : { players: [] };
         const list = (body.players ?? []).flatMap((p): LivePlayer[] => {
           const name = names.get(String(p.name ?? '').toLowerCase());

@@ -349,7 +349,8 @@ export default function Wall({ initial, places, initialStats = null, initialLed 
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
         const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-        const top = rem * 5.5;        /* the bar, its strata and a step of night */
+        /* the bar as it stands on the screen (a phone's notch grows it), its strata and a step of night */
+        const top = (document.querySelector<HTMLElement>('.b-bar')?.offsetHeight ?? rem * 3.5) + rem * 2;
         const foot = rem * 1.5;
         poster.style.setProperty('--poster-top', `${Math.min(top, window.innerHeight - poster.offsetHeight - foot)}px`);
       });

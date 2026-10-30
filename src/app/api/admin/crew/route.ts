@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { badJson, jsonObject } from '@/lib/http';
 import QRCode from 'qrcode';
 import { requireAdmin, unauthorizedResponse } from '@/lib/auth';
-import { readAllProfiles, allPhotos, createInvite, closeInvite, listInvites, inviteUrl, getCrewToken, isCrewUsername, canonicalUsername, type Invite } from '@/lib/crew';
+import { readAllProfiles, allPhotos, createInvite, closeInvite, listInvites, inviteUrl, getCrewToken, isCrewUsername, canonicalUsername, revokeCrewSessions, type Invite } from '@/lib/crew';
 import { hasPassword, setPasswordHash } from '@/lib/crew-access';
 import { getEmail, getNames, mailSignInLink, updateContact, type CrewEmail } from '@/lib/crew-email';
 import { canSendEmail } from '@/lib/email';
@@ -104,7 +104,9 @@ export async function DELETE(req: NextRequest) {
   if (typeof body.username === 'string' && body.password === null) {
     if (!isCrewUsername(body.username)) return NextResponse.json({ error: 'Þessi félagi er ekki á listanum.' }, { status: 400 });
     await setPasswordHash(body.username, null);
-    return NextResponse.json({ ok: true });
+    /* the password is cleared because it is lost or in the wrong hands: every device it signed in goes with it */
+    const signedOut = await revokeCrewSessions(body.username);
+    return NextResponse.json({ ok: true, signedOut });
   }
   return NextResponse.json({ error: 'Vantar tengil eða félaga.' }, { status: 400 });
 }

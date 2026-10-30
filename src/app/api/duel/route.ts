@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { badJson, jsonObject } from '@/lib/http';
+import { badJson, jsonObject, tooMany, tooManyWrites } from '@/lib/http';
 import { getCrewSession, updateProfile, wallError } from '@/lib/crew';
 
 export const dynamic = 'force-dynamic';
@@ -13,6 +13,7 @@ const MAX_MS = 5000;
 export async function POST(req: NextRequest) {
   const session = await getCrewSession();
   if (!session) return NextResponse.json({ error: 'Skráðu þig inn á veggnum þínum til að komast á töfluna.' }, { status: 401 });
+  if (await tooManyWrites(session.username)) return tooMany();
 
   let body: { ms?: unknown };
   { const parsed = await jsonObject(req); if (!parsed) return badJson(); body = parsed; }

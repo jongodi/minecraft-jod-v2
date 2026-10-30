@@ -23,8 +23,11 @@ export async function GET(
     const result = await get(pathname, { access: 'private', ifNoneMatch });
     if (!result) return new NextResponse('Not found', { status: 404 });
 
+    /* a picture never changes under its name, but a print can be taken down:
+       a crew photo is kept a day rather than a year, and the ETag answers the
+       rest; the map's packs are the sync's and are kept for good */
     const headers = new Headers({
-      'Cache-Control': 'public, max-age=31536000, immutable',
+      'Cache-Control': pathname.startsWith('crew/') ? 'public, max-age=86400' : 'public, max-age=31536000, immutable',
       'ETag': result.blob.etag,
       'X-Content-Type-Options': 'nosniff',
     });

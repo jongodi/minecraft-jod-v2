@@ -37,9 +37,16 @@ export default function Rail({ children, className, label, prevLabel = 'Fyrri', 
   }, []);
   const onScroll = useCallback(() => { if (!raf.current) raf.current = requestAnimationFrame(measure); }, [measure]);
   useEffect(() => {
-    measure();
+    /* measured in the next frame, with the browser's own layout, rather than
+       here: read right after hydration had changed the page, scrollWidth
+       made it lay the whole page out again on the spot */
+    onScroll();
     window.addEventListener('resize', onScroll, { passive: true });
-    return () => { window.removeEventListener('resize', onScroll); cancelAnimationFrame(raf.current); raf.current = 0; };
+    /* the items change size on their own: the font swaps in, a picture arrives,
+       a chip's name wraps; a rail that fit when measured can overflow after */
+    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(onScroll);
+    if (ro && rail.current) { ro.observe(rail.current); if (rail.current.firstElementChild) ro.observe(rail.current.firstElementChild); }
+    return () => { ro?.disconnect(); window.removeEventListener('resize', onScroll); cancelAnimationFrame(raf.current); raf.current = 0; };
   }, [measure, onScroll, count]);
 
   /* A mouse wheel has no sideways: over the rail, its up and down walk the items. */

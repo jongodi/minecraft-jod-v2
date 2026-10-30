@@ -57,4 +57,17 @@ describe('signing in, counted per account', () => {
     for (let i = 0; i < 5; i++) await signIn(i % 2 ? 'JOENANA' : 'joenana', 'guess');
     expect((await signIn('JoeNana', 'right-b')).status).toBe(429);
   });
+
+  /* five tries from each of many addresses were as many as the guesser had addresses */
+  it('an account is guessed at so many times an hour from everywhere together', async () => {
+    const from = (ip: string, token: string) => POST(new Request('http://x/api/crew/auth', {
+      method: 'POST', headers: { 'content-type': 'application/json', 'x-forwarded-for': ip }, body: JSON.stringify({ username: 'joenana', token }),
+    }) as never);
+    for (let n = 0; n < 20; n++) expect((await from(`10.0.${n}.1`, 'guess')).status).toBe(401);
+    expect((await from('10.0.99.1', 'right-b')).status).toBe(429);
+  });
+
+  it('a token longer than any password is turned away before it is checked', async () => {
+    expect((await signIn('joenana', 'x'.repeat(300))).status).toBe(401);
+  });
 });

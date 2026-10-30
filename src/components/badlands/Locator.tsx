@@ -17,6 +17,11 @@ export type CameraSink = (from: readonly [number, number], way: readonly [number
 /* the bar spans this far either side of straight ahead; anything farther
    round stands at its end, pointing on */
 const SPAN = (70 * Math.PI) / 180;
+/* how often a mark's tip (its distance) is rewritten while the camera moves:
+   the tip is the mark's generated content, and a new one on every frame of
+   the flight laid the mark out and painted it again each time, for a word
+   that shows only under a pointer */
+const TIP_EVERY_MS = 500;
 
 interface Props {
   bases: BaseLink[];
@@ -36,7 +41,7 @@ interface Props {
 function Locator({ bases, players, sink, hidden }: Props) {
   const bar = useRef<HTMLDivElement>(null);
   const cam = useRef<{ from: readonly [number, number]; way: readonly [number, number] } | null>(null);
-  const marks = useRef<{ el: HTMLElement; at: [number, number]; name: string }[]>([]);
+  const marks = useRef<{ el: HTMLElement; at: [number, number]; name: string; wrote: number }[]>([]);
   /* The bar's width, measured as it changes, so each frame of the flight
      moves the marks along it with a transform: a left in per cent laid the
      bar out again on every frame the camera turned. */
@@ -47,6 +52,7 @@ function Locator({ bases, players, sink, hidden }: Props) {
     const el = bar.current;
     if (!c || !el) return;
     el.classList.add('is-up');
+    const now = performance.now();
     for (const m of marks.current) {
       const { angle, blocks } = bearing(c.from, c.way, m.at);
       const off = Math.abs(angle) > SPAN;
@@ -55,8 +61,9 @@ function Locator({ bases, players, sink, hidden }: Props) {
       m.el.classList.toggle('is-off', off);
       m.el.classList.toggle('is-left', off && angle < 0);
       /* kubbar, as the map's own viewer counts them (is.conf); rounded to tens, so never one */
+      if (now - m.wrote < TIP_EVERY_MS && !m.el.matches(':hover')) continue;
       const tip = `${m.name} · ${formatNumber(Math.round(blocks / 10) * 10)} kubbar`;
-      if (m.el.dataset.tip !== tip) m.el.dataset.tip = tip;
+      if (m.el.dataset.tip !== tip) { m.el.dataset.tip = tip; m.wrote = now; }
     }
   }, []);
 
@@ -71,7 +78,7 @@ function Locator({ bases, players, sink, hidden }: Props) {
      sends nothing that would put it back */
   useEffect(() => {
     marks.current = Array.from(bar.current?.querySelectorAll<HTMLElement>('[data-x]') ?? []).map(el => ({
-      el, at: [Number(el.dataset.x), Number(el.dataset.z)], name: el.dataset.name ?? '',
+      el, at: [Number(el.dataset.x), Number(el.dataset.z)], name: el.dataset.name ?? '', wrote: 0,
     }));
     span.current = bar.current?.clientWidth ?? 0;
     place();
