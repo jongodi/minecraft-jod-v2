@@ -525,9 +525,10 @@ void main() {
     /* A warm frame: woken behind the flight, the viewer is paused from its
        first moment, so its first real frame fell at the landing and held the
        page for half a second (the shaders compiled, every tile loaded during
-       the flight sent to the GPU). Drawn once when the first view is ready,
-       and again whenever the page says the visitor is resting (World.tsx), so
-       the landing's frame has little left to do. */
+       the flight sent to the GPU). Drawn whenever the page says the visitor
+       is resting on the way down (World.tsx), and only then, so a visitor
+       who never pauses is no worse off than before and one who does lands on
+       a frame with little left to do. */
     jod.warm = () => { if (jod.paused && jod.ready) drawOnce(); };
     jod.pause = (on) => {
       if (jod.paused === !!on) return;
@@ -1002,9 +1003,10 @@ void main() {
       const waited = Date.now() - started;
       if ((tiles > 0 && (busy === 0 || waited > 600)) || waited > 3000) {
         /* one more frame so what arrived is on screen before the still goes;
-           a viewer paused behind the flight draws it warm, so the landing
-           finds its shaders compiled and these tiles already on the GPU */
-        if (jod.paused) jod.warm(); else app.mapViewer.redraw();
+           a viewer paused behind the flight draws nothing here (a frame drawn
+           now would land wherever the visitor's scroll is, mid-flight as
+           likely as not) and warms up when the page rests instead */
+        if (!jod.paused) app.mapViewer.redraw();
         requestAnimationFrame(() => { tell('ready', { tiles, of }); handOver(); });
         return;
       }
