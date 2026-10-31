@@ -70,7 +70,7 @@ function Shelf({ version }: { version: string | null }) {
   return (
     <div className="b-wrap b-shelf">
         {packs.length > 0 && <div className="b-head b-head--tight">
-          <p className="b-lede b-shelf__lede">{packs.length} {plural(packs.length, 'gagnapakki uppsettur', 'gagnapakkar uppsettir')}. Þú þarft ekkert að setja upp; útlitspakkinn sækist þegar þú tengist.</p>
+          <p className="b-lede b-shelf__lede">Þú þarft ekkert að setja upp; útlitspakkinn sækist þegar þú tengist.</p>
           <p className="b-note">{game && <>Minecraft {game} · </>}<span className="b-nowrap">Java-útgáfa</span></p>
         </div>}
 

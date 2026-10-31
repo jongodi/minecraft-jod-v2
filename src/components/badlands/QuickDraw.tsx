@@ -204,10 +204,10 @@ function QuickDraw({ onClose }: { onClose: () => void }) {
             <p className="b-duel__rules">Sýslumaður undir 200 ms, aðstoðarsýslumaður undir 300 og kúreki undir 450. Annars ertu nýliði.</p>
             <p className="b-duel__rules" role="status">
               {me
-                ? (posted ? (posted.improved ? `Skráð á töfluna: ${posted.best} ms. Fógetinn er sá sem er fljótastur.` : `Metið þitt á töflunni er ${posted.best} ms; þetta var ekki betra.`)
-                  : unposted ? 'Náði ekki að skrá tímann á töfluna. Spilaðu aftur eftir smástund.'
+                ? (posted ? (posted.improved ? `Skráð á spjaldið: ${posted.best} ms. Fógetinn er sá sem er fljótastur.` : `Metið þitt á spjaldinu er ${posted.best} ms; þetta var ekki betra.`)
+                  : unposted ? 'Náði ekki að skrá tímann á spjaldið. Spilaðu aftur eftir smástund.'
                   : `Besti tíminn þinn fer á eftirlýsingaspjaldið sem Fógetinn, ${me}.`)
-                : <>Fljótasta skotið er eftirlýst sem Fógetinn. <Link href="/crew" className="b-link">Skráðu þig inn á veggnum þínum</Link> til að komast á töfluna.</>}
+                : <>Fljótasta skotið er eftirlýst sem Fógetinn. <Link href="/crew" className="b-link">Skráðu þig inn á veggnum þínum</Link> til að komast á spjaldið.</>}
             </p>
           </div>
         </div>
