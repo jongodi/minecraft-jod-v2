@@ -42,6 +42,8 @@ export interface HomeData {
     any of them has, the fires held, the mobs felled. Empty without a store. */
 async function worldFacts(): Promise<string[]> {
   const out: string[] = [];
+  /* the nights and the copies live in the store; without one there are no numbers to count, and a build must not reach for it */
+  if (!process.env.REDIS_URL) return out;
   const [stats, crew, nights] = await Promise.all([
     getCachedStats().catch(() => null),
     readStoredAdvancements().catch(() => null),
