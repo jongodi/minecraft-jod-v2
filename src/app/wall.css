@@ -700,3 +700,8 @@
 .w-print__share { padding: 0 var(--sp-1); border: 0; background: none; font-family: var(--font-data); font-size: var(--fs-data); letter-spacing: 0.04em; text-transform: uppercase; color: var(--sign-lantern); min-height: 2rem; cursor: pointer; }
 @media (hover: hover) { .w-print__share:hover { color: var(--sign-ink); } }
 .w-print__share:focus-visible { outline: var(--px) solid var(--sign-lantern); outline-offset: var(--px); }
+
+/* the game's missing texture, the magenta and black check in 8-pixel cells, on a print that failed to upload and on one that will not load */
+.w-draft { position: relative; }
+.w-draft.is-error::before { content: ''; position: absolute; inset: 0; z-index: 1; background: repeating-conic-gradient(#F800F8 0 25%, #000 0 50%) 0 0 / calc(var(--px) * 16) calc(var(--px) * 16); opacity: 0.85; pointer-events: none; }
+.w-print img.is-missing { min-height: 8rem; background: repeating-conic-gradient(#F800F8 0 25%, #000 0 50%) 0 0 / calc(var(--px) * 16) calc(var(--px) * 16); }

@@ -2,6 +2,7 @@
 
 import { Moon, Stars } from './Bits';
 import { Ridge } from './Mesa';
+import { CloudSet } from './Sky';
 import { useMoonPhase } from './Season';
 
 /** The evening an hour on, behind the top of the crew's own pages: the night
@@ -17,6 +18,8 @@ export default function NightSky() {
     <div className="b-nightsky" aria-hidden="true">
       <Stars className="b-nightsky__stars" />
       {moon !== null && <Moon phase={moon} className="b-nightsky__moon" />}
+      {/* the hero's clouds, grey against the stars as they are at night, drifting a few cells east with the scroll */}
+      <CloudSet tone="night" />
       <Ridge />
     </div>
   );

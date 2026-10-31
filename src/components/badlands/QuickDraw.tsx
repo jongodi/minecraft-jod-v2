@@ -2,6 +2,7 @@
 
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { motion, useAnimation, useReducedMotion } from 'framer-motion';
+import { playSound } from '@/effects/ambience';
 import Link from 'next/link';
 import { BulletHole, Star } from './Bits';
 import { useCrewSession, useDialogFocus } from './hooks';
@@ -81,6 +82,8 @@ function QuickDraw({ onClose }: { onClose: () => void }) {
   const begin = useCallback(() => { setShots([]); setPosted(null); setUnposted(false); startRound(0); }, [startRound]);
   const endRound = useCallback((shot: Shot, r: number) => {
     setShots(s => [...s, shot]);
+    /* the arrow's ding for a hit, the note block's thud for a foul, with the wind and fire on */
+    playSound(shot === null ? 'thud' : 'ding');
     if (shot !== null) setBest(b => (b === null || shot < b ? shot : b));
     setPhase('result');
     timer.current = setTimeout(() => { if (r + 1 >= ROUNDS) setPhase('done'); else startRound(r + 1); }, NEXT_DELAY);

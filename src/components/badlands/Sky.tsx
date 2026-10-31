@@ -30,7 +30,8 @@ function Sky() {
 
 /* Which cloud hangs where is the stylesheet's (badlands.css, .b-cloud--1 …). */
 const SKY_CLOUDS: (keyof typeof CLOUDS)[] = ['a', 'b', 'c', 'd'];
-function CloudSet({ tone }: { tone: 'day' | 'night' }) {
+/** The game's flat clouds, a set of four; the crew pages hang the night's over their far ridge (NightSky.tsx). */
+export function CloudSet({ tone }: { tone: 'day' | 'night' }) {
   return (
     <div className={`b-clouds b-clouds--${tone}`}>
       {SKY_CLOUDS.map((shape, i) => <Cloud key={shape} shape={shape} className={`b-cloud b-cloud--${i + 1}`} />)}

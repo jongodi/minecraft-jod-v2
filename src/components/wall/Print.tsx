@@ -10,6 +10,7 @@
 import { memo, useCallback, useEffect, useId, useRef, useState, type CSSProperties, type FormEvent, type MouseEvent } from 'react';
 import Link from 'next/link';
 import { toast } from '@/components/badlands/Toast';
+import { playSound } from '@/effects/ambience';
 import type { CrewEntry, CrewPhoto } from '@/lib/crew-types';
 import { LIMITS, sameUser } from '@/lib/crew-types';
 import Call from './Call';
@@ -121,6 +122,7 @@ export default memo(function Print({ username, entry, places, me, isOwner, cover
     if (!me || busyLantern) return;
     /* lighting it, not putting it out: the board takes the light at once, from the lantern */
     if (!lit) {
+      playSound('flint');
       const board = e.currentTarget.closest('article')?.getBoundingClientRect();
       const lamp = e.currentTarget.querySelector('svg')?.getBoundingClientRect() ?? e.currentTarget.getBoundingClientRect();
       if (board) setLight(l => ({ x: lamp.left + lamp.width / 2 - board.left, y: lamp.top + lamp.height / 2 - board.top, n: (l?.n ?? 0) + 1 }));
@@ -186,7 +188,7 @@ export default memo(function Print({ username, entry, places, me, isOwner, cover
             <figure key={photo.id} className="w-print__pic">
               <button type="button" className="w-print__btn" onClick={open(photo)} aria-label={photo.caption || 'Stækka myndina'}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img {...photoProps(photo.filename, many ? PHOTO_SIZES.shot : PHOTO_SIZES.print)} alt={photo.caption || ''} loading="lazy" decoding="async" />
+                <img {...photoProps(photo.filename, many ? PHOTO_SIZES.shot : PHOTO_SIZES.print)} alt={photo.caption || ''} loading="lazy" decoding="async" onError={e => e.currentTarget.classList.add('is-missing')} />
               </button>
               {edit ? (
                 <div className="w-print__edit-pic">

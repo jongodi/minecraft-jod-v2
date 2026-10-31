@@ -125,6 +125,52 @@ export function pickupPop() {
   osc.stop(t + 0.1);
 }
 
+/** Four moments as the game sounds them, only while the wind and the fire
+    play (the visitor turned the sound on with them): a lantern lit under a
+    sign strikes like flint and steel, a duel hit rings the arrow's ding, a
+    foul lands with the note block's low thud, and the server coming on
+    chimes like a level up. */
+export function playSound(kind: 'flint' | 'ding' | 'thud' | 'chime') {
+  if (!engine || engine.ctx.state !== 'running') return;
+  const { ctx, master } = engine;
+  const t = ctx.currentTime;
+  const tone = (type: OscillatorType, from: number, to: number, at: number, len: number, peak: number) => {
+    const osc = ctx.createOscillator();
+    osc.type = type;
+    osc.frequency.setValueAtTime(from, t + at);
+    osc.frequency.exponentialRampToValueAtTime(to, t + at + len);
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, t + at);
+    gain.gain.exponentialRampToValueAtTime(peak, t + at + 0.006);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + at + len);
+    osc.connect(gain).connect(master);
+    osc.start(t + at);
+    osc.stop(t + at + len + 0.02);
+  };
+  if (kind === 'flint') {
+    /* a scrape of noise, bright and short */
+    const n = ctx.createBufferSource();
+    const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.08), ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length) ** 2;
+    n.buffer = buf;
+    const hp = ctx.createBiquadFilter();
+    hp.type = 'highpass';
+    hp.frequency.value = 2400;
+    const gain = ctx.createGain();
+    gain.gain.value = 0.25;
+    n.connect(hp).connect(gain).connect(master);
+    n.start(t);
+  } else if (kind === 'ding') {
+    tone('sine', 1320, 1760, 0, 0.18, 0.2);
+  } else if (kind === 'thud') {
+    tone('square', 110, 70, 0, 0.14, 0.18);
+  } else {
+    /* the level-up's rising four notes */
+    [660, 880, 1100, 1320].forEach((f, i) => tone('sine', f, f, i * 0.09, 0.16, 0.16));
+  }
+}
+
 export function stopAmbience() {
   if (!engine) return;
   const { ctx, master, crackle } = engine;

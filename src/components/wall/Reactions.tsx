@@ -8,7 +8,7 @@
 // opens the inventory: every item, what it says, and who gave it, in the
 // game's own violet tooltip. An item given pops into its slot as the game's
 // do when picked up, with the game's pop when the sound is on.
-import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type RefObject } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent, type RefObject } from 'react';
 import { ITEMS, gaveIt, give, given, giversOf, itemOf, settle, type ItemId, type Reactions } from '@/lib/reactions';
 import { errorFrom, failure } from '@/lib/crew-upload';
 import { andList } from '@/lib/format';
@@ -121,12 +121,21 @@ export function Hotbar({ gifts, panelId, plusRef }: { gifts: Gifts; panelId: str
         const label = `${item.name}: ${andList(who)}`;
         const busy = gifts.busy.includes(id);
         /* taking back the last of an item takes its slot away; the keyboard goes on to the plus rather than to the top of the page */
+        /* a finger held on the slot raises the game's tooltip (who gave it) instead of giving; lifting after that gives nothing */
         const press = (e: MouseEvent<HTMLButtonElement>) => {
+          if (e.currentTarget.classList.contains('is-held')) { e.currentTarget.classList.remove('is-held'); return; }
           const focused = document.activeElement === e.currentTarget;
           if (gifts.toggle(id) && mine && who.length === 1 && focused) plusRef.current?.focus();
         };
+        const hold = (e: PointerEvent<HTMLButtonElement>) => {
+          if (e.pointerType !== 'touch') return;
+          const el = e.currentTarget;
+          const t = setTimeout(() => el.classList.add('is-held'), 400);
+          const off = () => { clearTimeout(t); el.removeEventListener('pointerup', off); el.removeEventListener('pointercancel', off); el.removeEventListener('pointerleave', off); setTimeout(() => el.classList.remove('is-held'), 1800); };
+          el.addEventListener('pointerup', off); el.addEventListener('pointercancel', off); el.addEventListener('pointerleave', off);
+        };
         return (
-          <button key={id} type="button" className={`w-slot b-tip${mine ? ' is-mine' : ''}`} onClick={press} disabled={!gifts.me}
+          <button key={id} type="button" className={`w-slot b-tip${mine ? ' is-mine' : ''}`} onClick={press} onPointerDown={hold} disabled={!gifts.me}
             aria-pressed={mine} aria-busy={busy || undefined} aria-label={label} data-tip={mine ? `${label}. Taka þinn aftur` : label}
             onMouseEnter={e => keepTag(e.currentTarget)} onFocus={e => keepTag(e.currentTarget)}>
             <Slot id={id} count={who.length} popping={gifts.pop?.id === id} popKey={gifts.pop?.n} onPopped={gifts.popped} />

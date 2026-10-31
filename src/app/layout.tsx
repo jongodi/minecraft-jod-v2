@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import localFont from 'next/font/local';
 import './globals.css';
 import { SERVER_IP, SITE_NAME, TITLE_TEMPLATE } from '@/components/badlands/data';
+import Offline from './Offline';
 
 /* Three families, self-hosted, four files, all preloaded: each is on the
    first screen. Each is verified to carry þ ð æ ö á é í ó ú ý; the Latin-1
@@ -87,6 +88,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         {/* the first stop for a keyboard: past the bar, straight to the page's main landmark */}
         <a href="#efni" className="b-skip">Beint í efnið</a>
         {children}
+        <Offline />
       </body>
     </html>
   );

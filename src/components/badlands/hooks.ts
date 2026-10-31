@@ -5,6 +5,7 @@ import type { PlayerStat, StatsResponse, WeekStats } from '@/app/api/stats/route
 import type { StatusResponse } from '@/lib/server-status';
 import { NO_STATUS, STARTING_MS, isChanging, toServerState, type ServerState } from '@/lib/server-state';
 import { toast } from './Toast';
+import { playSound } from '@/effects/ambience';
 
 export type { ServerState } from '@/lib/server-state';
 
@@ -60,6 +61,8 @@ async function loadStatus(): Promise<void> {
   if (missed) return;
   /* the site asked for a start a moment ago: an answer from before it does not put the lantern out again */
   if (startingUntil && Date.now() < startingUntil && (next.life === 'off' || next.life === 'unknown')) next = { ...next, life: 'starting' };
+  /* the server coming on while the page is looked at: the level-up's chime, with the wind and fire on */
+  if (next.online && statusValue.online === false) playSound('chime');
   else if (next.life !== 'starting') startingUntil = 0;
   statusValue = next;
   notifyStatus();
