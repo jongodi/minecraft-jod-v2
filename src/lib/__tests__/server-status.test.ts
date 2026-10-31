@@ -113,6 +113,7 @@ describe('when the server last burned', () => {
     vi.doMock('@/lib/redis', () => ({
       rGet: async (k: string) => { const v = kv.get(k); return v ? JSON.parse(v) : null; },
       rSet: async (k: string, v: unknown) => { kv.set(k, JSON.stringify(v)); },
+      rDel: async (k: string) => { kv.delete(k); },
     }));
     vi.stubGlobal('fetch', fetchMock);
     vi.stubEnv('EXAROTON_API_KEY', 'key');

@@ -7,6 +7,7 @@ const store = new Map<string, string>();
 const lists = new Map<string, string[]>();
 const fake = {
   get: async (k: string) => store.get(k) ?? null,
+  set: async (k: string, v: string) => { store.set(k, v); return 'OK'; },
   getset: async (k: string, v: string) => { const old = store.get(k) ?? null; store.set(k, v); return old; },
   lpush: async (k: string, ...v: string[]) => { const l = lists.get(k) ?? []; lists.set(k, [...[...v].reverse(), ...l]); return l.length + v.length; },
   ltrim: async (k: string, a: number, b: number) => { lists.set(k, (lists.get(k) ?? []).slice(a, b + 1)); return 'OK'; },
