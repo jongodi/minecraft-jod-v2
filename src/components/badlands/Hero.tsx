@@ -6,6 +6,7 @@ import { Moon, Sun } from './Bits';
 import CopyAddress from './CopyAddress';
 import StatusLantern from './StatusLantern';
 import { NightLine } from './NightLine';
+import { usePlayNight } from './night';
 import { isLive, useAway, type ServerState } from './hooks';
 import type { Season } from '@/lib/season';
 import type { PlayNightResponse } from '@/app/api/playnight/route';
@@ -21,7 +22,7 @@ import { useRoster } from './roster';
    as the page is open; a press brings the next, so every fact can be read.
    None repeats the line printed just above the name (eight friends, since
    2024, by invitation): a splash is a fact the visitor has not read yet. */
-const SPLASHES = ['Aldrei endurræst!', 'Eigin gagnapakkar!', 'Útlitspakki fylgir!', 'Heimurinn í þrívídd!', 'Badlands við sólsetur!', 'Með armadillo!'];
+const SPLASHES = ['Aldrei endurræst!', 'Eigin gagnapakkar!', 'Útlitspakki fylgir!', 'Heimurinn í þrívídd!', 'Eyðimörk við sólsetur!', 'Með beltisdýri!'];
 /* the hotbar's keys, one to a door (AddressBar.tsx), said only where there is likely a keyboard to press them on */
 const KEYS_SPLASH = 'Ýttu á 1, 2 eða 3!';
 
@@ -97,6 +98,10 @@ function Hero({ server, season, nights, packs }: { server: ServerState; season: 
   /* the names are a live answer, so a change in them is someone coming or going (isLive) */
   const known = isLive(server);
   const moon = useMoonPhase();
+  /* the fires as they stand now, not as the page was drawn: a night lit or
+     burnt out while the page was open changed the line beside the lantern
+     but not the splash's word about it */
+  const { state: tonight } = usePlayNight(nights);
   /* scrolled past, the hero's critters and lantern hold still (useAway) */
   const root = useRef<HTMLElement>(null);
   useAway(root);
@@ -137,7 +142,7 @@ function Hero({ server, season, nights, packs }: { server: ServerState; season: 
         </div>
         {/* after the address and the lantern in the page's order, so the one
             action comes first to the keyboard; drawn over the Ð all the same */}
-        <Splash inside={inside.length} planned={(nights?.nights ?? []).some(n => n.phase !== 'over')} live={known} />
+        <Splash inside={inside.length} planned={(tonight?.nights ?? []).some(n => n.phase !== 'over')} live={known} />
       </div>
       <Mesa snow={season.snow} halloween={season.halloween} heads={inside} known={known} />
       <YuleLad season={season} spot="mesa" />

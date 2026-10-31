@@ -102,9 +102,10 @@ function Evening({ night }: { night: AnnalNight }) {
     <article className="b-night b-night--over b-annall__evening" aria-label={`Annáll: ${dayOf(night.at)}`}>
       <header className="b-night__top">
         <span className="b-night__kicker">Annáll</span>
-        <h4 className="b-night__title">{cap(sinceAt(night.at))}</h4>
+        {/* the day as the fire's own heading names it (PlayNight), in the nominative; the hour goes in the line under */}
+        <h4 className="b-night__title">{dayOf(night.at)}</h4>
         <p className="b-note">
-          {night.note && <><q>{night.note}</q> · </>}{night.by} kveikti bálið
+          {cap(sinceAt(night.at)).replace(/^.*?(kl\. [\d:]+).*$/, '$1')} · {night.note && <><q>{night.note}</q> · </>}{night.by} kveikti bálið
           {night.startedBy && `, ${night.startedBy} kveikti á þjóninum`}
         </p>
       </header>

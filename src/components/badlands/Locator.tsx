@@ -60,9 +60,9 @@ function Locator({ bases, players, sink, hidden }: Props) {
       m.el.style.transform = `translateX(${(u * span.current).toFixed(1)}px)`;
       m.el.classList.toggle('is-off', off);
       m.el.classList.toggle('is-left', off && angle < 0);
-      /* kubbar, as the map's own viewer counts them (is.conf); rounded to tens, so never one */
+      /* kubbar, as the map's own viewer counts them (is.conf); rounded to tens, so never one, and within ten it is simply near */
       if (now - m.wrote < TIP_EVERY_MS && !m.el.matches(':hover')) continue;
-      const tip = `${m.name} · ${formatNumber(Math.round(blocks / 10) * 10)} kubbar`;
+      const tip = `${m.name} · ${blocks < 10 ? 'rétt hjá' : `${formatNumber(Math.round(blocks / 10) * 10)} kubbar`}`;
       if (m.el.dataset.tip !== tip) { m.el.dataset.tip = tip; m.wrote = now; }
     }
   }, []);

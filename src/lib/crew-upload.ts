@@ -12,7 +12,8 @@ export interface UploadedPrint { id: string; url: string; pathname: string; take
 
 export async function fetchStorageInfo(username: string): Promise<StorageInfo> {
   try {
-    const res = await fetch(`/api/crew/${username}/upload`, { cache: 'no-store' });
+    /* a request that hangs is given up on: every draft waits on this answer, and once waited on it for good */
+    const res = await fetch(`/api/crew/${username}/upload`, { cache: 'no-store', signal: AbortSignal.timeout(12_000) });
     if (!res.ok) throw new Error();
     return await res.json() as StorageInfo;
   } catch {

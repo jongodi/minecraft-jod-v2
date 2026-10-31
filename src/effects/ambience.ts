@@ -41,7 +41,7 @@ export function remember(on: boolean) {
 }
 
 export function startAmbience(): boolean {
-  if (engine) { engine.ctx.resume(); return true; }
+  if (engine) { engine.ctx.resume().catch(() => { /* a context the browser would not wake: the toggle says on, and the next press tries again */ }); return true; }
   const Ctx = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
   if (!Ctx) return false;
   const ctx = new Ctx();
@@ -132,5 +132,5 @@ export function stopAmbience() {
   document.removeEventListener('visibilitychange', onVisibility);
   clearInterval(crackle);
   master.gain.linearRampToValueAtTime(0, ctx.currentTime + FADE_S);
-  setTimeout(() => ctx.close(), FADE_S * 1000 + 100);
+  setTimeout(() => ctx.close().catch(() => { /* already closed */ }), FADE_S * 1000 + 100);
 }

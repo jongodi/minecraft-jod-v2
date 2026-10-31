@@ -326,9 +326,10 @@ export default function Wall({ initial, places, initialStats = null, initialLed 
 
   useEffect(() => {
     fetch('/api/stats')
-      .then(r => r.json())
-      .then((data: StatsResponse) => {
-        /* an answer with nothing for them keeps the snapshot the page was drawn with */
+      .then(r => (r.ok ? r.json() : null))
+      .then((data: StatsResponse | null) => {
+        /* an error, or an answer with nothing for them, keeps the snapshot the page was drawn with */
+        if (!data || !Array.isArray(data.players)) return;
         setStats(s => data.players.find(p => sameUser(p.username, username)) ?? s);
         setStatsMeta({ source: data.source, cachedAt: data.cachedAt });
         if (data.players.length) setLed(outlaws(data.players).byName.get(username.toLowerCase())?.led ?? []);
