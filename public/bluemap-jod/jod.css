@@ -415,7 +415,7 @@ h1::after, h2::after { height: 3px; background: var(--jod-strata); }
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  height: 2.25rem;
+  height: 2.75rem;   /* a thumb's key on a tablet's plank */
   padding: 0 0.75rem;
   background: rgba(21, 16, 13, 0.35);
   color: var(--jod-lantern);
@@ -429,7 +429,8 @@ h1::after, h2::after { height: 3px; background: var(--jod-strata); }
 .jod-plank__back:focus-visible { background: var(--jod-lantern); color: var(--jod-night); }
 @media (hover: hover) { .jod-plank__back:hover { background: var(--jod-lantern); color: var(--jod-night); } }
 .jod-plank__title { font-family: var(--jod-font-display); font-size: 1.25rem; line-height: 1; color: var(--jod-paper); text-shadow: 0 var(--jod-px) 0 var(--jod-wood-dark); white-space: nowrap; }
-.jod-plank__note { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--jod-font-data); font-size: 0.6rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--jod-white); text-shadow: 0 1px 0 var(--jod-wood-dark); }
+/* in the text face, as the frame's own date line is: the bitmap face at 9.6 px fell between the screen's pixels */
+.jod-plank__note { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--jod-font-text); font-size: 0.875rem; color: var(--jod-white); text-shadow: 0 1px 0 var(--jod-wood-dark); }
 
 /* the tools ride on the right of the plank */
 html:not(.jod-embed) .control-bar {
@@ -530,7 +531,7 @@ html.jod-embed #map-container::after { background: radial-gradient(ellipse 80% 7
 }
 
 /* full screen, a chosen place says how to reach its postcard */
-.jod-pin.is-chosen .jod-pin__label .jod-pin__more { display: block; font-family: var(--jod-font-data); font-size: 0.6rem; letter-spacing: 0.04em; color: var(--jod-ink); }
+.jod-pin.is-chosen .jod-pin__label .jod-pin__more { display: block; font-family: var(--jod-font-text); font-size: 0.875rem; color: var(--jod-ink); }
 /* in the frame, night and day is the HUD's lantern */
 html.jod-embed .day-night-switch { display: none; }
 

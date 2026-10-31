@@ -181,7 +181,8 @@
 .w-pin__go { margin-left: auto; }
 .w-pin__place { display: inline-flex; }
 .w-pin__select { min-height: 2.25rem; padding: var(--sp-1) 2.25rem var(--sp-1) var(--sp-3); background-color: var(--paper); border: var(--line) solid var(--sign-rim); color: var(--ink); font-size: var(--fs-sm); }
-.w-pin__select:focus { outline: none; border-color: var(--sign-lantern); box-shadow: 0 0 0 var(--px) var(--lantern-glow); }
+.w-pin__select:focus { border-color: var(--sign-lantern); }
+.w-pin__select:focus-visible { outline: var(--px) solid var(--sign-lantern); outline-offset: var(--px); }
 
 /* the prints on their way up: a thumbnail, a caption line, a progress bar */
 .w-pin__prints { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); gap: var(--sp-3); }
@@ -548,7 +549,7 @@
 .w-pin__kind.is-on { background: var(--sign-lantern); color: var(--sign); box-shadow: var(--bevel-in); }
 .w-pin__kind:focus-visible { outline: var(--px) solid var(--ink); outline-offset: var(--px); }
 .w-pin__names { display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-2); margin-top: calc(var(--sp-2) * -1); }
-.w-pin__name { display: inline-flex; align-items: center; gap: var(--sp-1); min-height: 2rem; padding-inline: var(--sp-2); color: var(--sign-lantern); font-weight: 600; border: var(--px) solid var(--sign-rim); background: var(--sign-2); }
+.w-pin__name { display: inline-flex; align-items: center; gap: var(--sp-1); min-height: 2rem; padding-inline: var(--sp-2); color: var(--sign-lantern); font-weight: 600; border: var(--px) solid var(--sign-rim); background: var(--sign); }   /* on the board's own oak, 4.9:1; the grain's darker shade put the ink at 4.0 */
 .w-pin__name img { width: 1rem; height: 1rem; image-rendering: pixelated; }
 @media (hover: hover) { .w-pin__name:hover { border-color: var(--sign-lantern); } }
 .w-pin__reward { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-3); }
