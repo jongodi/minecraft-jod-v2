@@ -4,8 +4,15 @@ import { Lantern } from './Bits';
 import PlayerHead from './PlayerHead';
 import { CREW } from './data';
 import { useAgo, type ServerState } from './hooks';
-import { sinceAt } from './night';
+import { sinceAt, DAYS_PLURAL, clockHour } from './night';
 import type { ServerLife } from '@/lib/server-state';
+import type { NightHabit } from '@/lib/play-night-view';
+
+/** "logar oftast á fimmtudagskvöldum", or on that day before the hour, "logar oftast í kvöld kl. 20" */
+function usualLine(h: NightHabit, now: Date): string {
+  if (now.getUTCDay() === h.weekday && now.getUTCHours() < h.hour) return `logar oftast í kvöld ${clockHour(h.hour)}`;
+  return `logar oftast á ${DAYS_PLURAL[h.weekday]}`;
+}
 import { andList, plural } from '@/lib/format';
 
 /* What the lantern says in each state the server can be in: the word in
@@ -38,8 +45,10 @@ const launcherVersion = (v: string) => v.replace(/\s*\([^)]*\)\s*$/, '');
     the hash is what opens a room, so they work before the page's script has
     run and from any other page as /#hopur and /#hillan.
     `packs` is what the shelf holds, counted on the server (home-data.ts). */
-export default function StatusLantern({ server, packs }: { server: ServerState; packs: number }) {
-  const { online, life, players, list, version, lastOnline, checkedAt } = server;
+export default function StatusLantern({ server, packs, habit }: { server: ServerState; packs: number; habit?: NightHabit | null }) {
+  const { online, life, players, list, version, lastOnline, onSince, versionSince, checkedAt } = server;
+  /* the crew's habit, said by a dark lantern: on the usual day before the usual hour, that it is tonight */
+  const usual = habit ? usualLine(habit, new Date()) : '';
   /* '' until the page has hydrated (useAgo), so the first render matches the markup however old the cached page is */
   const ago = useAgo(checkedAt);
   const stale = ago !== '' && checkedAt !== null && Date.now() - checkedAt >= STALE_MS;
@@ -67,6 +76,9 @@ export default function StatusLantern({ server, packs }: { server: ServerState; 
            online ? (players === 0 ? 'enginn inni enn, en það er opið' : <>inni núna: <b>{players}</b></>) :
            last ? `síðast kveikt ${sinceAt(last.at)}` :
            said.row}
+          {/* a lit lantern says since when it burns; a dark one, when the crew usually light it */}
+          {online && onSince ? ` · kveikt ${sinceAt(onSince)}` : ''}
+          {!online && (life === 'off' || life === 'crashed') && usual ? ` · ${usual}` : ''}
           {stale && ago && burn !== 'kindling' ? `, athugað ${ago}` : ''}
         </span>
         {heads.length > 0 && (
@@ -82,7 +94,13 @@ export default function StatusLantern({ server, packs }: { server: ServerState; 
       {/* the version a player opens the game in, and the shelf: the packs are
           part of what the server is, and the word that can be pressed is lit */}
       <a href="#hillan" className="b-status__shelf">
-        {version && <span className="b-nowrap">Minecraft {launcherVersion(version)} · Java</span>}
+        {version && (
+          <span className="b-nowrap">
+            Minecraft {launcherVersion(version)} · Java
+            {/* the game moved to this version within the week: the board's own paper tag, the way it marks what came since last time */}
+            {versionSince && <span className="t-new b-status__new">Nýtt<span className="b-visually-hidden">: ný útgáfa síðan {sinceAt(versionSince)}</span></span>}
+          </span>
+        )}
         <span className="b-nowrap">{packs} {plural(packs, 'gagnapakki', 'gagnapakkar')} <b className="b-status__shelfword">á hillunni</b></span>
       </a>
     </div>

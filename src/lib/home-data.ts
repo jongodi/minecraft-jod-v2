@@ -17,6 +17,10 @@ import { PLATES, sentenceCase, titleCase, type Plate } from '@/components/badlan
 import { seasonAt, type Season } from '@/lib/season';
 import { getPublicPacks } from '@/lib/datapacks-store';
 import { DATAPACKS } from '@/data/datapacks';
+import { getCachedStats } from '@/lib/stats';
+import { ADVANCEMENT_COUNT, readStoredAdvancements } from '@/lib/advancements';
+import { readNights, type Night } from '@/lib/play-night';
+import { formatNumber } from '@/lib/format';
 
 export interface HomeData {
   status: ServerState;
@@ -27,6 +31,32 @@ export interface HomeData {
   season: Season;
   /** how many packs stand on the shelf, for its way in under the hero's lantern */
   packs: number;
+  /** the world's own numbers, as splash lines over the Ð (Hero.tsx) */
+  facts: string[];
+}
+
+/** Facts counted from the world: the crew's hours in it, the advancements
+    any of them has, the fires held, the mobs felled. Empty without a store. */
+async function worldFacts(): Promise<string[]> {
+  const out: string[] = [];
+  const [stats, crew, nights] = await Promise.all([
+    getCachedStats().catch(() => null),
+    readStoredAdvancements().catch(() => null),
+    readNights().catch(() => [] as Night[]),
+  ]);
+  if (stats) {
+    const hours = Math.round(stats.players.reduce((a, p) => a + (p.playTimeHours ?? 0), 0));
+    const mobs = stats.players.reduce((a, p) => a + (p.mobKills ?? 0), 0);
+    if (hours > 0) out.push(`${formatNumber(hours)} klukkustundir í heiminum!`);
+    if (mobs > 0) out.push(`${formatNumber(mobs)} verur felldar!`);
+  }
+  if (crew) {
+    const done = new Set(Object.values(crew.players).flatMap(d => Object.keys(d)));
+    if (done.size > 0) out.push(`${done.size} af ${ADVANCEMENT_COUNT} afrekum!`);
+  }
+  const held = nights.filter(n => !n.cancelled && n.outcome).length;
+  if (held > 0) out.push(`${held} ${held === 1 ? 'spilakvöld' : 'spilakvöld'} við eldinn!`);
+  return out;
 }
 
 const WAIT_MS = 5000;
@@ -41,13 +71,14 @@ async function within<T>(work: Promise<T>, fallback: T): Promise<T> {
 
 export async function loadHomeData(): Promise<HomeData> {
   const now = Date.now();
-  const [status, nights, gallery, map, pinned, packs] = await Promise.all([
+  const [status, nights, gallery, map, pinned, packs, facts] = await Promise.all([
     within(getStatus({ live: false }).then(s => toServerState(s, now)), { ...NO_STATUS, online: false, life: 'unknown', checkedAt: now }),
     within(viewNights(null, now), NO_NIGHTS),
     within(readGallery(), []),
     within(readMap(), DEFAULT_CONFIG),
     within(placePrints(), {}),
     within(getPublicPacks().then(l => l.length), DATAPACKS.length),
+    within(worldFacts(), []),
   ]);
   const shown = gallery.filter(p => p.active).sort((a, b) => a.order - b.order);
   return {
@@ -59,5 +90,6 @@ export async function loadHomeData(): Promise<HomeData> {
     pinned,
     season: seasonAt(new Date(now)),
     packs,
+    facts,
   };
 }

@@ -474,6 +474,8 @@
    opened in and what is on the shelf, the pressable words lit as every
    control on the night is (the shelf has no door in the bar, data.ts). */
 .b-status__shelf { display: flex; flex-wrap: wrap; column-gap: var(--sp-2); margin-left: calc(var(--status-lantern) + var(--sp-4)); font-size: var(--fs-sm); line-height: 1.5; color: var(--tc-white); text-decoration: none; }
+/* the game moved to a new version this week: the board's paper tag beside it, in the rewards' red */
+.b-status__new { display: inline-block; margin-left: var(--sp-2); padding: 0 var(--sp-1); background: var(--paper); color: var(--tc-red); border: var(--px) solid var(--tc-red); font-family: var(--font-text); font-weight: 600; font-size: var(--fs-sm); line-height: 1.3; letter-spacing: 0.04em; text-transform: uppercase; vertical-align: baseline; }
 .b-status__shelfword { font-weight: 600; color: var(--lantern); }
 .b-status__shelf:focus-visible .b-status__shelfword { text-decoration: underline var(--px); text-underline-offset: 0.35em; }
 @media (hover: hover) { .b-status__shelf:hover .b-status__shelfword { text-decoration: underline var(--px); text-underline-offset: 0.35em; } }

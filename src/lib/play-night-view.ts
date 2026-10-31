@@ -1,7 +1,7 @@
 /* The play nights as the page shows them (src/lib/play-night.ts), for anyone:
    what /api/playnight answers, and what the home page is drawn with on the
    server so the hero's line is there at first paint. Server only. */
-import { MAX_PLANNED, currentNights, decidesAt, phaseOf, yesFor, type NightState, type Phase } from '@/lib/play-night';
+import { MAX_PLANNED, currentNights, decidesAt, optionOf, phaseOf, yesFor, type Night, type NightState, type Phase } from '@/lib/play-night';
 import { summaryOf, type NightSummary } from '@/lib/night-numbers';
 
 export interface PublicNight {
@@ -23,9 +23,30 @@ export interface PublicNight {
   numbers: NightSummary | null;
 }
 
+/** The crew's habit, read off the nights that were held: the weekday and hour most of them fell on. */
+export interface NightHabit { weekday: number; hour: number; of: number; total: number }
+
+/** The weekday and hour most held nights fell on, once three or more have
+    been held and that weekday carries at least a third of them; null otherwise. */
+export function habitOf(nights: Night[], now: number): NightHabit | null {
+  const held = nights.filter(n => !n.cancelled && n.outcome && n.chosen && phaseOf(n, now) === 'over');
+  if (held.length < 3) return null;
+  const byDay = new Map<number, number[]>();
+  for (const n of held) {
+    const d = new Date(optionOf(n, n.chosen)?.at ?? n.options[0].at);
+    byDay.set(d.getUTCDay(), [...(byDay.get(d.getUTCDay()) ?? []), d.getUTCHours()]);
+  }
+  const [weekday, hours] = [...byDay.entries()].sort((a, b) => b[1].length - a[1].length)[0];
+  if (hours.length * 3 < held.length) return null;
+  const sorted = [...hours].sort((a, b) => a - b);
+  return { weekday, hour: sorted[sorted.length >> 1], of: hours.length, total: held.length };
+}
+
 export interface PlayNightResponse {
   /** those planned, soonest first, then the last one over while its embers glow */
   nights: PublicNight[];
+  /** the crew's usual evening, if they have one */
+  habit?: NightHabit | null;
   me: string | null;
   /** how many can be planned at once */
   max: number;
@@ -49,6 +70,6 @@ export const publicOf = ({ night, votes, seen }: NightState, now: number): Publi
     page is drawn for everyone and only the API knows who is asking. */
 export async function viewNights(me: string | null = null, now = Date.now()): Promise<PlayNightResponse> {
   if (!process.env.REDIS_URL) return { ...NO_NIGHTS, me };
-  const { shown } = await currentNights(now);
-  return { nights: shown.map(s => publicOf(s, now)), me, max: MAX_PLANNED };
+  const { all, shown } = await currentNights(now);
+  return { nights: shown.map(s => publicOf(s, now)), me, max: MAX_PLANNED, habit: habitOf(all, now) };
 }

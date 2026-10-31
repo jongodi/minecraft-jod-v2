@@ -27,6 +27,10 @@ export async function rSet(key: string, value: unknown): Promise<void> {
   await getRedis().set(key, JSON.stringify(value));
 }
 
+export async function rDel(key: string): Promise<void> {
+  await getRedis().del(key);
+}
+
 /** For a read that is about to be changed and written back: "no key" is null,
     but a storage error or a value that does not parse throws, so the caller
     never mistakes a failed read for an empty record and writes that over it. */

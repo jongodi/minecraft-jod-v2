@@ -5,6 +5,11 @@ export const SERVER_IP = 'play.jodcraft.world';
    the footer's credit and the link previews carry it. The mark and the hero
    keep the wordmark, JOÐ, which is also the word the players say. */
 export const SITE_NAME = 'JOÐcraft';
+/* The day the world was born (its first day in the summer of 2024, as the
+   hero says): the splash and the board mark its birthday. Set it to the real
+   date, as the game's own files give it, before the first birthday is kept;
+   null keeps the birthday off. */
+export const WORLD_BORN: string | null = null;
 export const TITLE_TEMPLATE = `%s · ${SITE_NAME}`;
 
 export const CREW = [

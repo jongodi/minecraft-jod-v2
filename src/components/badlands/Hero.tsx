@@ -11,7 +11,7 @@ import { isLive, useAway, type ServerState } from './hooks';
 import type { Season } from '@/lib/season';
 import type { PlayNightResponse } from '@/app/api/playnight/route';
 import { YuleLad, useMoonPhase } from './Season';
-import { CREW } from './data';
+import { CREW, WORLD_BORN } from './data';
 import { useRoster } from './roster';
 
 /* The title screen's splash: what the game tilts in yellow over its logo,
@@ -39,7 +39,17 @@ const shuffled = <T,>(a: T[]): T[] => {
 const INSIDE = 'inside';
 const PLANNED = 'planned';
 
-function Splash({ inside, planned, live }: { inside: number; planned: boolean; live: boolean }) {
+/* "Heimurinn tveggja ára í dag!" on the day the world was born (data.ts), said first */
+function birthdayLine(now: Date): string | null {
+  if (!WORLD_BORN) return null;
+  const born = new Date(WORLD_BORN);
+  if (born.getUTCMonth() !== now.getUTCMonth() || born.getUTCDate() !== now.getUTCDate()) return null;
+  const years = now.getUTCFullYear() - born.getUTCFullYear();
+  const word = ['', 'eins', 'tveggja', 'þriggja', 'fjögurra', 'fimm', 'sex', 'sjö', 'átta', 'níu', 'tíu'][years] ?? String(years);
+  return years >= 1 ? `Heimurinn ${word} ára í dag!` : null;
+}
+
+function Splash({ inside, planned, live, facts }: { inside: number; planned: boolean; live: boolean; facts: string[] }) {
   /* picked in the browser, once: a pick in the server's markup would differ
      from the browser's. The first as the game picks it, the rest in a
      shuffled round, so a press never brings the same line twice running. */
@@ -51,8 +61,11 @@ function Splash({ inside, planned, live }: { inside: number; planned: boolean; l
       ...(planned ? [PLANNED] : []),
     ];
     const keys = window.matchMedia('(hover: hover) and (pointer: fine)').matches ? [KEYS_SPLASH] : [];
-    const all = [INSIDE, PLANNED, ...SPLASHES, ...keys];
-    const first = shuffled(tonight.length > 0 && Math.random() < 0.6 ? tonight : [...SPLASHES, ...keys])[0];
+    /* the fixed lines, and the world's own numbers counted on the server (home-data.ts) */
+    const lines = [...SPLASHES, ...facts, ...keys];
+    const all = [INSIDE, PLANNED, ...lines];
+    const birthday = birthdayLine(new Date());
+    const first = birthday ?? shuffled(tonight.length > 0 && Math.random() < 0.6 ? tonight : lines)[0];
     setLines([first, ...shuffled(all.filter(l => l !== first))]);
   // the title screen picks once, as the game does
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -90,7 +103,7 @@ function Climbers({ names, known }: { names: string[]; known: boolean }) {
   );
 }
 
-function Hero({ server, season, nights, packs }: { server: ServerState; season: Season; nights?: PlayNightResponse; packs: number }) {
+function Hero({ server, season, nights, packs, facts = [] }: { server: ServerState; season: Season; nights?: PlayNightResponse; packs: number; facts?: string[] }) {
   /* someone's home: the server is up and somebody is in it */
   const home = server.online === true && server.players > 0;
   const lower = server.list.map(n => n.toLowerCase());
@@ -134,7 +147,7 @@ function Hero({ server, season, nights, packs }: { server: ServerState; season: 
           <div className="b-hero__action">
             <CopyAddress />
             <div className="b-hero__side">
-              <StatusLantern server={server} packs={packs} />
+              <StatusLantern server={server} packs={packs} habit={tonight?.habit ?? nights?.habit ?? null} />
               <NightLine initial={nights} />
               <YuleLad season={season} spot="hero" />
             </div>
@@ -142,7 +155,7 @@ function Hero({ server, season, nights, packs }: { server: ServerState; season: 
         </div>
         {/* after the address and the lantern in the page's order, so the one
             action comes first to the keyboard; drawn over the Ð all the same */}
-        <Splash inside={inside.length} planned={(tonight?.nights ?? []).some(n => n.phase !== 'over')} live={known} />
+        <Splash inside={inside.length} planned={(tonight?.nights ?? []).some(n => n.phase !== 'over')} live={known} facts={facts} />
       </div>
       <Mesa snow={season.snow} halloween={season.halloween} heads={inside} known={known} />
       <YuleLad season={season} spot="mesa" />
