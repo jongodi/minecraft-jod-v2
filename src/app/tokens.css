@@ -155,6 +155,25 @@
   --chat-green-shadow:  rgb(from var(--chat-green) calc(r / 4) calc(g / 4) calc(b / 4));
   --chat-red-shadow:    rgb(from var(--chat-red) calc(r / 4) calc(g / 4) calc(b / 4));
 
+  /* ── the experience bar, as the game draws it: the empty track a shade
+     over the night with its rim in the deepest dark, and the green filling
+     it lit along its top and shaded along its foot (the bar under the
+     plank and over the hotbar, and the map's loading on the lantern's sign) ── */
+  --xp-track:   oklch(0.328 0.018 78);
+  --xp-track-2: oklch(0.268 0.015 76.3);
+  --xp-rim:     var(--pitch);
+  --xp-fill-hi: oklch(0.935 0.172 128);
+  --xp-fill:    oklch(0.815 0.226 134.1);
+  --xp-fill-lo: oklch(0.519 0.144 135.6);
+
+  /* ── snow on the plateaus and the ground, December to Twelfth Night ── */
+  --snow:   oklch(0.938 0.012 84.6);
+  --snow-2: oklch(0.871 0.015 84.6);   /* on the ground, in the campfire's dark */
+
+  /* ── the admin table's two rules: the only names of their own the panel reads ── */
+  --border:        oklch(0.306 0.027 57);
+  --border-strong: oklch(0.399 0.029 48);
+
   /* ── status ── */
   --online:  oklch(0.716 0.102 129.3);
   --offline: var(--tc-red);

@@ -44,16 +44,18 @@ interface JodViewer {
   unfollow: () => void;
   /** in view but not yet taken in hand: BlueMap's own tools stay hidden (an older jod.js has none) */
   glass?: (on: boolean) => void;
+  /** paused behind the flight: draw one frame unseen, so the landing's first frame has less to do */
+  warm?: () => void;
 }
 type ViewerMessage = {
-  source?: string; type?: string; tiles?: number; id?: number; on?: boolean; open?: boolean;
+  source?: string; type?: string; tiles?: number; of?: number; id?: number; on?: boolean; open?: boolean;
   x?: number; y?: number; z?: number; facing?: 'north' | 'south' | 'east' | 'west';
   /** camera: BlueMap's rotation of the camera round the point it holds, in radians, 0 facing north */
   rotation?: number;
   /** camera: where the camera itself stands on the ground (x, z) */
   ex?: number; ez?: number;
-  /** follow: who the camera keeps with now, and who it let go of for walking out of the world */
-  name?: string | null; outside?: string;
+  /** follow: who the camera keeps with now, and who it let go of for walking out of the world or leaving the game */
+  name?: string | null; outside?: string; gone?: string;
 };
 
 /* The rooms' code is warmed without a move from the visitor this long after
@@ -61,6 +63,16 @@ type ViewerMessage = {
    after that at the latest. */
 const WARM_AFTER_LOAD_MS = 5000;
 const WARM_IDLE_MS = 10_000;
+/* A viewer waiting behind the flight draws a frame unseen once the page has
+   rested this long since its last scroll, and again every so often while it
+   rests, so the tiles that came in meanwhile are already on the GPU when the
+   camera lands (jod.js, warm). */
+const WARM_REST_MS = 350;
+const WARM_AGAIN_MS = 1500;
+/* The page knows a phone by its width, and a tablet by its touch: a map in
+   the page would take an iPad's drag for its own, with the page only
+   scrollable from the edges, which is what the whole screen is for. */
+const PHONE_QUERY = '(max-width: 899px), (pointer: coarse)';
 
 /* The main map's rendered edges, as map:brand wrote them; null before a copy is synced. */
 const MAIN_BOUNDS = (viewerFiles as { bounds?: MapBounds | null }).bounds ?? null;
@@ -103,14 +115,16 @@ function useLinger<T>(value: T | null, ms = 400): { shown: T | null; leaving: bo
     a soft pool of night round it was the one blurred edge on the page. */
 /* The paper tag says what the lantern does where it is seen: in place on a
    wide screen, the whole screen on a phone (badlands.css keeps one of the two). */
-function Signpost({ here }: { here: boolean }) {
+function Signpost({ here, loading }: { here: boolean; loading: boolean }) {
   return (
     <>
       <span className="b-boot__post" aria-hidden="true" />
       <Lantern lit />
       <span className="b-boot__word">Ferðast um heiminn</span>
-      {/* landed in the live map (World.tsx): it is already here, and waits to be taken hold of */}
-      <span className="b-boot__sub b-boot__sub--wide">{here ? 'þrívíddarkortið er komið · smelltu og taktu í það' : 'hleður þrívíddarkortið · dragðu, snúðu, stækkaðu'}</span>
+      {/* landed in the live map (World.tsx): it is already here, and waits to be taken hold of;
+          on its way, the tag says so; otherwise it says what a press does (it once said
+          "loading" whatever the state, and a first visit waited for a map nobody had asked for) */}
+      <span className="b-boot__sub b-boot__sub--wide">{here ? 'þrívíddarkortið er komið · smelltu og taktu í það' : loading ? 'sæki þrívíddarkortið · andartak' : 'opnar þrívíddarkortið · dragðu, snúðu, stækkaðu'}</span>
       <span className="b-boot__sub b-boot__sub--phone">opnar þrívíddarkortið á heilum skjá</span>
     </>
   );
@@ -189,7 +203,8 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
   const [ready, setReady]     = useState(false);
   /* the viewer's map has loaded and window.jod answers */
   const [viewer, setViewer]   = useState(false);
-  const [tiles, setTiles]     = useState(0);
+  /* how far the first view has come: the tiles drawn of those asked for */
+  const [tiles, setTiles]     = useState({ drawn: 0, of: 0 });
   /* the live map was asked for and would not come; said until it is asked again */
   const [failed, setFailed]   = useState(false);
   /* where the live map is looking, for the F3 lines (F3 below) */
@@ -221,7 +236,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
   const sheetRef = useRef<HTMLDivElement>(null);
   /* On phones the viewer opens full screen instead of inside the page, so
      BlueMap's drag and pinch never fight the page scroll. */
-  const phone = useMediaQuery('(max-width: 899px)');
+  const phone = useMediaQuery(PHONE_QUERY);
   /* the painted map's pins and the 3D viewer under a room's dark take no keys
      either; each may come after the room opened, so it is set as they do */
   useEffect(() => {
@@ -405,7 +420,8 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
       const m = e.data as ViewerMessage | null;
       if (m?.source !== 'jod-map') return;
       if (m.type === 'hello') setViewer(true);
-      else if (m.type === 'progress') setTiles(m.tiles ?? 0);
+      /* the same count again is no change: the viewer says it every 100 ms while the first view comes */
+      else if (m.type === 'progress') setTiles(t => (t.drawn === (m.tiles ?? 0) && t.of === (m.of ?? 0) ? t : { drawn: m.tiles ?? 0, of: m.of ?? 0 }));
       else if (m.type === 'camera' && typeof m.x === 'number' && typeof m.y === 'number' && typeof m.z === 'number') {
         camera.set({ x: m.x, y: m.y, z: m.z, facing: m.facing ?? 'north' });
         /* asleep behind the flight, the viewer's camera is not the one on screen */
@@ -420,7 +436,9 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
         /* under a layer opened over the whole screen (the album), going
            back would close the layer instead: the screen stays, still and lantern */
         if (!modalOpen()) closeFull();
-        setLive(false); setReady(false); setViewer(false); setTiles(0); setSlow(false); setMenu(false);
+        setLive(false); setReady(false); setViewer(false); setTiles({ drawn: 0, of: 0 }); setSlow(false); setMenu(false);
+        /* the next viewer opens at night following nobody: the HUD says so too */
+        setNight(false); setFollowing(null); setFollowNote(null);
         setFailed(!autoRef.current);
         setAuto(false);
       }
@@ -430,6 +448,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
       else if (m.type === 'follow') {
         setFollowing(m.name ?? null);
         if (m.outside) setFollowNote(`${m.outside} fór út fyrir kortið`);
+        else if (m.gone) setFollowNote(`${m.gone} fór úr leiknum`);
       }
     };
     window.addEventListener('message', onMessage);
@@ -506,16 +525,20 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
   useEffect(() => { if (viewer) jod()?.glass?.(auto || still); }, [viewer, auto, still, jod]);
 
   /* The viewer says when its first view is drawn, which is usually well under
-     a second. Should it not have said so in four (a slow texture download, or
-     a viewer without JOÐ's script), it is shown anyway and fills in live. The
-     loading line only appears if the wait is long enough to notice. */
+     a second. Should it not have said so in four once it is there (a slow
+     texture download), it is shown anyway and fills in live; a viewer that
+     never says hello at all (JOÐ's script did not load) is given twenty
+     seconds, since before it had said hello its map has not loaded, and the
+     still would have faded into an empty canvas. The loading line only
+     appears if the wait is long enough to notice. */
   const [slow, setSlow] = useState(false);
+  const loading = shown && !ready && !still && slow;
   useEffect(() => {
     if (!live || ready) return;
-    const show = setTimeout(() => setReady(true), 4000);
+    const show = setTimeout(() => setReady(true), viewer ? 4000 : 20_000);
     const note = setTimeout(() => setSlow(true), 700);
     return () => { clearTimeout(show); clearTimeout(note); };
-  }, [live, ready]);
+  }, [live, ready, viewer]);
 
   /* ─── the whole screen ─── */
   /* the way in that was pressed, which goes as the screen opens and is drawn anew as it closes */
@@ -649,14 +672,35 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
     return () => window.removeEventListener('keydown', onKey);
   }, [held, selected, album, shut, letGoMap]);
   useEffect(() => { if (held && !inView) letGoMap(); }, [held, inView, letGoMap]);
+  /* Escape folds the painted map away, as it closes anything else open over
+     the world, one layer at a time: not while a postcard, the album, the
+     chat or a room is open over it, whose own keys take that press. */
+  useEffect(() => {
+    if (!drawn || selected !== null || album || shut) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !modalOpen()) setDrawn(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [drawn, selected, album, shut]);
   /* set off down the page on a wide screen: wake the live map behind the flight */
   const liveRef = useRef(live);
   liveRef.current = live;
   const approach = useCallback(() => {
-    if (liveRef.current || window.matchMedia('(max-width: 899px)').matches) return;
+    if (liveRef.current || window.matchMedia(PHONE_QUERY).matches) return;
     setAuto(true);
     setLive(true);
   }, []);
+  /* Resting on the way down, the viewer waiting behind the flight draws its
+     frames unseen (WARM_REST_MS above): the shaders compile and the tiles go
+     to the GPU while nothing on the page waits on the thread. */
+  useEffect(() => {
+    if (!standby || !viewer) return;
+    let t: ReturnType<typeof setTimeout> | undefined;
+    const again = () => { jod()?.warm?.(); t = setTimeout(again, WARM_AGAIN_MS); };
+    const rest = () => { clearTimeout(t); t = setTimeout(again, WARM_REST_MS); };
+    window.addEventListener('scroll', rest, { passive: true });
+    rest();
+    return () => { clearTimeout(t); window.removeEventListener('scroll', rest); };
+  }, [standby, viewer, jod]);
   const pointAt = useCallback((id: number | null) => {
     setNear(id);
     if (id !== null) revealRailItem(id, places.current);
@@ -756,8 +800,10 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
                   </span>
                 )}
                 {canFollow && (following || followNote) && (
-                  <span className="b-hud__follow" role="status">{followNote ?? `Eltir ${following}`}</span>
+                  <span className="b-hud__follow">{followNote ?? `Eltir ${following}`}</span>
                 )}
+                {/* the same words for a screen reader, in a live region that is there before they come: one put up already holding them is not read */}
+                {canFollow && <span className="b-visually-hidden" role="status">{followNote ?? (following ? `Eltir ${following}` : '')}</span>}
               </p>
             </div>
             {/* On a phone the tools are slots sunk into one strip, as the hotbar's,
@@ -773,7 +819,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
               )}
               {viewer && shown && !drawn && !still && (
                 <button type="button" className={`b-btn b-btn--small b-btn--ghost b-hud__tool b-tip b-tip--below${night ? ' is-on' : ''}`} aria-pressed={night}
-                  data-tip="Sólin sest og ljósin í bænum loga" onClick={() => jod()?.setNight(!night)}>
+                  data-tip={night ? 'Sólin kemur upp aftur' : 'Sólin sest og ljósin í bænum loga'} onClick={() => jod()?.setNight(!night)}>
                   <MoonIcon className="b-btn__icon" /><span className="b-hud__word">Nótt</span>
                 </button>
               )}
@@ -806,17 +852,22 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
               // eslint-disable-next-line @next/next/no-html-link-for-pages
               <a href={MAP_URL} className="b-boot" onPointerEnter={warmViewer} onTouchStart={warmViewer} onFocus={warmViewer}
                 onClick={e => { if (plainClick(e)) { e.preventDefault(); if (phone) openFull(); else takeHold(); } }}>
-                <Signpost here={shown && auto && ready} />
+                <Signpost here={shown && auto && ready} loading={live && !ready && !still} />
               </a>
             )}
-            {failed && !live && (
-              <p className="b-boot__wait" role="status">kortið náði ekki að hlaðast · reyndu aftur eftir smástund</p>
-            )}
-            {shown && !ready && !still && slow && (
-              <p className="b-boot__wait" role="status">
-                sæki kortið{tiles > 0 ? ` · ${tiles} ${plural(tiles, 'reitur', 'reitir')}` : '…'}
-              </p>
-            )}
+            {/* What the wait says, in one live region kept mounted so a screen
+                reader hears each change: that the map would not come, or how
+                far the first view has come, drawn as the game draws a world
+                loading, its bar filling tile by tile under the words. */}
+            <p className="b-boot__wait" role="status">
+              {failed && !live ? 'kortið náði ekki að hlaðast · reyndu aftur eftir smástund'
+                : loading ? `sæki kortið${tiles.of > 0 ? ` · ${tiles.drawn} af ${tiles.of} ${plural(tiles.of, 'reit', 'reitum')}` : '…'}` : ''}
+              {loading && (
+                <span className="b-xp b-boot__bar" aria-hidden="true">
+                  <span className="b-xp__fill" style={{ transform: `scaleX(${tiles.of > 0 ? Math.min(1, tiles.drawn / tiles.of).toFixed(3) : 0})` }} />
+                </span>
+              )}
+            </p>
           </div>
         </div>
 

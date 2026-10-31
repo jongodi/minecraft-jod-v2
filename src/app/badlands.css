@@ -739,8 +739,8 @@
   /* the empty track a shade over the night and the segments cut dark into
      it, so an empty bar reads as the game's eighteen empty cells and not as
      a black strip that failed to draw */
-  background: linear-gradient(180deg, #3A342B 0 var(--px), #2A251E var(--px));
-  box-shadow: 0 0 0 var(--px) #0E0C09;
+  background: linear-gradient(180deg, var(--xp-track) 0 var(--px), var(--xp-track-2) var(--px));
+  box-shadow: 0 0 0 var(--px) var(--xp-rim);
   overflow: clip;
   pointer-events: none;
 }
@@ -748,7 +748,7 @@
   position: absolute;
   inset: 0;
   will-change: transform;   /* the scroll moves it on the compositor, so no frame repaints the bar */
-  background: linear-gradient(180deg, #C8FF7A 0 var(--px), #80E020 var(--px) calc(100% - var(--px)), #3F7A12 calc(100% - var(--px)));
+  background: linear-gradient(180deg, var(--xp-fill-hi) 0 var(--px), var(--xp-fill) var(--px) calc(100% - var(--px)), var(--xp-fill-lo) calc(100% - var(--px)));
   transform: scaleX(0);
   transform-origin: left;
 }
@@ -1763,7 +1763,14 @@ html.is-map-full { overflow: hidden; }
   .b-boot { padding-bottom: var(--sp-4); }
   .b-boot__sub { display: none; }
 }
-.b-boot__wait { font-family: var(--font-data); font-size: var(--fs-data); color: var(--paper); text-shadow: 0 var(--px) 0 var(--night); }
+/* What the wait says, under the lantern: the words, and while the first view
+   is on its way the game's own bar under them, filling tile by tile as a world
+   loads, 18 cells on the sign's width. Empty, it is nothing at all. */
+.b-boot__wait { display: grid; justify-items: center; gap: var(--sp-2); font-family: var(--font-data); font-size: var(--fs-data); color: var(--paper); text-align: center; text-shadow: 0 var(--px) 0 var(--night); }
+.b-boot__bar { width: min(18rem, 100%); --xp: 8px; }
+/* its fill is the map's progress, not the page's: no scroll timeline, a short step between counts */
+.b-boot__bar .b-xp__fill { animation: none; transition: transform var(--dur-2) linear; }
+@media (prefers-reduced-motion: reduce) { .b-boot__bar .b-xp__fill { transition: none; } }
 
 /* the postcard of the chosen place. Scoped to the frame: board.css gives every
    sheet of paper position: relative, and this one has to sit over the world. */
