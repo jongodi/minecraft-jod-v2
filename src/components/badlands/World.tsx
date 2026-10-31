@@ -18,7 +18,7 @@ import Flight, { type FlightPlace } from './Flight';
 import Locator, { type CameraSink } from './Locator';
 import { useLivePlayers } from './livePlayers';
 import { FLIGHT, headingOf } from '@/lib/map-flight';
-import { CREW, FACING, MAP_LIGHTS, MAP_POSTER, MAP_URL, SITE_NAME, handCase, isRoom, plainClick, titleCase, type Plate, type RoomId } from './data';
+import { CREW, FACING, MAP_LIGHTS, MAP_POSTER, MAP_START_VIEW, MAP_URL, SITE_NAME, handCase, isRoom, plainClick, titleCase, type Plate, type RoomId } from './data';
 import type { ServerState } from './hooks';
 import { modalOpen, showWorld, useEffectsAllowed, useInert, useMediaQuery, useReducedMotionPref, useRoomForEffects } from './hooks';
 import { photoProps, PHOTO_SIZES } from './photo';
@@ -44,6 +44,8 @@ interface JodViewer {
   unfollow: () => void;
   /** in view but not yet taken in hand: BlueMap's own tools stay hidden (an older jod.js has none) */
   glass?: (on: boolean) => void;
+  /** a whole view: the point held, the distance, the turn and the tilt */
+  view?: (v: View) => void;
   /** paused behind the flight: draw one frame unseen, so the landing's first frame has less to do */
   warm?: () => void;
 }
@@ -52,8 +54,8 @@ type ViewerMessage = {
   x?: number; y?: number; z?: number; facing?: 'north' | 'south' | 'east' | 'west';
   /** camera: BlueMap's rotation of the camera round the point it holds, in radians, 0 facing north */
   rotation?: number;
-  /** camera: where the camera itself stands on the ground (x, z) */
-  ex?: number; ez?: number;
+  /** camera: where the camera itself stands on the ground (x, z), how far off it is and how far tilted */
+  ex?: number; ez?: number; d?: number; tilt?: number;
   /** follow: who the camera keeps with now, and who it let go of for walking out of the world or leaving the game */
   name?: string | null; outside?: string; gone?: string;
 };
@@ -140,6 +142,8 @@ interface Props {
   syncedOn: string | null;
   /** the other bases with a 3D map of their own (/kort/<id>) */
   bases: BaseLink[];
+  /** the places whose ground changed in the newest copy of the map, while that is news (home-data.ts) */
+  fresh?: number[];
   /** which room is open over the world, if any */
   room: RoomId | null;
   onCloseRoom: () => void;
@@ -157,7 +161,15 @@ interface Props {
     board, the crew, the shelf) rise from the foot of the frame when their door is opened,
     leaving the world in view above them. *Heill skjár* makes the frame itself
     the whole screen, so nothing reloads; on a phone the lantern does. */
-type Camera = { x: number; y: number; z: number; facing: string };
+export type Camera = { x: number; y: number; z: number; facing: string; rotation?: number; d?: number; tilt?: number };
+/** A whole view of the live map, as a link carries it: ?syn=x,y,z,d,rot,tilt */
+export type View = { x: number; y: number; z: number; d: number; rot: number; tilt: number };
+const viewOf = (s: string | null): View | null => {
+  const n = (s ?? '').split(',').map(Number);
+  return n.length === 6 && n.every(Number.isFinite) ? { x: n[0], y: n[1], z: n[2], d: n[3], rot: n[4], tilt: n[5] } : null;
+};
+/* the start view, as data.ts writes it for the viewer: world:x:y:z:distance:rotation:angle:… */
+const START_VIEW: View = (() => { const p = MAP_START_VIEW.split(':').map(Number); return { x: p[1], y: p[2], z: p[3], d: p[4], rot: p[5], tilt: p[6] }; })();
 
 /** Where the live map is looking. The viewer says it a few times a second
     while it moves; it is kept here rather than in the world's state, so a
@@ -168,7 +180,7 @@ function cameraStore() {
   const listeners = new Set<() => void>();
   return {
     set(next: Camera) {
-      if (value && value.x === next.x && value.y === next.y && value.z === next.z && value.facing === next.facing) return;
+      if (value && value.x === next.x && value.y === next.y && value.z === next.z && value.facing === next.facing && value.rotation === next.rotation && value.d === next.d) return;
       value = next;
       listeners.forEach(l => l());
     },
@@ -176,12 +188,12 @@ function cameraStore() {
     subscribe(l: () => void) { listeners.add(l); return () => { listeners.delete(l); }; },
   };
 }
-type CameraStore = ReturnType<typeof cameraStore>;
+export type CameraStore = ReturnType<typeof cameraStore>;
 
 /* The game's F3 lines while the live map is up: the block the map holds and
    the way it faces, as a player reads them to find the same spot in the
    game, each line on its own veil of dark. */
-const F3 = memo(function F3({ store }: { store: CameraStore }) {
+const F3 = memo(function F3({ store, onCopy }: { store: CameraStore; onCopy?: () => void }) {
   const camera = useSyncExternalStore(store.subscribe, store.get, () => null);
   if (!camera) return null;
   return (
@@ -190,11 +202,13 @@ const F3 = memo(function F3({ store }: { store: CameraStore }) {
       <span className="b-visually-hidden">Kortið horfir á {camera.x}, {camera.y}, {camera.z} og snýr í {FACING[camera.facing] ?? camera.facing}</span>
       <span aria-hidden="true">XYZ: {camera.x} / {camera.y} / {camera.z}</span>
       <span aria-hidden="true">Snýr í {FACING[camera.facing] ?? camera.facing}</span>
+      {/* a link to this very view, as F3+C copies a position in the game; C does it from the keyboard */}
+      {onCopy && <button type="button" className="b-f3__copy" onClick={onCopy} aria-keyshortcuts="c">Afrita hlekk á þessa sýn</button>}
     </p>
   );
 });
 
-function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseRoom }: Props) {
+function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], room, onCloseRoom }: Props) {
   const [selected, setSelect] = useState<number | null>(null);
   const [drawn, setDrawn]     = useState(false);
   const [album, setAlbum]     = useState(false);
@@ -423,7 +437,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
       /* the same count again is no change: the viewer says it every 100 ms while the first view comes */
       else if (m.type === 'progress') setTiles(t => (t.drawn === (m.tiles ?? 0) && t.of === (m.of ?? 0) ? t : { drawn: m.tiles ?? 0, of: m.of ?? 0 }));
       else if (m.type === 'camera' && typeof m.x === 'number' && typeof m.y === 'number' && typeof m.z === 'number') {
-        camera.set({ x: m.x, y: m.y, z: m.z, facing: m.facing ?? 'north' });
+        camera.set({ x: m.x, y: m.y, z: m.z, facing: m.facing ?? 'north', rotation: m.rotation, d: m.d, tilt: m.tilt });
         /* asleep behind the flight, the viewer's camera is not the one on screen */
         if (typeof m.rotation === 'number' && !standbyRef.current) cameraSink.current?.([m.ex ?? m.x, m.ez ?? m.z], headingOf(m.rotation));
       }
@@ -689,6 +703,87 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
     setAuto(true);
     setLive(true);
   }, []);
+  /* A link to the view the map holds (?syn=x,y,z,d,rot,tilt): copied with C
+     while the map is held, as F3+C copies a position in the game, or from
+     the F3 lines' own key for a touch; arrived at, the map is taken hold of
+     and flown there once it is ready. A friend pressed in the chat or on the
+     land (jod:follow) is followed the same way; the compass needle on the
+     locator (jod:home) flies back to the start view. */
+  const pendingView = useRef<View | null>(null);
+  const pendingFollow = useRef<string | null>(null);
+  const copyView = useCallback(async () => {
+    const c = camera.get();
+    if (!c || typeof c.rotation !== 'number' || typeof c.d !== 'number') return;
+    const url = `${window.location.origin}/?syn=${c.x},${c.y},${c.z},${c.d},${c.rotation},${c.tilt ?? 0}#heimur`;
+    try { await navigator.clipboard.writeText(url); toast('Afritað', 'hlekkur á þessa sýn'); }
+    catch { window.prompt('Afritaðu hlekkinn:', url); }
+  }, [camera]);
+  useEffect(() => {
+    if (!held) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() !== 'c' || e.altKey || e.ctrlKey || e.metaKey || e.repeat || modalOpen()) return;
+      const at = e.target instanceof HTMLElement ? e.target : null;
+      if (at && (at.isContentEditable || at.closest('input, textarea, select'))) return;
+      copyView();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [held, copyView]);
+  useEffect(() => {
+    const v = viewOf(new URLSearchParams(window.location.search).get('syn'));
+    if (!v) return;
+    pendingView.current = v;
+    showWorld(false);
+    if (window.matchMedia(PHONE_QUERY).matches) openFull(); else takeHold();
+  // once, as the page arrives
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => {
+    const onFollow = (e: Event) => {
+      pendingFollow.current = (e as CustomEvent<string>).detail;
+      showWorld(false);
+      if (window.matchMedia(PHONE_QUERY).matches) openFull(); else takeHold();
+    };
+    const onHome = () => jod()?.view?.(START_VIEW);
+    window.addEventListener('jod:follow', onFollow);
+    window.addEventListener('jod:home', onHome);
+    return () => { window.removeEventListener('jod:follow', onFollow); window.removeEventListener('jod:home', onHome); };
+  // openFull and takeHold are stable callbacks declared below
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jod]);
+  useEffect(() => {
+    if (!viewer || !ready || standby) return;
+    if (pendingView.current) { jod()?.view?.(pendingView.current); pendingView.current = null; }
+    const name = pendingFollow.current;
+    if (!name) return;
+    /* the player's marker may come a moment after the map: asked a few times */
+    let tries = 0;
+    const t = setInterval(() => {
+      const r = jod()?.follow(name);
+      if (r === 'ok' || r === 'outside' || ++tries >= 6) { clearInterval(t); pendingFollow.current = null; if (r === 'missing') setFollowNote(`${name} sést ekki á kortinu`); }
+    }, 800);
+    return () => clearInterval(t);
+  }, [viewer, ready, standby, jod]);
+  /* The hotbar's next slots: 4 Nótt, 5 Teiknað kort, 6 Myndir, 7 Heill
+     skjár, with the world in view on a wide screen; not in a field, under a
+     dialog, in a room, or with a modifier (the doors' keys are AddressBar's). */
+  useEffect(() => {
+    if (!reached || shut) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (!/^[4-7]$/.test(e.key) || e.altKey || e.ctrlKey || e.metaKey || e.repeat || modalOpen() || window.matchMedia(PHONE_QUERY).matches) return;
+      const at = e.target instanceof HTMLElement ? e.target : null;
+      if (at && (at.isContentEditable || at.closest('input, textarea, select'))) return;
+      e.preventDefault();
+      if (e.key === '4') { if (viewer && shown) jod()?.setNight(!night); }
+      else if (e.key === '5') setDrawn(v => !v);
+      else if (e.key === '6') setAlbum(true);
+      else if (e.key === '7') { setDrawn(false); openFull(); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  // openFull is a stable callback declared below
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reached, shut, viewer, shown, night, jod]);
   /* Resting on the way down, the viewer waiting behind the flight draws its
      frames unseen (WARM_REST_MS above): the shaders compile and the tiles go
      to the GPU while nothing on the page waits on the thread. */
@@ -760,7 +855,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
 
         {drawn && (
           <div ref={sheetRef} className="b-frame__sheet">
-            <MapSheet config={config} selectedId={selected} onSelect={choose} />
+            <MapSheet config={config} selectedId={selected} onSelect={choose} camera={shown && ready ? camera : undefined} />
           </div>
         )}
 
@@ -872,7 +967,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
         </div>
 
         {/* the locator bar: the other bases and the crew, by where they stand from the way the camera faces */}
-        <Locator bases={bases} players={players} sink={cameraSink} hidden={drawn || shut || (menu && ready)} />
+        <Locator bases={bases} players={players} home={{ x: START_VIEW.x, z: START_VIEW.z, name: 'Joðbær' }} sink={cameraSink} hidden={drawn || shut || (menu && ready)} />
 
         {/* the place picked, said once as it comes: a live region on the card itself is a new one with every place, and one put up already holding its words is not read */}
         <p className="b-visually-hidden" role="status">{chosen && !shut ? `Póstkort: ${titleCase(chosen.label)}` : ''}</p>
@@ -901,6 +996,13 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
                   {place.sublabel && <span className="b-card__sub">{handCase(place.sublabel).replace(/\s*·\s*/g, ', ')}</span>}
                   {place.builders && place.builders.length > 0 && (
                     <span className="b-card__builders">byggt af {place.builders.map((b, i) => <span key={b}>{i > 0 && ', '}<Link href={`/crew/${b}`}>{b}</Link></span>)}</span>
+                  )}
+                  {/* where it stands, as F3 writes it; a press copies the three numbers for a /tp or a walk */}
+                  {place.world && (
+                    <button type="button" className="b-f3 b-card__xyz" aria-label={`Afrita hnitin ${place.world.x}, ${place.world.y}, ${place.world.z}`}
+                      onClick={() => { const w = place.world!; navigator.clipboard?.writeText(`${w.x} ${w.y} ${w.z}`).then(() => toast('Afritað', 'hnitin'), () => {}); }}>
+                      <span aria-hidden="true">XYZ: {place.world.x} / {place.world.y} / {place.world.z}</span>
+                    </button>
                   )}
                 </span>
                 <span className="b-card__tools">
@@ -953,7 +1055,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
             </p>
           )}
           {/* the game's F3 lines while the live map is up (F3 above) */}
-          {shown && ready && !still && !drawn && <F3 store={camera} />}
+          {shown && ready && !still && !drawn && <F3 store={camera} onCopy={copyView} />}
           {/* a count, as the shelf counts its crates: each base's own tag already says it has its own map, and the rail's order says where */}
           <p className="b-places__head">{config.locations.length} {plural(config.locations.length, 'staður', 'staðir')}{bases.length > 0 && ` og ${bases.length} ${plural(bases.length, 'stöð', 'stöðvar')}`}</p>
           <Rail label="Staðir og stöðvar" prevLabel="Fyrri staðir" nextLabel="Næstu staðir" count={config.locations.length + bases.length}>
@@ -967,6 +1069,8 @@ function World({ plates, config, pinned, server, syncedOn, bases, room, onCloseR
                   onFocus={() => setNear(loc.id)} onBlur={() => setNear(null)}>
                   {/* a label on a bare span is not read; the count is spoken as words instead */}
                   {count > 0 && <><span className="b-chip__count" aria-hidden="true">{count}</span><span className="b-visually-hidden">{`${count} ${plural(count, 'færsla', 'færslur')} frá hópnum, `}</span></>}
+                  {/* its ground changed in the newest copy of the map, this week: the board's own tag */}
+                  {fresh.includes(loc.id) && <span className="b-chip__new">Nýtt<span className="b-visually-hidden">: breytt á nýjasta afriti kortsins</span></span>}
                   <span className="b-chip__thumb">
                     {thumb
                       // eslint-disable-next-line @next/next/no-img-element

@@ -522,10 +522,12 @@ function Flight({ flight, fly, runway, f3, places, players, selected, onChoose, 
           </button>
         ))}
         {players.map(p => (
-          <span key={p.name} data-pin={`player:${p.name}`} className="b-pin b-pin--player">
+          /* pressed, the live map takes hold and follows them (World.tsx, jod:follow) */
+          <button key={p.name} type="button" tabIndex={-1} data-pin={`player:${p.name}`} className="b-pin b-pin--player"
+            onClick={() => window.dispatchEvent(new CustomEvent('jod:follow', { detail: p.name }))}>
             <span className="b-nametag b-pin__tag">{p.name}</span>
             <PlayerHead name={p.name} size={16} alt="" className="b-pin__head" />
-          </span>
+          </button>
         ))}
       </div>
     </>

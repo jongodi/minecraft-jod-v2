@@ -23,6 +23,25 @@ export interface Snapshot {
       the CDN still hold it after a new copy. Left out, every file is the
       copy's own version. */
   since?: string[];
+  /** The detailed tiles whose bytes changed in this copy (maps/…/tiles/0/… paths), so the
+      places standing on them can carry a tag while the copy is news. Left out before it was kept. */
+  changed?: string[];
+}
+
+const HIRES = /^maps\/world\/tiles\/0\/x(-?[\d/]+?)\/z(-?[\d/]+)\.prbm(?:\.gz)?$/;
+const coord = (s: string) => Number(s.replace(/\//g, ''));
+/* BlueMap's hires tiles: 32 blocks a side, offset by 2 (scripts/bluemap-brand.mjs, boundsOf) */
+const TILE = { size: 32, translate: 2 };
+const tileOf = (v: number) => Math.floor((v - TILE.translate) / TILE.size);
+const NEWS_MS = 7 * 24 * 3600_000;
+
+/** The ids of the places whose ground changed in the newest copy, while that
+    copy is under a week old: those standing on a detailed tile the sync fetched anew. */
+export function freshPlaces(places: { id: number; world?: { x: number; z: number } | null }[], now = Date.now()): number[] {
+  const { syncedAt, changed } = snapshot;
+  if (!syncedAt || !changed?.length || now - Date.parse(syncedAt) > NEWS_MS) return [];
+  const tiles = new Set(changed.map(f => HIRES.exec(f)).filter((m): m is RegExpExecArray => !!m).map(m => `${coord(m[1])},${coord(m[2])}`));
+  return places.filter(p => p.world && tiles.has(`${tileOf(p.world.x)},${tileOf(p.world.z)}`)).map(p => p.id);
 }
 
 /** One map's copy in the store, read off its manifest. */

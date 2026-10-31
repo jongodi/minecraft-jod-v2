@@ -21,6 +21,7 @@ import { getCachedStats } from '@/lib/stats';
 import { ADVANCEMENT_COUNT, readStoredAdvancements } from '@/lib/advancements';
 import { readNights, type Night } from '@/lib/play-night';
 import { formatNumber } from '@/lib/format';
+import { freshPlaces } from '@/lib/bluemap-snapshot';
 
 export interface HomeData {
   status: ServerState;
@@ -33,6 +34,8 @@ export interface HomeData {
   packs: number;
   /** the world's own numbers, as splash lines over the Ð (Hero.tsx) */
   facts: string[];
+  /** the places whose ground changed in the newest copy of the map, while that is news */
+  fresh: number[];
 }
 
 /** Facts counted from the world: the crew's hours in it, the advancements
@@ -91,5 +94,6 @@ export async function loadHomeData(): Promise<HomeData> {
     season: seasonAt(new Date(now)),
     packs,
     facts,
+    fresh: freshPlaces(map.locations, now),
   };
 }

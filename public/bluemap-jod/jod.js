@@ -101,6 +101,7 @@
     warm() {},
     setNight() {},
     flyTo() {},
+    view() {},
     choose() {},
     follow() { return 'missing'; },
     unfollow() {},
@@ -581,6 +582,22 @@ void main() {
       if (id !== undefined && id !== null) jod.choose(id);
     };
     jod.choose = choose;
+    /* A whole view, as a link to it carries it (the page's ?syn=): the point
+       the camera holds, how far off it stands, its turn and its tilt. */
+    jod.view = (v) => {
+      if (!v || ![v.x, v.y, v.z, v.d, v.rot, v.tilt].every(Number.isFinite)) return;
+      const from = { x: cm.position.x, y: cm.position.y, z: cm.position.z, d: cm.distance, rot: cm.rotation, tilt: cm.angle ?? 0 };
+      jod.flying = true;
+      animate(900, (k) => {
+        cm.position.x = from.x + (v.x - from.x) * k;
+        cm.position.y = from.y + (v.y - from.y) * k;
+        cm.position.z = from.z + (v.z - from.z) * k;
+        cm.distance = from.d + (v.d - from.d) * k;
+        cm.rotation = from.rot + (v.rot - from.rot) * k;
+        if ('angle' in cm) cm.angle = from.tilt + (v.tilt - from.tilt) * k;
+        viewer.redraw();
+      }, () => { jod.flying = false; }, 'camera');
+    };
 
     /* Keep the camera over the rendered world (a circle render mask gives a round one). */
     const b = facts.bounds;
@@ -675,8 +692,9 @@ void main() {
       const facing = Math.abs(fx) > Math.abs(fz) ? (fx > 0 ? 'east' : 'west') : (fz > 0 ? 'south' : 'north');
       const rotation = Math.round(cm.rotation * 20) / 20;
       const eye = viewer.camera?.position;
-      const at = { x: Math.floor(p.x), y: Math.floor(p.y), z: Math.floor(p.z), facing, rotation, ex: Math.floor(eye?.x ?? p.x), ez: Math.floor(eye?.z ?? p.z) };
-      const key = `${at.x} ${at.y} ${at.z} ${facing} ${rotation}`;
+      /* how far off and how far tilted too, so the page can hand out a link to this very view (jod.view) */
+      const at = { x: Math.floor(p.x), y: Math.floor(p.y), z: Math.floor(p.z), facing, rotation, ex: Math.floor(eye?.x ?? p.x), ez: Math.floor(eye?.z ?? p.z), d: Math.round(cm.distance), tilt: Math.round((cm.angle ?? 0) * 100) / 100 };
+      const key = `${at.x} ${at.y} ${at.z} ${facing} ${rotation} ${at.d} ${at.tilt}`;
       if (key === lastCamera) return;
       lastCamera = key;
       tell('camera', at);
