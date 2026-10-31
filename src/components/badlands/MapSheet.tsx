@@ -31,7 +31,7 @@ interface Props {
 /* The paper's own coordinates from the world's: a fit, each axis on its own,
    through the places drawn on the sheet that also stand in the world, so a
    camera in the world can be drawn on the paper. null under two such places. */
-function paperFit(locations: MapLocation[]): { x: (wx: number) => number; y: (wz: number) => number } | null {
+export function paperFit(locations: MapLocation[]): { x: (wx: number) => number; y: (wz: number) => number } | null {
   const pts = locations.filter(l => l.world).map(l => ({ px: l.x, py: l.y, wx: l.world!.x, wz: l.world!.z }));
   if (pts.length < 2) return null;
   const axis = (w: number[], p: number[]) => {

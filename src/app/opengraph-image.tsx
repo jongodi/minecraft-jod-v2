@@ -66,7 +66,7 @@ export default async function Image() {
     (
       <div style={{ width: '100%', height: '100%', display: 'flex', position: 'relative', background: sky, fontFamily: 'Alfa Slab One' }}>
         {/* tonight's moon, the game's square one in its phase (src/lib/moon.ts), high on the left */}
-        <div style={{ position: 'absolute', left: 1020, top: 60, width: 60, height: 60, display: 'flex' }}>
+        <div style={{ position: 'absolute', left: 1112, top: 36, width: 60, height: 60, display: 'flex' }}>
           {MOON_COLUMNS[phase].flatMap((col, x) => col.map(([a, b]) => (
             <div key={`${x}-${a}`} style={{ position: 'absolute', left: x * 6, top: (a - 1) * 6, width: 6, height: (b - a + 1) * 6, background: C.paper, display: 'flex' }} />
           )))}
