@@ -740,7 +740,9 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
     if (!v) return;
     pendingView.current = v;
     showWorld(false);
-    if (window.matchMedia(PHONE_QUERY).matches) openFull(); else takeHold();
+    /* a phone opens the whole screen at once; a wide screen lets the flight
+       come down and wake the viewer behind it, and takes hold at the landing */
+    if (window.matchMedia(PHONE_QUERY).matches) openFull();
   // once, as the page arrives
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -759,7 +761,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
   }, [jod]);
   useEffect(() => {
     if (!viewer || !ready || standby) return;
-    if (pendingView.current) { jod()?.view?.(pendingView.current); pendingView.current = null; }
+    if (pendingView.current) { setAuto(false); jod()?.view?.(pendingView.current); pendingView.current = null; }
     const name = pendingFollow.current;
     if (!name) return;
     /* the player's marker may come a moment after the map: asked a few times */
