@@ -9,6 +9,7 @@
 // (src/components/board), with its writer named at its top.
 import { memo, useCallback, useEffect, useId, useRef, useState, type CSSProperties, type FormEvent, type MouseEvent } from 'react';
 import Link from 'next/link';
+import { toast } from '@/components/badlands/Toast';
 import type { CrewEntry, CrewPhoto } from '@/lib/crew-types';
 import { LIMITS, sameUser } from '@/lib/crew-types';
 import Call from './Call';
@@ -256,6 +257,9 @@ export default memo(function Print({ username, entry, places, me, isOwner, cover
           {entry.lanterns.length > 0 && <span>{entry.lanterns.length}</span>}
         </button>
         <Hotbar gifts={gifts} panelId={inventoryId} plusRef={plusBtn} />
+        {/* the sign's own link (/skilti/<id>): the wall scrolled to it, and in a chat the sign itself as the card */}
+        <button type="button" className="w-print__share b-tip" data-tip="Afrita hlekk á skiltið" aria-label="Deila skiltinu: afrita hlekk á það"
+          onClick={() => { const url = `${window.location.origin}/skilti/${entry.id}`; navigator.clipboard?.writeText(url).then(() => toast('Afritað', 'hlekkur á skiltið'), () => window.prompt('Afritaðu hlekkinn:', url)); }}>Deila</button>
         {isOwner && !edit && (
           <span className="w-print__actions">
             <button ref={editBtn} type="button" onClick={() => setEdit({ text: entry.text, placeId: entry.placeId, photos: entry.photos, reward: entry.bounty?.reward ?? '' })} aria-label={`Breyta færslunni: ${name}`}>breyta</button>

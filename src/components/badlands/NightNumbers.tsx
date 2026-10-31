@@ -15,11 +15,12 @@ const hours = (h: number) => `${formatNumber(h, { max: h < 10 ? 1 : 0 })} klst.`
 const VALUE = { deaths: formatNumber, mobKills: formatNumber, travelCm: km } as const;
 
 export default function NightNumbers({ numbers }: { numbers: NightSummary }) {
+  const records = new Set(numbers.records ?? []);
   const totals = [
-    { label: 'Í heiminum, öll saman', n: numbers.hours, value: hours(numbers.hours) },
-    { label: 'Dauðsföll', n: numbers.deaths, value: formatNumber(numbers.deaths) },
-    { label: 'Verur felldar', n: numbers.mobKills, value: formatNumber(numbers.mobKills) },
-    { label: 'Á eigin fótum', n: numbers.travelCm, value: km(numbers.travelCm) },
+    { key: 'hours' as const, label: 'Í heiminum, öll saman', n: numbers.hours, value: hours(numbers.hours) },
+    { key: 'deaths' as const, label: 'Dauðsföll', n: numbers.deaths, value: formatNumber(numbers.deaths) },
+    { key: 'mobKills' as const, label: 'Verur felldar', n: numbers.mobKills, value: formatNumber(numbers.mobKills) },
+    { key: 'travelCm' as const, label: 'Á eigin fótum', n: numbers.travelCm, value: km(numbers.travelCm) },
   ].filter(row => row.n > 0);
 
   return (
@@ -28,9 +29,10 @@ export default function NightNumbers({ numbers }: { numbers: NightSummary }) {
       {totals.length > 0 && (
         <dl className="b-stats">
           {totals.map(row => (
-            <div key={row.label} className="b-stat">
-              <dt className="b-stat__k">{row.label}</dt>
-              <dd className="b-stat__v">{row.value}</dd>
+            /* a total that topped every night before: a red Met stamp, struck askew as Í höfn is */
+            <div key={row.label} className={`b-stat${records.has(row.key) ? ' is-record' : ''}`}>
+              <dt className="b-stat__k">{row.label}{records.has(row.key) && <span className="b-visually-hidden">, met</span>}</dt>
+              <dd className="b-stat__v">{row.value}{records.has(row.key) && <span className="b-stat__met" aria-hidden="true">Met</span>}</dd>
             </div>
           ))}
         </dl>

@@ -113,6 +113,8 @@ export function letterAnswer(search: string): LetterAnswer | null {
 const DAYS = ['sunnudag', 'mánudag', 'þriðjudag', 'miðvikudag', 'fimmtudag', 'föstudag', 'laugardag'];
 /** "á fimmtudagskvöldum": the evenings of a weekday, for the crew's habit */
 export const DAYS_PLURAL = ['sunnudagskvöldum', 'mánudagskvöldum', 'þriðjudagskvöldum', 'miðvikudagskvöldum', 'fimmtudagskvöldum', 'föstudagskvöldum', 'laugardagskvöldum'];
+/** "fimmtudagar": the weekday in the plural, for a habit */
+export const DAYS_NOM_PLURAL = ['sunnudagar', 'mánudagar', 'þriðjudagar', 'miðvikudagar', 'fimmtudagar', 'föstudagar', 'laugardagar'];
 /** "kl. 20" */
 export const clockHour = (h: number) => `kl. ${h}`;
 const DAYS_NOM = ['sunnudagur', 'mánudagur', 'þriðjudagur', 'miðvikudagur', 'fimmtudagur', 'föstudagur', 'laugardagur'];

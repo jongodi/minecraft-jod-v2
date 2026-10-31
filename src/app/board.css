@@ -400,3 +400,7 @@
 .b-tally .b-stats + .b-stats { margin-top: var(--sp-3); }
 .b-tally__adv { margin-top: var(--sp-3); }
 .b-tally__from { margin-top: var(--sp-3); font-size: var(--fs-sm); line-height: 1.4; color: var(--ink-faint); }
+
+/* a night's total that topped every night before: a red Met stamp, struck askew the way the done stamp is */
+.b-stat.is-record .b-stat__v { position: relative; }
+.b-stat__met { position: absolute; right: calc(var(--sp-5) * -1); top: calc(var(--sp-2) * -1); padding: 0 var(--sp-1); border: var(--px) solid var(--tc-red); color: var(--tc-red); font-family: var(--font-data); font-size: var(--fs-chip); line-height: 1.6; letter-spacing: 0.08em; text-transform: uppercase; transform: rotate(-12deg); pointer-events: none; }

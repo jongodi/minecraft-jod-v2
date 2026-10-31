@@ -152,6 +152,7 @@ export const STAT_TABS = [
   { id: 'bounties',       nick: 'Hausa\u00ADveiðarinn', label: 'Óskir uppfylltar fyrir verðlaun', unit: (v: number) => `${num(v)} ${plural(v, 'ósk', 'óskir')}` },
   { id: 'drawMs',         nick: 'Fógetinn',       label: 'Hraðasta skotið við varðeldinn', unit: ms, low: true },
   { id: 'noShows',        nick: 'Svikarinn',      label: 'Sagðist mæta en kom ekki',  unit: (v: number) => `${num(v)} kvöld` },
+  { id: 'attended',       nick: 'Fastagesturinn', label: 'Mætti á flest spilakvöld',  unit: (v: number) => `${num(v)} kvöld` },
 ] as const;
 export const isLowerBetter = (id: StatKey) => STAT_TABS.some(t => t.id === id && 'low' in t && t.low);
 export type StatKey = typeof STAT_TABS[number]['id'];

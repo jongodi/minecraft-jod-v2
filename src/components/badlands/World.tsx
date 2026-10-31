@@ -21,6 +21,8 @@ import { FLIGHT, headingOf } from '@/lib/map-flight';
 import { CREW, FACING, MAP_LIGHTS, MAP_POSTER, MAP_START_VIEW, MAP_URL, SITE_NAME, handCase, isRoom, plainClick, titleCase, type Plate, type RoomId } from './data';
 import type { ServerState } from './hooks';
 import { modalOpen, showWorld, useEffectsAllowed, useInert, useMediaQuery, useReducedMotionPref, useRoomForEffects } from './hooks';
+import { useBoardNews } from '@/components/board/news';
+import { usePlayNight, whenAt } from './night';
 import { photoProps, PHOTO_SIZES } from './photo';
 import { toast } from './Toast';
 
@@ -651,6 +653,10 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
   const plate = place?.photoId ? plates.find(p => p.id === place.photoId) ?? null : null;
   const lower = server.list.map(n => n.toLowerCase());
   const inside = CREW.filter(n => lower.includes(n.toLowerCase()));
+  /* for the planks' live lines: what is new on the board, and the next fire */
+  const news = useBoardNews();
+  const { state: fires } = usePlayNight();
+  const nextFire = (fires?.nights ?? []).find(n => n.phase !== 'over' && n.chosen)?.options.find(o => o.id === (fires?.nights ?? []).find(n => n.phase !== 'over' && n.chosen)?.chosen)?.at ?? null;
   /* heads can be followed while the live 3D map is on screen */
   const canFollow = viewer && shown && !drawn && !still;
   /* and pressed only while no room's dark lies over them: the follow itself goes on under the room */
@@ -1098,13 +1104,14 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
         </div>
 
         {/* The three rooms. Each rises from the foot of the frame over the world. */}
-        <Drawer id="taflan" open={room === 'taflan'} title="Taflan" note="allt sem gerist á JOÐ, nýjast efst" onClose={onCloseRoom}>
+        {/* each plank's note is the room's live line where there is one: what is new, who is in and the next fire, the version the packs belong to */}
+        <Drawer id="taflan" open={room === 'taflan'} title="Taflan" note={news.count ? `${news.count} ${plural(news.count, 'nýtt síðan þú leist síðast við', 'ný síðan þú leist síðast við')}` : 'allt sem gerist á JOÐ, nýjast efst'} onClose={onCloseRoom}>
           {visited.taflan && <Board room open={room === 'taflan'} />}
         </Drawer>
-        <Drawer id="hopur" open={room === 'hopur'} title="Eftirlýst" note="átta vinir, einn heimur · þrjú efstu í hverjum flokki, beint úr leiknum" onClose={onCloseRoom}>
+        <Drawer id="hopur" open={room === 'hopur'} title="Eftirlýst" note={[inside.length > 0 ? `${inside.length} inni núna` : null, nextFire ? `næsta kvöld ${whenAt(nextFire)}` : null].filter(Boolean).join(' · ') || 'átta vinir, einn heimur · þrjú efstu í hverjum flokki, beint úr leiknum'} onClose={onCloseRoom}>
           {visited.hopur && <Crew server={server} />}
         </Drawer>
-        <Drawer id="hillan" open={room === 'hillan'} title="Á hillunni" note="gagnapakkarnir sem eru uppsettir á þjóninum" onClose={onCloseRoom}>
+        <Drawer id="hillan" open={room === 'hillan'} title="Á hillunni" note={server.version ? `gagnapakkarnir sem eru uppsettir á þjóninum · Minecraft ${server.version.replace(/\s*\([^)]*\)\s*$/, '')}` : 'gagnapakkarnir sem eru uppsettir á þjóninum'} onClose={onCloseRoom}>
           {visited.hillan && <Shelf version={server.version} />}
         </Drawer>
       </div>

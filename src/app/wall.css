@@ -681,3 +681,22 @@
 .w-inv__given li { display: flex; align-items: center; gap: var(--sp-2); color: var(--tc-white); }
 .w-inv__given li span:last-child { min-width: 0; overflow-wrap: anywhere; }
 .w-inv__given .w-item { width: 1rem; height: 1rem; flex-shrink: 0; }
+
+/* the 31 October ideas: the folded poster, what is left on the table, a sign's Deila.
+   On a phone the poster folds along a hard crease under the bio: the charges and
+   the advancements are tucked behind it, and the crease carries one line in the
+   bitmap face, amber because it can be pressed. From 1024 px the poster stands
+   beside the signs and is never folded. */
+.w-poster__crease { display: none; }
+@media (max-width: 1023.98px) {
+  .w-poster__crease { display: block; width: 100%; margin-top: var(--sp-2); padding: var(--sp-2) 0; border: 0; border-top: var(--px) dashed var(--ink-faint); border-bottom: var(--px) dashed var(--ink-faint); background: none; color: var(--lantern-ink); font-family: var(--font-data); font-size: var(--fs-data); letter-spacing: 0.04em; text-transform: uppercase; text-align: center; cursor: pointer; }
+  .w-poster__crease:focus-visible { outline: var(--px) solid var(--lantern-ink); outline-offset: var(--px); }
+  .w-poster__fold:not(.is-open) { display: none; }
+}
+/* what the others have and this member has not: the game's dim unearned frame */
+.w-adv__item.is-unearned { opacity: 0.62; }
+.w-adv__head--left, .w-adv__list--left { margin-top: var(--sp-4); }
+/* a sign's own link, beside the lantern and the hotbar */
+.w-print__share { padding: 0 var(--sp-1); border: 0; background: none; font-family: var(--font-data); font-size: var(--fs-data); letter-spacing: 0.04em; text-transform: uppercase; color: var(--sign-lantern); min-height: 2rem; cursor: pointer; }
+@media (hover: hover) { .w-print__share:hover { color: var(--sign-ink); } }
+.w-print__share:focus-visible { outline: var(--px) solid var(--sign-lantern); outline-offset: var(--px); }

@@ -8,7 +8,8 @@ import Calendar from './Calendar';
 import type { ServerState } from './hooks';
 import { expectStarting, useMounted } from './hooks';
 import { isChanging } from '@/lib/server-state';
-import { DECIDE_MS, LAST_DAY_AHEAD, SOON_MS, TIME_CHOICES, WhenAt, dayLabel, dayLong, dayNum, dayOf, dayValue, isLate, letterAnswer, usePlayNight, whenAt, type LetterAnswer } from './night';
+import { DAYS_NOM_PLURAL, DECIDE_MS, LAST_DAY_AHEAD, SOON_MS, TIME_CHOICES, WhenAt, dayLabel, dayLong, dayNum, dayOf, dayValue, isLate, letterAnswer, usePlayNight, whenAt, type LetterAnswer } from './night';
+import type { NightHabit } from '@/lib/play-night-view';
 import { Fire, Heads, chosenOf, lower } from './NightLine';
 import { plural } from '@/lib/format';
 import { toast } from './Toast';
@@ -94,6 +95,7 @@ export function NightBoard({ server }: { server: ServerState }) {
   const lightFire = (
     <LightFire
       busy={busy}
+      habit={state?.habit ?? null}
       err={err?.at === 'new' ? err.text : ''}
       onCancel={() => { setLighting(false); setErr(null); }}
       onLight={async (times, note) => { if (await run('new', { action: 'propose', times, note })) setLighting(false); }}
@@ -316,15 +318,25 @@ function LetterSlip({ night, letter, busy, onSend, onDrop }: {
 
 /* ─── lighting a fire ─────────────────────────────────────────────────── */
 
-function LightFire({ busy, err, onLight, onCancel }: { busy: boolean; err: string; onLight: (times: string[], note: string) => void; onCancel: () => void }) {
+function LightFire({ busy, err, habit, onLight, onCancel }: { busy: boolean; err: string; habit?: NightHabit | null; onLight: (times: string[], note: string) => void; onCancel: () => void }) {
   /* the clock as the form opened; the server checks the times again when the fire is lit */
   const [now] = useState(() => Date.now());
   const today = Math.floor(now / 86_400_000);
   const last = today + LAST_DAY_AHEAD;
+  /* the crew's usual evening (play-night-view.ts): the form opens on the next
+     of them, at the usual hour, rather than on tonight at eight */
+  const usual = (() => {
+    if (!habit) return null;
+    const time = `${String(habit.hour).padStart(2, '0')}:00`;
+    for (let d = today; d <= today + 7; d++) {
+      if (new Date(d * 86_400_000).getUTCDay() === habit.weekday && !isLate(dayValue(d), time, now)) return { day: dayValue(d), time };
+    }
+    return null;
+  })();
   /* each row keeps a key of its own: keyed by its place, a row removed from the
      middle handed its field, and the keyboard's focus in it, to the one after */
   const nextKey = useRef(2);
-  const [rows, setRows] = useState(() => [{ key: 1, day: dayValue(isLate(dayValue(today), '20:00', now) ? today + 1 : today), time: '20:00' }]);
+  const [rows, setRows] = useState(() => [usual ? { key: 1, ...usual } : { key: 1, day: dayValue(isLate(dayValue(today), '20:00', now) ? today + 1 : today), time: '20:00' }]);
   /* How far off a time must be: a quarter of an hour for a single time, which
      is chosen as it is lit; with more than one, three hours, so the crew can
      answer before the night is decided on its own. Times nearer than that are
@@ -372,6 +384,7 @@ function LightFire({ busy, err, onLight, onCancel }: { busy: boolean; err: strin
       <header className="b-night__top">
         <h3 className="b-night__title">Kveikja bál</h3>
         <p className="b-note">Einn til þrír tímar. Hópurinn segir hvaða tímar henta og kvöldið velst þremur tímum fyrir þann fyrsta, nema þú veljir fyrr.</p>
+        {habit && usual && <p className="b-note">Venjulega {DAYS_NOM_PLURAL[habit.weekday]} kl. {habit.hour}, {habit.of} af {habit.total} kvöldum.</p>}
       </header>
       {rows.map((r, i) => (
         <div key={r.key} className="b-inline b-night__row">

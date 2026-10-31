@@ -252,7 +252,7 @@ interface Props {
   /** the charges they are the outlaw of, by the same snapshot */
   initialLed?: StatKey[];
   /** the game's advancements, newest first, and how many there are to earn; null before the first daily read */
-  advancements?: { list: WallAdvancement[]; of: number } | null;
+  advancements?: { list: WallAdvancement[]; of: number; missing?: WallAdvancement[] } | null;
   /** true when the page was opened from a sign-in link */
   justSignedIn?: boolean;
   /** what they built, seen in the world; null when none of it stands on the main map's ground */
@@ -321,6 +321,8 @@ export default function Wall({ initial, places, initialStats = null, initialLed 
   }, [me]);
   /* the sign put up from this page, which swings in on its chains */
   const [fresh,       setFresh]       = useState<string | null>(null);
+  /* on a phone the poster is folded under the bio: the charges and the advancements wait behind the crease */
+  const [unfolded,    setUnfolded]    = useState(false);
 
   const username = profile.username;
 
@@ -527,6 +529,15 @@ export default function Wall({ initial, places, initialStats = null, initialLed 
               </figure>
             )}
 
+            {/* The crease: on a phone the poster folds here, the charges and the
+                advancements behind it, so the first sign starts on the first screen;
+                the line on the crease is amber because it can be pressed (wall.css) */}
+            {(stats || advancements) && (
+              <button type="button" className="w-poster__crease" aria-expanded={unfolded} onClick={() => setUnfolded(v => !v)}>
+                {unfolded ? 'Fella saman' : [stats && `${STAT_TABS.filter(t => (stats[t.id] ?? 0) > 0).length} ákærur`, advancements && advancements.list.length > 0 && `${advancements.list.length} afrek`].filter(Boolean).join(' og ')}
+              </button>
+            )}
+            <div className={`w-poster__fold${unfolded ? ' is-open' : ''}`}>
             {stats && (
               <>
                 {/* The charges as a printed poster lists its rewards: each on one
@@ -548,7 +559,8 @@ export default function Wall({ initial, places, initialStats = null, initialLed 
                 )}
               </>
             )}
-            {advancements && <Advancements list={advancements.list} of={advancements.of} />}
+            {advancements && <Advancements list={advancements.list} of={advancements.of} missing={advancements.missing} />}
+            </div>
           </div>
           {/* the poster made good: JOÐ's seal in its corner */}
           <Seal className="w-poster__seal" />

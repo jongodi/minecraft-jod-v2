@@ -9,7 +9,7 @@ import { keepSnapshot } from '@/lib/stats-snapshot';
 export type { PlayerStat, StatsResponse, WeekPlayer, WeekStats } from '@/lib/stats';
 
 /* a member with any charge kept beside the game's numbers: a draw, an advancement first, a call brought home, a night missed */
-const hasCharge = (p: PlayerStat) => p.drawMs > 0 || p.firsts > 0 || p.bounties > 0 || p.noShows > 0;
+const hasCharge = (p: PlayerStat) => p.drawMs > 0 || p.firsts > 0 || p.bounties > 0 || p.noShows > 0 || p.attended > 0;
 
 export const dynamic = 'force-dynamic';
 
