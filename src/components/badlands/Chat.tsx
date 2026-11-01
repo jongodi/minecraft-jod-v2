@@ -187,7 +187,9 @@ function Chat({ active, covered, server, onOpen }: Props) {
       {open && !log.length && <p className="b-chat__line b-chat__empty">Ekkert sagt í heiminum síðustu vikurnar.</p>}
       {visible.map(s => (
         <Link key={s.key} href={s.line.href} className="b-chat__line"
-          style={open ? undefined : { animationDelay: `${s.inMs}ms, ${s.outMs}ms` }}>
+          style={open ? undefined : { animationDelay: `${s.inMs}ms, ${s.outMs}ms` }}
+          /* one who just came in is in the world: on the home page the line goes to them there, the live map following (World.tsx, jod:follow) */
+          onClick={s.line.kind === 'joined' && window.location.pathname === '/' ? (e) => { e.preventDefault(); window.dispatchEvent(new CustomEvent('jod:follow', { detail: s.line.name })); } : undefined}>
           <Words line={s.line} />
         </Link>
       ))}

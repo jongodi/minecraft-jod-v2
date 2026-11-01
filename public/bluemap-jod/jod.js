@@ -98,8 +98,10 @@
     paused: false,
     /* set once the map has loaded */
     pause() {},
+    warm() {},
     setNight() {},
     flyTo() {},
+    view() {},
     choose() {},
     follow() { return 'missing'; },
     unfollow() {},
@@ -201,10 +203,19 @@
 
   const ease = (k) => (k < 0.5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2);
 
-  function animate(duration, frame, done) {
+  /* A glide on a channel (the camera, the sun) overtakes the one before it
+     on the same channel: the older one stops where it is and its `done`
+     never runs, so two chips pressed one after the other end at the second,
+     rather than the first glide writing the camera after the second landed. */
+  const glides = new Map();
+  function animate(duration, frame, done, channel) {
+    const run = channel ? (glides.get(channel) ?? 0) + 1 : 0;
+    if (channel) glides.set(channel, run);
+    const overtaken = () => channel !== undefined && glides.get(channel) !== run;
     if (reduce || duration <= 0) { frame(1); done?.(); return; }
     const t0 = performance.now();
     const step = (now) => {
+      if (overtaken()) return;
       const k = Math.min(1, (now - t0) / duration);
       frame(ease(k));
       if (k < 1) requestAnimationFrame(step); else done?.();
@@ -249,7 +260,8 @@
   };
   /* The moon's lit share of its face in each of the game's eight phases, as
      Bits.tsx draws it: the rows lit in each of the ten columns of its body,
-     [first, last], waxing from the right. Checked against Bits.tsx by a test. */
+     [first, last], waxing from the right. Checked against src/lib/moon.ts by
+     src/lib/__tests__/bluemap-sky.test.ts. */
   const D = [], F = [[1, 10]], MID = [[4, 7]], TALL = [[2, 9]], ENDS = [[1, 2], [9, 10]];
   const MOON_COLUMNS = [
     [D, D, D, D, D, D, D, D, D, D],
@@ -436,10 +448,13 @@ void main() {
 
     quality(app);
     const starry = !params.has('upptaka') && nightSky(viewer);
-    /* the stars come out over a moment once the map is alive; told by the
-       page in the frame (progress, when the still hands over), and on its own
-       in the whole-screen viewer */
+    /* the stars come out over a moment once the map is alive: in the frame
+       when the still hands over (progress below), and on its own in the
+       whole-screen viewer. A viewer woken behind the flight is ready long
+       before it is seen, so there the stars wait for the first unpause,
+       which is the landing. */
     let starsOut = () => {};
+    let starsWait = false;
     if (starry) {
       let out = false;
       starsOut = () => {
@@ -449,6 +464,7 @@ void main() {
       };
       if (!embedded) setTimeout(starsOut, 600);
     }
+    const handOver = () => { if (jod.paused) starsWait = true; else starsOut(); };
 
     /* The sky. BlueMap draws it as the map's sky colour times the light (the
        larger of the sun's strength squared and the ambient light), so at
@@ -493,9 +509,28 @@ void main() {
       });
     }
 
-    /* Paused, the viewer draws nothing and stops asking for players. */
+    /* Paused, the viewer draws nothing and stops asking for players. One
+       frame is still drawn when asked for: a warm frame (below), and after
+       a resize, since BlueMap sets its renderer's size then, which clears
+       the canvas, and a paused map left on screen (a still on a phone, a
+       room over the world) stood black until it was unpaused. BlueMap's own
+       loop calls render within 50 ms, so the frame is drawn there. */
     const draw = viewer.render.bind(viewer);
-    viewer.render = (...args) => { if (!jod.paused) draw(...args); };
+    let oneFrame = false;
+    viewer.render = (...args) => {
+      if (!jod.paused) draw(...args);
+      else if (oneFrame) { oneFrame = false; draw(...args); }
+    };
+    const drawOnce = () => { oneFrame = true; viewer.redraw(); };
+    window.addEventListener('resize', () => { if (jod.paused) drawOnce(); });
+    /* A warm frame: woken behind the flight, the viewer is paused from its
+       first moment, so its first real frame fell at the landing and held the
+       page for half a second (the shaders compiled, every tile loaded during
+       the flight sent to the GPU). Drawn whenever the page says the visitor
+       is resting on the way down (World.tsx), and only then, so a visitor
+       who never pauses is no worse off than before and one who does lands on
+       a frame with little left to do. */
+    jod.warm = () => { if (jod.paused && jod.ready) drawOnce(); };
     jod.pause = (on) => {
       if (jod.paused === !!on) return;
       jod.paused = !!on;
@@ -503,7 +538,10 @@ void main() {
         if (!manager) continue;
         if (on) manager.pauseAutoUpdates(); else manager.resumeAutoUpdates();
       }
-      if (!on) viewer.redraw();
+      if (!on) {
+        viewer.redraw();
+        if (starsWait) { starsWait = false; starsOut(); }
+      }
     };
 
     /* Night: the sun goes down and the town's own lights are what's left. */
@@ -512,7 +550,7 @@ void main() {
       jod.night = !!on;
       const from = sun.value;
       const to = on ? NIGHT : 1;
-      animate(instant ? 0 : 1400, (k) => { sun.value = from + (to - from) * k; paintSky(sun.value); viewer.redraw(); });
+      animate(instant ? 0 : 1400, (k) => { sun.value = from + (to - from) * k; paintSky(sun.value); viewer.redraw(); }, undefined, 'sun');
       tell('night', { on: jod.night });
     };
     /* The map opens at night, the hour the site is set in: the town's own
@@ -540,10 +578,26 @@ void main() {
         cm.position.z = from.z + (to.z - from.z) * k;
         cm.distance = from.d + (to.d - from.d) * k;
         viewer.redraw();
-      }, () => { jod.flying = false; done?.(); });
+      }, () => { jod.flying = false; done?.(); }, 'camera');
       if (id !== undefined && id !== null) jod.choose(id);
     };
     jod.choose = choose;
+    /* A whole view, as a link to it carries it (the page's ?syn=): the point
+       the camera holds, how far off it stands, its turn and its tilt. */
+    jod.view = (v) => {
+      if (!v || ![v.x, v.y, v.z, v.d, v.rot, v.tilt].every(Number.isFinite)) return;
+      const from = { x: cm.position.x, y: cm.position.y, z: cm.position.z, d: cm.distance, rot: cm.rotation, tilt: cm.angle ?? 0 };
+      jod.flying = true;
+      animate(900, (k) => {
+        cm.position.x = from.x + (v.x - from.x) * k;
+        cm.position.y = from.y + (v.y - from.y) * k;
+        cm.position.z = from.z + (v.z - from.z) * k;
+        cm.distance = from.d + (v.d - from.d) * k;
+        cm.rotation = from.rot + (v.rot - from.rot) * k;
+        if ('angle' in cm) cm.angle = from.tilt + (v.tilt - from.tilt) * k;
+        viewer.redraw();
+      }, () => { jod.flying = false; }, 'camera');
+    };
 
     /* Keep the camera over the rendered world (a circle render mask gives a round one). */
     const b = facts.bounds;
@@ -638,8 +692,9 @@ void main() {
       const facing = Math.abs(fx) > Math.abs(fz) ? (fx > 0 ? 'east' : 'west') : (fz > 0 ? 'south' : 'north');
       const rotation = Math.round(cm.rotation * 20) / 20;
       const eye = viewer.camera?.position;
-      const at = { x: Math.floor(p.x), y: Math.floor(p.y), z: Math.floor(p.z), facing, rotation, ex: Math.floor(eye?.x ?? p.x), ez: Math.floor(eye?.z ?? p.z) };
-      const key = `${at.x} ${at.y} ${at.z} ${facing} ${rotation}`;
+      /* how far off and how far tilted too, so the page can hand out a link to this very view (jod.view) */
+      const at = { x: Math.floor(p.x), y: Math.floor(p.y), z: Math.floor(p.z), facing, rotation, ex: Math.floor(eye?.x ?? p.x), ez: Math.floor(eye?.z ?? p.z), d: Math.round(cm.distance), tilt: Math.round((cm.angle ?? 0) * 100) / 100 };
+      const key = `${at.x} ${at.y} ${at.z} ${facing} ${rotation} ${at.d} ${at.tilt}`;
       if (key === lastCamera) return;
       lastCamera = key;
       tell('camera', at);
@@ -657,7 +712,7 @@ void main() {
 
     jod.ready = true;
     tell('hello', {});
-    if (embedded) progress(app, starsOut);
+    if (embedded) progress(app, handOver);
   }
 
   /* ─── quality: the one setting ─────────────────────────────── */
@@ -671,9 +726,16 @@ void main() {
      browser; BlueMap itself keeps nothing (useCookies is off). */
   const QUALITIES = ['lett', 'venjulegt', 'mikid'];
   const QUALITY_LABEL = { lett: 'Létt', venjulegt: 'Venjulegt', mikid: 'Mikið' };
-  const saveQuality = (q) => { try { localStorage.setItem(QUALITY_KEY, q); } catch { /* private mode: kept for this visit only */ } };
+  /* kept as the quality's name, with a mark when it was picked by hand
+     ("venjulegt!"), since a Venjulegt picked in the menu is never eased */
+  const saveQuality = (q) => { try { localStorage.setItem(QUALITY_KEY, picked ? `${q}!` : q); } catch { /* private mode: kept for this visit only */ } };
+  let picked = false;
   let qualityNow = (() => {
-    try { const q = localStorage.getItem(QUALITY_KEY); if (QUALITIES.includes(q)) return q; } catch { /* none */ }
+    try {
+      const kept = localStorage.getItem(QUALITY_KEY) || '';
+      const q = kept.replace(/!$/, '');
+      if (QUALITIES.includes(q)) { picked = kept.endsWith('!'); return q; }
+    } catch { /* none */ }
     return 'venjulegt';
   })();
   /* before the map has loaded, a choice is only remembered; quality() applies it */
@@ -746,7 +808,6 @@ void main() {
   const EASE_DAYS = 3;
   /* a frame slower than this, as the median of a stretch of moving frames, is too slow */
   const SLOW_MS = 26;
-  let picked = false;
   let easeStep = (() => {
     try {
       const kept = JSON.parse(localStorage.getItem(EASE_KEY) || 'null');
@@ -911,7 +972,7 @@ void main() {
       }
       const help = document.createElement('p');
       help.className = 'jod-quality__help';
-      help.textContent = 'Létt fyrir hægar tölvur og síma, Mikið sýnir meira í fullri upplausn.';
+      help.textContent = 'Venjulegt lagar sig að tækinu. Létt fyrir hægar tölvur og síma, Mikið sýnir meira í fullri upplausn.';
       content.append(help);
       group.append(title, content);
       if (view) view.after(group); else first.before(group);
@@ -933,11 +994,15 @@ void main() {
   }).observe(document.getElementById('app') ?? document.body, { childList: true, subtree: true });
 
   /* The first view, told to the page: the moment the nearest low-detail layer
-     around the start is on screen (or 0.6 seconds after the map has loaded)
-     the page swaps its still for the live map, and the detailed tiles stream
-     in from there, the way the map always opened. Waiting for every detailed
-     tile made opening feel slow. */
-  function progress(app, starsOut) {
+     around the start is on screen (or 0.6 seconds after the map has loaded,
+     once anything of it is drawn) the page swaps its still for the live map,
+     and the detailed tiles stream in from there, the way the map always
+     opened. Waiting for every detailed tile made opening feel slow; handing
+     over before any tile had come (a cold cache, a new copy of the map) faded
+     the still into empty sky, so that now waits, up to three seconds. The
+     page is told how far along the first view is on the way, as the tiles
+     asked for come in, for the bar on the lantern's sign. */
+  function progress(app, handOver) {
     const started = Date.now();
     /* lowresTileManager[0] is the nearest of the low-detail layers */
     const near = () => app.mapViewer.map?.lowresTileManager?.[0] ?? null;
@@ -951,11 +1016,16 @@ void main() {
     const tick = () => {
       const tiles = drawn();
       const busy = near()?.currentlyLoading || 0;
-      tell('progress', { tiles });
-      if ((tiles > 0 && busy === 0) || Date.now() - started > 600) {
-        /* one more frame so what arrived is on screen before the still goes */
-        app.mapViewer.redraw();
-        requestAnimationFrame(() => { tell('ready', { tiles }); starsOut(); });
+      const of = Math.max(tiles, near()?.tiles?.size ?? 0);
+      tell('progress', { tiles, of });
+      const waited = Date.now() - started;
+      if ((tiles > 0 && (busy === 0 || waited > 600)) || waited > 3000) {
+        /* one more frame so what arrived is on screen before the still goes;
+           a viewer paused behind the flight draws nothing here (a frame drawn
+           now would land wherever the visitor's scroll is, mid-flight as
+           likely as not) and warms up when the page rests instead */
+        if (!jod.paused) app.mapViewer.redraw();
+        requestAnimationFrame(() => { tell('ready', { tiles, of }); handOver(); });
         return;
       }
       setTimeout(tick, 100);

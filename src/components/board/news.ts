@@ -44,16 +44,36 @@ function loadStamps(): Promise<void> {
 /** The board itself answers with every item: its stamps are the store's too. */
 export function takeStamps(stamps: BoardStamp[]): void { set({ stamps }); }
 
+/* numbered, so a member's slow answer landing after a sign-out's quick one
+   does not set the mark back to theirs */
+let seenAsked = 0;
 async function loadSeen(me: string | null): Promise<void> {
+  const asked = ++seenAsked;
   if (!me) { set({ seen: readLocal(), whose: null }); return; }
   try {
     const res = await fetch('/api/board/seen', { cache: 'no-store', signal: AbortSignal.timeout(WAIT_MS) });
     const d = res.ok ? await res.json() as { seen: string | null; member: boolean } : null;
+    if (asked !== seenAsked) return;
     /* a member's mark, or their browser's while the store does not answer */
     set({ seen: d?.member ? d.seen ?? readLocal() : readLocal(), whose: me });
   } catch {
-    set({ seen: readLocal(), whose: me });
+    if (asked === seenAsked) set({ seen: readLocal(), whose: me });
   }
+}
+
+/* One timer for however many read the count (the bar's door on every page,
+   the board once it is open): each once ran its own, two requests every few
+   minutes out of step. */
+let readers = 0;
+let refresh: ReturnType<typeof setInterval> | undefined;
+function watch(): void {
+  if (readers++ > 0) return;
+  refresh = setInterval(() => { if (!document.hidden) loadStamps(); }, REFRESH_MS);
+}
+function unwatch(): void {
+  if (--readers > 0) return;
+  clearInterval(refresh);
+  refresh = undefined;
 }
 
 /** The board was looked at up to `at` (the newest thing it showed). */
@@ -78,14 +98,16 @@ export function useBoardNews(): { count: number | null; seen: string | null | un
   /* the stamps once the page is idle, and again every few minutes while it is looked at */
   useEffect(() => {
     const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void };
-    let timer: ReturnType<typeof setInterval> | undefined;
+    let watching = false;
     const start = () => {
       if (!state.stamps) loadStamps();
-      timer = setInterval(() => { if (!document.hidden) loadStamps(); }, REFRESH_MS);
+      watching = true;
+      watch();
     };
-    if (w.requestIdleCallback) { const id = w.requestIdleCallback(start, { timeout: 4000 }); return () => { w.cancelIdleCallback?.(id); clearInterval(timer); }; }
+    const stop = () => { if (watching) { watching = false; unwatch(); } };
+    if (w.requestIdleCallback) { const id = w.requestIdleCallback(start, { timeout: 4000 }); return () => { w.cancelIdleCallback?.(id); stop(); }; }
     const t = setTimeout(start, 2000);
-    return () => { clearTimeout(t); clearInterval(timer); };
+    return () => { clearTimeout(t); stop(); };
   }, []);
   /* the mark: asked again whenever who is looking changes (a sign-in, a sign-out) */
   useEffect(() => {

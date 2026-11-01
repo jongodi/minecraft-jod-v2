@@ -74,7 +74,12 @@ const CHARGES = [
 ] as const;
 
 /** A night's numbers as the page shows them. */
+/** a total a night can set a record on: the Met stamp (play-night-view.ts) */
+export type RecordKey = 'hours' | 'deaths' | 'mobKills' | 'travelCm' | 'came';
+
 export interface NightSummary {
+  /** the totals this night topped every night before it on, stamped Met on the slip */
+  records?: RecordKey[];
   /** hours in the world, everyone who came together */
   hours:    number;
   deaths:   number;

@@ -30,6 +30,8 @@ interface Props {
   /** where the camera tells the bar it is */
   sink: MutableRefObject<CameraSink | null>;
   hidden: boolean;
+  /** the start of the world (Joðbær): the game's compass needle on the bar, pressed to fly back there */
+  home?: { x: number; z: number; name: string };
 }
 
 /** The locator bar, as the game draws one over the hotbar: the other bases
@@ -38,7 +40,7 @@ interface Props {
     way the camera faces, straight ahead in the middle. What lies behind or
     far round stands at an end, pointing on. Moved by the camera, not by
     React: the marks are placed straight onto the page as it turns. */
-function Locator({ bases, players, sink, hidden }: Props) {
+function Locator({ bases, players, sink, hidden, home }: Props) {
   const bar = useRef<HTMLDivElement>(null);
   const cam = useRef<{ from: readonly [number, number]; way: readonly [number, number] } | null>(null);
   const marks = useRef<{ el: HTMLElement; at: [number, number]; name: string; wrote: number }[]>([]);
@@ -60,9 +62,9 @@ function Locator({ bases, players, sink, hidden }: Props) {
       m.el.style.transform = `translateX(${(u * span.current).toFixed(1)}px)`;
       m.el.classList.toggle('is-off', off);
       m.el.classList.toggle('is-left', off && angle < 0);
-      /* kubbar, as the map's own viewer counts them (is.conf); rounded to tens, so never one */
+      /* kubbar, as the map's own viewer counts them (is.conf); rounded to tens, so never one, and within ten it is simply near */
       if (now - m.wrote < TIP_EVERY_MS && !m.el.matches(':hover')) continue;
-      const tip = `${m.name} · ${formatNumber(Math.round(blocks / 10) * 10)} kubbar`;
+      const tip = `${m.name} · ${blocks < 10 ? 'rétt hjá' : `${formatNumber(Math.round(blocks / 10) * 10)} kubbar`}`;
       if (m.el.dataset.tip !== tip) { m.el.dataset.tip = tip; m.wrote = now; }
     }
   }, []);
@@ -98,6 +100,16 @@ function Locator({ bases, players, sink, hidden }: Props) {
   return (
     <div ref={bar} className={`b-locator${hidden ? ' is-hidden' : ''}`} aria-hidden="true">
       <span className="b-locator__ahead" />
+      {/* the compass needle, red at its tip, at the bearing of the world's start; pressed, the camera flies back there (World.tsx, jod:home) */}
+      {home && (
+        <button type="button" tabIndex={-1} className="b-locator__mark b-locator__mark--home b-tip b-tip--below"
+          data-x={home.x} data-z={home.z} data-name={home.name} onClick={() => window.dispatchEvent(new Event('jod:home'))}>
+          <svg viewBox="0 0 8 16" width="8" height="16" shapeRendering="crispEdges" aria-hidden="true">
+            <rect x="3" y="0" width="2" height="8" fill="var(--tc-red)" /><rect x="2" y="2" width="4" height="2" fill="var(--tc-red)" />
+            <rect x="3" y="8" width="2" height="8" fill="var(--paper)" />
+          </svg>
+        </button>
+      )}
       {bases.map(b => (
         // eslint-disable-next-line @next/next/no-html-link-for-pages -- BlueMap's own app, not a Next page
         <a key={b.id} href={baseUrl(b.id)} tabIndex={-1} className="b-locator__mark b-locator__mark--base b-tip b-tip--below"

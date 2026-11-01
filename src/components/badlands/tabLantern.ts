@@ -53,6 +53,9 @@ export function useTabLantern({ online, list }: ServerState): void {
       const bare = document.title.replace(COUNT, '');
       const title = count > 0 ? `(${count}) ${bare}` : bare;
       if (document.title !== title) document.title = title;
+      /* the installed icon carries the count as the tab does, cleared with it */
+      const nav = navigator as Navigator & { setAppBadge?: (n?: number) => Promise<void>; clearAppBadge?: () => Promise<void> };
+      if (count > 0) nav.setAppBadge?.(count).catch(() => {}); else nav.clearAppBadge?.().catch(() => {});
       for (const link of icons()) {
         if (!lit) continue;
         if (link.dataset.unlit === undefined) {

@@ -19,7 +19,8 @@ export default function NotFound() {
         <Link href="/" className="b-btn">Titilskjár</Link>
       </>}
     >
-      Síðan sem þú leitar að er ekki til, eða hún hefur verið flutt.
+      {/* the game's screen has no paragraph: the cause says it */}
+      {null}
     </OffTrail>
   );
 }

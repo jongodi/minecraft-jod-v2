@@ -266,7 +266,10 @@
 .b-poster__lamp { position: absolute; z-index: 2; top: -3.25rem; right: calc(var(--sp-2) * -1); width: 2rem; pointer-events: none; filter: drop-shadow(0 0 0.75rem color-mix(in srgb, var(--lantern) 70%, transparent)); }
 .b-poster__lamp::before { content: ''; display: block; width: var(--px); height: 1rem; margin-inline: auto; background: repeating-linear-gradient(180deg, var(--ink-faint) 0 var(--px), transparent var(--px) calc(var(--px) * 2)); }
 .b-poster__lamp .b-lantern { width: 2rem; height: 3rem; }
-.b-rollcall > .b-hang.is-in { filter: drop-shadow(0 calc(var(--px) * 2) 0 rgb(from var(--night) r g b / 0.55)) drop-shadow(0 0 1.75rem color-mix(in srgb, var(--lantern) 50%, transparent)); }
+/* the lantern's light on the board round the poster: a pool painted once
+   behind it, not a blurred shadow filtered on every frame the poster swings */
+.b-rollcall > .b-hang.is-in { isolation: isolate; }
+.b-rollcall > .b-hang.is-in::before { content: ''; position: absolute; inset: -2.5rem -2rem; z-index: -1; background: radial-gradient(closest-side, rgb(from var(--lantern) r g b / 0.4), rgb(from var(--lantern) r g b / 0.12) 60%, transparent); pointer-events: none; }
 .b-poster--crew { padding: var(--sp-6) var(--sp-3) var(--sp-4); text-decoration: none; }
 /* the torn edge cuts off a ring drawn outside the poster, so it is drawn inside, clear of the tears */
 .b-poster--crew:focus-visible { outline: calc(var(--px) * 2) solid var(--lantern-ink); outline-offset: calc(var(--px) * -6); }
@@ -397,3 +400,7 @@
 .b-tally .b-stats + .b-stats { margin-top: var(--sp-3); }
 .b-tally__adv { margin-top: var(--sp-3); }
 .b-tally__from { margin-top: var(--sp-3); font-size: var(--fs-sm); line-height: 1.4; color: var(--ink-faint); }
+
+/* a night's total that topped every night before: a red Met stamp, struck askew the way the done stamp is */
+.b-stat.is-record .b-stat__v { position: relative; }
+.b-stat__met { position: absolute; right: calc(var(--sp-5) * -1); top: calc(var(--sp-2) * -1); padding: 0 var(--sp-1); border: var(--px) solid var(--tc-red); color: var(--tc-red); font-family: var(--font-data); font-size: var(--fs-chip); line-height: 1.6; letter-spacing: 0.08em; text-transform: uppercase; transform: rotate(-12deg); pointer-events: none; }

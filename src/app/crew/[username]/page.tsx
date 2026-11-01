@@ -11,7 +11,7 @@ import { readMap } from '@/lib/map';
 import { woodOf } from '@/lib/map-types';
 import { getCachedStats, withCharges } from '@/lib/stats';
 import { outlaws } from '@/components/badlands/outlaws';
-import { ADVANCEMENT_COUNT, readStoredAdvancements, wallAdvancements } from '@/lib/advancements';
+import { ADVANCEMENT_COUNT, missingAdvancements, readStoredAdvancements, wallAdvancements } from '@/lib/advancements';
 import { sameUser } from '@/lib/crew-types';
 import Wall, { type WallCorner, type WallPlace } from '@/components/wall/Wall';
 import { FLIGHT, flightFrame, frameFor } from '@/lib/map-flight';
@@ -75,7 +75,7 @@ export default async function CrewWallPage({ params, searchParams }: Props) {
   const stats = mine ? { ...mine, drawMs: profile.bestDrawMs ?? 0 } : null;
   const led = charged ? outlaws(charged).byName.get(profile.username.toLowerCase())?.led ?? [] : [];
   /* only this member's, with their names: the list of every advancement stays on the server */
-  const advancements = crewAdvancements ? { list: wallAdvancements(profile.username, crewAdvancements), of: ADVANCEMENT_COUNT } : null;
+  const advancements = crewAdvancements ? { list: wallAdvancements(profile.username, crewAdvancements), of: ADVANCEMENT_COUNT, missing: missingAdvancements(profile.username, crewAdvancements) } : null;
   const places: WallPlace[] = (map?.locations ?? []).map(l => ({ id: l.id, label: l.label, sublabel: l.sublabel, builders: l.builders ?? [], wood: woodOf(l) }));
   /* drawn: which drawing this is, so Back to it is told from a fresh one (useRestored) */
   return <Wall initial={profile} places={places} initialStats={stats} initialLed={led} advancements={advancements} justSignedIn={query.innskrad === '1'} corner={cornerOf(map?.locations ?? [], profile.username)} session={session} drawn={randomUUID()} />;

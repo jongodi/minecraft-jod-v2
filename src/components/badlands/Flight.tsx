@@ -57,6 +57,9 @@ const FIRST = 2;
 const AROUND = [-1, 0, 1, 2, 3];
 /* how often the F3 lines are rewritten while the camera moves */
 const F3_EVERY_MS = 120;
+/* a still that would not come is asked for again this many times, this long apart and then longer */
+const RETRIES = 2;
+const RETRY_MS = 1200;
 /* a pin this far past the frame's edge is out of sight */
 const EDGE = 24;
 /* the camera sets off while the frame is still rising, this much of its
@@ -105,6 +108,10 @@ function Flight({ flight, fly, runway, f3, places, players, selected, onChoose, 
   const redraw = useRef<() => void>(() => {});
   /* the visitor has scrolled since the page came: the whole flight is wanted, and the live map behind it */
   const scrolled = useRef(false);
+  /* the camera is on its way: a pin that slides under a resting pointer is
+     not pointed at, and lighting it on the rail each time cost the scroll a
+     render of the world and a measured, smooth-scrolled rail */
+  const moving = useRef(false);
 
   /* the pins as they are in the page, and a fresh look at them */
   useEffect(() => {
@@ -219,6 +226,9 @@ function Flight({ flight, fly, runway, f3, places, players, selected, onChoose, 
       bytes = new Array(flight.frames).fill(null);
       const queue = fetchOrder(flight.frames);
       let out = 0;
+      /* a still that would not come is asked for again, twice, a moment
+         apart: one dropped request once took the whole flight down for the visit */
+      const tries = new Map<number, number>();
       more = () => {
         while (!gone && mine === round && out < AT_ONCE && queue.length > 0 && (scrolled.current || flight.frames - queue.length < FIRST)) {
           const n = queue.shift()!;
@@ -227,8 +237,14 @@ function Flight({ flight, fly, runway, f3, places, players, selected, onChoose, 
             .then(r => { if (!r.ok) throw new Error(`${r.status}`); return r.blob(); })
             .then(
               (blob) => { if (mine === round) { bytes[n] = blob; if (wanted.has(n)) decode(n); } },
-              /* without the overview there is no flight to fly: the still stands */
-              () => { if (n === 0 && mine === round && !ac.signal.aborted) { failed = true; schedule(); } },
+              () => {
+                if (mine !== round || ac.signal.aborted) return;
+                const t = (tries.get(n) ?? 0) + 1;
+                tries.set(n, t);
+                if (t <= RETRIES) setTimeout(() => { if (mine === round && !gone) { queue.unshift(n); more(); } }, RETRY_MS * t);
+                /* without the overview there is no flight to fly: the still stands */
+                else if (n === 0) { failed = true; schedule(); }
+              },
             )
             .finally(() => { if (mine === round) { out--; more(); } });
         }
@@ -267,12 +283,16 @@ function Flight({ flight, fly, runway, f3, places, players, selected, onChoose, 
       cur = cur < 0 ? target : follow(cur, target, dt);
       lastT = now;
       lastTarget = target;
+      moving.current = cur !== target;
       if (cur !== target) schedule();
       const p = cur;
       const along = easeFlight(p);
       const at = along * last;
       const i = Math.min(last, Math.floor(at));
       if (fly && fetching && p < 1 && i !== keptAt) { keptAt = i; keep(i); }
+      /* landed, the stills round the camera are let go but the last and the
+         overview: six decoded frames stood under the live map for as long as it ran */
+      else if (fly && fetching && p >= 1 && keptAt !== last) { keptAt = last; keep(last); }
       if (fly && !approached && scrolled.current && p < 1) { approached = true; latest.current.onApproach?.(); }
       let lo = -1, hi = -1;
       if (fly && p < 1 && !failed) {
@@ -473,7 +493,7 @@ function Flight({ flight, fly, runway, f3, places, players, selected, onChoose, 
   }, [flight, fly, runway, f3, camera]);
 
   /* a pointer over a lantern says so, for the rail; not a touch, which presses it */
-  const point = (id: number | null) => (e: ReactPointerEvent) => { if (e.pointerType === 'mouse') onNear(id); };
+  const point = (id: number | null) => (e: ReactPointerEvent) => { if (e.pointerType === 'mouse' && (id === null || !moving.current)) onNear(id); };
 
   return (
     <>
@@ -502,10 +522,12 @@ function Flight({ flight, fly, runway, f3, places, players, selected, onChoose, 
           </button>
         ))}
         {players.map(p => (
-          <span key={p.name} data-pin={`player:${p.name}`} className="b-pin b-pin--player">
+          /* pressed, the live map takes hold and follows them (World.tsx, jod:follow) */
+          <button key={p.name} type="button" tabIndex={-1} data-pin={`player:${p.name}`} className="b-pin b-pin--player"
+            onClick={() => window.dispatchEvent(new CustomEvent('jod:follow', { detail: p.name }))}>
             <span className="b-nametag b-pin__tag">{p.name}</span>
             <PlayerHead name={p.name} size={16} alt="" className="b-pin__head" />
-          </span>
+          </button>
         ))}
       </div>
     </>

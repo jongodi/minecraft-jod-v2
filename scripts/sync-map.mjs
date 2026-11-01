@@ -163,7 +163,8 @@ async function main() {
     console.log('\nKortagögnin eru óbreytt frá síðasta afriti; ekkert sent í geymsluna og ekkert að birta.');
     writeManifest(previous.syncedAt, files, previous, false);
   } else {
-    writeManifest(syncedAt, files, await upload(files, syncedAt, previous));
+    /* the detailed tiles fetched anew: the site tags the places standing on them while the copy is news (src/lib/bluemap-snapshot.ts) */
+    writeManifest(syncedAt, files, { ...await upload(files, syncedAt, previous), changedTiles: [...changed].filter((rel) => /\/tiles\/0\//.test(rel)) });
   }
 }
 
@@ -191,8 +192,8 @@ function readManifest() {
   try { return JSON.parse(readFileSync(MANIFEST, 'utf8')); } catch { return { syncedAt: null, files: [] }; }
 }
 
-function writeManifest(syncedAt, files, { blob, packs, sums, since }, changed = true) {
-  writeFileSync(MANIFEST, manifestText({ syncedAt, version: versionOf(syncedAt), files, blob, packs, sums, since }));
+function writeManifest(syncedAt, files, { blob, packs, sums, since, changedTiles }, changed = true) {
+  writeFileSync(MANIFEST, manifestText({ syncedAt, version: versionOf(syncedAt), files, blob, packs, sums, since, ...(changedTiles ? { changed: changedTiles } : {}) }));
   brand(ROOT);
   if (changed) console.log(`\nTil að birta það: git add public/bluemap src/lib/bluemap-snapshot.json src/lib/bluemap-viewer.json, commit og push.`);
 }

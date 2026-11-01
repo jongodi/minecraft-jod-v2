@@ -2,6 +2,7 @@
 
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { motion, useAnimation, useReducedMotion } from 'framer-motion';
+import { playSound } from '@/effects/ambience';
 import Link from 'next/link';
 import { BulletHole, Star } from './Bits';
 import { useCrewSession, useDialogFocus } from './hooks';
@@ -64,6 +65,8 @@ function QuickDraw({ onClose }: { onClose: () => void }) {
   const kick = useAnimation();
   const { me } = useCrewSession();
   const [posted, setPosted] = useState<{ best: number; improved: boolean } | null>(null);
+  /* the board could not be reached with the time: said, rather than left as a promise */
+  const [unposted, setUnposted] = useState(false);
   const closeRef = useRef<HTMLButtonElement>(null);
   useDialogFocus(closeRef);
 
@@ -76,9 +79,11 @@ function QuickDraw({ onClose }: { onClose: () => void }) {
     timer.current = setTimeout(() => { setPhase('draw'); t0.current = performance.now(); }, 1600 + Math.random() * 2400);
   }, []);
   /* a new game clears the last one's word from the board */
-  const begin = useCallback(() => { setShots([]); setPosted(null); startRound(0); }, [startRound]);
+  const begin = useCallback(() => { setShots([]); setPosted(null); setUnposted(false); startRound(0); }, [startRound]);
   const endRound = useCallback((shot: Shot, r: number) => {
     setShots(s => [...s, shot]);
+    /* the arrow's ding for a hit, the note block's thud for a foul, with the wind and fire on */
+    playSound(shot === null ? 'thud' : 'ding');
     if (shot !== null) setBest(b => (b === null || shot < b ? shot : b));
     setPhase('result');
     timer.current = setTimeout(() => { if (r + 1 >= ROUNDS) setPhase('done'); else startRound(r + 1); }, NEXT_DELAY);
@@ -105,10 +110,10 @@ function QuickDraw({ onClose }: { onClose: () => void }) {
      board as Fógetinn's charge; only a quicker time replaces the old one. */
   useEffect(() => {
     if (phase !== 'done' || gameBest === null || !me) return;
-    fetch('/api/duel', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ms: gameBest }) })
+    fetch('/api/duel', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ms: gameBest }), signal: AbortSignal.timeout(15_000) })
       .then(r => (r.ok ? r.json() : null))
-      .then((d: { bestDrawMs: number; improved: boolean } | null) => { if (d) setPosted({ best: d.bestDrawMs, improved: d.improved }); })
-      .catch(() => {});
+      .then((d: { bestDrawMs: number; improved: boolean } | null) => { if (d) setPosted({ best: d.bestDrawMs, improved: d.improved }); else setUnposted(true); })
+      .catch(() => setUnposted(true));
   // once per finished game
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
@@ -199,8 +204,10 @@ function QuickDraw({ onClose }: { onClose: () => void }) {
             <p className="b-duel__rules">Sýslumaður undir 200 ms, aðstoðarsýslumaður undir 300 og kúreki undir 450. Annars ertu nýliði.</p>
             <p className="b-duel__rules" role="status">
               {me
-                ? (posted ? (posted.improved ? `Skráð á töfluna: ${posted.best} ms. Fógetinn er sá sem er fljótastur.` : `Metið þitt á töflunni er ${posted.best} ms; þetta var ekki betra.`) : `Besti tíminn þinn fer á eftirlýsingaspjaldið sem Fógetinn, ${me}.`)
-                : <>Fljótasta skotið er eftirlýst sem Fógetinn. <Link href="/crew" className="b-link">Skráðu þig inn á veggnum þínum</Link> til að komast á töfluna.</>}
+                ? (posted ? (posted.improved ? `Skráð á spjaldið: ${posted.best} ms. Fógetinn er sá sem er fljótastur.` : `Metið þitt á spjaldinu er ${posted.best} ms; þetta var ekki betra.`)
+                  : unposted ? 'Náði ekki að skrá tímann á spjaldið. Spilaðu aftur eftir smástund.'
+                  : `Besti tíminn þinn fer á eftirlýsingaspjaldið sem Fógetinn, ${me}.`)
+                : <>Fljótasta skotið er eftirlýst sem Fógetinn. <Link href="/crew" className="b-link">Skráðu þig inn á veggnum þínum</Link> til að komast á spjaldið.</>}
             </p>
           </div>
         </div>

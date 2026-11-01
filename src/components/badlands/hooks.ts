@@ -5,6 +5,7 @@ import type { PlayerStat, StatsResponse, WeekStats } from '@/app/api/stats/route
 import type { StatusResponse } from '@/lib/server-status';
 import { NO_STATUS, STARTING_MS, isChanging, toServerState, type ServerState } from '@/lib/server-state';
 import { toast } from './Toast';
+import { playSound } from '@/effects/ambience';
 
 export type { ServerState } from '@/lib/server-state';
 
@@ -60,6 +61,8 @@ async function loadStatus(): Promise<void> {
   if (missed) return;
   /* the site asked for a start a moment ago: an answer from before it does not put the lantern out again */
   if (startingUntil && Date.now() < startingUntil && (next.life === 'off' || next.life === 'unknown')) next = { ...next, life: 'starting' };
+  /* the server coming on while the page is looked at: the level-up's chime, with the wind and fire on */
+  if (next.online && statusValue.online === false) playSound('chime');
   else if (next.life !== 'starting') startingUntil = 0;
   statusValue = next;
   notifyStatus();
@@ -186,18 +189,23 @@ export function useCopy(text: string, { toast: withToast = true }: { toast?: boo
       clearTimeout(timer.current);
       timer.current = setTimeout(() => setCopied(false), COPIED_MS);
     };
+    /* a copy that failed used to be stamped Afritað all the same; the toast
+       now says so, with the address on it to be copied by hand */
+    const failed = () => { if (withToast) toast('Afritun tókst ekki', text); };
     if (navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(text).then(done, () => { legacyCopy(text); done(); });
-    } else {
-      legacyCopy(text);
+      navigator.clipboard.writeText(text).then(done, () => { if (legacyCopy(text)) done(); else failed(); });
+    } else if (legacyCopy(text)) {
       done();
+    } else {
+      failed();
     }
   }, [text, withToast]);
   useEffect(() => () => clearTimeout(timer.current), []);
   return [copied, copy];
 }
 
-function legacyCopy(text: string) {
+/** true when the browser says the copy went through */
+function legacyCopy(text: string): boolean {
   const ta = document.createElement('textarea');
   ta.value = text;
   ta.setAttribute('readonly', '');
@@ -205,8 +213,10 @@ function legacyCopy(text: string) {
   ta.style.opacity = '0';
   document.body.appendChild(ta);
   ta.select();
-  try { document.execCommand('copy'); } catch { /* nothing else to try */ }
+  let ok = false;
+  try { ok = document.execCommand('copy'); } catch { /* nothing else to try */ }
   document.body.removeChild(ta);
+  return ok;
 }
 
 /** Marks an element `is-away` while none of it is on screen, so the

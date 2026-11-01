@@ -132,7 +132,7 @@ export function signinLetter({ name, url, expiresAt, uses }: { name: string; url
     preheader: `Gildir til ${day(expiresAt)} og dugar á ${devices(uses)}.`,
     heading: `Gakktu í bæinn, ${name}`,
     lines: [
-      'Hér er innskráningarlykillinn þinn. Ýttu á hnappinn í símanum eða tölvunni til að skrá þig inn. Þú helst innskráð/ur í heilt ár.',
+      'Hér er innskráningarlykillinn þinn. Ýttu á hnappinn í símanum eða tölvunni til að skrá þig inn. Innskráningin gildir í heilt ár.',
       `Lykillinn gildir til ${day(expiresAt)} og dugar á ${devices(uses)}.`,
     ],
     button: { label: 'Skrá mig inn', url },
@@ -240,15 +240,15 @@ export function nightLetter(kind: NightNotice, night: Night, votes: Votes, reade
     return {
       ...base,
       subject: `Hálftími í bál: kl. ${clock(chosen.at)}`,
-      preheader: 'Þú sagðist mæta. Serverinn bíður.',
+      preheader: 'Þú sagðist mæta. Þjónninn bíður.',
       heading: `Söðlaðu hestinn, ${who(reader.username)}`,
       when: [dayTime(chosen.at)],
       lines: [
         `Bálið logar kl. ${clock(chosen.at)} og þú sagðist mæta.`,
         ...coming(others.map(who)),
-        'Ef serverinn sefur geturðu vakið hann á vefnum.',
+        'Ef þjónninn sefur geturðu vakið hann á vefnum.',
       ],
-      button: { label: 'Kveikja á servernum', url },
+      button: { label: 'Kveikja á þjóninum', url },
     };
   }
 

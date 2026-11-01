@@ -18,10 +18,14 @@ export interface ServerState {
   version:   string | null;
   /** when the server last burned and who was in, while it is dark and the store remembers */
   lastOnline: LastOnline | null;
+  /** since when it burns, while it is lit and the store saw it come on */
+  onSince: string | null;
+  /** when the game moved to its version, while that is less than a week old */
+  versionSince: string | null;
   checkedAt: number | null;
 }
 
-export const NO_STATUS: ServerState = { online: null, life: null, players: 0, max: 20, list: [], version: null, lastOnline: null, checkedAt: null };
+export const NO_STATUS: ServerState = { online: null, life: null, players: 0, max: 20, list: [], version: null, lastOnline: null, onSince: null, versionSince: null, checkedAt: null };
 
 /** A status answer as the page holds it. */
 export function toServerState(data: StatusResponse, checkedAt = Date.now()): ServerState {
@@ -33,6 +37,8 @@ export function toServerState(data: StatusResponse, checkedAt = Date.now()): Ser
     list:       (data.players?.list ?? []).map(p => p.name),
     version:    data.version ?? null,
     lastOnline: data.lastOnline ?? null,
+    onSince:    data.onSince ?? null,
+    versionSince: data.versionSince ?? null,
     checkedAt,
   };
 }

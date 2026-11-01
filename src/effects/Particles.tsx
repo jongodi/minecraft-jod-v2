@@ -58,6 +58,10 @@ export default function Particles({ heroId, fireId, snow = false, fireworks = fa
     let lastBurst = 0;
     let mode: Mode = null;
     let raf = 0;
+    /* when the last frame was drawn: the motes move by the time that passed,
+       in sixtieths of a second, so a 120 Hz screen does not blow the dust
+       twice as fast; 0 after a rest, so the first frame back counts as one */
+    let last = 0;
     let hidden = document.hidden;
     let heroIn = false, fireIn = false;
 
@@ -104,26 +108,29 @@ export default function Particles({ heroId, fireId, snow = false, fireworks = fa
 
     const frame = () => {
       raf = 0;
-      if (!mode || hidden) { ctx.clearRect(0, 0, w, h); return; }
+      if (!mode || hidden) { ctx.clearRect(0, 0, w, h); last = 0; return; }
+      const now = performance.now();
+      const dt = last ? Math.min(2.5, (now - last) / (1000 / 60)) : 1;
+      last = now;
       if (mode === 'embers') seatFlame();   // the fire scrolls; read the offset once, not once per ember
       ctx.clearRect(0, 0, w, h);
       ctx.fillStyle = mode === 'embers' ? colours.embers : mode === 'snow' ? colours.snow : colours.dust;
       for (const m of motes) {
-        m.x += m.vx; m.y += m.vy;
-        if (mode === 'embers') { m.life -= 0.006 + Math.random() * 0.004; m.vx += (Math.random() - 0.5) * 0.04; }
-        else if (mode === 'snow') m.vx += (Math.random() - 0.5) * 0.03;
-        else m.vy += (Math.random() - 0.5) * 0.02;
+        m.x += m.vx * dt; m.y += m.vy * dt;
+        if (mode === 'embers') { m.life -= (0.006 + Math.random() * 0.004) * dt; m.vx += (Math.random() - 0.5) * 0.04 * dt; }
+        else if (mode === 'snow') m.vx += (Math.random() - 0.5) * 0.03 * dt;
+        else m.vy += (Math.random() - 0.5) * 0.02 * dt;
         const out = m.x > w + 10 || m.x < -20 || m.y < -10 || m.y > h + 10 || m.life <= 0;
         if (out) spawn(m, false);
         ctx.globalAlpha = mode === 'embers' ? Math.max(0, m.life) * 0.9 : mode === 'snow' ? 0.8 : 0.35;
         ctx.fillRect(Math.round(m.x), Math.round(m.y), m.size, m.size);
       }
-      if (mode === 'embers' && fireworks) burst();
+      if (mode === 'embers' && fireworks) burst(dt);
       ctx.globalAlpha = 1;
       raf = requestAnimationFrame(frame);
     };
     /* Fireworks: now and then a ring of sparks somewhere over the fire, falling back and fading. */
-    const burst = () => {
+    const burst = (dt: number) => {
       const now = performance.now();
       if (now - lastBurst > BURST_MS * (0.6 + Math.random() * 0.8) && burstColours.length) {
         lastBurst = now;
@@ -141,7 +148,7 @@ export default function Particles({ heroId, fireId, snow = false, fireworks = fa
       }
       for (let i = sparks.length - 1; i >= 0; i--) {
         const p = sparks[i];
-        p.x += p.vx; p.y += p.vy; p.vy += 0.03; p.vx *= 0.985; p.life -= 0.011;
+        p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 0.03 * dt; p.vx *= 0.985 ** dt; p.life -= 0.011 * dt;
         if (p.life <= 0) { sparks.splice(i, 1); continue; }
         ctx.globalAlpha = p.life;
         ctx.fillStyle = p.colour;

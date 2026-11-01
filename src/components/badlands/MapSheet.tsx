@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
+import type { CameraStore } from './World';
 import { motion, useMotionValue, animate } from 'framer-motion';
 import type { MotionValue } from 'framer-motion';
 import type { MapConfig, MapLocation } from '@/lib/map-types';
@@ -23,13 +24,47 @@ interface Props {
   config: MapConfig;
   selectedId: number | null;
   onSelect: (id: number) => void;
+  /** where the live map is looking (World.tsx): drawn on the paper as the game's own map cursor */
+  camera?: CameraStore;
+}
+
+/* The paper's own coordinates from the world's: a fit, each axis on its own,
+   through the places drawn on the sheet that also stand in the world, so a
+   camera in the world can be drawn on the paper. null under two such places. */
+export function paperFit(locations: MapLocation[]): { x: (wx: number) => number; y: (wz: number) => number } | null {
+  const pts = locations.filter(l => l.world).map(l => ({ px: l.x, py: l.y, wx: l.world!.x, wz: l.world!.z }));
+  if (pts.length < 2) return null;
+  const axis = (w: number[], p: number[]) => {
+    const n = w.length, mw = w.reduce((a, b) => a + b, 0) / n, mp = p.reduce((a, b) => a + b, 0) / n;
+    const sxx = w.reduce((a, v) => a + (v - mw) ** 2, 0);
+    if (sxx === 0) return null;
+    const k = w.reduce((a, v, i) => a + (v - mw) * (p[i] - mp), 0) / sxx;
+    return (v: number) => mp + k * (v - mw);
+  };
+  const x = axis(pts.map(p => p.wx), pts.map(p => p.px));
+  const y = axis(pts.map(p => p.wz), pts.map(p => p.py));
+  return x && y ? { x, y } : null;
+}
+
+/** The game's map cursor: the white player arrow an in-game map draws where
+    the one holding it stands, turned the way the 3D camera faces. */
+function CameraArrow({ store, fit }: { store: CameraStore; fit: NonNullable<ReturnType<typeof paperFit>> }) {
+  const cam = useSyncExternalStore(store.subscribe, store.get, () => null);
+  if (!cam) return null;
+  const deg = ((cam.rotation ?? 0) * 180) / Math.PI;
+  return (
+    <g transform={`translate(${fit.x(cam.x).toFixed(1)} ${fit.y(cam.z).toFixed(1)}) rotate(${deg.toFixed(1)})`} aria-hidden="true">
+      <path d="M0 -9 L7 7 L0 3 L-7 7 Z" fill="#FFFFFF" stroke="#1E1611" strokeWidth="1.5" strokeLinejoin="miter" />
+    </g>
+  );
 }
 
 /** The painted map, the paper sheet laid over the world when "Teiknað kort" is
     on. Drag to pan, pinch or the buttons to zoom, a flag to pick a place. It is
     the same sheet the admin panel paints, block for block. */
-export default function MapSheet({ config, selectedId, onSelect }: Props) {
+export default function MapSheet({ config, selectedId, onSelect, camera }: Props) {
   const sheet = useRef<HTMLDivElement>(null);
+  const fit = useMemo(() => paperFit(config.locations), [config.locations]);
   const reduce = useReducedMotionPref();
   const x = useMotionValue(0), y = useMotionValue(0), z = useMotionValue(1);
   /* Under reduced motion the view still moves, it just does not spring. */
@@ -206,6 +241,7 @@ export default function MapSheet({ config, selectedId, onSelect }: Props) {
               onKeyDown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(loc.id); } },
             })}
           />
+          {camera && fit && <CameraArrow store={camera} fit={fit} />}
         </svg>
       </motion.div>
       <div className="b-sheet__zoom">

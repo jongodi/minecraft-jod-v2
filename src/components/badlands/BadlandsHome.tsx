@@ -42,7 +42,7 @@ export default function BadlandsHome({ syncedOn, bases, initial }: { syncedOn: s
   const reached = useScrollSpy(['heimur']) === 'heimur';
   const [room, setRoom] = useState<RoomId | null>(null);
   const [pressed, setPressed] = useState<PlaceId | null>(null);
-  const { plates, map, pinned, nights, packs } = initial;
+  const { plates, map, pinned, nights, packs, facts, fresh } = initial;
 
 
   /* The hash is the source of truth: read it on arrival, on the back button,
@@ -147,8 +147,8 @@ export default function BadlandsHome({ syncedOn, bases, initial }: { syncedOn: s
       {effects && !reduce && <CursorLight />}
       <AddressBar links={SECTIONS} activeId={active} onDoor={openDoor} status={initial.status} />
       <main id="efni">
-        <Hero server={server} season={season} nights={nights} packs={packs} />
-        <World plates={plates} config={map} pinned={pinned} server={server} syncedOn={syncedOn} bases={bases} room={room} onCloseRoom={closeRoom} />
+        <Hero server={server} season={season} nights={nights} packs={packs} facts={facts} />
+        <World plates={plates} config={map} pinned={pinned} server={server} syncedOn={syncedOn} bases={bases} fresh={fresh} room={room} onCloseRoom={closeRoom} />
       </main>
       <Footer season={season} />
     </div>

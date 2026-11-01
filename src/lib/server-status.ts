@@ -16,6 +16,10 @@ export interface StatusResponse {
   life: ServerLife;
   /** for a dark lantern: when it last burned, if the store remembers */
   lastOnline?: LastOnline;
+  /** for a lit lantern: when it was lit, if the store saw it come on */
+  onSince?: string;
+  /** when the game on the server last moved to a new version (src/lib/server-news.ts), while that is news */
+  versionSince?: string;
   players?: {
     online: number;
     max: number;
@@ -66,6 +70,20 @@ function crewIn(body: StatusResponse): string[] {
 }
 
 const LAST_KEY = 'status:last-online';
+const ON_KEY = 'status:on-since';
+/* since when the server burns, as last read or written by this instance */
+let onSince: { at: number; value: string | null } | null = null;
+/* a new version of the game is news for a week (src/lib/server-news.ts keeps when it moved) */
+const VERSION_NEWS_MS = 7 * 24 * 3600_000;
+let versionAt: { at: number; value: string | null } | null = null;
+async function versionSince(now: number): Promise<string | null> {
+  if (!versionAt || now - versionAt.at > LAST_EVERY_MS) {
+    const { rGet } = await import('@/lib/redis');
+    versionAt = { at: now, value: await rGet<string>('server:version-at') };
+  }
+  const v = versionAt.value;
+  return v && now - Date.parse(v) < VERSION_NEWS_MS ? v : null;
+}
 /* while the server burns, the store is told every few minutes (or when who is in changes); while it is dark, asked every few minutes */
 const LAST_EVERY_MS = 5 * 60_000;
 /* what the store holds, as last read or written by this instance */
@@ -85,23 +103,37 @@ async function rememberLastOnline(body: StatusResponse, before: { at: number; bo
   const recent = before && before.live && now - before.at <= 2 * keepFor(before.body) ? before : null;
   try {
     if (body.online) {
+      /* since when it burns: noted the moment a live answer sees it come on
+         (the one before was not on), else read from the store, so a lit
+         lantern can say "kveikt í dag kl. 20:15" */
+      const { rSet, rGet } = await import('@/lib/redis');
+      if (live && recent && !recent.body.online) {
+        onSince = { at: now, value: new Date(now).toISOString() };
+        await rSet(ON_KEY, onSince.value);
+      } else if (!onSince || now - onSince.at > LAST_EVERY_MS) {
+        onSince = { at: now, value: await rGet<string>(ON_KEY) };
+      }
+      if (onSince.value) body.onSince = onSince.value;
+      body.versionSince = await versionSince(now) ?? undefined;
       /* a page render's answer may be the data cache's; only a live one is noted */
       if (!live) return;
       const names = crewIn(body);
       const held = lastKnown?.value;
       if (lastKnown && now - lastKnown.at < LAST_EVERY_MS && held && sameNames(held.names, names)) return;
       const value: LastOnline = { at: new Date(now).toISOString(), names };
-      const { rSet } = await import('@/lib/redis');
       await rSet(LAST_KEY, value);
       lastKnown = { at: now, value };
       return;
     }
+    body.versionSince = await versionSince(now) ?? undefined;
     if (live && recent?.body.online) {
       /* it has just gone out: the last answer that saw it burning says when */
       const value: LastOnline = { at: new Date(recent.at).toISOString(), names: crewIn(recent.body) };
-      const { rSet } = await import('@/lib/redis');
+      const { rSet, rDel } = await import('@/lib/redis');
       await rSet(LAST_KEY, value);
       lastKnown = { at: now, value };
+      onSince = { at: now, value: null };
+      await rDel(ON_KEY);
     } else if (!lastKnown || now - lastKnown.at > LAST_EVERY_MS) {
       const { rGet } = await import('@/lib/redis');
       lastKnown = { at: now, value: await rGet<LastOnline>(LAST_KEY) };

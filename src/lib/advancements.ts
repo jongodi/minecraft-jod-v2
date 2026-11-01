@@ -193,3 +193,21 @@ export async function refreshAdvancements(token: string, now = new Date()): Prom
   if (read.length > 0 && process.env.REDIS_URL) await rSet(KEY, { readAt: now.toISOString(), players: kept, found } satisfies CrewAdvancements);
   return { read: read.sort(), failed: failed.sort() };
 }
+
+/** The advancements left on the table for a member: those at least `least`
+    of the others hold and this member does not, the most widely held first,
+    up to three. What the crew has done is what one of them is likeliest to do next. */
+export function missingAdvancements(username: string, crew: CrewAdvancements | null, least = 5, most = 3): WallAdvancement[] {
+  if (!crew) return [];
+  const mine = Object.entries(crew.players).find(([u]) => u.toLowerCase() === username.toLowerCase())?.[1] ?? {};
+  const held = new Map<string, number>();
+  for (const [u, done] of Object.entries(crew.players)) {
+    if (u.toLowerCase() === username.toLowerCase()) continue;
+    for (const id of Object.keys(done)) held.set(id, (held.get(id) ?? 0) + 1);
+  }
+  return [...held.entries()]
+    .filter(([id, n]) => n >= least && !(id in mine) && DEFS.has(id))
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, most)
+    .map(([id]) => { const def = DEFS.get(id)!; return { id, title: def.title, description: def.description, frame: def.frame, at: '', first: false }; });
+}

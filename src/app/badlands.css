@@ -287,7 +287,9 @@
   outline: none;
 }
 .b-input::placeholder, .b-textarea::placeholder { color: var(--ink-faint); }
-.b-input:focus, .b-textarea:focus { border-color: var(--lantern-ink); box-shadow: 0 0 0 var(--px) var(--lantern-glow); }
+/* the keyboard's focus on paper: a solid ring of the lantern's ink, since the lantern itself is 1.5:1 on paper and a faint glow of it could not be seen */
+.b-input:focus, .b-textarea:focus { border-color: var(--lantern-ink); }
+.b-input:focus-visible, .b-textarea:focus-visible { outline: var(--px) solid var(--lantern-ink); outline-offset: var(--px); }
 .b-textarea { resize: vertical; min-height: 5.5rem; line-height: 1.5; }
 .b-input.is-error, .b-textarea.is-error { border-color: var(--tc-red); }
 /* ember on the night (5.3:1); the terracotta red is kept for paper, where it reads */
@@ -328,7 +330,7 @@
   position: absolute;
   right: -0.6rem;
   top: -0.9rem;
-  padding: 0.15rem 0.5rem;
+  padding: var(--px) var(--sp-2);
   border: var(--px) solid var(--tc-red);
   border-radius: var(--radius);
   color: var(--tc-red);
@@ -472,6 +474,8 @@
    opened in and what is on the shelf, the pressable words lit as every
    control on the night is (the shelf has no door in the bar, data.ts). */
 .b-status__shelf { display: flex; flex-wrap: wrap; column-gap: var(--sp-2); margin-left: calc(var(--status-lantern) + var(--sp-4)); font-size: var(--fs-sm); line-height: 1.5; color: var(--tc-white); text-decoration: none; }
+/* the game moved to a new version this week: the board's paper tag beside it, in the rewards' red */
+.b-status__new { display: inline-block; margin-left: var(--sp-2); padding: 0 var(--sp-1); background: var(--paper); color: var(--tc-red); border: var(--px) solid var(--tc-red); font-family: var(--font-text); font-weight: 600; font-size: var(--fs-sm); line-height: 1.3; letter-spacing: 0.04em; text-transform: uppercase; vertical-align: baseline; }
 .b-status__shelfword { font-weight: 600; color: var(--lantern); }
 .b-status__shelf:focus-visible .b-status__shelfword { text-decoration: underline var(--px); text-underline-offset: 0.35em; }
 @media (hover: hover) { .b-status__shelf:hover .b-status__shelfword { text-decoration: underline var(--px); text-underline-offset: 0.35em; } }
@@ -496,16 +500,25 @@
   top: 0;
   z-index: var(--z-bar);
   padding-top: var(--safe-top);
-  transition: background var(--dur-3) var(--ease-out), box-shadow var(--dur-3) var(--ease-out);
 }
 /* Over the sunset the bar is only its contents. Once the page moves it becomes
    a plank hung across the top: wood with its grain and a bevelled edge, the
    same slice of strata the hours are divided by along its foot, the address on
-   a paper tag nailed to it. */
-.b-bar.is-solid {
+   a paper tag nailed to it. The plank is painted once on a layer under the
+   bar's contents and faded in, as the strata are: a gradient cannot be
+   transitioned from nothing, and the bar once snapped from sky to wood. */
+.b-bar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
   background: var(--plank);
   box-shadow: inset 0 0 0 var(--px) rgb(from var(--night) r g b / 0.35);
+  opacity: 0;
+  transition: opacity var(--dur-3) var(--ease-out);
+  pointer-events: none;
 }
+.b-bar.is-solid::before { opacity: 1; }
 .b-bar__strata { pointer-events: none; opacity: 0; transition: opacity var(--dur-3) var(--ease-out); }
 .b-bar .b-bar__strata { top: 100%; height: 12px; transform: none; filter: drop-shadow(var(--lift-2)); }
 .b-bar.is-solid .b-bar__strata { opacity: 1; }
@@ -522,7 +535,7 @@
 /* the paper tag is notched, which cuts off a ring drawn outside it */
 .b-bar.is-solid .b-bar__addr:focus-visible { outline: none; }
 .b-bar.is-solid .b-bar__addr:focus-visible .b-bar__tag { outline: var(--px) solid var(--lantern-ink); outline-offset: calc(var(--px) * -2); }
-@media (prefers-reduced-motion: reduce) { .b-bar { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .b-bar::before, .b-bar__strata { transition: none; } }
 .b-bar__inner { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); min-height: var(--bar); }
 .b-bar__mark { display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2); min-width: var(--tap); min-height: var(--tap); font-family: var(--font-display); font-size: var(--fs-lg); color: var(--paper); text-decoration: none; transition: background var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease-out); }
 .b-bar__mark svg { width: 1.5rem; height: 1.5rem; shape-rendering: crispEdges; }
@@ -739,8 +752,8 @@
   /* the empty track a shade over the night and the segments cut dark into
      it, so an empty bar reads as the game's eighteen empty cells and not as
      a black strip that failed to draw */
-  background: linear-gradient(180deg, #3A342B 0 var(--px), #2A251E var(--px));
-  box-shadow: 0 0 0 var(--px) #0E0C09;
+  background: linear-gradient(180deg, var(--xp-track) 0 var(--px), var(--xp-track-2) var(--px));
+  box-shadow: 0 0 0 var(--px) var(--xp-rim);
   overflow: clip;
   pointer-events: none;
 }
@@ -748,7 +761,7 @@
   position: absolute;
   inset: 0;
   will-change: transform;   /* the scroll moves it on the compositor, so no frame repaints the bar */
-  background: linear-gradient(180deg, #C8FF7A 0 var(--px), #80E020 var(--px) calc(100% - var(--px)), #3F7A12 calc(100% - var(--px)));
+  background: linear-gradient(180deg, var(--xp-fill-hi) 0 var(--px), var(--xp-fill) var(--px) calc(100% - var(--px)), var(--xp-fill-lo) calc(100% - var(--px)));
   transform: scaleX(0);
   transform-origin: left;
 }
@@ -1107,7 +1120,6 @@
    with the sky over them free for their tags. */
 .b-hero__climbers { display: none; }
 @media (max-width: 899.98px) {
-  .b-hero__stage { position: relative; }
   .b-hero__climbers {
     --u: calc(0.135em / 12);
     display: block;
@@ -1150,7 +1162,7 @@
   position: absolute;
   left: 0;
   top: 0;
-  padding: 0.6rem 0.5rem;
+  padding: calc(var(--px) * 5) var(--sp-2);
   border: 0;
   background: none;
   cursor: pointer;
@@ -1398,7 +1410,7 @@ html:has(.b-world.has-flight) { scroll-snap-type: y proximity; }
   color: var(--ink);
   font-family: var(--font-data);
   font-weight: 700;
-  font-size: 0.75rem;
+  font-size: var(--fs-data);   /* the bitmap face at its own size: at 12 px its pixels fell between the screen's */
   letter-spacing: 0.04em;
   white-space: nowrap;
   clip-path: var(--notch);
@@ -1562,6 +1574,8 @@ html.is-map-full { overflow: hidden; }
 /* moved along the bar by a transform from its left end (Locator.tsx), centred on the spot by translate */
 .b-locator .b-locator__mark { position: absolute; left: 0; top: 50%; display: grid; place-items: center; translate: -50% -50%; line-height: 0; }
 .b-locator__mark--base { width: 1.25rem; height: 1.75rem; color: var(--lantern); }
+/* for a thumb the bar is a bearing to read, not keys: a mark a few pixels wide that led straight to another map was pressed by mistake; the rail links the bases */
+@media (hover: none) { .b-locator__mark--base { pointer-events: none; } }
 .b-locator__mark--base .b-lantern { width: 0.75rem; height: 1.125rem; color: var(--lantern); filter: drop-shadow(0 0 2px var(--lantern-glow)); }
 .b-locator__mark--player img { width: 0.875rem; height: 0.875rem; image-rendering: pixelated; box-shadow: 0 0 0 1px var(--night); }
 /* farther round than the bar reaches: at its end, dimmer, with an arrow on */
@@ -1606,7 +1620,7 @@ html.is-map-full { overflow: hidden; }
 .b-hud__in img { width: 1rem; height: 1rem; image-rendering: pixelated; box-shadow: 0 0 0 1px var(--night); }
 .b-hud__dot { width: 0.5rem; height: 0.5rem; background: var(--online); box-shadow: 0 0 0 1px var(--night); }
 /* while the 3D map runs, a head follows its player: lantern light, as anything that can be pressed */
-.b-hud__head { display: inline-grid; place-items: center; padding: 0.3rem; margin: -0.3rem; border: 0; background: none; cursor: pointer; line-height: 0; }
+.b-hud__head { display: inline-grid; place-items: center; padding: var(--sp-2); margin: calc(var(--sp-2) * -1); border: 0; background: none; cursor: pointer; line-height: 0; }
 .b-hud__head.is-on img, .b-hud__head:focus-visible img { box-shadow: 0 0 0 1px var(--night), 0 0 0 calc(1px + var(--px)) var(--lantern); }
 @media (hover: hover) { .b-hud__head:hover img { box-shadow: 0 0 0 1px var(--night), 0 0 0 calc(1px + var(--px)) var(--lantern); } }
 .b-hud__head:focus-visible { outline: none; }
@@ -1619,6 +1633,10 @@ html.is-map-full { overflow: hidden; }
    behind a hover is a word a keyboard never reads. The slot in hand (the
    painted map laid over) is framed in light as the hotbar frames it; the
    pictures' count sits low on the right of its slot, as a stack's does. */
+/* at every width: a 16-unit icon at 32 px, the art's pixel at the site's --px,
+   every block whole, filling its slot as an item does; and the slot in hand */
+.b-hud__tool .b-btn__icon { width: 2rem; height: 2rem; }
+.b-hud__tool.b-btn.is-on { z-index: 1; background: var(--dusk-2); color: var(--lantern); }
 @media (min-width: 900px) {
   .b-hud__tools { flex-wrap: nowrap; gap: var(--px); padding: var(--px); background: var(--night); box-shadow: 0 0 0 var(--px) var(--wood-dark), 0 calc(var(--px) * 3) 0 var(--veil); }
   .b-hud__tool.b-btn {
@@ -1633,11 +1651,9 @@ html.is-map-full { overflow: hidden; }
     color: var(--tc-white);
     box-shadow: var(--bevel-in);
   }
-  .b-hud__tool .b-btn__icon { width: 2rem; height: 2rem; }
   .b-hud__tool .b-hud__word { font-family: var(--font-text); font-weight: 600; font-size: var(--fs-sm); line-height: 1.2; letter-spacing: 0.04em; text-transform: uppercase; }
   .b-hud__tool .b-hud__sep { display: none; }
   .b-hud__tool .b-hud__count { position: absolute; right: var(--sp-2); top: calc(var(--sp-2) + 1rem); color: var(--paper); font-family: var(--font-data); font-size: var(--fs-data); line-height: 1; text-shadow: var(--px) var(--px) 0 var(--night); pointer-events: none; }
-  .b-hud__tool.b-btn.is-on { z-index: 1; background: var(--dusk-2); color: var(--lantern); }
   .b-hud__tool.b-btn.is-on::before { content: ''; position: absolute; inset: calc(var(--px) * -2); border: var(--px) solid var(--paper); box-shadow: inset 0 0 0 var(--px) var(--night); clip-path: var(--notch); pointer-events: none; }
   .b-hud__tool.b-btn:focus-visible { background: var(--lantern); color: var(--night); }
   .b-hud__tool.b-btn:focus-visible .b-hud__count { color: var(--night); text-shadow: none; }
@@ -1763,7 +1779,14 @@ html.is-map-full { overflow: hidden; }
   .b-boot { padding-bottom: var(--sp-4); }
   .b-boot__sub { display: none; }
 }
-.b-boot__wait { font-family: var(--font-data); font-size: var(--fs-data); color: var(--paper); text-shadow: 0 var(--px) 0 var(--night); }
+/* What the wait says, under the lantern: the words, and while the first view
+   is on its way the game's own bar under them, filling tile by tile as a world
+   loads, 18 cells on the sign's width. Empty, it is nothing at all. */
+.b-boot__wait { display: grid; justify-items: center; gap: var(--sp-2); font-family: var(--font-data); font-size: var(--fs-data); color: var(--paper); text-align: center; text-shadow: 0 var(--px) 0 var(--night); }
+.b-boot__bar { width: min(18rem, 100%); --xp: 8px; }
+/* its fill is the map's progress, not the page's: no scroll timeline, a short step between counts */
+.b-boot__bar .b-xp__fill { animation: none; transition: transform var(--dur-2) linear; }
+@media (prefers-reduced-motion: reduce) { .b-boot__bar .b-xp__fill { transition: none; } }
 
 /* the postcard of the chosen place. Scoped to the frame: board.css gives every
    sheet of paper position: relative, and this one has to sit over the world. */
@@ -1890,8 +1913,10 @@ html.is-map-full { overflow: hidden; }
   --fade: clamp(2rem, 6vw, 4rem);
   --fade-l: var(--fade);
   --fade-r: var(--fade);
-  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent 100%);
-          mask-image: linear-gradient(90deg, transparent 0, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent 100%);
+  /* in hard steps of a quarter each: the game fades nothing smoothly */
+  --steps: rgb(0 0 0 / 0.25) 0, rgb(0 0 0 / 0.25) calc(var(--fade-l) / 4), rgb(0 0 0 / 0.5) calc(var(--fade-l) / 4), rgb(0 0 0 / 0.5) calc(var(--fade-l) / 2), rgb(0 0 0 / 0.75) calc(var(--fade-l) / 2), rgb(0 0 0 / 0.75) calc(var(--fade-l) * 3 / 4), #000 calc(var(--fade-l) * 3 / 4), #000 calc(100% - var(--fade-r) * 3 / 4), rgb(0 0 0 / 0.75) calc(100% - var(--fade-r) * 3 / 4), rgb(0 0 0 / 0.75) calc(100% - var(--fade-r) / 2), rgb(0 0 0 / 0.5) calc(100% - var(--fade-r) / 2), rgb(0 0 0 / 0.5) calc(100% - var(--fade-r) / 4), rgb(0 0 0 / 0.25) calc(100% - var(--fade-r) / 4), rgb(0 0 0 / 0.25) 100%;
+  -webkit-mask-image: linear-gradient(90deg, var(--steps));
+          mask-image: linear-gradient(90deg, var(--steps));
 }
 .b-rail::-webkit-scrollbar { display: none; }
 .b-rail.at-start { --fade-l: 0px; }
@@ -1959,7 +1984,7 @@ html.is-map-full { overflow: hidden; }
 .b-chip__sub { font-size: var(--fs-sm); line-height: 1.4; color: var(--text-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .b-chip.is-on .b-chip__sub { color: rgb(from var(--night) r g b / 0.7); }
 /* how many things the crew pinned at this place */
-.b-chip__count { position: absolute; top: calc(var(--px) * -1); right: calc(var(--px) * -1); padding: 0 0.3rem; background: var(--lantern); color: var(--night); font-family: var(--font-data); font-size: var(--fs-chip); line-height: 1.6; }
+.b-chip__count { position: absolute; top: calc(var(--px) * -1); right: calc(var(--px) * -1); padding: 0 calc(var(--px) * 2); background: var(--lantern); color: var(--night); font-family: var(--font-data); font-size: var(--fs-chip); line-height: 1.6; }
 .b-chip { position: relative; }
 .b-chip.is-on .b-chip__count { background: var(--night); color: var(--lantern); }
 /* the other bases at the end of the rail: a lit lantern where the photo would be, since the chip leads to a 3D map of its own */
@@ -2075,12 +2100,9 @@ html.is-map-full { overflow: hidden; }
     color: var(--tc-white);
     box-shadow: var(--bevel-in);
   }
-  /* a 16-unit icon at 32 px, the art's pixel at the site's --px, every block whole, filling its slot as an item does */
-  .b-hud__tool .b-btn__icon { width: 2rem; height: 2rem; }
   .b-hud__word { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   /* pressed: the slot in hand, framed as the hotbar frames it, a light square
      a pixel larger than the slot with a pixel of night inside, its icon lit */
-  .b-hud__tool.b-btn.is-on { z-index: 1; background: var(--dusk-2); color: var(--lantern); }
   .b-hud__tool.b-btn.is-on::before {
     content: '';
     position: absolute;
@@ -2226,7 +2248,7 @@ html.is-map-full { overflow: hidden; }
 .b-hang { filter: drop-shadow(0 calc(var(--px) * 2) 0 rgb(from var(--night) r g b / 0.55)); }
 
 /* ─── the album: the whole wall, opened over the world ────────── */
-.b-album { position: fixed; inset: 0; z-index: var(--z-drawer); overflow-y: auto; background: var(--scrim-deep); padding-block: calc(var(--sp-6) + env(safe-area-inset-top, 0px)) var(--sp-8); }
+.b-album { position: fixed; inset: 0; z-index: var(--z-drawer); overflow-y: auto; background: var(--scrim-deep); padding-block: calc(var(--sp-6) + var(--safe-top)) var(--sp-8); }
 .b-album__inner { display: grid; gap: var(--sp-4); }
 /* Tiles are square and butt together, so the wall never leaves holes.
    Every fifth picture is hung double size. There is no dense packing:
@@ -2277,7 +2299,7 @@ html.is-map-full { overflow: hidden; }
 .b-arrowbtn svg { width: 1.125rem; height: 1.125rem; }
 .b-arrowbtn:focus-visible { background: var(--lantern); color: var(--night); }
 @media (hover: hover) { .b-arrowbtn:hover { background: var(--lantern); color: var(--night); } }
-.b-lb__close { position: absolute; top: max(var(--sp-3), env(safe-area-inset-top, 0px)); right: var(--sp-4); z-index: 1; background: var(--veil); }
+.b-lb__close { position: absolute; top: max(var(--sp-3), var(--safe-top)); right: var(--sp-4); z-index: 1; background: var(--veil); }
 
 /* ─── the crew: portraits in the room ─────────────────────────── */
 /* the room's one line of state runs under the portraits, the width of a sentence */
@@ -2324,7 +2346,7 @@ html.is-map-full { overflow: hidden; }
 .b-folk__item:focus-visible .b-folk__name { color: var(--lantern); }
 @media (hover: hover) { .b-folk__item:hover .b-folk__name { color: var(--lantern); } }
 .b-folk__count { width: 100%; font-size: var(--fs-sm); color: var(--text-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.b-folk__in { position: absolute; z-index: 1; top: -0.5rem; right: -0.25rem; padding: 0.1rem 0.35rem; background: var(--online); color: var(--night); font-family: var(--font-data); font-size: var(--fs-data); line-height: 1.2; text-transform: uppercase; }
+.b-folk__in { position: absolute; z-index: 1; top: -0.5rem; right: -0.25rem; padding: var(--px) calc(var(--px) * 3); background: var(--online); color: var(--night); font-family: var(--font-data); font-size: var(--fs-data); line-height: 1.2; text-transform: uppercase; }
 .b-crew__foot { margin-top: var(--sp-5); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-3); }
 .b-shelf__lede { font-size: var(--fs-md); }
 
@@ -2356,8 +2378,9 @@ html.is-map-full { overflow: hidden; }
 .is-draw .b-arena__flash { animation: b-flash var(--dur-3) var(--ease-out); }
 @keyframes b-flash { 0% { opacity: 0.85; } 100% { opacity: 0; } }
 .b-arena__smoke { opacity: 0; }
-.is-result.is-hit .b-arena__smoke { animation: b-smoke 1.2s var(--ease-out) forwards; transform-box: fill-box; transform-origin: center; }
-@keyframes b-smoke { 0% { opacity: 0.9; transform: scale(0.4); } 100% { opacity: 0; transform: scale(2.2) translateY(-30px); } }
+/* the puff of a hit: its own keyframes, since the campfire's b-smoke below once shared the name and won the whole sheet */
+.is-result.is-hit .b-arena__smoke { animation: b-arena-smoke 1.2s var(--ease-out) forwards; transform-box: fill-box; transform-origin: center; }
+@keyframes b-arena-smoke { 0% { opacity: 0.9; transform: scale(0.4); } 100% { opacity: 0; transform: scale(2.2) translateY(-30px); } }
 .b-arena__hole { position: absolute; width: 34px; height: 34px; margin: -17px 0 0 -17px; pointer-events: none; }
 .b-arena__call { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: var(--sp-4) var(--sp-4) 24%; pointer-events: none; }
 .b-arena__big { font-family: var(--font-display); font-size: var(--fs-2xl); line-height: 1; color: var(--paper); text-shadow: var(--px) var(--px) 0 var(--night); }
@@ -2597,9 +2620,9 @@ html.is-map-full { overflow: hidden; }
 
 /* Snow on the mesas and the ridge, dimming with the evening as the rock does.
    --evening does not inherit, so the fallbacks set it on the snow itself. */
-.b-mesa__snow { fill: #EEEAE2; }   /* in the hero the night layer darkens it with the rock */
-.b-ridge .b-mesa__snow { fill: color-mix(in oklab, #EEEAE2, var(--night) 45%); }
-.b-foot.is-snow .b-ground::before { height: calc(var(--px) * 2); background: #D9D4CA; opacity: 0.9; }
+.b-mesa__snow { fill: var(--snow); }   /* in the hero the night layer darkens it with the rock */
+.b-ridge .b-mesa__snow { fill: color-mix(in oklab, var(--snow), var(--night) 45%); }
+.b-foot.is-snow .b-ground::before { height: calc(var(--px) * 2); background: var(--snow-2); opacity: 0.9; }
 
 /* The day's Yule Lad, somewhere on the page */
 .b-lad { position: relative; display: inline-block; z-index: 3; line-height: 0; }
@@ -2946,3 +2969,37 @@ html.is-map-full { overflow: hidden; }
 .b-stray__actions { display: grid; gap: var(--sp-3); width: min(20rem, 100%); margin-top: var(--sp-5); }
 .b-stray__actions .b-btn { width: 100%; }
 @media (prefers-reduced-motion: reduce) { .b-died__veil, .b-stray__title { animation: none; } }
+
+/* ─── the 31 October ideas: the view's link, a place's coordinates, the compass, a place's Nýtt ─── */
+/* a key on the F3 lines, in their own dark, for a touch: the keyboard has C */
+.b-f3__copy { display: block; margin-top: var(--px); padding: 0; border: 0; background: none; color: var(--lantern); font: inherit; font-size: var(--fs-sm); text-transform: none; cursor: pointer; }
+.b-f3__copy:focus-visible { outline: var(--px) solid var(--lantern); outline-offset: var(--px); }
+@media (hover: hover) { .b-f3__copy:hover { color: var(--paper); } }
+/* where a place stands, on the F3 lines' own dark under its name; a press copies it */
+.b-card__xyz { display: inline-block; position: static; margin-top: var(--sp-1); padding: var(--px) var(--sp-2); border: 0; background: var(--pitch); color: var(--paper); font-family: var(--font-data); font-size: var(--fs-sm); line-height: 1.4; cursor: pointer; }
+.b-card__xyz:focus-visible { outline: var(--px) solid var(--lantern-ink); outline-offset: var(--px); }
+@media (hover: hover) { .b-card__xyz:hover { color: var(--lantern); } }
+/* the compass needle on the locator bar: a key, unlike the marks */
+.b-locator__mark--home { width: 1.25rem; height: 1.75rem; padding: 0; border: 0; background: none; cursor: pointer; pointer-events: auto; }
+.b-locator__mark--home svg { width: 0.5rem; height: 1rem; }
+/* a place whose ground changed in the newest copy of the map: the board's paper tag on its chip */
+.b-chip__new { position: absolute; top: calc(var(--px) * -1); left: calc(var(--px) * -1); padding: 0 var(--sp-1); background: var(--paper); color: var(--tc-red); border: var(--px) solid var(--tc-red); font-family: var(--font-text); font-weight: 600; font-size: var(--fs-chip); line-height: 1.6; letter-spacing: 0.04em; text-transform: uppercase; }
+.b-chip.is-on .b-chip__new { background: var(--tc-red); color: var(--paper); }
+
+/* ─── the 31 October ideas: the lantern's catch, the crosshair, the clouds over the crew pages, the held tooltip ─── */
+/* A lantern that comes on no longer flips from dark glass to full amber: the
+   glass takes its colour in two hard steps over 240 ms, the flame on the last,
+   and the glow comes up in three steps over 480 ms, as the game lights a lamp. */
+.b-lantern__glass, .b-lantern__flame { transition: fill var(--dur-3) steps(2, jump-end); }
+.b-lantern.is-lit::before { transition: opacity calc(var(--dur-3) * 2) steps(3, jump-end); }
+@media (prefers-reduced-motion: reduce) { .b-lantern__glass, .b-lantern__flame, .b-lantern.is-lit::before { transition: none; } }
+/* during the draw the pointer over the arena is the game's own crosshair: a nine by nine plus, paper with a pixel of night round it */
+.b-arena.is-draw { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 11 11' shape-rendering='crispEdges'%3E%3Cpath fill='%2315100D' d='M4 0h3v4h4v3H7v4H4V7H0V4h4z'/%3E%3Cpath fill='%23E8DCC4' d='M5 1h1v4h4v1H6v4H5V6H1V5h4z'/%3E%3C/svg%3E") 11 11, crosshair; }
+/* the crew pages' night: the hero's clouds in the band over the far ridge, drifting east with the scroll */
+.b-nightsky .b-clouds { position: absolute; left: 0; right: 0; top: 18%; height: 30%; opacity: 1; pointer-events: none; }
+@supports (animation-timeline: scroll()) {
+  .b-nightsky .b-clouds { animation: b-clouds-drift linear both; animation-timeline: scroll(root); }
+}
+@media (prefers-reduced-motion: reduce) { .b-nightsky .b-clouds { animation: none; } }
+/* a finger held on a slot raises the tooltip (Reactions.tsx) */
+.b-tip.is-held::after { opacity: 1; transform: translate(var(--tip-x, -50%), 0); }

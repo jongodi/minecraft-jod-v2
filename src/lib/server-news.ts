@@ -76,7 +76,11 @@ export async function noteServerVersion(body: { source: string; version?: string
     /* swapped in one step: of two readers at once, only the first gets the old version back */
     const prev = await r.getset(VERSION_KEY, version);
     knownVersion = version;
-    await record(versionNews(prev, version, new Date().toISOString()));
+    const at = new Date().toISOString();
+    const news = versionNews(prev, version, at);
+    /* when it moved, for the hero's Nýtt tag beside the version (src/lib/server-status.ts) */
+    if (news.length) await r.set('server:version-at', at);
+    await record(news);
   } catch (e) {
     console.error('server version news:', e);
   }

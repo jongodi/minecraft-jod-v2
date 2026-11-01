@@ -5,6 +5,11 @@ export const SERVER_IP = 'play.jodcraft.world';
    the footer's credit and the link previews carry it. The mark and the hero
    keep the wordmark, JOÐ, which is also the word the players say. */
 export const SITE_NAME = 'JOÐcraft';
+/* The day the world was born (its first day in the summer of 2024, as the
+   hero says): the splash and the board mark its birthday. Set it to the real
+   date, as the game's own files give it, before the first birthday is kept;
+   null keeps the birthday off. */
+export const WORLD_BORN: string | null = null;
 export const TITLE_TEMPLATE = `%s · ${SITE_NAME}`;
 
 export const CREW = [
@@ -147,6 +152,7 @@ export const STAT_TABS = [
   { id: 'bounties',       nick: 'Hausa\u00ADveiðarinn', label: 'Óskir uppfylltar fyrir verðlaun', unit: (v: number) => `${num(v)} ${plural(v, 'ósk', 'óskir')}` },
   { id: 'drawMs',         nick: 'Fógetinn',       label: 'Hraðasta skotið við varðeldinn', unit: ms, low: true },
   { id: 'noShows',        nick: 'Svikarinn',      label: 'Sagðist mæta en kom ekki',  unit: (v: number) => `${num(v)} kvöld` },
+  { id: 'attended',       nick: 'Fastagesturinn', label: 'Mætti á flest spilakvöld',  unit: (v: number) => `${num(v)} kvöld` },
 ] as const;
 export const isLowerBetter = (id: StatKey) => STAT_TABS.some(t => t.id === id && 'low' in t && t.low);
 export type StatKey = typeof STAT_TABS[number]['id'];

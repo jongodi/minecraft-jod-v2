@@ -111,6 +111,12 @@ export function letterAnswer(search: string): LetterAnswer | null {
    back to English wherever it carries no Icelandic. */
 
 const DAYS = ['sunnudag', 'mánudag', 'þriðjudag', 'miðvikudag', 'fimmtudag', 'föstudag', 'laugardag'];
+/** "á fimmtudagskvöldum": the evenings of a weekday, for the crew's habit */
+export const DAYS_PLURAL = ['sunnudagskvöldum', 'mánudagskvöldum', 'þriðjudagskvöldum', 'miðvikudagskvöldum', 'fimmtudagskvöldum', 'föstudagskvöldum', 'laugardagskvöldum'];
+/** "fimmtudagar": the weekday in the plural, for a habit */
+export const DAYS_NOM_PLURAL = ['sunnudagar', 'mánudagar', 'þriðjudagar', 'miðvikudagar', 'fimmtudagar', 'föstudagar', 'laugardagar'];
+/** "kl. 20" */
+export const clockHour = (h: number) => `kl. ${h}`;
 const DAYS_NOM = ['sunnudagur', 'mánudagur', 'þriðjudagur', 'miðvikudagur', 'fimmtudagur', 'föstudagur', 'laugardagur'];
 const MONTHS = ['jan.', 'feb.', 'mar.', 'apr.', 'maí', 'jún.', 'júl.', 'ágú.', 'sep.', 'okt.', 'nóv.', 'des.'];
 const cap = (s: string) => s.charAt(0).toLocaleUpperCase('is-IS') + s.slice(1);

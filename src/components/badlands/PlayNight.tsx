@@ -8,7 +8,8 @@ import Calendar from './Calendar';
 import type { ServerState } from './hooks';
 import { expectStarting, useMounted } from './hooks';
 import { isChanging } from '@/lib/server-state';
-import { DECIDE_MS, LAST_DAY_AHEAD, SOON_MS, TIME_CHOICES, WhenAt, dayLabel, dayLong, dayNum, dayOf, dayValue, isLate, letterAnswer, usePlayNight, whenAt, type LetterAnswer } from './night';
+import { DAYS_NOM_PLURAL, DECIDE_MS, LAST_DAY_AHEAD, SOON_MS, TIME_CHOICES, WhenAt, dayLabel, dayLong, dayNum, dayOf, dayValue, isLate, letterAnswer, usePlayNight, whenAt, type LetterAnswer } from './night';
+import type { NightHabit } from '@/lib/play-night-view';
 import { Fire, Heads, chosenOf, lower } from './NightLine';
 import { plural } from '@/lib/format';
 import { toast } from './Toast';
@@ -94,6 +95,7 @@ export function NightBoard({ server }: { server: ServerState }) {
   const lightFire = (
     <LightFire
       busy={busy}
+      habit={state?.habit ?? null}
       err={err?.at === 'new' ? err.text : ''}
       onCancel={() => { setLighting(false); setErr(null); }}
       onLight={async (times, note) => { if (await run('new', { action: 'propose', times, note })) setLighting(false); }}
@@ -240,7 +242,11 @@ function NightFire({ night, kicker, me, server, busy, err, picked, letter, onRun
             <button type="button" className="b-btn b-btn--solid" disabled={busy} onClick={() => onRun({ action: 'start' })}>Kveikja á þjóninum</button>
           )}
           {(night.phase === 'soon' || night.phase === 'live') && isChanging(server.life) && (
-            <span className="b-note" role="status">{server.life === 'stopping' ? 'Þjónninn er að slokkna.' : 'Þjónninn er að vakna, komdu inn eftir augnablik.'}</span>
+            <span className="b-note">{server.life === 'stopping' ? 'Þjónninn er að slokkna.' : 'Þjónninn er að vakna, komdu inn eftir augnablik.'}</span>
+          )}
+          {/* the same words for a screen reader, in a live region that is there before they come: one put up already holding them is not read */}
+          {(night.phase === 'soon' || night.phase === 'live') && (
+            <span className="b-visually-hidden" role="status">{isChanging(server.life) ? (server.life === 'stopping' ? 'Þjónninn er að slokkna.' : 'Þjónninn er að vakna, komdu inn eftir augnablik.') : ''}</span>
           )}
           <button type="button" className="b-btn b-btn--small b-btn--ghost" onClick={onShare}>Deila</button>
           {/* a chosen night goes in the phone's calendar: a calendar file, opened by the calendar app */}
@@ -282,7 +288,7 @@ function LetterSlip({ night, letter, busy, onSend, onDrop }: {
       <div className="b-paper b-night__slipbody" role="group" aria-label={`Svar úr bréfinu fyrir ${letter.user}`}>
         <p className="b-paper__kicker">Svar úr bréfinu</p>
         {closed ? (
-          <p className="b-night__sliptext">Kvöldið er hafið, svo ekki er lengur hægt að svara.</p>
+          <p className="b-night__sliptext">{night.phase === 'over' ? 'Kvöldið er liðið' : 'Kvöldið er hafið'}, svo ekki er lengur hægt að svara.</p>
         ) : (
           <>
             <p className="b-night__sliptext">Svar fyrir <b>{letter.user}</b>. Það fer þegar þú staðfestir.</p>
@@ -312,12 +318,25 @@ function LetterSlip({ night, letter, busy, onSend, onDrop }: {
 
 /* ─── lighting a fire ─────────────────────────────────────────────────── */
 
-function LightFire({ busy, err, onLight, onCancel }: { busy: boolean; err: string; onLight: (times: string[], note: string) => void; onCancel: () => void }) {
+function LightFire({ busy, err, habit, onLight, onCancel }: { busy: boolean; err: string; habit?: NightHabit | null; onLight: (times: string[], note: string) => void; onCancel: () => void }) {
   /* the clock as the form opened; the server checks the times again when the fire is lit */
   const [now] = useState(() => Date.now());
   const today = Math.floor(now / 86_400_000);
   const last = today + LAST_DAY_AHEAD;
-  const [rows, setRows] = useState(() => [{ day: dayValue(isLate(dayValue(today), '20:00', now) ? today + 1 : today), time: '20:00' }]);
+  /* the crew's usual evening (play-night-view.ts): the form opens on the next
+     of them, at the usual hour, rather than on tonight at eight */
+  const usual = (() => {
+    if (!habit) return null;
+    const time = `${String(habit.hour).padStart(2, '0')}:00`;
+    for (let d = today; d <= today + 7; d++) {
+      if (new Date(d * 86_400_000).getUTCDay() === habit.weekday && !isLate(dayValue(d), time, now)) return { day: dayValue(d), time };
+    }
+    return null;
+  })();
+  /* each row keeps a key of its own: keyed by its place, a row removed from the
+     middle handed its field, and the keyboard's focus in it, to the one after */
+  const nextKey = useRef(2);
+  const [rows, setRows] = useState(() => [usual ? { key: 1, ...usual } : { key: 1, day: dayValue(isLate(dayValue(today), '20:00', now) ? today + 1 : today), time: '20:00' }]);
   /* How far off a time must be: a quarter of an hour for a single time, which
      is chosen as it is lit; with more than one, three hours, so the crew can
      answer before the night is decided on its own. Times nearer than that are
@@ -343,16 +362,16 @@ function LightFire({ busy, err, onLight, onCancel }: { busy: boolean; err: strin
     const { fitRow } = rule(true);
     /* the times already chosen first, then the new one the day after the last of
        them: one moved off tonight would otherwise land on the new one's day and time */
-    const fitted = rows.map(fitRow);
+    const fitted = rows.map(row => ({ ...fitRow(row), key: row.key }));
     const r = fitted[fitted.length - 1];
     setMoved(rows.some((was, i) => was.day !== fitted[i].day || was.time !== fitted[i].time));
-    setRows([...fitted, fitRow({ day: dayValue(Math.min(last, dayNum(r.day) + 1)), time: r.time })]);
+    setRows([...fitted, { ...fitRow({ day: dayValue(Math.min(last, dayNum(r.day) + 1)), time: r.time }), key: nextKey.current++ }]);
   };
   const [note, setNote] = useState('');
   const [open, setOpen] = useState<number | null>(null);
   const id = useId();
   const trigger = (i: number) => `${id}-dagur-${i}`;
-  const set = (i: number, key: 'day' | 'time', v: string) => setRows(rs => rs.map((r, k) => (k !== i ? r : key === 'day' ? { day: v, time: fit(v, r.time) } : { ...r, time: v })));
+  const set = (i: number, key: 'day' | 'time', v: string) => setRows(rs => rs.map((r, k) => (k !== i ? r : key === 'day' ? { ...r, day: v, time: fit(v, r.time) } : { ...r, time: v })));
   const pick = (i: number, v: string) => {
     set(i, 'day', v);
     setOpen(null);
@@ -365,9 +384,10 @@ function LightFire({ busy, err, onLight, onCancel }: { busy: boolean; err: strin
       <header className="b-night__top">
         <h3 className="b-night__title">Kveikja bál</h3>
         <p className="b-note">Einn til þrír tímar. Hópurinn segir hvaða tímar henta og kvöldið velst þremur tímum fyrir þann fyrsta, nema þú veljir fyrr.</p>
+        {habit && usual && <p className="b-note">Venjulega {DAYS_NOM_PLURAL[habit.weekday]} kl. {habit.hour}, {habit.of} af {habit.total} kvöldum.</p>}
       </header>
       {rows.map((r, i) => (
-        <div key={i} className="b-inline b-night__row">
+        <div key={r.key} className="b-inline b-night__row">
           <button
             type="button"
             id={trigger(i)}
@@ -388,7 +408,8 @@ function LightFire({ busy, err, onLight, onCancel }: { busy: boolean; err: strin
           {open === i && <Calendar value={r.day} today={today} min={first} max={last} triggerId={trigger(i)} onPick={v => pick(i, v)} onClose={close} />}
         </div>
       ))}
-      {held && <p className="b-note" role="status">Með fleiri en einum tíma þarf sá fyrsti að vera minnst þrjá tíma fram í tímann, svo hópurinn nái að svara.</p>}
+      {held && <p className="b-note">Með fleiri en einum tíma þarf sá fyrsti að vera minnst þrjá tíma fram í tímann, svo hópurinn nái að svara.</p>}
+      <p className="b-visually-hidden" role="status">{held ? 'Með fleiri en einum tíma þarf sá fyrsti að vera minnst þrjá tíma fram í tímann, svo hópurinn nái að svara.' : ''}</p>
       {rows.length < 3 && (
         /* a second time brings the three-hour rule in: any time that falls short of it moves to the first that does not */
         <button type="button" className="b-btn b-btn--small b-btn--ghost" onClick={addTime}>+ Annar tími</button>

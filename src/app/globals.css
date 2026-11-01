@@ -1,13 +1,5 @@
 @import './tokens.css';
 
-/* ─── the admin table's two rules ───────────────────────────────
-   The panel paints its own dark root; these are the only names of their
-   own it reads (the generic --bg, --accent and the like were never read). */
-:root {
-  --border:        #3A2C22;
-  --border-strong: #55433A;
-}
-
 /* ─── reset & base ─────────────────────────────────────────────
    The site's own ground, in place of a framework's: borders are set by
    width alone, headings and links carry no look of their own until a
@@ -77,7 +69,7 @@ img, svg, video, canvas, audio, iframe, embed, object { display: block; vertical
 img, video { max-width: 100%; height: auto; }
 [hidden]:where(:not([hidden='until-found'])) { display: none; }
 
-::selection { background: var(--tc-orange); color: var(--paper); }
+::selection { background: var(--tc-red); color: var(--paper); }   /* 5.4:1; the orange was 4.1 */
 :focus-visible { outline: var(--px) solid var(--lantern); outline-offset: 3px; }
 
 /* ─── the skip link ─────────────────────────────────────────────

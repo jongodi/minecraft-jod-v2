@@ -30,9 +30,9 @@ export function AdvancementFrame({ frame }: { frame: Frame }) {
 
 const FRAME_NAMES: Record<Frame, string> = { task: 'verkefni', goal: 'markmið', challenge: 'áskorun' };
 
-export default function Advancements({ list, of }: { list: WallAdvancement[]; of: number }) {
+export default function Advancements({ list, of, missing = [] }: { list: WallAdvancement[]; of: number; missing?: WallAdvancement[] }) {
   const [all, setAll] = useState(false);
-  if (list.length === 0) return null;
+  if (list.length === 0 && missing.length === 0) return null;
   const shown = all ? list : list.slice(0, SHOWN);
   return (
     <section id="afrek" className="w-adv" aria-label="Afrek">
@@ -54,6 +54,24 @@ export default function Advancements({ list, of }: { list: WallAdvancement[]; of
         <button type="button" className="b-link w-adv__more" aria-expanded={all} onClick={() => setAll(v => !v)}>
           {all ? 'Bara þau nýjustu' : `Öll ${list.length} afrekin`}
         </button>
+      )}
+      {/* what most of the others have and this member has not, in the game's dim unearned frame */}
+      {missing.length > 0 && (
+        <>
+          <p className="w-adv__head w-adv__head--left"><span className="b-paper__kicker">Þú átt eftir</span></p>
+          <ol className="w-adv__list w-adv__list--left">
+            {missing.map(a => (
+              <li key={a.id} className="w-adv__item is-unearned">
+                <AdvancementFrame frame={a.frame} />
+                <span className="w-adv__title b-tip" data-tip={a.description} tabIndex={a.description ? 0 : undefined}>
+                  {a.title}
+                  <span className="b-visually-hidden">, {FRAME_NAMES[a.frame]}{a.description ? `: ${a.description}` : ''}</span>
+                </span>
+                <span className="w-adv__when">flestir hinna eiga það</span>
+              </li>
+            ))}
+          </ol>
+        </>
       )}
     </section>
   );
