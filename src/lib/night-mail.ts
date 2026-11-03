@@ -96,13 +96,19 @@ interface Dress { themes: Record<NightNotice, Theme>; names: Names }
 async function deliver(kind: NightNotice, night: Night, votes: Votes, readers: Reader[], { themes, names }: Dress): Promise<number> {
   const to = recipientsOf(kind, night, votes, readers);
   if (to.length === 0 || !(await claim(night.id, kind))) return 0;
-  const res = await sendEmails(to.map(r => nightLetter(kind, night, votes, r, themes[kind], names)));
   const r = await redis();
-  if (res.sent) {
-    if (kind === 'out') await r.hdel(OUT_PENDING, night.id);
-    return to.length;
+  try {
+    const res = await sendEmails(to.map(r => nightLetter(kind, night, votes, r, themes[kind], names)));
+    if (res.sent) {
+      if (kind === 'out') await r.hdel(OUT_PENDING, night.id);
+      return to.length;
+    }
+    console.error(`[night-mail] ${kind} for ${night.id} did not go: ${res.reason}`);
+  } catch (e) {
+    /* the letter could not be written or sent: the claim is given back the
+       same way, or the letter was marked sent for good and never went */
+    console.error(`[night-mail] ${kind} for ${night.id} threw: ${e instanceof Error ? e.message : String(e)}`);
   }
-  console.error(`[night-mail] ${kind} for ${night.id} did not go: ${res.reason}`);
   await r.srem(mailedKey(night.id), kind);
   if (kind === 'out') await r.hset(OUT_PENDING, night.id, JSON.stringify({ night, votes }));
   return 0;
