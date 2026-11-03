@@ -69,7 +69,7 @@ export function YuleLad({ season, spot }: { season: Season; spot: LadSpot }) {
         <svg viewBox="0 0 10 14" shapeRendering="crispEdges" aria-hidden="true">
           {/* the hood, long and red, flopping to one side */}
           <rect x="2" y="0" width="5" height="1" fill="var(--tc-red)" /><rect x="1" y="1" width="7" height="2" fill="var(--tc-red)" /><rect x="7" y="2" width="2" height="1" fill="var(--tc-red)" /><rect x="8" y="3" width="1" height="1" fill="var(--paper)" />
-          {/* face and a grey beard */}
+          {/* face and a grey beard: the lad's own two colours, which no token on the site is (as the armadillo's are the game's) */}
           <rect x="2" y="3" width="5" height="2" fill="#D9A77C" /><rect x="3" y="4" width="1" height="1" fill="var(--ink)" /><rect x="5" y="4" width="1" height="1" fill="var(--ink)" />
           <rect x="1" y="5" width="7" height="3" fill="#CFC6B8" />
           {/* wool coat and a rope belt */}
