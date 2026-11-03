@@ -348,7 +348,7 @@ h1::after, h2::after { height: 3px; background: var(--jod-strata); }
   height: 30px;
   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 18' shape-rendering='crispEdges'%3E%3Cg fill='%2315100D'%3E%3Crect x='4' y='0' width='4' height='1'/%3E%3Crect x='3' y='1' width='1' height='2'/%3E%3Crect x='8' y='1' width='1' height='2'/%3E%3Crect x='2' y='3' width='8' height='2'/%3E%3Crect x='2' y='5' width='1' height='8'/%3E%3Crect x='9' y='5' width='1' height='8'/%3E%3Crect x='1' y='13' width='10' height='2'/%3E%3Crect x='3' y='15' width='6' height='1'/%3E%3C/g%3E%3Crect x='3' y='5' width='6' height='8' fill='%23F2A63B'/%3E%3Crect x='5' y='8' width='2' height='3' fill='%23E8DCC4'/%3E%3C/svg%3E") center / contain no-repeat;
   image-rendering: pixelated;
-  filter: drop-shadow(0 0 1px rgba(232, 220, 196, 0.6));
+  filter: drop-shadow(0 1px 0 rgba(21, 16, 13, 0.5));
   transition: transform 120ms ease-out;
 }
 .jod-pin__lamp::before {
