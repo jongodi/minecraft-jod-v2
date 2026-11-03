@@ -48,6 +48,10 @@ export async function POST(req: NextRequest) {
 
   await clearRateLimit(ip, action);
   const name = canonicalUsername(username);
+  /* the account's own count too: left standing, twenty failed tries from
+     anywhere (a guesser's, or a member's own old phone) kept the member out
+     for an hour after they had signed in */
+  await clearRateLimit(name.toLowerCase(), 'crew-auth-account');
   const sessionId = await createCrewSession(name);
   const res = NextResponse.json({ ok: true, username: name });
   /* a year: signing in is a one-time thing, and the link the admin hands out
