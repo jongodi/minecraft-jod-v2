@@ -25,10 +25,10 @@
 }
 /* the lantern's tint laid on the night itself, solid: see-through, it let the moon and the stars through onto its words */
 .w-welcome { position: relative; max-width: 52rem; width: 100%; margin-inline: auto; padding: var(--sp-3) var(--sp-7) var(--sp-3) var(--sp-4); background: linear-gradient(color-mix(in srgb, var(--lantern) 12%, transparent), color-mix(in srgb, var(--lantern) 12%, transparent)), var(--night); border: var(--px) solid var(--lantern); color: var(--paper); font-size: var(--fs-md); line-height: 1.5; }
-.w-welcome > button:last-child:not(.w-welcome__act) { position: absolute; right: 0; top: 0; display: grid; place-items: center; width: var(--tap); height: 100%; min-height: var(--tap); color: var(--lantern); }
-.w-welcome > button:last-child:not(.w-welcome__act) svg { width: 0.875rem; height: 0.875rem; }
-.w-welcome > button:last-child:not(.w-welcome__act):focus-visible { color: var(--paper); }
-@media (hover: hover) { .w-welcome > button:last-child:not(.w-welcome__act):hover { color: var(--paper); } }
+.w-welcome > button:last-child:not(.w-welcome__act):not(.w-welcome__go) { position: absolute; right: 0; top: 0; display: grid; place-items: center; width: var(--tap); height: 100%; min-height: var(--tap); color: var(--lantern); }
+.w-welcome > button:last-child:not(.w-welcome__act):not(.w-welcome__go) svg { width: 0.875rem; height: 0.875rem; }
+.w-welcome > button:last-child:not(.w-welcome__act):not(.w-welcome__go):focus-visible { color: var(--paper); }
+@media (hover: hover) { .w-welcome > button:last-child:not(.w-welcome__act):not(.w-welcome__go):hover { color: var(--paper); } }
 .w-welcome__act { font: inherit; color: var(--lantern); text-decoration: underline; text-underline-offset: 0.2em; }
 /* the slip a sign-in link opens: its words and the one press side by side, the press under them on a phone */
 .w-welcome--link { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3) var(--sp-5); padding-right: var(--sp-4); }
