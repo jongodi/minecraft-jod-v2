@@ -586,7 +586,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
   /* Escape closes one thing at a time: a postcard or a room open in the
      whole screen closes first (their own keys do it), and the screen stays */
   const overFull = useRef(false);
-  overFull.current = selected !== null || shut;
+  overFull.current = selected !== null || shut || drawn;
   useEffect(() => {
     if (!full) return;
     const onFs = () => { if (!document.fullscreenElement && full === 'native') setFull(false); };
@@ -688,11 +688,11 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
   const held = shown && !auto && !full && !still;
   const letGoMap = useCallback(() => setAuto(true), []);
   useEffect(() => {
-    if (!held || selected !== null || album || shut) return;
+    if (!held || selected !== null || album || shut || drawn) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !modalOpen()) letGoMap(); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [held, selected, album, shut, letGoMap]);
+  }, [held, selected, album, shut, drawn, letGoMap]);
   useEffect(() => { if (held && !inView) letGoMap(); }, [held, inView, letGoMap]);
   /* Escape folds the painted map away, as it closes anything else open over
      the world, one layer at a time: not while a postcard, the album, the
