@@ -172,6 +172,8 @@ const viewOf = (s: string | null): View | null => {
 };
 /* the start view, as data.ts writes it for the viewer: world:x:y:z:distance:rotation:angle:… */
 const START_VIEW: View = (() => { const p = MAP_START_VIEW.split(':').map(Number); return { x: p[1], y: p[2], z: p[3], d: p[4], rot: p[5], tilt: p[6] }; })();
+/* the start of the world on the locator bar, one object, so the bar's memo holds */
+const HOME_MARK = { x: START_VIEW.x, z: START_VIEW.z, name: 'Joðbær' };
 
 /** Where the live map is looking. The viewer says it a few times a second
     while it moves; it is kept here rather than in the world's state, so a
@@ -584,7 +586,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
   /* Escape closes one thing at a time: a postcard or a room open in the
      whole screen closes first (their own keys do it), and the screen stays */
   const overFull = useRef(false);
-  overFull.current = selected !== null || shut;
+  overFull.current = selected !== null || shut || drawn;
   useEffect(() => {
     if (!full) return;
     const onFs = () => { if (!document.fullscreenElement && full === 'native') setFull(false); };
@@ -685,12 +687,13 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
      that holds the wheel. */
   const held = shown && !auto && !full && !still;
   const letGoMap = useCallback(() => setAuto(true), []);
+  /* not while the painted map is up either: Escape folds that first (below), and one press let go of the live map at the same time */
   useEffect(() => {
-    if (!held || selected !== null || album || shut) return;
+    if (!held || selected !== null || album || shut || drawn) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !modalOpen()) letGoMap(); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [held, selected, album, shut, letGoMap]);
+  }, [held, selected, album, shut, drawn, letGoMap]);
   useEffect(() => { if (held && !inView) letGoMap(); }, [held, inView, letGoMap]);
   /* Escape folds the painted map away, as it closes anything else open over
      the world, one layer at a time: not while a postcard, the album, the
@@ -756,7 +759,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
     window.addEventListener('jod:follow', onFollow);
     window.addEventListener('jod:home', onHome);
     return () => { window.removeEventListener('jod:follow', onFollow); window.removeEventListener('jod:home', onHome); };
-  // openFull and takeHold are stable callbacks declared below
+  // openFull and takeHold are stable callbacks declared above
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jod]);
   useEffect(() => {
@@ -789,7 +792,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  // openFull is a stable callback declared below
+  // openFull is a stable callback declared above
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reached, shut, viewer, shown, night, jod]);
   /* Resting on the way down, the viewer waiting behind the flight draws its
@@ -975,7 +978,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
         </div>
 
         {/* the locator bar: the other bases and the crew, by where they stand from the way the camera faces */}
-        <Locator bases={bases} players={players} home={{ x: START_VIEW.x, z: START_VIEW.z, name: 'Joðbær' }} sink={cameraSink} hidden={drawn || shut || (menu && ready)} />
+        <Locator bases={bases} players={players} home={HOME_MARK} sink={cameraSink} hidden={drawn || shut || (menu && ready)} />
 
         {/* the place picked, said once as it comes: a live region on the card itself is a new one with every place, and one put up already holding its words is not read */}
         <p className="b-visually-hidden" role="status">{chosen && !shut ? `Póstkort: ${titleCase(chosen.label)}` : ''}</p>

@@ -6,6 +6,7 @@ import '@/app/wall.css';
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { formatAge, plural } from '@/lib/format';
+import { sinceAt } from '@/components/badlands/night';
 import type { CrewSummary } from '@/app/api/crew/route';
 import type { FeedEntry } from '@/app/api/crew/feed/route';
 import AddressBar from '@/components/badlands/AddressBar';
@@ -16,12 +17,13 @@ import { Lantern, Seal } from '@/components/badlands/Bits';
 import { useServerStatus } from '@/components/badlands/hooks';
 import { NightLine } from '@/components/badlands/NightLine';
 import { CREW, PAGE_LINKS, STAT_TABS } from '@/components/badlands/data';
+import { toast } from '@/components/badlands/Toast';
 import { outlaws, type Outlaw, type StatRow } from '@/components/badlands/outlaws';
 import { photoProps, PHOTO_SIZES } from '@/components/badlands/photo';
 import { woodClass } from '@/lib/sign-wood';
 
 /* a member's poster before the list has come: the name, nothing about the wall yet */
-const blankPoster = (username: string): CrewSummary => ({ username, bio: '', entryCount: 0, photoCount: 0, lastEntry: null, cover: null, bestDrawMs: null });
+const blankPoster = (username: string): CrewSummary => ({ username, bio: '', entryCount: 0, photoCount: 0, lastEntry: null, cover: null, bestDrawMs: null, lastSeen: null });
 
 const tabOf = (id: string) => STAT_TABS.find(t => t.id === id)!;
 /* an alias as it is set on a poster wide enough to hold it whole */
@@ -64,24 +66,47 @@ function Charge({ outlaw, waiting }: { outlaw: Outlaw | undefined; waiting: bool
     is nailed up in the space the board has left. `initialPlayers` is the
     last snapshot of the game's numbers, read on the server (page.tsx), so
     the board is whole at first paint. */
-export default function RollCall({ initialPlayers }: { initialPlayers: StatRow[] | null }) {
-  /* null while loading; 'error' if the list never came */
-  const [crew, setCrew] = useState<CrewSummary[] | null | 'error'>(null);
+export default function RollCall({ initialPlayers, initialCrew = null }: { initialPlayers: StatRow[] | null; initialCrew?: CrewSummary[] | null }) {
+  /* the lines as the page was drawn with them (page.tsx), then the browser's
+     own; null while loading, 'error' if the list never came */
+  const [crew, setCrew] = useState<CrewSummary[] | null | 'error'>(initialCrew);
   const [feed, setFeed] = useState<FeedEntry[] | null | 'error'>(null);
   const [staleLink, setStaleLink] = useState(false);
+  /* a sign-in link opened: the key and the member it is for, until it is pressed or turns out spent */
+  const [link, setLink] = useState<{ key: string; name: string } | null>(null);
+  const [signing, setSigning] = useState(false);
   /* who is in the game now: the bar asks for the same answer, so this is no second question */
   const server = useServerStatus();
   const isIn = (name: string) => server.online === true && server.list.some(n => n.toLowerCase() === name.toLowerCase());
 
+  /* the press that spends the link's use: signed in, the member goes to their wall; a spent link says so */
+  const signIn = async () => {
+    if (!link || signing) return;
+    setSigning(true);
+    try {
+      const r = await fetch('/api/crew/invite', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ lykill: link.key }), signal: AbortSignal.timeout(15_000) });
+      const d = await r.json().catch(() => null) as { next?: string; error?: string } | null;
+      if (r.ok && d?.next) { window.location.assign(d.next); return; }
+      if (r.status === 410) { setLink(null); setStaleLink(true); window.history.replaceState(null, '', '/crew?lykill=utrunninn'); }
+      else toast('Tókst ekki', d?.error ?? 'reyndu aftur eftir smástund');
+    } catch { toast('Tókst ekki', 'náði ekki sambandi'); }
+    setSigning(false);
+  };
+
   useEffect(() => {
-    setStaleLink(new URLSearchParams(window.location.search).get('lykill') === 'utrunninn');
+    const q = new URLSearchParams(window.location.search);
+    const key = q.get('lykill') ?? '';
+    setStaleLink(key === 'utrunninn');
+    const name = q.get('felagi') ?? '';
+    if (key && key !== 'utrunninn' && CREW.some(n => n === name)) setLink({ key, name });
     /* an error answer is JSON too ({ error }), so only an array is a list */
     const list = <T,>(url: string, set: (v: T[] | 'error') => void) =>
-      fetch(url, { cache: 'no-store' })
+      fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(15_000) })
         .then(r => (r.ok ? r.json() : null))
         .then((rows: unknown) => set(Array.isArray(rows) ? (rows as T[]) : 'error'))
         .catch(() => set('error'));
-    list<CrewSummary>('/api/crew', setCrew);
+    /* asked afresh, for a wall pinned on since the page was kept; a lost answer keeps the page's lines */
+    list<CrewSummary>('/api/crew', v => setCrew(c => (v === 'error' && c && c !== 'error' ? c : v)));
     list<FeedEntry>('/api/crew/feed?limit=1', setFeed);
   }, []);
 
@@ -90,10 +115,11 @@ export default function RollCall({ initialPlayers }: { initialPlayers: StatRow[]
   const [players, setPlayers] = useState<StatRow[] | null>(initialPlayers);
   useEffect(() => {
     if (initialPlayers) return;
-    fetch('/api/stats')
+    /* capped, and a lost answer ends the wait: every poster kept its "sæki" for good */
+    fetch('/api/stats', { signal: AbortSignal.timeout(25_000) })
       .then(r => (r.ok ? r.json() : null))
-      .then((d: { players?: StatRow[] } | null) => { if (d?.players?.length) setPlayers(d.players); })
-      .catch(() => {});
+      .then((d: { players?: StatRow[] } | null) => { setPlayers(d?.players?.length ? d.players : []); })
+      .catch(() => setPlayers(p => p ?? []));
   }, [initialPlayers]);
   const { byName, mostWanted } = useMemo(() => outlaws(players ?? []), [players]);
   /* The most wanted hangs large only on a board drawn with the numbers: one
@@ -110,6 +136,13 @@ export default function RollCall({ initialPlayers }: { initialPlayers: StatRow[]
       <main id="efni" className="b-wrap b-page">
         {staleLink && (
           <p className="w-welcome" role="status">Þessi innskráningartengill er útrunninn eða þegar notaður. Fáðu nýjan í pósti undir „Þetta er ég“ á veggnum þínum, eða hjá stjórnandanum.</p>
+        )}
+        {/* the slip a sign-in link opens: the member's own press spends the use, so a mail scanner's look spends nothing */}
+        {link && (
+          <p className="w-welcome w-welcome--link" role="status">
+            <span>Innskráningartengill fyrir <b>{link.name}</b>. Þetta tæki man eftir þér í eitt ár.</span>
+            <button type="button" className="b-btn b-btn--solid b-btn--small w-welcome__go" onClick={signIn} disabled={signing}>{signing ? 'Skrái inn…' : 'Skrá mig inn'}</button>
+          </p>
         )}
         <div className="b-page__head">
           <div>
@@ -140,8 +173,9 @@ export default function RollCall({ initialPlayers }: { initialPlayers: StatRow[]
                 {isIn(m.username) && <span className="b-poster__lamp" aria-hidden="true"><Lantern lit /></span>}
                 <Link href={`/crew/${m.username}`} className={`b-paper b-paper--torn b-poster b-poster--crew${isMost ? ' b-poster--most' : ''}${m.cover ? ' has-cover' : ''}`}>
                   {m.cover && (
+                    /* the most wanted poster's print is the largest thing on the first screen (its LCP): asked for at once, the rest when scrolled to */
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img className="b-poster__cover" {...photoProps(m.cover, isMost ? PHOTO_SIZES.board : PHOTO_SIZES.strip)} alt="" aria-hidden="true" loading="lazy" decoding="async" />
+                    <img className="b-poster__cover" {...photoProps(m.cover, isMost ? PHOTO_SIZES.board : PHOTO_SIZES.strip)} alt="" aria-hidden="true" loading={isMost ? "eager" : "lazy"} fetchPriority={isMost ? "high" : undefined} decoding="async" />
                   )}
                   <span className="b-paper__nail b-paper__nail--l" aria-hidden="true" />
                   <span className="b-paper__nail b-paper__nail--r" aria-hidden="true" />
@@ -173,6 +207,8 @@ export default function RollCall({ initialPlayers }: { initialPlayers: StatRow[]
                   </>) : (<>
                     {/* someone with a charge against them has a poster already; "nothing heard yet" is for one with neither */}
                     {(m.bio || m.lastEntry || (!outlaw?.best && players !== null)) && <div className="b-poster__note">{m.bio || (m.lastEntry ? `festi eitthvað upp ${formatAge(m.lastEntry)}` : 'ekkert heyrst enn')}</div>}
+                    {/* when they were last in the game, under the charges, for one who is not in now: the lantern says the rest */}
+                    {m.lastSeen && !isIn(m.username) && <div className="b-poster__seen">síðast inni {sinceAt(m.lastSeen)}</div>}
                     {/* a bare wall says so once, in the line above; its two zeros keep their height so the board's rows stay level */}
                     <div className="b-poster__meta" aria-hidden={m.entryCount + m.photoCount === 0 || undefined} style={m.entryCount + m.photoCount === 0 ? { visibility: 'hidden' } : undefined}><span className="b-nowrap">{m.entryCount} {plural(m.entryCount, 'færsla', 'færslur')}</span> · <span className="b-nowrap">{m.photoCount} {plural(m.photoCount, 'mynd', 'myndir')}</span></div>
                   </>)}

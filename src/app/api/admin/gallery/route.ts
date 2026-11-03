@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { readGallery, addGalleryPhoto } from '@/lib/gallery';
 import { readMap, locationForPhoto, linkPhotoToLocation } from '@/lib/map';
 import { requireAdmin, unauthorizedResponse } from '@/lib/auth';
-import { detectBlobAccess, displayUrlFor, hasBlob, isBlobHost } from '@/lib/blob-store';
+import { detectBlobAccess, displayUrlFor, hasBlob, isOwnBlobUrl } from '@/lib/blob-store';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,7 +32,8 @@ export async function POST(req: NextRequest) {
   const locationId = typeof body?.locationId === 'number' && Number.isFinite(body.locationId) ? Math.floor(body.locationId) : null;
 
   const m = GALLERY_PATH.exec(pathname);
-  if (!m || !isBlobHost(url) || !new URL(url).pathname.endsWith('/' + pathname)) {
+  /* this project's own store only: any Blob host would take a picture that skipped the upload handshake's limits */
+  if (!m || !isOwnBlobUrl(url) || !new URL(url).pathname.endsWith('/' + pathname)) {
     return NextResponse.json({ error: 'Ógild myndaslóð.' }, { status: 400 });
   }
   const id = m[1];

@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import Link from 'next/link';
 import PlayerHead from './PlayerHead';
 import { Lantern } from './Bits';
@@ -259,7 +260,7 @@ function Armadillo() {
 
 /** The mesas; in winter with snow on them, at Hrekkjavaka with jack-o'-lanterns
     (src/lib/season.ts); with the heads of whoever is in on the nearest ridge. */
-export default function Mesa({ snow = false, halloween = false, heads = [], known = false }: { snow?: boolean; halloween?: boolean; heads?: string[]; known?: boolean }) {
+function Mesa({ snow = false, halloween = false, heads = [], known = false }: { snow?: boolean; halloween?: boolean; heads?: string[]; known?: boolean }) {
   return (
     <div className="b-mesa">
       <Layer d={FAR_D} mod="far" haze={<Haze />}>
@@ -279,3 +280,6 @@ export default function Mesa({ snow = false, halloween = false, heads = [], know
     </div>
   );
 }
+
+/* Memoised: the hero re-renders on every status answer, and the land reads only who is in */
+export default memo(Mesa);

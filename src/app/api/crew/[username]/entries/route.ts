@@ -46,7 +46,10 @@ export async function POST(req: NextRequest, { params }: Params) {
   { const parsed = await jsonObject(req); if (!parsed) return badJson(); body = parsed; }
 
   const text = cleanText(body.text, LIMITS.text);
-  const drafts = Array.isArray(body.photos) ? (body.photos as PhotoDraft[]).slice(0, LIMITS.photosPer) : [];
+  const drafts = Array.isArray(body.photos) ? (body.photos as PhotoDraft[]) : [];
+  /* said, not cut: the pictures past the limit were already uploaded, and a
+     sign quietly missing its last ones looked like a lost upload */
+  if (drafts.length > LIMITS.photosPer) return NextResponse.json({ error: `Mest ${LIMITS.photosPer} myndir á einum miða.` }, { status: 400 });
   const photos = drafts.map(d => photoFromDraft(username, d));
   if (photos.some(p => p === null)) return NextResponse.json({ error: 'Ein myndanna er ekki úr þinni möppu.' }, { status: 400 });
   const kept = photos.filter((p): p is NonNullable<typeof p> => p !== null);

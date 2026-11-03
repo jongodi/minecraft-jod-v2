@@ -103,6 +103,8 @@ describe('the status lookup', () => {
 
 describe('when the server last burned', () => {
   const kv = new Map<string, string>();
+  /* status:seen, as src/lib/crew-seen.ts writes it */
+  const seen = new Map<string, string>();
   const fetchMock = vi.fn();
   const exaroton = (status: number, players?: string[]) => ({
     ok: true,
@@ -114,6 +116,7 @@ describe('when the server last burned', () => {
       rGet: async (k: string) => { const v = kv.get(k); return v ? JSON.parse(v) : null; },
       rSet: async (k: string, v: unknown) => { kv.set(k, JSON.stringify(v)); },
       rDel: async (k: string) => { kv.delete(k); },
+      getRedis: () => ({ hset: async (_k: string, fields: Record<string, string>) => { for (const [a, b] of Object.entries(fields)) seen.set(a, b); return 1; } }),
     }));
     vi.stubGlobal('fetch', fetchMock);
     vi.stubEnv('EXAROTON_API_KEY', 'key');
@@ -121,6 +124,7 @@ describe('when the server last burned', () => {
     vi.useFakeTimers();
     fetchMock.mockReset();
     kv.clear();
+    seen.clear();
     forgetStatus();
   });
   afterEach(() => {
@@ -136,6 +140,8 @@ describe('when the server last burned', () => {
     const lit = await getStatus();
     expect(lit.lastOnline).toBeUndefined();
     expect(JSON.parse(kv.get('status:last-online')!)).toEqual({ at: '2026-10-02T21:40:00.000Z', names: ['stebbias', 'joenana'] });
+    /* and each of the crew in as last seen now, the stranger not */
+    expect(Object.fromEntries(seen)).toEqual({ stebbias: '2026-10-02T21:40:00.000Z', joenana: '2026-10-02T21:40:00.000Z' });
 
     /* half a minute on, the server has gone out: the answer before says when */
     vi.setSystemTime(new Date('2026-10-02T21:40:31Z'));

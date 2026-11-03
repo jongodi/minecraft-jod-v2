@@ -347,6 +347,10 @@ function Board({ room = false, open = true, initial = null, initialFilter = 'all
           </div>
         ) : null}
 
+        {/* a refetch that failed over a board already drawn: said over it, with the way to try again */}
+        {failed && data !== null && (
+          <p className="b-note t-board__stale" role="status">Náði ekki að sækja það nýjasta. <button type="button" className="b-link" onClick={() => setAttempt(a => a + 1)}>Reyna aftur</button></p>
+        )}
         {failed && data === null ? (
           <p className="b-empty t-board__empty" role="alert">Náði ekki í töfluna. <button type="button" className="b-link" onClick={() => setAttempt(a => a + 1)}>Reyna aftur</button></p>
         ) : data === null ? (
@@ -372,9 +376,11 @@ function Board({ room = false, open = true, initial = null, initialFilter = 'all
                   const calling = callingMe.has(item.id);
                   return (
                     <Fragment key={item.id}>
+                      {/* a list item like the rest (a separator among items breaks a screen reader's count), its words for the eye and for the ear */}
                       {item.id === stringAt && (
-                        <li className="t-string" role="separator" aria-label="Það sem var komið síðast þegar þú leist við">
+                        <li className="t-string">
                           <span className="t-string__tag" aria-hidden="true">Síðast þegar þú leist við</span>
+                          <span className="b-visually-hidden">Það sem var komið síðast þegar þú leist við</span>
                         </li>
                       )}
                       <li className={`t-item t-item--${item.kind}${isFresh ? ' is-new' : ''}`}>

@@ -53,6 +53,13 @@ describe('signing in, counted per account', () => {
     for (let i = 0; i < 4; i++) expect((await signIn('stebbias', 'typo')).status).toBe(401);
   });
 
+  it('a sign-in forgets the hourly count at the account, from wherever the tries came', async () => {
+    /* nineteen tries from elsewhere, then the member's own sign-in: the next day's tries start from nothing */
+    counts.set('ratelimit:crew-auth-account:stebbias', 19);
+    expect((await signIn('stebbias', 'right-a')).status).toBe(200);
+    expect(counts.has('ratelimit:crew-auth-account:stebbias')).toBe(false);
+  });
+
   it('counts the name however it is cased', async () => {
     for (let i = 0; i < 5; i++) await signIn(i % 2 ? 'JOENANA' : 'joenana', 'guess');
     expect((await signIn('JoeNana', 'right-b')).status).toBe(429);

@@ -303,7 +303,7 @@ export default function Composer({ username, places, onPinned, active = true, co
       />
       {/* @ and the start of a name: the crew it could be, a tap to finish it */}
       {named.length > 0 && (
-        <div className="w-pin__names" aria-label="Nefna félaga">
+        <div className="w-pin__names" role="group" aria-label="Nefna félaga">
           {named.map(n => (
             <button key={n} type="button" className="w-pin__name" onClick={() => callBy(n)}><PlayerHead name={n} size={16} alt="" />@{n}</button>
           ))}

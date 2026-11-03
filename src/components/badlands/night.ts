@@ -59,12 +59,15 @@ export function seedNights(initial: PlayNightResponse): void {
   if (value === undefined) value = initial;
 }
 
+/* the browser's own question has been asked: a signed-out visitor's answer
+   names nobody either, and each line that read it asked again on mount */
+let askedOwn = false;
 export function usePlayNight(initial?: PlayNightResponse) {
   const state = useSyncExternalStore(subscribe, () => value, () => initial);
   useEffect(() => {
     /* the page's own answer is drawn for everyone and names nobody, so the
        browser asks once for its own, which knows who is signed in */
-    if (value === undefined || value.me === null) refresh();
+    if (value === undefined || (value.me === null && !askedOwn)) { askedOwn = true; refresh(); }
     startPolling();
     return stopPolling;
   }, []);

@@ -135,7 +135,7 @@
   transition: transform var(--dur-2) var(--ease-out), box-shadow var(--dur-3) var(--ease-out);
 }
 /* the tag, nailed to the front: the pack's drawing on paper, a pixel nail at its top */
-.b-stock__label { position: relative; z-index: 1; display: grid; place-items: center; width: 58%; aspect-ratio: 1; padding: calc(var(--px) * 3) calc(var(--px) * 2) calc(var(--px) * 2); background: var(--paper); clip-path: var(--notch); box-shadow: 0 var(--px) 0 rgb(from var(--night) r g b / 0.45); }
+.b-stock__label { position: relative; z-index: 1; display: grid; place-items: center; width: 58%; aspect-ratio: 1; padding: calc(var(--px) * 3) calc(var(--px) * 2) calc(var(--px) * 2); background: var(--paper); clip-path: var(--notch); box-shadow: var(--lift-1); }
 .b-stock__label::before { content: ''; position: absolute; top: var(--px); left: calc(50% - var(--px)); width: calc(var(--px) * 2); height: calc(var(--px) * 2); background: var(--ink-faint); }
 .b-stock__label svg { width: 100%; height: 100%; display: block; }
 /* the crate being read lifts off the shelf and takes a rim of lantern light;
@@ -263,7 +263,7 @@
 /* In the game now (crew/page.tsx): a lit lantern hung on a short chain over
    the poster's corner, and its light warm on the paper, as the lantern burns
    behind the portraits of whoever is in, in the crew's room. */
-.b-poster__lamp { position: absolute; z-index: 2; top: -3.25rem; right: calc(var(--sp-2) * -1); width: 2rem; pointer-events: none; filter: drop-shadow(0 0 0.75rem color-mix(in srgb, var(--lantern) 70%, transparent)); }
+.b-poster__lamp { position: absolute; z-index: 2; top: -3.25rem; right: calc(var(--sp-2) * -1); width: 2rem; pointer-events: none; }
 .b-poster__lamp::before { content: ''; display: block; width: var(--px); height: 1rem; margin-inline: auto; background: repeating-linear-gradient(180deg, var(--ink-faint) 0 var(--px), transparent var(--px) calc(var(--px) * 2)); }
 .b-poster__lamp .b-lantern { width: 2rem; height: 3rem; }
 /* the lantern's light on the board round the poster: a pool painted once
@@ -277,6 +277,8 @@
 .b-poster--crew .b-poster__name { margin-top: var(--sp-3); }
 .b-poster__reward { font-size: var(--fs-sm); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-faint); }
 .b-poster__meta { margin-top: var(--sp-2); font-size: var(--fs-sm); color: var(--ink-faint); }
+/* when a member was last in the game: small print in the faint ink, as the meta line is */
+.b-poster__seen { margin-top: var(--sp-2); font-size: var(--fs-sm); color: var(--ink-faint); }
 .b-poster__note { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; text-wrap: balance; }
 /* what a member is wanted for, under their name on the roll call: as the room's board sets it, a little smaller */
 .b-poster--crew .b-poster__alias { font-size: var(--fs-sm); }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { hashPassword, verifyPassword, passwordProblem, createInvite, consumeInvite, closeInvite, listInvites, INVITE_USES } from '@/lib/crew-access';
+import { hashPassword, verifyPassword, passwordProblem, createInvite, consumeInvite, peekInvite, closeInvite, listInvites, INVITE_USES } from '@/lib/crew-access';
 
 describe('passwords', () => {
   it('verifies the password it hashed and nothing else', async () => {
@@ -31,6 +31,15 @@ describe('sign-in links', () => {
     expect(await consumeInvite(inv.key)).toBe('joenana');
     expect(await consumeInvite(inv.key)).toBeNull();
     expect(await consumeInvite('not-a-real-key-at-all-xx')).toBeNull();
+  });
+
+  it('can be looked at without being spent, as a link that is opened is', async () => {
+    const inv = await createInvite('joenana', 1);
+    expect(await peekInvite(inv.key)).toBe('joenana');
+    expect(await peekInvite(inv.key)).toBe('joenana');
+    expect(await consumeInvite(inv.key)).toBe('joenana');
+    expect(await peekInvite(inv.key)).toBeNull();
+    expect(await peekInvite('not-a-real-key-at-all-xx')).toBeNull();
   });
 
   it('can be shut early and then drops off the list', async () => {

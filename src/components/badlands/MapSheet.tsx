@@ -54,7 +54,7 @@ function CameraArrow({ store, fit }: { store: CameraStore; fit: NonNullable<Retu
   const deg = ((cam.rotation ?? 0) * 180) / Math.PI;
   return (
     <g transform={`translate(${fit.x(cam.x).toFixed(1)} ${fit.y(cam.z).toFixed(1)}) rotate(${deg.toFixed(1)})`} aria-hidden="true">
-      <path d="M0 -9 L7 7 L0 3 L-7 7 Z" fill="#FFFFFF" stroke="#1E1611" strokeWidth="1.5" strokeLinejoin="miter" />
+      <path d="M0 -9 L7 7 L0 3 L-7 7 Z" fill="var(--chat-white)" stroke="var(--ink)" strokeWidth="1.5" strokeLinejoin="miter" />
     </g>
   );
 }

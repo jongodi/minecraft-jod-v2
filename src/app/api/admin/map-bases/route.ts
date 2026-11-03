@@ -91,7 +91,9 @@ export async function POST(req: NextRequest) {
   /* { action: 'upload', bases: ['jodville'], force: true }; no bases, or an
      empty list, is all of them (a redraw names its bases) */
   const body = await req.json().catch(() => null) as { action?: unknown; bases?: unknown; force?: unknown } | null;
-  const action: Action = (ACTIONS as readonly unknown[]).includes(body?.action) ? body!.action as Action : 'upload';
+  /* an unknown action is turned away: taken for an upload, a typo set the workflow going */
+  if (body?.action !== undefined && !(ACTIONS as readonly unknown[]).includes(body.action)) return NextResponse.json({ error: `Óþekkt aðgerð. Til eru: ${ACTIONS.join(', ')}.` }, { status: 400 });
+  const action: Action = (body?.action as Action | undefined) ?? 'upload';
   const asked = Array.isArray(body?.bases) ? body.bases : [];
   const known = new Set(BASES.map(b => b.id));
   if (!asked.every((id): id is string => typeof id === 'string' && known.has(id))) {

@@ -50,7 +50,8 @@ async function worldFacts(): Promise<string[]> {
     readNights().catch(() => [] as Night[]),
   ]);
   if (stats) {
-    const hours = Math.round(stats.players.reduce((a, p) => a + (p.playTimeHours ?? 0), 0));
+    /* from the ticks: each member's hours are floored, and eight floors lose most of a day */
+    const hours = Math.round(stats.players.reduce((a, p) => a + (p.playTimeTicks ?? 0), 0) / 72000);
     const mobs = stats.players.reduce((a, p) => a + (p.mobKills ?? 0), 0);
     if (hours > 0) out.push(`${formatNumber(hours)} klukkustundir í heiminum!`);
     if (mobs > 0) out.push(`${formatNumber(mobs)} verur felldar!`);
@@ -60,7 +61,7 @@ async function worldFacts(): Promise<string[]> {
     if (done.size > 0) out.push(`${done.size} af ${ADVANCEMENT_COUNT} afrekum!`);
   }
   const held = nights.filter(n => !n.cancelled && n.outcome).length;
-  if (held > 0) out.push(`${held} ${held === 1 ? 'spilakvöld' : 'spilakvöld'} við eldinn!`);
+  if (held > 0) out.push(`${held} spilakvöld við eldinn!`);
   return out;
 }
 

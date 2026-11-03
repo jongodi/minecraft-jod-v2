@@ -46,8 +46,10 @@ async function readStoredGallery(): Promise<GalleryPhoto[]> {
   /* With Redis configured it is the only source of truth. Falling back to the
      bundled gallery.json on a read error would quietly serve the original
      order and hide the failure, so a failed read is raised instead. */
-  const { rGet, rSet } = await import('./redis');
-  const data = await rGet<GalleryPhoto[]>(KV_KEY);
+  /* strict: a stored value that does not parse is raised, not taken for an
+     empty store and written over with the bundled seed */
+  const { rGetStrict, rSet } = await import('./redis');
+  const data = await rGetStrict<GalleryPhoto[]>(KV_KEY);
   if (data) return data;
   // Genuinely empty: seed from the committed gallery.json, once.
   const seed = await readFromDisk();

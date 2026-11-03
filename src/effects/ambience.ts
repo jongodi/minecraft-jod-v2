@@ -1,7 +1,7 @@
 /* Wind and a distant fire, made from noise in Web Audio. No files.
    Off by default; the choice is remembered in localStorage. */
 
-export const AMBIENCE_KEY = 'jod-ambience-v1';
+const AMBIENCE_KEY = 'jod-ambience-v1';
 
 const WIND_CUTOFF = 420;   // Hz, low-passed brown noise
 const WIND_SWELL_HZ = 0.07;

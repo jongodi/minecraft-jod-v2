@@ -89,7 +89,6 @@ export function markSeen(at: string | null, me: string | null | undefined): void
 }
 
 /** When this visitor had last looked, as it stood before this look: for the board's own "new" tags. */
-export const seenNow = () => state.seen;
 
 /** How many things on the board are new to the one looking; null until it is known. */
 export function useBoardNews(): { count: number | null; seen: string | null | undefined } {

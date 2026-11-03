@@ -108,14 +108,19 @@ export default memo(function Print({ username, entry, places, me, isOwner, cover
     finally { setSaving(false); }
   }
 
+  /* one delete at a time: eyða pressed twice sent a second that answered 404 before the first had taken the sign down */
+  const removing = useRef(false);
   async function remove() {
+    if (removing.current) return;
     if (!confirm(entry.photos.length > 0 ? `Taka þetta niður af veggnum? ${entry.photos.length === 1 ? 'Myndin hverfur' : 'Myndirnar hverfa'} líka.` : 'Taka þetta niður af veggnum?')) return;
+    removing.current = true;
     setError('');
     try {
       const res = await api('', { method: 'DELETE' });
       if (res.ok) onRemove(entry.id);
       else setError(await errorFrom(res));
     } catch { setError(OFFLINE); }
+    finally { removing.current = false; }
   }
 
   async function toggleLantern(e: MouseEvent<HTMLButtonElement>) {
@@ -153,13 +158,16 @@ export default memo(function Print({ username, entry, places, me, isOwner, cover
   }
 
   async function dropReply(rid: string) {
+    if (removing.current) return;
     if (!confirm('Eyða svarinu?')) return;
+    removing.current = true;
     setError('');
     try {
       const res = await api(`/replies/${rid}`, { method: 'DELETE' });
       if (!res.ok) throw new Error(await errorFrom(res));
       onChange(entry.id, e => ({ ...e, replies: e.replies.filter(r => r.id !== rid) }));
     } catch (err) { setError(failure(err, 'Ekki tókst að eyða svarinu.')); }
+    finally { removing.current = false; }
   }
 
   const open = (photo: CrewPhoto) => (e: MouseEvent<HTMLButtonElement>) => onOpen(photo.id, e.currentTarget.getBoundingClientRect());
@@ -261,7 +269,12 @@ export default memo(function Print({ username, entry, places, me, isOwner, cover
         <Hotbar gifts={gifts} panelId={inventoryId} plusRef={plusBtn} />
         {/* the sign's own link (/skilti/<id>): the wall scrolled to it, and in a chat the sign itself as the card */}
         <button type="button" className="w-print__share b-tip" data-tip="Afrita hlekk á skiltið" aria-label="Deila skiltinu: afrita hlekk á það"
-          onClick={() => { const url = `${window.location.origin}/skilti/${entry.id}`; navigator.clipboard?.writeText(url).then(() => toast('Afritað', 'hlekkur á skiltið'), () => window.prompt('Afritaðu hlekkinn:', url)); }}>Deila</button>
+          onClick={() => {
+            const url = `${window.location.origin}/skilti/${entry.id}`;
+            /* no clipboard (http on the LAN, an old webview): the link is offered to be copied by hand, where the press used to do nothing */
+            if (!navigator.clipboard?.writeText) { window.prompt('Afritaðu hlekkinn:', url); return; }
+            navigator.clipboard.writeText(url).then(() => toast('Afritað', 'hlekkur á skiltið'), () => window.prompt('Afritaðu hlekkinn:', url));
+          }}>Deila</button>
         {isOwner && !edit && (
           <span className="w-print__actions">
             <button ref={editBtn} type="button" onClick={() => setEdit({ text: entry.text, placeId: entry.placeId, photos: entry.photos, reward: entry.bounty?.reward ?? '' })} aria-label={`Breyta færslunni: ${name}`}>breyta</button>

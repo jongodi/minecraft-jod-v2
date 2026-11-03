@@ -11,7 +11,7 @@ import Annall from './Annall';
 import { CREW } from './data';
 import { useStats, type ServerState } from './hooks';
 import { sinceAt } from './night';
-import { plural } from '@/lib/format';
+import { formatAge, plural } from '@/lib/format';
 import type { CrewSummary } from '@/app/api/crew/route';
 
 /** The crew's room, opened over the world. Portraits of the eight with a
@@ -30,10 +30,13 @@ function Crew({ server }: { server: ServerState }) {
   const guests = Math.max(0, players - inside);
 
   useEffect(() => {
-    fetch('/api/crew', { cache: 'no-store' })
+    let alive = true;
+    /* the counts and the last evenings are decoration under the heads: a lost answer leaves them off, and says nothing */
+    fetch('/api/crew', { cache: 'no-store', signal: AbortSignal.timeout(15_000) })
       .then(r => (r.ok ? r.json() : null))
-      .then((rows: CrewSummary[] | null) => { if (rows) setSummary(Object.fromEntries(rows.map(r => [r.username.toLowerCase(), r]))); })
+      .then((rows: CrewSummary[] | null) => { if (rows && alive) setSummary(Object.fromEntries(rows.map(r => [r.username.toLowerCase(), r]))); })
       .catch(() => {});
+    return () => { alive = false; };
   }, []);
 
   return (
@@ -51,7 +54,10 @@ function Crew({ server }: { server: ServerState }) {
                     {on && <span className="b-folk__in">inni</span>}
                   </span>
                   <span className="b-folk__name">{name}</span>
-                  {row && row.photoCount > 0 && <span className="b-folk__count">{row.photoCount} {plural(row.photoCount, 'mynd', 'myndir')}</span>}
+                  {/* under a head that is in, the tag says so; under one that is not, when they were last: the one question the room is asked */}
+                  {on ? null
+                    : row?.lastSeen ? <span className="b-folk__count">inni {formatAge(row.lastSeen)}</span>
+                    : row && row.photoCount > 0 ? <span className="b-folk__count">{row.photoCount} {plural(row.photoCount, 'mynd', 'myndir')}</span> : null}
                 </Link>
               </li>
             );

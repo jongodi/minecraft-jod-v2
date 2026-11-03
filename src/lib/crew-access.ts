@@ -170,6 +170,14 @@ async function spendInvite(key: string, how: 'use' | 'close'): Promise<Invite | 
   return inv;
 }
 
+/** Who a key is for, without spending it: the page a link opens reads this
+    and the member's own press spends the use. Null for a key that is unknown,
+    closed, used up or past its week. */
+export async function peekInvite(key: string): Promise<string | null> {
+  const inv = await readInvite(key);
+  return alive(inv) ? inv.username : null;
+}
+
 /** Spend one use of a key. Returns the member it is for, or null if it is
     unknown, closed, used up or past its week. */
 export async function consumeInvite(key: string): Promise<string | null> {
