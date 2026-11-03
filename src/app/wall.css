@@ -30,6 +30,9 @@
 .w-welcome > button:last-child:not(.w-welcome__act):focus-visible { color: var(--paper); }
 @media (hover: hover) { .w-welcome > button:last-child:not(.w-welcome__act):hover { color: var(--paper); } }
 .w-welcome__act { font: inherit; color: var(--lantern); text-decoration: underline; text-underline-offset: 0.2em; }
+/* the slip a sign-in link opens: its words and the one press side by side, the press under them on a phone */
+.w-welcome--link { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3) var(--sp-5); padding-right: var(--sp-4); }
+.w-welcome--link > span { flex: 1 1 18rem; }
 @media (hover: hover) { .w-welcome__act:hover { color: var(--paper); } }
 
 /* ─── the poster ────────────────────────────────────────────── */
