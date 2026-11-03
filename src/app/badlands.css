@@ -418,7 +418,7 @@
   position: absolute;
   inset: -60% -80%;
   background: radial-gradient(closest-side, var(--lantern-glow), transparent);
-  animation: b-flicker var(--dur-lantern) ease-in-out infinite;
+  animation: b-flicker var(--dur-lantern) var(--ease-flicker) infinite;
   pointer-events: none;
 }
 @keyframes b-flicker { 0%, 100% { opacity: 0.7; } 50% { opacity: 1; } }
@@ -444,7 +444,7 @@
   inset: -60% -80%;
   background: radial-gradient(closest-side, var(--lantern-glow), transparent);
   opacity: 0.5;
-  animation: b-flicker calc(var(--dur-lantern) / 2) ease-in-out infinite;
+  animation: b-flicker calc(var(--dur-lantern) / 2) var(--ease-flicker) infinite;
   pointer-events: none;
 }
 @keyframes b-kindle { from { opacity: 1; } to { opacity: 0.3; } }
@@ -553,7 +553,7 @@
 /* the signed-in member's head in the bar: framed in wood, a lantern's glow behind it */
 .b-bar__me { position: relative; display: grid; place-items: center; width: var(--tap); height: var(--tap); flex-shrink: 0; }
 .b-bar__me img { width: 1.5rem; height: 1.5rem; image-rendering: pixelated; box-shadow: 0 0 0 var(--px) var(--lantern); }
-.b-bar__me::before { content: ''; position: absolute; inset: 0; background: radial-gradient(closest-side, var(--lantern-glow), transparent); animation: b-flicker var(--dur-lantern) ease-in-out infinite; pointer-events: none; }
+.b-bar__me::before { content: ''; position: absolute; inset: 0; background: radial-gradient(closest-side, var(--lantern-glow), transparent); animation: b-flicker var(--dur-lantern) var(--ease-flicker) infinite; pointer-events: none; }
 .b-bar__me:focus-visible img { box-shadow: 0 0 0 var(--px) var(--paper); }
 @media (hover: hover) { .b-bar__me:hover img { box-shadow: 0 0 0 var(--px) var(--paper); } }
 
@@ -1402,7 +1402,7 @@ html:has(.b-world.has-flight) { scroll-snap-type: y proximity; }
   inset: -70% -110%;
   z-index: -1;
   background: radial-gradient(closest-side, var(--lantern-glow), transparent);
-  animation: b-flicker var(--dur-lantern) ease-in-out infinite;
+  animation: b-flicker var(--dur-lantern) var(--ease-flicker) infinite;
 }
 .b-pin__label {
   padding: 2px var(--sp-2) 3px;
@@ -2336,7 +2336,7 @@ html.is-map-full { overflow: hidden; }
   inset: -40%;
   z-index: -1;
   background: radial-gradient(closest-side, var(--lantern-glow), transparent);
-  animation: b-flicker var(--dur-lantern) ease-in-out infinite;
+  animation: b-flicker var(--dur-lantern) var(--ease-flicker) infinite;
 }
 /* A name under a portrait has one line and a column four heads wide on a phone:
    the text face, bold, at small print is 84 px for the longest name
@@ -2747,7 +2747,7 @@ html.is-map-full { overflow: hidden; }
   height: 13rem;
   margin-left: -23rem;
   background: radial-gradient(closest-side, color-mix(in srgb, var(--ember) 30%, transparent), color-mix(in srgb, var(--ember) 8%, transparent) 60%, transparent);
-  animation: b-flicker var(--dur-lantern) ease-in-out infinite;
+  animation: b-flicker var(--dur-lantern) var(--ease-flicker) infinite;
   pointer-events: none;
 }
 /* The duel's door is the fire and the sign planted beside it. The sign's

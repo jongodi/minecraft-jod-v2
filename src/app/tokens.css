@@ -272,6 +272,8 @@
   --dur-step: 160ms;
   --stagger: 70ms;
   --dur-lantern: 3400ms;
+  /* the flicker's own easing, the one place the site eases in and out: a flame breathes rather than steps */
+  --ease-flicker: ease-in-out;
 
   /* ── layers ── */
   --z-sky: -1;
