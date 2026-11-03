@@ -66,9 +66,10 @@ function Charge({ outlaw, waiting }: { outlaw: Outlaw | undefined; waiting: bool
     is nailed up in the space the board has left. `initialPlayers` is the
     last snapshot of the game's numbers, read on the server (page.tsx), so
     the board is whole at first paint. */
-export default function RollCall({ initialPlayers }: { initialPlayers: StatRow[] | null }) {
-  /* null while loading; 'error' if the list never came */
-  const [crew, setCrew] = useState<CrewSummary[] | null | 'error'>(null);
+export default function RollCall({ initialPlayers, initialCrew = null }: { initialPlayers: StatRow[] | null; initialCrew?: CrewSummary[] | null }) {
+  /* the lines as the page was drawn with them (page.tsx), then the browser's
+     own; null while loading, 'error' if the list never came */
+  const [crew, setCrew] = useState<CrewSummary[] | null | 'error'>(initialCrew);
   const [feed, setFeed] = useState<FeedEntry[] | null | 'error'>(null);
   const [staleLink, setStaleLink] = useState(false);
   /* a sign-in link opened: the key and the member it is for, until it is pressed or turns out spent */
@@ -104,7 +105,8 @@ export default function RollCall({ initialPlayers }: { initialPlayers: StatRow[]
         .then(r => (r.ok ? r.json() : null))
         .then((rows: unknown) => set(Array.isArray(rows) ? (rows as T[]) : 'error'))
         .catch(() => set('error'));
-    list<CrewSummary>('/api/crew', setCrew);
+    /* asked afresh, for a wall pinned on since the page was kept; a lost answer keeps the page's lines */
+    list<CrewSummary>('/api/crew', v => setCrew(c => (v === 'error' && c && c !== 'error' ? c : v)));
     list<FeedEntry>('/api/crew/feed?limit=1', setFeed);
   }, []);
 
