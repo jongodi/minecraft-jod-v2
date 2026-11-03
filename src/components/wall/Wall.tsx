@@ -105,11 +105,14 @@ function useWallDialog(onClose: () => void) {
   useScrollLock();
   useDialogFocus(box);
   useBackCloses(true, onClose);
+  /* the latest onClose through a ref: every caller passes a fresh arrow, and the key was unbound and bound again on each render of the wall */
+  const close = useRef(onClose);
+  close.current = onClose;
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close.current(); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  }, []);
   return { box, backdrop: useBackdropClose(onClose) };
 }
 
