@@ -7,6 +7,7 @@ import { NextRequest } from 'next/server';
 const store = new Map<string, unknown>();
 vi.mock('@/lib/redis', () => ({
   rGet: async (k: string) => store.get(k) ?? null,
+  rGetStrict: async (k: string) => store.get(k) ?? null,
   rSet: async (k: string, v: unknown) => { store.set(k, structuredClone(v)); },
 }));
 vi.mock('@/lib/auth', () => ({ requireAdmin: async () => true, unauthorizedResponse: () => new Response(null, { status: 401 }) }));
