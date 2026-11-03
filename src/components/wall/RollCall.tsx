@@ -141,7 +141,8 @@ export default function RollCall({ initialPlayers }: { initialPlayers: StatRow[]
                 <Link href={`/crew/${m.username}`} className={`b-paper b-paper--torn b-poster b-poster--crew${isMost ? ' b-poster--most' : ''}${m.cover ? ' has-cover' : ''}`}>
                   {m.cover && (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img className="b-poster__cover" {...photoProps(m.cover, isMost ? PHOTO_SIZES.board : PHOTO_SIZES.strip)} alt="" aria-hidden="true" loading="lazy" decoding="async" />
+                    /* the most wanted poster's print is the largest thing on the first screen (its LCP): asked for at once, the rest when scrolled to */
+                    <img className="b-poster__cover" {...photoProps(m.cover, isMost ? PHOTO_SIZES.board : PHOTO_SIZES.strip)} alt="" aria-hidden="true" loading={isMost ? "eager" : "lazy"} fetchPriority={isMost ? "high" : undefined} decoding="async" />
                   )}
                   <span className="b-paper__nail b-paper__nail--l" aria-hidden="true" />
                   <span className="b-paper__nail b-paper__nail--r" aria-hidden="true" />
