@@ -1,6 +1,6 @@
 // Player stats from Exaroton's file API (reads Minecraft world/stats/*.json)
-// When the server is online, fetches live data and caches it to Vercel KV.
-// When offline, serves the last cached snapshot with a timestamp.
+// When the server is online, fetches live data and keeps a snapshot in Redis.
+// When offline, serves the last snapshot with a timestamp.
 import { NextResponse } from 'next/server';
 import { CREW_USERNAMES } from '@/lib/crew';
 import { EMPTY, getCachedStats, readGameStats, readWeek, withCharges, type PlayerStat, type StatsResponse } from '@/lib/stats';

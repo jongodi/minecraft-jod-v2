@@ -46,10 +46,11 @@ export async function POST() {
       { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store', signal: AbortSignal.timeout(8000) }
     );
     if (!listRes.ok) {
-      return NextResponse.json(
-        { error: 'Gagnapakkamappan fannst ekki. Er kveikt á þjóninum og heimurinn hlaðinn?' },
-        { status: 404 }
-      );
+      /* by what exaroton said: a refused key, its limit, or its own trouble, each as itself */
+      if (listRes.status === 401 || listRes.status === 403) return NextResponse.json({ error: 'Exaroton hafnaði lyklinum. Athugaðu EXAROTON_API_KEY.' }, { status: 502 });
+      if (listRes.status === 429) return NextResponse.json({ error: 'Exaroton svarar ekki fleiri beiðnum í bili. Reyndu aftur eftir smástund.' }, { status: 503 });
+      if (listRes.status === 404) return NextResponse.json({ error: 'Gagnapakkamappan fannst ekki. Er kveikt á þjóninum og heimurinn hlaðinn?' }, { status: 404 });
+      return NextResponse.json({ error: `Exaroton svaraði með villu (${listRes.status}).` }, { status: 502 });
     }
 
     const listData = await listRes.json() as {

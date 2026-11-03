@@ -2,7 +2,7 @@ import { NextRequest, NextResponse, after } from 'next/server';
 import { badJson, jsonObject } from '@/lib/http';
 import { consumeInvite, createCrewSession, canonicalUsername, isCrewUsername, CREW_COOKIE, SESSION_TTL } from '@/lib/crew';
 import { mailSignInLink } from '@/lib/crew-email';
-import { canSendEmail } from '@/lib/email';
+import { canSendEmail, siteUrl } from '@/lib/email';
 import { checkRateLimit, clearRateLimit, clientKey } from '@/lib/rateLimit';
 
 export const dynamic = 'force-dynamic';
@@ -58,7 +58,8 @@ export async function POST(req: NextRequest) {
   if ((await checkRateLimit(`${ip}|${username.toLowerCase()}`, 'crew-mail-link-member', 3, 60 * 60)).limited) {
     return NextResponse.json({ error: 'Nokkrir tenglar hafa þegar verið sendir á síðasta klukkutíma. Kíktu í pósthólfið, eða reyndu aftur síðar.' }, { status: 429 });
   }
-  const origin = process.env.NEXT_PUBLIC_SITE_URL ?? req.nextUrl.origin;
+  /* as every letter reads it (a trailing slash dropped, an empty value ignored), else the address asked on */
+  const origin = process.env.NEXT_PUBLIC_SITE_URL ? siteUrl() : req.nextUrl.origin;
   after(async () => {
     const mailed = await mailSignInLink(username, origin);
     if (!mailed.sent) console.warn(`[crew/invite] no link mailed to ${username}: ${mailed.reason}`);

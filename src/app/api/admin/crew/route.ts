@@ -8,7 +8,7 @@ import { requireAdmin, unauthorizedResponse } from '@/lib/auth';
 import { readAllProfiles, allPhotos, createInvite, closeInvite, listInvites, inviteUrl, getCrewToken, isCrewUsername, canonicalUsername, revokeCrewSessions, type Invite } from '@/lib/crew';
 import { hasPassword, setPasswordHash } from '@/lib/crew-access';
 import { getEmail, getNames, mailSignInLink, updateContact, type CrewEmail } from '@/lib/crew-email';
-import { canSendEmail } from '@/lib/email';
+import { canSendEmail, siteUrl } from '@/lib/email';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,7 +29,7 @@ export interface AdminCrewRow {
 
 export async function GET(req: NextRequest) {
   if (!(await requireAdmin())) return unauthorizedResponse();
-  const origin = process.env.NEXT_PUBLIC_SITE_URL ?? req.nextUrl.origin;
+  const origin = process.env.NEXT_PUBLIC_SITE_URL ? siteUrl() : req.nextUrl.origin;
   const names = await getNames();
   const rows: AdminCrewRow[] = await Promise.all((await readAllProfiles()).map(async p => ({
     username:    p.username,
@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
   if (typeof body.username !== 'string' || !isCrewUsername(body.username)) return NextResponse.json({ error: 'Þessi félagi er ekki á listanum.' }, { status: 400 });
 
   const username = canonicalUsername(body.username);
-  const origin = process.env.NEXT_PUBLIC_SITE_URL ?? req.nextUrl.origin;
+  const origin = process.env.NEXT_PUBLIC_SITE_URL ? siteUrl() : req.nextUrl.origin;
   if (body.send === true) {
     if (!(await getEmail(username))) return NextResponse.json({ error: `${username} er ekki með netfang. Settu það inn fyrst.` }, { status: 409 });
     if (!canSendEmail()) return NextResponse.json({ error: 'Póstur er ekki tengdur (RESEND_API_KEY vantar).' }, { status: 503 });

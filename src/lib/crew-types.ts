@@ -13,8 +13,6 @@ export const CREW_USERNAMES = [
   'eikibleiki',
 ] as const;
 
-export type CrewUsername = typeof CREW_USERNAMES[number];
-
 export function isCrewUsername(name: string | null | undefined): boolean {
   return !!name && CREW_USERNAMES.some(u => u.toLowerCase() === name.toLowerCase());
 }
