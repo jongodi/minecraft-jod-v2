@@ -687,6 +687,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
      that holds the wheel. */
   const held = shown && !auto && !full && !still;
   const letGoMap = useCallback(() => setAuto(true), []);
+  /* not while the painted map is up either: Escape folds that first (below), and one press let go of the live map at the same time */
   useEffect(() => {
     if (!held || selected !== null || album || shut || drawn) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !modalOpen()) letGoMap(); };
