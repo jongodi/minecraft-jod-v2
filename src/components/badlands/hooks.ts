@@ -568,7 +568,10 @@ export const modalOpen = () => document.querySelector('[aria-modal="true"]') !==
     (the world's scroll-margin-top in badlands.css). Smooth unless the visitor
     asked for less motion, asked of the browser at the moment of scrolling. */
 export function showWorld(smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches): void {
-  document.getElementById('heimur')?.scrollIntoView({ block: 'start', behavior: smooth ? 'smooth' : 'auto' });
+  /* 'instant', not 'auto': auto takes the stylesheet's smooth scroll, so an
+     arrival meant to land at once (a room's link, a shared place) glided
+     down from the sunset and was cut short by the runway being laid */
+  document.getElementById('heimur')?.scrollIntoView({ block: 'start', behavior: smooth ? 'smooth' : 'instant' });
 }
 
 export function useInert<T extends HTMLElement>(inert: boolean): React.RefObject<T | null> {
