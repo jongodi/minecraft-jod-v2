@@ -621,7 +621,6 @@
    five of the game's ticks, from its foot, at the game's even pace. */
 .w-item.is-popping { transform-origin: 50% 75%; animation: w-pop var(--dur-2) linear both; }
 @keyframes w-pop { 0% { transform: scale(0.5, 1.5); } 50% { transform: scale(0.67, 1.25); } }
-@media (prefers-reduced-motion: reduce) { .w-item.is-popping { animation: none; } }
 /* the empty slot after them: a plus in the slot, lit while the inventory is open */
 .w-slot__plus { width: calc(var(--px) * 8); height: calc(var(--px) * 8); background: currentColor; -webkit-mask: var(--w-plus) center / contain no-repeat; mask: var(--w-plus) center / contain no-repeat; }
 .w-slot--add { --w-plus: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'%3E%3Cpath d='M3 0h2v3h3v2H5v3H3V5H0V3h3z'/%3E%3C/svg%3E"); }
