@@ -140,7 +140,6 @@ export default function RollCall({ initialPlayers }: { initialPlayers: StatRow[]
                 {isIn(m.username) && <span className="b-poster__lamp" aria-hidden="true"><Lantern lit /></span>}
                 <Link href={`/crew/${m.username}`} className={`b-paper b-paper--torn b-poster b-poster--crew${isMost ? ' b-poster--most' : ''}${m.cover ? ' has-cover' : ''}`}>
                   {m.cover && (
-                    // eslint-disable-next-line @next/next/no-img-element
                     /* the most wanted poster's print is the largest thing on the first screen (its LCP): asked for at once, the rest when scrolled to */
                     <img className="b-poster__cover" {...photoProps(m.cover, isMost ? PHOTO_SIZES.board : PHOTO_SIZES.strip)} alt="" aria-hidden="true" loading={isMost ? "eager" : "lazy"} fetchPriority={isMost ? "high" : undefined} decoding="async" />
                   )}
@@ -171,6 +170,7 @@ export default function RollCall({ initialPlayers }: { initialPlayers: StatRow[]
                     <div className="b-poster__note">sæki vegginn…</div>
                     {/* held open at the height its line will take, so nothing moves when it comes */}
                     <div className="b-poster__meta" aria-hidden="true" style={{ visibility: 'hidden' }}><span className="b-nowrap">0 færslur</span> · <span className="b-nowrap">0 myndir</span></div>
+                    // eslint-disable-next-line @next/next/no-img-element
                   </>) : (<>
                     {/* someone with a charge against them has a poster already; "nothing heard yet" is for one with neither */}
                     {(m.bio || m.lastEntry || (!outlaw?.best && players !== null)) && <div className="b-poster__note">{m.bio || (m.lastEntry ? `festi eitthvað upp ${formatAge(m.lastEntry)}` : 'ekkert heyrst enn')}</div>}
