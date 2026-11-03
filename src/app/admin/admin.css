@@ -90,6 +90,8 @@
 
 /* ─── notices and status ──────────────────────────────────────── */
 .a-notice { padding: var(--sp-3) var(--sp-4); border: var(--line) solid rgba(209, 178, 161, 0.2); background: var(--night); font-size: var(--fs-sm); line-height: 1.5; }
+/* empty, the line keeps its place in the page for a screen reader and takes no room */
+.a-notice:empty { padding: 0; border: 0; line-height: 0; }
 .a-notice--ok { border-color: var(--online); color: var(--paper); }
 .a-notice--err { border-color: var(--tc-red); color: var(--paper); }
 .a-notice--warn { border-color: var(--tc-yellow); color: var(--paper); }

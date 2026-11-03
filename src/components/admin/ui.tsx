@@ -51,8 +51,9 @@ export function Toggle({ checked, onChange, label, name, disabled }: { checked: 
 
 /** A status line. Messages starting with a check mark read as success, with a cross as failure. */
 export function Notice({ text, tone }: { text: string; tone?: 'ok' | 'err' | 'warn' }) {
-  if (!text) return null;
-  const t = tone ?? (text.startsWith('✓') ? 'ok' : text.startsWith('✗') ? 'err' : undefined);
+  /* mounted empty and filled, never mounted holding its words: a live region
+     put on the page already holding them is not read out */
+  const t = text ? tone ?? (text.startsWith('✓') ? 'ok' : text.startsWith('✗') ? 'err' : undefined) : undefined;
   return <p className={`a-notice${t ? ` a-notice--${t}` : ''}`} role="status" aria-live="polite">{text}</p>;
 }
 

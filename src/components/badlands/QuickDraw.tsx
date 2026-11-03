@@ -171,12 +171,14 @@ function QuickDraw({ onClose }: { onClose: () => void }) {
             {hole && <BulletHole x={hole.x} y={hole.y} />}
             <span className="b-arena__corner">Umferð {NUMERAL[Math.min(round, ROUNDS - 1)]} af {NUMERAL[ROUNDS - 1]}</span>
             {best !== null && <span className="b-arena__corner b-arena__corner--r">Best: {best} ms</span>}
-            <div className="b-arena__call" aria-live="polite">
+            <div className="b-arena__call" aria-hidden="true">
               <div>
                 <div className="b-arena__big">{call.big}</div>
                 {call.small && <div className="b-arena__small">{call.small}</div>}
               </div>
             </div>
+            {/* the call, said: a button's children are presentational to a screen reader, so the live region stands beside the arena */}
+            <p className="b-visually-hidden" role="status">{call.big}{call.small ? ` ${call.small}` : ''}</p>
           </motion.div>
 
           <div className="b-duel__side">
