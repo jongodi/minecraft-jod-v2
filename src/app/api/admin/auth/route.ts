@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { badJson, jsonObject } from '@/lib/http';
-import { isValidAdminToken, ADMIN_COOKIE } from '@/lib/auth';
+import { ADMIN_COOKIE, ADMIN_SESSION_S, isValidAdminToken, issueAdminSession } from '@/lib/auth';
 import { checkRateLimit, clearRateLimit, clientKey } from '@/lib/rateLimit';
 
 export async function POST(req: NextRequest) {
@@ -20,12 +20,12 @@ export async function POST(req: NextRequest) {
 
   await clearRateLimit(ip, 'admin-auth');
   const res = NextResponse.json({ ok: true });
-  res.cookies.set(ADMIN_COOKIE, token, {
+  /* a signed note of when the session ends (src/lib/auth.ts), never the token itself */
+  res.cookies.set(ADMIN_COOKIE, await issueAdminSession(), {
     httpOnly: true,
     sameSite: 'strict',
     path:     '/',
-    // Expire after eight hours
-    maxAge:   60 * 60 * 8,
+    maxAge:   ADMIN_SESSION_S,
     secure:   process.env.NODE_ENV === 'production',
   });
   return res;
