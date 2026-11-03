@@ -2,7 +2,6 @@
    paper with one terracotta accent, so they read as part of the notice.
    Rows: '.' empty, '#' ink, 'r' red terracotta, 'y' yellow terracotta. */
 
-export const GLYPH_SIZE = 12;
 
 export const PACK_GLYPHS: Record<string, readonly string[]> = {
   /* one per category, so no pack ever falls back to a bare chest */

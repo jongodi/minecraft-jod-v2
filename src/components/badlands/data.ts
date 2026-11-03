@@ -104,7 +104,7 @@ export const PLATES: Plate[] = [
 
 /* Older versions of the admin panel stored every caption in caps. Text typed
    since then keeps the casing the admin chose; only shouting gets calmed down. */
-export function isShouting(s: string): boolean {
+function isShouting(s: string): boolean {
   return s.length > 3 && s === s.toLocaleUpperCase('is-IS') && s !== s.toLocaleLowerCase('is-IS');
 }
 export function titleCase(s: string): string {

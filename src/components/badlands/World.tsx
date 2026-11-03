@@ -758,7 +758,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
     window.addEventListener('jod:follow', onFollow);
     window.addEventListener('jod:home', onHome);
     return () => { window.removeEventListener('jod:follow', onFollow); window.removeEventListener('jod:home', onHome); };
-  // openFull and takeHold are stable callbacks declared below
+  // openFull and takeHold are stable callbacks declared above
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jod]);
   useEffect(() => {
@@ -791,7 +791,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  // openFull is a stable callback declared below
+  // openFull is a stable callback declared above
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reached, shut, viewer, shown, night, jod]);
   /* Resting on the way down, the viewer waiting behind the flight draws its
