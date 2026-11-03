@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { readAllProfiles, allPhotos, coverPhoto } from '@/lib/crew';
+import { readLastSeen } from '@/lib/crew-seen';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,10 +15,12 @@ export interface CrewSummary {
   lastEntry:  string | null;
   cover:      string | null;
   bestDrawMs: number | null;
+  /** when they were last in the game, as the status check saw it; null if never, or without the store */
+  lastSeen:   string | null;
 }
 
 export async function GET() {
-  const profiles = await readAllProfiles();
+  const [profiles, seen] = await Promise.all([readAllProfiles(), readLastSeen().catch(() => ({} as Record<string, string>))]);
   const rows: CrewSummary[] = profiles.map(p => ({
     username:   p.username,
     bio:        p.bio,
@@ -26,6 +29,7 @@ export async function GET() {
     lastEntry:  p.entries[0]?.createdAt ?? null,
     cover:      coverPhoto(p)?.filename ?? null,
     bestDrawMs: p.bestDrawMs,
+    lastSeen:   seen[p.username] ?? null,
   }));
   return NextResponse.json(rows, { headers: { 'Cache-Control': 'no-store' } });
 }

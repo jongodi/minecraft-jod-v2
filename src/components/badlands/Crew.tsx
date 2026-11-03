@@ -11,7 +11,7 @@ import Annall from './Annall';
 import { CREW } from './data';
 import { useStats, type ServerState } from './hooks';
 import { sinceAt } from './night';
-import { plural } from '@/lib/format';
+import { formatAge, plural } from '@/lib/format';
 import type { CrewSummary } from '@/app/api/crew/route';
 
 /** The crew's room, opened over the world. Portraits of the eight with a
@@ -51,7 +51,10 @@ function Crew({ server }: { server: ServerState }) {
                     {on && <span className="b-folk__in">inni</span>}
                   </span>
                   <span className="b-folk__name">{name}</span>
-                  {row && row.photoCount > 0 && <span className="b-folk__count">{row.photoCount} {plural(row.photoCount, 'mynd', 'myndir')}</span>}
+                  {/* under a head that is in, the tag says so; under one that is not, when they were last: the one question the room is asked */}
+                  {on ? null
+                    : row?.lastSeen ? <span className="b-folk__count">inni {formatAge(row.lastSeen)}</span>
+                    : row && row.photoCount > 0 ? <span className="b-folk__count">{row.photoCount} {plural(row.photoCount, 'mynd', 'myndir')}</span> : null}
                 </Link>
               </li>
             );

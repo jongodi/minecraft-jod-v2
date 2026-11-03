@@ -6,6 +6,7 @@ import '@/app/wall.css';
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { formatAge, plural } from '@/lib/format';
+import { sinceAt } from '@/components/badlands/night';
 import type { CrewSummary } from '@/app/api/crew/route';
 import type { FeedEntry } from '@/app/api/crew/feed/route';
 import AddressBar from '@/components/badlands/AddressBar';
@@ -22,7 +23,7 @@ import { photoProps, PHOTO_SIZES } from '@/components/badlands/photo';
 import { woodClass } from '@/lib/sign-wood';
 
 /* a member's poster before the list has come: the name, nothing about the wall yet */
-const blankPoster = (username: string): CrewSummary => ({ username, bio: '', entryCount: 0, photoCount: 0, lastEntry: null, cover: null, bestDrawMs: null });
+const blankPoster = (username: string): CrewSummary => ({ username, bio: '', entryCount: 0, photoCount: 0, lastEntry: null, cover: null, bestDrawMs: null, lastSeen: null });
 
 const tabOf = (id: string) => STAT_TABS.find(t => t.id === id)!;
 /* an alias as it is set on a poster wide enough to hold it whole */
@@ -203,6 +204,8 @@ export default function RollCall({ initialPlayers }: { initialPlayers: StatRow[]
                   </>) : (<>
                     {/* someone with a charge against them has a poster already; "nothing heard yet" is for one with neither */}
                     {(m.bio || m.lastEntry || (!outlaw?.best && players !== null)) && <div className="b-poster__note">{m.bio || (m.lastEntry ? `festi eitthvað upp ${formatAge(m.lastEntry)}` : 'ekkert heyrst enn')}</div>}
+                    {/* when they were last in the game, under the charges, for one who is not in now: the lantern says the rest */}
+                    {m.lastSeen && !isIn(m.username) && <div className="b-poster__seen">síðast inni {sinceAt(m.lastSeen)}</div>}
                     {/* a bare wall says so once, in the line above; its two zeros keep their height so the board's rows stay level */}
                     <div className="b-poster__meta" aria-hidden={m.entryCount + m.photoCount === 0 || undefined} style={m.entryCount + m.photoCount === 0 ? { visibility: 'hidden' } : undefined}><span className="b-nowrap">{m.entryCount} {plural(m.entryCount, 'færsla', 'færslur')}</span> · <span className="b-nowrap">{m.photoCount} {plural(m.photoCount, 'mynd', 'myndir')}</span></div>
                   </>)}

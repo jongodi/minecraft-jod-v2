@@ -123,6 +123,11 @@ async function rememberLastOnline(body: StatusResponse, before: { at: number; bo
       const value: LastOnline = { at: new Date(now).toISOString(), names };
       await rSet(LAST_KEY, value);
       lastKnown = { at: now, value };
+      /* and each of them as last seen now (src/lib/crew-seen.ts), for the
+         roll call's "síðast inni": at the same beat, every few minutes or
+         when who is in changes */
+      const { noteSeenNow } = await import('@/lib/crew-seen');
+      await noteSeenNow(names, now);
       return;
     }
     body.versionSince = await versionSince(now) ?? undefined;

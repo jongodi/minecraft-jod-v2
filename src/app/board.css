@@ -277,6 +277,8 @@
 .b-poster--crew .b-poster__name { margin-top: var(--sp-3); }
 .b-poster__reward { font-size: var(--fs-sm); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-faint); }
 .b-poster__meta { margin-top: var(--sp-2); font-size: var(--fs-sm); color: var(--ink-faint); }
+/* when a member was last in the game: small print in the faint ink, as the meta line is */
+.b-poster__seen { margin-top: var(--sp-2); font-size: var(--fs-sm); color: var(--ink-faint); }
 .b-poster__note { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; text-wrap: balance; }
 /* what a member is wanted for, under their name on the roll call: as the room's board sets it, a little smaller */
 .b-poster--crew .b-poster__alias { font-size: var(--fs-sm); }
