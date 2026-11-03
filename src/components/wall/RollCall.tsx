@@ -100,7 +100,7 @@ export default function RollCall({ initialPlayers }: { initialPlayers: StatRow[]
     if (key && key !== 'utrunninn' && CREW.some(n => n === name)) setLink({ key, name });
     /* an error answer is JSON too ({ error }), so only an array is a list */
     const list = <T,>(url: string, set: (v: T[] | 'error') => void) =>
-      fetch(url, { cache: 'no-store' })
+      fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(15_000) })
         .then(r => (r.ok ? r.json() : null))
         .then((rows: unknown) => set(Array.isArray(rows) ? (rows as T[]) : 'error'))
         .catch(() => set('error'));
@@ -113,10 +113,11 @@ export default function RollCall({ initialPlayers }: { initialPlayers: StatRow[]
   const [players, setPlayers] = useState<StatRow[] | null>(initialPlayers);
   useEffect(() => {
     if (initialPlayers) return;
-    fetch('/api/stats')
+    /* capped, and a lost answer ends the wait: every poster kept its "sæki" for good */
+    fetch('/api/stats', { signal: AbortSignal.timeout(25_000) })
       .then(r => (r.ok ? r.json() : null))
-      .then((d: { players?: StatRow[] } | null) => { if (d?.players?.length) setPlayers(d.players); })
-      .catch(() => {});
+      .then((d: { players?: StatRow[] } | null) => { setPlayers(d?.players?.length ? d.players : []); })
+      .catch(() => setPlayers(p => p ?? []));
   }, [initialPlayers]);
   const { byName, mostWanted } = useMemo(() => outlaws(players ?? []), [players]);
   /* The most wanted hangs large only on a board drawn with the numbers: one

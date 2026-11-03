@@ -30,10 +30,13 @@ function Crew({ server }: { server: ServerState }) {
   const guests = Math.max(0, players - inside);
 
   useEffect(() => {
-    fetch('/api/crew', { cache: 'no-store' })
+    let alive = true;
+    /* the counts and the last evenings are decoration under the heads: a lost answer leaves them off, and says nothing */
+    fetch('/api/crew', { cache: 'no-store', signal: AbortSignal.timeout(15_000) })
       .then(r => (r.ok ? r.json() : null))
-      .then((rows: CrewSummary[] | null) => { if (rows) setSummary(Object.fromEntries(rows.map(r => [r.username.toLowerCase(), r]))); })
+      .then((rows: CrewSummary[] | null) => { if (rows && alive) setSummary(Object.fromEntries(rows.map(r => [r.username.toLowerCase(), r]))); })
       .catch(() => {});
+    return () => { alive = false; };
   }, []);
 
   return (
