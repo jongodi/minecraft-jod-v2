@@ -75,7 +75,10 @@ export default function BadlandsHome({ syncedOn, bases, initial }: { syncedOn: s
     const next = isRoom(id) ? id : null;
     const hash = next ? `#${next}` : '#heimur';
     if (window.location.hash !== hash) {
-      if (isRoom(window.location.hash.slice(1))) history.replaceState({ jodRoom: !!next && !!history.state?.jodRoom }, '', hash);
+      /* the state is spread each time: the full screen (jodFull) and the
+         layers (jodLayers) write their own marks into it, and a door that
+         wrote it afresh took them out, leaving a dead Back on a phone */
+      if (isRoom(window.location.hash.slice(1))) history.replaceState({ ...history.state, jodRoom: !!next && !!history.state?.jodRoom }, '', hash);
       else if (next) {
         /* The entry left behind keeps no scroll to go back to. The room opens
            over the landed world, and ✕ (which goes back) or Back out of it
@@ -83,10 +86,10 @@ export default function BadlandsHome({ syncedOn, bases, initial }: { syncedOn: s
            often as not: the camera flew back up and the town's lights went
            out. Manual for that one entry; every other stays the browser's. */
         history.scrollRestoration = 'manual';
-        history.pushState({ jodRoom: true }, '', hash);
+        history.pushState({ ...history.state, jodRoom: true }, '', hash);
         history.scrollRestoration = 'auto';
       }
-      else history.pushState({ jodRoom: false }, '', hash);
+      else history.pushState({ ...history.state, jodRoom: false }, '', hash);
     }
     setRoom(next);
     setPressed(next ?? 'heimur');
