@@ -172,6 +172,8 @@ const viewOf = (s: string | null): View | null => {
 };
 /* the start view, as data.ts writes it for the viewer: world:x:y:z:distance:rotation:angle:… */
 const START_VIEW: View = (() => { const p = MAP_START_VIEW.split(':').map(Number); return { x: p[1], y: p[2], z: p[3], d: p[4], rot: p[5], tilt: p[6] }; })();
+/* the start of the world on the locator bar, one object, so the bar's memo holds */
+const HOME_MARK = { x: START_VIEW.x, z: START_VIEW.z, name: 'Joðbær' };
 
 /** Where the live map is looking. The viewer says it a few times a second
     while it moves; it is kept here rather than in the world's state, so a
@@ -975,7 +977,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
         </div>
 
         {/* the locator bar: the other bases and the crew, by where they stand from the way the camera faces */}
-        <Locator bases={bases} players={players} home={{ x: START_VIEW.x, z: START_VIEW.z, name: 'Joðbær' }} sink={cameraSink} hidden={drawn || shut || (menu && ready)} />
+        <Locator bases={bases} players={players} home={HOME_MARK} sink={cameraSink} hidden={drawn || shut || (menu && ready)} />
 
         {/* the place picked, said once as it comes: a live region on the card itself is a new one with every place, and one put up already holding its words is not read */}
         <p className="b-visually-hidden" role="status">{chosen && !shut ? `Póstkort: ${titleCase(chosen.label)}` : ''}</p>

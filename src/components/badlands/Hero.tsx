@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import Mesa, { Rider } from './Mesa';
 import { Moon, Sun } from './Bits';
 import CopyAddress from './CopyAddress';
@@ -106,8 +106,9 @@ function Climbers({ names, known }: { names: string[]; known: boolean }) {
 function Hero({ server, season, nights, packs, facts = [] }: { server: ServerState; season: Season; nights?: PlayNightResponse; packs: number; facts?: string[] }) {
   /* someone's home: the server is up and somebody is in it */
   const home = server.online === true && server.players > 0;
-  const lower = server.list.map(n => n.toLowerCase());
-  const inside = server.online ? CREW.filter(n => lower.includes(n.toLowerCase())) : [];
+  /* one list for as long as the same names are in, so the land under the name (memoised) is not redrawn on every status answer */
+  const names = server.online ? server.list.map(n => n.toLowerCase()).join('|') : '';
+  const inside = useMemo(() => (names ? CREW.filter(n => names.split('|').includes(n.toLowerCase())) : []), [names]);
   /* the names are a live answer, so a change in them is someone coming or going (isLive) */
   const known = isLive(server);
   const moon = useMoonPhase();

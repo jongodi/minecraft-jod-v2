@@ -11,6 +11,9 @@ export interface LivePlayer { name: string; x: number; y: number; z: number }
    in view, never while the tab is hidden. */
 const EVERY = 5000;
 const URL = '/bluemap/maps/world/live/players.json';
+/* one empty list, so a world with nobody in it hands the locator the same
+   list each render and its memo holds */
+const NONE: LivePlayer[] = [];
 
 interface BlueMapPlayer { name?: string; foreign?: boolean; position?: { x?: number; y?: number; z?: number } }
 
@@ -18,7 +21,7 @@ interface BlueMapPlayer { name?: string; foreign?: boolean; position?: { x?: num
     the server is stopped or BlueMap does not answer. Only the crew, by the
     names the roster spells them with, and only a change makes a new list. */
 export function useLivePlayers(active: boolean, crew: readonly string[]): LivePlayer[] {
-  const [players, setPlayers] = useState<LivePlayer[]>([]);
+  const [players, setPlayers] = useState<LivePlayer[]>(NONE);
 
   useEffect(() => {
     if (!active) return;
@@ -48,8 +51,10 @@ export function useLivePlayers(active: boolean, crew: readonly string[]): LivePl
       if (!gone) timer = window.setTimeout(ask, EVERY);
     };
     ask();
-    return () => { gone = true; clearTimeout(timer); };
+    /* out of view, the list is let go: back in view, heads stood where
+       people had been until the first new answer, up to ten seconds on */
+    return () => { gone = true; clearTimeout(timer); setPlayers(NONE); };
   }, [active, crew]);
 
-  return active ? players : [];
+  return active ? players : NONE;
 }
