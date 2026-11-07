@@ -215,6 +215,9 @@
    everywhere. */
 .b-link { color: var(--lantern); text-decoration: underline; text-decoration-thickness: var(--line); text-underline-offset: 0.2em; }
 @media (hover: hover) { .b-link:hover { color: var(--paper); text-decoration-color: var(--lantern); } }
+/* a link whose question is already out (Reyna aftur, while it asks) is not
+   to be pressed until it is answered, so it lays the amber down */
+.b-link[aria-disabled='true'], .b-paper .b-link[aria-disabled='true'] { color: inherit; text-decoration: none; cursor: progress; }
 .b-btn {
   display: inline-flex;
   align-items: center;
