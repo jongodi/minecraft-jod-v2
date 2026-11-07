@@ -3,7 +3,8 @@ import Link from 'next/link';
 import PlayerHead from './PlayerHead';
 import { Campfire, Lantern, Phantom } from './Bits';
 import { beyond, useRoster, type OnRidge } from './roster';
-import { signalSpot } from './signal';
+import { signalSpot, type Plateau } from './signal';
+import { FAR, MID, NEAR } from './ridges';
 import { awakeWords } from '@/lib/sleepless';
 
 /* The badlands silhouettes behind the hero: three mesa layers and the ground.
@@ -19,13 +20,6 @@ import { awakeWords } from '@/lib/sleepless';
 
 const W = 480;
 const H = 120;
-
-/** [width, height] plateaus, left to right. Heights are measured up from the base. */
-type Plateau = readonly [number, number];
-
-const FAR: Plateau[]  = [[30, 40], [12, 52], [40, 60], [10, 46], [26, 40], [30, 30], [24, 44], [14, 56], [42, 66], [12, 50], [28, 38], [40, 34], [12, 48], [36, 58], [20, 44], [30, 36], [24, 42], [30, 30], [20, 40]];
-const MID: Plateau[]  = [[24, 22], [10, 34], [36, 44], [12, 30], [30, 24], [40, 18], [12, 30], [44, 52], [14, 40], [34, 26], [30, 20], [10, 30], [38, 42], [12, 32], [26, 22], [36, 16], [22, 28], [30, 24], [20, 18]];
-const NEAR: Plateau[] = [[40, 10], [14, 20], [50, 30], [12, 22], [44, 12], [30, 8], [16, 18], [60, 34], [14, 24], [40, 14], [50, 8], [20, 16], [46, 26], [12, 18], [32, 10]];
 
 function outline(plateaus: Plateau[]): string {
   let x = 0;
@@ -138,9 +132,11 @@ function Haze() {
    and again when the page changes size; until then there is no fire at all,
    and nothing else moves when it comes. The column goes up no higher than a
    step under the address and the lantern, and drifts east only once it is
-   clear of the letter (badlands.css). */
+   clear of the letter (badlands.css). On a phone the stretch beside the J is
+   only the gutter, so there the fire is narrowed to the room it has and may
+   stand across a step of the ridge (signal.ts, `narrow`). */
 const SIGNAL_WIDE = 8;      // the fire's width in the drawing's units, on a wide screen
-const SIGNAL_PHONE = 6;     // and on a phone, where the J stands at the gutter
+const SIGNAL_PHONE = 6;     // and the most it is on a phone, where the J stands at the gutter
 const SIGNAL_CLEAR = 6;     // pixels kept between the fire and the J
 const RISE_MIN = 64;        // a column shorter than this is no signal, and no fire stands
 const RISE_MAX = 256;
@@ -157,16 +153,16 @@ function SignalFire() {
     if (!mesa || !mark || !above) return;
     const place = () => {
       const box = mesa.getBoundingClientRect();
-      const fw = window.matchMedia('(max-width: 899.98px)').matches ? SIGNAL_PHONE : SIGNAL_WIDE;
+      const phone = window.matchMedia('(max-width: 899.98px)').matches;
       /* the middle ridge is not drawn on a phone (badlands.css) */
       const front = window.matchMedia('(max-width: 759.98px)').matches ? [NEAR] : [MID, NEAR];
-      const spot = signalSpot({ far: FAR, front, width: box.width, height: box.height, clear: mark.getBoundingClientRect().left - box.left - SIGNAL_CLEAR, fire: fw });
+      const spot = signalSpot({ far: FAR, front, width: box.width, height: box.height, clear: mark.getBoundingClientRect().left - box.left - SIGNAL_CLEAR, fire: phone ? SIGNAL_PHONE : SIGNAL_WIDE, narrow: phone });
       if (!spot) { setAt(null); return; }
       const u = Math.max(box.width / W, box.height / H);
       /* the fire's mouth, seven tenths of the way up its drawing, bale and all (Bits.tsx) */
-      const mouth = box.bottom - spot.h * u - fw * u * (20 / 16) * 0.7;
+      const mouth = box.bottom - spot.h * u - spot.fw * u * (20 / 16) * 0.7;
       const rise = Math.min(RISE_MAX, Math.round(mouth - above.getBoundingClientRect().bottom - 24));
-      setAt(rise < RISE_MIN ? null : { ...spot, fw, rise });
+      setAt(rise < RISE_MIN ? null : { ...spot, rise });
     };
     place();
     /* the page's size, and the lantern's plate as its lines come and go */

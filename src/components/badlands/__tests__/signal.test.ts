@@ -2,7 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createElement } from 'react';
 import { renderToString } from 'react-dom/server';
 import type { PlayNightResponse, PublicNight } from '@/app/api/playnight/route';
-import { signalOf, signalSpot, type Plateau } from '../signal';
+import { SIGNAL_LEAST, signalOf, signalSpot, type Plateau } from '../signal';
+import { FAR, NEAR } from '../ridges';
 import { useSignal } from '../night';
 
 const night = (phase: PublicNight['phase'], at: string, chosen: string | null = 'o1'): PublicNight => ({
@@ -78,7 +79,7 @@ describe('signalSpot', () => {
   it('stands the fire whole on the plateau under the middle of the clear stretch', () => {
     /* 960 by 240: two pixels to a unit, the drawing exactly the box */
     const spot = signalSpot({ far, front: [], width: 960, height: 240, clear: 200, fire: 8 });
-    expect(spot).toEqual({ x: 50, h: 40 });
+    expect(spot).toEqual({ x: 50, h: 40, fw: 8 });
   });
 
   it('keeps the fire on its plateau rather than over an edge', () => {
@@ -100,12 +101,54 @@ describe('signalSpot', () => {
   it('reads the drawing as the screen crops it, centred, on a tall box', () => {
     /* 240 by 240: two pixels to a unit by the height, so only units 180 to 300 show */
     const spot = signalSpot({ far, front: [], width: 240, height: 240, clear: 40, fire: 4 });
-    expect(spot).toEqual({ x: 190, h: 60 });
+    expect(spot).toEqual({ x: 190, h: 60, fw: 4 });
   });
 
   it('will not stand where a nearer ridge hides its foot', () => {
     const front: Plateau[][] = [[[120, 45]]];
     expect(signalSpot({ far, front, width: 960, height: 240, clear: 200, fire: 8 })).toBeNull();
-    expect(signalSpot({ far, front: [[[120, 20]]], width: 960, height: 240, clear: 200, fire: 8 })).toEqual({ x: 50, h: 40 });
+    expect(signalSpot({ far, front: [[[120, 20]]], width: 960, height: 240, clear: 200, fire: 8 })).toEqual({ x: 50, h: 40, fw: 8 });
+  });
+});
+
+describe('signalSpot on a phone, where the stretch beside the J is the gutter', () => {
+  const far: Plateau[] = [[120, 40], [120, 60], [120, 30], [120, 50]];
+
+  it('narrows the fire to the room there is, and no narrower than a fire', () => {
+    /* twelve pixels: the eight units (sixteen pixels) a wide screen draws will not go, six will */
+    expect(signalSpot({ far, front: [], width: 960, height: 240, clear: 12, fire: 8 })).toBeNull();
+    expect(signalSpot({ far, front: [], width: 960, height: 240, clear: 12, fire: 8, narrow: true })).toEqual({ x: 3, h: 40, fw: 6 });
+    expect(signalSpot({ far, front: [], width: 960, height: 240, clear: 2 * SIGNAL_LEAST - 1, fire: 8, narrow: true })).toBeNull();
+  });
+
+  it("stands across a step when a plateau's edge leaves neither side room, on the taller side", () => {
+    /* the edge at unit 5 is ten pixels in, halfway along a twenty-pixel stretch */
+    const stepped: Plateau[] = [[5, 40], [115, 60], [360, 30]];
+    expect(signalSpot({ far: stepped, front: [], width: 960, height: 240, clear: 20, fire: 8 })).toBeNull();
+    expect(signalSpot({ far: stepped, front: [], width: 960, height: 240, clear: 20, fire: 8, narrow: true })).toEqual({ x: 5, h: 60, fw: 8 });
+    /* and still not where a nearer ridge hides its foot */
+    expect(signalSpot({ far: stepped, front: [[[10, 60]]], width: 960, height: 240, clear: 20, fire: 8, narrow: true })).toBeNull();
+  });
+
+  /* the hero's own ridges, on phones where the fire never stood: the mesa
+     is 32svh tall, so the drawing's unit follows the height, and the stretch
+     is the gutter less the six pixels kept from the J (Mesa.tsx) */
+  it.each([
+    ['412 x 915', 412, 292.8, 14.36],
+    ['430 x 932', 430, 298.24, 14.36],
+    ['440 x 956', 440, 305.92, 14.36],
+    ['412 x 810, a step inside the stretch', 412, 259.2, 14.36],
+    ['390 x 770', 390, 246.4, 13.7],
+    ['360 x 700', 360, 224, 12.8],
+    ['390 x 844', 390, 270.08, 13.7],
+  ])("stands on %s, between the screen's edge and the J", (_, width, height, clear) => {
+    const spot = signalSpot({ far: FAR, front: [NEAR], width, height, clear, fire: 6, narrow: true });
+    expect(spot).not.toBeNull();
+    const u = Math.max(width / 480, height / 120);
+    const px = (unit: number) => width / 2 + (unit - 240) * u;
+    expect(px(spot!.x - spot!.fw / 2)).toBeGreaterThanOrEqual(-1e-9);
+    expect(px(spot!.x + spot!.fw / 2)).toBeLessThanOrEqual(clear + 1e-9);
+    expect(spot!.fw).toBeLessThanOrEqual(6);
+    expect(spot!.fw).toBeGreaterThanOrEqual(SIGNAL_LEAST);
   });
 });
