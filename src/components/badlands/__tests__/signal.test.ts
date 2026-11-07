@@ -1,6 +1,9 @@
-import { describe, expect, it } from 'vitest';
-import type { PublicNight } from '@/app/api/playnight/route';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { createElement } from 'react';
+import { renderToString } from 'react-dom/server';
+import type { PlayNightResponse, PublicNight } from '@/app/api/playnight/route';
 import { signalOf, signalSpot, type Plateau } from '../signal';
+import { useSignal } from '../night';
 
 const night = (phase: PublicNight['phase'], at: string, chosen: string | null = 'o1'): PublicNight => ({
   id: 'n1', by: 'stebbias', note: '', phase, options: [{ id: 'o1', at, yes: ['stebbias'] }], answered: ['stebbias'],
@@ -33,6 +36,38 @@ describe('signalOf', () => {
 
   it('looks past an evening that is over to the next', () => {
     expect(signalOf([night('over', '2026-11-06T20:00:00Z'), { ...night('chosen', '2026-11-07T21:00:00Z'), id: 'n2' }], now)).toBe(true);
+  });
+});
+
+describe('the signal as the page was drawn', () => {
+  /* a fire chosen for 8 November; the page drawn at ten the evening before,
+     and opened by the first visitor of the fire's day */
+  const nights: PlayNightResponse = { nights: [night('chosen', '2026-11-08T20:00:00Z')], me: null, max: 5 };
+  const drawnAt = Date.parse('2026-11-07T22:00:00Z');
+  const openedAt = Date.parse('2026-11-08T09:00:00Z');
+  function Probe({ drawn }: { drawn: boolean }) {
+    return createElement('i', null, useSignal(nights, drawn) ? 'fire' : 'none');
+  }
+  afterEach(() => { vi.useRealTimers(); });
+
+  it("is the same for the server and the browser's first drawing over its markup, whatever the browser's clock says", () => {
+    const drawn = signalOf(nights.nights, drawnAt);
+    vi.useFakeTimers();
+    vi.setSystemTime(drawnAt);
+    const server = renderToString(createElement(Probe, { drawn }));
+    /* the browser's clock alone would stand the fire, which the markup has not got */
+    vi.setSystemTime(openedAt);
+    expect(signalOf(nights.nights)).toBe(true);
+    /* hydration draws with the same server snapshot renderToString takes, so this is the browser's first drawing */
+    const first = renderToString(createElement(Probe, { drawn }));
+    expect(server).toBe('<i>none</i>');
+    expect(first).toBe(server);
+  });
+
+  it("carries the page's answer either way, a fire drawn on its day as much as none", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(Date.parse('2026-11-09T09:00:00Z'));
+    expect(renderToString(createElement(Probe, { drawn: true }))).toBe('<i>fire</i>');
   });
 });
 

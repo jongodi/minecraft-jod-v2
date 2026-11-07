@@ -6,14 +6,13 @@ import { Moon, Sun } from './Bits';
 import CopyAddress from './CopyAddress';
 import StatusLantern from './StatusLantern';
 import { NightLine } from './NightLine';
-import { usePlayNight } from './night';
+import { usePlayNight, useSignal } from './night';
 import { isLive, useAway, type ServerState } from './hooks';
 import type { Season } from '@/lib/season';
 import type { PlayNightResponse } from '@/app/api/playnight/route';
 import { YuleLad, useMoonPhase } from './Season';
 import { CREW, WORLD_BORN } from './data';
 import { beyond, useRoster } from './roster';
-import { signalOf } from './signal';
 
 /* The title screen's splash: what the game tilts in yellow over its logo,
    one line picked at random each time the title screen comes up. These are
@@ -106,8 +105,10 @@ function Climbers({ names, known, awake }: { names: string[]; known: boolean; aw
 
 /* `sleepless`: who has gone three of the game's days without a bed, counted
    on the server (src/lib/home-data.ts), so the phantoms over them are in the
-   page's markup and nothing is asked for to draw them */
-function Hero({ server, season, nights, packs, facts = [], sleepless = NONE_AWAKE }: { server: ServerState; season: Season; nights?: PlayNightResponse; packs: number; facts?: string[]; sleepless?: Record<string, number> }) {
+   page's markup and nothing is asked for to draw them. `signal`: whether the
+   signal fire stood by the clock the page was drawn with, worked out there
+   too, so the browser's first drawing over the markup says the same */
+function Hero({ server, season, nights, packs, facts = [], sleepless = NONE_AWAKE, signal: drawn = false }: { server: ServerState; season: Season; nights?: PlayNightResponse; packs: number; facts?: string[]; sleepless?: Record<string, number>; signal?: boolean }) {
   /* someone's home: the server is up and somebody is in it */
   const home = server.online === true && server.players > 0;
   /* one list for as long as the same names are in, so the land under the name (memoised) is not redrawn on every status answer */
@@ -120,11 +121,12 @@ function Hero({ server, season, nights, packs, facts = [], sleepless = NONE_AWAK
      burnt out while the page was open changed the line beside the lantern
      but not the splash's word about it */
   const { state: tonight } = usePlayNight(nights);
-  /* the day of a fire, the signal fire stands on the far ridge; told again at
-     each answer of the nights, which comes every minute, so it goes up on the
-     day and is gone once the evening is over (signal.ts). One boolean, so the
+  /* the day of a fire, the signal fire stands on the far ridge; drawn first
+     as the page was, then told by the browser's clock at each answer of the
+     nights, which comes every minute, so it goes up on the day and is gone
+     once the evening is over (useSignal, signal.ts). One boolean, so the
      land under the name (memoised) is redrawn only when it changes. */
-  const signal = useMemo(() => signalOf((tonight ?? nights)?.nights ?? []), [tonight, nights]);
+  const signal = useSignal(tonight ?? nights, drawn);
   /* scrolled past, the hero's critters and lantern hold still (useAway) */
   const root = useRef<HTMLElement>(null);
   useAway(root);

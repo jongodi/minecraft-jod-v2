@@ -11,8 +11,7 @@ import { SERVER_IP, SITE_NAME } from './data';
 import AmbienceToggle from '@/effects/AmbienceToggle';
 import { useAway, useBackCloses, useBackdropClose, useScrollLock } from './hooks';
 import { YuleLad, seasonClass, useSeason } from './Season';
-import { usePlayNight } from './night';
-import { signalOf } from './signal';
+import { usePlayNight, useSignal } from './night';
 import type { Season } from '@/lib/season';
 import type { PlayNightResponse } from '@/app/api/playnight/route';
 
@@ -39,11 +38,13 @@ function FireDoor({ signal = false, onOpen }: { signal?: boolean; onOpen: () => 
   );
 }
 /* The home page's fire reads the nights the page already polls (night.ts),
-   in a part of its own, so a poll redraws the fire and not the footer. The
-   other pages' footers ask nothing. */
-function NightFireDoor({ nights, onOpen }: { nights: PlayNightResponse; onOpen: () => void }) {
+   in a part of its own, so a poll redraws the fire and not the footer, and
+   is drawn first with the signal the page was drawn with (`drawn`), as the
+   hero's is. The other pages' footers ask nothing. */
+function NightFireDoor({ nights, drawn, onOpen }: { nights: PlayNightResponse; drawn: boolean; onOpen: () => void }) {
   const { state } = usePlayNight(nights);
-  return <FireDoor signal={signalOf((state ?? nights).nights)} onOpen={onOpen} />;
+  const signal = useSignal(state ?? nights, drawn);
+  return <FireDoor signal={signal} onOpen={onOpen} />;
 }
 
 /* Við eldinn: the crew who are in stand on the ground beside the fire, the
@@ -77,10 +78,11 @@ function FireCrew({ crew, known }: { crew: string; known: boolean }) {
     on the foot of the rock. Tap the fire and the duel comes out. Climbing
     back to the sunset rewinds the sky on the way up, because the sky is
     scroll. On the home page, `nights`: the nights it was drawn with, so the
-    fire knows the day of a fire; and `crew`, who is in, their names in one
+    fire knows the day of a fire, and `signal`, whether the page was drawn on
+    one; and `crew`, who is in, their names in one
     string so a status answer with the same names is no change to the memo,
     with `known`, whether that is a live answer at all. */
-function Footer({ season: initial, nights, crew = '', known = false }: { season?: Season; nights?: PlayNightResponse; crew?: string; known?: boolean } = {}) {
+function Footer({ season: initial, nights, signal = false, crew = '', known = false }: { season?: Season; nights?: PlayNightResponse; signal?: boolean; crew?: string; known?: boolean } = {}) {
   const [duel, setDuel] = useState(false);
   const season = useSeason(initial);
   useScrollLock(duel);
@@ -118,7 +120,7 @@ function Footer({ season: initial, nights, crew = '', known = false }: { season?
 
           <div className="b-foot__camp">
             <FireCrew crew={crew} known={known} />
-            {nights ? <NightFireDoor nights={nights} onOpen={openDuel} /> : <FireDoor onOpen={openDuel} />}
+            {nights ? <NightFireDoor nights={nights} drawn={signal} onOpen={openDuel} /> : <FireDoor onOpen={openDuel} />}
             <YuleLad season={season} spot="fire" />
           </div>
 
