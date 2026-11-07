@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { outlaws } from '@/components/badlands/outlaws';
-import { posted, standingOf, wallBounty } from '../bounty';
+import { posted, standingOf, wallPosted } from '../bounty';
 
 describe('what a wanted poster posts against a member', () => {
   const players = [
@@ -25,20 +25,23 @@ describe('what a wanted poster posts against a member', () => {
     expect(standingOf(players, 'nobody')).toBeUndefined();
   });
 
-  it('posts the same bounty on a wall as on the roll call, and play time only with no standing in hand', () => {
+  it('posts the same lines on a wall as on the roll call, the charge always with its bounty', () => {
     const fafnir = byName.get('fafnir1994')!;
-    /* the roll call's bounty for him is the one he leads, not his 94 hours */
-    expect(wallBounty(fafnir.best, 94)).toBe(posted(fafnir.best!).bounty);
-    expect(wallBounty(standingOf(players, 'fafnir1994')!.best, 94)).toBe('2 kvöld');
+    /* the roll call's lines for him are the charge he leads, not his 94 hours */
+    expect(wallPosted(fafnir.best, 94)).toEqual(posted(fafnir.best!));
+    expect(wallPosted(standingOf(players, 'fafnir1994')!.best, 94)).toEqual({ alias: 'Svikarinn', place: null, charge: 'Sagðist mæta en kom ekki', bounty: '2 kvöld' });
+    /* a bounty with no unit of its own stands under the charge it counts:
+       4 raids driven off, never a bare 'Verðlaun 4' */
+    expect(wallPosted(byName.get('eikibleiki')!.best, 20)).toEqual({ alias: 'Ræningja\u00ADbaninn', place: null, charge: 'Árásir hraktar', bounty: '4' });
     /* one who leads nothing is posted for their second place on deaths from
        the first paint, the server's standing, not for their 89 hours */
     const lonely = standingOf(players, 'IMlonely')!;
     expect(lonely.led).toEqual([]);
     expect(lonely.best).toEqual({ id: 'deaths', rank: 2, value: 30 });
-    expect(wallBounty(lonely.best, 89)).toBe('30');
-    /* no standing in hand: their play time, in its unit */
-    expect(wallBounty(null, 20)).toBe('20 klst.');
-    expect(wallBounty(null, 0)).toBeNull();
-    expect(wallBounty(null, undefined)).toBeNull();
+    expect(wallPosted(lonely.best, 89)).toEqual({ alias: null, place: 2, charge: 'Dauðsföll', bounty: '30' });
+    /* no standing in hand: their play time, under its own charge and in its unit */
+    expect(wallPosted(null, 20)).toEqual({ alias: null, place: null, charge: 'Spilatími', bounty: '20 klst.' });
+    expect(wallPosted(null, 0)).toBeNull();
+    expect(wallPosted(null, undefined)).toBeNull();
   });
 });

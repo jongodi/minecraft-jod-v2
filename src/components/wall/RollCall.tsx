@@ -22,6 +22,7 @@ import { outlaws, type Outlaw, type StatRow } from '@/components/badlands/outlaw
 import { photoProps, PHOTO_SIZES } from '@/components/badlands/photo';
 import { woodClass } from '@/lib/sign-wood';
 import { posted, tabOf } from './bounty';
+import PosterCharge from './PosterCharge';
 
 /* a member's poster before the list has come: the name, nothing about the wall yet */
 const blankPoster = (username: string): CrewSummary => ({ username, bio: '', entryCount: 0, photoCount: 0, lastEntry: null, cover: null, bestDrawMs: null, lastSeen: null });
@@ -32,8 +33,8 @@ const whole = (nick: string) => nick.replace(/\u00AD/g, '');
 /* What a member's poster says they are wanted for: the alias of a charge
    they are the outlaw of, in red, or their place on the charge they stand
    highest on; the charge; and their number on it, as the bounty. Read off
-   the same numbers as the board in the crew's room (outlaws.ts), through
-   the same lines the member's own poster on their wall prints (bounty.ts).
+   the same numbers as the board in the crew's room (outlaws.ts), in the
+   same lines the member's own poster on their wall prints (PosterCharge.tsx).
    Always three lines, held open while the numbers are on their way, so a
    poster never grows under the visitor when they come. */
 function Charge({ outlaw, waiting }: { outlaw: Outlaw | undefined; waiting: boolean }) {
@@ -47,16 +48,7 @@ function Charge({ outlaw, waiting }: { outlaw: Outlaw | undefined; waiting: bool
       </span>
     ) : null;
   }
-  const p = posted(best);
-  return (
-    <>
-      {p.alias !== null
-        ? <span className="b-poster__alias">„{p.alias}“</span>
-        : <span className="b-poster__place">{p.place}. sæti</span>}
-      <span className="b-poster__charge">{p.charge}</span>
-      <span className="b-poster__bounty"><span className="b-poster__reward">Verðlaun</span> <span className="b-poster__val">{p.bounty}</span></span>
-    </>
-  );
+  return <PosterCharge p={posted(best)} />;
 }
 
 /** The roll call: one poster per member on one notice board, with the

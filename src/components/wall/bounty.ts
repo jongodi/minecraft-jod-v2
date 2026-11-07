@@ -10,11 +10,11 @@ import { outlaws, type Charge, type Outlaw, type StatRow } from '@/components/ba
 
 export const tabOf = (id: StatKey) => STAT_TABS.find(t => t.id === id)!;
 
-/** The three lines a poster prints under the name. */
+/** The three lines a poster prints under the name (PosterCharge.tsx). */
 export interface Posted {
   /** the alias, when they are the charge's outlaw; it is printed in red in place of a place */
   alias: string | null;
-  /** their place on the charge when someone else is its outlaw: 2 for "2. sæti" */
+  /** their place on the charge when someone else is its outlaw: 2 for "2. sæti"; null on a wall's play time, posted with no standing in hand */
   place: number | null;
   /** the charge itself */
   charge: string;
@@ -38,10 +38,14 @@ export function standingOf(players: StatRow[], username: string): Outlaw | undef
   return outlaws(players).byName.get(username.toLowerCase());
 }
 
-/** The bounty on a member's own poster: the roll call's, from the standing
-    the server reads for the first paint and the live numbers confirm; their
-    play time only where the numbers in hand carry no standing for them. */
-export function wallBounty(best: Charge | null, playTimeHours: number | null | undefined): string | null {
-  if (best) return posted(best).bounty;
-  return playTimeHours && playTimeHours > 0 ? tabOf('playTimeHours').unit(playTimeHours) : null;
+/** What a member's own poster posts under their name: the roll call's lines,
+    from the standing the server reads for the first paint and the live
+    numbers confirm. Where the numbers in hand carry no standing for them,
+    their play time under its own charge, so the bounty is never a bare
+    number with nothing to say what it counts. */
+export function wallPosted(best: Charge | null, playTimeHours: number | null | undefined): Posted | null {
+  if (best) return posted(best);
+  if (!playTimeHours || playTimeHours <= 0) return null;
+  const tab = tabOf('playTimeHours');
+  return { alias: null, place: null, charge: tab.label, bounty: tab.unit(playTimeHours) };
 }

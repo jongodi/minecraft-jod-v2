@@ -23,7 +23,8 @@ import { landFocus, seedSession, useBackCloses, useBackdropClose, useCrewSession
 import { photoProps, PHOTO_SIZES } from '@/components/badlands/photo';
 import type { WallAdvancement } from '@/lib/advancements';
 import Advancements from './Advancements';
-import { standingOf, wallBounty } from './bounty';
+import { standingOf, wallPosted } from './bounty';
+import PosterCharge from './PosterCharge';
 import Composer from './Composer';
 import Print from './Print';
 
@@ -393,8 +394,8 @@ export default function Wall({ initial, places, initialStats = null, initialLed 
   }, [prints.length]);
   const cover  = coverPhoto(profile);
   const built  = places.filter(p => p.builders.some(b => sameUser(b, username)));
-  /* the same bounty the roll call's poster of them posts, so the poster pressed is the poster arrived at */
-  const bounty = wallBounty(best, stats?.playTimeHours);
+  /* the same lines the roll call's poster of them posts, so the poster pressed is the poster arrived at */
+  const wanted = wallPosted(best, stats?.playTimeHours);
 
   const patchProfile = useCallback(async (body: { bio?: string; coverPhotoId?: string | null }) => {
     const res = await fetch(`/api/crew/${username}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -483,9 +484,7 @@ export default function Wall({ initial, places, initialStats = null, initialLed 
                 {/* the masthead says Eftirlýst; the kicker says what of */}
                 <div className="b-paper__kicker">JOÐ-félagi</div>
                 <h1 className="w-poster__name" style={{ '--name-em': nameEm(username) } as CSSProperties}>{username}</h1>
-                {bounty && (
-                  <div className="w-poster__bounty"><span className="b-poster__reward">Verðlaun</span> <span className="b-poster__val">{bounty}</span></div>
-                )}
+                {wanted && <div className="w-poster__wanted"><PosterCharge p={wanted} /></div>}
               </div>
               <div className="b-inline">
                 {isOwner ? (
