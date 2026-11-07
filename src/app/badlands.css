@@ -2840,7 +2840,7 @@ html.is-map-full { overflow: hidden; }
 }
 
 /* the fire, and its light pooled wide across the band */
-.b-foot__camp { grid-area: camp; position: relative; display: flex; justify-content: center; align-items: flex-end; }
+.b-foot__camp { --sign: 7rem; grid-area: camp; position: relative; display: flex; justify-content: center; align-items: flex-end; }
 .b-foot__camp::before {
   content: '';
   position: absolute;
@@ -2854,10 +2854,54 @@ html.is-map-full { overflow: hidden; }
   pointer-events: none;
 }
 /* The duel's door is the fire and the sign planted beside it. The sign's
-   width is kept as an empty margin on the fire's other side, so the fire
-   stays the middle of the band and its light falls where it burns. */
-.b-foot__fire { --sign: 7rem; display: flex; align-items: flex-end; margin-left: var(--sign); padding: 0; border: 0; background: none; cursor: pointer; }
-@media (max-width: 1023.98px) { .b-foot__fire { --sign: 6.25rem; } }
+   width (--sign, on the camp, so the crew who stand in it can read it too)
+   is kept as an empty margin on the fire's other side, so the fire stays
+   the middle of the band and its light falls where it burns. */
+.b-foot__fire { display: flex; align-items: flex-end; margin-left: var(--sign); padding: 0; border: 0; background: none; cursor: pointer; }
+@media (max-width: 1023.98px) { .b-foot__camp { --sign: 6.25rem; } }
+/* Við eldinn (Footer.tsx): the crew who are in, standing on the ground in
+   that margin, on the fire's side away from its sign, and out of the flow
+   of the band, so the fire stays its middle. The same whole skins and name
+   tags as on the ridge, at a scale set beside the fire, without a lantern,
+   since the fire lights them; the first nearest the fire, the rest further
+   into the dark, and their tags at two heights as the ridge's are. Up to
+   three from 720 px, one and a count under it. One who comes in while the
+   fire is in view walks in out of the dark in the climb's four steps, and
+   one who goes walks back into it; under reduced motion they are simply
+   there or not. */
+.b-foot__crew {
+  --u: calc(2.25rem / 12);
+  position: absolute;
+  right: calc(100% - var(--sign) + var(--sp-2));
+  bottom: 0;
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: flex-end;
+  gap: calc(var(--u) * 3);
+}
+@media (max-width: 719.98px) { .b-foot__crew { --u: calc(1.75rem / 12); } }
+.b-foot__mate { position: relative; display: block; width: calc(var(--u) * 12); line-height: 0; }
+.b-foot__mate::before { content: ''; position: absolute; inset: -0.5rem calc(var(--u) * -1); }
+.b-foot__mate img { display: block; width: 100%; height: auto; aspect-ratio: 1 / 2; image-rendering: pixelated; }
+.b-foot__mate > .b-nametag { position: absolute; left: 50%; bottom: calc(100% + var(--sp-1)); translate: -50% 0; pointer-events: none; }
+.b-foot__mate:nth-child(even) > .b-nametag { bottom: calc(100% + var(--sp-1) + 0.75rem); }
+.b-foot__more { align-self: flex-start; }
+.b-foot__mate:focus-visible { outline: none; }
+.b-foot__mate:focus-visible img { filter: drop-shadow(var(--px) 0 0 var(--lantern)) drop-shadow(calc(var(--px) * -1) 0 0 var(--lantern)) drop-shadow(0 var(--px) 0 var(--lantern)) drop-shadow(0 calc(var(--px) * -1) 0 var(--lantern)); }
+@media (hover: hover) {
+  .b-foot__mate:hover img { filter: drop-shadow(var(--px) 0 0 var(--paper)) drop-shadow(calc(var(--px) * -1) 0 0 var(--paper)) drop-shadow(0 var(--px) 0 var(--paper)) drop-shadow(0 calc(var(--px) * -1) 0 var(--paper)); }
+  .b-foot__mate:hover > .b-nametag { color: var(--lantern); }
+}
+.b-foot__mate:active img { translate: var(--press); }
+.b-foot__mate.is-coming { animation: b-walk-in calc(var(--dur-step) * 4) var(--ease-step) backwards; }
+.b-foot__mate.is-going  { animation: b-walk-in calc(var(--dur-step) * 4) var(--ease-step) reverse forwards; pointer-events: none; }
+@keyframes b-walk-in { from { transform: translateX(-100%); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .b-foot__mate.is-coming, .b-foot__mate.is-going { animation: none; } }
+.b-foot__more--narrow { display: none; }
+@media (max-width: 719.98px) {
+  .b-foot__mate:nth-child(n + 2), .b-foot__more--wide { display: none; }
+  .b-foot__more--narrow { display: block; }
+}
 /* a short plank on a post, the word burnt in lantern light, as the world's
    lantern has its sign nailed under it; the post stands in the ground the
    fire stands on */

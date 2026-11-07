@@ -12,7 +12,7 @@ import type { Season } from '@/lib/season';
 import type { PlayNightResponse } from '@/app/api/playnight/route';
 import { YuleLad, useMoonPhase } from './Season';
 import { CREW, WORLD_BORN } from './data';
-import { useRoster } from './roster';
+import { beyond, useRoster } from './roster';
 import { signalOf } from './signal';
 
 /* The title screen's splash: what the game tilts in yellow over its logo,
@@ -95,7 +95,7 @@ function Climbers({ names, known, awake }: { names: string[]; known: boolean; aw
   const { roster, settle } = useRoster(names, known);
   if (roster.length === 0) return null;
   const shown = roster.slice(0, 2);
-  const more = names.length - shown.filter(r => r.phase !== 'going').length;
+  const more = beyond(names.length, shown);
   return (
     <div className="b-hero__climbers">
       {shown.map(r => <Rider key={r.name} name={r.name} phase={r.phase} onWalked={settle} awake={awake[r.name.toLowerCase()]} className="b-hero__climber" />)}

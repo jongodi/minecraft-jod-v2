@@ -2,7 +2,7 @@ import { memo, useEffect, useRef, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
 import PlayerHead from './PlayerHead';
 import { Campfire, Lantern, Phantom } from './Bits';
-import { useRoster, type OnRidge } from './roster';
+import { beyond, useRoster, type OnRidge } from './roster';
 import { signalSpot } from './signal';
 import { awakeWords } from '@/lib/sleepless';
 
@@ -246,8 +246,9 @@ const RIDERS_SHOWN = 3;
    and `onWalked` says the climb is over. `awake` is the nights this member
    has gone without a bed, when the game would send phantoms after them
    (src/lib/sleepless.ts): two circle over their head as the sky goes dark,
-   and pointed at or focused, the tag says why. */
-export function Rider({ name, className, phase = 'here', onWalked, awake }: { name: string; className: string; phase?: OnRidge['phase']; onWalked?: (name: string) => void; awake?: number }) {
+   and pointed at or focused, the tag says why. At the campfire (Footer.tsx)
+   the fire lights them, so they carry no lantern (`lantern`). */
+export function Rider({ name, className, phase = 'here', onWalked, awake, lantern = true }: { name: string; className: string; phase?: OnRidge['phase']; onWalked?: (name: string) => void; awake?: number; lantern?: boolean }) {
   return (
     <Link href={`/crew/${name}`} className={`${className}${phase !== 'here' ? ` is-${phase}` : ''}`}
       aria-label={phase === 'going' ? `${name} fór út. Veggurinn` : `${name} er inni${awake ? ` og ${awakeWords(awake)}` : ''}. Veggurinn`}
@@ -255,7 +256,7 @@ export function Rider({ name, className, phase = 'here', onWalked, awake }: { na
       <span className="b-nametag" aria-hidden="true">{name}</span>
       {awake ? <span className="b-nametag b-nametag--awake" aria-hidden="true">{name} · {awakeWords(awake)}</span> : null}
       <PlayerHead name={name} size={32} full alt="" />
-      <Lantern lit className="b-mesa__held" />
+      {lantern && <Lantern lit className="b-mesa__held" />}
       {awake ? <span className="b-phantoms" aria-hidden="true"><Phantom /><Phantom /></span> : null}
     </Link>
   );
@@ -270,7 +271,7 @@ function Riders({ names, known, awake }: { names: string[]; known: boolean; awak
   const { roster, settle } = useRoster(names, known);
   if (roster.length === 0) return null;
   const shown = roster.slice(0, RIDERS_SHOWN);
-  const more = names.length - shown.filter(r => r.phase !== 'going').length;
+  const more = beyond(names.length, shown);
   return (
     <div className="b-mesa__riders">
       {shown.map(r => <Rider key={r.name} name={r.name} phase={r.phase} onWalked={settle} awake={awake[r.name.toLowerCase()]} className="b-mesa__rider" />)}

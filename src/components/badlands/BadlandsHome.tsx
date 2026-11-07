@@ -11,8 +11,8 @@ import AddressBar from './AddressBar';
 import Hero from './Hero';
 import World from './World';
 import Footer from './Footer';
-import { SECTIONS, isRoom, plainClick, type PlaceId, type RoomId } from './data';
-import { modalOpen, seedStatus, showWorld, useEffectsAllowed, useReducedMotionPref, useScrollSpy, useServerStatus } from './hooks';
+import { CREW, SECTIONS, isRoom, plainClick, type PlaceId, type RoomId } from './data';
+import { isLive, modalOpen, seedStatus, showWorld, useEffectsAllowed, useReducedMotionPref, useScrollSpy, useServerStatus } from './hooks';
 import { seedNights } from './night';
 import { seasonClass, useSeason } from './Season';
 
@@ -43,6 +43,11 @@ export default function BadlandsHome({ syncedOn, bases, initial }: { syncedOn: s
   const [room, setRoom] = useState<RoomId | null>(null);
   const [pressed, setPressed] = useState<PlaceId | null>(null);
   const { plates, map, pinned, nights, packs, facts, fresh, sleepless } = initial;
+  /* who is in, for the fire at the foot of the page: one string, as the hero
+     keys its own list, so the footer (memoised) is drawn again only when
+     somebody comes or goes, not at every answer of the status */
+  const lower = server.online ? server.list.map(n => n.toLowerCase()) : [];
+  const crew = CREW.filter(n => lower.includes(n.toLowerCase())).join('|');
 
 
   /* The hash is the source of truth: read it on arrival, on the back button,
@@ -153,7 +158,7 @@ export default function BadlandsHome({ syncedOn, bases, initial }: { syncedOn: s
         <Hero server={server} season={season} nights={nights} packs={packs} facts={facts} sleepless={sleepless} />
         <World plates={plates} config={map} pinned={pinned} server={server} syncedOn={syncedOn} bases={bases} fresh={fresh} room={room} onCloseRoom={closeRoom} />
       </main>
-      <Footer season={season} nights={nights} />
+      <Footer season={season} nights={nights} crew={crew} known={isLive(server)} />
     </div>
   );
 }

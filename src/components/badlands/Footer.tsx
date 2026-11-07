@@ -1,11 +1,12 @@
 'use client';
 
-import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { usePathname } from 'next/navigation';
 import { Campfire, ChevronIcon } from './Bits';
-import { Ridge } from './Mesa';
+import { Ridge, Rider } from './Mesa';
+import { beyond, useRoster } from './roster';
 import { SERVER_IP, SITE_NAME } from './data';
 import AmbienceToggle from '@/effects/AmbienceToggle';
 import { useAway, useBackCloses, useBackdropClose, useScrollLock } from './hooks';
@@ -45,14 +46,41 @@ function NightFireDoor({ nights, onOpen }: { nights: PlayNightResponse; onOpen: 
   return <FireDoor signal={signalOf((state ?? nights).nights)} onOpen={onOpen} />;
 }
 
+/* Við eldinn: the crew who are in stand on the ground beside the fire, the
+   same whole skins and name tags as on the ridge at the start of the evening,
+   so the page ends where it began, with who is there. Figures only, no
+   words: the lantern and the ridge have said it already. Up to three on a
+   wide screen and one with a count on a phone (badlands.css), the first
+   nearest the fire. One who comes in while the fire is in view walks in out
+   of the dark, and one who goes walks back into it (useRoster). */
+const AT_FIRE = 3;
+function FireCrew({ crew, known }: { crew: string; known: boolean }) {
+  const names = useMemo(() => (crew ? crew.split('|') : []), [crew]);
+  const { roster, settle } = useRoster(names, known);
+  if (roster.length === 0) return null;
+  const shown = roster.slice(0, AT_FIRE);
+  /* the rest, past the three a wide screen shows and past the one a phone does */
+  const wide = beyond(names.length, shown);
+  const narrow = beyond(names.length, shown.slice(0, 1));
+  return (
+    <div className="b-foot__crew">
+      {shown.map(r => <Rider key={r.name} name={r.name} phase={r.phase} onWalked={settle} lantern={false} className="b-foot__mate" />)}
+      {wide > 0 && <span className="b-nametag b-foot__more b-foot__more--wide">+{wide}</span>}
+      {narrow > 0 && <span className="b-nametag b-foot__more b-foot__more--narrow">+{narrow}</span>}
+    </div>
+  );
+}
+
 /** The campfire: the last light. One band of ground at the foot of the page,
     the fire burning in the middle of it in a ring of stones, in front of the
     same mesas the evening opened over, its light pooled across the ground and
     on the foot of the rock. Tap the fire and the duel comes out. Climbing
     back to the sunset rewinds the sky on the way up, because the sky is
-    scroll. `nights`, on the home page: the nights it was drawn with, so the
-    fire knows the day of a fire. */
-function Footer({ season: initial, nights }: { season?: Season; nights?: PlayNightResponse } = {}) {
+    scroll. On the home page, `nights`: the nights it was drawn with, so the
+    fire knows the day of a fire; and `crew`, who is in, their names in one
+    string so a status answer with the same names is no change to the memo,
+    with `known`, whether that is a live answer at all. */
+function Footer({ season: initial, nights, crew = '', known = false }: { season?: Season; nights?: PlayNightResponse; crew?: string; known?: boolean } = {}) {
   const [duel, setDuel] = useState(false);
   const season = useSeason(initial);
   useScrollLock(duel);
@@ -89,6 +117,7 @@ function Footer({ season: initial, nights }: { season?: Season; nights?: PlayNig
           </Link>
 
           <div className="b-foot__camp">
+            <FireCrew crew={crew} known={known} />
             {nights ? <NightFireDoor nights={nights} onOpen={openDuel} /> : <FireDoor onOpen={openDuel} />}
             <YuleLad season={season} spot="fire" />
           </div>

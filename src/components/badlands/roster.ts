@@ -6,6 +6,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
     or on the way out. */
 export interface OnRidge { name: string; phase: 'here' | 'coming' | 'going' }
 
+/** How many of `total` who are in a count beside the figures stands for,
+    when only `shown` of the roster are drawn: one on their way out is still
+    drawn but no longer in, so they are no reason to count one fewer. */
+export function beyond(total: number, shown: readonly OnRidge[]): number {
+  return Math.max(0, total - shown.filter(r => r.phase !== 'going').length);
+}
+
 /* longer than the climb itself (badlands.css), should its end never be heard */
 const WALK_MS = 1200;
 
