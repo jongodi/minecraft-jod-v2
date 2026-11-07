@@ -8,9 +8,18 @@ import Offline from './Offline';
    first screen. Each is verified to carry þ ð æ ö á é í ó ú ý; the Latin-1
    block lives in the "latin" subset files, not in "latin-ext". Every face
    gets a size-adjusted fallback, so the line a word takes before its font
-   arrives is the line it keeps, and the swap moves nothing. */
+   arrives is the line it keeps, and the swap moves nothing.
+   The files are the @fontsource "latin" woff2 files with their TrueType
+   hinting taken out, and nothing else changed (src/app/fonts): the same
+   glyphs, outlines, advances and line metrics, so the fallbacks still fit.
+   Hinting was a third of the bytes on the critical path (43 kB, now 29),
+   and most screens draw without it anyway: Chromium draws every size the
+   site sets them at pixel for pixel the same either way. Made once with
+   pyftsubset <file> --unicodes='*' --no-hinting --flavor=woff2, every name
+   record kept and the licences beside them; the link cards and letters
+   still read the @fontsource woff files. */
 const display = localFont({
-  src: '../../node_modules/@fontsource/alfa-slab-one/files/alfa-slab-one-latin-400-normal.woff2',
+  src: './fonts/alfa-slab-one-latin-400-normal.woff2',
   weight: '400',
   variable: '--font-display-loaded',
   display: 'swap',
@@ -19,8 +28,8 @@ const display = localFont({
    proportions, crisp at any size; the bold cut carries names and kickers. */
 const text = localFont({
   src: [
-    { path: '../../node_modules/@fontsource/pixelify-sans/files/pixelify-sans-latin-400-normal.woff2', weight: '400', style: 'normal' },
-    { path: '../../node_modules/@fontsource/pixelify-sans/files/pixelify-sans-latin-600-normal.woff2', weight: '600', style: 'normal' },
+    { path: './fonts/pixelify-sans-latin-400-normal.woff2', weight: '400', style: 'normal' },
+    { path: './fonts/pixelify-sans-latin-600-normal.woff2', weight: '600', style: 'normal' },
   ],
   variable: '--font-text-loaded',
   display: 'swap',
@@ -29,7 +38,7 @@ const text = localFont({
    the address, the numbers. One cut; nothing on the site asks it for bold,
    and a faux bold would smear a bitmap face. */
 const data = localFont({
-  src: '../../node_modules/@fontsource/silkscreen/files/silkscreen-latin-400-normal.woff2',
+  src: './fonts/silkscreen-latin-400-normal.woff2',
   weight: '400',
   variable: '--font-data-loaded',
   display: 'swap',
