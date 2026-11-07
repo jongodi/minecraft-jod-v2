@@ -217,6 +217,14 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
   const [drawn, setDrawn]     = useState(false);
   const [album, setAlbum]     = useState(false);
   const closeAlbum = useCallback(() => setAlbum(false), []);
+  /* The album hangs over the page, outside the frame the browser's own full
+     screen shows: that screen is left first, from the Myndir slot and from
+     its key alike. Opened by the key inside it, the album was out of sight,
+     held the page's scroll and took the number keys, until Escape. */
+  const openAlbum = useCallback(() => {
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    setAlbum(true);
+  }, []);
   const [live, setLive]       = useState(false);
   const [ready, setReady]     = useState(false);
   /* the viewer's map has loaded and window.jod answers */
@@ -806,12 +814,12 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
       e.preventDefault();
       if (e.key === '4') { if (viewer && shown) jod()?.setNight(!night); }
       else if (e.key === '5') setDrawn(v => !v);
-      else if (e.key === '6') setAlbum(true);
+      else if (e.key === '6') openAlbum();
       else if (e.key === '7') { setDrawn(false); openFull(); }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  // openFull is a stable callback declared above
+  // openFull and openAlbum are stable callbacks declared above
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reached, shut, viewer, shown, night, jod]);
   /* Resting on the way down, the viewer waiting behind the flight draws its
@@ -952,9 +960,8 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
                 onClick={() => setDrawn(v => !v)}>
                 <FoldedMapIcon className="b-btn__icon" /><span className="b-hud__word">Teiknað kort</span>
               </button>
-              {/* the album hangs over the page, outside the frame the browser's full screen shows */}
-              <button type="button" className="b-btn b-btn--small b-btn--ghost b-hud__tool"
-                onClick={() => { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); setAlbum(true); }}>
+              {/* the album hangs over the page, outside the frame the browser's full screen shows (openAlbum) */}
+              <button type="button" className="b-btn b-btn--small b-btn--ghost b-hud__tool" onClick={openAlbum}>
                 <PictureIcon className="b-btn__icon" /><span className="b-hud__word">Myndir<span className="b-hud__sep"> · </span></span><span className="b-hud__count">{plates.length}</span>
               </button>
               {!full && (
