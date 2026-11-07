@@ -144,7 +144,7 @@ kbd {
   background: var(--jod-paper);
   color: var(--jod-ink);
   font-family: var(--jod-font-data);
-  font-size: 0.75em;
+  font-size: 1rem;
   line-height: 1.4;
   text-align: center;
   box-shadow: 0 var(--jod-px) 0 var(--jod-wood-dark);
@@ -255,8 +255,11 @@ h1::after, h2::after { height: 3px; background: var(--jod-strata); }
   .side-menu .marker-set > .info:hover { background: transparent; }
 }
 .side-menu .group { border: var(--jod-px) solid var(--theme-bg-light); }
+/* BlueMap's own words in the bitmap face are set on its grid too, at 16 px
+   (rem, since what holds them is not always 16 px): at three quarters of
+   their line they came out at 12 px and smeared */
 .side-menu .group > .title {
-  font-size: 0.75em;
+  font-size: 1rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--theme-fg-light);
@@ -284,9 +287,9 @@ h1::after, h2::after { height: 3px; background: var(--jod-strata); }
 .info-content h2 { font-size: 1.05em; margin-top: 1.25em; }
 .info-content table tr th,
 .info-content table tr td { border: var(--jod-px) solid var(--theme-bg-hover); padding: 0.35em 0.5em; }
-.info-content table tr th { font-family: var(--jod-font-data); font-size: 0.8em; color: var(--theme-fg-light); white-space: nowrap; }
+.info-content table tr th { font-family: var(--jod-font-data); font-size: 1rem; color: var(--theme-fg-light); white-space: nowrap; }
 .jod-info__lead { margin: 0.75em 0.5em 1em; color: var(--theme-fg); }
-.info-content .info-footer { margin-top: 1.5em; font-family: var(--jod-font-data); font-size: 0.75em; line-height: 1.8; color: var(--theme-fg-light); }
+.info-content .info-footer { margin-top: 1.5em; font-family: var(--jod-font-text); font-size: 0.875rem; line-height: 1.8; color: var(--theme-fg-light); }
 
 /* ─── on the map: players, notes, and the places ───────────────── */
 #app .map-state-message { font-family: var(--jod-font-data); color: var(--jod-paper); text-shadow: 0 var(--jod-px) 0 var(--jod-night); letter-spacing: 0.04em; }
@@ -300,7 +303,7 @@ h1::after, h2::after { height: 3px; background: var(--jod-strata); }
   background: var(--jod-paper);
   color: var(--jod-ink);
   font-family: var(--jod-font-data);
-  font-size: 0.75rem;
+  font-size: 1rem;   /* the bitmap face on its grid, as a place's tag is */
   letter-spacing: 0.04em;
   white-space: nowrap;
   box-shadow: 0 var(--jod-px) 0 var(--jod-wood-dark);
@@ -370,8 +373,11 @@ h1::after, h2::after { height: 3px; background: var(--jod-strata); }
   box-shadow: 0 var(--jod-px) 0 var(--jod-wood-dark);
   clip-path: var(--jod-notch);
 }
-/* in the weight the flight's tag is set in (the site loads the bitmap face's one 400 cut), so a place's name does not thicken as the live map takes over from the flight */
-.jod-pin__label b { font-family: var(--jod-font-data); font-weight: 400; font-size: 0.75rem; letter-spacing: 0.04em; }
+/* in the weight and the size the flight's tag is set in (the site loads the
+   bitmap face's one 400 cut, at 16 px), so a place's name neither thickens
+   nor shrinks as the live map takes over from the flight; at 12 px the
+   face's pixels fell between the screen's, a stroke one pixel and the next two */
+.jod-pin__label b { font-family: var(--jod-font-data); font-weight: 400; font-size: 1rem; letter-spacing: 0.04em; }
 .jod-pin__label small { display: none; font-family: var(--jod-font-text); font-size: 0.75rem; color: var(--jod-ink-soft); }
 .jod-pin:focus-visible .jod-pin__lamp,
 .jod-pin.is-chosen .jod-pin__lamp { transform: translateY(-2px) scale(1.15); }
