@@ -524,8 +524,8 @@ function Flight({ flight, fly, runway, f3, places, players, selected, onChoose, 
         </div>
       )}
       {/* The pins are for a pointer: each is the place's chip on the rail,
-          which is the way to it from a keyboard and for a screen reader; the
-          crew who are on are in the HUD's heads. */}
+          which is the way to it from a keyboard and for a screen reader; for
+          the crew who are on, it is their head in the HUD. */}
       <div ref={layer} className={`b-pins${hidden ? ' is-hidden' : ''}`} aria-hidden="true">
         {places.map(pl => (
           <button key={pl.id} data-pin={`place:${pl.id}`} type="button" tabIndex={-1}

@@ -1424,9 +1424,10 @@ html:has(.b-world.has-flight) { scroll-snap-type: y proximity; }
 /* pointed at on the rail: its lantern lifts and says its name */
 .b-pin.is-near .b-pin__label { opacity: 1; transform: none; }
 /* A member who is on, where they stand: their head, a block over them, under
-   the name tag the game floats over every player. Not pressed: their heads
-   in the HUD follow them in the live map. */
-.b-pin--player { pointer-events: none; cursor: default; translate: -50% -100%; gap: 2px; }
+   the name tag the game floats over every player. Pressed, the live map
+   takes hold and follows them, as their head in the HUD does (Flight.tsx,
+   jod:follow); the HUD's heads stay the way to them from a keyboard. */
+.b-pin--player { pointer-events: auto; cursor: pointer; translate: -50% -100%; gap: 2px; }
 .b-pin--player .b-pin__head { display: block; width: 1rem; height: 1rem; image-rendering: pixelated; box-shadow: 0 0 0 1px var(--night); }
 @media (hover: hover) {
   .b-pin:hover .b-pin__lamp { transform: translateY(-2px) scale(1.15); }
