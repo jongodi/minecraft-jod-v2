@@ -520,7 +520,7 @@
 }
 .b-bar.is-solid::before { opacity: 1; }
 .b-bar__strata { pointer-events: none; opacity: 0; transition: opacity var(--dur-3) var(--ease-out); }
-.b-bar .b-bar__strata { top: 100%; height: 12px; transform: none; filter: drop-shadow(var(--lift-2)); }
+.b-bar .b-bar__strata { top: 100%; height: var(--bar-strata); transform: none; filter: drop-shadow(var(--lift-2)); }
 .b-bar.is-solid .b-bar__strata { opacity: 1; }
 .b-bar.is-solid .b-bar__mark { color: var(--paper); text-shadow: 0 var(--px) 0 var(--wood-dark); }
 @media (hover: hover) { .b-bar.is-solid .b-bar__mark:hover { color: var(--lantern); } }
@@ -779,7 +779,7 @@
 .b-hotbar > .b-xp { grid-column: 1 / -1; margin: 0 0 var(--sp-1); }
 /* a phone on its side has no height to give it */
 @media (max-height: 500.98px) { .b-hotbar > .b-xp { display: none; } }
-.b-bar > .b-xp { position: absolute; left: 50%; top: calc(100% + 12px + var(--sp-2)); width: 22.75rem; translate: -50% 0; opacity: 0; transition: opacity var(--dur-3) var(--ease-out); }
+.b-bar > .b-xp { position: absolute; left: 50%; top: calc(100% + var(--bar-strata) + var(--sp-2)); width: 22.75rem; translate: -50% 0; opacity: 0; transition: opacity var(--dur-3) var(--ease-out); }
 .b-bar.is-solid > .b-xp { opacity: 1; }
 @media (max-width: 759.98px) { .b-bar > .b-xp { display: none; } }
 
@@ -2169,7 +2169,7 @@ html.is-map-full { overflow: hidden; }
   .b-frame.is-full.is-drawn .b-hud__title .b-title, .b-frame.is-drawn:fullscreen .b-hud__title .b-title { color: var(--paper); }
   .b-frame.is-full.is-drawn .b-hud__meta, .b-frame.is-drawn:fullscreen .b-hud__meta { color: var(--tc-white); }
   .b-frame.is-full.is-drawn .b-hud__in img, .b-frame.is-drawn:fullscreen .b-hud__in img { box-shadow: 0 0 0 1px var(--night); }
-  .b-frame.is-full .b-places, .b-frame:fullscreen .b-places { animation: b-rail-in var(--dur-3) var(--ease-out) 120ms backwards; }
+  .b-frame.is-full .b-places, .b-frame:fullscreen .b-places { animation: b-rail-in var(--dur-3) var(--ease-out) var(--dur-1) backwards; }
 }
 @keyframes b-plank-in { from { transform: translateY(calc(-100% - 0.5rem)); } }
 @keyframes b-rail-in  { from { opacity: 0; transform: translateY(var(--sp-5)); } }

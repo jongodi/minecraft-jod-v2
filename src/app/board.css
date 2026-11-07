@@ -203,7 +203,7 @@
 .b-stock > .b-hang { max-width: 34rem; }
 @media (min-width: 900px) { .b-stock > .b-hang { position: sticky; top: 0; } .b-counter { min-height: 9rem; } .b-counter__slip { align-items: flex-start; } }
 .b-counter__slip { display: flex; align-items: center; gap: var(--sp-4); animation: b-slip var(--dur-3) var(--ease-out) both; }
-.b-counter__glyph { flex-shrink: 0; display: grid; place-items: center; width: 3rem; height: 3rem; padding: var(--sp-1); background: var(--paper-2); box-shadow: inset 0 0 0 var(--px) rgb(from var(--ink) r g b / 0.2); animation: b-land var(--dur-3) var(--ease-out) both; animation-delay: 60ms; }
+.b-counter__glyph { flex-shrink: 0; display: grid; place-items: center; width: 3rem; height: 3rem; padding: var(--sp-1); background: var(--paper-2); box-shadow: inset 0 0 0 var(--px) rgb(from var(--ink) r g b / 0.2); animation: b-land var(--dur-3) var(--ease-out) both; animation-delay: var(--dur-0); }
 .b-counter__text { animation: b-slip var(--dur-3) var(--ease-out) both; }
 @keyframes b-slip { from { opacity: 0; transform: translateX(calc(var(--px) * -6)); } to { opacity: 1; transform: none; } }
 @keyframes b-land { from { opacity: 0; transform: translateY(calc(var(--px) * -4)); } to { opacity: 1; transform: none; } }

@@ -230,6 +230,7 @@
   --wrap:   1160px;
   --bar:    3.5rem;     /* the bar at the top */
   --bar-safe: calc(var(--bar) + var(--safe-top));   /* the bar as it stands on the screen: what sticks under it or scrolls up to it reads this */
+  --bar-strata: 12px;   /* the strata hung under the bar's plank: what is set under the bar (the experience bar, the board's side column) clears it by this */
   --xp:      10px;      /* the experience bar over the hotbar: the game's five pixels, at two a pixel */
   --doorbar: calc(4.5rem + var(--xp) + var(--sp-1));    /* the hotbar at the foot of a phone, with its strip and the experience bar over it */
   --slot:    3.5rem;    /* one of its slots */
