@@ -157,6 +157,7 @@ describe('when the server last burned', () => {
     fetchMock.mockResolvedValueOnce(exaroton(1, ['stebbias']));
     await getStatus();
     kv.set('status:last-online', JSON.stringify({ at: '2026-10-02T23:00:00.000Z', names: ['joenana'] }));
+    kv.set('status:last-life', JSON.stringify({ life: 'on', at: '2026-10-02T23:00:00.000Z', names: ['joenana'] }));
     vi.setSystemTime(new Date('2026-10-02T23:30:00Z'));
     fetchMock.mockResolvedValueOnce(exaroton(0));
     expect((await getStatus()).lastOnline).toEqual({ at: '2026-10-02T23:00:00.000Z', names: ['joenana'] });
@@ -168,6 +169,64 @@ describe('when the server last burned', () => {
     fetchMock.mockResolvedValueOnce(exaroton(1, ['stebbias']));
     await getStatus({ live: false });
     expect(kv.has('status:last-online')).toBe(false);
+    expect(kv.has('status:last-life')).toBe(false);
+  });
+
+  /* An instance's memory of its own answer before saw the server go out only
+     within a minute, and a visitor polls a minute apart: the time it was lit
+     stayed in the store, and was said again of a later evening. */
+  const answer = async (at: string, status: number, players?: string[]) => {
+    vi.setSystemTime(new Date(at));
+    fetchMock.mockResolvedValueOnce(exaroton(status, players));
+    return getStatus();
+  };
+
+  it('says when it was lit, stops when it goes out between polls a minute apart, and never says an evening days before', async () => {
+    /* a visitor watches it start, polling a minute and a second apart */
+    expect((await answer('2026-11-04T19:58:58Z', 2)).onSince).toBeUndefined();
+    expect((await answer('2026-11-04T19:59:59Z', 1, ['stebbias'])).onSince).toBe('2026-11-04T19:59:59.000Z');
+    expect((await answer('2026-11-04T20:01:00Z', 1, ['stebbias'])).onSince).toBe('2026-11-04T19:59:59.000Z');
+    /* it goes out between two of the polls: the last answer that saw it burning says when, and who was in */
+    const dark = await answer('2026-11-04T20:02:01Z', 0);
+    expect(dark.lastOnline).toEqual({ at: '2026-11-04T20:01:00.000Z', names: ['stebbias'] });
+    expect(kv.has('status:on-since')).toBe(false);
+    /* two days on it is started from exaroton's own app, unwatched, and another instance answers the first visitor */
+    forgetStatus();
+    expect((await answer('2026-11-06T20:06:18Z', 1, ['joenana'])).onSince).toBeUndefined();
+  });
+
+  it('is seen to go out by the five-minute job when nobody is watching', async () => {
+    await answer('2026-11-04T19:59:00Z', 2);
+    await answer('2026-11-04T20:00:00Z', 1, ['AmmaGaur']);
+    expect(JSON.parse(kv.get('status:on-since')!)).toBe('2026-11-04T20:00:00.000Z');
+    /* the job's beat five minutes on finds it dark: stopped when empty, with nobody looking */
+    forgetStatus();
+    const dark = await answer('2026-11-04T20:05:00Z', 0);
+    expect(dark.lastOnline).toEqual({ at: '2026-11-04T20:00:00.000Z', names: ['AmmaGaur'] });
+    expect(kv.has('status:on-since')).toBe(false);
+  });
+
+  it('keeps when it was lit across instances while their answers come near each other', async () => {
+    kv.set('status:on-since', JSON.stringify('2026-11-04T20:00:00.000Z'));
+    kv.set('status:last-life', JSON.stringify({ life: 'on', at: '2026-11-04T20:03:00.000Z', names: [] }));
+    expect((await answer('2026-11-04T20:07:30Z', 1, [])).onSince).toBe('2026-11-04T20:00:00.000Z');
+  });
+
+  it('says no time it was lit after a gap nobody asked across, rather than an old one', async () => {
+    kv.set('status:on-since', JSON.stringify('2026-11-01T20:00:00.000Z'));
+    kv.set('status:last-life', JSON.stringify({ life: 'on', at: '2026-11-01T22:00:00.000Z', names: [] }));
+    expect((await answer('2026-11-01T22:30:00Z', 1, [])).onSince).toBeUndefined();
+    expect(kv.has('status:on-since')).toBe(false);
+  });
+
+  it('is not changed by a lookup that failed', async () => {
+    kv.set('status:on-since', JSON.stringify('2026-11-04T20:00:00.000Z'));
+    kv.set('status:last-life', JSON.stringify({ life: 'on', at: '2026-11-04T20:03:00.000Z', names: [] }));
+    vi.setSystemTime(new Date('2026-11-04T20:04:00Z'));
+    fetchMock.mockRejectedValueOnce(new Error('down')).mockRejectedValueOnce(new Error('down'));
+    expect((await getStatus()).source).toBe('error');
+    expect(JSON.parse(kv.get('status:on-since')!)).toBe('2026-11-04T20:00:00.000Z');
+    expect(JSON.parse(kv.get('status:last-life')!).at).toBe('2026-11-04T20:03:00.000Z');
   });
 
   it('is read from the store by an instance that never saw it burn', async () => {
