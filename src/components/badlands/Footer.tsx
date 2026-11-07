@@ -3,6 +3,7 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
+import { usePathname } from 'next/navigation';
 import { Campfire, ChevronIcon } from './Bits';
 import { Ridge } from './Mesa';
 import { SERVER_IP, SITE_NAME } from './data';
@@ -36,6 +37,10 @@ function Footer({ season: initial }: { season?: Season } = {}) {
   /* out of sight, the fire's frames and its smoke hold still (useAway) */
   const root = useRef<HTMLElement>(null);
   useAway(root);
+  /* On the home page the way up leads to the page the visitor is already on,
+     and a link in view is prefetched: every visit there spent a request on
+     its own page. Everywhere else the home is the right guess. */
+  const home = usePathname() === '/';
 
   useEffect(() => {
     if (!duel) return;
@@ -52,7 +57,7 @@ function Footer({ season: initial }: { season?: Season } = {}) {
       <div className="b-foot__scene">
         <Ridge snow={season.snow} warm />
         <div className="b-wrap b-foot__inner">
-          <Link href="/#top" className="b-btn b-btn--small b-foot__up">
+          <Link href="/#top" prefetch={home ? false : undefined} className="b-btn b-btn--small b-foot__up">
             <ChevronIcon dir="up" className="b-foot__upchev" />
             Aftur í sólsetrið
           </Link>
