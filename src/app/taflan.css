@@ -287,6 +287,11 @@
 @media (min-width: 1100px) {
   /* and no taller than the screen under the bar, scrolling inside itself: with many calls open on a short laptop its foot could not be reached until the board ended */
   .t-board__side { position: sticky; top: calc(var(--bar-safe) + var(--bar-strata) + var(--sp-6)); max-height: calc(100svh - var(--bar-safe) - var(--bar-strata) - var(--sp-6) * 2); overflow-y: auto; scrollbar-width: thin; }
+  /* A box that scrolls clips what rises above it, and the acute on the Á of
+     Á döfinni rises above the slab's tight line: it read A döfinni. The
+     column keeps a step of room over its heading for the accent, and stands
+     that step higher, so the heading is where it was. */
+  .t-board__side { padding-top: var(--sp-1); margin-top: calc(var(--sp-1) * -1); }
   .t-board--room .t-board__side { top: 0; }
 }
 /* Narrower, the pinned things hang across the board between the slot and
