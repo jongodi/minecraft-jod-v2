@@ -295,6 +295,52 @@ describe('/api/playnight', () => {
     });
   });
 
+  /* an afternoon's fire and an evening's, seven hours apart, do not clash,
+     yet both lie between the same two daily copies: whoever played that
+     afternoon was counted as come to the evening too, and both slips showed
+     the whole day's hours */
+  it('settles two fires between the same daily copies from who was seen, without the day\'s totals', async () => {
+    await post({ action: 'propose', times: ['2026-10-03T14:00:00Z'] });
+    await post({ action: 'propose', times: ['2026-10-03T21:00:00Z'] });
+    /* a fire the next Saturday has copies of its own */
+    await post({ action: 'propose', times: ['2026-10-10T20:00:00Z'] });
+    const [afternoon, evening, week] = (await view()).nights;
+    for (const n of [afternoon, evening]) { session = 'joenana'; await post({ action: 'vote', night: n.id, yes: ['a'] }); }
+    session = 'stebbias';
+
+    /* stebbias plays three hours that afternoon, and is seen; joenana plays not at all */
+    vi.setSystemTime(new Date('2026-10-03T15:00:00Z'));
+    await lib.noteSeen(['stebbias']);
+    const T = 72000;
+    const day = (d: string, stebbias: number) => kv.set(`stats:day:${d}`, JSON.stringify({ day: d, takenAt: `${d}T12:05:00Z`, failed: [], counters: {
+      stebbias: { playTimeTicks: stebbias, deaths: 0, mobKills: 0, travelCm: 0 }, joenana: { playTimeTicks: 0, deaths: 0, mobKills: 0, travelCm: 0 },
+    } }));
+    day('2026-10-03', 10 * T); day('2026-10-04', 13 * T);
+    day('2026-10-10', 13 * T); day('2026-10-11', 15 * T);
+
+    vi.setSystemTime(new Date('2026-10-04T12:10:00Z'));
+    const settled = await lib.settleNights();
+    /* the afternoon: stebbias was seen there; at the evening nobody was, and play time going up that day says nothing of which fire */
+    expect(settled).toEqual([
+      { id: afternoon.id, came: ['stebbias'], noShows: ['joenana'] },
+      { id: evening.id, came: [], noShows: ['joenana'] },
+    ]);
+    /* joenana did not play that day at all, so missed both and is charged for both */
+    expect(await lib.readNoShows()).toEqual({ joenana: 2 });
+    /* neither slip carries the day's totals */
+    const stored = (id: string) => JSON.parse(hash('playnight:nights').get(id)!) as import('@/lib/play-night').Night;
+    expect(stored(afternoon.id).outcome?.numbers).toEqual({ by: {}, advancements: [] });
+    expect(stored(evening.id).outcome?.numbers).toEqual({ by: {}, advancements: [] });
+
+    /* a fire with copies of its own is measured by them as before, and credits play time to who said yes */
+    session = 'joenana';
+    await post({ action: 'vote', night: week.id, yes: [] });
+    session = 'stebbias';
+    vi.setSystemTime(new Date('2026-10-11T12:10:00Z'));
+    expect(await lib.settleNights()).toEqual([{ id: week.id, came: ['stebbias'], noShows: [] }]);
+    expect(stored(week.id).outcome?.numbers?.by).toEqual({ stebbias: { ticks: 2 * T, deaths: 0, mobKills: 0, travelCm: 0 } });
+  });
+
   it('settles a night again the next day when the store fails part of the way, and the nights after it still', async () => {
     await post({ action: 'propose', times: ['2026-10-01T20:00:00Z'] });
     await post({ action: 'propose', times: ['2026-10-02T20:00:00Z'] });
