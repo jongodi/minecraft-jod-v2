@@ -44,6 +44,11 @@ const data = localFont({
   display: 'swap',
 });
 
+/* Which deploy this is, for the lost-connection screen's worker (Offline.tsx):
+   the commit Vercel built, which it sets the same at build and at run time,
+   so a page made at build and a page made on request name the same worker. */
+const DEPLOY = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 12) || undefined;
+
 const TITLE = `${SITE_NAME} · Minecraft-heimurinn okkar`;
 const DESCRIPTION = `Minecraft-heimur átta vina frá sumrinu 2024. Staða þjónsins, hver er inni, landakort, myndir úr leiknum og tölfræði leikmanna. ${SERVER_IP}`;
 
@@ -97,7 +102,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         {/* the first stop for a keyboard: past the bar, straight to the page's main landmark */}
         <a href="#efni" className="b-skip">Beint í efnið</a>
         {children}
-        <Offline />
+        <Offline version={DEPLOY} />
       </body>
     </html>
   );
