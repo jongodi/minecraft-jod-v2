@@ -2397,8 +2397,10 @@ html.is-map-full { overflow: hidden; }
 .b-arena__corner--r { left: auto; right: var(--sp-3); }
 /* A phone's arena is 4:3 and a thumb wide: the call starts below the corner
    labels and its small line drops a size, so the round count, the call and
-   the instructions no longer sit on top of one another. */
+   the instructions no longer sit on top of one another; and the round loses
+   its word, so "I af III" and "Best: 2396 ms" stand apart on a 360 px phone. */
 @media (max-width: 639.98px) {
+  .b-arena__word { display: none; }
   .b-arena__call { padding: 2.25rem var(--sp-3) 18%; }
   .b-arena__small { font-size: var(--fs-sm); line-height: 1.5; }
   .b-duelpanel { padding: var(--sp-4); }
