@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Mesa, { NONE_AWAKE, Rider } from './Mesa';
 import { Moon, Sun } from './Bits';
 import CopyAddress from './CopyAddress';
@@ -85,6 +85,9 @@ function Splash({ inside, planned, live, facts }: { inside: number; planned: boo
   );
 }
 
+/* How far clear of the lantern's plate the phantoms' ring keeps, in pixels: a step of the spacing scale */
+const RING_CLEAR = 4;
+
 /* On a phone the crew who are in climb the name: one on the O, one on the
    Ð, their name tags in the sky over them, and a count for the rest. The
    plateau at the name's feet stood them in front of the O's window. One who
@@ -92,11 +95,39 @@ function Splash({ inside, planned, live, facts }: { inside: number; planned: boo
    goes out climbs down. */
 function Climbers({ names, known, awake }: { names: string[]; known: boolean; awake: Record<string, number> }) {
   const { roster, settle } = useRoster(names, known);
-  if (roster.length === 0) return null;
+  const box = useRef<HTMLDivElement>(null);
   const shown = roster.slice(0, 2);
+  /* who stands on the name, how far along their climb, and how long awake */
+  const drawn = shown.map(r => `${r.name}:${r.phase}:${awake[r.name.toLowerCase()] ?? 0}`).join('|');
+  /* The phantoms' ring hangs a fixed height over the tag (badlands.css), and
+     on a small phone the name stands only a step under the lantern's plate:
+     there the ring circled inside the plate, dark on its dark, instead of in
+     the open sky. It is shown only once it is measured clear of the plate
+     (is-clear), as the signal fire stands only where its column has room,
+     and measured again as the page or the plate changes size (a night's
+     line makes the plate taller) and as the crew on the name change. The
+     class is written straight to the element, as useAway's is. */
+  useLayoutEffect(() => {
+    const el = box.current;
+    const plate = el?.closest('.b-hero')?.querySelector('.b-hero__action');
+    if (!el || !plate) return;
+    const measure = () => {
+      const birds = [...el.querySelectorAll<HTMLElement>('.b-phantoms')];
+      /* each ring's middle, less how far a bird reaches above it: half its
+         own height and four pixels of the round, 1.3 of its height in all */
+      const top = Math.min(...birds.map(b => b.getBoundingClientRect().top - (b.firstElementChild as HTMLElement | null ?? b).offsetHeight * 1.3));
+      el.classList.toggle('is-clear', birds.length > 0 && top >= plate.getBoundingClientRect().bottom + RING_CLEAR);
+    };
+    measure();
+    const watch = new ResizeObserver(measure);
+    watch.observe(el);
+    watch.observe(plate);
+    return () => watch.disconnect();
+  }, [drawn]);
+  if (roster.length === 0) return null;
   const more = beyond(names.length, shown);
   return (
-    <div className="b-hero__climbers">
+    <div ref={box} className="b-hero__climbers">
       {shown.map(r => <Rider key={r.name} name={r.name} phase={r.phase} onWalked={settle} awake={awake[r.name.toLowerCase()]} className="b-hero__climber" />)}
       {more > 0 && <span className="b-nametag b-hero__more">+{more}</span>}
     </div>

@@ -1254,6 +1254,11 @@
      feet; placed in the name's size, since its own em is the tag's. At the
      climber's shoulder it stood on the corner of the sun from 700 px up. */
   .b-hero__climbers > .b-hero__more { left: calc(var(--fs-hero) * 1.9); top: calc(var(--fs-hero) * -0.09); translate: 0 0; }
+  /* the phantoms over a climber come out only once the page has measured
+     their ring clear of the lantern's plate (Climbers, Hero.tsx): on a small
+     phone the name stands a step under the plate, and they circled in it */
+  .b-hero__climbers:not(.is-clear) .b-phantoms { visibility: hidden; }
+  .b-hero__climbers:not(.is-clear) :is(.b-phantom, .b-phantom__wing) { animation-play-state: paused; }
 }
 /* The splash (Hero.tsx): the game's yellow line tilted over the corner of
    its logo, popping as it comes, laid over the name's own row of the stage and placed in
