@@ -517,16 +517,19 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
     return () => io.disconnect();
   }, []);
   /* How far down the frame the title and the tools reach, so the postcard
-     stops short of them (--hud-bottom in badlands.css). On a phone they are
-     a third of the frame, and the card would otherwise cover the buttons. */
+     stops short of them, the locator bar hangs under them and a toast over
+     the whole screen drops in below them (--hud-bottom in badlands.css). On
+     a phone they are a third of the frame, and the card would otherwise
+     cover the buttons. Measured by the layout box, which a transform does not
+     move: the whole screen's plank comes down from above the frame as it
+     opens (b-plank-in), and read on its first frame it reached nowhere, so
+     the locator lay across the plank's title for the rest of the visit. */
   useEffect(() => {
     const frame = frameRef.current;
     const top = hudTop.current;
     if (!frame || !top || !('ResizeObserver' in window)) return;
-    const measure = () => {
-      const reach = top.getBoundingClientRect().bottom - frame.getBoundingClientRect().top;
-      frame.style.setProperty('--hud-bottom', `${Math.max(0, Math.round(reach))}px`);
-    };
+    /* the plank's offsetParent is the HUD, which lies over the whole frame (inset 0) */
+    const measure = () => frame.style.setProperty('--hud-bottom', `${Math.max(0, Math.round(top.offsetTop + top.offsetHeight))}px`);
     const ro = new ResizeObserver(measure);
     ro.observe(frame);
     ro.observe(top);
