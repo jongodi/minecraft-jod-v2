@@ -2997,8 +2997,11 @@ html.is-map-full { overflow: hidden; }
 .b-f3__copy { display: block; margin-top: var(--px); padding: 0; border: 0; background: none; color: var(--lantern); font: inherit; font-size: var(--fs-sm); text-transform: none; cursor: pointer; }
 .b-f3__copy:focus-visible { outline: var(--px) solid var(--lantern); outline-offset: var(--px); }
 @media (hover: hover) { .b-f3__copy:hover { color: var(--paper); } }
-/* where a place stands, on the F3 lines' own dark under its name; a press copies it */
-.b-card__xyz { display: inline-block; position: static; margin-top: var(--sp-1); padding: var(--px) var(--sp-2); border: 0; background: var(--pitch); color: var(--paper); font-family: var(--font-data); font-size: var(--fs-sm); line-height: 1.4; cursor: pointer; }
+/* where a place stands, on the F3 lines' own dark under its name; a press
+   copies it. In the bitmap face at its own 16 px, as the F3 lines it copies
+   are, and pressable: the F3 lines let the pointer through to the map
+   (.b-f3), and the key took that from them, so only a keyboard could press it */
+.b-card__xyz { display: inline-block; position: static; margin-top: var(--sp-1); padding: var(--px) var(--sp-2); border: 0; background: var(--pitch); color: var(--paper); font-family: var(--font-data); font-size: var(--fs-data); line-height: 1.4; cursor: pointer; pointer-events: auto; }
 .b-card__xyz:focus-visible { outline: var(--px) solid var(--lantern-ink); outline-offset: var(--px); }
 @media (hover: hover) { .b-card__xyz:hover { color: var(--lantern); } }
 /* the compass needle on the locator bar: a key, unlike the marks */
