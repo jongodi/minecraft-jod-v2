@@ -162,6 +162,11 @@
 .t-notice__go { color: var(--lantern-ink); font-weight: 600; text-decoration: none; }
 @media (hover: hover) { .t-notice__go:hover { color: var(--ink); text-decoration: underline var(--px); text-underline-offset: 0.3em; } }
 .t-notice__go:focus-visible { outline: var(--px) solid var(--lantern-ink); outline-offset: var(--px); }
+/* A slip's one press (sjá kvöldið, í heiminn, the member's name) is a
+   thumb's height where there is a thumb, as the frames' captions are: it was
+   the height of its words, 21 px. The block margins give the extra height
+   back, so the slip keeps its printed lines and the paper does not grow. */
+@media (pointer: coarse) { .t-notice__go, .t-notice__who { display: inline-flex; align-items: center; min-height: var(--tap); margin-block: calc((var(--tap) - 1.5em) / -2); } }
 /* the map's new picture, held up beside the words like a postcard; a press holds it up larger */
 .t-notice__pic { display: block; width: 12rem; padding: 0; background: var(--paper-2); box-shadow: 0 0 0 var(--px) var(--wood-dark), 0 var(--px) 0 calc(var(--px) * 2) rgb(from var(--night) r g b / 0.12); transition: box-shadow var(--dur-2) var(--ease-out); }
 .t-notice__pic img { display: block; width: 100%; aspect-ratio: 16 / 10; object-fit: cover; }
