@@ -388,6 +388,39 @@ export async function pastNight(id: string): Promise<PastNight | null> {
   return (await pastNights()).find(p => p.id === id) ?? null;
 }
 
+/** A night that was held, as the counts over every such night read it: when
+    it was, who came, and what the game counted. A PastNight is one. */
+export type HeldNight = Pick<PastNight, 'id' | 'at' | 'came' | 'numbers'>;
+
+/** Every night that was held and settled, oldest first: the annals, and the
+    settled nights still among the fires (an evening's embers, or one not yet
+    cleared away). The fires let a settled night go about a week after its
+    evening, so the counts read off them alone (the fires held on the hero's
+    splash, Fastagesturinn, the crew's usual evening, a night's Met stamp)
+    saw the last night or two of a weekly crew and forgot the rest. `fires` is
+    a read of the fires already made, so they are not read twice in one
+    request; without it they are read as they stand in the store. */
+export async function heldNights(fires?: Night[]): Promise<HeldNight[]> {
+  const nights = fires ?? await readNights();
+  const held = new Map<string, HeldNight>();
+  for (const v of Object.values(await (await redis()).hgetall(PAST_KEY))) {
+    try {
+      const past = JSON.parse(v) as PastNight;
+      /* the annals also take a night that was never settled, with who was
+         seen standing for who came: one nobody was seen at, or charged for
+         missing, was no night held */
+      if (past.numbers || past.came.length || past.noShows.length) held.set(past.id, past);
+    } catch { /* skip */ }
+  }
+  /* a night is written to the annals before it leaves the fires, so for a moment it can be in both: the fires' own copy is kept */
+  for (const night of nights) {
+    const chosen = optionOf(night, night.chosen);
+    if (night.cancelled || !chosen || !night.outcome) continue;
+    held.set(night.id, { id: night.id, at: chosen.at, came: night.outcome.came, ...(night.outcome.numbers ? { numbers: night.outcome.numbers } : {}) });
+  }
+  return [...held.values()].sort((a, b) => t(a.at) - t(b.at));
+}
+
 /** The last daily copy taken before an evening began, and the first after it ended. */
 async function copiesAround(start: number, end: number) {
   const { readDay, dayOf } = await import('@/lib/daily-stats');

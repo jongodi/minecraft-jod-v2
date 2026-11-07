@@ -204,11 +204,13 @@ export async function withCharges(players: PlayerStat[]): Promise<PlayerStat[]> 
   } catch { /* the draws and the calls stay as they were */ }
   if (hasKV()) {
     try {
-      const { readNoShows, readNights } = await import('@/lib/play-night');
+      const { readNoShows, heldNights } = await import('@/lib/play-night');
       const tally = new Map(Object.entries(await readNoShows()).map(([u, n]) => [u.toLowerCase(), n]));
-      /* and who came to the most nights that were held: Fastagesturinn, the counterpart of Svikarinn */
+      /* and who came to the most nights that were held: Fastagesturinn, the
+         counterpart of Svikarinn. Every night held, the annals' too: the
+         fires let a night go a week after it, while Svikarinn's tally is kept for good */
       const came = new Map<string, number>();
-      for (const n of await readNights()) if (!n.cancelled && n.outcome) for (const u of n.outcome.came) came.set(u.toLowerCase(), (came.get(u.toLowerCase()) ?? 0) + 1);
+      for (const n of await heldNights()) for (const u of n.came) came.set(u.toLowerCase(), (came.get(u.toLowerCase()) ?? 0) + 1);
       out = out.map(p => ({ ...p, noShows: tally.get(p.username.toLowerCase()) ?? 0, attended: came.get(p.username.toLowerCase()) ?? 0 }));
     } catch { /* no tally, no charge */ }
     try {
