@@ -14,6 +14,13 @@ export const contentType = 'image/png';
    pasted into a chat is fetched by every crawler that sees it, and nothing
    here depends on who asks. */
 export const revalidate = 300;
+/* Drawn on a member's first preview and kept its five minutes; without the
+   list, even an empty one, drawn again for every crawler that asks. Empty
+   rather than the crew's names: those would be drawn while the site is
+   built, reaching the store and the skin service from the build. */
+export async function generateStaticParams() {
+  return [];
+}
 
 /* The member's link card: their wanted poster. The print they chose stands
    faded behind the paper, the skin in its frame, the name in the slab, the

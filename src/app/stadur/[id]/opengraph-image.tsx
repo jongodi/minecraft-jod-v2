@@ -12,6 +12,10 @@ export const alt = 'Póstkort af stað í Minecraft-heimi JOÐ';
 export const size = CARD;
 export const contentType = 'image/png';
 export const revalidate = 300;
+/* drawn on a place's first preview and kept its five minutes; without the list, even an empty one, drawn again for every crawler that asks */
+export async function generateStaticParams() {
+  return [];
+}
 
 /* The main map's rendered edges, as map:brand wrote them */
 const BOUNDS = (viewerFiles as { bounds?: MapBounds | null }).bounds ?? null;

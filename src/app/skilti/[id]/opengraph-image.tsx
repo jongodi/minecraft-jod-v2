@@ -9,6 +9,10 @@ export const alt = 'Skilti á vegg JOÐ-félaga';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 export const revalidate = 300;
+/* drawn on a sign's first preview and kept its five minutes; without the list, even an empty one, drawn again for every crawler that asks */
+export async function generateStaticParams() {
+  return [];
+}
 
 /* The sign as a card: its print large on the left when it has one, the
    words on a board of pale oak with its dark rim, the writer's head and name
