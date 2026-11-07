@@ -9,7 +9,8 @@ import PlayerHead from './PlayerHead';
 import Rail, { revealRailItem } from './Rail';
 import { dayOf, sinceAt } from './night';
 import { photoProps, PHOTO_SIZES } from './photo';
-import { andList, plural } from '@/lib/format';
+import { plural } from '@/lib/format';
+import { noShowsLine } from '@/components/board/held';
 import { woodClass } from '@/lib/sign-wood';
 
 /* Annáll: the play nights that have been, at the foot of the crew's room.
@@ -113,7 +114,8 @@ function Evening({ night }: { night: AnnalNight }) {
         <div className="b-night__camp"><Fire count={0} embers big /><Heads names={night.came} /></div>
         <div className="b-night__body">
           <p className="b-night__count">{night.came.length} {plural(night.came.length, 'mætti', 'mættu')}</p>
-          {night.noShows.length > 0 && <p className="b-note">Sögðust mæta en komu ekki: {andList(night.noShows)}</p>}
+          {/* one who said yes and stayed away is named in the singular, as on the board's slip */}
+          {night.noShows.length > 0 && <p className="b-note">{cap(noShowsLine(night.noShows))}</p>}
         </div>
       </div>
       {night.numbers && <NightNumbers numbers={night.numbers} />}
