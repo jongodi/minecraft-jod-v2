@@ -72,10 +72,15 @@ export async function stage(page) {
     players: CREW.map(stat), source: 'cached', cachedAt: new Date(now - 3600_000).toISOString(),
     week: { from: '2026-09-28', to: '2026-10-05', players: CREW.map((n, i) => ({ username: n, playTimeHours: 2 + i * 1.5, deaths: i % 4, mobKills: 20 + i * 13, travelCm: (5 + i) * 100000, raidWins: i % 2, recordsPlayed: i % 3, damageRatio: 1 + i / 4 })) },
   } }));
-  /* STAGE_NIGHT=1: a night fixed for two days from now, four coming */
-  if (process.env.STAGE_NIGHT === '1') {
-    const at = new Date(now + 2 * 86400_000); at.setUTCHours(20, 0, 0, 0);
-    const night = { id: 'n1', by: 'stebbias', note: 'Byggjum brúna yfir gilið', phase: 'chosen', chosen: 'o1', chosenBy: 'stebbias',
+  /* STAGE_NIGHT=1: a night fixed for two days from now, four coming.
+     STAGE_NIGHT=today: fixed for eight tonight, so the signal fire stands
+     (signal.ts), in the phase the clock gives it: chosen, about to be lit,
+     or under way. */
+  if (process.env.STAGE_NIGHT === '1' || process.env.STAGE_NIGHT === 'today') {
+    const today = process.env.STAGE_NIGHT === 'today';
+    const at = new Date(now + (today ? 0 : 2 * 86400_000)); at.setUTCHours(20, 0, 0, 0);
+    const phase = !today || now < at.getTime() - 30 * 60_000 ? 'chosen' : now < at.getTime() ? 'soon' : 'live';
+    const night = { id: 'n1', by: 'stebbias', note: 'Byggjum brúna yfir gilið', phase, chosen: 'o1', chosenBy: 'stebbias',
       options: [{ id: 'o1', at: at.toISOString(), yes: ['stebbias', 'joenana', 'AmmaGaur', 'eikibleiki'] }],
       decidesAt: at.toISOString(), startedBy: null, came: [] };
     await page.route('**/api/playnight', r => r.request().method() === 'GET' ? r.fulfill({ json: { nights: [night], me: null, max: 5 } }) : r.continue());

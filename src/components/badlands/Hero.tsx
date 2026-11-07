@@ -13,6 +13,7 @@ import type { PlayNightResponse } from '@/app/api/playnight/route';
 import { YuleLad, useMoonPhase } from './Season';
 import { CREW, WORLD_BORN } from './data';
 import { useRoster } from './roster';
+import { signalOf } from './signal';
 
 /* The title screen's splash: what the game tilts in yellow over its logo,
    one line picked at random each time the title screen comes up. These are
@@ -119,6 +120,11 @@ function Hero({ server, season, nights, packs, facts = [], sleepless = NONE_AWAK
      burnt out while the page was open changed the line beside the lantern
      but not the splash's word about it */
   const { state: tonight } = usePlayNight(nights);
+  /* the day of a fire, the signal fire stands on the far ridge; told again at
+     each answer of the nights, which comes every minute, so it goes up on the
+     day and is gone once the evening is over (signal.ts). One boolean, so the
+     land under the name (memoised) is redrawn only when it changes. */
+  const signal = useMemo(() => signalOf((tonight ?? nights)?.nights ?? []), [tonight, nights]);
   /* scrolled past, the hero's critters and lantern hold still (useAway) */
   const root = useRef<HTMLElement>(null);
   useAway(root);
@@ -161,7 +167,7 @@ function Hero({ server, season, nights, packs, facts = [], sleepless = NONE_AWAK
             action comes first to the keyboard; drawn over the Ð all the same */}
         <Splash inside={inside.length} planned={(tonight?.nights ?? []).some(n => n.phase !== 'over')} live={known} facts={facts} />
       </div>
-      <Mesa snow={season.snow} halloween={season.halloween} heads={inside} known={known} awake={sleepless} />
+      <Mesa snow={season.snow} halloween={season.halloween} heads={inside} known={known} awake={sleepless} signal={signal} />
       <YuleLad season={season} spot="mesa" />
     </section>
   );

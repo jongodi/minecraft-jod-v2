@@ -430,7 +430,7 @@
    the hero's ground and the lantern's glow once the sunset is scrolled past,
    the fire's frames and smoke until the campfire is in view. The sky's and
    the ridges' scroll-driven animations are not these: they are the scroll. */
-.b-hero.is-away :is(.b-critter, .b-critter__step, .b-lantern__flame, .b-phantom, .b-phantom__wing), .b-hero.is-away .b-lantern::before,
+.b-hero.is-away :is(.b-critter, .b-critter__step, .b-lantern__flame, .b-phantom, .b-phantom__wing, .b-fire__frame, .b-fire__smoke i), .b-hero.is-away .b-lantern::before,
 .b-foot.is-away :is(.b-fire__frame, .b-fire__smoke i, .b-foot__fire::before) { animation-play-state: paused; }
 /* kindling: the server on its way up (or down). The glass takes the deeper
    amber, a small flame comes and goes behind it, and the glow is half what a
@@ -1061,6 +1061,28 @@
 }
 /* on a phone the plateau stands in front of the name's feet; there the crew climb the name (below) */
 @media (max-width: 899.98px) { .b-mesa__riders { display: none; } }
+/* The signal fire on the far ridge (Mesa.tsx), placed the same way by the
+   plateau it stands on, which the page works out once it knows where the J
+   begins (signal.ts): its middle at --fx, its foot on a plateau --fh high,
+   --fw units wide, bale and all. Its column is drawn at the land's scale,
+   rises --rise, which keeps it under the address and the lantern, and
+   leans east only over its last three quarters, once it has climbed clear
+   of the letter's foot. */
+.b-mesa__signal {
+  --u: max(100cqw / 480, 100cqh / 120);
+  --drift: calc(var(--u) * 5);
+  position: absolute;
+  left: calc(50% + (var(--fx) - 240) * var(--u));
+  bottom: calc(var(--fh) * var(--u));
+  width: calc(var(--fw) * var(--u));
+  translate: -50% 0;
+  pointer-events: none;
+}
+/* no ring of stones on the far ridge, so the drawing ends at the bale's foot */
+.b-mesa__signal .b-fire { width: 100%; height: auto; aspect-ratio: 16 / 20; margin: 0; }
+.b-mesa__signal .b-fire.is-signal .b-fire__smoke { bottom: 70%; }
+.b-mesa__signal .b-fire.is-signal .b-fire__smoke i:nth-child(n) { width: calc(var(--u) * 3.5); height: calc(var(--u) * 3.5); left: calc(var(--u) * -1.75); }
+.b-mesa__signal .b-fire.is-signal .b-fire__smoke i:nth-child(3n) { left: calc(var(--u) * -2.25); }
 .b-mesa__rider, .b-hero__climber { position: relative; display: block; width: calc(var(--u) * 12); line-height: 0; }
 /* a tap target larger than a narrow figure */
 .b-mesa__rider::before, .b-hero__climber::before { content: ''; position: absolute; inset: -0.5rem calc(var(--u) * -1); }
@@ -2892,9 +2914,33 @@ html.is-map-full { overflow: hidden; }
   60%  { opacity: 0.3; }
   100% { transform: translate(2.25rem, -9rem) scale(1.8); opacity: 0; }
 }
+/* The signal fire's column (Bits.tsx, on its hay bale): eight puffs where
+   the plain fire sends six, a puff every second and a quarter (each puff's
+   place in the column is its --i), going up --rise, more than twice the
+   plain fire's height as the game's signal smoke goes, and leaning --drift
+   east only once a quarter of the way up. The hero's and the footer's set
+   the two lengths each for itself. */
+.b-fire.is-signal .b-fire__smoke { bottom: 73%; }
+.b-fire.is-signal .b-fire__smoke i { --puff: 1.25s; animation-name: b-smoke-signal; animation-duration: calc(var(--puff) * 8); animation-delay: calc(var(--i) * var(--puff) * -1); }
+.b-fire.is-signal .b-fire__smoke i:nth-child(7) { left: -0.375rem; }
+.b-fire.is-signal .b-fire__smoke i:nth-child(8) { left: -0.875rem; }
+@keyframes b-smoke-signal {
+  0%   { transform: translate(0, 0) scale(0.6); opacity: 0; }
+  8%   { opacity: 0.55; }
+  25%  { transform: translate(0, calc(var(--rise) * -0.25)) scale(1); }
+  70%  { opacity: 0.3; }
+  100% { transform: translate(var(--drift), calc(var(--rise) * -1)) scale(1.8); opacity: 0; }
+}
 /* on a wide screen the band keeps a stretch of night over the fire for the
    smoke, so it thins out under the stars rather than over the world's places */
 @media (min-width: 1024px) { .b-foot { padding-top: 6rem; } }
+/* On the day of a fire the footer's own fire stands on its bale (Bits.tsx)
+   and its column goes up more than twice as far, so the band keeps that much
+   more night over it: above the fire on a wide screen, and between the fire
+   and the row of buttons over it below 1024 px, so the column thins out
+   under the stars and never over the world's places or through a button. */
+.b-foot .b-fire.is-signal { --rise: 20rem; --drift: 1.5rem; height: auto; aspect-ratio: 16 / 22; }
+@media (min-width: 1024px) { .b-foot:has(.b-fire.is-signal) { padding-top: 15rem; } }
 /* Below 1024 px the way up and the wind share the row over the fire: the
    smoke gets a stretch of sky between them and the fire, and rises only
    that far, so it never passes through the buttons. */
@@ -2907,8 +2953,22 @@ html.is-map-full { overflow: hidden; }
 @media (max-width: 1023.98px) {
   .b-foot__inner { row-gap: var(--sp-8); }
   .b-fire__smoke i { width: 1rem; height: 1rem; animation-name: b-smoke-short; animation-duration: 5.4s; }
+  .b-foot:has(.b-fire.is-signal) .b-foot__inner { row-gap: 11rem; }
+  .b-foot .b-fire.is-signal { --rise: 12rem; --drift: 1rem; }
 }
 @media (prefers-reduced-motion: reduce) { .b-fire__smoke { display: none; } }
+/* The signal stands still under reduced motion: each puff is set where its
+   place in the column would carry it, growing and thinning on the way up,
+   so the column is there and nothing moves. */
+@media (prefers-reduced-motion: reduce) {
+  .b-fire.is-signal .b-fire__smoke { display: block; }
+  .b-fire.is-signal .b-fire__smoke i {
+    --k: calc((var(--i) + 1) / 9);
+    animation: none;
+    transform: translate(calc(var(--drift) * max(0, (var(--k) - 0.25) / 0.75)), calc(var(--rise) * var(--k) * -1)) scale(calc(0.6 + var(--k) * 1.2));
+    opacity: calc(0.5 - var(--k) * 0.35);
+  }
+}
 @keyframes b-frames { 0%, 33.33% { opacity: 1; } 33.34%, 100% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .b-fire__frame { animation: none; } .b-fire__frame:first-child { opacity: 1; } }
 

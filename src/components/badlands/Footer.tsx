@@ -10,7 +10,10 @@ import { SERVER_IP, SITE_NAME } from './data';
 import AmbienceToggle from '@/effects/AmbienceToggle';
 import { useAway, useBackCloses, useBackdropClose, useScrollLock } from './hooks';
 import { YuleLad, seasonClass, useSeason } from './Season';
+import { usePlayNight } from './night';
+import { signalOf } from './signal';
 import type { Season } from '@/lib/season';
+import type { PlayNightResponse } from '@/app/api/playnight/route';
 
 /* The duel lives behind the fire; nobody pays for it until they tap. */
 const QuickDraw = dynamic(() => import('./QuickDraw'), { ssr: false });
@@ -21,17 +24,40 @@ const QuickDraw = dynamic(() => import('./QuickDraw'), { ssr: false });
    rides in the small print. Not prefetched: every visitor who scrolled to
    the fire used to download the panel's code and stylesheet. */
 
+/** The duel's door: the fire, and the sign planted beside it, since a phone
+    has no pointer to bring up a tooltip and the duel was found only by those
+    who happened to tap the fire. On the day a fire is lit for, it stands on
+    a hay bale and sends the signal up, as the far ridge's does in the hero
+    (signal.ts), and the band keeps a taller stretch of sky for it. */
+function FireDoor({ signal = false, onOpen }: { signal?: boolean; onOpen: () => void }) {
+  return (
+    <button type="button" className="b-foot__fire" onClick={onOpen} aria-haspopup="dialog" aria-label="Einvígi: prófaðu viðbragðstímann">
+      <Campfire stones signal={signal} />
+      <span className="b-foot__sign" aria-hidden="true"><span className="b-foot__board">Einvígi</span></span>
+    </button>
+  );
+}
+/* The home page's fire reads the nights the page already polls (night.ts),
+   in a part of its own, so a poll redraws the fire and not the footer. The
+   other pages' footers ask nothing. */
+function NightFireDoor({ nights, onOpen }: { nights: PlayNightResponse; onOpen: () => void }) {
+  const { state } = usePlayNight(nights);
+  return <FireDoor signal={signalOf((state ?? nights).nights)} onOpen={onOpen} />;
+}
+
 /** The campfire: the last light. One band of ground at the foot of the page,
     the fire burning in the middle of it in a ring of stones, in front of the
     same mesas the evening opened over, its light pooled across the ground and
     on the foot of the rock. Tap the fire and the duel comes out. Climbing
     back to the sunset rewinds the sky on the way up, because the sky is
-    scroll. */
-function Footer({ season: initial }: { season?: Season } = {}) {
+    scroll. `nights`, on the home page: the nights it was drawn with, so the
+    fire knows the day of a fire. */
+function Footer({ season: initial, nights }: { season?: Season; nights?: PlayNightResponse } = {}) {
   const [duel, setDuel] = useState(false);
   const season = useSeason(initial);
   useScrollLock(duel);
   const closeDuel = useCallback(() => setDuel(false), []);
+  const openDuel = useCallback(() => setDuel(true), []);
   const backdrop = useBackdropClose(closeDuel);
   useBackCloses(duel, closeDuel);
   /* out of sight, the fire's frames and its smoke hold still (useAway) */
@@ -63,13 +89,7 @@ function Footer({ season: initial }: { season?: Season } = {}) {
           </Link>
 
           <div className="b-foot__camp">
-            {/* the duel's door: the fire, and the sign planted beside it, since a
-                phone has no pointer to bring up a tooltip and the duel was
-                found only by those who happened to tap the fire */}
-            <button type="button" className="b-foot__fire" onClick={() => setDuel(true)} aria-haspopup="dialog" aria-label="Einvígi: prófaðu viðbragðstímann">
-              <Campfire stones />
-              <span className="b-foot__sign" aria-hidden="true"><span className="b-foot__board">Einvígi</span></span>
-            </button>
+            {nights ? <NightFireDoor nights={nights} onOpen={openDuel} /> : <FireDoor onOpen={openDuel} />}
             <YuleLad season={season} spot="fire" />
           </div>
 

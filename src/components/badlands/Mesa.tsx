@@ -1,8 +1,9 @@
-import { memo } from 'react';
+import { memo, useEffect, useRef, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
 import PlayerHead from './PlayerHead';
-import { Lantern, Phantom } from './Bits';
+import { Campfire, Lantern, Phantom } from './Bits';
 import { useRoster, type OnRidge } from './roster';
+import { signalSpot } from './signal';
 import { awakeWords } from '@/lib/sleepless';
 
 /* The badlands silhouettes behind the hero: three mesa layers and the ground.
@@ -125,6 +126,57 @@ function Haze() {
       </g>
     </svg>
   );
+}
+
+/* Reykmerki: the day a fire is lit for (signal.ts), the game's signal fire,
+   a campfire on a hay bale, stands on a plateau of the far ridge between the
+   screen's edge and the J, and sends its column up into the open sky beside
+   the letter, so the day is said from across the badlands before a word is
+   read. It is the far ridge's, so it sinks with it, behind the name and the
+   nearer ridges. Where it can stand depends on where the name begins and on
+   how the screen crops the drawing, so it is placed once it is on the page
+   and again when the page changes size; until then there is no fire at all,
+   and nothing else moves when it comes. The column goes up no higher than a
+   step under the address and the lantern, and drifts east only once it is
+   clear of the letter (badlands.css). */
+const SIGNAL_WIDE = 8;      // the fire's width in the drawing's units, on a wide screen
+const SIGNAL_PHONE = 6;     // and on a phone, where the J stands at the gutter
+const SIGNAL_CLEAR = 6;     // pixels kept between the fire and the J
+const RISE_MIN = 64;        // a column shorter than this is no signal, and no fire stands
+const RISE_MAX = 256;
+interface Signal { x: number; h: number; fw: number; rise: number }
+
+function SignalFire() {
+  const ref = useRef<HTMLSpanElement>(null);
+  const [at, setAt] = useState<Signal | null>(null);
+  useEffect(() => {
+    const mesa = ref.current?.closest<HTMLElement>('.b-mesa');
+    const hero = mesa?.closest('.b-hero');
+    const mark = hero?.querySelector('.b-hero__mark');
+    const above = hero?.querySelector('.b-hero__action');
+    if (!mesa || !mark || !above) return;
+    const place = () => {
+      const box = mesa.getBoundingClientRect();
+      const fw = window.matchMedia('(max-width: 899.98px)').matches ? SIGNAL_PHONE : SIGNAL_WIDE;
+      /* the middle ridge is not drawn on a phone (badlands.css) */
+      const front = window.matchMedia('(max-width: 759.98px)').matches ? [NEAR] : [MID, NEAR];
+      const spot = signalSpot({ far: FAR, front, width: box.width, height: box.height, clear: mark.getBoundingClientRect().left - box.left - SIGNAL_CLEAR, fire: fw });
+      if (!spot) { setAt(null); return; }
+      const u = Math.max(box.width / W, box.height / H);
+      /* the fire's mouth, seven tenths of the way up its drawing, bale and all (Bits.tsx) */
+      const mouth = box.bottom - spot.h * u - fw * u * (20 / 16) * 0.7;
+      const rise = Math.min(RISE_MAX, Math.round(mouth - above.getBoundingClientRect().bottom - 24));
+      setAt(rise < RISE_MIN ? null : { ...spot, fw, rise });
+    };
+    place();
+    /* the page's size, and the lantern's plate as its lines come and go */
+    const watch = new ResizeObserver(place);
+    watch.observe(mesa);
+    watch.observe(above);
+    return () => watch.disconnect();
+  }, []);
+  const style = at ? { '--fx': at.x, '--fh': at.h, '--fw': at.fw, '--rise': `${at.rise}px` } as CSSProperties : undefined;
+  return <span ref={ref} className="b-mesa__signal" style={style}>{at && <Campfire signal />}</span>;
 }
 
 /** One ridge: its rock and strata in the sunset's colours, drawn once; what
@@ -269,11 +321,12 @@ export const NONE_AWAKE: Record<string, number> = {};
 
 /** The mesas; in winter with snow on them, at Hrekkjavaka with jack-o'-lanterns
     (src/lib/season.ts); with the heads of whoever is in on the nearest ridge,
-    and phantoms over any of them who has not slept (`awake`). */
-function Mesa({ snow = false, halloween = false, heads = [], known = false, awake = NONE_AWAKE }: { snow?: boolean; halloween?: boolean; heads?: string[]; known?: boolean; awake?: Record<string, number> }) {
+    and phantoms over any of them who has not slept (`awake`); on the day of
+    a fire, with the signal fire on the far ridge (`signal`). */
+function Mesa({ snow = false, halloween = false, heads = [], known = false, awake = NONE_AWAKE, signal = false }: { snow?: boolean; halloween?: boolean; heads?: string[]; known?: boolean; awake?: Record<string, number>; signal?: boolean }) {
   return (
     <div className="b-mesa">
-      <Layer d={FAR_D} mod="far" haze={<Haze />}>
+      <Layer d={FAR_D} mod="far" haze={<Haze />} after={signal ? <SignalFire /> : undefined}>
         <Bands id="b-mesa-far-bands" d={FAR_D} bands={FAR_BANDS} faint />
         {snow && <Snow plateaus={FAR} />}
       </Layer>

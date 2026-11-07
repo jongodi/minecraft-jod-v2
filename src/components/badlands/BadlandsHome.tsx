@@ -153,7 +153,7 @@ export default function BadlandsHome({ syncedOn, bases, initial }: { syncedOn: s
         <Hero server={server} season={season} nights={nights} packs={packs} facts={facts} sleepless={sleepless} />
         <World plates={plates} config={map} pinned={pinned} server={server} syncedOn={syncedOn} bases={bases} fresh={fresh} room={room} onCloseRoom={closeRoom} />
       </main>
-      <Footer season={season} />
+      <Footer season={season} nights={nights} />
     </div>
   );
 }
