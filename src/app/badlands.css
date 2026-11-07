@@ -2270,7 +2270,10 @@ html.is-map-full { overflow: hidden; }
 .b-hang { filter: drop-shadow(0 calc(var(--px) * 2) 0 rgb(from var(--night) r g b / 0.55)); }
 
 /* ─── the album: the whole wall, opened over the world ────────── */
-.b-album { position: fixed; inset: 0; z-index: var(--z-drawer); overflow-y: auto; background: var(--scrim-deep); padding-block: calc(var(--sp-6) + var(--safe-top)) var(--sp-8); }
+/* on the night itself, solid: through the deep scrim the HUD's date, heads
+   and tools stood faintly at the header's own baselines, and its sentence
+   ran on into them. The viewer sleeps under the album, so nothing is lost. */
+.b-album { position: fixed; inset: 0; z-index: var(--z-drawer); overflow-y: auto; background: var(--night); padding-block: calc(var(--sp-6) + var(--safe-top)) var(--sp-8); }
 .b-album__inner { display: grid; gap: var(--sp-4); }
 /* Tiles are square and butt together, so the wall never leaves holes.
    Every fifth picture is hung double size. There is no dense packing:
