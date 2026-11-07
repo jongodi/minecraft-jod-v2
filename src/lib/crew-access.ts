@@ -193,6 +193,15 @@ export async function closeInvite(key: string): Promise<boolean> {
   return (await spendInvite(key, 'close')) !== null;
 }
 
+/** Shut every open link a member has. A new password, or one cleared, signs
+    out whoever got in on an old link; a link still open let them straight
+    back in, for a year, as long as it had a use left. Returns how many were shut. */
+export async function closeInvitesOf(username: string): Promise<number> {
+  let closed = 0;
+  for (const inv of await listInvites(username)) if (await closeInvite(inv.key)) closed++;
+  return closed;
+}
+
 /** A member's open links, newest first, for the admin panel. */
 export async function listInvites(username: string): Promise<Invite[]> {
   const name = canonicalUsername(username);
