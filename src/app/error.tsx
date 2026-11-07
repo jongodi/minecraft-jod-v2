@@ -2,7 +2,7 @@
 
 import { startTransition, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import OffTrail from '@/components/badlands/OffTrail';
+import LostScreen from '@/components/badlands/LostScreen';
 
 /* A page that threw while it was being drawn. The words stay in the site's
    voice; the one action draws it again, and the bar and the fire keep the
@@ -15,7 +15,7 @@ export default function PageError({ error, reset }: { error: Error & { digest?: 
      asked for afresh, and the boundary lets go once the new one is in. */
   const retry = () => startTransition(() => { router.refresh(); reset(); });
   return (
-    <OffTrail
+    <LostScreen
       title="Ljósið slokknaði"
       cause="Eitthvað fór úrskeiðis meðan síðan var teiknuð."
       actions={<>
@@ -26,6 +26,6 @@ export default function PageError({ error, reset }: { error: Error & { digest?: 
       </>}
     >
       Reyndu aftur, eða farðu aftur í sólsetrið og komdu síðar.
-    </OffTrail>
+    </LostScreen>
   );
 }

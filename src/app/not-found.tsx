@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import OffTrail from '@/components/badlands/OffTrail';
+import LostScreen from '@/components/badlands/LostScreen';
 
 export const metadata: Metadata = { title: 'Fannst ekki' };
 
@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: 'Fannst ekki' };
    which is the site's own title card. */
 export default function NotFound() {
   return (
-    <OffTrail
+    <LostScreen
       title="Þú dóst!"
       cause="Þú féllst út úr heiminum."
       score={0}
@@ -21,6 +21,6 @@ export default function NotFound() {
     >
       {/* the game's screen has no paragraph: the cause says it */}
       {null}
-    </OffTrail>
+    </LostScreen>
   );
 }
