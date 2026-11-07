@@ -144,6 +144,8 @@ function Flight({ flight, fly, runway, f3, places, players, selected, onChoose, 
     const haze = scene?.querySelector<HTMLElement>('.b-flight__haze') ?? null;
     /* the landing mark: the scroll at which the camera is down (World.tsx, badlands.css) */
     const land = section.querySelector<HTMLElement>(':scope > .b-world__land');
+    /* World's F3 lines, which it lays out beside the flight for as long as the page flies */
+    const f3Lines = f3.current;
 
     /* where the world is on the page and how big the frame is: measured on resize, never while scrolling */
     const geo = { top: 0, stick: 0, length: 0, lead: 0, w: 0, h: 0, glow: 0 };
@@ -183,7 +185,11 @@ function Flight({ flight, fly, runway, f3, places, players, selected, onChoose, 
     let landed: boolean | null = null;
     let approached = false;
     let showing = false;
-    let f3Text = ['', ''];
+    /* null until the lines are first written: each run of this effect writes
+       them, and whether they are hidden, at its first draw, whatever an
+       earlier run left there (taking hold of the map mid-flight ends a run
+       with the camera up in the air) */
+    let f3Text: string[] | null = null;
     /* the F3 lines are rewritten a few times a second, not on every frame:
        each rewrite is a text node laid out and painted in the scroll's frame */
     let f3At = 0;
@@ -422,7 +428,7 @@ function Flight({ flight, fly, runway, f3, places, players, selected, onChoose, 
       const lines = f3.current;
       const xyz = flying ? `XYZ: ${cam.eye.map(Math.floor).join(' / ')}` : '';
       const way = flying ? `Snýr í ${FACING[facing(cam.eye, cam.look)]}` : '';
-      if (lines && (xyz !== f3Text[0] || way !== f3Text[1]) && (!flying || now - f3At >= F3_EVERY_MS)) {
+      if (lines && (!f3Text || xyz !== f3Text[0] || way !== f3Text[1]) && (!flying || now - f3At >= F3_EVERY_MS)) {
         f3At = now;
         f3Text = [xyz, way];
         lines.hidden = !flying;
@@ -482,6 +488,14 @@ function Flight({ flight, fly, runway, f3, places, players, selected, onChoose, 
       inflight?.abort();
       cancelAnimationFrame(raf);
       if (scene) scene.style.visibility = 'hidden';
+      /* The F3 lines are World's and outlive this: taken hold of mid-flight,
+         the live map's own come up under them, and the camera's last place
+         high over the world stood frozen above those. Hidden and emptied,
+         they wait for the next run to write them. */
+      if (f3Lines) {
+        f3Lines.hidden = true;
+        for (const line of f3Lines.children) line.textContent = '';
+      }
       ready.forEach(bitmap => bitmap.close());
       ready.clear();
       window.removeEventListener('resize', remeasure);

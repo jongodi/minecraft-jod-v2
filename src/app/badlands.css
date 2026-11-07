@@ -1845,6 +1845,11 @@ html.is-map-full { overflow: hidden; }
    each line on its own strip, left over the places while the live map is up.
    The figures are live, so they are the bitmap face. */
 .b-f3 { display: grid; justify-items: start; gap: var(--px); margin-bottom: var(--sp-2); pointer-events: none; }
+/* the flight's lines are hidden while the camera is down (Flight.tsx): the
+   grid above outranks the global [hidden] rule, and kept their two empty
+   strips over the places' count as a stray mark, and a frozen pair of
+   lines over the live map's own when it was taken hold of mid-flight */
+.b-f3[hidden] { display: none; }
 .b-f3 > span { padding: var(--px) var(--sp-1); background: rgb(from var(--pitch) r g b / 0.6); color: var(--chat-grey); font-family: var(--font-data); font-size: var(--fs-data); line-height: 1.2; white-space: nowrap; text-shadow: var(--px) var(--px) 0 rgb(from var(--pitch) r g b / 0.8); }
 /* Spjallið (Chat.tsx): the game's chat, over the places' rail as it sits over
    the hotbar. Each line on its own veil of dark, the F3 lines' own, in the
