@@ -455,8 +455,10 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
            back would close the layer instead: the screen stays, still and lantern */
         if (!modalOpen()) closeFull();
         setLive(false); setReady(false); setViewer(false); setTiles({ drawn: 0, of: 0 }); setSlow(false); setMenu(false);
-        /* the next viewer opens at night following nobody: the HUD says so too */
+        /* the next viewer opens at night following nobody: the HUD says so too,
+           and a friend asked for before this one failed is not followed by it */
         setNight(false); setFollowing(null); setFollowNote(null);
+        pendingFollow.current = null;
         setFailed(!autoRef.current);
         setAuto(false);
       }
@@ -561,12 +563,19 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
   /* ─── the whole screen ─── */
   /* the way in that was pressed, which goes as the screen opens and is drawn anew as it closes */
   const opener = useRef<string | null>(null);
+  const fullRef = useRef(full);
+  fullRef.current = full;
   const openFull = useCallback(() => {
-    const at = document.activeElement;
-    opener.current = at?.closest('.b-card__fly') ? '.b-card__fly' : at?.closest('.b-boot') ? '.b-boot' : at?.closest('.b-hud__tools a') ? '.b-hud__tools a[href]' : null;
     setAuto(false);
     setFailed(false);
     setLive(true);
+    /* Asked again from inside the whole screen (a friend's line in the chat,
+       pressed there): the map is taken in hand, and nothing else. On an
+       iPhone a second entry in the history had Loka, or Back, need two
+       presses to leave, and the way in to go back to was a chat line. */
+    if (fullRef.current) return;
+    const at = document.activeElement;
+    opener.current = at?.closest('.b-card__fly') ? '.b-card__fly' : at?.closest('.b-boot') ? '.b-boot' : at?.closest('.b-hud__tools a') ? '.b-hud__tools a[href]' : null;
     const el = frameRef.current;
     if (el?.requestFullscreen && document.fullscreenEnabled) {
       el.requestFullscreen({ navigationUI: 'hide' }).then(() => setFull('native')).catch(() => {
@@ -720,6 +729,10 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
      locator (jod:home) flies back to the start view. */
   const pendingView = useRef<View | null>(null);
   const pendingFollow = useRef<string | null>(null);
+  /* Each press of a friend's line counts here, so the follow below runs again
+     for it: with the map already up and ready nothing else changes, and the
+     name waited in the ref until the map next woke, minutes later. */
+  const [followAsk, setFollowAsk] = useState(0);
   const copyView = useCallback(async () => {
     const c = camera.get();
     if (!c || typeof c.rotation !== 'number' || typeof c.d !== 'number') return;
@@ -752,6 +765,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
   useEffect(() => {
     const onFollow = (e: Event) => {
       pendingFollow.current = (e as CustomEvent<string>).detail;
+      setFollowAsk(n => n + 1);
       showWorld(false);
       if (window.matchMedia(PHONE_QUERY).matches) openFull(); else takeHold();
     };
@@ -774,7 +788,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
       if (r === 'ok' || r === 'outside' || ++tries >= 6) { clearInterval(t); pendingFollow.current = null; if (r === 'missing') setFollowNote(`${name} sést ekki á kortinu`); }
     }, 800);
     return () => clearInterval(t);
-  }, [viewer, ready, standby, jod]);
+  }, [viewer, ready, standby, jod, followAsk]);
   /* The hotbar's next slots: 4 Nótt, 5 Teiknað kort, 6 Myndir, 7 Heill
      skjár, with the world in view on a wide screen; not in a field, under a
      dialog, in a room, or with a modifier (the doors' keys are AddressBar's). */
