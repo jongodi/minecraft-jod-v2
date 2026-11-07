@@ -1160,9 +1160,9 @@
    nearly gone up under the bar. Their wings beat every six of the game's
    ticks, and the ring is eight stops round in four seconds,
    each stop reached in two steps of whole pixels of the art, as the game's
-   sprites move. Paused once the sunset is scrolled past (.is-away), held
-   where they are under reduced motion, and left out where the browser has
-   no scroll timeline to bring them out on. */
+   sprites move. Paused once the sunset is scrolled past (.is-away), still
+   on their ring with their wings up under reduced motion, and left out
+   where the browser has no scroll timeline to bring them out on. */
 .b-phantoms {
   --flap: 300ms;
   --round: 4s;
@@ -1211,7 +1211,9 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .b-phantoms { animation: none; opacity: 1; }
-  .b-phantom, .b-phantom__wing { animation-play-state: paused; }
+  .b-phantom, .b-phantom__wing { animation: none; }
+  .b-phantom { transform: translate(calc(var(--px) * -8), calc(var(--px) * 2)); }
+  .b-phantom + .b-phantom { transform: translate(calc(var(--px) * 8), calc(var(--px) * -2)); }
 }
 
 /* The phone's climbers: the crew who are in, standing on the name itself,
