@@ -42,3 +42,16 @@ export function hereLine(names: readonly string[], where = 'hérna'): string {
   if (names.length === 0) return '';
   return `${andList(names)} ${names.length === 1 ? 'er' : 'eru'} ${where}`;
 }
+
+/** What the rail does about who is where, once the world is reached
+    (World.tsx), and only once: `wait` for the first answer of where the crew
+    stand; then bring into view the first place someone stands at, if any,
+    or nothing at all (null). A place a link has chosen keeps the rail on its
+    own chip. An answer with nobody at a place spends the one reveal too: one
+    who walked into a place minutes later slid the rail back under a visitor
+    reading its far end. */
+export function railReveal(selected: number | null, answered: boolean, firstAt: number | null): 'wait' | number | null {
+  if (selected !== null) return null;
+  if (!answered) return 'wait';
+  return firstAt;
+}

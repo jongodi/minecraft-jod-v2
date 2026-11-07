@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { crewAtPlaces, hereLine, HERE_REACH } from '../hereNow';
+import { crewAtPlaces, hereLine, railReveal, HERE_REACH } from '../hereNow';
 
 const place = (id: number, x: number, z: number) => ({ id, world: { x, z } });
 const at = (name: string, x: number, z: number) => ({ name, x, z });
@@ -40,5 +40,21 @@ describe('what the postcard says of them', () => {
   it('says it for the rail with its own word for here, and nothing for nobody', () => {
     expect(hereLine(['joenana'], 'hér núna')).toBe('joenana er hér núna');
     expect(hereLine([])).toBe('');
+  });
+});
+
+describe("the rail's one reveal of who is where", () => {
+  it('waits for the first answer of where the crew stand', () => {
+    expect(railReveal(null, false, null)).toBe('wait');
+  });
+  it('brings the first place with someone at it into view', () => {
+    expect(railReveal(null, true, 4)).toBe(4);
+  });
+  it('is spent by a first answer with nobody at a place, so nobody walking in later moves the rail', () => {
+    expect(railReveal(null, true, null)).toBeNull();
+  });
+  it('leaves the rail on a place a link has chosen, answer or none', () => {
+    expect(railReveal(7, false, null)).toBeNull();
+    expect(railReveal(7, true, 4)).toBeNull();
   });
 });

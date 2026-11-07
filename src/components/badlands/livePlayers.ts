@@ -12,8 +12,14 @@ export interface LivePlayer { name: string; x: number; y: number; z: number }
 const EVERY = 5000;
 const URL = '/bluemap/maps/world/live/players.json';
 /* one empty list, so a world with nobody in it hands the locator the same
-   list each render and its memo holds */
+   list each render and its memo holds. Only ever handed out before the first
+   answer since the world came into view: that answer is a list of its own,
+   even an empty one, which is how `answered` below tells the two apart. */
 const NONE: LivePlayer[] = [];
+
+/** Whether a list from useLivePlayers is an answer, rather than the empty
+    list it gives until the first one comes. */
+export const answered = (players: readonly LivePlayer[]): boolean => players !== NONE;
 
 interface BlueMapPlayer { name?: string; foreign?: boolean; position?: { x?: number; y?: number; z?: number } }
 
