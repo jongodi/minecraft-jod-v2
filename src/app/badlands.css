@@ -1610,6 +1610,10 @@ html.is-map-full { overflow: hidden; }
 @media (hover: hover) { .b-sheet__zoom button:hover { background: var(--lantern); } }
 .b-sheet__zoom button:active { box-shadow: var(--bevel-in); }
 .b-pin-map { cursor: pointer; }
+/* on the sheet the flags keep the size they opened at while the paper zooms
+   under them (MapSheet.tsx: --z0 over --z), each about its own foot
+   (MapArt.tsx), so a zoom spreads a cluster apart instead of enlarging it */
+.b-sheet .b-pin-map { scale: calc(var(--z0, 1) / var(--z, 1)); }
 .b-pin-map__hit { fill: transparent; }
 .b-pin-map__body { transition: transform var(--dur-1) var(--ease-out); transform-box: fill-box; transform-origin: center bottom; }
 .b-pin-map:focus-visible .b-pin-map__body { transform: translateY(-2px) scale(1.15); }
