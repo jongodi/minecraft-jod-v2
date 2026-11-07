@@ -1066,19 +1066,21 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
                   {place.builders && place.builders.length > 0 && (
                     <span className="b-card__builders">byggt af {place.builders.map((b, i) => <span key={b}>{i > 0 && ', '}<Link href={`/crew/${b}`}>{b}</Link></span>)}</span>
                   )}
-                  {/* where it stands, as F3 writes it; a press copies the three numbers for a /tp or a walk,
-                      and where neither way of copying works the toast holds them to be copied by hand */}
-                  {place.world && (
-                    <button type="button" className="b-f3 b-card__xyz" aria-label={`Afrita hnitin ${place.world.x}, ${place.world.y}, ${place.world.z}`}
-                      onClick={() => { const w = place.world!; const xyz = `${w.x} ${w.y} ${w.z}`; copyText(xyz).then(ok => (ok ? toast('Afritað', 'hnitin') : toast('Afritun tókst ekki', xyz))); }}>
-                      <span aria-hidden="true">XYZ: {place.world.x} / {place.world.y} / {place.world.z}</span>
-                    </button>
-                  )}
                 </span>
                 <span className="b-card__tools">
                   <button type="button" className="b-btn b-btn--small b-btn--ghost b-card__share" onClick={() => share(place.id, titleCase(place.label))}>Deila</button>
                   <button type="button" className="b-card__x" onClick={letGo} aria-label="Loka póstkortinu"><CloseIcon /></button>
                 </span>
+                {/* where it stands, as F3 writes it; a press copies the three numbers for a /tp or a walk,
+                    and where neither way of copying works the toast holds them to be copied by hand.
+                    A row of its own under the words and the buttons (badlands.css): in with the
+                    words, its unbroken line set their width, and they ran on under Deila */}
+                {place.world && (
+                  <button type="button" className="b-f3 b-card__xyz" aria-label={`Afrita hnitin ${place.world.x}, ${place.world.y}, ${place.world.z}`}
+                    onClick={() => { const w = place.world!; const xyz = `${w.x} ${w.y} ${w.z}`; copyText(xyz).then(ok => (ok ? toast('Afritað', 'hnitin') : toast('Afritun tókst ekki', xyz))); }}>
+                    <span aria-hidden="true">XYZ: {place.world.x} / {place.world.y} / {place.world.z}</span>
+                  </button>
+                )}
               </figcaption>
               {/* a place on this map's ground can be visited here, one at another
                   base in that base's own map, and one in neither has no 3D to offer */}

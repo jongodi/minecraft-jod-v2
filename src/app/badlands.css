@@ -1976,8 +1976,13 @@ html.is-map-full { overflow: hidden; }
 .b-card__emptysun { position: absolute; top: 14%; right: 16%; width: 1.5rem; height: 1.5rem; opacity: 0.3; }
 .b-card__emptysun svg { width: 100%; height: 100%; display: block; shape-rendering: crispEdges; }
 .b-card__emptytext { position: relative; font-size: var(--fs-sm); color: var(--ink-soft); }
-.b-card__cap { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-2); margin-top: var(--sp-3); padding-inline: var(--sp-1); }
+/* the words in a column that gives way to Deila and the ✕ beside them, and
+   the coordinates in a row of their own under both (World.tsx): an F3 line
+   does not break, and inside the words' column it set the column's width,
+   so a long name or sublabel ran on under the buttons */
+.b-card__cap { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: var(--px) var(--sp-2); margin-top: var(--sp-3); padding-inline: var(--sp-1); }
 .b-card__cap > span { display: grid; gap: var(--px); min-width: 0; }
+.b-card__cap > .b-card__xyz { grid-column: 1 / -1; justify-self: start; }
 .b-card__name { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-lg); line-height: 1.15; color: var(--ink); overflow-wrap: break-word; hyphens: auto; }
 .b-card__sub { font-size: var(--fs-sm); color: var(--ink-soft); line-height: 1.35; }
 /* who of the crew stands at the place now (hereNow.ts): their heads, ringed
