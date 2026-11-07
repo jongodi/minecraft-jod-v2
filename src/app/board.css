@@ -280,8 +280,12 @@
 /* when a member was last in the game: small print in the faint ink, as the meta line is */
 .b-poster__seen { margin-top: var(--sp-2); font-size: var(--fs-sm); color: var(--ink-faint); }
 .b-poster__note { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; text-wrap: balance; }
-/* what a member is wanted for, under their name on the roll call: as the room's board sets it, a little smaller */
-.b-poster--crew .b-poster__alias { font-size: var(--fs-sm); }
+/* what a member is wanted for, under their name on the roll call: as the room's board sets it, a little smaller.
+   The alias is the poster's headline, so it is never cut short: too long for
+   a narrow poster (a 360 px phone, a tablet's four columns), it breaks at the
+   soft hyphen its name carries, Ræningja-baninn, in two even lines. The
+   alias is known at first paint, so a poster never grows under the visitor. */
+.b-poster--crew .b-poster__alias { font-size: var(--fs-sm); white-space: normal; overflow: visible; text-overflow: clip; hyphens: manual; text-wrap: balance; }
 /* one who is not a charge's outlaw: their place on it, where the alias would stand, in the paper's soft ink */
 .b-poster__place { margin-top: var(--sp-1); font-size: var(--fs-sm); font-weight: 600; line-height: 1.3; color: var(--ink-faint); }
 /* the three lines held open while the numbers come */
