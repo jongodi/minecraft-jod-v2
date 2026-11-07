@@ -2915,6 +2915,12 @@ html.is-map-full { overflow: hidden; }
    rather than in board.css: OffTrail is the root's not-found boundary,
    and a sheet it imports is preloaded on every page, used or not. */
 .b-page { padding-block: calc(clamp(5rem, 9vw, 7rem) + var(--safe-top)) clamp(3rem, 8vw, 6rem); }
+/* Where the experience bar hangs under the plank (760 px and up), the page
+   starts a step of night below its foot: from 760 to about 1130 px the
+   padding alone put a wall's poster under the bar's last row of pixels. The
+   bar stays where it hangs, over the page as the game's sits over the world;
+   only what the page opens with is kept from starting under it. */
+@media (min-width: 760px) { .b-page { padding-top: calc(max(clamp(5rem, 9vw, 7rem), var(--bar) + var(--bar-strata) + var(--sp-2) + var(--xp) + var(--sp-4)) + var(--safe-top)); } }
 /* the night behind the top of the crew's pages (NightSky.tsx): the sky from
    its darkest at the top to the page's own night at the ridge, the stars, and
    the far ridge standing on the line where the page's night begins; the
