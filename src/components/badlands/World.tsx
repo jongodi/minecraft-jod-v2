@@ -846,7 +846,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
 
   return (
     <section id="heimur" className={`b-world${fly ? ' has-flight' : ''}`} aria-labelledby="heimur-title">
-      <div ref={frameRef} className={`b-frame${shown ? ' is-live' : ''}${shown && ready ? ' is-ready' : ''}${shown && !viewed ? ' is-unseen' : ''}${standby ? ' is-standby' : ''}${shown && auto ? ' is-glass' : ''}${held ? ' is-held' : ''}${drawn ? ' is-drawn' : ''}${shut ? ' is-room' : ''}${full === 'overlay' ? ' is-full' : ''}${shown && still ? ' is-still' : ''}${menu && ready ? ' is-menu' : ''}${chatOpen ? ' is-chat' : ''}${flying ? ' is-flying' : ''}`}>
+      <div ref={frameRef} className={`b-frame${shown ? ' is-live' : ''}${shown && ready ? ' is-ready' : ''}${shown && !viewed ? ' is-unseen' : ''}${standby ? ' is-standby' : ''}${shown && auto ? ' is-glass' : ''}${held ? ' is-held' : ''}${drawn ? ' is-drawn' : ''}${shut ? ' is-room' : ''}${full === 'overlay' ? ' is-full' : ''}${shown && still ? ' is-still' : ''}${menu && ready ? ' is-menu' : ''}${chatOpen ? ' is-chat' : ''}${place && !leaving ? ' is-card' : ''}${flying ? ' is-flying' : ''}`}>
         {/* The still and its lights settle together as the world is
             reached, the camera coming down into the valley with the scroll
             (badlands.css). On a device with room for the effects, until the

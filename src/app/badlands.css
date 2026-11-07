@@ -1899,6 +1899,11 @@ html.is-map-full { overflow: hidden; }
 /* open, the chat is read as the game's is, with the world's lantern stepped aside: its sign stood where the longer log climbs */
 .b-frame .b-hud__mid { transition: opacity var(--dur-2) var(--ease-out), transform var(--dur-3) var(--ease-out), visibility 0s linear 0s; }
 .b-frame.is-chat .b-hud__mid { opacity: 0; visibility: hidden; transition: opacity var(--dur-2) var(--ease-out), visibility 0s linear var(--dur-2); }
+/* On a phone a postcard opens across the middle of the world, and the post,
+   its arm and the top of the lantern stood up out of the card, sliced flat:
+   the sign steps aside while a card is up, as it does for the chat, and the
+   card's own button is the way into the map meanwhile. */
+@media (max-width: 899.98px) { .b-frame.is-card .b-hud__mid { opacity: 0; visibility: hidden; transition: opacity var(--dur-2) var(--ease-out), visibility 0s linear var(--dur-2); } }
 /* Coming down (Flight.tsx), the post is pulled up out of the camera's way,
    and set down in the town when it lands: the way into the live map stands
    where the flight ends, and the pins under it can be reached while flying. */
