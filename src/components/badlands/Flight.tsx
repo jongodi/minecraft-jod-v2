@@ -2,8 +2,8 @@
 
 import { memo, useEffect, useRef, type MutableRefObject, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
 import type { WorldPoint } from '@/lib/map-types';
-import { cameraAt, cover, depthScale, easeFlight, facing, fetchOrder, flightFrame, flightProgress, flightShape, follow, heading, horizonPoint, projectPoint, warp, type Flight as FlightData, type FlightShape } from '@/lib/map-flight';
-import { Lantern, Moon, Stars } from './Bits';
+import { cameraAt, cameraMatrix, CLOUD_BANDS, cloudDeck, clouded, cloudThinned, cover, deckHomography, depthScale, easeFlight, facing, fetchOrder, flightFrame, flightProgress, flightShape, follow, heading, horizonPoint, lensOf, projectPoint, warp, type CloudDeck, type Flight as FlightData, type FlightShape } from '@/lib/map-flight';
+import { Lantern, Moon, paintCloudDeck, Stars } from './Bits';
 import { FACING, titleCase } from './data';
 import PlayerHead from './PlayerHead';
 import { useMoonPhase } from './Season';
@@ -69,6 +69,8 @@ const LEAD = 0.5;
    camera is given a glider's lean over the overview, levelling out as it
    comes down and level for the landing, where the still takes over. */
 const BANK = -2.5;
+/* the deck's bands, a picture each, from the edges of the clouds in to their middles (map-flight.ts) */
+const BANDS = Array.from({ length: CLOUD_BANDS }, (_, b) => b + 1);
 
 type Moved = ReturnType<typeof warp>;
 interface Sheet { el: HTMLCanvasElement; ctx: CanvasRenderingContext2D | null; frame: number; shape: string; z: string }
@@ -82,9 +84,11 @@ interface Pin { el: HTMLElement; at: [number, number, number]; least: number; de
     the light going as it comes, the stars giving way to the town's lamps.
     Between two stills the nearer one is zoomed in towards the next by the
     camera each was taken with, and the next fades in over it already lined
-    up, so the camera moves instead of the frames dissolving. It ends on the
-    start view itself, where the flight steps aside for the still and its
-    lights. The places are pinned where they stand on whatever is showing,
+    up, so the camera moves instead of the frames dissolving. On the way it
+    comes down through the game's clouds, a deck of flat cells at their own
+    height, which thins away as the camera breaks out over the town. It ends
+    on the start view itself, where the flight steps aside for the still and
+    its lights. The places are pinned where they stand on whatever is showing,
     smaller the farther off, and so are the crew who are on, by their heads; a
     pin opens the place's postcard as its chip on the rail does.
 
@@ -92,8 +96,9 @@ interface Pin { el: HTMLElement; at: [number, number, number]; least: number; de
     (where the world is on the page is measured on resize), and nothing is
     done while the camera has not moved. The two stills on screen are each
     painted once onto a sheet of their own, at the size they were taken, when
-    they come on; the scroll only moves and fades the sheets and the sky's
-    layers, which the compositor does without painting. The stills are fetched
+    they come on, and the clouds' pictures once for the visit; the scroll only
+    moves and fades the sheets, the sky's layers and the clouds, which the
+    compositor does without painting. The stills are fetched
     as they are: the overview and the landing once the world is near, and the
     rest, a few MB, from the visitor's first scroll, ever finer between, so a
     quick scroll always has one near, moved to where the camera is. Only those
@@ -142,8 +147,21 @@ function Flight({ flight, fly, runway, f3, places, players, selected, onChoose, 
 
     /* altitude: the night air between the camera and the land, thick over the overview and gone at the landing */
     const haze = scene?.querySelector<HTMLElement>('.b-flight__haze') ?? null;
+    /* the game's clouds: a picture for each band of the deck, painted once
+       the stills are on their way, and set on its plane while the camera is
+       over it (map-flight.ts) */
+    const clouds = scene?.querySelector<HTMLElement>('.b-flight__clouds') ?? null;
+    const cloudPics = Array.from(clouds?.querySelectorAll('img') ?? []);
+    let deck: CloudDeck | null = null;
+    let painting = false;
+    const cloudUrls: string[] = [];
+    /* the deck on screen, and how many of its bands are gone */
+    let deckOn = false;
+    let deckThin = -1;
     /* the landing mark: the scroll at which the camera is down (World.tsx, badlands.css) */
     const land = section.querySelector<HTMLElement>(':scope > .b-world__land');
+    /* World's F3 lines, which it lays out beside the flight for as long as the page flies */
+    const f3Lines = f3.current;
 
     /* where the world is on the page and how big the frame is: measured on resize, never while scrolling */
     const geo = { top: 0, stick: 0, length: 0, lead: 0, w: 0, h: 0, glow: 0 };
@@ -183,7 +201,11 @@ function Flight({ flight, fly, runway, f3, places, players, selected, onChoose, 
     let landed: boolean | null = null;
     let approached = false;
     let showing = false;
-    let f3Text = ['', ''];
+    /* null until the lines are first written: each run of this effect writes
+       them, and whether they are hidden, at its first draw, whatever an
+       earlier run left there (taking hold of the map mid-flight ends a run
+       with the camera up in the air) */
+    let f3Text: string[] | null = null;
     /* the F3 lines are rewritten a few times a second, not on every frame:
        each rewrite is a text node laid out and painted in the scroll's frame */
     let f3At = 0;
@@ -398,12 +420,28 @@ function Flight({ flight, fly, runway, f3, places, players, selected, onChoose, 
         }
       }
 
-      /* each pin where its point stands, smaller the farther it is from the camera */
+      /* The clouds: the deck set on its plane as the camera sees it, worked
+         out from the camera itself rather than moved with a still, since it
+         is far nearer the camera than the land is. It thins in whole steps
+         over the last stretch above it and is gone before the camera
+         reaches it. One transform for each band still there, which the
+         compositor draws; nothing at all once it is gone, or landed. */
+      const thin = deck && flying ? cloudThinned(cam.eye[1]) : CLOUD_BANDS;
+      if (clouds && (thin < CLOUD_BANDS) !== deckOn) { deckOn = thin < CLOUD_BANDS; clouds.hidden = !deckOn; }
+      if (deck && deckOn) {
+        if (thin !== deckThin) { deckThin = thin; cloudPics.forEach((pic, b) => { pic.style.visibility = b < thin ? 'hidden' : ''; }); }
+        const hm = deckHomography(cameraMatrix(cam.eye, cam.look, lensOf(shots[0].m)), deck, set, rect).map(v => v.toPrecision(8));
+        const t = `matrix3d(${hm[0]}, ${hm[3]}, 0, ${hm[6]}, ${hm[1]}, ${hm[4]}, 0, ${hm[7]}, 0, 0, 1, 0, ${hm[2]}, ${hm[5]}, 0, ${hm[8]})`;
+        for (let b = thin; b < cloudPics.length; b++) cloudPics[b].style.transform = t;
+      }
+
+      /* each pin where its point stands, smaller the farther it is from the
+         camera, and out of sight under a cloud, where it would float on top of it */
       for (const pin of pins.current) {
         const seen = onScreen(pin.at);
         const pos = seen && leaned(seen);
         const { el } = pin;
-        if (!pos || pos.x < -EDGE || pos.x > w + EDGE || pos.y < -EDGE || pos.y > h + EDGE) { el.style.visibility = 'hidden'; continue; }
+        if (!pos || pos.x < -EDGE || pos.x > w + EDGE || pos.y < -EDGE || pos.y > h + EDGE || (deck && deckOn && clouded(deck, cam.eye, pin.at, thin))) { el.style.visibility = 'hidden'; continue; }
         el.style.visibility = '';
         el.style.transform = `translate(${pos.x.toFixed(1)}px, ${pos.y.toFixed(1)}px)`;
         const depth = Math.max(pin.least, depthScale(Math.hypot(pin.at[0] - cam.eye[0], pin.at[1] - cam.eye[1], pin.at[2] - cam.eye[2]))).toFixed(2);
@@ -422,7 +460,7 @@ function Flight({ flight, fly, runway, f3, places, players, selected, onChoose, 
       const lines = f3.current;
       const xyz = flying ? `XYZ: ${cam.eye.map(Math.floor).join(' / ')}` : '';
       const way = flying ? `Snýr í ${FACING[facing(cam.eye, cam.look)]}` : '';
-      if (lines && (xyz !== f3Text[0] || way !== f3Text[1]) && (!flying || now - f3At >= F3_EVERY_MS)) {
+      if (lines && (!f3Text || xyz !== f3Text[0] || way !== f3Text[1]) && (!flying || now - f3At >= F3_EVERY_MS)) {
         f3At = now;
         f3Text = [xyz, way];
         lines.hidden = !flying;
@@ -461,11 +499,30 @@ function Flight({ flight, fly, runway, f3, places, players, selected, onChoose, 
     const onLoad = () => { loaded = true; if (asked) start(); };
     let loaded = document.readyState === 'complete';
     let asked = false;
+    /* The deck's pictures, painted once, as the stills are first asked for:
+       never on the first paint, and a few kB of canvas off the scroll. Its
+       colour is the token the stylesheet gives the pictures; a browser that
+       cannot paint it flies without clouds. */
+    const paintClouds = () => {
+      if (painting || !clouds || cloudPics.length !== CLOUD_BANDS) return;
+      painting = true;
+      const d = cloudDeck(flight);
+      const colour = getComputedStyle(cloudPics[0]).color;
+      void Promise.all(BANDS.map(b => paintCloudDeck(d.cells, d.size, b, colour))).then(urls => {
+        const got = urls.filter((u): u is string => u !== null);
+        if (gone || got.length !== urls.length) { got.forEach(u => URL.revokeObjectURL(u)); return; }
+        got.forEach((u, b) => { cloudUrls.push(u); cloudPics[b].src = u; });
+        deck = d;
+        lastKey = '';
+        schedule();
+      });
+    };
     const start = () => {
       if (fetching) return;
       if (!loaded && !scrolled.current) { asked = true; return; }
       fetching = true;
       if (shape) fetchSet(shape);
+      paintClouds();
       lastKey = '';
     };
     if (fly) {
@@ -482,6 +539,16 @@ function Flight({ flight, fly, runway, f3, places, players, selected, onChoose, 
       inflight?.abort();
       cancelAnimationFrame(raf);
       if (scene) scene.style.visibility = 'hidden';
+      /* The F3 lines are World's and outlive this: taken hold of mid-flight,
+         the live map's own come up under them, and the camera's last place
+         high over the world stood frozen above those. Hidden and emptied,
+         they wait for the next run to write them. */
+      if (f3Lines) {
+        f3Lines.hidden = true;
+        for (const line of f3Lines.children) line.textContent = '';
+      }
+      if (clouds) clouds.hidden = true;
+      cloudUrls.forEach(u => URL.revokeObjectURL(u));
       ready.forEach(bitmap => bitmap.close());
       ready.clear();
       window.removeEventListener('resize', remeasure);
@@ -506,12 +573,19 @@ function Flight({ flight, fly, runway, f3, places, players, selected, onChoose, 
           <div className="b-flight__glow" />
           <canvas className="b-flight__sheet" />
           <canvas className="b-flight__sheet" />
+          {/* the game's clouds, a band of the deck in each picture (badlands.css) */}
+          <div className="b-flight__clouds" hidden>
+            {BANDS.map(b => (
+              // eslint-disable-next-line @next/next/no-img-element -- a picture painted in the page, a pixel a cell, set on the plane by a transform
+              <img key={b} className="b-flight__cloud" alt="" draggable={false} decoding="async" />
+            ))}
+          </div>
           <div className="b-flight__haze" />
         </div>
       )}
       {/* The pins are for a pointer: each is the place's chip on the rail,
-          which is the way to it from a keyboard and for a screen reader; the
-          crew who are on are in the HUD's heads. */}
+          which is the way to it from a keyboard and for a screen reader; for
+          the crew who are on, it is their head in the HUD. */}
       <div ref={layer} className={`b-pins${hidden ? ' is-hidden' : ''}`} aria-hidden="true">
         {places.map(pl => (
           <button key={pl.id} data-pin={`place:${pl.id}`} type="button" tabIndex={-1}

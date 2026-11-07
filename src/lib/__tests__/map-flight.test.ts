@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bearing, cameraAt, cardShot, cover, depthScale, easeFlight, facing, fetchOrder, flightProgress, flightShape, follow, frameFor, heading, headingOf, horizonPoint, project, projectPoint, warp, type Flight, type FlightShot } from '../map-flight';
+import { bearing, cameraAt, cameraMatrix, cardShot, CLOUD_BANDS, CLOUD_CELL, CLOUD_GONE, CLOUD_THIN, CLOUD_Y, cloudAt, cloudDeck, clouded, cloudThinned, cover, crossing, deckHomography, depthScale, easeFlight, facing, fetchOrder, FLIGHT, flightProgress, flightShape, follow, frameFor, heading, headingOf, horizonPoint, lensOf, planeHomography, project, projectPoint, warp, type CloudDeck, type Flight, type FlightShot } from '../map-flight';
 
 const IDENTITY = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
 /* w = z, as a camera at the origin looking down +z would give */
@@ -93,6 +93,142 @@ describe('the flight', () => {
     expect(facing([0, 100, 0], [0, 64, 50])).toBe('south');
     expect(facing([0, 100, 0], [50, 64, 10])).toBe('east');
     expect(facing([0, 100, 0], [-50, 64, -10])).toBe('west');
+  });
+});
+
+describe('the cloud deck', () => {
+  const flight = FLIGHT!;
+  /* points round what a still looks at, near enough to be in front of the camera from the overview to the landing */
+  const around = (s: FlightShot) => [s.look, [s.look[0] - 30, s.look[1] + 20, s.look[2] + 25], [s.look[0] + 40, s.look[1] - 10, s.look[2] - 30], [s.look[0] + 25, s.look[1] + 30, s.look[2] + 10]];
+
+  it('is laid on a flight that has been taken', () => {
+    expect(flight).not.toBeNull();
+  });
+
+  it('rebuilds the camera of every still from where it stood and looked, and its lens', () => {
+    for (const set of [flight.wide, flight.tall!]) {
+      const lens = lensOf(set.shots[0].m);
+      for (const k of [0, 14, 22, set.shots.length - 1]) {
+        const s = set.shots[k];
+        const m = cameraMatrix(s.eye, s.look, lens);
+        for (const point of around(s)) {
+          const a = projectPoint(s.m, point)!, b = projectPoint(m, point)!;
+          /* within a pixel or so of a 1280 still: the file keeps where the camera stood to a tenth of a block */
+          expect(Math.abs(a.x - b.x)).toBeLessThan(2e-3);
+          expect(Math.abs(a.y - b.y)).toBeLessThan(2e-3);
+        }
+      }
+    }
+  });
+
+  it('takes a point of the level plane where projectPoint takes it', () => {
+    const s = flight.wide.shots[10];
+    const h = planeHomography(s.m, CLOUD_Y);
+    for (const [x, z] of [[-7000, -8900], [-6950, -9000], [-6800, -8850]]) {
+      const X = h[0] * x + h[1] * z + h[2], Y = h[3] * x + h[4] * z + h[5], W = h[6] * x + h[7] * z + h[8];
+      const p = projectPoint(s.m, [x, CLOUD_Y, z])!;
+      expect((X / W + 1) / 2).toBeCloseTo(p.x, 9);
+      expect((1 - Y / W) / 2).toBeCloseTo(p.y, 9);
+    }
+  });
+
+  it("sets the deck's picture on the frame where the camera sees the cells", () => {
+    const deck: CloudDeck = { x: -7000, z: -9000, size: 40, cells: new Uint8Array(1600) };
+    const s = flight.wide.shots[6];
+    const still = flight.wide;
+    const rect = cover(1440, 844, still.width, still.height);
+    const h = deckHomography(s.m, deck, still, rect);
+    for (const [u, v] of [[0, 0], [12, 30], [40, 40], [25.5, 3]]) {
+      const w = h[6] * u + h[7] * v + h[8];
+      expect(w).toBeGreaterThan(0);
+      const p = projectPoint(s.m, [deck.x + u * CLOUD_CELL, CLOUD_Y, deck.z + v * CLOUD_CELL])!;
+      expect((h[0] * u + h[1] * v + h[2]) / w).toBeCloseTo(rect.x + p.x * rect.width, 6);
+      expect((h[3] * u + h[4] * v + h[5]) / w).toBeCloseTo(rect.y + p.y * rect.height, 6);
+    }
+  });
+
+  it('keeps the depth of what is in front of the camera above nought, however it is scaled', () => {
+    /* the camera just over the plane, the deck's corner behind it */
+    const eye = [-7040, 200, -8948], look = [-6905, 57, -8915];
+    const m = cameraMatrix(eye, look, lensOf(flight.wide.shots[0].m));
+    const deck: CloudDeck = { x: -7454, z: -9438, size: 88, cells: new Uint8Array(88 * 88) };
+    const h = deckHomography(m, deck, flight.wide, cover(1440, 844, 1280, 720));
+    const depth = (x: number, z: number) => { const u = (x - deck.x) / CLOUD_CELL, v = (z - deck.z) / CLOUD_CELL; return h[6] * u + h[7] * v + h[8]; };
+    expect(depth(-6900, -8940)).toBeGreaterThan(0);
+    expect(depth(-7400, -8940)).toBeLessThan(0);
+  });
+
+  it('covers about a quarter of the world, the same every time, and none of its edge', () => {
+    const deck = cloudDeck(flight);
+    expect(deck.size).toBeGreaterThan(40);
+    const all = deck.cells.reduce((n, c) => n + (c > 0 ? 1 : 0), 0);
+    expect(all / deck.cells.length).toBeGreaterThan(0.2);
+    expect(all / deck.cells.length).toBeLessThanOrEqual(0.3);
+    expect(cloudDeck(flight).cells).toEqual(deck.cells);
+    for (let i = 0; i < deck.size; i++) {
+      for (const [a, b] of [[i, 0], [i, deck.size - 1], [0, i], [deck.size - 1, i]]) expect(deck.cells[b * deck.size + a]).toBe(0);
+    }
+  });
+
+  it('thins a cloud from its edges: every band holds a share of the cells', () => {
+    const deck = cloudDeck(flight);
+    const count = (b: number) => deck.cells.reduce((n, c) => n + (c === b ? 1 : 0), 0);
+    const filled = deck.cells.reduce((n, c) => n + (c > 0 ? 1 : 0), 0);
+    for (let b = 1; b <= CLOUD_BANDS; b++) {
+      expect(count(b) / filled).toBeGreaterThan(0.15);
+      expect(count(b) / filled).toBeLessThan(0.35);
+    }
+  });
+
+  it('never hangs a cell between either camera and the town it lands on', () => {
+    const deck = cloudDeck(flight);
+    for (const set of [flight.wide, flight.tall!]) {
+      const last = set.shots.length - 1;
+      const town = set.shots[last].look;
+      /* finer than the deck was cleared at, and out across the town the landing takes in */
+      for (let at = 0; at <= last; at += 0.1) {
+        const k = Math.min(last, Math.floor(at));
+        const { eye } = cameraAt(set.shots[k], set.shots[Math.min(last, k + 1)], at - k);
+        for (const [dx, dz] of [[0, 0], [8, 8], [-8, 6], [45, -20], [-30, 40], [0, -55]]) expect(clouded(deck, eye, [town[0] + dx, town[1], town[2] + dz], 0)).toBe(false);
+      }
+    }
+  });
+
+  it('finds where the line from the camera crosses the plane', () => {
+    expect(crossing([0, 292, 0], [100, 92, 50])).toEqual([50, 25]);
+    /* under the deck, or looking up at something over it, there is no crossing */
+    expect(crossing([0, 150, 0], [100, 60, 0])).toBeNull();
+    expect(crossing([0, 300, 0], [100, 250, 0])).toBeNull();
+  });
+
+  it('reads the cell over a point of the plane, and clear sky off the deck', () => {
+    const cells = new Uint8Array(4);
+    cells[3] = 2;
+    const deck: CloudDeck = { x: 0, z: 0, size: 2, cells };
+    expect(cloudAt(deck, 13, 13)).toBe(2);
+    expect(cloudAt(deck, 11.9, 13)).toBe(0);
+    expect(cloudAt(deck, -1, 13)).toBe(0);
+    expect(cloudAt(deck, 25, 13)).toBe(0);
+    /* a lantern under that cell is hidden, until its band is gone */
+    expect(clouded(deck, [0, 292, 0], [12, 92, 0], 0)).toBe(false);
+    expect(clouded(deck, [12, 292, 12], [14, 92, 14], 0)).toBe(true);
+    expect(clouded(deck, [12, 292, 12], [14, 92, 14], 2)).toBe(false);
+  });
+
+  it('thins in whole steps over the last stretch above it, and is gone before the camera reaches it', () => {
+    expect(cloudThinned(400)).toBe(0);
+    expect(cloudThinned(CLOUD_THIN)).toBe(0);
+    expect(cloudThinned(CLOUD_THIN - 0.5)).toBe(1);
+    expect(cloudThinned(CLOUD_GONE)).toBe(CLOUD_BANDS);
+    expect(cloudThinned(CLOUD_Y)).toBe(CLOUD_BANDS);
+    let was = 0;
+    for (let y = CLOUD_THIN; y >= CLOUD_GONE; y -= 0.5) {
+      const n = cloudThinned(y);
+      expect(Number.isInteger(n)).toBe(true);
+      expect(n).toBeGreaterThanOrEqual(was);
+      was = n;
+    }
+    expect(CLOUD_GONE).toBeGreaterThan(CLOUD_Y);
   });
 });
 

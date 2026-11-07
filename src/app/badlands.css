@@ -1356,6 +1356,26 @@ html:has(.b-world.has-flight) { scroll-snap-type: y proximity; }
     transparent 85%);
   will-change: opacity;
 }
+/* The game's clouds, which the camera comes down through at y 192: a deck
+   of flat cells over the stills and under the air (Flight.tsx). Each band
+   is one picture, a pixel a cell, set on the plane by a matrix3d and drawn
+   cell by cell (pixelated), so a cell stays a hard square as it swells past
+   the frame. Its colour is the hero's clouds' paper, let through a little
+   more than theirs, so the night's land shows under a cell as it does
+   through the game's own; the night's grey of the hero's clouds read over
+   the land as burnt ground. Flight.tsx reads it off the picture and paints
+   the cells in it. Hidden (Flight.tsx) whenever the camera is not over it. */
+.b-flight__clouds { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+.b-flight__cloud {
+  position: absolute;
+  left: 0;
+  top: 0;
+  max-width: none;
+  transform-origin: 0 0;
+  image-rendering: pixelated;
+  color: rgb(from var(--paper) r g b / 0.36);
+  will-change: transform;
+}
 .b-flight__stars { position: absolute; inset: 0; width: 100%; height: 100%; color: var(--star); opacity: 0.55; }
 .b-flight__moon { position: absolute; right: 14%; top: 16%; width: 3rem; height: 3rem; color: var(--star); }
 @media (max-width: 759.98px) { .b-flight__moon { width: 2.25rem; height: 2.25rem; top: 22%; right: 12%; } }
@@ -1434,9 +1454,10 @@ html:has(.b-world.has-flight) { scroll-snap-type: y proximity; }
 /* pointed at on the rail: its lantern lifts and says its name */
 .b-pin.is-near .b-pin__label { opacity: 1; transform: none; }
 /* A member who is on, where they stand: their head, a block over them, under
-   the name tag the game floats over every player. Not pressed: their heads
-   in the HUD follow them in the live map. */
-.b-pin--player { pointer-events: none; cursor: default; translate: -50% -100%; gap: 2px; }
+   the name tag the game floats over every player. Pressed, the live map
+   takes hold and follows them, as their head in the HUD does (Flight.tsx,
+   jod:follow); the HUD's heads stay the way to them from a keyboard. */
+.b-pin--player { pointer-events: auto; cursor: pointer; translate: -50% -100%; gap: 2px; }
 .b-pin--player .b-pin__head { display: block; width: 1rem; height: 1rem; image-rendering: pixelated; box-shadow: 0 0 0 1px var(--night); }
 @media (hover: hover) {
   .b-pin:hover .b-pin__lamp { transform: translateY(-2px) scale(1.15); }
@@ -1871,6 +1892,11 @@ html.is-map-full { overflow: hidden; }
    each line on its own strip, left over the places while the live map is up.
    The figures are live, so they are the bitmap face. */
 .b-f3 { display: grid; justify-items: start; gap: var(--px); margin-bottom: var(--sp-2); pointer-events: none; }
+/* the flight's lines are hidden while the camera is down (Flight.tsx): the
+   grid above outranks the global [hidden] rule, and kept their two empty
+   strips over the places' count as a stray mark, and a frozen pair of
+   lines over the live map's own when it was taken hold of mid-flight */
+.b-f3[hidden] { display: none; }
 .b-f3 > span { padding: var(--px) var(--sp-1); background: rgb(from var(--pitch) r g b / 0.6); color: var(--chat-grey); font-family: var(--font-data); font-size: var(--fs-data); line-height: 1.2; white-space: nowrap; text-shadow: var(--px) var(--px) 0 rgb(from var(--pitch) r g b / 0.8); }
 /* Spjallið (Chat.tsx): the game's chat, over the places' rail as it sits over
    the hotbar. Each line on its own veil of dark, the F3 lines' own, in the

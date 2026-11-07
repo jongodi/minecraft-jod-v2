@@ -119,6 +119,33 @@ export function Cloud({ shape, className }: { shape: keyof typeof CLOUDS; classN
   );
 }
 
+/** The same clouds from above, as the flight comes down through them
+    (src/lib/map-flight.ts, Flight.tsx): the cells of one band of the deck,
+    a pixel a cell, in one colour, made into a picture once. A picture, and
+    not an SVG: drawn under a projective transform the browser samples a
+    picture marked `image-rendering: pixelated` cell by cell, so a cell
+    stays a hard square however near the camera comes, where an SVG laid out
+    once would be stretched soft. The colour is any CSS colour the page has
+    worked out (a token, read off the element it is drawn for); one the
+    canvas cannot take, or no canvas at all, leaves no picture, and the
+    flight comes down without its clouds. In the browser only: the object
+    URL is the caller's to let go. */
+export function paintCloudDeck(cells: Uint8Array, size: number, band: number, colour: string): Promise<string | null> {
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  if (!ctx || typeof canvas.toBlob !== 'function') return Promise.resolve(null);
+  /* a colour the canvas cannot read leaves the one before it: the marker says so */
+  ctx.fillStyle = '#010203';
+  ctx.fillStyle = colour;
+  if (ctx.fillStyle === '#010203') return Promise.resolve(null);
+  for (let j = 0; j < size; j++) {
+    for (let i = 0; i < size; i++) if (cells[j * size + i] === band) ctx.fillRect(i, j, 1, 1);
+  }
+  return new Promise(done => canvas.toBlob(blob => done(blob ? URL.createObjectURL(blob) : null)));
+}
+
 const STAR_TILE: Array<[number, number, number]> = [
   [12, 18, 2], [58, 7, 1], [91, 40, 2], [140, 22, 1], [176, 66, 2], [33, 84, 1], [118, 96, 2], [64, 132, 1],
   [160, 150, 2], [21, 168, 1], [99, 176, 1], [189, 118, 1], [136, 184, 2], [76, 52, 1], [8, 120, 1], [172, 12, 1],
