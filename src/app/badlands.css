@@ -1346,6 +1346,26 @@ html:has(.b-world.has-flight) { scroll-snap-type: y proximity; }
     transparent 85%);
   will-change: opacity;
 }
+/* The game's clouds, which the camera comes down through at y 192: a deck
+   of flat cells over the stills and under the air (Flight.tsx). Each band
+   is one picture, a pixel a cell, set on the plane by a matrix3d and drawn
+   cell by cell (pixelated), so a cell stays a hard square as it swells past
+   the frame. Its colour is the hero's clouds' paper, let through a little
+   more than theirs, so the night's land shows under a cell as it does
+   through the game's own; the night's grey of the hero's clouds read over
+   the land as burnt ground. Flight.tsx reads it off the picture and paints
+   the cells in it. Hidden (Flight.tsx) whenever the camera is not over it. */
+.b-flight__clouds { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+.b-flight__cloud {
+  position: absolute;
+  left: 0;
+  top: 0;
+  max-width: none;
+  transform-origin: 0 0;
+  image-rendering: pixelated;
+  color: rgb(from var(--paper) r g b / 0.36);
+  will-change: transform;
+}
 .b-flight__stars { position: absolute; inset: 0; width: 100%; height: 100%; color: var(--star); opacity: 0.55; }
 .b-flight__moon { position: absolute; right: 14%; top: 16%; width: 3rem; height: 3rem; color: var(--star); }
 @media (max-width: 759.98px) { .b-flight__moon { width: 2.25rem; height: 2.25rem; top: 22%; right: 12%; } }

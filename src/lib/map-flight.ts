@@ -180,6 +180,222 @@ export function horizonPoint(eye: readonly number[], look: readonly number[]): [
   return [eye[0] + fx * 100000, eye[1], eye[2] + fz * 100000];
 }
 
+/* ─── the cloud deck ──────────────────────────────────────────────
+   The game hangs its clouds at one height, y 192, flat cells 12 blocks
+   square, and the flight comes down through them: the wide camera at about
+   its fifteenth still of forty, the tall one at its twenty-second. BlueMap
+   draws no clouds, so the deck is laid over the stills by the page: one
+   flat picture of the cells, a pixel a cell, set on the plane with a
+   projective transform from the camera, so it rushes up and swells past the
+   frame as the camera comes down to it. */
+
+/** The height of the game's clouds, and the side of one of their cells, in blocks. */
+export const CLOUD_Y = 192;
+export const CLOUD_CELL = 12;
+/* The deck is whole down to CLOUD_THIN and gone by CLOUD_GONE: in between
+   it thins in CLOUD_BANDS steps, the cells at the edges of each cloud first
+   and their middles last, so the camera breaks out over the town as the
+   last of it goes. It is hidden before the camera reaches the plane, where
+   the projection of a plane so close would run off to the edge of the world. */
+export const CLOUD_THIN = 212;
+export const CLOUD_GONE = 196;
+export const CLOUD_BANDS = 4;
+/* the share of the deck under a cell: sparse enough that the world below
+   still reads as the model on a table it is from the overview */
+const CLOUD_COVER = 0.24;
+/* the clear sky kept over the town, in blocks: this much round the line
+   from the camera to its middle, and the town itself round that */
+const CLOUD_CLEAR = 24;
+
+/** The deck: `size` by `size` cells from its north-west corner at `x`, `z`.
+    Each cell is 0 where the sky is clear, or the band it belongs to, 1 at
+    the edges of a cloud to CLOUD_BANDS at its middle. */
+export interface CloudDeck { x: number; z: number; size: number; cells: Uint8Array }
+
+/** The camera's lens, from a still's matrix: how much it draws across
+    and up the frame per unit of the way ahead (three.js's projection, in
+    the first two rows). The stills of a flight share one. */
+export const lensOf = (m: readonly number[]): { x: number; y: number } => ({
+  x: Math.hypot(m[0], m[4], m[8]),
+  y: Math.hypot(m[1], m[5], m[9]),
+});
+
+/* a number from 0 to 1 for a whole point of the lattice, always the same one */
+function hash2(i: number, j: number): number {
+  let h = Math.imul(i | 0, 374761393) ^ Math.imul(j | 0, 668265263);
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+}
+/* the lattice's numbers blended across the squares between its points: soft hills, which cut at a level give round clouds */
+function noise(u: number, v: number): number {
+  const i = Math.floor(u), j = Math.floor(v);
+  const s = (t: number) => t * t * (3 - 2 * t);
+  const a = s(u - i), b = s(v - j);
+  const top = hash2(i, j) + (hash2(i + 1, j) - hash2(i, j)) * a;
+  const foot = hash2(i, j + 1) + (hash2(i + 1, j + 1) - hash2(i, j + 1)) * a;
+  return top + (foot - top) * b;
+}
+
+/** The deck over the world a flight was taken of. Its middle is where the
+    overview looks, and its width the world's: the overview was placed to
+    take the whole world in across the wide frame (scripts/map-flight.mjs),
+    so its distance over its lens gives the width. The cells are the game's
+    kind of clouds, ragged clusters of cells cut out of soft noise, thinning
+    to none at the world's edge, so the deck never ends on a straight line
+    over the night round the world. The sky is kept clear all along the line
+    from either camera to the town it lands on, and as wide round it as the
+    town the landing takes in, so the town is never under a cell on the way
+    down. */
+export function cloudDeck(flight: Flight): CloudDeck {
+  const over = flight.wide.shots[0];
+  const half = over.d / Math.max(1e-6, lensOf(over.m).x);
+  const size = Math.max(2, Math.ceil((2 * half) / CLOUD_CELL));
+  const x = over.look[0] - (size * CLOUD_CELL) / 2;
+  const z = over.look[2] - (size * CLOUD_CELL) / 2;
+  const level = new Float64Array(size * size);
+  for (let j = 0; j < size; j++) {
+    for (let i = 0; i < size; i++) {
+      /* two sizes of cloud, the larger leading */
+      const n = 0.75 * noise(i / 5, j / 5) + 0.25 * noise(i / 2 + 17, j / 2 + 31);
+      /* the last quarter of the way to the world's edge, the clouds give out */
+      const out = Math.max(Math.abs(i + 0.5 - size / 2), Math.abs(j + 0.5 - size / 2)) / (size / 2);
+      level[j * size + i] = n - Math.max(0, (out - 0.75) / 0.25) * 0.6;
+    }
+  }
+  const sorted = Float64Array.from(level).sort();
+  const floor = sorted[Math.min(sorted.length - 1, Math.floor((1 - CLOUD_COVER) * sorted.length))];
+  /* the bands: the filled cells in equal shares, by how far into a cloud each is */
+  const filled = sorted.filter(v => v >= floor);
+  const steps = Array.from({ length: CLOUD_BANDS - 1 }, (_, b) => filled[Math.floor(((b + 1) / CLOUD_BANDS) * filled.length)]);
+  const cells = new Uint8Array(size * size);
+  level.forEach((v, k) => { if (v >= floor) cells[k] = 1 + steps.filter(s => v >= s).length; });
+
+  /* The clear sky: round where the line from the camera to the town
+     crosses the deck, at every step of both flights. The town is taken as
+     the ground the landing still stands off it (its distance), which comes
+     onto the deck smaller by how far along the line the deck is: most of
+     its width from high over it, nearly none from just over the deck. */
+  const landing = flight.wide.shots[flight.wide.shots.length - 1];
+  const town = landing.look;
+  const clear = (cx: number, cz: number, r: number) => {
+    const reach = Math.ceil(r / CLOUD_CELL) + 1;
+    const ci = Math.floor((cx - x) / CLOUD_CELL), cj = Math.floor((cz - z) / CLOUD_CELL);
+    for (let j = cj - reach; j <= cj + reach; j++) {
+      for (let i = ci - reach; i <= ci + reach; i++) {
+        if (i < 0 || j < 0 || i >= size || j >= size) continue;
+        /* the nearest point of the cell to the crossing */
+        const nx = Math.min(Math.max(cx, x + i * CLOUD_CELL), x + (i + 1) * CLOUD_CELL);
+        const nz = Math.min(Math.max(cz, z + j * CLOUD_CELL), z + (j + 1) * CLOUD_CELL);
+        if (Math.hypot(nx - cx, nz - cz) <= r) cells[j * size + i] = 0;
+      }
+    }
+  };
+  for (const set of [flight.wide, flight.tall]) {
+    if (!set) continue;
+    const last = set.shots.length - 1;
+    for (let at = 0; at <= last; at += 0.25) {
+      const k = Math.min(last, Math.floor(at));
+      const { eye } = cameraAt(set.shots[k], set.shots[Math.min(last, k + 1)], at - k);
+      const cross = crossing(eye, town);
+      if (cross) clear(cross[0], cross[1], CLOUD_CLEAR + landing.d * ((eye[1] - CLOUD_Y) / (eye[1] - town[1])));
+    }
+  }
+  return { x, z, size, cells };
+}
+
+/** Where the line from the camera to a point crosses the deck, as x and z,
+    or null where it does not: the camera under it, or the point over it. */
+export function crossing(eye: readonly number[], point: readonly number[]): [number, number] | null {
+  if (!(eye[1] > CLOUD_Y && point[1] < CLOUD_Y)) return null;
+  const t = (eye[1] - CLOUD_Y) / (eye[1] - point[1]);
+  return [eye[0] + (point[0] - eye[0]) * t, eye[2] + (point[2] - eye[2]) * t];
+}
+
+/** The cell of the deck over a point of the plane: 0 for clear sky and off
+    the deck, else the band it belongs to. */
+export function cloudAt(deck: CloudDeck, x: number, z: number): number {
+  const i = Math.floor((x - deck.x) / CLOUD_CELL), j = Math.floor((z - deck.z) / CLOUD_CELL);
+  return i < 0 || j < 0 || i >= deck.size || j >= deck.size ? 0 : deck.cells[j * deck.size + i];
+}
+
+/** How many of the deck's bands are gone with the camera this high: none
+    over CLOUD_THIN, then one more every few blocks, and all of them by CLOUD_GONE. */
+export function cloudThinned(eyeY: number): number {
+  if (eyeY >= CLOUD_THIN) return 0;
+  if (eyeY <= CLOUD_GONE) return CLOUD_BANDS;
+  return Math.min(CLOUD_BANDS, Math.ceil(((CLOUD_THIN - eyeY) / (CLOUD_THIN - CLOUD_GONE)) * CLOUD_BANDS));
+}
+
+/** A point is under a cloud, seen from the camera: the line to it crosses a
+    cell of a band not yet gone. A lantern there would float on top of the cloud. */
+export function clouded(deck: CloudDeck, eye: readonly number[], point: readonly number[], thinned: number): boolean {
+  const cross = crossing(eye, point);
+  return !!cross && cloudAt(deck, cross[0], cross[1]) > thinned;
+}
+
+/** The matrix a camera standing at `eye` and looking at `look` would have
+    with this lens, upright as BlueMap holds it, column-major as the stills'
+    are. It is the camera between two stills, where neither still's own
+    matrix is: the deck is nearer the camera than the land is, so a still
+    moved to stand in for that camera (warp) would carry it wrong. Only the
+    rows that place a point on the frame are filled; the depth row is left
+    at nought, since nothing here asks how far into the frame a point is. */
+export function cameraMatrix(eye: readonly number[], look: readonly number[], lens: { x: number; y: number }): number[] {
+  const f = [look[0] - eye[0], look[1] - eye[1], look[2] - eye[2]];
+  const fl = Math.hypot(f[0], f[1], f[2]) || 1;
+  const fwd = [f[0] / fl, f[1] / fl, f[2] / fl];
+  /* right of the way ahead, on the level; and up, square to both */
+  const rl = Math.hypot(fwd[2], fwd[0]) || 1;
+  const right = [-fwd[2] / rl, 0, fwd[0] / rl];
+  const up = [right[1] * fwd[2] - right[2] * fwd[1], right[2] * fwd[0] - right[0] * fwd[2], right[0] * fwd[1] - right[1] * fwd[0]];
+  const dot = (a: readonly number[]) => a[0] * eye[0] + a[1] * eye[1] + a[2] * eye[2];
+  return [
+    lens.x * right[0], lens.y * up[0], 0, fwd[0],
+    lens.x * right[1], lens.y * up[1], 0, fwd[1],
+    lens.x * right[2], lens.y * up[2], 0, fwd[2],
+    -lens.x * dot(right), -lens.y * dot(up), 0, -dot(fwd),
+  ];
+}
+
+/** A level plane through a camera: the 3×3 (row by row) that takes a point
+    of the plane at height `y`, as (x, z, 1), to where the camera puts it
+    before the division by depth (X, Y, W), as projectPoint does for one point. */
+export function planeHomography(m: readonly number[], y: number): number[] {
+  return [
+    m[0], m[8], m[4] * y + m[12],
+    m[1], m[9], m[5] * y + m[13],
+    m[3], m[11], m[7] * y + m[15],
+  ];
+}
+
+/** The deck on the frame: the 3×3 (row by row) that takes a pixel of the
+    deck's picture (one a cell, its corner at the deck's north-west corner)
+    to the frame's pixels, through the camera `m`, the still's size and
+    where the still lies in the frame under `cover`. Set as a matrix3d, the
+    picture is drawn on the plane as the camera sees it. Scaled so its depth
+    over the picture is about one, and never by a negative number: the sign
+    of the depth is what keeps the part behind the camera out of sight. */
+export function deckHomography(m: readonly number[], deck: CloudDeck, still: { width: number; height: number }, rect: { x: number; y: number; width: number }): number[] {
+  const p = planeHomography(m, CLOUD_Y);
+  const q = rect.width / still.width;
+  const sx = (q * still.width) / 2, sy = (q * still.height) / 2;
+  /* the frame's pixels from the camera's: across from X and W, down from Y and W */
+  const s = [
+    sx * p[0] + (rect.x + sx) * p[6], sx * p[1] + (rect.x + sx) * p[7], sx * p[2] + (rect.x + sx) * p[8],
+    -sy * p[3] + (rect.y + sy) * p[6], -sy * p[4] + (rect.y + sy) * p[7], -sy * p[5] + (rect.y + sy) * p[8],
+    p[6], p[7], p[8],
+  ];
+  /* from the picture's pixels to the plane: a cell to a pixel, from the deck's corner */
+  const c = CLOUD_CELL;
+  const h = [
+    s[0] * c, s[1] * c, s[0] * deck.x + s[1] * deck.z + s[2],
+    s[3] * c, s[4] * c, s[3] * deck.x + s[4] * deck.z + s[5],
+    s[6] * c, s[7] * c, s[6] * deck.x + s[7] * deck.z + s[8],
+  ];
+  const k = Math.max(Math.abs(h[6]) * deck.size, Math.abs(h[7]) * deck.size, Math.abs(h[8])) || 1;
+  return h.map(v => v / k);
+}
+
 /** A place's link card seen from the air: the still, how it is laid on the
     card, and where the place's lantern stands on the card. */
 export interface CardShot {
