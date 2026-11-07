@@ -1,7 +1,7 @@
 'use client';
 
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
-import Mesa, { Rider } from './Mesa';
+import Mesa, { NONE_AWAKE, Rider } from './Mesa';
 import { Moon, Sun } from './Bits';
 import CopyAddress from './CopyAddress';
 import StatusLantern from './StatusLantern';
@@ -90,20 +90,23 @@ function Splash({ inside, planned, live, facts }: { inside: number; planned: boo
    plateau at the name's feet stood them in front of the O's window. One who
    comes in while the page is looked at climbs up onto the letter; one who
    goes out climbs down. */
-function Climbers({ names, known }: { names: string[]; known: boolean }) {
+function Climbers({ names, known, awake }: { names: string[]; known: boolean; awake: Record<string, number> }) {
   const { roster, settle } = useRoster(names, known);
   if (roster.length === 0) return null;
   const shown = roster.slice(0, 2);
   const more = names.length - shown.filter(r => r.phase !== 'going').length;
   return (
     <div className="b-hero__climbers">
-      {shown.map(r => <Rider key={r.name} name={r.name} phase={r.phase} onWalked={settle} className="b-hero__climber" />)}
+      {shown.map(r => <Rider key={r.name} name={r.name} phase={r.phase} onWalked={settle} awake={awake[r.name.toLowerCase()]} className="b-hero__climber" />)}
       {more > 0 && <span className="b-nametag b-hero__more">+{more}</span>}
     </div>
   );
 }
 
-function Hero({ server, season, nights, packs, facts = [] }: { server: ServerState; season: Season; nights?: PlayNightResponse; packs: number; facts?: string[] }) {
+/* `sleepless`: who has gone three of the game's days without a bed, counted
+   on the server (src/lib/home-data.ts), so the phantoms over them are in the
+   page's markup and nothing is asked for to draw them */
+function Hero({ server, season, nights, packs, facts = [], sleepless = NONE_AWAKE }: { server: ServerState; season: Season; nights?: PlayNightResponse; packs: number; facts?: string[]; sleepless?: Record<string, number> }) {
   /* someone's home: the server is up and somebody is in it */
   const home = server.online === true && server.players > 0;
   /* one list for as long as the same names are in, so the land under the name (memoised) is not redrawn on every status answer */
@@ -139,7 +142,7 @@ function Hero({ server, season, nights, packs, facts = [] }: { server: ServerSta
           {/* tonight's moon, rising from behind the J as the sun sets on the other side */}
           {moon !== null && <Moon phase={moon} className="b-hero__moon" />}
         </h1>
-        <Climbers names={inside} known={known} />
+        <Climbers names={inside} known={known} awake={sleepless} />
         {/* a phone's sun: in the open sky between the words and the name, so no line above it ever crosses it (badlands.css) */}
         <div className="b-hero__sun" aria-hidden="true"><Sun /></div>
         <div className="b-hero__lead">
@@ -158,7 +161,7 @@ function Hero({ server, season, nights, packs, facts = [] }: { server: ServerSta
             action comes first to the keyboard; drawn over the Ð all the same */}
         <Splash inside={inside.length} planned={(tonight?.nights ?? []).some(n => n.phase !== 'over')} live={known} facts={facts} />
       </div>
-      <Mesa snow={season.snow} halloween={season.halloween} heads={inside} known={known} />
+      <Mesa snow={season.snow} halloween={season.halloween} heads={inside} known={known} awake={sleepless} />
       <YuleLad season={season} spot="mesa" />
     </section>
   );

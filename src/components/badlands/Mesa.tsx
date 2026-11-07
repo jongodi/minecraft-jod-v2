@@ -1,8 +1,9 @@
 import { memo } from 'react';
 import Link from 'next/link';
 import PlayerHead from './PlayerHead';
-import { Lantern } from './Bits';
+import { Lantern, Phantom } from './Bits';
 import { useRoster, type OnRidge } from './roster';
+import { awakeWords } from '@/lib/sleepless';
 
 /* The badlands silhouettes behind the hero: three mesa layers and the ground.
    Each layer is a stepped outline built from plateaus so the edge reads as
@@ -190,15 +191,20 @@ const RIDERS_SHOWN = 3;
     services can't give falls back to the drawn stand-in (PlayerHead). */
 /* One who came in while the page was looked at climbs up into view, one who
    went out climbs down out of it (`phase`, from useRoster; badlands.css),
-   and `onWalked` says the climb is over. */
-export function Rider({ name, className, phase = 'here', onWalked }: { name: string; className: string; phase?: OnRidge['phase']; onWalked?: (name: string) => void }) {
+   and `onWalked` says the climb is over. `awake` is the nights this member
+   has gone without a bed, when the game would send phantoms after them
+   (src/lib/sleepless.ts): two circle over their head as the sky goes dark,
+   and pointed at or focused, the tag says why. */
+export function Rider({ name, className, phase = 'here', onWalked, awake }: { name: string; className: string; phase?: OnRidge['phase']; onWalked?: (name: string) => void; awake?: number }) {
   return (
     <Link href={`/crew/${name}`} className={`${className}${phase !== 'here' ? ` is-${phase}` : ''}`}
-      aria-label={phase === 'going' ? `${name} fór út. Veggurinn` : `${name} er inni. Veggurinn`}
+      aria-label={phase === 'going' ? `${name} fór út. Veggurinn` : `${name} er inni${awake ? ` og ${awakeWords(awake)}` : ''}. Veggurinn`}
       onAnimationEnd={e => { if (e.target === e.currentTarget && phase !== 'here') onWalked?.(name); }}>
       <span className="b-nametag" aria-hidden="true">{name}</span>
+      {awake ? <span className="b-nametag b-nametag--awake" aria-hidden="true">{name} · {awakeWords(awake)}</span> : null}
       <PlayerHead name={name} size={32} full alt="" />
       <Lantern lit className="b-mesa__held" />
+      {awake ? <span className="b-phantoms" aria-hidden="true"><Phantom /><Phantom /></span> : null}
     </Link>
   );
 }
@@ -208,14 +214,14 @@ export function Rider({ name, className, phase = 'here', onWalked }: { name: str
     by its coordinates in the ridge's own drawing). A wanted poster's
     Western, and the game's own figure. Inside the near layer, so they move
     with it. */
-function Riders({ names, known }: { names: string[]; known: boolean }) {
+function Riders({ names, known, awake }: { names: string[]; known: boolean; awake: Record<string, number> }) {
   const { roster, settle } = useRoster(names, known);
   if (roster.length === 0) return null;
   const shown = roster.slice(0, RIDERS_SHOWN);
   const more = names.length - shown.filter(r => r.phase !== 'going').length;
   return (
     <div className="b-mesa__riders">
-      {shown.map(r => <Rider key={r.name} name={r.name} phase={r.phase} onWalked={settle} className="b-mesa__rider" />)}
+      {shown.map(r => <Rider key={r.name} name={r.name} phase={r.phase} onWalked={settle} awake={awake[r.name.toLowerCase()]} className="b-mesa__rider" />)}
       {more > 0 && <span className="b-nametag b-mesa__more">+{more}</span>}
     </div>
   );
@@ -258,9 +264,13 @@ function Armadillo() {
   );
 }
 
+/* nobody without sleep: one object for every page drawn without the count, so the memo holds */
+export const NONE_AWAKE: Record<string, number> = {};
+
 /** The mesas; in winter with snow on them, at Hrekkjavaka with jack-o'-lanterns
-    (src/lib/season.ts); with the heads of whoever is in on the nearest ridge. */
-function Mesa({ snow = false, halloween = false, heads = [], known = false }: { snow?: boolean; halloween?: boolean; heads?: string[]; known?: boolean }) {
+    (src/lib/season.ts); with the heads of whoever is in on the nearest ridge,
+    and phantoms over any of them who has not slept (`awake`). */
+function Mesa({ snow = false, halloween = false, heads = [], known = false, awake = NONE_AWAKE }: { snow?: boolean; halloween?: boolean; heads?: string[]; known?: boolean; awake?: Record<string, number> }) {
   return (
     <div className="b-mesa">
       <Layer d={FAR_D} mod="far" haze={<Haze />}>
@@ -271,7 +281,7 @@ function Mesa({ snow = false, halloween = false, heads = [], known = false }: { 
         <Bands id="b-mesa-mid" d={MID_D} bands={MID_BANDS} />
         {snow && <Snow plateaus={MID} />}
       </Layer>
-      <Layer d={NEAR_D} mod="near" lit={halloween ? <PumpkinFaces /> : undefined} after={<Riders names={heads} known={known} />}>
+      <Layer d={NEAR_D} mod="near" lit={halloween ? <PumpkinFaces /> : undefined} after={<Riders names={heads} known={known} awake={awake} />}>
         <Bands id="b-mesa-near" d={NEAR_D} bands={NEAR_BANDS} />
         {snow && <Snow plateaus={NEAR} />}
         {halloween && <Pumpkins />}

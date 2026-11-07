@@ -22,6 +22,7 @@ import { ADVANCEMENT_COUNT, readStoredAdvancements } from '@/lib/advancements';
 import { readNights, type Night } from '@/lib/play-night';
 import { formatNumber } from '@/lib/format';
 import { freshPlaces } from '@/lib/bluemap-snapshot';
+import { sleeplessOf } from '@/lib/sleepless';
 
 export interface HomeData {
   status: ServerState;
@@ -36,11 +37,14 @@ export interface HomeData {
   facts: string[];
   /** the places whose ground changed in the newest copy of the map, while that is news */
   fresh: number[];
+  /** who has gone three of the game's days without a bed, by name in lower case, to the nights awake, as the stats last counted them (src/lib/sleepless.ts) */
+  sleepless: Record<string, number>;
 }
 
 /** Facts counted from the world: the crew's hours in it, the advancements
-    any of them has, the fires held, the mobs felled. Empty without a store. */
-async function worldFacts(): Promise<string[]> {
+    any of them has, the fires held, the mobs felled. Empty without a store.
+    Who has not slept is read off the same stats, into `awake`. */
+async function worldFacts(awake: Record<string, number> = {}): Promise<string[]> {
   const out: string[] = [];
   /* the nights and the copies live in the store; without one there are no numbers to count, and a build must not reach for it */
   if (!process.env.REDIS_URL) return out;
@@ -55,6 +59,7 @@ async function worldFacts(): Promise<string[]> {
     const mobs = stats.players.reduce((a, p) => a + (p.mobKills ?? 0), 0);
     if (hours > 0) out.push(`${formatNumber(hours)} klukkustundir í heiminum!`);
     if (mobs > 0) out.push(`${formatNumber(mobs)} verur felldar!`);
+    Object.assign(awake, sleeplessOf(stats.players));
   }
   if (crew) {
     const done = new Set(Object.values(crew.players).flatMap(d => Object.keys(d)));
@@ -77,6 +82,7 @@ async function within<T>(work: Promise<T>, fallback: T): Promise<T> {
 
 export async function loadHomeData(): Promise<HomeData> {
   const now = Date.now();
+  const sleepless: Record<string, number> = {};
   const [status, nights, gallery, map, pinned, packs, facts] = await Promise.all([
     within(getStatus({ live: false }).then(s => toServerState(s, now)), { ...NO_STATUS, online: false, life: 'unknown', checkedAt: now }),
     within(viewNights(null, now), NO_NIGHTS),
@@ -84,7 +90,7 @@ export async function loadHomeData(): Promise<HomeData> {
     within(readMap(), DEFAULT_CONFIG),
     within(placePrints(), {}),
     within(getPublicPacks().then(l => l.length), DATAPACKS.length),
-    within(worldFacts(), []),
+    within(worldFacts(sleepless), []),
   ]);
   const shown = gallery.filter(p => p.active).sort((a, b) => a.order - b.order);
   return {
@@ -98,5 +104,6 @@ export async function loadHomeData(): Promise<HomeData> {
     packs,
     facts,
     fresh: freshPlaces(map.locations, now),
+    sleepless,
   };
 }

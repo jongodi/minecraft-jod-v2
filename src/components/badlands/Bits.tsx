@@ -188,6 +188,32 @@ export function Campfire({ embers = false, stones = false, className }: { embers
   );
 }
 
+/* The phantom, seen from below as it circles, on a 13 by 5 grid: a narrow
+   body with the game's two pixels of glowing eye at its head, and two frames
+   of its wings, raised and lowered. [x, y, w, h]. */
+type Px = readonly [number, number, number, number];
+const PHANTOM_BODY: Px[] = [[5, 1, 3, 1], [2, 2, 3, 1], [6, 2, 1, 1], [8, 2, 3, 1], [5, 3, 3, 1], [6, 4, 1, 1]];
+const PHANTOM_EYES: Px[] = [[5, 2, 1, 1], [7, 2, 1, 1]];
+const PHANTOM_UP: Px[] = [[0, 0, 1, 1], [12, 0, 1, 1], [1, 1, 2, 1], [10, 1, 2, 1]];
+const PHANTOM_DOWN: Px[] = [[1, 3, 2, 1], [10, 3, 2, 1], [0, 4, 1, 1], [12, 4, 1, 1]];
+const rects = (px: Px[]) => px.map(([x, y, w, h]) => <rect key={`${x}-${y}`} x={x} y={y} width={w} height={h} />);
+
+/** A phantom, which the game sends after a player three days without a bed:
+    its wings beat and it circles (badlands.css), over whoever on the crew has
+    not slept (Mesa.tsx). */
+export function Phantom() {
+  return (
+    <span className="b-phantom" aria-hidden="true">
+      <svg viewBox="0 0 13 5" shapeRendering="crispEdges">
+        <g fill="currentColor">{rects(PHANTOM_BODY)}</g>
+        <g className="b-phantom__wing" fill="currentColor">{rects(PHANTOM_UP)}</g>
+        <g className="b-phantom__wing b-phantom__wing--down" fill="currentColor">{rects(PHANTOM_DOWN)}</g>
+        <g className="b-phantom__eye">{rects(PHANTOM_EYES)}</g>
+      </svg>
+    </span>
+  );
+}
+
 /** Copy icon: two overlapping pixel sheets. */
 export function CopyIcon() {
   return (
