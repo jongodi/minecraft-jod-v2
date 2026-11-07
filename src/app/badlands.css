@@ -1626,6 +1626,8 @@ html.is-map-full { overflow: hidden; }
 .b-hud__top { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-3) var(--sp-4); flex-wrap: wrap; }
 .b-hud__title { display: grid; gap: var(--sp-1); }
 .b-hud__title .b-title { font-size: var(--fs-xl); text-shadow: 0 var(--px) 0 var(--night); }
+/* where the keyboard lands when a room with no door of its own closes (Drawer.tsx): a place to carry on from, not a control, so no lantern ring */
+.b-hud__title .b-title:focus { outline: none; }
 .b-hud__meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-3); font-size: var(--fs-sm); color: var(--tc-white); text-shadow: 0 var(--px) 0 var(--night); }
 .b-hud__in { display: inline-flex; align-items: center; gap: var(--sp-2); }
 .b-hud__in img { width: 1rem; height: 1rem; image-rendering: pixelated; box-shadow: 0 0 0 1px var(--night); }
