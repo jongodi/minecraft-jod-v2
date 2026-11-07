@@ -993,10 +993,13 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
             {/* What the wait says, in one live region kept mounted so a screen
                 reader hears each change: that the map would not come, or how
                 far the first view has come, drawn as the game draws a world
-                loading, its bar filling tile by tile under the words. */}
+                loading, its bar filling tile by tile under the words. The words
+                are on the F3 lines' veil of dark, so they read over the busiest
+                still; a phone says the failure in one line of the bitmap face,
+                where the longer sentence wrapped down into the places' rail. */}
             <p className="b-boot__wait" role="status">
-              {failed && !live ? 'kortið náði ekki að hlaðast · reyndu aftur eftir smástund'
-                : loading ? `sæki kortið${tiles.of > 0 ? ` · ${tiles.drawn} af ${tiles.of} ${plural(tiles.of, 'reit', 'reitum')}` : '…'}` : ''}
+              {failed && !live ? <span className="b-boot__say">{phone ? 'kortið kom ekki · reyndu aftur' : 'kortið náði ekki að hlaðast · reyndu aftur eftir smástund'}</span>
+                : loading ? <span className="b-boot__say">{`sæki kortið${tiles.of > 0 ? ` · ${tiles.drawn} af ${tiles.of} ${plural(tiles.of, 'reit', 'reitum')}` : '…'}`}</span> : ''}
               {loading && (
                 <span className="b-xp b-boot__bar" aria-hidden="true">
                   <span className="b-xp__fill" style={{ transform: `scaleX(${tiles.of > 0 ? Math.min(1, tiles.drawn / tiles.of).toFixed(3) : 0})` }} />

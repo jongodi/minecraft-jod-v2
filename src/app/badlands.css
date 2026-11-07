@@ -1794,6 +1794,12 @@ html.is-map-full { overflow: hidden; }
    is on its way the game's own bar under them, filling tile by tile as a world
    loads, 18 cells on the sign's width. Empty, it is nothing at all. */
 .b-boot__wait { display: grid; justify-items: center; gap: var(--sp-2); font-family: var(--font-data); font-size: var(--fs-data); color: var(--paper); text-align: center; text-shadow: 0 var(--px) 0 var(--night); }
+.b-boot__say { padding: var(--px) var(--sp-1); background: rgb(from var(--pitch) r g b / 0.6); clip-path: var(--notch); text-wrap: balance; }
+/* On a phone the places' rail stands high in a short frame, and the words
+   centred in the half of the world under the lantern ran in under its count:
+   under the lantern they hang straight below its tag instead. Alone (the map
+   up, loading) they keep the middle of the world. */
+@media (max-width: 899.98px) { .b-boot + .b-boot__wait { align-self: start; } }
 .b-boot__bar { width: min(18rem, 100%); --xp: 8px; }
 /* its fill is the map's progress, not the page's: no scroll timeline, a short step between counts */
 .b-boot__bar .b-xp__fill { animation: none; transition: transform var(--dur-2) linear; }
