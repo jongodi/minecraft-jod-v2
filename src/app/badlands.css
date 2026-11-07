@@ -1409,7 +1409,7 @@ html:has(.b-world.has-flight) { scroll-snap-type: y proximity; }
   background: var(--paper);
   color: var(--ink);
   font-family: var(--font-data);
-  font-weight: 700;
+  font-weight: 400;            /* the face's one cut: a 700 was drawn by smearing it */
   font-size: var(--fs-data);   /* the bitmap face at its own size: at 12 px its pixels fell between the screen's */
   letter-spacing: 0.04em;
   white-space: nowrap;

@@ -370,7 +370,8 @@ h1::after, h2::after { height: 3px; background: var(--jod-strata); }
   box-shadow: 0 var(--jod-px) 0 var(--jod-wood-dark);
   clip-path: var(--jod-notch);
 }
-.jod-pin__label b { font-family: var(--jod-font-data); font-weight: 700; font-size: 0.75rem; letter-spacing: 0.04em; }
+/* in the weight the flight's tag is set in (the site loads the bitmap face's one 400 cut), so a place's name does not thicken as the live map takes over from the flight */
+.jod-pin__label b { font-family: var(--jod-font-data); font-weight: 400; font-size: 0.75rem; letter-spacing: 0.04em; }
 .jod-pin__label small { display: none; font-family: var(--jod-font-text); font-size: 0.75rem; color: var(--jod-ink-soft); }
 .jod-pin:focus-visible .jod-pin__lamp,
 .jod-pin.is-chosen .jod-pin__lamp { transform: translateY(-2px) scale(1.15); }
