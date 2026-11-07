@@ -2414,7 +2414,7 @@ html.is-map-full { overflow: hidden; }
 .b-duel__side { display: flex; flex-direction: column; gap: var(--sp-5); }
 .b-stubs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-2); }
 .b-stub { position: relative; padding: var(--sp-3) var(--sp-2); text-align: center; color: var(--ink); background: var(--paper); border: var(--px) solid transparent; }
-.b-stub.is-live { border-color: var(--lantern); }
+.b-stub.is-live { box-shadow: inset 0 0 0 var(--px) var(--ink); }   /* the round in hand, a rule printed round the slip in its own ink: the stub is a readout, not a press, so not the lantern's */
 .b-stub.is-foul { color: var(--tc-red); }
 .b-stub__k { font-size: var(--fs-sm); color: var(--ink-faint); }
 .b-stub__v { margin-top: var(--sp-1); font-family: var(--font-data); font-size: var(--fs-data); }
@@ -2497,7 +2497,7 @@ html.is-map-full { overflow: hidden; }
 .b-night { display: grid; gap: var(--sp-4); margin-block: var(--sp-7); }
 /* no night yet: the dead fire, the line, and the way to light one right after it, read as one sentence rather than a button across the room */
 .b-night--none { grid-template-columns: auto minmax(0, max-content) auto; justify-content: start; align-items: end; column-gap: var(--sp-5); }
-.b-night.is-picked { padding: var(--sp-4); margin-inline: calc(var(--sp-4) * -1); background: var(--veil); box-shadow: 0 0 0 var(--px) var(--lantern-glow); }
+.b-night.is-picked { padding: var(--sp-4); margin-inline: calc(var(--sp-4) * -1); background: var(--veil); box-shadow: 0 0 0 var(--px) var(--hairline); }   /* a hairline, not the lantern: the night is not a press, and it stays picked */
 /* a night under way says so in the green the server's lantern uses for on; amber is only for what can be pressed */
 .b-night--live .b-night__kicker { color: var(--online); }
 /* the ground the fire stands on, and the heads beside it standing on the same line */

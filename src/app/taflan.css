@@ -17,7 +17,7 @@
 /* one whole line held while the board works out what is new: 1.5em of a 1.7
    line grew as the words came and shifted the board under it (CLS 0.057) */
 .t-board__news { min-height: 1lh; font-size: var(--fs-md); color: var(--text-soft); }
-.t-board__news b { color: var(--lantern); font-weight: 600; }
+.t-board__news b { color: var(--paper); font-weight: 600; }   /* a count, not a press: in the paper the status's numbers are set in */
 .t-filters { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
 .t-filter {
   display: inline-flex; align-items: center; gap: var(--sp-2);
