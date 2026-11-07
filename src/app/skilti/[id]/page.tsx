@@ -22,7 +22,8 @@ export async function findSign(id: string) {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   const sign = await findSign(id);
-  if (!sign) return { title: 'Skilti' };
+  /* a sign taken down draws the death screen, so its tab says what the screen does, as a missing wall's does */
+  if (!sign) return { title: 'Fannst ekki' };
   const words = sign.entry.text.trim() || sign.entry.photos[0]?.caption || 'Mynd';
   return {
     title: `${words.slice(0, 70)} · ${sign.profile.username}`,
