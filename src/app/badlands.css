@@ -1847,6 +1847,10 @@ html.is-map-full { overflow: hidden; }
 .b-card__cap > span { display: grid; gap: var(--px); min-width: 0; }
 .b-card__name { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-lg); line-height: 1.15; color: var(--ink); overflow-wrap: break-word; hyphens: auto; }
 .b-card__sub { font-size: var(--fs-sm); color: var(--ink-soft); line-height: 1.35; }
+/* who of the crew stands at the place now (hereNow.ts): their heads, ringed
+   in ink as the HUD's are on the painted map, and the line that says it */
+.b-card__here { display: flex; flex-wrap: wrap; align-items: center; gap: var(--px) var(--sp-1); font-size: var(--fs-sm); line-height: 1.35; color: var(--ink); }
+.b-card__here img { width: 1rem; height: 1rem; image-rendering: pixelated; box-shadow: 0 0 0 1px var(--ink); }
 .b-card__x { flex-shrink: 0; display: grid; place-items: center; width: var(--tap); height: var(--tap); margin: calc(var(--sp-2) * -1) calc(var(--sp-2) * -1) 0 0; color: var(--ink-faint); }
 .b-card__x svg { width: 1rem; height: 1rem; }
 @media (hover: hover) { .b-card__x:hover { color: var(--ink); } }
@@ -2015,6 +2019,14 @@ html.is-map-full { overflow: hidden; }
 .b-chip__count { position: absolute; top: calc(var(--px) * -1); right: calc(var(--px) * -1); padding: 0 calc(var(--px) * 2); background: var(--lantern); color: var(--night); font-family: var(--font-data); font-size: var(--fs-chip); line-height: 1.6; }
 .b-chip { position: relative; }
 .b-chip.is-on .b-chip__count { background: var(--night); color: var(--lantern); }
+/* who of the crew stands at the place now (World.tsx, hereNow.ts): their
+   heads along the foot of its picture, each on a pixel of night as the HUD's
+   are, the count's corner left to the count; past three, two heads and the
+   rest counted in the bitmap face */
+.b-chip__thumb { position: relative; }
+.b-chip__here { position: absolute; left: var(--px); bottom: var(--px); display: flex; gap: var(--px); }
+.b-chip__here img { width: 1rem; height: 1rem; image-rendering: pixelated; box-shadow: 0 0 0 var(--px) var(--night); }
+.b-chip__heremore { display: grid; place-items: center; min-width: 1rem; height: 1rem; padding: 0 var(--px); background: var(--night); color: var(--paper); font-size: var(--fs-chip); line-height: 1; }
 /* the other bases at the end of the rail: a lit lantern where the photo would be, since the chip leads to a 3D map of its own */
 .b-chip--base { text-decoration: none; }
 .b-chip__thumb--lantern { display: grid; place-items: center; background: var(--dusk-2); }
@@ -2481,6 +2493,7 @@ html.is-map-full { overflow: hidden; }
 .b-cal,
 .b-chip__count,
 .b-chip__new,
+.b-chip__heremore,
 .b-hud__count,
 .b-frame-pic__no {
   font-family: var(--font-data);

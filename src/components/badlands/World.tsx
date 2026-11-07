@@ -25,6 +25,7 @@ import { useBoardNews } from '@/components/board/news';
 import { usePlayNight, whenAt } from './night';
 import { photoProps, PHOTO_SIZES } from './photo';
 import { toast } from './Toast';
+import { crewAtPlaces, hereLine } from './hereNow';
 
 /* Everything that opens over the world is a screen of its own, fetched when
    its door is first opened: the paper sheet, the album, and the three rooms. */
@@ -696,6 +697,23 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
      are on the locator bar alone */
   const players = useLivePlayers(inView && !shut, CREW);
   const onLand = useMemo(() => players.filter(p => !MAIN_BOUNDS || onMap(MAIN_BOUNDS, p)), [players]);
+  /* Hver er hvar (hereNow.ts): who of them stands at which place, the places
+     and the players on the main map's ground alone, for each place's chip
+     and its postcard */
+  const crewAt = useMemo(() => crewAtPlaces(onLand, grounded), [onLand, grounded]);
+  const standing = place ? crewAt.get(place.id) ?? [] : [];
+  /* The first chip with someone at it is brought into view on the rail,
+     once, when the world is reached; not over a place a link has chosen,
+     whose own chip the rail already holds. */
+  const firstAt = config.locations.find(l => crewAt.has(l.id))?.id ?? null;
+  const whoShown = useRef(false);
+  useEffect(() => {
+    if (!reached || whoShown.current) return;
+    if (selected !== null) { whoShown.current = true; return; }
+    if (firstAt === null) return;
+    whoShown.current = true;
+    revealRailItem(firstAt, places.current);
+  }, [reached, selected, firstAt, places]);
   /* The live map, taken hold of: from the lantern, the postcard or the whole
      screen. A viewer the flight woke is the same one, now let go of as glass. */
   const takeHold = useCallback(() => { setAuto(false); setFailed(false); setLive(true); }, []);
@@ -1037,6 +1055,13 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
                 <span>
                   <b className="b-card__name">{titleCase(place.label)}</b>
                   {place.sublabel && <span className="b-card__sub">{handCase(place.sublabel).replace(/\s*·\s*/g, ', ')}</span>}
+                  {/* who of the crew stands here now, as the place's chip shows them (hereNow.ts) */}
+                  {standing.length > 0 && (
+                    <span className="b-card__here">
+                      {standing.map(n => <PlayerHead key={n} name={n} size={16} alt="" />)}
+                      {hereLine(standing)}
+                    </span>
+                  )}
                   {place.builders && place.builders.length > 0 && (
                     <span className="b-card__builders">byggt af {place.builders.map((b, i) => <span key={b}>{i > 0 && ', '}<Link href={`/crew/${b}`}>{b}</Link></span>)}</span>
                   )}
@@ -1106,6 +1131,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
             {config.locations.map(loc => {
               const thumb = loc.photoId ? plates.find(p => p.id === loc.photoId) ?? null : null;
               const count = pinned[String(loc.id)]?.count ?? 0;
+              const who = crewAt.get(loc.id) ?? [];
               return (
                 <button key={loc.id} type="button" data-rail-item={loc.id}
                   className={`b-chip${woodClass(loc.wood)}${loc.id === selected ? ' is-on' : ''}${loc.id === near ? ' is-near' : ''}`} aria-pressed={loc.id === selected} onClick={() => choose(loc.id)}
@@ -1120,6 +1146,14 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
                       // eslint-disable-next-line @next/next/no-img-element
                       ? <img {...photoProps(thumb.src, PHOTO_SIZES.thumb)} alt="" loading="lazy" decoding="async" width={56} height={40} />
                       : <span className="b-chip__thumb--empty" aria-hidden="true" />}
+                    {/* who stands here now: their heads along the foot of the picture, three at most, the rest counted; said in words */}
+                    {who.length > 0 && (
+                      <span className="b-chip__here">
+                        {(who.length > 3 ? who.slice(0, 2) : who).map(n => <PlayerHead key={n} name={n} size={16} alt="" />)}
+                        {who.length > 3 && <span className="b-chip__heremore" aria-hidden="true">+{who.length - 2}</span>}
+                        <span className="b-visually-hidden">{`${hereLine(who, 'hér núna')}, `}</span>
+                      </span>
+                    )}
                   </span>
                   <span className="b-chip__text">
                     <span className="b-chip__name">{titleCase(loc.label)}</span>
