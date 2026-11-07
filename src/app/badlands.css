@@ -2966,7 +2966,6 @@ html.is-map-full { overflow: hidden; }
   right: calc(100% - var(--sign) + var(--sp-2));
   bottom: 0;
   display: flex;
-  flex-direction: row-reverse;
   align-items: flex-end;
   gap: calc(var(--u) * 3);
 }
@@ -2975,7 +2974,8 @@ html.is-map-full { overflow: hidden; }
 .b-foot__mate::before { content: ''; position: absolute; inset: -0.5rem calc(var(--u) * -1); }
 .b-foot__mate img { display: block; width: 100%; height: auto; aspect-ratio: 1 / 2; image-rendering: pixelated; }
 .b-foot__mate > .b-nametag { position: absolute; left: 50%; bottom: calc(100% + var(--sp-1)); translate: -50% 0; pointer-events: none; }
-.b-foot__mate:nth-child(even) > .b-nametag { bottom: calc(100% + var(--sp-1) + 0.75rem); }
+/* the figures are written farthest first (Footer.tsx), so they are counted from the fire's end: the mates are links, the counts spans */
+.b-foot__mate:nth-last-of-type(even) > .b-nametag { bottom: calc(100% + var(--sp-1) + 0.75rem); }
 .b-foot__more { align-self: flex-start; }
 .b-foot__mate:focus-visible { outline: none; }
 .b-foot__mate:focus-visible img { filter: drop-shadow(var(--px) 0 0 var(--lantern)) drop-shadow(calc(var(--px) * -1) 0 0 var(--lantern)) drop-shadow(0 var(--px) 0 var(--lantern)) drop-shadow(0 calc(var(--px) * -1) 0 var(--lantern)); }
@@ -2990,7 +2990,7 @@ html.is-map-full { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) { .b-foot__mate.is-coming, .b-foot__mate.is-going { animation: none; } }
 .b-foot__more--narrow { display: none; }
 @media (max-width: 719.98px) {
-  .b-foot__mate:nth-child(n + 2), .b-foot__more--wide { display: none; }
+  .b-foot__mate:not(:last-of-type), .b-foot__more--wide { display: none; }
   .b-foot__more--narrow { display: block; }
 }
 /* a short plank on a post, the word burnt in lantern light, as the world's

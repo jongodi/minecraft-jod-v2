@@ -52,8 +52,12 @@ function NightFireDoor({ nights, drawn, onOpen }: { nights: PlayNightResponse; d
    so the page ends where it began, with who is there. Figures only, no
    words: the lantern and the ridge have said it already. Up to three on a
    wide screen and one with a count on a phone (badlands.css), the first
-   nearest the fire. One who comes in while the fire is in view walks in out
-   of the dark, and one who goes walks back into it (useRoster). */
+   nearest the fire. They are written in the order the eye meets them, the
+   count farthest into the dark and the first last, beside the fire, so the
+   keyboard crosses them left to right and goes on to the fire; laid out
+   the other way round, it went right to left and then jumped back. One who
+   comes in while the fire is in view walks in out of the dark, and one who
+   goes walks back into it (useRoster). */
 const AT_FIRE = 3;
 function FireCrew({ crew, known }: { crew: string; known: boolean }) {
   const names = useMemo(() => (crew ? crew.split('|') : []), [crew]);
@@ -65,9 +69,9 @@ function FireCrew({ crew, known }: { crew: string; known: boolean }) {
   const narrow = beyond(names.length, shown.slice(0, 1));
   return (
     <div className="b-foot__crew">
-      {shown.map(r => <Rider key={r.name} name={r.name} phase={r.phase} onWalked={settle} lantern={false} className="b-foot__mate" />)}
-      {wide > 0 && <span className="b-nametag b-foot__more b-foot__more--wide">+{wide}</span>}
       {narrow > 0 && <span className="b-nametag b-foot__more b-foot__more--narrow">+{narrow}</span>}
+      {wide > 0 && <span className="b-nametag b-foot__more b-foot__more--wide">+{wide}</span>}
+      {[...shown].reverse().map(r => <Rider key={r.name} name={r.name} phase={r.phase} onWalked={settle} lantern={false} className="b-foot__mate" />)}
     </div>
   );
 }
