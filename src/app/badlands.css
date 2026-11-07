@@ -2995,8 +2995,26 @@ html.is-map-full { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) { .b-lantern__glass, .b-lantern__flame, .b-lantern.is-lit::before { transition: none; } }
 /* during the draw the pointer over the arena is the game's own crosshair: a nine by nine plus, paper with a pixel of night round it */
 .b-arena.is-draw { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 11 11' shape-rendering='crispEdges'%3E%3Cpath fill='%2315100D' d='M4 0h3v4h4v3H7v4H4V7H0V4h4z'/%3E%3Cpath fill='%23E8DCC4' d='M5 1h1v4h4v1H6v4H5V6H1V5h4z'/%3E%3C/svg%3E") 11 11, crosshair; }
-/* the crew pages' night: the hero's clouds in the band over the far ridge, drifting east with the scroll */
-.b-nightsky .b-clouds { position: absolute; left: 0; right: 0; top: 18%; height: 30%; opacity: 1; pointer-events: none; }
+/* The crew pages' night: the hero's clouds in the band over the far ridge,
+   drifting east with the scroll. A cloud is sized in cells of the sky it
+   hangs in (--cpx, the hero's on .b-sky__clouds), so the night sky gives
+   them their own cell, the hero's at each width: without one, each cloud
+   stretched to the width of the page and hung grey slabs across the title.
+   Never behind a line of words, as in the hero: on a wide screen the band
+   starts halfway across, right of the title and the lede, over the board's
+   side column; on a phone only two are drawn, on the moon's side, in the
+   strip of sky between the title's end and the moon, under the bar's strata
+   and over the lede, since the title and the lede run the screen's whole
+   width under the hero's places for the others. */
+.b-nightsky { --cpx: 6px; }
+.b-nightsky .b-clouds { position: absolute; left: 50%; right: 0; top: 18%; height: 30%; opacity: 1; pointer-events: none; }
+@media (max-width: 899.98px) {
+  .b-nightsky { --cpx: 4px; }
+  .b-nightsky .b-clouds { left: 0; top: 24%; height: 24%; }
+  .b-nightsky .b-cloud--1, .b-nightsky .b-cloud--2 { display: none; }
+  .b-nightsky .b-cloud--3 { left: 58%; top: 20%; }   /* and from 760 px, clear of the experience bar's foot */
+  .b-nightsky .b-cloud--4 { left: 70%; top: 62%; }
+}
 @supports (animation-timeline: scroll()) {
   .b-nightsky .b-clouds { animation: b-clouds-drift linear both; animation-timeline: scroll(root); }
 }
