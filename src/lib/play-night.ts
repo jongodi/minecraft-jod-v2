@@ -400,9 +400,9 @@ export type HeldNight = Pick<PastNight, 'id' | 'at' | 'came' | 'numbers'>;
 /** Every night that was held and settled, oldest first: the annals, and the
     settled nights still among the fires (an evening's embers, or one not yet
     cleared away). The fires let a settled night go about a week after its
-    evening, so the counts read off them alone (the fires held on the hero's
-    splash, Fastagesturinn, the crew's usual evening, a night's Met stamp)
-    saw the last night or two of a weekly crew and forgot the rest. `fires` is
+    evening, so the counts read off them alone (how many were held, on the
+    hero's splash; Fastagesturinn; the crew's usual evening; a night's Met
+    stamp) saw the last night or two of a weekly crew and forgot the rest. `fires` is
     a read of the fires already made, so they are not read twice in one
     request; without it they are read as they stand in the store. */
 export async function heldNights(fires?: Night[]): Promise<HeldNight[]> {
