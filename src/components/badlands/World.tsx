@@ -20,7 +20,7 @@ import { useLivePlayers } from './livePlayers';
 import { FLIGHT, headingOf } from '@/lib/map-flight';
 import { CREW, FACING, MAP_LIGHTS, MAP_POSTER, MAP_START_VIEW, MAP_URL, SITE_NAME, handCase, isRoom, plainClick, titleCase, type Plate, type RoomId } from './data';
 import type { ServerState } from './hooks';
-import { modalOpen, showWorld, useEffectsAllowed, useInert, useMediaQuery, useReducedMotionPref, useRoomForEffects } from './hooks';
+import { copyText, modalOpen, showWorld, useEffectsAllowed, useInert, useMediaQuery, useReducedMotionPref, useRoomForEffects } from './hooks';
 import { useBoardNews } from '@/components/board/news';
 import { usePlayNight, whenAt } from './night';
 import { photoProps, PHOTO_SIZES } from './photo';
@@ -1034,10 +1034,11 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
                   {place.builders && place.builders.length > 0 && (
                     <span className="b-card__builders">byggt af {place.builders.map((b, i) => <span key={b}>{i > 0 && ', '}<Link href={`/crew/${b}`}>{b}</Link></span>)}</span>
                   )}
-                  {/* where it stands, as F3 writes it; a press copies the three numbers for a /tp or a walk */}
+                  {/* where it stands, as F3 writes it; a press copies the three numbers for a /tp or a walk,
+                      and where neither way of copying works the toast holds them to be copied by hand */}
                   {place.world && (
                     <button type="button" className="b-f3 b-card__xyz" aria-label={`Afrita hnitin ${place.world.x}, ${place.world.y}, ${place.world.z}`}
-                      onClick={() => { const w = place.world!; navigator.clipboard?.writeText(`${w.x} ${w.y} ${w.z}`).then(() => toast('Afritað', 'hnitin'), () => {}); }}>
+                      onClick={() => { const w = place.world!; const xyz = `${w.x} ${w.y} ${w.z}`; copyText(xyz).then(ok => (ok ? toast('Afritað', 'hnitin') : toast('Afritun tókst ekki', xyz))); }}>
                       <span aria-hidden="true">XYZ: {place.world.x} / {place.world.y} / {place.world.z}</span>
                     </button>
                   )}

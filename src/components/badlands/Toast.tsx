@@ -11,7 +11,8 @@ import { Seal } from './Bits';
    was done and to what, and nothing more. One at a time; a new one takes the
    place of the one showing. Screen readers hear it once, from a live region
    that is on the page before anything is written to it. The hero's own copy
-   button answers with its stamp instead (CopyAddress). */
+   button answers with its stamp instead (CopyAddress), and only a copy that
+   failed is put on a slip from there, with the address to copy by hand. */
 
 export interface ToastMessage {
   id: number;
