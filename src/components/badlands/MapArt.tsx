@@ -168,12 +168,21 @@ export function MapMarks({ locations, zones, paths, selectedId = null, pinProps,
         );
       })}
 
-      {locations.map(loc => (
-        <g key={loc.id} className="b-pin-map" {...pinProps?.(loc)}>
-          <rect className="b-pin-map__hit" x={loc.x - 22} y={loc.y - 30} width="44" height="44" />
-          <MapPin loc={loc} active={loc.id === selectedId} />
-        </g>
-      ))}
+      {/* Each pin's pad is its own drawing, the base to the numeral and the
+          flag to the foot, and no wider: the 44-unit square it was reached
+          past its flag, and in a cluster a later pin's unseen pad covered
+          an earlier one's flag, so 6 under 10 and 11 could not be pressed.
+          A pin is scaled about its foot, where it stands: the painted map
+          keeps every pin one size as the paper zooms (MapSheet.tsx). */}
+      {locations.map(loc => {
+        const props = pinProps?.(loc);
+        return (
+          <g key={loc.id} className="b-pin-map" {...props} style={{ transformOrigin: `${loc.x}px ${loc.y}px`, ...props?.style }}>
+            <rect className="b-pin-map__hit" x={loc.x - 10} y={loc.y - 24} width="40" height="32" />
+            <MapPin loc={loc} active={loc.id === selectedId} />
+          </g>
+        );
+      })}
 
       <g transform="translate(930 170)" fill={INK}>
         <rect x="-4" y="-40" width="8" height="80" fillOpacity="0.5" />

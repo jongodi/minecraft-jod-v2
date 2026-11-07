@@ -20,11 +20,12 @@ import { useLivePlayers } from './livePlayers';
 import { FLIGHT, headingOf } from '@/lib/map-flight';
 import { CREW, FACING, MAP_LIGHTS, MAP_POSTER, MAP_START_VIEW, MAP_URL, SITE_NAME, handCase, isRoom, plainClick, titleCase, type Plate, type RoomId } from './data';
 import type { ServerState } from './hooks';
-import { modalOpen, showWorld, useEffectsAllowed, useInert, useMediaQuery, useReducedMotionPref, useRoomForEffects } from './hooks';
+import { copyText, modalOpen, showWorld, useEffectsAllowed, useInert, useMediaQuery, useReducedMotionPref, useRoomForEffects } from './hooks';
 import { useBoardNews } from '@/components/board/news';
 import { usePlayNight, whenAt } from './night';
 import { photoProps, PHOTO_SIZES } from './photo';
 import { toast } from './Toast';
+import { crewAtPlaces, hereLine } from './hereNow';
 
 /* Everything that opens over the world is a screen of its own, fetched when
    its door is first opened: the paper sheet, the album, and the three rooms. */
@@ -217,6 +218,14 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
   const [drawn, setDrawn]     = useState(false);
   const [album, setAlbum]     = useState(false);
   const closeAlbum = useCallback(() => setAlbum(false), []);
+  /* The album hangs over the page, outside the frame the browser's own full
+     screen shows: that screen is left first, from the Myndir slot and from
+     its key alike. Opened by the key inside it, the album was out of sight,
+     held the page's scroll and took the number keys, until Escape. */
+  const openAlbum = useCallback(() => {
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    setAlbum(true);
+  }, []);
   const [live, setLive]       = useState(false);
   const [ready, setReady]     = useState(false);
   /* the viewer's map has loaded and window.jod answers */
@@ -455,8 +464,10 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
            back would close the layer instead: the screen stays, still and lantern */
         if (!modalOpen()) closeFull();
         setLive(false); setReady(false); setViewer(false); setTiles({ drawn: 0, of: 0 }); setSlow(false); setMenu(false);
-        /* the next viewer opens at night following nobody: the HUD says so too */
+        /* the next viewer opens at night following nobody: the HUD says so too,
+           and a friend asked for before this one failed is not followed by it */
         setNight(false); setFollowing(null); setFollowNote(null);
+        pendingFollow.current = null;
         setFailed(!autoRef.current);
         setAuto(false);
       }
@@ -507,16 +518,19 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
     return () => io.disconnect();
   }, []);
   /* How far down the frame the title and the tools reach, so the postcard
-     stops short of them (--hud-bottom in badlands.css). On a phone they are
-     a third of the frame, and the card would otherwise cover the buttons. */
+     stops short of them, the locator bar hangs under them and a toast over
+     the whole screen drops in below them (--hud-bottom in badlands.css). On
+     a phone they are a third of the frame, and the card would otherwise
+     cover the buttons. Measured by the layout box, which a transform does not
+     move: the whole screen's plank comes down from above the frame as it
+     opens (b-plank-in), and read on its first frame it reached nowhere, so
+     the locator lay across the plank's title for the rest of the visit. */
   useEffect(() => {
     const frame = frameRef.current;
     const top = hudTop.current;
     if (!frame || !top || !('ResizeObserver' in window)) return;
-    const measure = () => {
-      const reach = top.getBoundingClientRect().bottom - frame.getBoundingClientRect().top;
-      frame.style.setProperty('--hud-bottom', `${Math.max(0, Math.round(reach))}px`);
-    };
+    /* the plank's offsetParent is the HUD, which lies over the whole frame (inset 0) */
+    const measure = () => frame.style.setProperty('--hud-bottom', `${Math.max(0, Math.round(top.offsetTop + top.offsetHeight))}px`);
     const ro = new ResizeObserver(measure);
     ro.observe(frame);
     ro.observe(top);
@@ -561,12 +575,19 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
   /* ─── the whole screen ─── */
   /* the way in that was pressed, which goes as the screen opens and is drawn anew as it closes */
   const opener = useRef<string | null>(null);
+  const fullRef = useRef(full);
+  fullRef.current = full;
   const openFull = useCallback(() => {
-    const at = document.activeElement;
-    opener.current = at?.closest('.b-card__fly') ? '.b-card__fly' : at?.closest('.b-boot') ? '.b-boot' : at?.closest('.b-hud__tools a') ? '.b-hud__tools a[href]' : null;
     setAuto(false);
     setFailed(false);
     setLive(true);
+    /* Asked again from inside the whole screen (a friend's line in the chat,
+       pressed there): the map is taken in hand, and nothing else. On an
+       iPhone a second entry in the history had Loka, or Back, need two
+       presses to leave, and the way in to go back to was a chat line. */
+    if (fullRef.current) return;
+    const at = document.activeElement;
+    opener.current = at?.closest('.b-card__fly') ? '.b-card__fly' : at?.closest('.b-boot') ? '.b-boot' : at?.closest('.b-hud__tools a') ? '.b-hud__tools a[href]' : null;
     const el = frameRef.current;
     if (el?.requestFullscreen && document.fullscreenEnabled) {
       el.requestFullscreen({ navigationUI: 'hide' }).then(() => setFull('native')).catch(() => {
@@ -676,6 +697,23 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
      are on the locator bar alone */
   const players = useLivePlayers(inView && !shut, CREW);
   const onLand = useMemo(() => players.filter(p => !MAIN_BOUNDS || onMap(MAIN_BOUNDS, p)), [players]);
+  /* Hver er hvar (hereNow.ts): who of them stands at which place, the places
+     and the players on the main map's ground alone, for each place's chip
+     and its postcard */
+  const crewAt = useMemo(() => crewAtPlaces(onLand, grounded), [onLand, grounded]);
+  const standing = place ? crewAt.get(place.id) ?? [] : [];
+  /* The first chip with someone at it is brought into view on the rail,
+     once, when the world is reached; not over a place a link has chosen,
+     whose own chip the rail already holds. */
+  const firstAt = config.locations.find(l => crewAt.has(l.id))?.id ?? null;
+  const whoShown = useRef(false);
+  useEffect(() => {
+    if (!reached || whoShown.current) return;
+    if (selected !== null) { whoShown.current = true; return; }
+    if (firstAt === null) return;
+    whoShown.current = true;
+    revealRailItem(firstAt, places.current);
+  }, [reached, selected, firstAt, places]);
   /* The live map, taken hold of: from the lantern, the postcard or the whole
      screen. A viewer the flight woke is the same one, now let go of as glass. */
   const takeHold = useCallback(() => { setAuto(false); setFailed(false); setLive(true); }, []);
@@ -720,6 +758,10 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
      locator (jod:home) flies back to the start view. */
   const pendingView = useRef<View | null>(null);
   const pendingFollow = useRef<string | null>(null);
+  /* Each press of a friend's line counts here, so the follow below runs again
+     for it: with the map already up and ready nothing else changes, and the
+     name waited in the ref until the map next woke, minutes later. */
+  const [followAsk, setFollowAsk] = useState(0);
   const copyView = useCallback(async () => {
     const c = camera.get();
     if (!c || typeof c.rotation !== 'number' || typeof c.d !== 'number') return;
@@ -743,15 +785,21 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
     if (!v) return;
     pendingView.current = v;
     showWorld(false);
-    /* a phone opens the whole screen at once; a wide screen lets the flight
-       come down and wake the viewer behind it, and takes hold at the landing */
-    if (window.matchMedia(PHONE_QUERY).matches) openFull();
+    /* A phone opens the whole screen at once, and a wide screen takes hold of
+       the map in the page, as a friend's line does. Left to the flight to
+       wake the viewer, a link usually never showed its view: the arrival
+       jumps straight to the landing, the flight's first frame was already
+       there, and it never set off to wake anything. Until the world is seen
+       to be in view the map may be let go of once, as glass; the view below
+       takes it in hand again when it is ready. */
+    if (window.matchMedia(PHONE_QUERY).matches) openFull(); else takeHold();
   // once, as the page arrives
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useEffect(() => {
     const onFollow = (e: Event) => {
       pendingFollow.current = (e as CustomEvent<string>).detail;
+      setFollowAsk(n => n + 1);
       showWorld(false);
       if (window.matchMedia(PHONE_QUERY).matches) openFull(); else takeHold();
     };
@@ -774,7 +822,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
       if (r === 'ok' || r === 'outside' || ++tries >= 6) { clearInterval(t); pendingFollow.current = null; if (r === 'missing') setFollowNote(`${name} sést ekki á kortinu`); }
     }, 800);
     return () => clearInterval(t);
-  }, [viewer, ready, standby, jod]);
+  }, [viewer, ready, standby, jod, followAsk]);
   /* The hotbar's next slots: 4 Nótt, 5 Teiknað kort, 6 Myndir, 7 Heill
      skjár, with the world in view on a wide screen; not in a field, under a
      dialog, in a room, or with a modifier (the doors' keys are AddressBar's). */
@@ -787,12 +835,12 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
       e.preventDefault();
       if (e.key === '4') { if (viewer && shown) jod()?.setNight(!night); }
       else if (e.key === '5') setDrawn(v => !v);
-      else if (e.key === '6') setAlbum(true);
+      else if (e.key === '6') openAlbum();
       else if (e.key === '7') { setDrawn(false); openFull(); }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  // openFull is a stable callback declared above
+  // openFull and openAlbum are stable callbacks declared above
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reached, shut, viewer, shown, night, jod]);
   /* Resting on the way down, the viewer waiting behind the flight draws its
@@ -816,7 +864,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
 
   return (
     <section id="heimur" className={`b-world${fly ? ' has-flight' : ''}`} aria-labelledby="heimur-title">
-      <div ref={frameRef} className={`b-frame${shown ? ' is-live' : ''}${shown && ready ? ' is-ready' : ''}${shown && !viewed ? ' is-unseen' : ''}${standby ? ' is-standby' : ''}${shown && auto ? ' is-glass' : ''}${held ? ' is-held' : ''}${drawn ? ' is-drawn' : ''}${shut ? ' is-room' : ''}${full === 'overlay' ? ' is-full' : ''}${shown && still ? ' is-still' : ''}${menu && ready ? ' is-menu' : ''}${chatOpen ? ' is-chat' : ''}${flying ? ' is-flying' : ''}`}>
+      <div ref={frameRef} className={`b-frame${shown ? ' is-live' : ''}${shown && ready ? ' is-ready' : ''}${shown && !viewed ? ' is-unseen' : ''}${standby ? ' is-standby' : ''}${shown && auto ? ' is-glass' : ''}${held ? ' is-held' : ''}${drawn ? ' is-drawn' : ''}${shut ? ' is-room' : ''}${full === 'overlay' ? ' is-full' : ''}${shown && still ? ' is-still' : ''}${menu && ready ? ' is-menu' : ''}${chatOpen ? ' is-chat' : ''}${place && !leaving ? ' is-card' : ''}${flying ? ' is-flying' : ''}`}>
         {/* The still and its lights settle together as the world is
             reached, the camera coming down into the valley with the scroll
             (badlands.css). On a device with room for the effects, until the
@@ -933,9 +981,8 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
                 onClick={() => setDrawn(v => !v)}>
                 <FoldedMapIcon className="b-btn__icon" /><span className="b-hud__word">Teiknað kort</span>
               </button>
-              {/* the album hangs over the page, outside the frame the browser's full screen shows */}
-              <button type="button" className="b-btn b-btn--small b-btn--ghost b-hud__tool"
-                onClick={() => { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); setAlbum(true); }}>
+              {/* the album hangs over the page, outside the frame the browser's full screen shows (openAlbum) */}
+              <button type="button" className="b-btn b-btn--small b-btn--ghost b-hud__tool" onClick={openAlbum}>
                 <PictureIcon className="b-btn__icon" /><span className="b-hud__word">Myndir<span className="b-hud__sep"> · </span></span><span className="b-hud__count">{plates.length}</span>
               </button>
               {!full && (
@@ -964,10 +1011,13 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
             {/* What the wait says, in one live region kept mounted so a screen
                 reader hears each change: that the map would not come, or how
                 far the first view has come, drawn as the game draws a world
-                loading, its bar filling tile by tile under the words. */}
+                loading, its bar filling tile by tile under the words. The words
+                are on the F3 lines' veil of dark, so they read over the busiest
+                still; a phone says the failure in one line of the bitmap face,
+                where the longer sentence wrapped down into the places' rail. */}
             <p className="b-boot__wait" role="status">
-              {failed && !live ? 'kortið náði ekki að hlaðast · reyndu aftur eftir smástund'
-                : loading ? `sæki kortið${tiles.of > 0 ? ` · ${tiles.drawn} af ${tiles.of} ${plural(tiles.of, 'reit', 'reitum')}` : '…'}` : ''}
+              {failed && !live ? <span className="b-boot__say">{phone ? 'kortið kom ekki · reyndu aftur' : 'kortið náði ekki að hlaðast · reyndu aftur eftir smástund'}</span>
+                : loading ? <span className="b-boot__say">{`sæki kortið${tiles.of > 0 ? ` · ${tiles.drawn} af ${tiles.of} ${plural(tiles.of, 'reit', 'reitum')}` : '…'}`}</span> : ''}
               {loading && (
                 <span className="b-xp b-boot__bar" aria-hidden="true">
                   <span className="b-xp__fill" style={{ transform: `scaleX(${tiles.of > 0 ? Math.min(1, tiles.drawn / tiles.of).toFixed(3) : 0})` }} />
@@ -1005,13 +1055,21 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
                 <span>
                   <b className="b-card__name">{titleCase(place.label)}</b>
                   {place.sublabel && <span className="b-card__sub">{handCase(place.sublabel).replace(/\s*·\s*/g, ', ')}</span>}
+                  {/* who of the crew stands here now, as the place's chip shows them (hereNow.ts) */}
+                  {standing.length > 0 && (
+                    <span className="b-card__here">
+                      {standing.map(n => <PlayerHead key={n} name={n} size={16} alt="" />)}
+                      {hereLine(standing)}
+                    </span>
+                  )}
                   {place.builders && place.builders.length > 0 && (
                     <span className="b-card__builders">byggt af {place.builders.map((b, i) => <span key={b}>{i > 0 && ', '}<Link href={`/crew/${b}`}>{b}</Link></span>)}</span>
                   )}
-                  {/* where it stands, as F3 writes it; a press copies the three numbers for a /tp or a walk */}
+                  {/* where it stands, as F3 writes it; a press copies the three numbers for a /tp or a walk,
+                      and where neither way of copying works the toast holds them to be copied by hand */}
                   {place.world && (
                     <button type="button" className="b-f3 b-card__xyz" aria-label={`Afrita hnitin ${place.world.x}, ${place.world.y}, ${place.world.z}`}
-                      onClick={() => { const w = place.world!; navigator.clipboard?.writeText(`${w.x} ${w.y} ${w.z}`).then(() => toast('Afritað', 'hnitin'), () => {}); }}>
+                      onClick={() => { const w = place.world!; const xyz = `${w.x} ${w.y} ${w.z}`; copyText(xyz).then(ok => (ok ? toast('Afritað', 'hnitin') : toast('Afritun tókst ekki', xyz))); }}>
                       <span aria-hidden="true">XYZ: {place.world.x} / {place.world.y} / {place.world.z}</span>
                     </button>
                   )}
@@ -1073,6 +1131,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
             {config.locations.map(loc => {
               const thumb = loc.photoId ? plates.find(p => p.id === loc.photoId) ?? null : null;
               const count = pinned[String(loc.id)]?.count ?? 0;
+              const who = crewAt.get(loc.id) ?? [];
               return (
                 <button key={loc.id} type="button" data-rail-item={loc.id}
                   className={`b-chip${woodClass(loc.wood)}${loc.id === selected ? ' is-on' : ''}${loc.id === near ? ' is-near' : ''}`} aria-pressed={loc.id === selected} onClick={() => choose(loc.id)}
@@ -1087,6 +1146,14 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
                       // eslint-disable-next-line @next/next/no-img-element
                       ? <img {...photoProps(thumb.src, PHOTO_SIZES.thumb)} alt="" loading="lazy" decoding="async" width={56} height={40} />
                       : <span className="b-chip__thumb--empty" aria-hidden="true" />}
+                    {/* who stands here now: their heads along the foot of the picture, three at most, the rest counted; said in words */}
+                    {who.length > 0 && (
+                      <span className="b-chip__here">
+                        {(who.length > 3 ? who.slice(0, 2) : who).map(n => <PlayerHead key={n} name={n} size={16} alt="" />)}
+                        {who.length > 3 && <span className="b-chip__heremore" aria-hidden="true">+{who.length - 2}</span>}
+                        <span className="b-visually-hidden">{`${hereLine(who, 'hér núna')}, `}</span>
+                      </span>
+                    )}
                   </span>
                   <span className="b-chip__text">
                     <span className="b-chip__name">{titleCase(loc.label)}</span>

@@ -395,6 +395,17 @@
   box-shadow: 0 var(--px) 0 var(--tc-brown), var(--lift-3);
   animation: b-toast-in var(--dur-3) var(--ease-out) both;
 }
+/* Lifted into the top layer (Toast.tsx, Slip), so it shows over the map's
+   whole screen too: placed on the screen itself rather than in the column
+   above, and the browser's own box for a popover (centred in the screen) put
+   back to the slip's. Over the whole screen it hangs under that screen's
+   plank (--toast-under) rather than under a bar that is not there. */
+.b-toast[popover] {
+  position: fixed;
+  inset: calc(var(--toast-under, var(--bar-safe)) + var(--sp-3)) var(--gutter) auto auto;
+  width: min(22rem, 100% - 2 * var(--gutter));
+  margin: 0;
+}
 .b-toast.is-leaving { animation: b-toast-out var(--dur-2) var(--ease-in) forwards; }
 @keyframes b-toast-in  { from { opacity: 0; transform: translateY(calc(-100% - var(--bar))); } }
 @keyframes b-toast-out { to   { opacity: 0; transform: translateY(calc(var(--px) * -4)); } }
@@ -1598,6 +1609,10 @@ html.is-map-full { overflow: hidden; }
 @media (hover: hover) { .b-sheet__zoom button:hover { background: var(--lantern); } }
 .b-sheet__zoom button:active { box-shadow: var(--bevel-in); }
 .b-pin-map { cursor: pointer; }
+/* on the sheet the flags keep the size they opened at while the paper zooms
+   under them (MapSheet.tsx: --z0 over --z), each about its own foot
+   (MapArt.tsx), so a zoom spreads a cluster apart instead of enlarging it */
+.b-sheet .b-pin-map { scale: calc(var(--z0, 1) / var(--z, 1)); }
 .b-pin-map__hit { fill: transparent; }
 .b-pin-map__body { transition: transform var(--dur-1) var(--ease-out); transform-box: fill-box; transform-origin: center bottom; }
 .b-pin-map:focus-visible .b-pin-map__body { transform: translateY(-2px) scale(1.15); }
@@ -1614,6 +1629,8 @@ html.is-map-full { overflow: hidden; }
 .b-hud__top { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-3) var(--sp-4); flex-wrap: wrap; }
 .b-hud__title { display: grid; gap: var(--sp-1); }
 .b-hud__title .b-title { font-size: var(--fs-xl); text-shadow: 0 var(--px) 0 var(--night); }
+/* where the keyboard lands when a room with no door of its own closes (Drawer.tsx): a place to carry on from, not a control, so no lantern ring */
+.b-hud__title .b-title:focus { outline: none; }
 .b-hud__meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-3); font-size: var(--fs-sm); color: var(--tc-white); text-shadow: 0 var(--px) 0 var(--night); }
 .b-hud__in { display: inline-flex; align-items: center; gap: var(--sp-2); }
 .b-hud__in img { width: 1rem; height: 1rem; image-rendering: pixelated; box-shadow: 0 0 0 1px var(--night); }
@@ -1782,6 +1799,12 @@ html.is-map-full { overflow: hidden; }
    is on its way the game's own bar under them, filling tile by tile as a world
    loads, 18 cells on the sign's width. Empty, it is nothing at all. */
 .b-boot__wait { display: grid; justify-items: center; gap: var(--sp-2); font-family: var(--font-data); font-size: var(--fs-data); color: var(--paper); text-align: center; text-shadow: 0 var(--px) 0 var(--night); }
+.b-boot__say { padding: var(--px) var(--sp-1); background: rgb(from var(--pitch) r g b / 0.6); clip-path: var(--notch); text-wrap: balance; }
+/* On a phone the places' rail stands high in a short frame, and the words
+   centred in the half of the world under the lantern ran in under its count:
+   under the lantern they hang straight below its tag instead. Alone (the map
+   up, loading) they keep the middle of the world. */
+@media (max-width: 899.98px) { .b-boot + .b-boot__wait { align-self: start; } }
 .b-boot__bar { width: min(18rem, 100%); --xp: 8px; }
 /* its fill is the map's progress, not the page's: no scroll timeline, a short step between counts */
 .b-boot__bar .b-xp__fill { animation: none; transition: transform var(--dur-2) linear; }
@@ -1823,6 +1846,10 @@ html.is-map-full { overflow: hidden; }
 .b-card__cap > span { display: grid; gap: var(--px); min-width: 0; }
 .b-card__name { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-lg); line-height: 1.15; color: var(--ink); overflow-wrap: break-word; hyphens: auto; }
 .b-card__sub { font-size: var(--fs-sm); color: var(--ink-soft); line-height: 1.35; }
+/* who of the crew stands at the place now (hereNow.ts): their heads, ringed
+   in ink as the HUD's are on the painted map, and the line that says it */
+.b-card__here { display: flex; flex-wrap: wrap; align-items: center; gap: var(--px) var(--sp-1); font-size: var(--fs-sm); line-height: 1.35; color: var(--ink); }
+.b-card__here img { width: 1rem; height: 1rem; image-rendering: pixelated; box-shadow: 0 0 0 1px var(--ink); }
 .b-card__x { flex-shrink: 0; display: grid; place-items: center; width: var(--tap); height: var(--tap); margin: calc(var(--sp-2) * -1) calc(var(--sp-2) * -1) 0 0; color: var(--ink-faint); }
 .b-card__x svg { width: 1rem; height: 1rem; }
 @media (hover: hover) { .b-card__x:hover { color: var(--ink); } }
@@ -1881,6 +1908,11 @@ html.is-map-full { overflow: hidden; }
 /* open, the chat is read as the game's is, with the world's lantern stepped aside: its sign stood where the longer log climbs */
 .b-frame .b-hud__mid { transition: opacity var(--dur-2) var(--ease-out), transform var(--dur-3) var(--ease-out), visibility 0s linear 0s; }
 .b-frame.is-chat .b-hud__mid { opacity: 0; visibility: hidden; transition: opacity var(--dur-2) var(--ease-out), visibility 0s linear var(--dur-2); }
+/* On a phone a postcard opens across the middle of the world, and the post,
+   its arm and the top of the lantern stood up out of the card, sliced flat:
+   the sign steps aside while a card is up, as it does for the chat, and the
+   card's own button is the way into the map meanwhile. */
+@media (max-width: 899.98px) { .b-frame.is-card .b-hud__mid { opacity: 0; visibility: hidden; transition: opacity var(--dur-2) var(--ease-out), visibility 0s linear var(--dur-2); } }
 /* Coming down (Flight.tsx), the post is pulled up out of the camera's way,
    and set down in the town when it lands: the way into the live map stands
    where the flight ends, and the pins under it can be reached while flying. */
@@ -1985,6 +2017,14 @@ html.is-map-full { overflow: hidden; }
 /* how many things the crew pinned at this place */
 .b-chip__count { position: absolute; top: calc(var(--px) * -1); right: calc(var(--px) * -1); padding: 0 calc(var(--px) * 2); background: var(--lantern); color: var(--night); font-family: var(--font-data); font-size: var(--fs-chip); line-height: 1.6; }
 .b-chip.is-on .b-chip__count { background: var(--night); color: var(--lantern); }
+/* who of the crew stands at the place now (World.tsx, hereNow.ts): their
+   heads along the foot of its picture, each on a pixel of night as the HUD's
+   are, the count's corner left to the count; past three, two heads and the
+   rest counted in the bitmap face */
+.b-chip__thumb { position: relative; }
+.b-chip__here { position: absolute; left: var(--px); bottom: var(--px); display: flex; gap: var(--px); }
+.b-chip__here img { width: 1rem; height: 1rem; image-rendering: pixelated; box-shadow: 0 0 0 var(--px) var(--night); }
+.b-chip__heremore { display: grid; place-items: center; min-width: 1rem; height: 1rem; padding: 0 var(--px); background: var(--night); color: var(--paper); font-size: var(--fs-chip); line-height: 1; }
 /* the other bases at the end of the rail: a lit lantern where the photo would be, since the chip leads to a 3D map of its own */
 .b-chip--base { text-decoration: none; }
 .b-chip__thumb--lantern { display: grid; place-items: center; background: var(--dusk-2); }
@@ -2246,7 +2286,10 @@ html.is-map-full { overflow: hidden; }
 .b-hang { filter: drop-shadow(0 calc(var(--px) * 2) 0 rgb(from var(--night) r g b / 0.55)); }
 
 /* ─── the album: the whole wall, opened over the world ────────── */
-.b-album { position: fixed; inset: 0; z-index: var(--z-drawer); overflow-y: auto; background: var(--scrim-deep); padding-block: calc(var(--sp-6) + var(--safe-top)) var(--sp-8); }
+/* on the night itself, solid: through the deep scrim the HUD's date, heads
+   and tools stood faintly at the header's own baselines, and its sentence
+   ran on into them. The viewer sleeps under the album, so nothing is lost. */
+.b-album { position: fixed; inset: 0; z-index: var(--z-drawer); overflow-y: auto; background: var(--night); padding-block: calc(var(--sp-6) + var(--safe-top)) var(--sp-8); }
 .b-album__inner { display: grid; gap: var(--sp-4); }
 /* Tiles are square and butt together, so the wall never leaves holes.
    Every fifth picture is hung double size. There is no dense packing:
@@ -2454,6 +2497,8 @@ html.is-map-full { overflow: hidden; }
 .b-night__count,
 .b-cal,
 .b-chip__count,
+.b-chip__new,
+.b-chip__heremore,
 .b-hud__count,
 .b-frame-pic__no {
   font-family: var(--font-data);
@@ -2988,15 +3033,22 @@ html.is-map-full { overflow: hidden; }
 .b-f3__copy { display: block; margin-top: var(--px); padding: 0; border: 0; background: none; color: var(--lantern); font: inherit; font-size: var(--fs-sm); text-transform: none; cursor: pointer; }
 .b-f3__copy:focus-visible { outline: var(--px) solid var(--lantern); outline-offset: var(--px); }
 @media (hover: hover) { .b-f3__copy:hover { color: var(--paper); } }
-/* where a place stands, on the F3 lines' own dark under its name; a press copies it */
-.b-card__xyz { display: inline-block; position: static; margin-top: var(--sp-1); padding: var(--px) var(--sp-2); border: 0; background: var(--pitch); color: var(--paper); font-family: var(--font-data); font-size: var(--fs-sm); line-height: 1.4; cursor: pointer; }
+/* where a place stands, on the F3 lines' own dark under its name; a press
+   copies it. In the bitmap face at its own 16 px, as the F3 lines it copies
+   are, and pressable: the F3 lines let the pointer through to the map
+   (.b-f3), and the key took that from them, so only a keyboard could press it */
+.b-card__xyz { display: inline-block; position: static; margin-top: var(--sp-1); padding: var(--px) var(--sp-2); border: 0; background: var(--pitch); color: var(--paper); font-family: var(--font-data); font-size: var(--fs-data); line-height: 1.4; cursor: pointer; pointer-events: auto; }
 .b-card__xyz:focus-visible { outline: var(--px) solid var(--lantern-ink); outline-offset: var(--px); }
 @media (hover: hover) { .b-card__xyz:hover { color: var(--lantern); } }
 /* the compass needle on the locator bar: a key, unlike the marks */
 .b-locator__mark--home { width: 1.25rem; height: 1.75rem; padding: 0; border: 0; background: none; cursor: pointer; pointer-events: auto; }
 .b-locator__mark--home svg { width: 0.5rem; height: 1rem; }
-/* a place whose ground changed in the newest copy of the map: the board's paper tag on its chip */
-.b-chip__new { position: absolute; top: calc(var(--px) * -1); left: calc(var(--px) * -1); padding: 0 var(--sp-1); background: var(--paper); color: var(--tc-red); border: var(--px) solid var(--tc-red); font-family: var(--font-text); font-weight: 600; font-size: var(--fs-chip); line-height: 1.6; letter-spacing: 0.04em; text-transform: uppercase; }
+/* a place whose ground changed in the newest copy of the map: the board's
+   paper tag on its chip, in the bitmap face at its 8 px grid as the count in
+   the other corner is (set with the face's other labels, above); the text
+   face at 8 px fused the Ý's accent into the letter, and tracking would
+   take the face off its grid */
+.b-chip__new { position: absolute; top: calc(var(--px) * -1); left: calc(var(--px) * -1); padding: 0 var(--sp-1); background: var(--paper); color: var(--tc-red); border: var(--px) solid var(--tc-red); font-size: var(--fs-chip); line-height: 1.6; text-transform: uppercase; }
 .b-chip.is-on .b-chip__new { background: var(--tc-red); color: var(--paper); }
 
 /* ─── the 31 October ideas: the lantern's catch, the crosshair, the clouds over the crew pages, the held tooltip ─── */
