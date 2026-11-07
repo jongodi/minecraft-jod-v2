@@ -1,7 +1,12 @@
 // A member's print on its way to the store, from the browser: shrunk to a
 // sensible size, sent straight to Vercel Blob (or to the server in local
 // development), then pinned with the entry that carries it.
-import { upload } from '@vercel/blob/client';
+// The Blob client is fetched only when a picture is sent (sendToBlob). It
+// brings a Node Buffer polyfill and a retry library with it, about 18 kB
+// compressed, and every sign on the board and the walls imports this module
+// for the error helpers below; read statically, it loaded before the first
+// frame of /taflan and every wall for visitors who never send a picture.
+import type { upload } from '@vercel/blob/client';
 import { prepareImage, formatBytes } from '@/lib/client-image';
 import { crewBlobPath, takenAtFromFilename } from '@/lib/crew-types';
 
@@ -58,8 +63,12 @@ export async function errorFrom(res: Response): Promise<string> {
 /** A picture sent straight to Vercel Blob. Its client speaks English and,
     when the site's handshake turns an upload away, drops the site's own
     words for "Failed to retrieve the client token"; the message is put back
-    into Icelandic here. */
+    into Icelandic here. The client itself is fetched on the first send; if
+    it cannot be (the network dropped since the page loaded), the bundler
+    rejects with a plain Error in English, so that is said as a network
+    failure in the site's words too. */
 export async function sendToBlob(...args: Parameters<typeof upload>): ReturnType<typeof upload> {
+  const { upload } = await import('@vercel/blob/client').catch(() => { throw new Error(OFFLINE); });
   try {
     return await upload(...args);
   } catch (e) {
