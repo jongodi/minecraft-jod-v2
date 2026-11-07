@@ -24,10 +24,13 @@ function rankOf(ms: number) {
   return 'Nýliði';
 }
 
-/* The night scene: a pixel moon, a few stars and two mesas. The moon hangs
-   below the band the corner labels stand in, right of the call: at the top
-   of the sky it sat under Best, and the best time was written across it. */
-const MOON: Array<[number, number, number]> = [[606, 100, 24], [600, 106, 36], [594, 112, 48], [594, 118, 48], [594, 124, 48], [594, 130, 48], [600, 136, 36], [606, 142, 24]];
+/* The night scene: a pixel moon, a few stars and two mesas. The call fills
+   the middle of the sky and the corner labels its top, so the moon stands
+   low over the far mesa, right of the foe, where no call reaches: at the top
+   it sat under Best, and in the call's band 'Of snemma' was written across
+   it. A phone's arena is narrower and the call takes its whole sky, so there
+   the moon is moved up between the two corner labels (badlands.css). */
+const MOON: Array<[number, number, number]> = [[702, 240, 24], [696, 246, 36], [690, 252, 48], [690, 258, 48], [690, 264, 48], [690, 270, 48], [696, 276, 36], [702, 282, 24]];
 const STARS: Array<[number, number]> = [[60, 40], [140, 90], [220, 30], [330, 70], [420, 120], [500, 50], [700, 110], [760, 30], [90, 150], [660, 160]];
 const MESA_FAR  = 'M0 330 H70 V280 H110 V300 H190 V260 H230 V330 H350 V265 H470 V300 H515 V330 H640 V295 H760 V330 H800 V450 H0 Z';
 const MESA_NEAR = 'M0 372 H120 V340 H200 V372 H460 V350 H540 V372 H800 V450 H0 Z';
@@ -160,7 +163,7 @@ function QuickDraw({ onClose }: { onClose: () => void }) {
             onKeyDown={e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); if (!e.repeat) tap(); } }}
           >
             <svg viewBox="0 0 800 450" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
-              {MOON.map(([x, y, w]) => <rect key={`${x}-${y}`} x={x} y={y} width={w} height="6" fill="var(--sun)" />)}
+              <g className="b-arena__moon">{MOON.map(([x, y, w]) => <rect key={`${x}-${y}`} x={x} y={y} width={w} height="6" fill="var(--sun)" />)}</g>
               {STARS.map(([x, y]) => <rect key={`${x}-${y}`} x={x} y={y} width="3" height="3" fill="var(--star)" />)}
               <path d={MESA_FAR} fill="var(--tc-red)" />
               <path d={MESA_NEAR} fill="var(--tc-brown)" />

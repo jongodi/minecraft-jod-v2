@@ -102,9 +102,15 @@
   text-overflow: ellipsis;
   color: var(--ink);
 }
-.w-poster__bounty { margin-top: var(--sp-2); display: flex; align-items: baseline; gap: var(--sp-2); }
-.w-poster__bounty .b-poster__reward { margin-top: 0; }
-.w-poster__bounty .b-poster__val { margin-top: 0; font-size: var(--fs-data); }
+/* What they are wanted for, under the name, in the roll call's own lines
+   (PosterCharge.tsx): the alias in red or their place, the charge, then the
+   bounty, to the paper's side beside the skin and centred on the portrait
+   poster. A long alias breaks at its soft hyphen, as on the roll call. */
+.w-poster__wanted { margin-top: var(--sp-2); display: grid; justify-items: start; }
+.w-poster__wanted > :first-child { margin-top: 0; }
+.w-poster__wanted .b-poster__alias { white-space: normal; overflow: visible; text-overflow: clip; hyphens: manual; text-wrap: balance; }
+.w-poster__wanted .b-poster__bounty { margin-top: var(--sp-1); justify-content: start; }
+@media (min-width: 1024px) { .w-poster__wanted { justify-items: center; } .w-poster__wanted .b-poster__bounty { justify-content: center; } }
 .w-poster__biorow { display: grid; gap: var(--sp-2); margin-top: var(--sp-4); }
 .w-poster__bio { display: block; margin-top: var(--sp-4); max-width: 60ch; line-height: 1.5; color: var(--ink-soft); white-space: pre-wrap; overflow-wrap: anywhere; text-align: left; }
 .w-poster__bio.is-empty { color: var(--ink-faint); }

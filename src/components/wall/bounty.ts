@@ -6,15 +6,15 @@
    to the charge a member stands highest on, and the two disagreed. Both read
    the same standing (outlaws.ts) through here, so they cannot drift again. */
 import { STAT_TABS, type StatKey } from '@/components/badlands/data';
-import type { Charge } from '@/components/badlands/outlaws';
+import { outlaws, type Charge, type Outlaw, type StatRow } from '@/components/badlands/outlaws';
 
 export const tabOf = (id: StatKey) => STAT_TABS.find(t => t.id === id)!;
 
-/** The three lines a poster prints under the name. */
+/** The three lines a poster prints under the name (PosterCharge.tsx). */
 export interface Posted {
   /** the alias, when they are the charge's outlaw; it is printed in red in place of a place */
   alias: string | null;
-  /** their place on the charge when someone else is its outlaw: 2 for "2. sæti" */
+  /** their place on the charge when someone else is its outlaw: 2 for "2. sæti"; null on a wall's play time, posted with no standing in hand */
   place: number | null;
   /** the charge itself */
   charge: string;
@@ -29,22 +29,23 @@ export function posted(best: Charge): Posted {
   return { alias: led ? tab.nick : null, place: led ? null : best.rank, charge: tab.label, bounty: tab.unit(best.value) };
 }
 
-/** The charge a member stands highest on, as far as the charges they lead
-    and their own numbers can tell it before the whole crew's numbers have
-    come: the first charge they are the outlaw of, in the board's order, is
-    the one outlaws() picks for them, since nothing ranks above first and the
-    board's order breaks a tie. One who leads nothing stands highest on
-    something only the others' numbers can say, so that waits for them. */
-export function bestOfLed(led: readonly StatKey[], numbers: Partial<Record<StatKey, number>> | null | undefined): Charge | null {
-  const id = led[0];
-  const value = id && numbers ? numbers[id] ?? 0 : 0;
-  return id && value > 0 ? { id, rank: 1, value } : null;
+/** Where a member stands on the board, read off the crew's numbers the way
+    the roll call reads them: the server reads it from the last snapshot, so
+    a wall's first paint already posts the bounty the roll call posts (even
+    for one who leads nothing, whose standing only the others' numbers can
+    say), and the wall reads it again from the live numbers when they come. */
+export function standingOf(players: StatRow[], username: string): Outlaw | undefined {
+  return outlaws(players).byName.get(username.toLowerCase());
 }
 
-/** The bounty on a member's own poster: the roll call's, and their play time
-    only while where they stand is not known yet, so the line is there from
-    the first paint and never pushes the poster down when the numbers come. */
-export function wallBounty(best: Charge | null, playTimeHours: number | null | undefined): string | null {
-  if (best) return posted(best).bounty;
-  return playTimeHours && playTimeHours > 0 ? tabOf('playTimeHours').unit(playTimeHours) : null;
+/** What a member's own poster posts under their name: the roll call's lines,
+    from the standing the server reads for the first paint and the live
+    numbers confirm. Where the numbers in hand carry no standing for them,
+    their play time under its own charge, so the bounty is never a bare
+    number with nothing to say what it counts. */
+export function wallPosted(best: Charge | null, playTimeHours: number | null | undefined): Posted | null {
+  if (best) return posted(best);
+  if (!playTimeHours || playTimeHours <= 0) return null;
+  const tab = tabOf('playTimeHours');
+  return { alias: null, place: null, charge: tab.label, bounty: tab.unit(playTimeHours) };
 }

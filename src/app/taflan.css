@@ -183,6 +183,9 @@
 .t-notice--empty { grid-template-columns: minmax(0, 1fr); padding-block: var(--sp-5) var(--sp-4); color: var(--ink-soft); }
 .t-frame--empty .t-frame__pic { pointer-events: none; }
 .t-frame--empty .t-frame__pic::before { content: ''; display: block; aspect-ratio: 16 / 10; }
+/* the line breaks into even halves on a phone, as the empty wall's does,
+   not a sentence with "enn." or "vikurnar." left alone under it */
+.t-frame--empty .t-frame__line, .t-notice--empty .t-notice__line { text-wrap: balance; }
 .t-board__end { padding-top: var(--sp-4); }
 /* The red string: pinned across the board, a nail at each end, above the
    first thing that was already there when the visitor last looked. What is

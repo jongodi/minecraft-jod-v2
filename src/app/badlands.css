@@ -2583,11 +2583,15 @@ html.is-map-full { overflow: hidden; }
 /* A phone's arena is 4:3 and a thumb wide: the call starts below the corner
    labels and its small line drops a size, so the round count, the call and
    the instructions no longer sit on top of one another; and the round loses
-   its word, so "I af III" and "Best: 2396 ms" stand apart on a 360 px phone. */
+   its word, so "I af III" and "Best: 2396 ms" stand apart on a 360 px phone.
+   The call then fills the sky from side to side, and the moon's place over
+   the far mesa is cut off at the slice's edge, so the moon goes up into the
+   gap between the two labels (in the SVG's own units, QuickDraw.tsx). */
 @media (max-width: 639.98px) {
   .b-arena__word { display: none; }
   .b-arena__call { padding: 2.25rem var(--sp-3) 18%; }
   .b-arena__small { font-size: var(--fs-sm); line-height: 1.5; }
+  .b-arena__moon { transform: translate(-390px, -228px); }
   .b-duelpanel { padding: var(--sp-4); }
 }
 .b-fig { transition: transform 0.18s var(--ease-out); transform-box: fill-box; transform-origin: bottom center; }
@@ -3210,6 +3214,12 @@ html.is-map-full { overflow: hidden; }
 @keyframes b-moon-out { from { opacity: 0; } }
 @media (max-width: 759.98px) { .b-nightsky__moon { width: 2.25rem; height: 2.25rem; top: 5rem; } }
 @media (prefers-reduced-motion: reduce) { .b-nightsky__moon { animation: none; } }
+/* On a wall from 760 px the page starts a step below the bar, and until the
+   wall takes two columns at 1024 px its poster runs the page's whole width
+   under the moon, so the paper's top edge cut the moon straight across with
+   its upper part showing. There the moon is not drawn, as below 760 px it
+   is hidden whole behind the paper. */
+@media (min-width: 760px) and (max-width: 1023.98px) { .b-nightsky:has(~ .w-page) .b-nightsky__moon { display: none; } }
 /* a sign's own link on its way to the wall (skilti/[id]): one slip nailed up under the night while the wall comes */
 .b-hop { max-width: 24rem; padding: var(--sp-6) var(--sp-5) var(--sp-5); color: var(--ink); }
 /* off the trail (404 and a page that broke): the words stand alone under a dark lantern */
