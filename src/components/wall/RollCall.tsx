@@ -16,25 +16,26 @@ import NightSky from '@/components/badlands/NightSky';
 import { Lantern, Seal } from '@/components/badlands/Bits';
 import { useServerStatus } from '@/components/badlands/hooks';
 import { NightLine } from '@/components/badlands/NightLine';
-import { CREW, PAGE_LINKS, STAT_TABS } from '@/components/badlands/data';
+import { CREW, PAGE_LINKS } from '@/components/badlands/data';
 import { toast } from '@/components/badlands/Toast';
 import { outlaws, type Outlaw, type StatRow } from '@/components/badlands/outlaws';
 import { photoProps, PHOTO_SIZES } from '@/components/badlands/photo';
 import { woodClass } from '@/lib/sign-wood';
+import { posted, tabOf } from './bounty';
 
 /* a member's poster before the list has come: the name, nothing about the wall yet */
 const blankPoster = (username: string): CrewSummary => ({ username, bio: '', entryCount: 0, photoCount: 0, lastEntry: null, cover: null, bestDrawMs: null, lastSeen: null });
 
-const tabOf = (id: string) => STAT_TABS.find(t => t.id === id)!;
 /* an alias as it is set on a poster wide enough to hold it whole */
 const whole = (nick: string) => nick.replace(/\u00AD/g, '');
 
 /* What a member's poster says they are wanted for: the alias of a charge
    they are the outlaw of, in red, or their place on the charge they stand
    highest on; the charge; and their number on it, as the bounty. Read off
-   the same numbers as the board in the crew's room (outlaws.ts). Always
-   three lines, held open while the numbers are on their way, so a poster
-   never grows under the visitor when they come. */
+   the same numbers as the board in the crew's room (outlaws.ts), through
+   the same lines the member's own poster on their wall prints (bounty.ts).
+   Always three lines, held open while the numbers are on their way, so a
+   poster never grows under the visitor when they come. */
 function Charge({ outlaw, waiting }: { outlaw: Outlaw | undefined; waiting: boolean }) {
   const best = outlaw?.best;
   if (!best) {
@@ -46,14 +47,14 @@ function Charge({ outlaw, waiting }: { outlaw: Outlaw | undefined; waiting: bool
       </span>
     ) : null;
   }
-  const tab = tabOf(best.id);
+  const p = posted(best);
   return (
     <>
-      {best.rank === 1
-        ? <span className="b-poster__alias">„{tab.nick}“</span>
-        : <span className="b-poster__place">{best.rank}. sæti</span>}
-      <span className="b-poster__charge">{tab.label}</span>
-      <span className="b-poster__bounty"><span className="b-poster__reward">Verðlaun</span> <span className="b-poster__val">{tab.unit(best.value)}</span></span>
+      {p.alias !== null
+        ? <span className="b-poster__alias">„{p.alias}“</span>
+        : <span className="b-poster__place">{p.place}. sæti</span>}
+      <span className="b-poster__charge">{p.charge}</span>
+      <span className="b-poster__bounty"><span className="b-poster__reward">Verðlaun</span> <span className="b-poster__val">{p.bounty}</span></span>
     </>
   );
 }

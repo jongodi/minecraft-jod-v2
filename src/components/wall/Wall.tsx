@@ -17,12 +17,13 @@ import Footer from '@/components/badlands/Footer';
 import PlayerHead from '@/components/badlands/PlayerHead';
 import { CloseIcon, Lantern, Seal } from '@/components/badlands/Bits';
 import { PAGE_LINKS, STAT_TABS, type StatKey } from '@/components/badlands/data';
-import { outlaws } from '@/components/badlands/outlaws';
+import { outlaws, type Charge } from '@/components/badlands/outlaws';
 import NightSky from '@/components/badlands/NightSky';
 import { landFocus, seedSession, useBackCloses, useBackdropClose, useCrewSession, useDialogFocus, useRestored, useScrollLock, type CrewSessionSeed } from '@/components/badlands/hooks';
 import { photoProps, PHOTO_SIZES } from '@/components/badlands/photo';
 import type { WallAdvancement } from '@/lib/advancements';
 import Advancements from './Advancements';
+import { bestOfLed, wallBounty } from './bounty';
 import Composer from './Composer';
 import Print from './Print';
 
@@ -310,6 +311,10 @@ export default function Wall({ initial, places, initialStats = null, initialLed 
   const [stats,       setStats]       = useState<PlayerStat | null>(initialStats);
   const [statsMeta,   setStatsMeta]   = useState<{ source: string; cachedAt: string | null } | null>(null);
   const [led,         setLed]         = useState<StatKey[]>(initialLed);
+  /* the charge they stand highest on, whose number is the bounty, as the
+     roll call posts it (bounty.ts): known at first paint for one who leads a
+     charge, and for everyone once the crew's numbers have come */
+  const [best,        setBest]        = useState<Charge | null>(() => bestOfLed(initialLed, initialStats));
   /* the print held up, by its own id (see onOpen) */
   const [held,        setHeld]        = useState<string | null>(null);
   const [origin,      setOrigin]      = useState<DOMRect | null>(null);
@@ -337,7 +342,11 @@ export default function Wall({ initial, places, initialStats = null, initialLed 
         if (!data || !Array.isArray(data.players)) return;
         setStats(s => data.players.find(p => sameUser(p.username, username)) ?? s);
         setStatsMeta({ source: data.source, cachedAt: data.cachedAt });
-        if (data.players.length) setLed(outlaws(data.players).byName.get(username.toLowerCase())?.led ?? []);
+        if (data.players.length) {
+          const standing = outlaws(data.players).byName.get(username.toLowerCase());
+          setLed(standing?.led ?? []);
+          setBest(standing?.best ?? null);
+        }
       })
       .catch(() => {});
   }, [username]);
@@ -381,6 +390,8 @@ export default function Wall({ initial, places, initialStats = null, initialLed 
   }, [prints.length]);
   const cover  = coverPhoto(profile);
   const built  = places.filter(p => p.builders.some(b => sameUser(b, username)));
+  /* the same bounty the roll call's poster of them posts, so the poster pressed is the poster arrived at */
+  const bounty = wallBounty(best, stats?.playTimeHours);
 
   const patchProfile = useCallback(async (body: { bio?: string; coverPhotoId?: string | null }) => {
     const res = await fetch(`/api/crew/${username}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -469,8 +480,8 @@ export default function Wall({ initial, places, initialStats = null, initialLed 
                 {/* the masthead says Eftirlýst; the kicker says what of */}
                 <div className="b-paper__kicker">JOÐ-félagi</div>
                 <h1 className="w-poster__name" style={{ '--name-em': nameEm(username) } as CSSProperties}>{username}</h1>
-                {stats && stats.playTimeHours > 0 && (
-                  <div className="w-poster__bounty"><span className="b-poster__reward">Verðlaun</span> <span className="b-poster__val">{STAT_TABS[0].unit(stats.playTimeHours)}</span></div>
+                {bounty && (
+                  <div className="w-poster__bounty"><span className="b-poster__reward">Verðlaun</span> <span className="b-poster__val">{bounty}</span></div>
                 )}
               </div>
               <div className="b-inline">
