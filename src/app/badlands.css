@@ -2985,7 +2985,7 @@ html.is-map-full { overflow: hidden; }
    more night over it: above the fire on a wide screen, and between the fire
    and the row of buttons over it below 1024 px, so the column thins out
    under the stars and never over the world's places or through a button. */
-.b-foot .b-fire.is-signal { --rise: 20rem; --drift: 1.5rem; height: auto; aspect-ratio: 16 / 22; }
+.b-foot .b-fire.is-signal { --rise: 19rem; --drift: 1.5rem; height: auto; aspect-ratio: 16 / 22; }
 @media (min-width: 1024px) { .b-foot:has(.b-fire.is-signal) { padding-top: 15rem; } }
 /* Below 1024 px the way up and the wind share the row over the fire: the
    smoke gets a stretch of sky between them and the fire, and rises only
@@ -3000,7 +3000,7 @@ html.is-map-full { overflow: hidden; }
   .b-foot__inner { row-gap: var(--sp-8); }
   .b-fire__smoke i { width: 1rem; height: 1rem; animation-name: b-smoke-short; animation-duration: 5.4s; }
   .b-foot:has(.b-fire.is-signal) .b-foot__inner { row-gap: 11rem; }
-  .b-foot .b-fire.is-signal { --rise: 12rem; --drift: 1rem; }
+  .b-foot .b-fire.is-signal { --rise: 11rem; --drift: 1rem; }
 }
 @media (prefers-reduced-motion: reduce) { .b-fire__smoke { display: none; } }
 /* The signal stands still under reduced motion: each puff is set where its
