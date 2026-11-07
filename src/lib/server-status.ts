@@ -197,11 +197,16 @@ export async function noteCrewSeen(body: StatusResponse): Promise<void> {
   } catch { /* the status answers regardless */ }
 }
 
-/* How a lookup reaches the upstream: live, or through Next's data cache for
-   as long as a changing state is kept in memory (CHANGING_CACHE_MS). A live
+/* How a lookup reaches the upstream: live, or through Next's data cache on
+   the page's own half-minute beat (revalidate in src/app/page.tsx). A live
    read on the page would make every page that reads the status render on
-   demand instead of on its half-minute schedule (src/app/page.tsx). */
-const reach = (live: boolean): RequestInit => (live ? { cache: 'no-store' } : { next: { revalidate: CHANGING_CACHE_MS / 1000 } });
+   demand instead of on that schedule. A page is drawn again as often as the
+   shortest keep of any fetch it makes, so the ten seconds a changing state
+   was kept had the home page drawn three times as often as it says; a
+   changing state is put right by the browser instead, which asks the live
+   route ten seconds after a page drawn on the server (SEEDED_POLL_MS in
+   src/components/badlands/hooks.ts). */
+const reach = (live: boolean): RequestInit => (live ? { cache: 'no-store' } : { next: { revalidate: CACHE_MS / 1000 } });
 
 async function lookup(live: boolean): Promise<StatusResponse> {
   if (process.env.EXAROTON_API_KEY) {

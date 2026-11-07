@@ -83,7 +83,8 @@ describe('the status lookup', () => {
   it("asks the upstream itself for the status route, and lets the page's render use the data cache", async () => {
     fetchMock.mockResolvedValue(exaroton(0));
     await getStatus({ live: false });
-    expect(fetchMock.mock.calls[0][1]).toMatchObject({ next: { revalidate: 10 } });
+    /* on the page's own half-minute beat: a shorter keep here has the page drawn again that much more often */
+    expect(fetchMock.mock.calls[0][1]).toMatchObject({ next: { revalidate: 30 } });
     /* the page's answer may be the data cache's, however old: the route asks again, live */
     await getStatus();
     expect(fetchMock).toHaveBeenCalledTimes(2);
