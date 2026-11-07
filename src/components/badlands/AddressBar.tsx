@@ -186,7 +186,8 @@ export default function AddressBar({ links, activeId, onDoor, always = false, st
     <>
       <header className={`b-bar${onDoor ? ' b-bar--home' : ''}${solid ? ' is-solid' : ''}`}>
         <div className="b-wrap b-bar__inner">
-          <Link href="/" className="b-bar__mark" aria-label="JOÐ, forsíða"><Mark /><span>JOÐ</span></Link>
+          {/* everywhere else the home is the likeliest next page and is fetched ahead; on the home it is the page already open */}
+          <Link href="/" className="b-bar__mark" aria-label="JOÐ, forsíða" prefetch={path === '/' ? false : undefined}><Mark /><span>JOÐ</span></Link>
           <nav className="b-doors" aria-label="Efnisyfirlit">
             {links.map((l, i) => door(l, 'b-door', i))}
           </nav>
