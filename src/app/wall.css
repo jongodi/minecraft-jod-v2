@@ -485,8 +485,12 @@
 @media (hover: hover) { .w-print .w-call .b-btn:hover { background: var(--lantern-ink); color: var(--paper); } }
 .w-print .w-call .b-btn--solid { background: var(--lantern); color: var(--ink); }
 .w-print .w-call .b-err { color: var(--tc-red); }
-/* paid: the stamp goes on askew, as a stamp does, over a notice gone pale */
-.w-call.is-done > :not(.w-call__stamp):not(.b-paper__nail):not(.w-call__acts) { opacity: 0.62; }
+/* paid: the stamp goes on askew, as a stamp does, over a notice gone pale.
+   Pale in the paper's faint ink rather than see-through, so its words still
+   read (4.8:1; at six tenths of their ink they were 2.4 to 2.9:1), and who
+   brought it home keeps the lantern's ink, as a link on paper does. */
+.w-call.is-done :is(.w-call__mast, .w-call__state, .w-call__pay, .b-poster__reward) { color: var(--ink-faint); }
+.w-call.is-done .w-call__mast { border-bottom-color: var(--ink-faint); }
 .w-call .w-call__stamp {
   position: absolute;
   right: var(--sp-4);
@@ -697,8 +701,11 @@
   .w-poster__crease:focus-visible { outline: var(--px) solid var(--lantern-ink); outline-offset: var(--px); }
   .w-poster__fold:not(.is-open) { display: none; }
 }
-/* what the others have and this member has not: the game's dim unearned frame */
-.w-adv__item.is-unearned { opacity: 0.62; }
+/* what the others have and this member has not: the game's dim unearned
+   frame, and the words in the paper's faint ink rather than see-through, so
+   they still read (4.8:1, where the faded line was 2.4:1) */
+.w-adv__item.is-unearned .w-adv__frame { opacity: 0.62; }
+.w-adv__item.is-unearned :is(.w-adv__title, .w-adv__when) { color: var(--ink-faint); }
 .w-adv__head--left, .w-adv__list--left { margin-top: var(--sp-4); }
 /* a sign's own link, beside the lantern and the hotbar */
 .w-print__share { padding: 0 var(--sp-1); border: 0; background: none; font-family: var(--font-data); font-size: var(--fs-data); letter-spacing: 0.04em; text-transform: uppercase; color: var(--sign-lantern); min-height: 2rem; cursor: pointer; }
