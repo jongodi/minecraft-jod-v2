@@ -8,6 +8,7 @@ import { plural } from '@/lib/format';
 import { CREW } from './data';
 import type { ServerState } from './hooks';
 import { isLive, modalOpen, showWorld, useMediaQuery } from './hooks';
+import { askAgain, keyOf, merged } from './chatLog';
 
 /* When the chat was last read in this browser: the newest line it printed. */
 const SEEN_KEY = 'jod-chat-seen-v1';
@@ -19,8 +20,10 @@ const STAGGER_MS = 350;
 const FIRST_MS = 900;
 /* the log keeps the fetched lines and what the page saw itself */
 const LOG_KEEP = 20;
+/* while the world is in view, how often the chat looks at the clock to see
+   whether five minutes have gone by since it last asked (chatLog.ts) */
+const TICK_MS = 30_000;
 
-const keyOf = (l: ChatLine) => `${l.kind}|${l.name}|${l.at}|${'text' in l ? l.text : 'title' in l ? l.title : ''}`;
 const prints = (n: number) => (n === 1 ? '[mynd]' : `[${n} ${plural(n, 'mynd', 'myndir')}]`);
 
 /* The sentence the game prints, in its Icelandic (Mojang's is_is.json):
@@ -75,27 +78,68 @@ function Chat({ active, covered, server, onOpen }: Props) {
   const phone = useMediaQuery('(max-width: 899px)');
   const most = phone ? 3 : 4;
 
-  /* What happened lately, asked for once the page is idle. What this browser
-     has read before goes into the log without being printed again. */
-  useEffect(() => {
-    let gone = false;
-    const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void };
-    const load = async () => {
-      try {
-        const res = await fetch('/api/chat', { signal: AbortSignal.timeout(15_000) });
-        if (!res.ok || gone) return;
-        const { lines } = (await res.json()) as ChatResponse;
+  /* What happened lately. The first answer the page takes in sorts what this
+     browser has read before into the log without printing it again; after
+     that, whatever the page has neither printed nor logged is news, a late
+     advancement read in as much as a picture just pinned. */
+  const gone = useRef(false);
+  const asked = useRef<number | null>(null);
+  const busy = useRef(false);
+  const took = useRef(false);
+  const ask = useCallback(async () => {
+    if (busy.current) return;
+    busy.current = true;
+    asked.current = Date.now();
+    try {
+      const res = await fetch('/api/chat', { signal: AbortSignal.timeout(15_000) });
+      if (!res.ok || gone.current) return;
+      const { lines } = (await res.json()) as ChatResponse;
+      if (gone.current) return;
+      if (!took.current) {
+        took.current = true;
         let seen: string | null = null;
         try { seen = localStorage.getItem(SEEN_KEY); } catch { /* no storage: everything recent is new */ }
         const fresh = new Set(unread(lines, seen).map(keyOf));
         lines.forEach(l => { if (!fresh.has(keyOf(l))) done.current.add(keyOf(l)); });
-        if (!gone) setLog(cur => [...lines, ...cur].slice(-LOG_KEEP));
-      } catch { /* no chat is a quiet world, not an error */ }
-    };
-    if (w.requestIdleCallback) { const id = w.requestIdleCallback(load, { timeout: 4000 }); return () => { gone = true; w.cancelIdleCallback?.(id); }; }
-    const t = setTimeout(load, 2000);
-    return () => { gone = true; clearTimeout(t); };
+      }
+      setLog(cur => merged(cur, lines, LOG_KEEP));
+    } catch { /* no chat is a quiet world, not an error */ }
+    finally { busy.current = false; }
   }, []);
+
+  /* the first question once the page is idle, never with it */
+  useEffect(() => {
+    gone.current = false;
+    const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void };
+    const load = () => { void ask(); };
+    if (w.requestIdleCallback) { const id = w.requestIdleCallback(load, { timeout: 4000 }); return () => { gone.current = true; w.cancelIdleCallback?.(id); }; }
+    const t = setTimeout(load, 2000);
+    return () => { gone.current = true; clearTimeout(t); };
+  }, [ask]);
+
+  /* On a long night the chat keeps listening: it asks again when a tab left
+     for five minutes or more is looked at, and every five minutes while the
+     world is in view, and never while the tab is hidden (chatLog.ts). The
+     print below still waits for the corner to be clear, and the game's
+     note of lines held back covers a laptop opened after an hour away. */
+  useEffect(() => {
+    let hiddenAt: number | null = document.hidden ? Date.now() : null;
+    const onShown = () => {
+      const now = Date.now();
+      if (document.hidden) { hiddenAt ??= now; return; }
+      if (askAgain('shown', { now, last: asked.current, hidden: false, hiddenAt })) void ask();
+      hiddenAt = null;
+    };
+    document.addEventListener('visibilitychange', onShown);
+    return () => document.removeEventListener('visibilitychange', onShown);
+  }, [ask]);
+  useEffect(() => {
+    if (!active) return;
+    const tick = () => { if (askAgain('tick', { now: Date.now(), last: asked.current, hidden: document.hidden })) void ask(); };
+    tick();
+    const id = setInterval(tick, TICK_MS);
+    return () => clearInterval(id);
+  }, [active, ask]);
 
   /* Who comes in and goes out while the page is open: the crew in the
      status's player list, compared answer to answer. The first live answer
