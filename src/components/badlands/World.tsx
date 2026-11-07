@@ -756,9 +756,14 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
     if (!v) return;
     pendingView.current = v;
     showWorld(false);
-    /* a phone opens the whole screen at once; a wide screen lets the flight
-       come down and wake the viewer behind it, and takes hold at the landing */
-    if (window.matchMedia(PHONE_QUERY).matches) openFull();
+    /* A phone opens the whole screen at once, and a wide screen takes hold of
+       the map in the page, as a friend's line does. Left to the flight to
+       wake the viewer, a link usually never showed its view: the arrival
+       jumps straight to the landing, the flight's first frame was already
+       there, and it never set off to wake anything. Until the world is seen
+       to be in view the map may be let go of once, as glass; the view below
+       takes it in hand again when it is ready. */
+    if (window.matchMedia(PHONE_QUERY).matches) openFull(); else takeHold();
   // once, as the page arrives
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
