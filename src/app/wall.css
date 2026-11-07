@@ -304,6 +304,8 @@
   text-align: center;
   font-size: var(--fs-md);
   line-height: var(--lh-night);
+  /* two even lines on a phone, not a sentence with "enn" left alone under it */
+  text-wrap: balance;
   color: var(--text-faint);
   background: none;
   border-color: transparent;

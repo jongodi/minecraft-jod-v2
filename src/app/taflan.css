@@ -176,6 +176,13 @@
 @media (max-width: 599px) { .t-notice { grid-template-columns: 1.5rem minmax(0, 1fr); } .t-notice__pic { grid-column: 2; width: 100%; max-width: 20rem; } }
 
 .t-board__empty { padding-block: var(--sp-6); }
+/* A filter with nothing under it (Board.tsx): a blank slip with only its nail
+   and the line printed across it, and under Myndir an empty item frame, its
+   leather showing where a picture would hang, the line as its caption. The
+   frame is not a press, so it does not take the lantern's rim when pointed at. */
+.t-notice--empty { grid-template-columns: minmax(0, 1fr); padding-block: var(--sp-5) var(--sp-4); color: var(--ink-soft); }
+.t-frame--empty .t-frame__pic { pointer-events: none; }
+.t-frame--empty .t-frame__pic::before { content: ''; display: block; aspect-ratio: 16 / 10; }
 .t-board__end { padding-top: var(--sp-4); }
 /* The red string: pinned across the board, a nail at each end, above the
    first thing that was already there when the visitor last looked. What is

@@ -356,13 +356,31 @@ function Board({ room = false, open = true, initial = null, initialFilter = 'all
         ) : data === null ? (
           <div className="t-board__wait" aria-busy="true" />
         ) : total === 0 ? (
-          <p className="b-empty t-board__empty">
-            {filter === 'allt' ? (me ? 'Taflan er auð enn. Festu upp fyrsta miðann hér fyrir ofan.' : 'Taflan er auð enn.') :
-             filter === 'myndir' ? 'Engar myndir á töflunni enn.' :
-             filter === 'midar' ? 'Engir miðar á töflunni enn.' :
-             filter === 'vidburdir' ? 'Engin bál, kvöld eða afrek síðustu vikurnar.' :
-             filter === 'kortid' ? 'Ekkert nýtt á kortinu síðustu vikurnar.' : 'Enginn hefur nefnt þig enn.'}
-          </p>
+          /* Nothing under the filter in hand, drawn as what is missing, on the
+             board's own materials rather than a line of grey on the night: the
+             pictures as an empty item frame, its leather showing, with the
+             line as its caption; the rest as a blank slip nailed up with only
+             the line printed on it. */
+          pictures ? (
+            <div className="t-frames t-board__empty">
+              <div className="t-frame t-frame--empty">
+                <span className="t-frame__pic" aria-hidden="true" />
+                <p className="t-frame__line">Engar myndir á töflunni enn.</p>
+              </div>
+            </div>
+          ) : (
+            <div className="t-item t-board__empty">
+              <p className="t-notice t-notice--empty">
+                <span className="b-paper__nail t-notice__nail" aria-hidden="true" />
+                <span className="t-notice__line">
+                  {filter === 'allt' ? (me ? 'Taflan er auð enn. Festu upp fyrsta miðann hér fyrir ofan.' : 'Taflan er auð enn.') :
+                   filter === 'midar' ? 'Engir miðar á töflunni enn.' :
+                   filter === 'vidburdir' ? 'Engin bál, kvöld eða afrek síðustu vikurnar.' :
+                   filter === 'kortid' ? 'Ekkert nýtt á kortinu síðustu vikurnar.' : 'Enginn hefur nefnt þig enn.'}
+                </span>
+              </p>
+            </div>
+          )
         ) : pictures ? (
           <PrintWall frames={frames.slice(0, reveal)} isFresh={f => looked && isNew({ at: f.at, who: f.who }, since ?? null, me)} H={H} now={now} onOpen={onOpen} />
         ) : (
