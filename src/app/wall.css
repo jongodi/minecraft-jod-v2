@@ -611,7 +611,7 @@
 .w-slot::before { content: ''; position: absolute; z-index: 1; inset: 0; background: rgb(from var(--glint) r g b / 0.32); opacity: 0; pointer-events: none; }
 @media (hover: hover) { .w-slot:not([disabled]):hover::before { opacity: 1; } }
 .w-slot:not([disabled]):active .w-item, .w-slot:not([disabled]):active .w-slot__plus { translate: var(--press); }
-.w-slot:focus-visible { outline: var(--px) solid var(--lantern); outline-offset: calc(var(--px) * 3); }
+.w-slot:focus-visible { outline: var(--px) solid var(--focus); outline-offset: calc(var(--px) * 3); }   /* the ring stands on the board round the slot, so it takes the board's ink */
 /* the slot pointed at or with the keyboard stands over its neighbours, so its ring and its tag are whole */
 .w-slot:is(:hover, :focus-visible) { z-index: 3; }
 .w-slot[disabled] { cursor: default; }

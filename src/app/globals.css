@@ -70,7 +70,8 @@ img, video { max-width: 100%; height: auto; }
 [hidden]:where(:not([hidden='until-found'])) { display: none; }
 
 ::selection { background: var(--tc-red); color: var(--paper); }   /* 5.4:1; the orange was 4.1 */
-:focus-visible { outline: var(--px) solid var(--lantern); outline-offset: 3px; }
+/* in the lantern's light, or the lantern's ink on paper and wood (--focus, tokens.css) */
+:focus-visible { outline: var(--px) solid var(--focus); outline-offset: 3px; }
 
 /* ─── the skip link ─────────────────────────────────────────────
    The first thing in the tab order on every page: a lit tag that drops in

@@ -42,6 +42,10 @@
   /* the same light written on paper: dark enough to read there (5.4:1), where
      --lantern-deep is 2.35:1 */
   --lantern-ink:  oklch(0.46 0.0915 68.2);
+  /* the keyboard's ring (globals.css): the lantern on the night, and on paper
+     and the signs' wood the lantern's own ink for that surface, which each
+     sets for itself (after the woods, below) */
+  --focus:        var(--lantern);
 
   /* ── paper and ink: notices ── */
   --paper:      oklch(0.898 0.035 84.6);
@@ -303,6 +307,15 @@
 .w-sign--spruce   { --sign: oklch(0.37 0.049 64.1); --sign-2: oklch(0.432 0.054 64.5); --sign-rim: oklch(0.461 0.056 65.7); }   /* paper 7.8:1, soft 5.3:1, lantern 5.2:1 */
 .w-sign--mangrove { --sign: oklch(0.384 0.059 30.7); --sign-2: oklch(0.437 0.065 32); --sign-rim: oklch(0.47 0.069 32.2); }   /* paper 7.5:1, soft 5.1:1, lantern 5.0:1; the brown side of its red, so it never reads as a warning */
 .w-sign--dark-oak { --sign: oklch(0.301 0.043 53.5); --sign-2: oklch(0.361 0.05 53.3); --sign-rim: oklch(0.383 0.055 54.4); }   /* paper 10.1:1, soft 6.9:1, lantern 6.7:1 */
+/* The keyboard's ring on what is not the night. The lantern itself is 1.5:1
+   on paper and 1.1:1 on oak, a ring that could hardly be seen there, so a
+   sheet of paper rings in the lantern's ink (5.4:1, 4.7 on its darker
+   paper) and a board in the lantern burnt into its wood (4.9:1 on oak, 7.0
+   on birch and cherry, and on the dark woods the lantern itself, 5.0 to
+   6.8:1, since a wood redefines --sign-lantern on the board it is). A notice
+   nailed to a sign is paper again (.w-call is a .b-paper). */
+.w-sign, .w-pin { --focus: var(--sign-lantern); }
+.b-paper, .t-notice, .t-side__block, .b-cal { --focus: var(--lantern-ink); }
 
 @media (min-width: 900px) { :root { --fs-hero: clamp(12rem, min(23vw, 40svh), 24rem); } }
 /* on a phone on its side the hotbar's slots lay their lantern beside the name, a tap tall (badlands.css) */

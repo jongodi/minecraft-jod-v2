@@ -2051,7 +2051,7 @@ html.is-map-full { overflow: hidden; }
 .b-card__print { position: relative; width: 3.5rem; height: 2.4rem; overflow: hidden; box-shadow: 0 0 0 var(--px) var(--tc-brown); }
 .b-card__print img { width: 100%; height: 100%; object-fit: cover; }
 .b-card__print .b-card__printhead { position: absolute; right: 0; bottom: 0; width: 0.9rem; height: 0.9rem; image-rendering: pixelated; box-shadow: 0 0 0 1px var(--paper); }
-.b-card__print:focus-visible { box-shadow: 0 0 0 var(--px) var(--lantern-deep); }
+.b-card__print:focus-visible { box-shadow: 0 0 0 var(--px) var(--lantern-ink); }   /* on the postcard's paper: the deep lantern was 2.3:1 there */
 @media (hover: hover) { .b-card__print:hover { box-shadow: 0 0 0 var(--px) var(--lantern-deep); } }
 .b-card__more { font-size: var(--fs-sm); color: var(--ink-faint); margin-left: var(--sp-1); }
 .b-card__builders { font-size: var(--fs-sm); color: var(--ink-faint); }
