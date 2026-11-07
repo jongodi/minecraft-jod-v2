@@ -9,10 +9,24 @@ self.addEventListener('install', (e) => {
 });
 
 self.addEventListener('activate', (e) => {
-  e.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim()));
+  e.waitUntil((async () => {
+    const names = await caches.keys();
+    await Promise.all(names.filter((k) => k !== CACHE).map((k) => caches.delete(k)));
+    /* A page's request leaves while the worker is still waking, not after it
+       (fetch below): the worker only steps in when the network is gone, and
+       a visit should not wait on it to start before asking for the page. */
+    if (self.registration.navigationPreload) await self.registration.navigationPreload.enable();
+    await self.clients.claim();
+  })());
 });
 
 self.addEventListener('fetch', (e) => {
   if (e.request.mode !== 'navigate') return;
-  e.respondWith(fetch(e.request).catch(() => caches.match(OFFLINE).then((r) => r || Response.error())));
+  e.respondWith((async () => {
+    try {
+      return (await e.preloadResponse) || (await fetch(e.request));
+    } catch {
+      return (await caches.match(OFFLINE)) || Response.error();
+    }
+  })());
 });
