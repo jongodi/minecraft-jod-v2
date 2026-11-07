@@ -2372,6 +2372,11 @@ html.is-map-full { overflow: hidden; }
   touch-action: manipulation;
 }
 @media (min-width: 640px) { .b-arena { aspect-ratio: 16 / 9; } }
+/* Its resting frame is an outline in the strata's red, which outweighed the
+   site's ring, so the arena showed nothing when the keyboard came to it: the
+   frame takes the lantern's light while it is the control in hand, the one
+   Space draws with, and keeps the red at rest. */
+.b-arena:focus-visible { outline-color: var(--lantern); }
 .b-arena.is-draw { cursor: crosshair; }
 .b-arena svg { position: absolute; inset: 0; width: 100%; height: 100%; shape-rendering: crispEdges; }
 .b-arena__flash { position: absolute; inset: 0; background: var(--lantern); opacity: 0; pointer-events: none; }
