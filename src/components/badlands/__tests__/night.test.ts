@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DECIDE_MS, SOON_MS, isLate, sinceAt, untilAt, whenAt } from '../night';
+import { DECIDE_MS, SOON_MS, afterAsking, isLate, sinceAt, untilAt, whenAt } from '../night';
 import { CHOOSE_BEFORE_MS } from '@/lib/play-night';
 
 describe('a moment gone by, in Icelandic', () => {
@@ -47,5 +47,19 @@ describe('which times the fire form offers', () => {
   it("holds the server's own numbers", () => {
     expect(DECIDE_MS).toBe(CHOOSE_BEFORE_MS);
     expect(SOON_MS).toBe(15 * 60_000);
+  });
+});
+
+describe("the browser's own question for the fires", () => {
+  const seeded = { nights: [], me: null, max: 5 };
+  const own = { nights: [], me: 'stebbias', max: 5 };
+  it('takes the answer, and says nothing went wrong', () => {
+    expect(afterAsking(seeded, own)).toEqual({ value: own, failed: false });
+  });
+  /* the page's own answer names nobody: kept without a word, it told a member who is signed in to sign in */
+  it('unanswered, keeps what it held and says the fires could not be asked for', () => {
+    expect(afterAsking(seeded, null)).toEqual({ value: seeded, failed: true });
+    expect(afterAsking(own, null)).toEqual({ value: own, failed: true });
+    expect(afterAsking(undefined, null)).toEqual({ value: { nights: [], me: null, max: 5 }, failed: true });
   });
 });
