@@ -11,9 +11,11 @@ import { useCopy } from './hooks';
     No toast for a copy that went through: the stamp is the answer, and a
     screen reader hears the same word from the live region beside the button.
     One that failed (an in-app browser that refuses both ways of copying) is
-    not stamped, since a stamp marks a thing done: the toast puts the address
-    on paper, the live region says it failed, and the address on the button
-    is selected, so a long press copies it by hand. */
+    not stamped, since a stamp marks a thing done: the toast says it failed
+    and puts the address on paper, and the address on the button is
+    selected, so a long press copies it by hand. The toast is heard from its
+    own live region, so the one beside the button keeps quiet then, or the
+    failure was said twice. */
 export default function CopyAddress({ className }: { className?: string }) {
   const [copied, copy, failed] = useCopy(SERVER_IP, { toast: false });
   const addr = useRef<HTMLSpanElement>(null);
@@ -33,7 +35,7 @@ export default function CopyAddress({ className }: { className?: string }) {
         <span ref={addr} className="b-copy__addr">{SERVER_IP}</span>
         <span className="b-copy__stamp" aria-hidden="true">Afritað</span>
       </button>
-      <span className="b-visually-hidden" role="status">{copied ? 'Afritað' : failed ? 'Afritun tókst ekki' : ''}</span>
+      <span className="b-visually-hidden" role="status">{copied ? 'Afritað' : ''}</span>
     </div>
   );
 }

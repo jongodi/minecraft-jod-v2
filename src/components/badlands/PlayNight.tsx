@@ -157,12 +157,25 @@ export function NightBoard({ server }: { server: ServerState }) {
 
 /** The fires could not be asked for: said by them, with a way to ask again.
     The words reach a screen reader through a live region that is on the
-    page before they come: one put up already holding its words is not read. */
-function Unanswered({ lost, onRetry }: { lost: boolean; onRetry: () => void }) {
+    page before they come: one put up already holding its words is not read.
+    While the question is out the button says so and the region is emptied,
+    so a second failure is said again, aloud as well: a retry that failed
+    changed nothing on the page, and the button looked dead. Pressed again
+    meanwhile it does nothing; it is not disabled, which would drop the
+    keyboard to the foot of the page. */
+function Unanswered({ lost, onRetry }: { lost: boolean; onRetry: () => Promise<void> }) {
+  const [retrying, setRetrying] = useState(false);
+  const retry = () => {
+    if (retrying) return;
+    setRetrying(true);
+    onRetry().finally(() => setRetrying(false));
+  };
   return (
     <>
-      {lost && <p className="b-note">Náði ekki í bálin núna. <button type="button" className="b-link" onClick={() => onRetry()}>Reyna aftur</button></p>}
-      <span className="b-visually-hidden" role="status">{lost ? 'Náði ekki í bálin núna.' : ''}</span>
+      {lost && (
+        <p className="b-note">Náði ekki í bálin núna. <button type="button" className="b-link" aria-disabled={retrying || undefined} onClick={retry}>{retrying ? 'Reyni aftur…' : 'Reyna aftur'}</button></p>
+      )}
+      <span className="b-visually-hidden" role="status">{lost && !retrying ? 'Náði ekki í bálin núna.' : ''}</span>
     </>
   );
 }

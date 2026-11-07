@@ -8,9 +8,23 @@ export const keyOf = (l: ChatLine) => `${l.kind}|${l.name}|${l.at}|${'text' in l
 
 /* On a play night the page waits in a tab for hours, and a picture pinned
    at 21:40 was never printed by a chat that asked only once. Five minutes is
-   long enough that the question costs nothing (the answer is shared at the
-   CDN for a minute) and short enough that a line comes while it is news. */
+   long enough that the question costs next to nothing and short enough that
+   a line comes while it is news. The answer it gets is at most a minute and
+   a half old (CHAT_CACHE, below), so a line is printed by the next question,
+   or by the one after it when it was said just before that one: within six
+   and a half minutes. */
 export const AGAIN_MS = 5 * 60_000;
+
+/* How long the chat's answer is shared at the CDN, and how long past that a
+   stale copy may still be handed out while a fresh one is fetched. */
+export const CHAT_FRESH_S = 60;
+export const CHAT_STALE_S = 30;
+/** The chat's Cache-Control (src/app/api/chat/route.ts): one answer a minute
+    for the whole crew, and the stale window ended well before the next
+    question. Ten minutes of it answered every question five minutes on with
+    the copy the question before had set off, a whole beat late, from the
+    CDN and from the browser's own cache alike. */
+export const CHAT_CACHE = `public, max-age=0, s-maxage=${CHAT_FRESH_S}, stale-while-revalidate=${CHAT_STALE_S}`;
 
 export interface Asking {
   now: number;

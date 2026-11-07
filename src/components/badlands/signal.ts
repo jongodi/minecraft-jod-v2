@@ -36,22 +36,36 @@ export interface SignalLand {
   height: number;
   /** how far from the box's left edge the land is clear of the name, in pixels */
   clear: number;
-  /** the fire's width, in the drawing's units */
+  /** the fire's width, in the drawing's units: as wide as it is drawn where there is room */
   fire: number;
+  /** The clear stretch is only a gutter wide (a phone's, where the J stands
+      at the screen's edge): the fire is narrowed to the room there is, and
+      where no one plateau holds it whole it stands across a step of the
+      ridge. Held to the full width and to one plateau, it stood on a phone
+      only when a few pixels of the screen's height happened to suit it. */
+  narrow?: boolean;
 }
 
-/** Where the signal fire stands: its middle, in the drawing's units, and the
-    height of the plateau under it. Between the screen's left edge and the
-    name, so neither it nor its column crosses a letter; on a plateau wide
-    enough to hold it whole, standing clear of the ridges in front; as near
-    the middle of that clear stretch as a plateau allows. Null when no
-    plateau there will do. */
-export function signalSpot(land: SignalLand): { x: number; h: number } | null {
-  const { far, front, width, height, clear, fire } = land;
+/** The narrowest the fire is drawn, in the drawing's units: any less is a smudge, not a fire. */
+export const SIGNAL_LEAST = 4;
+
+/** Where the signal fire stands: its middle, in the drawing's units, the
+    height of the plateau under it, and its width in the same units.
+    Between the screen's left edge and the name, so neither it nor its
+    column crosses a letter; on a plateau wide enough to hold it whole,
+    standing clear of the ridges in front; as near the middle of that clear
+    stretch as a plateau allows. On a `narrow` stretch, failing that, across
+    the step under the stretch's middle, on the taller side, so the bale
+    overhangs the lower by a pixel or two. Null when nowhere there will do. */
+export function signalSpot(land: SignalLand): { x: number; h: number; fw: number } | null {
+  const { far, front, width, height, clear, narrow = false } = land;
   const u = Math.max(width / GRID_W, height / GRID_H);
   const screen = (unit: number) => width / 2 + (unit - GRID_W / 2) * u;
   const unitAt = (px: number) => GRID_W / 2 + (px - width / 2) / u;
-  const half = (fire * u) / 2;
+  /* floored to a hundredth, so a fire as wide as the stretch is not a rounding error wider */
+  const fw = narrow ? Math.floor(Math.min(land.fire, clear / u) * 100) / 100 : land.fire;
+  if (fw < SIGNAL_LEAST) return null;
+  const half = (fw * u) / 2;
   const target = clear / 2;
   /* the tallest of a ridge between two points of the grid */
   const tallest = (ridge: readonly Plateau[], a: number, b: number) => {
@@ -60,6 +74,7 @@ export function signalSpot(land: SignalLand): { x: number; h: number } | null {
     for (const [w, h] of ridge) { if (x < b && x + w > a) top = Math.max(top, h); x += w; }
     return top;
   };
+  const hidden = (x: number, h: number) => front.some(r => tallest(r, x - fw / 2, x + fw / 2) >= h);
   let best: { x: number; h: number; off: number } | null = null;
   let x0 = 0;
   for (const [w, h] of far) {
@@ -69,9 +84,17 @@ export function signalSpot(land: SignalLand): { x: number; h: number } | null {
     if (lo > hi) continue;
     const mid = Math.min(hi, Math.max(lo, target));
     const x = unitAt(mid);
-    if (front.some(r => tallest(r, x - fire / 2, x + fire / 2) >= h)) continue;
+    if (hidden(x, h)) continue;
     const off = Math.abs(mid - target);
     if (!best || off < best.off) best = { x, h, off };
   }
-  return best && { x: best.x, h: best.h };
+  if (best) return { x: best.x, h: best.h, fw };
+  if (!narrow) return null;
+  /* a plateau's edge falls inside the stretch and leaves neither side room */
+  const lo = Math.max(screen(0), 0) + half;
+  const hi = Math.min(screen(GRID_W), clear) - half;
+  if (lo > hi) return null;
+  const x = unitAt(Math.min(hi, Math.max(lo, target)));
+  const h = tallest(far, x - fw / 2, x + fw / 2);
+  return hidden(x, h) ? null : { x, h, fw };
 }

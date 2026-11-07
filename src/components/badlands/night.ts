@@ -1,7 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react';
 import type { PlayNightResponse } from '@/app/api/playnight/route';
+import { signalOf } from './signal';
 
 /* The play nights as the page holds them: one answer shared by the hero's line
    and the crew's room, asked for when the page opens and every minute while
@@ -99,6 +100,22 @@ export function usePlayNight(initial?: PlayNightResponse) {
       what was held before it: an older answer, or the page's own, which
       names nobody whoever is signed in */
   return { state, failed: unanswered, act, refresh };
+}
+
+/* nothing to listen to: the answer below changes once, from the server's to the browser's */
+const noChange = () => () => {};
+
+/** Whether the signal fire stands (signal.ts), for the hero's far ridge and
+    the footer's fire. The server's markup and the browser's first drawing
+    over it both take `drawn`, the page's own answer by the clock it was drawn
+    with (src/lib/home-data.ts): a page kept since last night and opened on
+    the day of a fire otherwise drew a fire its markup had not got, and React
+    threw the hero away and drew it again. Once the page is the browser's,
+    its own clock says, against the nights as they now stand, and again at
+    each answer of them. */
+export function useSignal(nights: PlayNightResponse | undefined, drawn: boolean): boolean {
+  const own = useSyncExternalStore(noChange, () => true, () => false);
+  return useMemo(() => (own ? signalOf(nights?.nights ?? []) : drawn), [own, nights, drawn]);
 }
 
 /* ─── an answer from a letter ─────────────────────────────────────────── */

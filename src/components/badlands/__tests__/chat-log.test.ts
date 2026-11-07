@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ChatLine } from '@/lib/chat';
-import { AGAIN_MS, askAgain, keyOf, merged } from '../chatLog';
+import { AGAIN_MS, CHAT_CACHE, CHAT_FRESH_S, CHAT_STALE_S, askAgain, keyOf, merged } from '../chatLog';
 
 const say = (at: string, text: string): ChatLine => ({ kind: 'say', at, name: 'joenana', text, prints: 0, href: '/crew/joenana' });
 const joined = (at: string, name: string): ChatLine => ({ kind: 'joined', at, name, href: `/crew/${name}` });
@@ -51,5 +51,12 @@ describe('merged', () => {
   it('keeps the newest', () => {
     const lines = Array.from({ length: 5 }, (_, i) => say(`2026-11-07T2${i}:00:00.000Z`, `lína ${i}`));
     expect(merged([], lines, 3).map(l => (l as { text: string }).text)).toEqual(['lína 2', 'lína 3', 'lína 4']);
+  });
+});
+
+describe("the chat's answer as it is kept", () => {
+  it('is shared for a minute, and its stale window ends before the next question', () => {
+    expect(CHAT_CACHE).toBe('public, max-age=0, s-maxage=60, stale-while-revalidate=30');
+    expect((CHAT_FRESH_S + CHAT_STALE_S) * 1000).toBeLessThan(AGAIN_MS);
   });
 });

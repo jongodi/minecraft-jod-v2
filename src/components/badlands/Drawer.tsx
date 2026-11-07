@@ -58,9 +58,16 @@ export default function Drawer({ id, open, title, note, onClose, children }: Pro
       /* Rooms changed by their keys one after another (2, 3, then 1): the
          door the last room's close had just put focus on was taken for this
          room's opener, and the ring stood on Taflan with Heimurinn lit. An
-         opener handed over that way gives way to the door now lit, the one
-         just pressed. */
-      if (from && from === handedTo.current) from = Array.from(document.querySelectorAll<HTMLElement>(doors)).find(d => d.classList.contains('is-here') && shows(d)) ?? null;
+         opener handed over that way gives way to the door the hash now names,
+         the one just pressed, and failing that to this room's own door: an
+         Escape or a ✕ leaves this room's hash or none. (The door lit by the
+         scroll was no guide: once a room has closed it is Heimurinn, and a
+         second Escape from Taflan landed there.) The hash is compared as
+         text, never built into a selector, where a pasted quote would throw. */
+      if (from && from === handedTo.current) {
+        const hash = window.location.hash;
+        from = Array.from(document.querySelectorAll<HTMLElement>(doors)).find(d => hash !== '' && d.getAttribute('href') === hash && shows(d)) ?? own ?? null;
+      }
       /* Opened from inside another room (its link to the board, or a key
          pressed in it), the opener is in a room that has gone inert since,
          and cannot take focus; opened from far up the page (the hero's line

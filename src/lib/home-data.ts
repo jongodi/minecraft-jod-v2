@@ -23,6 +23,7 @@ import { heldNights, type HeldNight } from '@/lib/play-night';
 import { formatNumber } from '@/lib/format';
 import { freshPlaces } from '@/lib/bluemap-snapshot';
 import { sleeplessOf } from '@/lib/sleepless';
+import { signalOf } from '@/components/badlands/signal';
 
 export interface HomeData {
   status: ServerState;
@@ -39,6 +40,11 @@ export interface HomeData {
   fresh: number[];
   /** who has gone three of the game's days without a bed, by name in lower case, to the nights awake, as the stats last counted them (src/lib/sleepless.ts) */
   sleepless: Record<string, number>;
+  /** whether the signal fire stands (src/components/badlands/signal.ts), by
+      the clock the page is drawn with: the browser draws its first frame over
+      the markup with this, whatever its own clock says, and only then asks
+      the day of it (useSignal in night.ts) */
+  signal: boolean;
 }
 
 /** Facts counted from the world: the crew's hours in it, the advancements
@@ -105,5 +111,6 @@ export async function loadHomeData(): Promise<HomeData> {
     facts,
     fresh: freshPlaces(map.locations, now),
     sleepless,
+    signal: signalOf(nights.nights, now),
   };
 }

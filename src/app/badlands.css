@@ -215,6 +215,9 @@
    everywhere. */
 .b-link { color: var(--lantern); text-decoration: underline; text-decoration-thickness: var(--line); text-underline-offset: 0.2em; }
 @media (hover: hover) { .b-link:hover { color: var(--paper); text-decoration-color: var(--lantern); } }
+/* a link whose question is already out (Reyna aftur, while it asks) is not
+   to be pressed until it is answered, so it lays the amber down */
+.b-link[aria-disabled='true'], .b-paper .b-link[aria-disabled='true'] { color: inherit; text-decoration: none; cursor: progress; }
 .b-btn {
   display: inline-flex;
   align-items: center;
@@ -1251,6 +1254,11 @@
      feet; placed in the name's size, since its own em is the tag's. At the
      climber's shoulder it stood on the corner of the sun from 700 px up. */
   .b-hero__climbers > .b-hero__more { left: calc(var(--fs-hero) * 1.9); top: calc(var(--fs-hero) * -0.09); translate: 0 0; }
+  /* the phantoms over a climber come out only once the page has measured
+     their ring clear of the lantern's plate (Climbers, Hero.tsx): on a small
+     phone the name stands a step under the plate, and they circled in it */
+  .b-hero__climbers:not(.is-clear) .b-phantoms { visibility: hidden; }
+  .b-hero__climbers:not(.is-clear) :is(.b-phantom, .b-phantom__wing) { animation-play-state: paused; }
 }
 /* The splash (Hero.tsx): the game's yellow line tilted over the corner of
    its logo, popping as it comes, laid over the name's own row of the stage and placed in
@@ -1734,9 +1742,11 @@ html.is-map-full { overflow: hidden; }
 .b-sheet__zoom button:active { box-shadow: var(--bevel-in); }
 .b-pin-map { cursor: pointer; }
 /* on the sheet the flags keep the size they opened at while the paper zooms
-   under them (MapSheet.tsx: --z0 over --z), each about its own foot
-   (MapArt.tsx), so a zoom spreads a cluster apart instead of enlarging it */
-.b-sheet .b-pin-map { scale: calc(var(--z0, 1) / var(--z, 1)); }
+   in past that view (MapSheet.tsx: --z0 over --z), each about its own foot
+   (MapArt.tsx), so a zoom spreads a cluster apart instead of enlarging it.
+   Below it they go with the paper, as they always did: held at a phone's
+   opening size, Allt kortið piled the town's flags into one heap */
+.b-sheet .b-pin-map { scale: min(1, calc(var(--z0, 1) / var(--z, 1))); }
 .b-pin-map__hit { fill: transparent; }
 .b-pin-map__body { transition: transform var(--dur-1) var(--ease-out); transform-box: fill-box; transform-origin: center bottom; }
 .b-pin-map:focus-visible .b-pin-map__body { transform: translateY(-2px) scale(1.15); }
@@ -1966,8 +1976,13 @@ html.is-map-full { overflow: hidden; }
 .b-card__emptysun { position: absolute; top: 14%; right: 16%; width: 1.5rem; height: 1.5rem; opacity: 0.3; }
 .b-card__emptysun svg { width: 100%; height: 100%; display: block; shape-rendering: crispEdges; }
 .b-card__emptytext { position: relative; font-size: var(--fs-sm); color: var(--ink-soft); }
-.b-card__cap { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-2); margin-top: var(--sp-3); padding-inline: var(--sp-1); }
+/* the words in a column that gives way to Deila and the ✕ beside them, and
+   the coordinates in a row of their own under both (World.tsx): an F3 line
+   does not break, and inside the words' column it set the column's width,
+   so a long name or sublabel ran on under the buttons */
+.b-card__cap { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: var(--px) var(--sp-2); margin-top: var(--sp-3); padding-inline: var(--sp-1); }
 .b-card__cap > span { display: grid; gap: var(--px); min-width: 0; }
+.b-card__cap > .b-card__xyz { grid-column: 1 / -1; justify-self: start; }
 .b-card__name { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-lg); line-height: 1.15; color: var(--ink); overflow-wrap: break-word; hyphens: auto; }
 .b-card__sub { font-size: var(--fs-sm); color: var(--ink-soft); line-height: 1.35; }
 /* who of the crew stands at the place now (hereNow.ts): their heads, ringed
@@ -2951,7 +2966,6 @@ html.is-map-full { overflow: hidden; }
   right: calc(100% - var(--sign) + var(--sp-2));
   bottom: 0;
   display: flex;
-  flex-direction: row-reverse;
   align-items: flex-end;
   gap: calc(var(--u) * 3);
 }
@@ -2960,7 +2974,8 @@ html.is-map-full { overflow: hidden; }
 .b-foot__mate::before { content: ''; position: absolute; inset: -0.5rem calc(var(--u) * -1); }
 .b-foot__mate img { display: block; width: 100%; height: auto; aspect-ratio: 1 / 2; image-rendering: pixelated; }
 .b-foot__mate > .b-nametag { position: absolute; left: 50%; bottom: calc(100% + var(--sp-1)); translate: -50% 0; pointer-events: none; }
-.b-foot__mate:nth-child(even) > .b-nametag { bottom: calc(100% + var(--sp-1) + 0.75rem); }
+/* the figures are written farthest first (Footer.tsx), so they are counted from the fire's end: the mates are links, the counts spans */
+.b-foot__mate:nth-last-of-type(even) > .b-nametag { bottom: calc(100% + var(--sp-1) + 0.75rem); }
 .b-foot__more { align-self: flex-start; }
 .b-foot__mate:focus-visible { outline: none; }
 .b-foot__mate:focus-visible img { filter: drop-shadow(var(--px) 0 0 var(--lantern)) drop-shadow(calc(var(--px) * -1) 0 0 var(--lantern)) drop-shadow(0 var(--px) 0 var(--lantern)) drop-shadow(0 calc(var(--px) * -1) 0 var(--lantern)); }
@@ -2975,7 +2990,7 @@ html.is-map-full { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) { .b-foot__mate.is-coming, .b-foot__mate.is-going { animation: none; } }
 .b-foot__more--narrow { display: none; }
 @media (max-width: 719.98px) {
-  .b-foot__mate:nth-child(n + 2), .b-foot__more--wide { display: none; }
+  .b-foot__mate:not(:last-of-type), .b-foot__more--wide { display: none; }
   .b-foot__more--narrow { display: block; }
 }
 /* a short plank on a post, the word burnt in lantern light, as the world's

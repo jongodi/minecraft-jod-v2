@@ -16,7 +16,7 @@ import Rail, { revealRailItem } from './Rail';
 import Chat from './Chat';
 import Flight, { type FlightPlace } from './Flight';
 import Locator, { type CameraSink } from './Locator';
-import { useLivePlayers } from './livePlayers';
+import { answered, useLivePlayers } from './livePlayers';
 import { FLIGHT, headingOf } from '@/lib/map-flight';
 import { CREW, FACING, MAP_LIGHTS, MAP_POSTER, MAP_START_VIEW, MAP_URL, SITE_NAME, handCase, isRoom, plainClick, titleCase, type Plate, type RoomId } from './data';
 import type { ServerState } from './hooks';
@@ -25,7 +25,7 @@ import { useBoardNews } from '@/components/board/news';
 import { usePlayNight, whenAt } from './night';
 import { photoProps, PHOTO_SIZES } from './photo';
 import { toast } from './Toast';
-import { crewAtPlaces, hereLine } from './hereNow';
+import { crewAtPlaces, hereLine, railReveal } from './hereNow';
 
 /* Everything that opens over the world is a screen of its own, fetched when
    its door is first opened: the paper sheet, the album, and the three rooms. */
@@ -703,17 +703,18 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
   const crewAt = useMemo(() => crewAtPlaces(onLand, grounded), [onLand, grounded]);
   const standing = place ? crewAt.get(place.id) ?? [] : [];
   /* The first chip with someone at it is brought into view on the rail,
-     once, when the world is reached; not over a place a link has chosen,
-     whose own chip the rail already holds. */
+     once, at the first answer of who is where after the world is reached;
+     not over a place a link has chosen, whose own chip the rail already
+     holds (railReveal, hereNow.ts). */
   const firstAt = config.locations.find(l => crewAt.has(l.id))?.id ?? null;
   const whoShown = useRef(false);
   useEffect(() => {
     if (!reached || whoShown.current) return;
-    if (selected !== null) { whoShown.current = true; return; }
-    if (firstAt === null) return;
+    const to = railReveal(selected, answered(players), firstAt);
+    if (to === 'wait') return;
     whoShown.current = true;
-    revealRailItem(firstAt, places.current);
-  }, [reached, selected, firstAt, places]);
+    if (to !== null) revealRailItem(to, places.current);
+  }, [reached, selected, players, firstAt, places]);
   /* The live map, taken hold of: from the lantern, the postcard or the whole
      screen. A viewer the flight woke is the same one, now let go of as glass. */
   const takeHold = useCallback(() => { setAuto(false); setFailed(false); setLive(true); }, []);
@@ -1065,19 +1066,21 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
                   {place.builders && place.builders.length > 0 && (
                     <span className="b-card__builders">byggt af {place.builders.map((b, i) => <span key={b}>{i > 0 && ', '}<Link href={`/crew/${b}`}>{b}</Link></span>)}</span>
                   )}
-                  {/* where it stands, as F3 writes it; a press copies the three numbers for a /tp or a walk,
-                      and where neither way of copying works the toast holds them to be copied by hand */}
-                  {place.world && (
-                    <button type="button" className="b-f3 b-card__xyz" aria-label={`Afrita hnitin ${place.world.x}, ${place.world.y}, ${place.world.z}`}
-                      onClick={() => { const w = place.world!; const xyz = `${w.x} ${w.y} ${w.z}`; copyText(xyz).then(ok => (ok ? toast('Afritað', 'hnitin') : toast('Afritun tókst ekki', xyz))); }}>
-                      <span aria-hidden="true">XYZ: {place.world.x} / {place.world.y} / {place.world.z}</span>
-                    </button>
-                  )}
                 </span>
                 <span className="b-card__tools">
                   <button type="button" className="b-btn b-btn--small b-btn--ghost b-card__share" onClick={() => share(place.id, titleCase(place.label))}>Deila</button>
                   <button type="button" className="b-card__x" onClick={letGo} aria-label="Loka póstkortinu"><CloseIcon /></button>
                 </span>
+                {/* where it stands, as F3 writes it; a press copies the three numbers for a /tp or a walk,
+                    and where neither way of copying works the toast holds them to be copied by hand.
+                    A row of its own under the words and the buttons (badlands.css): in with the
+                    words, its unbroken line set their width, and they ran on under Deila */}
+                {place.world && (
+                  <button type="button" className="b-f3 b-card__xyz" aria-label={`Afrita hnitin ${place.world.x}, ${place.world.y}, ${place.world.z}`}
+                    onClick={() => { const w = place.world!; const xyz = `${w.x} ${w.y} ${w.z}`; copyText(xyz).then(ok => (ok ? toast('Afritað', 'hnitin') : toast('Afritun tókst ekki', xyz))); }}>
+                    <span aria-hidden="true">XYZ: {place.world.x} / {place.world.y} / {place.world.z}</span>
+                  </button>
+                )}
               </figcaption>
               {/* a place on this map's ground can be visited here, one at another
                   base in that base's own map, and one in neither has no 3D to offer */}
