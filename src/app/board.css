@@ -310,7 +310,9 @@
 .b-poster__aliases { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 var(--sp-3); margin-top: var(--sp-2); font-weight: 600; font-size: var(--fs-lg); line-height: 1.3; color: var(--tc-red); }
 .b-poster--most .b-poster__charge { margin-top: var(--sp-1); font-size: var(--fs-md); }
 .b-poster--most .b-poster__note { margin-top: var(--sp-4); font-size: var(--fs-md); }
-.b-poster__ledger { list-style: none; display: grid; gap: var(--sp-1); width: min(100% - var(--sp-4), 22rem); margin-top: var(--sp-4); padding-top: var(--sp-3); border-top: var(--px) solid var(--ink-faint); text-align: left; }
+/* one column held to the ledger's own width: an implicit track sized itself
+   to the longest charge, and on a phone the bounties ran off the paper */
+.b-poster__ledger { list-style: none; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-1); width: min(100% - var(--sp-4), 22rem); margin-top: var(--sp-4); padding-top: var(--sp-3); border-top: var(--px) solid var(--ink-faint); text-align: left; }
 .b-poster__ledger li { display: flex; align-items: baseline; gap: var(--sp-2); font-size: var(--fs-sm); line-height: 1.4; color: var(--ink-soft); }
 .b-poster__ledgerwhat { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* the run of dots between a charge and its bounty, as a printed list leads the eye across */
