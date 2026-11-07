@@ -17,13 +17,13 @@ import Footer from '@/components/badlands/Footer';
 import PlayerHead from '@/components/badlands/PlayerHead';
 import { CloseIcon, Lantern, Seal } from '@/components/badlands/Bits';
 import { PAGE_LINKS, STAT_TABS, type StatKey } from '@/components/badlands/data';
-import { outlaws, type Charge } from '@/components/badlands/outlaws';
+import type { Charge } from '@/components/badlands/outlaws';
 import NightSky from '@/components/badlands/NightSky';
 import { landFocus, seedSession, useBackCloses, useBackdropClose, useCrewSession, useDialogFocus, useRestored, useScrollLock, type CrewSessionSeed } from '@/components/badlands/hooks';
 import { photoProps, PHOTO_SIZES } from '@/components/badlands/photo';
 import type { WallAdvancement } from '@/lib/advancements';
 import Advancements from './Advancements';
-import { bestOfLed, wallBounty } from './bounty';
+import { standingOf, wallBounty } from './bounty';
 import Composer from './Composer';
 import Print from './Print';
 
@@ -255,6 +255,8 @@ interface Props {
   initialStats?: PlayerStat | null;
   /** the charges they are the outlaw of, by the same snapshot */
   initialLed?: StatKey[];
+  /** the charge they stand highest on, by the same snapshot, whose number is the bounty */
+  initialBest?: Charge | null;
   /** the game's advancements, newest first, and how many there are to earn; null before the first daily read */
   advancements?: { list: WallAdvancement[]; of: number; missing?: WallAdvancement[] } | null;
   /** true when the page was opened from a sign-in link */
@@ -267,7 +269,7 @@ interface Props {
   drawn?: string;
 }
 
-export default function Wall({ initial, places, initialStats = null, initialLed = [], advancements = null, justSignedIn = false, corner = null, session, drawn }: Props) {
+export default function Wall({ initial, places, initialStats = null, initialLed = [], initialBest = null, advancements = null, justSignedIn = false, corner = null, session, drawn }: Props) {
   const [profile, setProfile] = useState<CrewProfile>(initial);
   /* Back to a wall brings it as it was first drawn: a sign pinned since, or
      one taken down, was missing or back. The wall is read again at once. */
@@ -312,9 +314,10 @@ export default function Wall({ initial, places, initialStats = null, initialLed 
   const [statsMeta,   setStatsMeta]   = useState<{ source: string; cachedAt: string | null } | null>(null);
   const [led,         setLed]         = useState<StatKey[]>(initialLed);
   /* the charge they stand highest on, whose number is the bounty, as the
-     roll call posts it (bounty.ts): known at first paint for one who leads a
-     charge, and for everyone once the crew's numbers have come */
-  const [best,        setBest]        = useState<Charge | null>(() => bestOfLed(initialLed, initialStats));
+     roll call posts it (bounty.ts): read on the server from the whole crew's
+     snapshot, so it is known at first paint for everyone, and read again
+     from the live numbers when they come */
+  const [best,        setBest]        = useState<Charge | null>(initialBest);
   /* the print held up, by its own id (see onOpen) */
   const [held,        setHeld]        = useState<string | null>(null);
   const [origin,      setOrigin]      = useState<DOMRect | null>(null);
@@ -343,7 +346,7 @@ export default function Wall({ initial, places, initialStats = null, initialLed 
         setStats(s => data.players.find(p => sameUser(p.username, username)) ?? s);
         setStatsMeta({ source: data.source, cachedAt: data.cachedAt });
         if (data.players.length) {
-          const standing = outlaws(data.players).byName.get(username.toLowerCase());
+          const standing = standingOf(data.players, username);
           setLed(standing?.led ?? []);
           setBest(standing?.best ?? null);
         }
