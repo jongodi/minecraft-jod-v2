@@ -1,7 +1,7 @@
 /* The play nights as the page shows them (src/lib/play-night.ts), for anyone:
    what /api/playnight answers, and what the home page is drawn with on the
    server so the hero's line is there at first paint. Server only. */
-import { MAX_PLANNED, currentNights, decidesAt, optionOf, phaseOf, whenOf, yesFor, type Night, type NightState, type Phase } from '@/lib/play-night';
+import { MAX_PLANNED, currentNights, decidesAt, heldNights, phaseOf, yesFor, type HeldNight, type NightState, type Phase } from '@/lib/play-night';
 import { summaryOf, type NightSummary, type RecordKey } from '@/lib/night-numbers';
 
 export interface PublicNight {
@@ -26,14 +26,15 @@ export interface PublicNight {
 /** The crew's habit, read off the nights that were held: the weekday and hour most of them fell on. */
 export interface NightHabit { weekday: number; hour: number; of: number; total: number }
 
-/** The weekday and hour most held nights fell on, once three or more have
-    been held and that weekday carries at least a third of them; null otherwise. */
-export function habitOf(nights: Night[], now: number): NightHabit | null {
-  const held = nights.filter(n => !n.cancelled && n.outcome && n.chosen && phaseOf(n, now) === 'over');
+/** The weekday and hour most held nights fell on (heldNights in
+    src/lib/play-night.ts: the annals as well as the fires), once three or
+    more have been held and that weekday carries at least a third of them;
+    null otherwise. */
+export function habitOf(held: HeldNight[]): NightHabit | null {
   if (held.length < 3) return null;
   const byDay = new Map<number, number[]>();
   for (const n of held) {
-    const d = new Date(optionOf(n, n.chosen)?.at ?? n.options[0].at);
+    const d = new Date(n.at);
     byDay.set(d.getUTCDay(), [...(byDay.get(d.getUTCDay()) ?? []), d.getUTCHours()]);
   }
   const [weekday, hours] = [...byDay.entries()].sort((a, b) => b[1].length - a[1].length)[0];
@@ -71,18 +72,20 @@ export const publicOf = ({ night, votes, seen }: NightState, now: number): Publi
 export async function viewNights(me: string | null = null, now = Date.now()): Promise<PlayNightResponse> {
   if (!process.env.REDIS_URL) return { ...NO_NIGHTS, me };
   const { all, shown } = await currentNights(now);
-  return { nights: shown.map(s => withRecords(publicOf(s, now), all)), me, max: MAX_PLANNED, habit: habitOf(all, now) };
+  /* every night held, the annals' as well: the night before is in them by the time a weekly night's embers glow */
+  const held = await heldNights(all);
+  return { nights: shown.map(s => withRecords(publicOf(s, now), held)), me, max: MAX_PLANNED, habit: habitOf(held) };
 }
 
 /** The totals a settled night tops every settled night before it on: a Met
     stamp for the slip. Only against nights that were counted, and only where
     there was at least one night before to beat. */
-export function withRecords(night: PublicNight, all: Night[]): PublicNight {
+export function withRecords(night: PublicNight, held: HeldNight[]): PublicNight {
   if (!night.numbers) return night;
   const at = Date.parse(night.options.find(o => o.id === night.chosen)?.at ?? night.options[0].at);
-  const before = all
-    .filter(n => n.id !== night.id && !n.cancelled && n.outcome?.numbers && whenOf(n) < at)
-    .map(n => ({ came: n.outcome!.came.length, sum: summaryOf(n.outcome!.numbers) }))
+  const before = held
+    .filter(n => n.id !== night.id && n.numbers && Date.parse(n.at) < at)
+    .map(n => ({ came: n.came.length, sum: summaryOf(n.numbers) }))
     .filter((b): b is { came: number; sum: NightSummary } => !!b.sum);
   if (!before.length) return night;
   const best = (k: 'hours' | 'deaths' | 'mobKills' | 'travelCm') => Math.max(...before.map(b => b.sum[k]));

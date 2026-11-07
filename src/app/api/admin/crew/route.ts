@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { badJson, jsonObject } from '@/lib/http';
 import QRCode from 'qrcode';
 import { requireAdmin, unauthorizedResponse } from '@/lib/auth';
-import { readAllProfiles, allPhotos, createInvite, closeInvite, listInvites, inviteUrl, getCrewToken, isCrewUsername, canonicalUsername, revokeCrewSessions, type Invite } from '@/lib/crew';
+import { readAllProfiles, allPhotos, createInvite, closeInvite, closeInvitesOf, listInvites, inviteUrl, getCrewToken, isCrewUsername, canonicalUsername, revokeCrewSessions, type Invite } from '@/lib/crew';
 import { hasPassword, setPasswordHash } from '@/lib/crew-access';
 import { getEmail, getNames, mailSignInLink, updateContact, type CrewEmail } from '@/lib/crew-email';
 import { canSendEmail, siteUrl } from '@/lib/email';
@@ -89,7 +89,7 @@ export async function PUT(req: NextRequest) {
   return NextResponse.json({ ok: true });
 }
 
-/** Close a link early (`{ url }`), or clear a member's password (`{ username, password: null }`) when they have forgotten it. */
+/** Close a link early (`{ url }`), or clear a member's password (`{ username, password: null }`) when they have forgotten it, which closes their open links too. */
 export async function DELETE(req: NextRequest) {
   if (!(await requireAdmin())) return unauthorizedResponse();
   let body: { url?: unknown; username?: unknown; password?: unknown };
@@ -104,9 +104,14 @@ export async function DELETE(req: NextRequest) {
   if (typeof body.username === 'string' && body.password === null) {
     if (!isCrewUsername(body.username)) return NextResponse.json({ error: 'Þessi félagi er ekki á listanum.' }, { status: 400 });
     await setPasswordHash(body.username, null);
-    /* the password is cleared because it is lost or in the wrong hands: every device it signed in goes with it */
+    /* The password is cleared because it is lost or in the wrong hands:
+       every device it signed in goes with it, and every link still open, or
+       whoever got in on one would be back in with it. A new link is made
+       after this (the panel asks for one once the clear has answered), or it
+       would be shut with the rest. */
     const signedOut = await revokeCrewSessions(body.username);
-    return NextResponse.json({ ok: true, signedOut });
+    const linksClosed = await closeInvitesOf(body.username);
+    return NextResponse.json({ ok: true, signedOut, linksClosed });
   }
   return NextResponse.json({ error: 'Vantar tengil eða félaga.' }, { status: 400 });
 }

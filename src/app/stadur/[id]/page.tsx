@@ -16,6 +16,14 @@ import { SITE_NAME } from '@/components/badlands/data';
 
 export const revalidate = 30;
 
+/* No place is drawn when the site is built: each is drawn on its first visit
+   and kept for its half minute after. Without this list, even an empty one,
+   a page under a [segment] is drawn anew for every visit and its revalidate
+   does nothing, so each open of a place's link waited on the whole page. */
+export async function generateStaticParams() {
+  return [];
+}
+
 type Props = { params: Promise<{ id: string }> };
 
 /* The link preview and the page are drawn in one request: the place is read once for both. */

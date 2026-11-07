@@ -186,11 +186,16 @@ export function pastOf(night: Night, votes: Votes, seen: string[]): PastNight | 
   };
 }
 
-/** Who came and who said yes but didn't, from who was seen and the daily copies either side of the evening. */
+/** Who came and who said yes but didn't, from who was seen and the daily
+    copies either side of the evening. With `shared`, another fire falls
+    between the same two copies, so play time going up says only that someone
+    played that day, not at which fire: who came is who was seen, and play
+    time that did not move at all is still a no-show to both. */
 export function outcomeOf(
   yes: string[], seen: string[],
   before: Record<string, { playTimeTicks: number }> | null,
   after: Record<string, { playTimeTicks: number }> | null,
+  { shared = false }: { shared?: boolean } = {},
 ): { came: string[]; noShows: string[] } {
   const lower = (s: string) => s.toLowerCase();
   const seenSet = new Set(seen.map(lower));
@@ -205,7 +210,7 @@ export function outcomeOf(
   const everyone = new Set([...yes, ...seen]);
   for (const u of everyone) {
     const p = played(u);
-    if (seenSet.has(lower(u)) || p === true) came.push(u);
+    if (seenSet.has(lower(u)) || (p === true && !shared)) came.push(u);
     else if (yes.includes(u) && p === false) noShows.push(u);
   }
   const byName = (a: string, b: string) => a.localeCompare(b);
@@ -388,6 +393,39 @@ export async function pastNight(id: string): Promise<PastNight | null> {
   return (await pastNights()).find(p => p.id === id) ?? null;
 }
 
+/** A night that was held, as the counts over every such night read it: when
+    it was, who came, and what the game counted. A PastNight is one. */
+export type HeldNight = Pick<PastNight, 'id' | 'at' | 'came' | 'numbers'>;
+
+/** Every night that was held and settled, oldest first: the annals, and the
+    settled nights still among the fires (an evening's embers, or one not yet
+    cleared away). The fires let a settled night go about a week after its
+    evening, so the counts read off them alone (how many were held, on the
+    hero's splash; Fastagesturinn; the crew's usual evening; a night's Met
+    stamp) saw the last night or two of a weekly crew and forgot the rest. `fires` is
+    a read of the fires already made, so they are not read twice in one
+    request; without it they are read as they stand in the store. */
+export async function heldNights(fires?: Night[]): Promise<HeldNight[]> {
+  const nights = fires ?? await readNights();
+  const held = new Map<string, HeldNight>();
+  for (const v of Object.values(await (await redis()).hgetall(PAST_KEY))) {
+    try {
+      const past = JSON.parse(v) as PastNight;
+      /* the annals also take a night that was never settled, with who was
+         seen standing for who came: one nobody was seen at, or charged for
+         missing, was no night held */
+      if (past.numbers || past.came.length || past.noShows.length) held.set(past.id, past);
+    } catch { /* skip */ }
+  }
+  /* a night is written to the annals before it leaves the fires, so for a moment it can be in both: the fires' own copy is kept */
+  for (const night of nights) {
+    const chosen = optionOf(night, night.chosen);
+    if (night.cancelled || !chosen || !night.outcome) continue;
+    held.set(night.id, { id: night.id, at: chosen.at, came: night.outcome.came, ...(night.outcome.numbers ? { numbers: night.outcome.numbers } : {}) });
+  }
+  return [...held.values()].sort((a, b) => t(a.at) - t(b.at));
+}
+
 /** The last daily copy taken before an evening began, and the first after it ended. */
 async function copiesAround(start: number, end: number) {
   const { readDay, dayOf } = await import('@/lib/daily-stats');
@@ -409,10 +447,30 @@ function numbersOf(came: string[], at: string, copies: Awaited<ReturnType<typeof
   };
 }
 
+/** Whether another fire is measured by the same two daily copies as this
+    one. The copies are a day apart, and two fires on one day (an afternoon's
+    and an evening's, or an evening's and one past midnight) are far enough
+    apart not to clash, yet fall between the same pair: who played that day
+    was counted as come to both, and both slips showed the whole day's totals. */
+async function sharesCopies(night: Night, nights: Night[], copies: Awaited<ReturnType<typeof copiesAround>>): Promise<boolean> {
+  if (!copies.before || !copies.after) return false;
+  const start = whenOf(night);
+  for (const other of nights) {
+    if (other.id === night.id || other.cancelled || !other.chosen) continue;
+    /* the copies are a day apart: a fire more than two days off cannot share them */
+    const at = whenOf(other);
+    if (Math.abs(at - start) > 2 * DAY) continue;
+    const theirs = await copiesAround(at, at + EVENING_MS);
+    if (theirs.before?.takenAt === copies.before.takenAt && theirs.after?.takenAt === copies.after.takenAt) return true;
+  }
+  return false;
+}
+
 /** The day after: once a daily copy taken after a night's evening exists, who
     came and who didn't is settled, the no-shows are counted, and what the
-    game counted of the evening is kept with it. */
-async function settleOne(night: Night, now: number, advancements: Record<string, Done> | null): Promise<{ id: string; came: string[]; noShows: string[] } | null> {
+    game counted of the evening is kept with it. `nights` are the fires, for
+    another one measured by the same copies. */
+async function settleOne(night: Night, nights: Night[], now: number, advancements: Record<string, Done> | null): Promise<{ id: string; came: string[]; noShows: string[] } | null> {
   const chosen = optionOf(night, night.chosen)!;
   const start = t(chosen.at);
   const end = start + EVENING_MS;
@@ -420,6 +478,10 @@ async function settleOne(night: Night, now: number, advancements: Record<string,
   const copies = await copiesAround(start, end);
   /* the copy after the evening isn't there yet: tomorrow, then */
   if (!copies.after && now < end + 2 * DAY) return null;
+  /* Sharing its copies with another fire, a night is settled from who was
+     seen, and keeps the advancements of its own evening but none of the
+     copies' totals, which belong to the whole day. */
+  const shared = await sharesCopies(night, nights, copies);
 
   /* claimed before anything is counted: a daily job delivered twice must not
      charge anyone twice for the same night */
@@ -429,8 +491,8 @@ async function settleOne(night: Night, now: number, advancements: Record<string,
   let kept = false;
   try {
     const votes = await readVotes(night.id);
-    const outcome = outcomeOf(yesFor(votes, chosen.id), await readSeen(night.id), copies.before?.counters ?? null, copies.after?.counters ?? null);
-    await writeNight({ ...night, outcome: { ...outcome, numbers: numbersOf(outcome.came, chosen.at, copies, advancements) } });
+    const outcome = outcomeOf(yesFor(votes, chosen.id), await readSeen(night.id), copies.before?.counters ?? null, copies.after?.counters ?? null, { shared });
+    await writeNight({ ...night, outcome: { ...outcome, numbers: numbersOf(outcome.came, chosen.at, shared ? { before: null, after: null } : copies, advancements) } });
     kept = true;
     for (const u of outcome.noShows) await r.hincrby(NO_SHOWS_KEY, u, 1);
     return { id: night.id, ...outcome };
@@ -474,11 +536,12 @@ export async function settleNights(now = Date.now()): Promise<{ id: string; came
   const { readStoredAdvancements } = await import('@/lib/advancements');
   const advancements = (await readStoredAdvancements())?.players ?? null;
   const done = [];
-  for (const night of await readNights()) {
+  const nights = await readNights();
+  for (const night of nights) {
     if (night.cancelled || night.outcome || !night.chosen || phaseOf(night, now) !== 'over') continue;
     /* each night on its own: one that fails no longer leaves every night after it for another day */
     try {
-      const out = await settleOne(night, now, advancements);
+      const out = await settleOne(night, nights, now, advancements);
       if (out) done.push(out);
     } catch (e) {
       console.error(`[playnight] could not settle ${night.id}, the next run tries again:`, e instanceof Error ? e.message : e);

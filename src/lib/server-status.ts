@@ -58,7 +58,7 @@ export function keepFor(body: StatusResponse): number {
 export async function getStatus({ live = true }: { live?: boolean } = {}): Promise<StatusResponse> {
   if (cached && (cached.live || !live) && Date.now() - cached.at < keepFor(cached.body)) return cached.body;
   const body = await lookup(live);
-  await rememberLastOnline(body, cached, live);
+  await rememberLastOnline(body, live);
   if (live || !cached?.live) cached = { at: Date.now(), body, live };
   return body;
 }
@@ -90,28 +90,55 @@ const LAST_EVERY_MS = 5 * 60_000;
 let lastKnown: { at: number; value: LastOnline | null } | null = null;
 const sameNames = (a: string[], b: string[]) => a.length === b.length && a.every(n => b.includes(n));
 
+/* The last live answer any instance had: what the server was doing, when,
+   and who was in. */
+const LIFE_KEY = 'status:last-life';
+interface LastLife { life: ServerLife; at: string; names: string[] }
+/* Two live answers this close say what happened between them: two beats of
+   the five-minute job (src/app/api/cron/nights) and a minute over. Further
+   apart, the server may have gone out and come back with nobody asking. */
+const NEAR_MS = 2 * LAST_EVERY_MS + 60_000;
+
 /** Keeps when the server was last seen burning and who was in, so a dark
-    lantern can say so. The moment it goes out is noted from the answer
-    before, so the time is good to half a minute. Never holds up or fails
-    the answer, and does nothing without the store. */
-async function rememberLastOnline(body: StatusResponse, before: { at: number; body: StatusResponse; live: boolean } | null, live: boolean): Promise<void> {
+    lantern can say so, and since when it burns, so a lit one can ("kveikt í
+    dag kl. 20:15"). Each live answer is compared with the last live answer
+    any instance had, kept in the store with its time. An instance's memory
+    of its own answer before saw the server go out only when its two answers
+    fell within a minute, which a visitor's poll a minute apart never did,
+    so a lit lantern went on saying "kveikt" from an evening days before.
+    With the five-minute job asking too, two live answers are never far
+    apart, and when they are, no time is said rather than an old one. Never
+    holds up or fails the answer, and does nothing without the store. */
+async function rememberLastOnline(body: StatusResponse, live: boolean): Promise<void> {
   if (!process.env.REDIS_URL) return;
   const now = Date.now();
-  /* The answer before says when it went out only if it was live and recent:
-     an instance that sat idle for hours (or answered from the data cache)
-     would write its own old evening over the one the store holds. */
-  const recent = before && before.live && now - before.at <= 2 * keepFor(before.body) ? before : null;
   try {
+    const { rGet, rSet, rDel } = await import('@/lib/redis');
+    /* only a live answer that reached the server says what it is doing: a
+       page render's may be the data cache's, however old, and a failed lookup says nothing */
+    const told = live && body.source !== 'error' && body.life !== 'unknown';
+    const before = told ? await rGet<LastLife>(LIFE_KEY) : null;
+    const near = before && now - Date.parse(before.at) <= NEAR_MS ? before : null;
+    /* Each write is ordered so that one which fails leaves the lantern
+       saying nothing rather than something old: a time is cleared before the
+       answer that cleared it is kept, so the next answer clears it again,
+       and the answer that sees the server come on is kept before the time. */
+    const keep = (names: string[]) => rSet(LIFE_KEY, { life: body.life, at: new Date(now).toISOString(), names } satisfies LastLife);
     if (body.online) {
-      /* since when it burns: noted the moment a live answer sees it come on
-         (the one before was not on), else read from the store, so a lit
-         lantern can say "kveikt í dag kl. 20:15" */
-      const { rSet, rGet } = await import('@/lib/redis');
-      if (live && recent && !recent.body.online) {
-        onSince = { at: now, value: new Date(now).toISOString() };
-        await rSet(ON_KEY, onSince.value);
-      } else if (!onSince || now - onSince.at > LAST_EVERY_MS) {
-        onSince = { at: now, value: await rGet<string>(ON_KEY) };
+      if (told && near && near.life !== 'on') {
+        /* it has just come on: the answer before saw it dark, or on its way up */
+        await keep(crewIn(body));
+        const value = new Date(now).toISOString();
+        await rSet(ON_KEY, value);
+        onSince = { at: now, value };
+      } else if (told && !near) {
+        /* nothing seen of it for a while, so it may have gone out and come back unseen */
+        await rDel(ON_KEY);
+        onSince = { at: now, value: null };
+        await keep(crewIn(body));
+      } else {
+        if (told) await keep(crewIn(body));
+        if (!onSince || now - onSince.at > LAST_EVERY_MS) onSince = { at: now, value: await rGet<string>(ON_KEY) };
       }
       if (onSince.value) body.onSince = onSince.value;
       body.versionSince = await versionSince(now) ?? undefined;
@@ -131,18 +158,22 @@ async function rememberLastOnline(body: StatusResponse, before: { at: number; bo
       return;
     }
     body.versionSince = await versionSince(now) ?? undefined;
-    if (live && recent?.body.online) {
-      /* it has just gone out: the last answer that saw it burning says when */
-      const value: LastOnline = { at: new Date(recent.at).toISOString(), names: crewIn(recent.body) };
-      const { rSet, rDel } = await import('@/lib/redis');
-      await rSet(LAST_KEY, value);
-      lastKnown = { at: now, value };
+    if (told) {
+      if (near?.life === 'on') {
+        /* it has just gone out: the last answer that saw it burning says when, and who was in */
+        const value: LastOnline = { at: near.at, names: near.names };
+        await rSet(LAST_KEY, value);
+        lastKnown = { at: now, value };
+      }
+      /* Dark, or on its way up or down: whatever it burned since is over.
+         The time is cleared when the answer before saw it burn (or there is
+         none), and once by each instance besides; after an answer that saw
+         it dark, the time was cleared by that one. */
+      if (!before || before.life === 'on' || onSince?.value !== null) await rDel(ON_KEY);
       onSince = { at: now, value: null };
-      await rDel(ON_KEY);
-    } else if (!lastKnown || now - lastKnown.at > LAST_EVERY_MS) {
-      const { rGet } = await import('@/lib/redis');
-      lastKnown = { at: now, value: await rGet<LastOnline>(LAST_KEY) };
+      await keep([]);
     }
+    if (!lastKnown || now - lastKnown.at > LAST_EVERY_MS) lastKnown = { at: now, value: await rGet<LastOnline>(LAST_KEY) };
     if (lastKnown.value) body.lastOnline = lastKnown.value;
   } catch { /* the lantern just does not say when */ }
 }
@@ -151,6 +182,7 @@ async function rememberLastOnline(body: StatusResponse, before: { at: number; bo
 export function forgetStatus(): void {
   cached = null;
   lastKnown = null;
+  onSince = null;
 }
 
 /* During a play night's evening, the crew online are noted as having come
@@ -165,11 +197,16 @@ export async function noteCrewSeen(body: StatusResponse): Promise<void> {
   } catch { /* the status answers regardless */ }
 }
 
-/* How a lookup reaches the upstream: live, or through Next's data cache for
-   as long as a changing state is kept in memory (CHANGING_CACHE_MS). A live
+/* How a lookup reaches the upstream: live, or through Next's data cache on
+   the page's own half-minute beat (revalidate in src/app/page.tsx). A live
    read on the page would make every page that reads the status render on
-   demand instead of on its half-minute schedule (src/app/page.tsx). */
-const reach = (live: boolean): RequestInit => (live ? { cache: 'no-store' } : { next: { revalidate: CHANGING_CACHE_MS / 1000 } });
+   demand instead of on that schedule. A page is drawn again as often as the
+   shortest keep of any fetch it makes, so the ten seconds a changing state
+   was kept had the home page drawn three times as often as it says; a
+   changing state is put right by the browser instead, which asks the live
+   route ten seconds after a page drawn on the server (SEEDED_POLL_MS in
+   src/components/badlands/hooks.ts). */
+const reach = (live: boolean): RequestInit => (live ? { cache: 'no-store' } : { next: { revalidate: CACHE_MS / 1000 } });
 
 async function lookup(live: boolean): Promise<StatusResponse> {
   if (process.env.EXAROTON_API_KEY) {

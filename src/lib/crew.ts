@@ -8,7 +8,7 @@ import { CREW_USERNAMES, canonicalUsername, normalizeProfile, type CrewProfile }
 
 export * from '@/lib/crew-types';
 export { CREW_COOKIE } from '@/lib/auth';
-export { createInvite, consumeInvite, peekInvite, closeInvite, listInvites, inviteUrl, INVITE_TTL, INVITE_USES, type Invite } from '@/lib/crew-access';
+export { createInvite, consumeInvite, peekInvite, closeInvite, closeInvitesOf, listInvites, inviteUrl, INVITE_TTL, INVITE_USES, type Invite } from '@/lib/crew-access';
 
 // ─── Storage backend ──────────────────────────────────────────────────────────
 // Priority order:

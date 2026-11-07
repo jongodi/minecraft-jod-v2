@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { badJson, jsonObject } from '@/lib/http';
 import { requireOwner, isCrewUsername, revokeCrewSessions, currentSessionId } from '@/lib/crew';
-import { hashPassword, passwordProblem, setPasswordHash } from '@/lib/crew-access';
+import { closeInvitesOf, hashPassword, passwordProblem, setPasswordHash } from '@/lib/crew-access';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,9 +22,11 @@ export async function PUT(req: NextRequest, { params }: Params) {
 
   await setPasswordHash(username, await hashPassword(body.password as string));
   /* a new password is the member taking the account: whoever else got in on
-     an old link or the old password is signed out, this device stays in */
+     an old link or the old password is signed out, this device stays in, and
+     every link still open is shut, or the same link would let them back in */
   const others = await revokeCrewSessions(username, await currentSessionId());
-  return NextResponse.json({ ok: true, hasPassword: true, signedOut: others });
+  const linksClosed = await closeInvitesOf(username);
+  return NextResponse.json({ ok: true, hasPassword: true, signedOut: others, linksClosed });
 }
 
 export async function DELETE(_req: NextRequest, { params }: Params) {
@@ -32,6 +34,8 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   if (!isCrewUsername(username)) return NextResponse.json({ error: 'Fannst ekki.' }, { status: 404 });
   if (!(await requireOwner(username))) return NextResponse.json({ error: 'Þú þarft að skrá þig inn með réttum aðgangi.' }, { status: 401 });
   await setPasswordHash(username, null);
+  /* as with a new one: the other devices go, and the open links with them */
   const others = await revokeCrewSessions(username, await currentSessionId());
-  return NextResponse.json({ ok: true, hasPassword: false, signedOut: others });
+  const linksClosed = await closeInvitesOf(username);
+  return NextResponse.json({ ok: true, hasPassword: false, signedOut: others, linksClosed });
 }

@@ -19,7 +19,7 @@ import { getPublicPacks } from '@/lib/datapacks-store';
 import { DATAPACKS } from '@/data/datapacks';
 import { getCachedStats } from '@/lib/stats';
 import { ADVANCEMENT_COUNT, readStoredAdvancements } from '@/lib/advancements';
-import { readNights, type Night } from '@/lib/play-night';
+import { heldNights, type HeldNight } from '@/lib/play-night';
 import { formatNumber } from '@/lib/format';
 import { freshPlaces } from '@/lib/bluemap-snapshot';
 
@@ -47,7 +47,7 @@ async function worldFacts(): Promise<string[]> {
   const [stats, crew, nights] = await Promise.all([
     getCachedStats().catch(() => null),
     readStoredAdvancements().catch(() => null),
-    readNights().catch(() => [] as Night[]),
+    heldNights().catch(() => [] as HeldNight[]),
   ]);
   if (stats) {
     /* from the ticks: each member's hours are floored, and eight floors lose most of a day */
@@ -60,8 +60,8 @@ async function worldFacts(): Promise<string[]> {
     const done = new Set(Object.values(crew.players).flatMap(d => Object.keys(d)));
     if (done.size > 0) out.push(`${done.size} af ${ADVANCEMENT_COUNT} afrekum!`);
   }
-  const held = nights.filter(n => !n.cancelled && n.outcome).length;
-  if (held > 0) out.push(`${held} spilakvöld við eldinn!`);
+  /* every night held, the annals' too: the fires let one go a week after its evening */
+  if (nights.length > 0) out.push(`${nights.length} spilakvöld við eldinn!`);
   return out;
 }
 
