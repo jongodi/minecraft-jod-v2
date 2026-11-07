@@ -2471,6 +2471,7 @@ html.is-map-full { overflow: hidden; }
 .b-night__count,
 .b-cal,
 .b-chip__count,
+.b-chip__new,
 .b-hud__count,
 .b-frame-pic__no {
   font-family: var(--font-data);
@@ -3007,8 +3008,12 @@ html.is-map-full { overflow: hidden; }
 /* the compass needle on the locator bar: a key, unlike the marks */
 .b-locator__mark--home { width: 1.25rem; height: 1.75rem; padding: 0; border: 0; background: none; cursor: pointer; pointer-events: auto; }
 .b-locator__mark--home svg { width: 0.5rem; height: 1rem; }
-/* a place whose ground changed in the newest copy of the map: the board's paper tag on its chip */
-.b-chip__new { position: absolute; top: calc(var(--px) * -1); left: calc(var(--px) * -1); padding: 0 var(--sp-1); background: var(--paper); color: var(--tc-red); border: var(--px) solid var(--tc-red); font-family: var(--font-text); font-weight: 600; font-size: var(--fs-chip); line-height: 1.6; letter-spacing: 0.04em; text-transform: uppercase; }
+/* a place whose ground changed in the newest copy of the map: the board's
+   paper tag on its chip, in the bitmap face at its 8 px grid as the count in
+   the other corner is (set with the face's other labels, above); the text
+   face at 8 px fused the Ý's accent into the letter, and tracking would
+   take the face off its grid */
+.b-chip__new { position: absolute; top: calc(var(--px) * -1); left: calc(var(--px) * -1); padding: 0 var(--sp-1); background: var(--paper); color: var(--tc-red); border: var(--px) solid var(--tc-red); font-size: var(--fs-chip); line-height: 1.6; text-transform: uppercase; }
 .b-chip.is-on .b-chip__new { background: var(--tc-red); color: var(--paper); }
 
 /* ─── the 31 October ideas: the lantern's catch, the crosshair, the clouds over the crew pages, the held tooltip ─── */
