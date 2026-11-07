@@ -441,7 +441,7 @@
    the hero's ground and the lantern's glow once the sunset is scrolled past,
    the fire's frames and smoke until the campfire is in view. The sky's and
    the ridges' scroll-driven animations are not these: they are the scroll. */
-.b-hero.is-away :is(.b-critter, .b-critter__step, .b-lantern__flame), .b-hero.is-away .b-lantern::before,
+.b-hero.is-away :is(.b-critter, .b-critter__step, .b-lantern__flame, .b-phantom, .b-phantom__wing, .b-fire__frame, .b-fire__smoke i), .b-hero.is-away .b-lantern::before,
 .b-foot.is-away :is(.b-fire__frame, .b-fire__smoke i, .b-foot__fire::before) { animation-play-state: paused; }
 /* kindling: the server on its way up (or down). The glass takes the deeper
    amber, a small flame comes and goes behind it, and the glow is half what a
@@ -1071,6 +1071,28 @@
 }
 /* on a phone the plateau stands in front of the name's feet; there the crew climb the name (below) */
 @media (max-width: 899.98px) { .b-mesa__riders { display: none; } }
+/* The signal fire on the far ridge (Mesa.tsx), placed the same way by the
+   plateau it stands on, which the page works out once it knows where the J
+   begins (signal.ts): its middle at --fx, its foot on a plateau --fh high,
+   --fw units wide, bale and all. Its column is drawn at the land's scale,
+   rises --rise, which keeps it under the address and the lantern, and
+   leans east only over its last three quarters, once it has climbed clear
+   of the letter's foot. */
+.b-mesa__signal {
+  --u: max(100cqw / 480, 100cqh / 120);
+  --drift: calc(var(--u) * 5);
+  position: absolute;
+  left: calc(50% + (var(--fx) - 240) * var(--u));
+  bottom: calc(var(--fh) * var(--u));
+  width: calc(var(--fw) * var(--u));
+  translate: -50% 0;
+  pointer-events: none;
+}
+/* no ring of stones on the far ridge, so the drawing ends at the bale's foot */
+.b-mesa__signal .b-fire { width: 100%; height: auto; aspect-ratio: 16 / 20; margin: 0; }
+.b-mesa__signal .b-fire.is-signal .b-fire__smoke { bottom: 70%; }
+.b-mesa__signal .b-fire.is-signal .b-fire__smoke i:nth-child(n) { width: calc(var(--u) * 3.5); height: calc(var(--u) * 3.5); left: calc(var(--u) * -1.75); }
+.b-mesa__signal .b-fire.is-signal .b-fire__smoke i:nth-child(3n) { left: calc(var(--u) * -2.25); }
 .b-mesa__rider, .b-hero__climber { position: relative; display: block; width: calc(var(--u) * 12); line-height: 0; }
 /* a tap target larger than a narrow figure */
 .b-mesa__rider::before, .b-hero__climber::before { content: ''; position: absolute; inset: -0.5rem calc(var(--u) * -1); }
@@ -1122,6 +1144,87 @@
 .b-mesa__rider:nth-child(even) > .b-nametag { bottom: calc(100% + var(--sp-1) + 0.75rem); }
 .b-mesa__more, .b-hero__more { align-self: flex-start; }
 @media (hover: hover) { .b-mesa__rider:hover > .b-nametag, .b-hero__climber:hover > .b-nametag { color: var(--lantern); } }
+/* Pointed at or focused, the tag over one the phantoms are after says why
+   (Mesa.tsx), and the tags beside it make way for it. The long tag stands
+   laid out and unseen all along, and the tags trade places by visibility
+   alone, so no name moves and nothing is laid out again. The last figure's
+   grows to its left, its end over the figure's far side, so near the edge of
+   the screen it never runs off it. */
+:is(.b-mesa__rider, .b-hero__climber) > .b-nametag--awake { visibility: hidden; }
+:is(.b-mesa__rider, .b-hero__climber):last-of-type > .b-nametag--awake { translate: calc(-100% + var(--u) * 6) 0; }
+:is(.b-mesa__rider, .b-hero__climber):focus-visible { z-index: 1; }
+:is(.b-mesa__riders, .b-hero__climbers):has(> :focus-visible > .b-nametag--awake) .b-nametag { visibility: hidden; }
+:is(.b-mesa__riders, .b-hero__climbers) > :focus-visible > .b-nametag.b-nametag--awake { visibility: visible; }
+@media (hover: hover) {
+  :is(.b-mesa__rider, .b-hero__climber):hover { z-index: 1; }
+  :is(.b-mesa__riders, .b-hero__climbers):has(> :hover > .b-nametag--awake) .b-nametag { visibility: hidden; }
+  :is(.b-mesa__riders, .b-hero__climbers) > :hover > .b-nametag.b-nametag--awake { visibility: visible; }
+}
+
+/* The phantoms (Bits.tsx) the game sends after a player three days without
+   a bed: two over the head of whoever on the crew that is, half a turn apart
+   on one ring above the tag, a dark of the night sky with the game's two
+   pixels of eye. They come out as the sky goes dark, on the scroll timeline
+   the stars come out on, so the sunset never has them, but over an earlier
+   stretch of it: on the stars' own they were out only once the ridges had
+   nearly gone up under the bar. Their wings beat every six of the game's
+   ticks, and the ring is eight stops round in four seconds,
+   each stop reached in two steps of whole pixels of the art, as the game's
+   sprites move. Paused once the sunset is scrolled past (.is-away), still
+   on their ring with their wings up under reduced motion, and left out
+   where the browser has no scroll timeline to bring them out on. */
+.b-phantoms {
+  --flap: 300ms;
+  --round: 4s;
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 2.5rem);
+  width: 0;
+  height: 0;
+  color: color-mix(in oklab, var(--sky-night-top), var(--star) 34%);
+  opacity: 0;
+  pointer-events: none;
+}
+.b-mesa__rider:nth-child(even) > .b-phantoms { bottom: calc(100% + 3.25rem); }
+.b-phantom {
+  position: absolute;
+  left: calc(var(--px) * -6.5);
+  top: calc(var(--px) * -2.5);
+  width: calc(var(--px) * 13);
+  height: calc(var(--px) * 5);
+  animation: b-phantom-round var(--round) steps(2, end) infinite;
+}
+.b-phantom + .b-phantom { animation-delay: calc(var(--round) / -2); }
+.b-phantom svg { display: block; width: 100%; height: 100%; }
+.b-phantom__eye { fill: var(--online); }
+.b-phantom__wing { animation: b-phantom-wing calc(var(--flap) * 2) steps(1, end) infinite; }
+.b-phantom__wing--down { opacity: 0; animation-delay: calc(var(--flap) * -1); }
+/* the second beats half a beat behind the first, as two birds never quite keep time */
+.b-phantom + .b-phantom .b-phantom__wing { animation-delay: calc(var(--flap) / -2); }
+.b-phantom + .b-phantom .b-phantom__wing--down { animation-delay: calc(var(--flap) * -1.5); }
+@keyframes b-phantom-wing { 0% { opacity: 1; } 50%, 100% { opacity: 0; } }
+@keyframes b-phantom-round {
+  0%, 100% { transform: translate(calc(var(--px) * 12), 0); }
+  12.5%    { transform: translate(calc(var(--px) * 8), calc(var(--px) * 2)); }
+  25%      { transform: translate(0, calc(var(--px) * 4)); }
+  37.5%    { transform: translate(calc(var(--px) * -8), calc(var(--px) * 2)); }
+  50%      { transform: translate(calc(var(--px) * -12), 0); }
+  62.5%    { transform: translate(calc(var(--px) * -8), calc(var(--px) * -2)); }
+  75%      { transform: translate(0, calc(var(--px) * -4)); }
+  87.5%    { transform: translate(calc(var(--px) * 8), calc(var(--px) * -2)); }
+}
+@keyframes b-phantoms-out { 0%, 20% { opacity: 0; } 50%, 100% { opacity: 1; } }
+@supports (animation-timeline: scroll()) {
+  .b-phantoms { animation: b-phantoms-out linear both; animation-timeline: scroll(root); animation-range: 0 120svh; }
+  /* a phone's crew stand on the name, high in the hero, and are under the bar sooner */
+  @media (max-width: 899.98px) { .b-phantoms { animation-range: 0 80svh; } }
+}
+@media (prefers-reduced-motion: reduce) {
+  .b-phantoms { animation: none; opacity: 1; }
+  .b-phantom, .b-phantom__wing { animation: none; }
+  .b-phantom { transform: translate(calc(var(--px) * -8), calc(var(--px) * 2)); }
+  .b-phantom + .b-phantom { transform: translate(calc(var(--px) * 8), calc(var(--px) * -2)); }
+}
 
 /* The phone's climbers: the crew who are in, standing on the name itself,
    one on the O and one on the Ð, sized and placed in ems of the name so they
@@ -2813,7 +2916,7 @@ html.is-map-full { overflow: hidden; }
 }
 
 /* the fire, and its light pooled wide across the band */
-.b-foot__camp { grid-area: camp; position: relative; display: flex; justify-content: center; align-items: flex-end; }
+.b-foot__camp { --sign: 7rem; grid-area: camp; position: relative; display: flex; justify-content: center; align-items: flex-end; }
 .b-foot__camp::before {
   content: '';
   position: absolute;
@@ -2827,10 +2930,54 @@ html.is-map-full { overflow: hidden; }
   pointer-events: none;
 }
 /* The duel's door is the fire and the sign planted beside it. The sign's
-   width is kept as an empty margin on the fire's other side, so the fire
-   stays the middle of the band and its light falls where it burns. */
-.b-foot__fire { --sign: 7rem; display: flex; align-items: flex-end; margin-left: var(--sign); padding: 0; border: 0; background: none; cursor: pointer; }
-@media (max-width: 1023.98px) { .b-foot__fire { --sign: 6.25rem; } }
+   width (--sign, on the camp, so the crew who stand in it can read it too)
+   is kept as an empty margin on the fire's other side, so the fire stays
+   the middle of the band and its light falls where it burns. */
+.b-foot__fire { display: flex; align-items: flex-end; margin-left: var(--sign); padding: 0; border: 0; background: none; cursor: pointer; }
+@media (max-width: 1023.98px) { .b-foot__camp { --sign: 6.25rem; } }
+/* Við eldinn (Footer.tsx): the crew who are in, standing on the ground in
+   that margin, on the fire's side away from its sign, and out of the flow
+   of the band, so the fire stays its middle. The same whole skins and name
+   tags as on the ridge, at a scale set beside the fire, without a lantern,
+   since the fire lights them; the first nearest the fire, the rest further
+   into the dark, and their tags at two heights as the ridge's are. Up to
+   three from 720 px, one and a count under it. One who comes in while the
+   fire is in view walks in out of the dark in the climb's four steps, and
+   one who goes walks back into it; under reduced motion they are simply
+   there or not. */
+.b-foot__crew {
+  --u: calc(2.25rem / 12);
+  position: absolute;
+  right: calc(100% - var(--sign) + var(--sp-2));
+  bottom: 0;
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: flex-end;
+  gap: calc(var(--u) * 3);
+}
+@media (max-width: 719.98px) { .b-foot__crew { --u: calc(1.75rem / 12); } }
+.b-foot__mate { position: relative; display: block; width: calc(var(--u) * 12); line-height: 0; }
+.b-foot__mate::before { content: ''; position: absolute; inset: -0.5rem calc(var(--u) * -1); }
+.b-foot__mate img { display: block; width: 100%; height: auto; aspect-ratio: 1 / 2; image-rendering: pixelated; }
+.b-foot__mate > .b-nametag { position: absolute; left: 50%; bottom: calc(100% + var(--sp-1)); translate: -50% 0; pointer-events: none; }
+.b-foot__mate:nth-child(even) > .b-nametag { bottom: calc(100% + var(--sp-1) + 0.75rem); }
+.b-foot__more { align-self: flex-start; }
+.b-foot__mate:focus-visible { outline: none; }
+.b-foot__mate:focus-visible img { filter: drop-shadow(var(--px) 0 0 var(--lantern)) drop-shadow(calc(var(--px) * -1) 0 0 var(--lantern)) drop-shadow(0 var(--px) 0 var(--lantern)) drop-shadow(0 calc(var(--px) * -1) 0 var(--lantern)); }
+@media (hover: hover) {
+  .b-foot__mate:hover img { filter: drop-shadow(var(--px) 0 0 var(--paper)) drop-shadow(calc(var(--px) * -1) 0 0 var(--paper)) drop-shadow(0 var(--px) 0 var(--paper)) drop-shadow(0 calc(var(--px) * -1) 0 var(--paper)); }
+  .b-foot__mate:hover > .b-nametag { color: var(--lantern); }
+}
+.b-foot__mate:active img { translate: var(--press); }
+.b-foot__mate.is-coming { animation: b-walk-in calc(var(--dur-step) * 4) var(--ease-step) backwards; }
+.b-foot__mate.is-going  { animation: b-walk-in calc(var(--dur-step) * 4) var(--ease-step) reverse forwards; pointer-events: none; }
+@keyframes b-walk-in { from { transform: translateX(-100%); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .b-foot__mate.is-coming, .b-foot__mate.is-going { animation: none; } }
+.b-foot__more--narrow { display: none; }
+@media (max-width: 719.98px) {
+  .b-foot__mate:nth-child(n + 2), .b-foot__more--wide { display: none; }
+  .b-foot__more--narrow { display: block; }
+}
 /* a short plank on a post, the word burnt in lantern light, as the world's
    lantern has its sign nailed under it; the post stands in the ground the
    fire stands on */
@@ -2889,9 +3036,33 @@ html.is-map-full { overflow: hidden; }
   60%  { opacity: 0.3; }
   100% { transform: translate(2.25rem, -9rem) scale(1.8); opacity: 0; }
 }
+/* The signal fire's column (Bits.tsx, on its hay bale): eight puffs where
+   the plain fire sends six, a puff every second and a quarter (each puff's
+   place in the column is its --i), going up --rise, more than twice the
+   plain fire's height as the game's signal smoke goes, and leaning --drift
+   east only once a quarter of the way up. The hero's and the footer's set
+   the two lengths each for itself. */
+.b-fire.is-signal .b-fire__smoke { bottom: 73%; }
+.b-fire.is-signal .b-fire__smoke i { --puff: 1.25s; animation-name: b-smoke-signal; animation-duration: calc(var(--puff) * 8); animation-delay: calc(var(--i) * var(--puff) * -1); }
+.b-fire.is-signal .b-fire__smoke i:nth-child(7) { left: -0.375rem; }
+.b-fire.is-signal .b-fire__smoke i:nth-child(8) { left: -0.875rem; }
+@keyframes b-smoke-signal {
+  0%   { transform: translate(0, 0) scale(0.6); opacity: 0; }
+  8%   { opacity: 0.55; }
+  25%  { transform: translate(0, calc(var(--rise) * -0.25)) scale(1); }
+  70%  { opacity: 0.3; }
+  100% { transform: translate(var(--drift), calc(var(--rise) * -1)) scale(1.8); opacity: 0; }
+}
 /* on a wide screen the band keeps a stretch of night over the fire for the
    smoke, so it thins out under the stars rather than over the world's places */
 @media (min-width: 1024px) { .b-foot { padding-top: 6rem; } }
+/* On the day of a fire the footer's own fire stands on its bale (Bits.tsx)
+   and its column goes up more than twice as far, so the band keeps that much
+   more night over it: above the fire on a wide screen, and between the fire
+   and the row of buttons over it below 1024 px, so the column thins out
+   under the stars and never over the world's places or through a button. */
+.b-foot .b-fire.is-signal { --rise: 19rem; --drift: 1.5rem; height: auto; aspect-ratio: 16 / 22; }
+@media (min-width: 1024px) { .b-foot:has(.b-fire.is-signal) { padding-top: 15rem; } }
 /* Below 1024 px the way up and the wind share the row over the fire: the
    smoke gets a stretch of sky between them and the fire, and rises only
    that far, so it never passes through the buttons. */
@@ -2904,8 +3075,22 @@ html.is-map-full { overflow: hidden; }
 @media (max-width: 1023.98px) {
   .b-foot__inner { row-gap: var(--sp-8); }
   .b-fire__smoke i { width: 1rem; height: 1rem; animation-name: b-smoke-short; animation-duration: 5.4s; }
+  .b-foot:has(.b-fire.is-signal) .b-foot__inner { row-gap: 11rem; }
+  .b-foot .b-fire.is-signal { --rise: 11rem; --drift: 1rem; }
 }
 @media (prefers-reduced-motion: reduce) { .b-fire__smoke { display: none; } }
+/* The signal stands still under reduced motion: each puff is set where its
+   place in the column would carry it, growing and thinning on the way up,
+   so the column is there and nothing moves. */
+@media (prefers-reduced-motion: reduce) {
+  .b-fire.is-signal .b-fire__smoke { display: block; }
+  .b-fire.is-signal .b-fire__smoke i {
+    --k: calc((var(--i) + 1) / 9);
+    animation: none;
+    transform: translate(calc(var(--drift) * max(0, (var(--k) - 0.25) / 0.75)), calc(var(--rise) * var(--k) * -1)) scale(calc(0.6 + var(--k) * 1.2));
+    opacity: calc(0.5 - var(--k) * 0.35);
+  }
+}
 @keyframes b-frames { 0%, 33.33% { opacity: 1; } 33.34%, 100% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .b-fire__frame { animation: none; } .b-fire__frame:first-child { opacity: 1; } }
 

@@ -1,5 +1,6 @@
 // Staged data for screenshots: the server on with three of the crew in, a
-// week of stats, and drawn pixel heads in place of minotar and mc-heads.
+// week of stats (two of those in have not slept, so phantoms circle over
+// them), and drawn pixel heads in place of minotar and mc-heads.
 // A sandbox that reaches none of those services otherwise shows only the
 // fallbacks (a dark lantern, question-mark heads, empty posters).
 // Used by shots.mjs with STAGE=1; nothing here ships with the site.
@@ -71,14 +72,38 @@ export async function stage(page) {
     players: CREW.map(stat), source: 'cached', cachedAt: new Date(now - 3600_000).toISOString(),
     week: { from: '2026-09-28', to: '2026-10-05', players: CREW.map((n, i) => ({ username: n, playTimeHours: 2 + i * 1.5, deaths: i % 4, mobKills: 20 + i * 13, travelCm: (5 + i) * 100000, raidWins: i % 2, recordsPlayed: i % 3, damageRatio: 1 + i / 4 })) },
   } }));
-  /* STAGE_NIGHT=1: a night fixed for two days from now, four coming */
-  if (process.env.STAGE_NIGHT === '1') {
-    const at = new Date(now + 2 * 86400_000); at.setUTCHours(20, 0, 0, 0);
-    const night = { id: 'n1', by: 'stebbias', note: 'Byggjum brúna yfir gilið', phase: 'chosen', chosen: 'o1', chosenBy: 'stebbias',
+  /* STAGE_NIGHT=1: a night fixed for two days from now, four coming.
+     STAGE_NIGHT=today: fixed for eight tonight, so the signal fire stands
+     (signal.ts), in the phase the clock gives it: chosen, about to be lit,
+     or under way. */
+  if (process.env.STAGE_NIGHT === '1' || process.env.STAGE_NIGHT === 'today') {
+    const today = process.env.STAGE_NIGHT === 'today';
+    const at = new Date(now + (today ? 0 : 2 * 86400_000)); at.setUTCHours(20, 0, 0, 0);
+    const phase = !today || now < at.getTime() - 30 * 60_000 ? 'chosen' : now < at.getTime() ? 'soon' : 'live';
+    const night = { id: 'n1', by: 'stebbias', note: 'Byggjum brúna yfir gilið', phase, chosen: 'o1', chosenBy: 'stebbias',
       options: [{ id: 'o1', at: at.toISOString(), yes: ['stebbias', 'joenana', 'AmmaGaur', 'eikibleiki'] }],
       decidesAt: at.toISOString(), startedBy: null, came: [] };
     await page.route('**/api/playnight', r => r.request().method() === 'GET' ? r.fulfill({ json: { nights: [night], me: null, max: 5 } }) : r.continue());
   }
+  /* Who has not slept is counted on the server from the stored stats and
+     drawn into the page's markup (src/lib/home-data.ts), where a sandbox
+     with no store has nobody. The page is given the count the staged stats
+     above make, for those of the crew who are in, so the phantoms circle
+     over them as the sky goes dark. The page's data comes to the browser as
+     chunks pushed onto self.__next_f, so the count is written into each
+     chunk as it is pushed, before React reads it, and the push React puts
+     there once it starts is wrapped the same way. (Answering the document
+     itself instead cost the dev server's own socket: the browser takes a
+     document from an interceptor for one off the network.) */
+  const awake = Object.fromEntries(CREW.map(stat).filter(s => IN.includes(s.username) && s.timeSinceRest >= 72000)
+    .map(s => [s.username.toLowerCase(), Math.floor(s.timeSinceRest / 24000)]));
+  await page.addInitScript(to => {
+    const chunks = [];
+    let into = Array.prototype.push;
+    const write = c => (Array.isArray(c) && c[0] === 1 && typeof c[1] === 'string' ? [1, c[1].replace('"sleepless":{}', `"sleepless":${to}`), ...c.slice(2)] : c);
+    Object.defineProperty(chunks, 'push', { configurable: true, get: () => (...cs) => into.apply(chunks, cs.map(write)), set: fn => { into = fn; } });
+    window.__next_f = chunks;
+  }, JSON.stringify(awake));
   await page.route(/^https:\/\/(minotar\.net|mc-heads\.net)\//, async r => {
     const url = new URL(r.request().url());
     const parts = url.pathname.split('/').filter(Boolean);

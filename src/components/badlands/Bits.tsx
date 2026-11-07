@@ -176,15 +176,32 @@ const FLAMES: ReadonlyArray<ReadonlyArray<[number, number, number, number, strin
    front, each with a pixel of light on its top where the fire catches it. */
 const STONES: ReadonlyArray<readonly [number, number, number, number]> = [[0, 12, 1, 3], [15, 12, 1, 3], [1, 14, 2, 2], [4, 15, 2, 1], [7, 14, 3, 2], [11, 15, 2, 1], [13, 14, 2, 2]];
 
+/* The hay bale a signal fire stands on, under the logs, [x, y, w, h, colour]:
+   the straw, lit along its top, bound by two rows of twine, a few straws
+   catching the light. */
+const BALE: ReadonlyArray<readonly [number, number, number, number, string]> = [
+  [0, 14, 16, 6, 'var(--tc-yellow)'], [0, 14, 16, 1, 'var(--sun)'], [0, 16, 16, 1, 'var(--tc-orange)'], [0, 18, 16, 1, 'var(--tc-orange)'],
+  [3, 15, 1, 1, 'var(--sun)'], [11, 17, 1, 1, 'var(--sun)'], [6, 19, 1, 1, 'var(--sun)'],
+];
+
 /** The campfire in the footer: a three-frame pixel flame on two logs, in a
     ring of stones there. A play night's fire is the same one, without the
-    stones; burnt down, only embers glow on the logs. */
+    stones; burnt down, only embers glow on the logs. `signal`: the game's
+    signal fire, on a hay bale, its column of smoke taller than a plain
+    fire's, on the day a fire is lit for (signal.ts); the bale stands where
+    the ring's sides were, with the ring's front row on the ground before it. */
 const SMOKE = [0, 1, 2, 3, 4, 5];
+const SIGNAL_SMOKE = [0, 1, 2, 3, 4, 5, 6, 7];
 
-export function Campfire({ embers = false, stones = false, className }: { embers?: boolean; stones?: boolean; className?: string } = {}) {
+export function Campfire({ embers = false, stones = false, signal = false, className }: { embers?: boolean; stones?: boolean; signal?: boolean; className?: string } = {}) {
+  /* On the bale everything stands six of the fire's pixels higher, so the
+     drawing is that much taller; its foot is the bale's, or with the ring,
+     the front row of stones on the ground before it, two pixels lower. */
+  const lift = signal ? 6 : 0;
+  const tall = signal ? (stones ? 22 : 20) : 16;
   return (
-    <span className={`b-fire${className ? ` ${className}` : ''}`} aria-hidden="true">
-      <svg viewBox="0 0 16 16">
+    <span className={`b-fire${signal ? ' is-signal' : ''}${className ? ` ${className}` : ''}`} aria-hidden="true">
+      <svg viewBox={`0 0 16 ${tall}`}>
         {embers ? (
           <g>
             <rect x="5" y="10" width="2" height="1" fill="var(--ember)" />
@@ -200,17 +217,45 @@ export function Campfire({ embers = false, stones = false, className }: { embers
         <rect x="1" y="13" width="14" height="1" fill="var(--wood)" />
         <rect x="3" y="12" width="3" height="1" fill="var(--tc-red)" />
         <rect x="10" y="12" width="3" height="1" fill="var(--tc-red)" />
-        {stones && STONES.map(([x, y, w, h]) => (
+        {signal && BALE.map(([x, y, w, h, fill]) => <rect key={`${x}-${y}-${fill}`} x={x} y={y} width={w} height={h} fill={fill} />)}
+        {stones && STONES.filter(([, y]) => !signal || y >= 14).map(([x, y, w, h]) => (
           <g key={`${x}-${y}`}>
-            <rect x={x} y={y} width={w} height={h} fill="var(--ink-faint)" />
-            <rect x={x} y={y} width={w} height="1" fill="var(--text-faint)" />
+            <rect x={x} y={y + lift} width={w} height={h} fill="var(--ink-faint)" />
+            <rect x={x} y={y + lift} width={w} height="1" fill="var(--text-faint)" />
           </g>
         ))}
       </svg>
       {/* the column of smoke a campfire in the game sends up, the signal the
           crew is camped: square puffs that rise, drift with the wind, grow
-          and thin out (badlands.css). Only the fire in its ring of stones. */}
-      {stones && !embers && <span className="b-fire__smoke">{SMOKE.map(i => <i key={i} />)}</span>}
+          and thin out (badlands.css). Only the fire in its ring of stones,
+          and the signal fire, whose column is taller and has more puffs. */}
+      {(stones || signal) && !embers && <span className="b-fire__smoke">{(signal ? SIGNAL_SMOKE : SMOKE).map(i => <i key={i} style={signal ? { ['--i' as string]: i } : undefined} />)}</span>}
+    </span>
+  );
+}
+
+/* The phantom, seen from below as it circles, on a 13 by 5 grid: a narrow
+   body with the game's two pixels of glowing eye at its head, and two frames
+   of its wings, raised and lowered. [x, y, w, h]. */
+type Px = readonly [number, number, number, number];
+const PHANTOM_BODY: Px[] = [[5, 1, 3, 1], [2, 2, 3, 1], [6, 2, 1, 1], [8, 2, 3, 1], [5, 3, 3, 1], [6, 4, 1, 1]];
+const PHANTOM_EYES: Px[] = [[5, 2, 1, 1], [7, 2, 1, 1]];
+const PHANTOM_UP: Px[] = [[0, 0, 1, 1], [12, 0, 1, 1], [1, 1, 2, 1], [10, 1, 2, 1]];
+const PHANTOM_DOWN: Px[] = [[1, 3, 2, 1], [10, 3, 2, 1], [0, 4, 1, 1], [12, 4, 1, 1]];
+const rects = (px: Px[]) => px.map(([x, y, w, h]) => <rect key={`${x}-${y}`} x={x} y={y} width={w} height={h} />);
+
+/** A phantom, which the game sends after a player three days without a bed:
+    its wings beat and it circles (badlands.css), over whoever on the crew has
+    not slept (Mesa.tsx). */
+export function Phantom() {
+  return (
+    <span className="b-phantom" aria-hidden="true">
+      <svg viewBox="0 0 13 5" shapeRendering="crispEdges">
+        <g fill="currentColor">{rects(PHANTOM_BODY)}</g>
+        <g className="b-phantom__wing" fill="currentColor">{rects(PHANTOM_UP)}</g>
+        <g className="b-phantom__wing b-phantom__wing--down" fill="currentColor">{rects(PHANTOM_DOWN)}</g>
+        <g className="b-phantom__eye">{rects(PHANTOM_EYES)}</g>
+      </svg>
     </span>
   );
 }
