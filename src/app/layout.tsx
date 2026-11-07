@@ -15,11 +15,13 @@ import Offline from './Offline';
    Hinting was a third of the bytes on the critical path (43 kB, now 29),
    and most screens draw without it anyway: Chromium draws every size the
    site sets them at pixel for pixel the same either way. Made once with
-   pyftsubset <file> --unicodes='*' --no-hinting --flavor=woff2, every name
-   record kept and the licences beside them; the link cards and letters
-   still read the @fontsource woff files. */
+   pyftsubset <file> --unicodes='*' --no-hinting --flavor=woff2, with the
+   licences beside them; the link cards and letters still read the
+   @fontsource woff files. The slab's licence reserves the name "Alfa Slab",
+   which a changed copy may not carry, so this copy is named JOD Slab inside
+   and out; its copyright line and licence stay as they were. */
 const display = localFont({
-  src: './fonts/alfa-slab-one-latin-400-normal.woff2',
+  src: './fonts/jod-slab-400-normal.woff2',
   weight: '400',
   variable: '--font-display-loaded',
   display: 'swap',
