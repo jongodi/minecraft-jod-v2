@@ -2568,11 +2568,15 @@ html.is-map-full { overflow: hidden; }
 /* A phone's arena is 4:3 and a thumb wide: the call starts below the corner
    labels and its small line drops a size, so the round count, the call and
    the instructions no longer sit on top of one another; and the round loses
-   its word, so "I af III" and "Best: 2396 ms" stand apart on a 360 px phone. */
+   its word, so "I af III" and "Best: 2396 ms" stand apart on a 360 px phone.
+   The call then fills the sky from side to side, and the moon's place over
+   the far mesa is cut off at the slice's edge, so the moon goes up into the
+   gap between the two labels (in the SVG's own units, QuickDraw.tsx). */
 @media (max-width: 639.98px) {
   .b-arena__word { display: none; }
   .b-arena__call { padding: 2.25rem var(--sp-3) 18%; }
   .b-arena__small { font-size: var(--fs-sm); line-height: 1.5; }
+  .b-arena__moon { transform: translate(-390px, -228px); }
   .b-duelpanel { padding: var(--sp-4); }
 }
 .b-fig { transition: transform 0.18s var(--ease-out); transform-box: fill-box; transform-origin: bottom center; }
