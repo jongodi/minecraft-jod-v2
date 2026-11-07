@@ -222,7 +222,7 @@
 
 /* ─── the crew tab ─────────────────────────────────────────── */
 .a-table { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
-.a-table th { text-align: left; padding: var(--sp-2) var(--sp-3); font-family: var(--font-data); font-size: var(--fs-data); letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-faint); border-bottom: var(--line) solid var(--border-strong); }
+.a-table th { text-align: left; padding: var(--sp-2) var(--sp-3); font-family: var(--font-data); font-weight: 400; font-size: var(--fs-data); letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-faint); border-bottom: var(--line) solid var(--border-strong); }
 .a-table td { padding: var(--sp-2) var(--sp-3); border-bottom: var(--line) solid var(--border); vertical-align: middle; }
 .a-table td a { color: var(--lantern); text-decoration: none; }
 @media (hover: hover) { .a-table td a:hover { text-decoration: underline; } }
