@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { Seal } from './Bits';
 
 /* A confirmation in the shape every Minecraft player knows: the advancement
@@ -39,7 +39,40 @@ export function toast(title: string, data?: string): void {
   timer = setTimeout(() => { current = null; notify(); }, SHOW_MS);
 }
 
-/** Where the toasts land. Rendered once, by the bar, so it is on every page. */
+/** One slip, raised into the browser's top layer as it is put up. The map's
+    whole screen is the frame in that layer, and nothing outside it paints
+    over it whatever its z-index: a link copied there (Deila, C, a place's
+    coordinates) was copied with no slip anywhere, and looked as if the press
+    had done nothing. A manual popover shown after the screen went whole
+    stacks above it. Shown before it is painted, each new message enters the
+    layer fresh. Over the whole screen there is no bar to hang under, so the
+    slip hangs under the screen's own plank instead (--hud-bottom, measured
+    by World), read as it goes up. */
+function Slip({ message, leaving, onLeft }: { message: ToastMessage; leaving: boolean; onLeft: () => void }) {
+  const slip = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const el = slip.current;
+    if (!el) return;
+    const whole = (document.fullscreenElement ?? document.querySelector('.b-frame.is-full')) as HTMLElement | null;
+    const under = whole ? parseFloat(getComputedStyle(whole).getPropertyValue('--hud-bottom')) : NaN;
+    if (Number.isFinite(under) && under > 0) el.style.setProperty('--toast-under', `${under}px`);
+    try { el.showPopover?.(); } catch { /* no top layer here: the slip stays where it is drawn */ }
+  }, []);
+  return (
+    <div ref={slip} popover="manual" className={`b-toast b-paper${leaving ? ' is-leaving' : ''}`} onAnimationEnd={e => { if (leaving && e.target === e.currentTarget) onLeft(); }}>
+      <span className="b-paper__nail" aria-hidden="true" />
+      <Seal />
+      <span className="b-toast__text">
+        <b className="b-toast__title">{message.title}</b>
+        {message.data && <span className="b-toast__data">{message.data}</span>}
+      </span>
+    </div>
+  );
+}
+
+/** Where the toasts land. Rendered once, by the bar, so it is on every page.
+    The live region stays here, in the page, whatever screen is up; only the
+    slip inside it is lifted to the top layer (Slip). */
 export default function ToastHost() {
   const shown = useSyncExternalStore(subscribe, () => current, () => null);
   /* the slip stays a beat after its message is gone, to leave the way it came */
@@ -50,19 +83,11 @@ export default function ToastHost() {
     return () => clearTimeout(t);
   }, [shown]);
   const message = shown ?? kept;
+  const left = useCallback(() => setKept(null), []);
 
   return (
     <div className="b-toasts" role="status" aria-live="polite" aria-atomic="true">
-      {message && (
-        <div key={message.id} className={`b-toast b-paper${shown ? '' : ' is-leaving'}`} onAnimationEnd={e => { if (!shown && e.target === e.currentTarget) setKept(null); }}>
-          <span className="b-paper__nail" aria-hidden="true" />
-          <Seal />
-          <span className="b-toast__text">
-            <b className="b-toast__title">{message.title}</b>
-            {message.data && <span className="b-toast__data">{message.data}</span>}
-          </span>
-        </div>
-      )}
+      {message && <Slip key={message.id} message={message} leaving={!shown} onLeft={left} />}
     </div>
   );
 }

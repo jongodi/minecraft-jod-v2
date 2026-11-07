@@ -395,6 +395,17 @@
   box-shadow: 0 var(--px) 0 var(--tc-brown), var(--lift-3);
   animation: b-toast-in var(--dur-3) var(--ease-out) both;
 }
+/* Lifted into the top layer (Toast.tsx, Slip), so it shows over the map's
+   whole screen too: placed on the screen itself rather than in the column
+   above, and the browser's own box for a popover (centred in the screen) put
+   back to the slip's. Over the whole screen it hangs under that screen's
+   plank (--toast-under) rather than under a bar that is not there. */
+.b-toast[popover] {
+  position: fixed;
+  inset: calc(var(--toast-under, var(--bar-safe)) + var(--sp-3)) var(--gutter) auto auto;
+  width: min(22rem, 100% - 2 * var(--gutter));
+  margin: 0;
+}
 .b-toast.is-leaving { animation: b-toast-out var(--dur-2) var(--ease-in) forwards; }
 @keyframes b-toast-in  { from { opacity: 0; transform: translateY(calc(-100% - var(--bar))); } }
 @keyframes b-toast-out { to   { opacity: 0; transform: translateY(calc(var(--px) * -4)); } }
