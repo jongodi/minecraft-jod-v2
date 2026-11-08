@@ -1,8 +1,11 @@
-import { memo } from 'react';
+import { memo, useEffect, useRef, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
 import PlayerHead from './PlayerHead';
-import { Lantern } from './Bits';
-import { useRoster, type OnRidge } from './roster';
+import { Campfire, Lantern, Phantom } from './Bits';
+import { beyond, useRoster, type OnRidge } from './roster';
+import { signalSpot, type Plateau } from './signal';
+import { FAR, MID, NEAR } from './ridges';
+import { awakeWords } from '@/lib/sleepless';
 
 /* The badlands silhouettes behind the hero: three mesa layers and the ground.
    Each layer is a stepped outline built from plateaus so the edge reads as
@@ -17,13 +20,6 @@ import { useRoster, type OnRidge } from './roster';
 
 const W = 480;
 const H = 120;
-
-/** [width, height] plateaus, left to right. Heights are measured up from the base. */
-type Plateau = readonly [number, number];
-
-const FAR: Plateau[]  = [[30, 40], [12, 52], [40, 60], [10, 46], [26, 40], [30, 30], [24, 44], [14, 56], [42, 66], [12, 50], [28, 38], [40, 34], [12, 48], [36, 58], [20, 44], [30, 36], [24, 42], [30, 30], [20, 40]];
-const MID: Plateau[]  = [[24, 22], [10, 34], [36, 44], [12, 30], [30, 24], [40, 18], [12, 30], [44, 52], [14, 40], [34, 26], [30, 20], [10, 30], [38, 42], [12, 32], [26, 22], [36, 16], [22, 28], [30, 24], [20, 18]];
-const NEAR: Plateau[] = [[40, 10], [14, 20], [50, 30], [12, 22], [44, 12], [30, 8], [16, 18], [60, 34], [14, 24], [40, 14], [50, 8], [20, 16], [46, 26], [12, 18], [32, 10]];
 
 function outline(plateaus: Plateau[]): string {
   let x = 0;
@@ -126,6 +122,59 @@ function Haze() {
   );
 }
 
+/* Reykmerki: the day a fire is lit for (signal.ts), the game's signal fire,
+   a campfire on a hay bale, stands on a plateau of the far ridge between the
+   screen's edge and the J, and sends its column up into the open sky beside
+   the letter, so the day is said from across the badlands before a word is
+   read. It is the far ridge's, so it sinks with it, behind the name and the
+   nearer ridges. Where it can stand depends on where the name begins and on
+   how the screen crops the drawing, so it is placed once it is on the page
+   and again when the page changes size; until then there is no fire at all,
+   and nothing else moves when it comes. The column goes up no higher than a
+   step under the address and the lantern, and drifts east only once it is
+   clear of the letter (badlands.css). On a phone the stretch beside the J is
+   only the gutter, so there the fire is narrowed to the room it has and may
+   stand across a step of the ridge (signal.ts, `narrow`). */
+const SIGNAL_WIDE = 8;      // the fire's width in the drawing's units, on a wide screen
+const SIGNAL_PHONE = 6;     // and the most it is on a phone, where the J stands at the gutter
+const SIGNAL_CLEAR = 6;     // pixels kept between the fire and the J
+const RISE_MIN = 64;        // a column shorter than this is no signal, and no fire stands
+const RISE_MAX = 256;
+interface Signal { x: number; h: number; fw: number; rise: number }
+
+function SignalFire() {
+  const ref = useRef<HTMLSpanElement>(null);
+  const [at, setAt] = useState<Signal | null>(null);
+  useEffect(() => {
+    const mesa = ref.current?.closest<HTMLElement>('.b-mesa');
+    const hero = mesa?.closest('.b-hero');
+    const mark = hero?.querySelector('.b-hero__mark');
+    const above = hero?.querySelector('.b-hero__action');
+    if (!mesa || !mark || !above) return;
+    const place = () => {
+      const box = mesa.getBoundingClientRect();
+      const phone = window.matchMedia('(max-width: 899.98px)').matches;
+      /* the middle ridge is not drawn on a phone (badlands.css) */
+      const front = window.matchMedia('(max-width: 759.98px)').matches ? [NEAR] : [MID, NEAR];
+      const spot = signalSpot({ far: FAR, front, width: box.width, height: box.height, clear: mark.getBoundingClientRect().left - box.left - SIGNAL_CLEAR, fire: phone ? SIGNAL_PHONE : SIGNAL_WIDE, narrow: phone });
+      if (!spot) { setAt(null); return; }
+      const u = Math.max(box.width / W, box.height / H);
+      /* the fire's mouth, seven tenths of the way up its drawing, bale and all (Bits.tsx) */
+      const mouth = box.bottom - spot.h * u - spot.fw * u * (20 / 16) * 0.7;
+      const rise = Math.min(RISE_MAX, Math.round(mouth - above.getBoundingClientRect().bottom - 24));
+      setAt(rise < RISE_MIN ? null : { ...spot, rise });
+    };
+    place();
+    /* the page's size, and the lantern's plate as its lines come and go */
+    const watch = new ResizeObserver(place);
+    watch.observe(mesa);
+    watch.observe(above);
+    return () => watch.disconnect();
+  }, []);
+  const style = at ? { '--fx': at.x, '--fh': at.h, '--fw': at.fw, '--rise': `${at.rise}px` } as CSSProperties : undefined;
+  return <span ref={ref} className="b-mesa__signal" style={style}>{at && <Campfire signal />}</span>;
+}
+
 /** One ridge: its rock and strata in the sunset's colours, drawn once; what
     sits over the rock and fades on its own (the far ridge's haze); the night
     falling on it, the same outline in the dark, faded in with the evening;
@@ -190,15 +239,21 @@ const RIDERS_SHOWN = 3;
     services can't give falls back to the drawn stand-in (PlayerHead). */
 /* One who came in while the page was looked at climbs up into view, one who
    went out climbs down out of it (`phase`, from useRoster; badlands.css),
-   and `onWalked` says the climb is over. */
-export function Rider({ name, className, phase = 'here', onWalked }: { name: string; className: string; phase?: OnRidge['phase']; onWalked?: (name: string) => void }) {
+   and `onWalked` says the climb is over. `awake` is the nights this member
+   has gone without a bed, when the game would send phantoms after them
+   (src/lib/sleepless.ts): two circle over their head as the sky goes dark,
+   and pointed at or focused, the tag says why. At the campfire (Footer.tsx)
+   the fire lights them, so they carry no lantern (`lantern`). */
+export function Rider({ name, className, phase = 'here', onWalked, awake, lantern = true }: { name: string; className: string; phase?: OnRidge['phase']; onWalked?: (name: string) => void; awake?: number; lantern?: boolean }) {
   return (
     <Link href={`/crew/${name}`} className={`${className}${phase !== 'here' ? ` is-${phase}` : ''}`}
-      aria-label={phase === 'going' ? `${name} fór út. Veggurinn` : `${name} er inni. Veggurinn`}
+      aria-label={phase === 'going' ? `${name} fór út. Veggurinn` : `${name} er inni${awake ? ` og ${awakeWords(awake)}` : ''}. Veggurinn`}
       onAnimationEnd={e => { if (e.target === e.currentTarget && phase !== 'here') onWalked?.(name); }}>
       <span className="b-nametag" aria-hidden="true">{name}</span>
+      {awake ? <span className="b-nametag b-nametag--awake" aria-hidden="true">{name} · {awakeWords(awake)}</span> : null}
       <PlayerHead name={name} size={32} full alt="" />
-      <Lantern lit className="b-mesa__held" />
+      {lantern && <Lantern lit className="b-mesa__held" />}
+      {awake ? <span className="b-phantoms" aria-hidden="true"><Phantom /><Phantom /></span> : null}
     </Link>
   );
 }
@@ -208,14 +263,14 @@ export function Rider({ name, className, phase = 'here', onWalked }: { name: str
     by its coordinates in the ridge's own drawing). A wanted poster's
     Western, and the game's own figure. Inside the near layer, so they move
     with it. */
-function Riders({ names, known }: { names: string[]; known: boolean }) {
+function Riders({ names, known, awake }: { names: string[]; known: boolean; awake: Record<string, number> }) {
   const { roster, settle } = useRoster(names, known);
   if (roster.length === 0) return null;
   const shown = roster.slice(0, RIDERS_SHOWN);
-  const more = names.length - shown.filter(r => r.phase !== 'going').length;
+  const more = beyond(names.length, shown);
   return (
     <div className="b-mesa__riders">
-      {shown.map(r => <Rider key={r.name} name={r.name} phase={r.phase} onWalked={settle} className="b-mesa__rider" />)}
+      {shown.map(r => <Rider key={r.name} name={r.name} phase={r.phase} onWalked={settle} awake={awake[r.name.toLowerCase()]} className="b-mesa__rider" />)}
       {more > 0 && <span className="b-nametag b-mesa__more">+{more}</span>}
     </div>
   );
@@ -258,12 +313,17 @@ function Armadillo() {
   );
 }
 
+/* nobody without sleep: one object for every page drawn without the count, so the memo holds */
+export const NONE_AWAKE: Record<string, number> = {};
+
 /** The mesas; in winter with snow on them, at Hrekkjavaka with jack-o'-lanterns
-    (src/lib/season.ts); with the heads of whoever is in on the nearest ridge. */
-function Mesa({ snow = false, halloween = false, heads = [], known = false }: { snow?: boolean; halloween?: boolean; heads?: string[]; known?: boolean }) {
+    (src/lib/season.ts); with the heads of whoever is in on the nearest ridge,
+    and phantoms over any of them who has not slept (`awake`); on the day of
+    a fire, with the signal fire on the far ridge (`signal`). */
+function Mesa({ snow = false, halloween = false, heads = [], known = false, awake = NONE_AWAKE, signal = false }: { snow?: boolean; halloween?: boolean; heads?: string[]; known?: boolean; awake?: Record<string, number>; signal?: boolean }) {
   return (
     <div className="b-mesa">
-      <Layer d={FAR_D} mod="far" haze={<Haze />}>
+      <Layer d={FAR_D} mod="far" haze={<Haze />} after={signal ? <SignalFire /> : undefined}>
         <Bands id="b-mesa-far-bands" d={FAR_D} bands={FAR_BANDS} faint />
         {snow && <Snow plateaus={FAR} />}
       </Layer>
@@ -271,7 +331,7 @@ function Mesa({ snow = false, halloween = false, heads = [], known = false }: { 
         <Bands id="b-mesa-mid" d={MID_D} bands={MID_BANDS} />
         {snow && <Snow plateaus={MID} />}
       </Layer>
-      <Layer d={NEAR_D} mod="near" lit={halloween ? <PumpkinFaces /> : undefined} after={<Riders names={heads} known={known} />}>
+      <Layer d={NEAR_D} mod="near" lit={halloween ? <PumpkinFaces /> : undefined} after={<Riders names={heads} known={known} awake={awake} />}>
         <Bands id="b-mesa-near" d={NEAR_D} bands={NEAR_BANDS} />
         {snow && <Snow plateaus={NEAR} />}
         {halloween && <Pumpkins />}

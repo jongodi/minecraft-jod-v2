@@ -17,7 +17,7 @@
 /* one whole line held while the board works out what is new: 1.5em of a 1.7
    line grew as the words came and shifted the board under it (CLS 0.057) */
 .t-board__news { min-height: 1lh; font-size: var(--fs-md); color: var(--text-soft); }
-.t-board__news b { color: var(--lantern); font-weight: 600; }
+.t-board__news b { color: var(--paper); font-weight: 600; }   /* a count, not a press: in the paper the status's numbers are set in */
 .t-filters { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
 .t-filter {
   display: inline-flex; align-items: center; gap: var(--sp-2);
@@ -162,6 +162,11 @@
 .t-notice__go { color: var(--lantern-ink); font-weight: 600; text-decoration: none; }
 @media (hover: hover) { .t-notice__go:hover { color: var(--ink); text-decoration: underline var(--px); text-underline-offset: 0.3em; } }
 .t-notice__go:focus-visible { outline: var(--px) solid var(--lantern-ink); outline-offset: var(--px); }
+/* A slip's one press (sjá kvöldið, í heiminn, the member's name) is a
+   thumb's height where there is a thumb, as the frames' captions are: it was
+   the height of its words, 21 px. The block margins give the extra height
+   back, so the slip keeps its printed lines and the paper does not grow. */
+@media (pointer: coarse) { .t-notice__go, .t-notice__who { display: inline-flex; align-items: center; min-height: var(--tap); margin-block: calc((var(--tap) - 1.5em) / -2); } }
 /* the map's new picture, held up beside the words like a postcard; a press holds it up larger */
 .t-notice__pic { display: block; width: 12rem; padding: 0; background: var(--paper-2); box-shadow: 0 0 0 var(--px) var(--wood-dark), 0 var(--px) 0 calc(var(--px) * 2) rgb(from var(--night) r g b / 0.12); transition: box-shadow var(--dur-2) var(--ease-out); }
 .t-notice__pic img { display: block; width: 100%; aspect-ratio: 16 / 10; object-fit: cover; }
@@ -171,6 +176,16 @@
 @media (max-width: 599px) { .t-notice { grid-template-columns: 1.5rem minmax(0, 1fr); } .t-notice__pic { grid-column: 2; width: 100%; max-width: 20rem; } }
 
 .t-board__empty { padding-block: var(--sp-6); }
+/* A filter with nothing under it (Board.tsx): a blank slip with only its nail
+   and the line printed across it, and under Myndir an empty item frame, its
+   leather showing where a picture would hang, the line as its caption. The
+   frame is not a press, so it does not take the lantern's rim when pointed at. */
+.t-notice--empty { grid-template-columns: minmax(0, 1fr); padding-block: var(--sp-5) var(--sp-4); color: var(--ink-soft); }
+.t-frame--empty .t-frame__pic { pointer-events: none; }
+.t-frame--empty .t-frame__pic::before { content: ''; display: block; aspect-ratio: 16 / 10; }
+/* the line breaks into even halves on a phone, as the empty wall's does,
+   not a sentence with "enn." or "vikurnar." left alone under it */
+.t-frame--empty .t-frame__line, .t-notice--empty .t-notice__line { text-wrap: balance; }
 .t-board__end { padding-top: var(--sp-4); }
 /* The red string: pinned across the board, a nail at each end, above the
    first thing that was already there when the visitor last looked. What is
@@ -281,7 +296,12 @@
 .t-side__start:focus-visible { outline: var(--px) solid var(--lantern-ink); outline-offset: var(--px); }
 @media (min-width: 1100px) {
   /* and no taller than the screen under the bar, scrolling inside itself: with many calls open on a short laptop its foot could not be reached until the board ended */
-  .t-board__side { position: sticky; top: calc(var(--bar-safe) + 12px + var(--sp-6)); max-height: calc(100svh - var(--bar-safe) - 12px - var(--sp-6) * 2); overflow-y: auto; scrollbar-width: thin; }
+  .t-board__side { position: sticky; top: calc(var(--bar-safe) + var(--bar-strata) + var(--sp-6)); max-height: calc(100svh - var(--bar-safe) - var(--bar-strata) - var(--sp-6) * 2); overflow-y: auto; scrollbar-width: thin; }
+  /* A box that scrolls clips what rises above it, and the acute on the Á of
+     Á döfinni rises above the slab's tight line: it read A döfinni. The
+     column keeps a step of room over its heading for the accent, and stands
+     that step higher, so the heading is where it was. */
+  .t-board__side { padding-top: var(--sp-1); margin-top: calc(var(--sp-1) * -1); }
   .t-board--room .t-board__side { top: 0; }
 }
 /* Narrower, the pinned things hang across the board between the slot and

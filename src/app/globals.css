@@ -27,6 +27,11 @@ body {
   /* Pixelify Sans's fi and fl ligatures point at glyphs the latin subset
      leaves out, so "yfir" and "flest" came out as "yAr" and "Aest" */
   font-variant-ligatures: none;
+  /* Each face is loaded in the cuts it has, and a weight it lacks is never
+     smeared out of another: the data face has its one cut, 400, so a <b>, a
+     th or a bold asked of it stays that cut instead of a thickened bitmap
+     (the text face's 600 is real, and the slab has only the one) */
+  font-synthesis-weight: none;
   font-size: var(--fs-md);
   line-height: var(--lh-night);
   overflow-x: clip;
@@ -70,7 +75,8 @@ img, video { max-width: 100%; height: auto; }
 [hidden]:where(:not([hidden='until-found'])) { display: none; }
 
 ::selection { background: var(--tc-red); color: var(--paper); }   /* 5.4:1; the orange was 4.1 */
-:focus-visible { outline: var(--px) solid var(--lantern); outline-offset: 3px; }
+/* in the lantern's light, or the lantern's ink on paper and wood (--focus, tokens.css) */
+:focus-visible { outline: var(--px) solid var(--focus); outline-offset: 3px; }
 
 /* ─── the skip link ─────────────────────────────────────────────
    The first thing in the tab order on every page: a lit tag that drops in

@@ -25,7 +25,7 @@ import NightNumbers from './NightNumbers';
 /* ─── the fires in the crew's room ────────────────────────────────────── */
 
 export function NightBoard({ server }: { server: ServerState }) {
-  const { state, act } = usePlayNight();
+  const { state, failed, act, refresh } = usePlayNight();
   const mounted = useMounted();
   const [lighting, setLighting] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -57,6 +57,11 @@ export function NightBoard({ server }: { server: ServerState }) {
   if (!mounted || state === undefined) return null;
   const { nights, me, max } = state;
   const planned = nights.filter(n => n.phase !== 'over').length;
+  /* Not asked, rather than signed out: the fires in hand are the page's own,
+     which names nobody, so the room says it could not ask, in place of
+     sending a member who is signed in to sign in again. What can be pressed
+     still goes by `me`, so nothing is offered that the store could not take. */
+  const lost = failed && !me;
 
   const run = async (at: string, body: Record<string, unknown>) => {
     setBusy(true); setErr(null);
@@ -109,22 +114,25 @@ export function NightBoard({ server }: { server: ServerState }) {
         <div className="b-night__camp"><Fire count={0} embers /></div>
         <div className="b-night__body">
           <h3 className="b-night__title">Næsta spilakvöld</h3>
-          <p className="b-note">{me ? 'Ekkert bál logar. Kveiktu eitt og sjáðu hver kemur.' : 'Ekkert kvöld á dagskrá.'}</p>
+          {!lost && <p className="b-note">{me ? 'Ekkert bál logar. Kveiktu eitt og sjáðu hver kemur.' : 'Ekkert kvöld á dagskrá.'}</p>}
+          <Unanswered lost={lost} onRetry={refresh} />
         </div>
         {me ? <button type="button" className="b-btn b-btn--solid b-btn--small" onClick={() => setLighting(true)}>Kveikja bál</button>
-            : <Link href="/crew" className="b-btn b-btn--small b-btn--ghost">Skrá mig inn</Link>}
+            : !lost && <Link href="/crew" className="b-btn b-btn--small b-btn--ghost">Skrá mig inn</Link>}
       </section>
     );
   }
 
   return (
     <div className="b-nights">
+      <Unanswered lost={lost} onRetry={refresh} />
       {nights.map((n, i) => (
         <NightFire
           key={n.id}
           night={n}
           kicker={n.phase === 'over' ? 'Síðasta spilakvöld' : i === 0 ? 'Næsta spilakvöld' : 'Á dagskrá'}
           me={me}
+          lost={lost}
           server={server}
           busy={busy}
           err={err?.at === n.id ? err.text : ''}
@@ -147,9 +155,36 @@ export function NightBoard({ server }: { server: ServerState }) {
   );
 }
 
-/** One fire: the times it offers and who can make each, or the night chosen and who is coming. */
-function NightFire({ night, kicker, me, server, busy, err, picked, letter, onRun, onShare, onLetter, onDropLetter }: {
-  night: PublicNight; kicker: string; me: string | null; server: ServerState;
+/** The fires could not be asked for: said by them, with a way to ask again.
+    The words reach a screen reader through a live region that is on the
+    page before they come: one put up already holding its words is not read.
+    While the question is out the button says so and the region is emptied,
+    so a second failure is said again, aloud as well: a retry that failed
+    changed nothing on the page, and the button looked dead. Pressed again
+    meanwhile it does nothing; it is not disabled, which would drop the
+    keyboard to the foot of the page. */
+function Unanswered({ lost, onRetry }: { lost: boolean; onRetry: () => Promise<void> }) {
+  const [retrying, setRetrying] = useState(false);
+  const retry = () => {
+    if (retrying) return;
+    setRetrying(true);
+    onRetry().finally(() => setRetrying(false));
+  };
+  return (
+    <>
+      {lost && (
+        <p className="b-note">Náði ekki í bálin núna. <button type="button" className="b-link" aria-disabled={retrying || undefined} onClick={retry}>{retrying ? 'Reyni aftur…' : 'Reyna aftur'}</button></p>
+      )}
+      <span className="b-visually-hidden" role="status">{lost && !retrying ? 'Náði ekki í bálin núna.' : ''}</span>
+    </>
+  );
+}
+
+/** One fire: the times it offers and who can make each, or the night chosen
+    and who is coming. `lost`: the fires could not be asked for, so nobody
+    is told to sign in to answer (the room says why above). */
+function NightFire({ night, kicker, me, lost, server, busy, err, picked, letter, onRun, onShare, onLetter, onDropLetter }: {
+  night: PublicNight; kicker: string; me: string | null; lost: boolean; server: ServerState;
   busy: boolean; err: string; picked: boolean; letter: LetterAnswer | null;
   onRun: (body: Record<string, unknown>) => void; onShare: () => void;
   onLetter: (yes: string[]) => void; onDropLetter: () => void;
@@ -258,7 +293,7 @@ function NightFire({ night, kicker, me, server, busy, err, picked, letter, onRun
           )}
         </div>
       )}
-      {!me && !letter && night.phase !== 'over' && night.phase !== 'live' && <p className="b-note"><Link href="/crew" className="b-link">Skráðu þig inn</Link> til að svara.</p>}
+      {!me && !lost && !letter && night.phase !== 'over' && night.phase !== 'live' && <p className="b-note"><Link href="/crew" className="b-link">Skráðu þig inn</Link> til að svara.</p>}
       {err && <p className="b-err" role="alert">{err}</p>}
     </section>
   );

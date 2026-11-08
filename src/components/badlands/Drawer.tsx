@@ -4,6 +4,10 @@ import { useEffect, useRef, type PointerEvent as ReactPointerEvent, type ReactNo
 import { CloseIcon } from './Bits';
 import { useInert } from './hooks';
 
+/* What the last room to close put focus on, so the next room to open can
+   tell a door the visitor chose from one it was handed (Drawer, below). */
+let handed: HTMLElement | null = null;
+
 interface Props {
   id: string;
   open: boolean;
@@ -24,6 +28,8 @@ export default function Drawer({ id, open, title, note, onClose, children }: Pro
   const wasOpen = useRef(false);
   /* what had focus when the room opened: a door, the lantern, the night's line */
   const opener = useRef<HTMLElement | null>(null);
+  /* the opener, when it was a room's close that had put focus there (handed) */
+  const handedTo = useRef<HTMLElement | null>(null);
   const root = useInert<HTMLElement>(!open);
 
   /* Focus lands on the way out when the room opens, and the room starts at
@@ -33,17 +39,50 @@ export default function Drawer({ id, open, title, note, onClose, children }: Pro
     if (open && !wasOpen.current) {
       const from = document.activeElement;
       opener.current = from instanceof HTMLElement && from !== document.body && !root.current?.contains(from) ? from : null;
+      /* still where another room's close put it, or on that room's own ✕ as
+         it opened (a key pressed in it): not where the visitor put it */
+      handedTo.current = opener.current && (opener.current === handed || opener.current.matches('.b-room__close')) ? opener.current : null;
+      handed = null;
       close.current?.focus({ preventScroll: true });
       if (body.current) body.current.scrollTop = 0;
     } else if (!open && wasOpen.current) {
       const at = document.activeElement;
       const lost = !at || at === document.body || !!root.current?.contains(at);
+      const shows = (el: Element | null | undefined): el is HTMLElement => {
+        const r = el instanceof HTMLElement && el.getClientRects().length > 0 ? el.getBoundingClientRect() : null;
+        return !!r && r.bottom > 0 && r.top < window.innerHeight;
+      };
+      const doors = '.b-doors a, .b-hotbar a';
+      const own = Array.from(document.querySelectorAll<HTMLElement>(`.b-doors a[href="#${id}"], .b-hotbar a[href="#${id}"]`)).find(shows);
+      let from = opener.current;
+      /* Rooms changed by their keys one after another (2, 3, then 1): the
+         door the last room's close had just put focus on was taken for this
+         room's opener, and the ring stood on Taflan with Heimurinn lit. An
+         opener handed over that way gives way to the door the hash now names,
+         the one just pressed, and failing that to this room's own door: an
+         Escape or a ✕ leaves this room's hash or none. (The door lit by the
+         scroll was no guide: once a room has closed it is Heimurinn, and a
+         second Escape from Taflan landed there.) The hash is compared as
+         text, never built into a selector, where a pasted quote would throw. */
+      if (from && from === handedTo.current) {
+        const hash = window.location.hash;
+        from = Array.from(document.querySelectorAll<HTMLElement>(doors)).find(d => hash !== '' && d.getAttribute('href') === hash && shows(d)) ?? own ?? null;
+      }
       /* Opened from inside another room (its link to the board, or a key
          pressed in it), the opener is in a room that has gone inert since,
-         and cannot take focus: the room's own door in the bar does instead. */
-      const from = opener.current?.isConnected && !opener.current.closest('[inert]') ? opener.current : null;
-      const door = Array.from(document.querySelectorAll<HTMLElement>(`.b-doors a[href="#${id}"], .b-hotbar a[href="#${id}"]`)).find(d => d.getClientRects().length > 0);
-      if (lost) (from ?? door)?.focus({ preventScroll: true });
+         and cannot take focus; opened from far up the page (the hero's line
+         to the shelf), it is out of sight, and the next Tab would carry the
+         page back up to it. The room's own door in the bar does instead, and
+         where it has none (the shelf), the heading of the world it opened
+         over, which is where the visitor is. */
+      if (from && (!from.isConnected || from.closest('[inert]') || !shows(from))) from = null;
+      let to: HTMLElement | null | undefined = from ?? own;
+      if (!to) {
+        const over = root.current?.parentElement?.closest('[aria-labelledby]')?.getAttribute('aria-labelledby');
+        to = over ? document.getElementById(over) : null;
+        if (to && !to.hasAttribute('tabindex')) to.setAttribute('tabindex', '-1');
+      }
+      if (lost && to) { to.focus({ preventScroll: true }); handed = to; }
       opener.current = null;
     }
     wasOpen.current = open;

@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { ADV_SHOWN, type BoardItem, type ShelfPack } from '@/lib/board-types';
 import type { Painted } from '@/lib/map-news';
 import { andList, plural } from '@/lib/format';
+import { noShowsLine } from './held';
 import { Campfire, CalendarIcon, FoldedMapIcon, PictureIcon } from '@/components/badlands/Bits';
 import PlayerHead from '@/components/badlands/PlayerHead';
 import PixelGlyph from '@/components/badlands/PixelGlyph';
@@ -100,7 +101,7 @@ export default function Notice({ item, room, mounted, onOpen }: { item: Notice; 
         <span className="t-notice__line">Spilakvöld að baki{item.note && <>: <q>{item.note}</q></>}</span>
         <span className="t-notice__sub">
           {item.came.length ? <>{item.came.length} {plural(item.came.length, 'mætti', 'mættu')} <span className="t-notice__heads">{item.came.map(n => <PlayerHead key={n} name={n} size={16} alt={n} />)}</span></> : 'enginn sást'}
-          {item.noShows.length > 0 && <> · <span className="t-notice__red">sögðust mæta en komu ekki: {andList(item.noShows)}</span></>}
+          {item.noShows.length > 0 && <> · <span className="t-notice__red">{noShowsLine(item.noShows)}</span></>}
         </span>
       </>;
       break;

@@ -19,9 +19,11 @@ import { getPublicPacks } from '@/lib/datapacks-store';
 import { DATAPACKS } from '@/data/datapacks';
 import { getCachedStats } from '@/lib/stats';
 import { ADVANCEMENT_COUNT, readStoredAdvancements } from '@/lib/advancements';
-import { readNights, type Night } from '@/lib/play-night';
+import { heldNights, type HeldNight } from '@/lib/play-night';
 import { formatNumber } from '@/lib/format';
 import { freshPlaces } from '@/lib/bluemap-snapshot';
+import { sleeplessOf } from '@/lib/sleepless';
+import { signalOf } from '@/components/badlands/signal';
 
 export interface HomeData {
   status: ServerState;
@@ -36,18 +38,26 @@ export interface HomeData {
   facts: string[];
   /** the places whose ground changed in the newest copy of the map, while that is news */
   fresh: number[];
+  /** who has gone three of the game's days without a bed, by name in lower case, to the nights awake, as the stats last counted them (src/lib/sleepless.ts) */
+  sleepless: Record<string, number>;
+  /** whether the signal fire stands (src/components/badlands/signal.ts), by
+      the clock the page is drawn with: the browser draws its first frame over
+      the markup with this, whatever its own clock says, and only then asks
+      the day of it (useSignal in night.ts) */
+  signal: boolean;
 }
 
 /** Facts counted from the world: the crew's hours in it, the advancements
-    any of them has, the fires held, the mobs felled. Empty without a store. */
-async function worldFacts(): Promise<string[]> {
+    any of them has, the fires held, the mobs felled. Empty without a store.
+    Who has not slept is read off the same stats, into `awake`. */
+async function worldFacts(awake: Record<string, number> = {}): Promise<string[]> {
   const out: string[] = [];
   /* the nights and the copies live in the store; without one there are no numbers to count, and a build must not reach for it */
   if (!process.env.REDIS_URL) return out;
   const [stats, crew, nights] = await Promise.all([
     getCachedStats().catch(() => null),
     readStoredAdvancements().catch(() => null),
-    readNights().catch(() => [] as Night[]),
+    heldNights().catch(() => [] as HeldNight[]),
   ]);
   if (stats) {
     /* from the ticks: each member's hours are floored, and eight floors lose most of a day */
@@ -55,13 +65,14 @@ async function worldFacts(): Promise<string[]> {
     const mobs = stats.players.reduce((a, p) => a + (p.mobKills ?? 0), 0);
     if (hours > 0) out.push(`${formatNumber(hours)} klukkustundir í heiminum!`);
     if (mobs > 0) out.push(`${formatNumber(mobs)} verur felldar!`);
+    Object.assign(awake, sleeplessOf(stats.players));
   }
   if (crew) {
     const done = new Set(Object.values(crew.players).flatMap(d => Object.keys(d)));
     if (done.size > 0) out.push(`${done.size} af ${ADVANCEMENT_COUNT} afrekum!`);
   }
-  const held = nights.filter(n => !n.cancelled && n.outcome).length;
-  if (held > 0) out.push(`${held} spilakvöld við eldinn!`);
+  /* every night held, the annals' too: the fires let one go a week after its evening */
+  if (nights.length > 0) out.push(`${nights.length} spilakvöld við eldinn!`);
   return out;
 }
 
@@ -77,6 +88,7 @@ async function within<T>(work: Promise<T>, fallback: T): Promise<T> {
 
 export async function loadHomeData(): Promise<HomeData> {
   const now = Date.now();
+  const sleepless: Record<string, number> = {};
   const [status, nights, gallery, map, pinned, packs, facts] = await Promise.all([
     within(getStatus({ live: false }).then(s => toServerState(s, now)), { ...NO_STATUS, online: false, life: 'unknown', checkedAt: now }),
     within(viewNights(null, now), NO_NIGHTS),
@@ -84,7 +96,7 @@ export async function loadHomeData(): Promise<HomeData> {
     within(readMap(), DEFAULT_CONFIG),
     within(placePrints(), {}),
     within(getPublicPacks().then(l => l.length), DATAPACKS.length),
-    within(worldFacts(), []),
+    within(worldFacts(sleepless), []),
   ]);
   const shown = gallery.filter(p => p.active).sort((a, b) => a.order - b.order);
   return {
@@ -98,5 +110,7 @@ export async function loadHomeData(): Promise<HomeData> {
     packs,
     facts,
     fresh: freshPlaces(map.locations, now),
+    sleepless,
+    signal: signalOf(nights.nights, now),
   };
 }

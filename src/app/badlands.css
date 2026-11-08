@@ -215,6 +215,9 @@
    everywhere. */
 .b-link { color: var(--lantern); text-decoration: underline; text-decoration-thickness: var(--line); text-underline-offset: 0.2em; }
 @media (hover: hover) { .b-link:hover { color: var(--paper); text-decoration-color: var(--lantern); } }
+/* a link whose question is already out (Reyna aftur, while it asks) is not
+   to be pressed until it is answered, so it lays the amber down */
+.b-link[aria-disabled='true'], .b-paper .b-link[aria-disabled='true'] { color: inherit; text-decoration: none; cursor: progress; }
 .b-btn {
   display: inline-flex;
   align-items: center;
@@ -395,6 +398,17 @@
   box-shadow: 0 var(--px) 0 var(--tc-brown), var(--lift-3);
   animation: b-toast-in var(--dur-3) var(--ease-out) both;
 }
+/* Lifted into the top layer (Toast.tsx, Slip), so it shows over the map's
+   whole screen too: placed on the screen itself rather than in the column
+   above, and the browser's own box for a popover (centred in the screen) put
+   back to the slip's. Over the whole screen it hangs under that screen's
+   plank (--toast-under) rather than under a bar that is not there. */
+.b-toast[popover] {
+  position: fixed;
+  inset: calc(var(--toast-under, var(--bar-safe)) + var(--sp-3)) var(--gutter) auto auto;
+  width: min(22rem, 100% - 2 * var(--gutter));
+  margin: 0;
+}
 .b-toast.is-leaving { animation: b-toast-out var(--dur-2) var(--ease-in) forwards; }
 @keyframes b-toast-in  { from { opacity: 0; transform: translateY(calc(-100% - var(--bar))); } }
 @keyframes b-toast-out { to   { opacity: 0; transform: translateY(calc(var(--px) * -4)); } }
@@ -430,7 +444,7 @@
    the hero's ground and the lantern's glow once the sunset is scrolled past,
    the fire's frames and smoke until the campfire is in view. The sky's and
    the ridges' scroll-driven animations are not these: they are the scroll. */
-.b-hero.is-away :is(.b-critter, .b-critter__step, .b-lantern__flame), .b-hero.is-away .b-lantern::before,
+.b-hero.is-away :is(.b-critter, .b-critter__step, .b-lantern__flame, .b-phantom, .b-phantom__wing, .b-fire__frame, .b-fire__smoke i), .b-hero.is-away .b-lantern::before,
 .b-foot.is-away :is(.b-fire__frame, .b-fire__smoke i, .b-foot__fire::before) { animation-play-state: paused; }
 /* kindling: the server on its way up (or down). The glass takes the deeper
    amber, a small flame comes and goes behind it, and the glow is half what a
@@ -520,7 +534,7 @@
 }
 .b-bar.is-solid::before { opacity: 1; }
 .b-bar__strata { pointer-events: none; opacity: 0; transition: opacity var(--dur-3) var(--ease-out); }
-.b-bar .b-bar__strata { top: 100%; height: 12px; transform: none; filter: drop-shadow(var(--lift-2)); }
+.b-bar .b-bar__strata { top: 100%; height: var(--bar-strata); transform: none; filter: drop-shadow(var(--lift-2)); }
 .b-bar.is-solid .b-bar__strata { opacity: 1; }
 .b-bar.is-solid .b-bar__mark { color: var(--paper); text-shadow: 0 var(--px) 0 var(--wood-dark); }
 @media (hover: hover) { .b-bar.is-solid .b-bar__mark:hover { color: var(--lantern); } }
@@ -544,8 +558,7 @@
 .b-bar__tag { display: inline-flex; align-items: center; gap: var(--sp-2); min-width: 0; padding-inline: var(--sp-2); }
 .b-bar__tag svg { flex-shrink: 0; width: 1rem; height: 1rem; color: var(--lantern); }
 .b-bar__ip { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.b-bar__addr b { margin-left: var(--sp-1); }
-.b-bar__addr b { font-family: var(--font-text); font-weight: 600; font-size: var(--fs-sm); color: var(--lantern); }
+.b-bar__addr b { margin-left: var(--sp-1); font-family: var(--font-text); font-weight: 600; font-size: var(--fs-sm); color: var(--lantern); }
 @media (hover: hover) { .b-bar__addr:hover b { color: var(--paper); } }
 /* on the narrowest phones the mark is the strata J alone, a full tap wide, its icon kept on the gutter's line */
 @media (max-width: 399px) { .b-bar__mark span { display: none; } .b-bar__mark { margin-inline-start: calc((var(--tap) - 1.5rem) / -2); } }
@@ -779,7 +792,7 @@
 .b-hotbar > .b-xp { grid-column: 1 / -1; margin: 0 0 var(--sp-1); }
 /* a phone on its side has no height to give it */
 @media (max-height: 500.98px) { .b-hotbar > .b-xp { display: none; } }
-.b-bar > .b-xp { position: absolute; left: 50%; top: calc(100% + 12px + var(--sp-2)); width: 22.75rem; translate: -50% 0; opacity: 0; transition: opacity var(--dur-3) var(--ease-out); }
+.b-bar > .b-xp { position: absolute; left: 50%; top: calc(100% + var(--bar-strata) + var(--sp-2)); width: 22.75rem; translate: -50% 0; opacity: 0; transition: opacity var(--dur-3) var(--ease-out); }
 .b-bar.is-solid > .b-xp { opacity: 1; }
 @media (max-width: 759.98px) { .b-bar > .b-xp { display: none; } }
 
@@ -1061,6 +1074,28 @@
 }
 /* on a phone the plateau stands in front of the name's feet; there the crew climb the name (below) */
 @media (max-width: 899.98px) { .b-mesa__riders { display: none; } }
+/* The signal fire on the far ridge (Mesa.tsx), placed the same way by the
+   plateau it stands on, which the page works out once it knows where the J
+   begins (signal.ts): its middle at --fx, its foot on a plateau --fh high,
+   --fw units wide, bale and all. Its column is drawn at the land's scale,
+   rises --rise, which keeps it under the address and the lantern, and
+   leans east only over its last three quarters, once it has climbed clear
+   of the letter's foot. */
+.b-mesa__signal {
+  --u: max(100cqw / 480, 100cqh / 120);
+  --drift: calc(var(--u) * 5);
+  position: absolute;
+  left: calc(50% + (var(--fx) - 240) * var(--u));
+  bottom: calc(var(--fh) * var(--u));
+  width: calc(var(--fw) * var(--u));
+  translate: -50% 0;
+  pointer-events: none;
+}
+/* no ring of stones on the far ridge, so the drawing ends at the bale's foot */
+.b-mesa__signal .b-fire { width: 100%; height: auto; aspect-ratio: 16 / 20; margin: 0; }
+.b-mesa__signal .b-fire.is-signal .b-fire__smoke { bottom: 70%; }
+.b-mesa__signal .b-fire.is-signal .b-fire__smoke i:nth-child(n) { width: calc(var(--u) * 3.5); height: calc(var(--u) * 3.5); left: calc(var(--u) * -1.75); }
+.b-mesa__signal .b-fire.is-signal .b-fire__smoke i:nth-child(3n) { left: calc(var(--u) * -2.25); }
 .b-mesa__rider, .b-hero__climber { position: relative; display: block; width: calc(var(--u) * 12); line-height: 0; }
 /* a tap target larger than a narrow figure */
 .b-mesa__rider::before, .b-hero__climber::before { content: ''; position: absolute; inset: -0.5rem calc(var(--u) * -1); }
@@ -1112,6 +1147,87 @@
 .b-mesa__rider:nth-child(even) > .b-nametag { bottom: calc(100% + var(--sp-1) + 0.75rem); }
 .b-mesa__more, .b-hero__more { align-self: flex-start; }
 @media (hover: hover) { .b-mesa__rider:hover > .b-nametag, .b-hero__climber:hover > .b-nametag { color: var(--lantern); } }
+/* Pointed at or focused, the tag over one the phantoms are after says why
+   (Mesa.tsx), and the tags beside it make way for it. The long tag stands
+   laid out and unseen all along, and the tags trade places by visibility
+   alone, so no name moves and nothing is laid out again. The last figure's
+   grows to its left, its end over the figure's far side, so near the edge of
+   the screen it never runs off it. */
+:is(.b-mesa__rider, .b-hero__climber) > .b-nametag--awake { visibility: hidden; }
+:is(.b-mesa__rider, .b-hero__climber):last-of-type > .b-nametag--awake { translate: calc(-100% + var(--u) * 6) 0; }
+:is(.b-mesa__rider, .b-hero__climber):focus-visible { z-index: 1; }
+:is(.b-mesa__riders, .b-hero__climbers):has(> :focus-visible > .b-nametag--awake) .b-nametag { visibility: hidden; }
+:is(.b-mesa__riders, .b-hero__climbers) > :focus-visible > .b-nametag.b-nametag--awake { visibility: visible; }
+@media (hover: hover) {
+  :is(.b-mesa__rider, .b-hero__climber):hover { z-index: 1; }
+  :is(.b-mesa__riders, .b-hero__climbers):has(> :hover > .b-nametag--awake) .b-nametag { visibility: hidden; }
+  :is(.b-mesa__riders, .b-hero__climbers) > :hover > .b-nametag.b-nametag--awake { visibility: visible; }
+}
+
+/* The phantoms (Bits.tsx) the game sends after a player three days without
+   a bed: two over the head of whoever on the crew that is, half a turn apart
+   on one ring above the tag, a dark of the night sky with the game's two
+   pixels of eye. They come out as the sky goes dark, on the scroll timeline
+   the stars come out on, so the sunset never has them, but over an earlier
+   stretch of it: on the stars' own they were out only once the ridges had
+   nearly gone up under the bar. Their wings beat every six of the game's
+   ticks, and the ring is eight stops round in four seconds,
+   each stop reached in two steps of whole pixels of the art, as the game's
+   sprites move. Paused once the sunset is scrolled past (.is-away), still
+   on their ring with their wings up under reduced motion, and left out
+   where the browser has no scroll timeline to bring them out on. */
+.b-phantoms {
+  --flap: 300ms;
+  --round: 4s;
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 2.5rem);
+  width: 0;
+  height: 0;
+  color: color-mix(in oklab, var(--sky-night-top), var(--star) 34%);
+  opacity: 0;
+  pointer-events: none;
+}
+.b-mesa__rider:nth-child(even) > .b-phantoms { bottom: calc(100% + 3.25rem); }
+.b-phantom {
+  position: absolute;
+  left: calc(var(--px) * -6.5);
+  top: calc(var(--px) * -2.5);
+  width: calc(var(--px) * 13);
+  height: calc(var(--px) * 5);
+  animation: b-phantom-round var(--round) steps(2, end) infinite;
+}
+.b-phantom + .b-phantom { animation-delay: calc(var(--round) / -2); }
+.b-phantom svg { display: block; width: 100%; height: 100%; }
+.b-phantom__eye { fill: var(--online); }
+.b-phantom__wing { animation: b-phantom-wing calc(var(--flap) * 2) steps(1, end) infinite; }
+.b-phantom__wing--down { opacity: 0; animation-delay: calc(var(--flap) * -1); }
+/* the second beats half a beat behind the first, as two birds never quite keep time */
+.b-phantom + .b-phantom .b-phantom__wing { animation-delay: calc(var(--flap) / -2); }
+.b-phantom + .b-phantom .b-phantom__wing--down { animation-delay: calc(var(--flap) * -1.5); }
+@keyframes b-phantom-wing { 0% { opacity: 1; } 50%, 100% { opacity: 0; } }
+@keyframes b-phantom-round {
+  0%, 100% { transform: translate(calc(var(--px) * 12), 0); }
+  12.5%    { transform: translate(calc(var(--px) * 8), calc(var(--px) * 2)); }
+  25%      { transform: translate(0, calc(var(--px) * 4)); }
+  37.5%    { transform: translate(calc(var(--px) * -8), calc(var(--px) * 2)); }
+  50%      { transform: translate(calc(var(--px) * -12), 0); }
+  62.5%    { transform: translate(calc(var(--px) * -8), calc(var(--px) * -2)); }
+  75%      { transform: translate(0, calc(var(--px) * -4)); }
+  87.5%    { transform: translate(calc(var(--px) * 8), calc(var(--px) * -2)); }
+}
+@keyframes b-phantoms-out { 0%, 20% { opacity: 0; } 50%, 100% { opacity: 1; } }
+@supports (animation-timeline: scroll()) {
+  .b-phantoms { animation: b-phantoms-out linear both; animation-timeline: scroll(root); animation-range: 0 120svh; }
+  /* a phone's crew stand on the name, high in the hero, and are under the bar sooner */
+  @media (max-width: 899.98px) { .b-phantoms { animation-range: 0 80svh; } }
+}
+@media (prefers-reduced-motion: reduce) {
+  .b-phantoms { animation: none; opacity: 1; }
+  .b-phantom, .b-phantom__wing { animation: none; }
+  .b-phantom { transform: translate(calc(var(--px) * -8), calc(var(--px) * 2)); }
+  .b-phantom + .b-phantom { transform: translate(calc(var(--px) * 8), calc(var(--px) * -2)); }
+}
 
 /* The phone's climbers: the crew who are in, standing on the name itself,
    one on the O and one on the Ð, sized and placed in ems of the name so they
@@ -1138,6 +1254,11 @@
      feet; placed in the name's size, since its own em is the tag's. At the
      climber's shoulder it stood on the corner of the sun from 700 px up. */
   .b-hero__climbers > .b-hero__more { left: calc(var(--fs-hero) * 1.9); top: calc(var(--fs-hero) * -0.09); translate: 0 0; }
+  /* the phantoms over a climber come out only once the page has measured
+     their ring clear of the lantern's plate (Climbers, Hero.tsx): on a small
+     phone the name stands a step under the plate, and they circled in it */
+  .b-hero__climbers:not(.is-clear) .b-phantoms { visibility: hidden; }
+  .b-hero__climbers:not(.is-clear) :is(.b-phantom, .b-phantom__wing) { animation-play-state: paused; }
 }
 /* The splash (Hero.tsx): the game's yellow line tilted over the corner of
    its logo, popping as it comes, laid over the name's own row of the stage and placed in
@@ -1346,6 +1467,26 @@ html:has(.b-world.has-flight) { scroll-snap-type: y proximity; }
     transparent 85%);
   will-change: opacity;
 }
+/* The game's clouds, which the camera comes down through at y 192: a deck
+   of flat cells over the stills and under the air (Flight.tsx). Each band
+   is one picture, a pixel a cell, set on the plane by a matrix3d and drawn
+   cell by cell (pixelated), so a cell stays a hard square as it swells past
+   the frame. Its colour is the hero's clouds' paper, let through a little
+   more than theirs, so the night's land shows under a cell as it does
+   through the game's own; the night's grey of the hero's clouds read over
+   the land as burnt ground. Flight.tsx reads it off the picture and paints
+   the cells in it. Hidden (Flight.tsx) whenever the camera is not over it. */
+.b-flight__clouds { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+.b-flight__cloud {
+  position: absolute;
+  left: 0;
+  top: 0;
+  max-width: none;
+  transform-origin: 0 0;
+  image-rendering: pixelated;
+  color: rgb(from var(--paper) r g b / 0.36);
+  will-change: transform;
+}
 .b-flight__stars { position: absolute; inset: 0; width: 100%; height: 100%; color: var(--star); opacity: 0.55; }
 .b-flight__moon { position: absolute; right: 14%; top: 16%; width: 3rem; height: 3rem; color: var(--star); }
 @media (max-width: 759.98px) { .b-flight__moon { width: 2.25rem; height: 2.25rem; top: 22%; right: 12%; } }
@@ -1409,7 +1550,7 @@ html:has(.b-world.has-flight) { scroll-snap-type: y proximity; }
   background: var(--paper);
   color: var(--ink);
   font-family: var(--font-data);
-  font-weight: 700;
+  font-weight: 400;            /* the face's one cut: a 700 was drawn by smearing it */
   font-size: var(--fs-data);   /* the bitmap face at its own size: at 12 px its pixels fell between the screen's */
   letter-spacing: 0.04em;
   white-space: nowrap;
@@ -1424,9 +1565,10 @@ html:has(.b-world.has-flight) { scroll-snap-type: y proximity; }
 /* pointed at on the rail: its lantern lifts and says its name */
 .b-pin.is-near .b-pin__label { opacity: 1; transform: none; }
 /* A member who is on, where they stand: their head, a block over them, under
-   the name tag the game floats over every player. Not pressed: their heads
-   in the HUD follow them in the live map. */
-.b-pin--player { pointer-events: none; cursor: default; translate: -50% -100%; gap: 2px; }
+   the name tag the game floats over every player. Pressed, the live map
+   takes hold and follows them, as their head in the HUD does (Flight.tsx,
+   jod:follow); the HUD's heads stay the way to them from a keyboard. */
+.b-pin--player { pointer-events: auto; cursor: pointer; translate: -50% -100%; gap: 2px; }
 .b-pin--player .b-pin__head { display: block; width: 1rem; height: 1rem; image-rendering: pixelated; box-shadow: 0 0 0 1px var(--night); }
 @media (hover: hover) {
   .b-pin:hover .b-pin__lamp { transform: translateY(-2px) scale(1.15); }
@@ -1599,6 +1741,12 @@ html.is-map-full { overflow: hidden; }
 @media (hover: hover) { .b-sheet__zoom button:hover { background: var(--lantern); } }
 .b-sheet__zoom button:active { box-shadow: var(--bevel-in); }
 .b-pin-map { cursor: pointer; }
+/* on the sheet the flags keep the size they opened at while the paper zooms
+   in past that view (MapSheet.tsx: --z0 over --z), each about its own foot
+   (MapArt.tsx), so a zoom spreads a cluster apart instead of enlarging it.
+   Below it they go with the paper, as they always did: held at a phone's
+   opening size, Allt kortið piled the town's flags into one heap */
+.b-sheet .b-pin-map { scale: min(1, calc(var(--z0, 1) / var(--z, 1))); }
 .b-pin-map__hit { fill: transparent; }
 .b-pin-map__body { transition: transform var(--dur-1) var(--ease-out); transform-box: fill-box; transform-origin: center bottom; }
 .b-pin-map:focus-visible .b-pin-map__body { transform: translateY(-2px) scale(1.15); }
@@ -1615,6 +1763,8 @@ html.is-map-full { overflow: hidden; }
 .b-hud__top { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-3) var(--sp-4); flex-wrap: wrap; }
 .b-hud__title { display: grid; gap: var(--sp-1); }
 .b-hud__title .b-title { font-size: var(--fs-xl); text-shadow: 0 var(--px) 0 var(--night); }
+/* where the keyboard lands when a room with no door of its own closes (Drawer.tsx): a place to carry on from, not a control, so no lantern ring */
+.b-hud__title .b-title:focus { outline: none; }
 .b-hud__meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-3); font-size: var(--fs-sm); color: var(--tc-white); text-shadow: 0 var(--px) 0 var(--night); }
 .b-hud__in { display: inline-flex; align-items: center; gap: var(--sp-2); }
 .b-hud__in img { width: 1rem; height: 1rem; image-rendering: pixelated; box-shadow: 0 0 0 1px var(--night); }
@@ -1783,6 +1933,12 @@ html.is-map-full { overflow: hidden; }
    is on its way the game's own bar under them, filling tile by tile as a world
    loads, 18 cells on the sign's width. Empty, it is nothing at all. */
 .b-boot__wait { display: grid; justify-items: center; gap: var(--sp-2); font-family: var(--font-data); font-size: var(--fs-data); color: var(--paper); text-align: center; text-shadow: 0 var(--px) 0 var(--night); }
+.b-boot__say { padding: var(--px) var(--sp-1); background: rgb(from var(--pitch) r g b / 0.6); clip-path: var(--notch); text-wrap: balance; }
+/* On a phone the places' rail stands high in a short frame, and the words
+   centred in the half of the world under the lantern ran in under its count:
+   under the lantern they hang straight below its tag instead. Alone (the map
+   up, loading) they keep the middle of the world. */
+@media (max-width: 899.98px) { .b-boot + .b-boot__wait { align-self: start; } }
 .b-boot__bar { width: min(18rem, 100%); --xp: 8px; }
 /* its fill is the map's progress, not the page's: no scroll timeline, a short step between counts */
 .b-boot__bar .b-xp__fill { animation: none; transition: transform var(--dur-2) linear; }
@@ -1820,10 +1976,19 @@ html.is-map-full { overflow: hidden; }
 .b-card__emptysun { position: absolute; top: 14%; right: 16%; width: 1.5rem; height: 1.5rem; opacity: 0.3; }
 .b-card__emptysun svg { width: 100%; height: 100%; display: block; shape-rendering: crispEdges; }
 .b-card__emptytext { position: relative; font-size: var(--fs-sm); color: var(--ink-soft); }
-.b-card__cap { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-2); margin-top: var(--sp-3); padding-inline: var(--sp-1); }
+/* the words in a column that gives way to Deila and the ✕ beside them, and
+   the coordinates in a row of their own under both (World.tsx): an F3 line
+   does not break, and inside the words' column it set the column's width,
+   so a long name or sublabel ran on under the buttons */
+.b-card__cap { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: var(--px) var(--sp-2); margin-top: var(--sp-3); padding-inline: var(--sp-1); }
 .b-card__cap > span { display: grid; gap: var(--px); min-width: 0; }
+.b-card__cap > .b-card__xyz { grid-column: 1 / -1; justify-self: start; }
 .b-card__name { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-lg); line-height: 1.15; color: var(--ink); overflow-wrap: break-word; hyphens: auto; }
 .b-card__sub { font-size: var(--fs-sm); color: var(--ink-soft); line-height: 1.35; }
+/* who of the crew stands at the place now (hereNow.ts): their heads, ringed
+   in ink as the HUD's are on the painted map, and the line that says it */
+.b-card__here { display: flex; flex-wrap: wrap; align-items: center; gap: var(--px) var(--sp-1); font-size: var(--fs-sm); line-height: 1.35; color: var(--ink); }
+.b-card__here img { width: 1rem; height: 1rem; image-rendering: pixelated; box-shadow: 0 0 0 1px var(--ink); }
 .b-card__x { flex-shrink: 0; display: grid; place-items: center; width: var(--tap); height: var(--tap); margin: calc(var(--sp-2) * -1) calc(var(--sp-2) * -1) 0 0; color: var(--ink-faint); }
 .b-card__x svg { width: 1rem; height: 1rem; }
 @media (hover: hover) { .b-card__x:hover { color: var(--ink); } }
@@ -1845,6 +2010,11 @@ html.is-map-full { overflow: hidden; }
    each line on its own strip, left over the places while the live map is up.
    The figures are live, so they are the bitmap face. */
 .b-f3 { display: grid; justify-items: start; gap: var(--px); margin-bottom: var(--sp-2); pointer-events: none; }
+/* the flight's lines are hidden while the camera is down (Flight.tsx): the
+   grid above outranks the global [hidden] rule, and kept their two empty
+   strips over the places' count as a stray mark, and a frozen pair of
+   lines over the live map's own when it was taken hold of mid-flight */
+.b-f3[hidden] { display: none; }
 .b-f3 > span { padding: var(--px) var(--sp-1); background: rgb(from var(--pitch) r g b / 0.6); color: var(--chat-grey); font-family: var(--font-data); font-size: var(--fs-data); line-height: 1.2; white-space: nowrap; text-shadow: var(--px) var(--px) 0 rgb(from var(--pitch) r g b / 0.8); }
 /* Spjallið (Chat.tsx): the game's chat, over the places' rail as it sits over
    the hotbar. Each line on its own veil of dark, the F3 lines' own, in the
@@ -1882,6 +2052,11 @@ html.is-map-full { overflow: hidden; }
 /* open, the chat is read as the game's is, with the world's lantern stepped aside: its sign stood where the longer log climbs */
 .b-frame .b-hud__mid { transition: opacity var(--dur-2) var(--ease-out), transform var(--dur-3) var(--ease-out), visibility 0s linear 0s; }
 .b-frame.is-chat .b-hud__mid { opacity: 0; visibility: hidden; transition: opacity var(--dur-2) var(--ease-out), visibility 0s linear var(--dur-2); }
+/* On a phone a postcard opens across the middle of the world, and the post,
+   its arm and the top of the lantern stood up out of the card, sliced flat:
+   the sign steps aside while a card is up, as it does for the chat, and the
+   card's own button is the way into the map meanwhile. */
+@media (max-width: 899.98px) { .b-frame.is-card .b-hud__mid { opacity: 0; visibility: hidden; transition: opacity var(--dur-2) var(--ease-out), visibility 0s linear var(--dur-2); } }
 /* Coming down (Flight.tsx), the post is pulled up out of the camera's way,
    and set down in the town when it lands: the way into the live map stands
    where the flight ends, and the pins under it can be reached while flying. */
@@ -1947,6 +2122,7 @@ html.is-map-full { overflow: hidden; }
 @media (hover: hover) { .b-railwrap__arrow:hover { background: var(--lantern); color: var(--night); box-shadow: none; } }
 .b-railwrap__arrow[disabled] { opacity: 0; pointer-events: none; }
 .b-chip {
+  position: relative;   /* the count's tag is pinned to its corner */
   flex: 0 0 auto;
   scroll-snap-align: start;
   display: grid;
@@ -1958,7 +2134,6 @@ html.is-map-full { overflow: hidden; }
   padding: var(--sp-1) var(--sp-3) var(--sp-1) var(--sp-1);
   text-align: left;
   color: var(--paper);
-  background: rgb(from var(--dusk) r g b / 0.92);
   /* The place's own wood, as it looks at night: its board (--sign, tokens.css)
      mixed down into the dark, so the castle's tag is spruce and the pink
      estate's cherry, as their posts are on the walls, and the rail stays
@@ -1985,8 +2160,15 @@ html.is-map-full { overflow: hidden; }
 .b-chip.is-on .b-chip__sub { color: rgb(from var(--night) r g b / 0.7); }
 /* how many things the crew pinned at this place */
 .b-chip__count { position: absolute; top: calc(var(--px) * -1); right: calc(var(--px) * -1); padding: 0 calc(var(--px) * 2); background: var(--lantern); color: var(--night); font-family: var(--font-data); font-size: var(--fs-chip); line-height: 1.6; }
-.b-chip { position: relative; }
 .b-chip.is-on .b-chip__count { background: var(--night); color: var(--lantern); }
+/* who of the crew stands at the place now (World.tsx, hereNow.ts): their
+   heads along the foot of its picture, each on a pixel of night as the HUD's
+   are, the count's corner left to the count; past three, two heads and the
+   rest counted in the bitmap face */
+.b-chip__thumb { position: relative; }
+.b-chip__here { position: absolute; left: var(--px); bottom: var(--px); display: flex; gap: var(--px); }
+.b-chip__here img { width: 1rem; height: 1rem; image-rendering: pixelated; box-shadow: 0 0 0 var(--px) var(--night); }
+.b-chip__heremore { display: grid; place-items: center; min-width: 1rem; height: 1rem; padding: 0 var(--px); background: var(--night); color: var(--paper); font-size: var(--fs-chip); line-height: 1; }
 /* the other bases at the end of the rail: a lit lantern where the photo would be, since the chip leads to a 3D map of its own */
 .b-chip--base { text-decoration: none; }
 .b-chip__thumb--lantern { display: grid; place-items: center; background: var(--dusk-2); }
@@ -2051,7 +2233,7 @@ html.is-map-full { overflow: hidden; }
 .b-card__print { position: relative; width: 3.5rem; height: 2.4rem; overflow: hidden; box-shadow: 0 0 0 var(--px) var(--tc-brown); }
 .b-card__print img { width: 100%; height: 100%; object-fit: cover; }
 .b-card__print .b-card__printhead { position: absolute; right: 0; bottom: 0; width: 0.9rem; height: 0.9rem; image-rendering: pixelated; box-shadow: 0 0 0 1px var(--paper); }
-.b-card__print:focus-visible { box-shadow: 0 0 0 var(--px) var(--lantern-deep); }
+.b-card__print:focus-visible { box-shadow: 0 0 0 var(--px) var(--lantern-ink); }   /* on the postcard's paper: the deep lantern was 2.3:1 there */
 @media (hover: hover) { .b-card__print:hover { box-shadow: 0 0 0 var(--px) var(--lantern-deep); } }
 .b-card__more { font-size: var(--fs-sm); color: var(--ink-faint); margin-left: var(--sp-1); }
 .b-card__builders { font-size: var(--fs-sm); color: var(--ink-faint); }
@@ -2169,7 +2351,7 @@ html.is-map-full { overflow: hidden; }
   .b-frame.is-full.is-drawn .b-hud__title .b-title, .b-frame.is-drawn:fullscreen .b-hud__title .b-title { color: var(--paper); }
   .b-frame.is-full.is-drawn .b-hud__meta, .b-frame.is-drawn:fullscreen .b-hud__meta { color: var(--tc-white); }
   .b-frame.is-full.is-drawn .b-hud__in img, .b-frame.is-drawn:fullscreen .b-hud__in img { box-shadow: 0 0 0 1px var(--night); }
-  .b-frame.is-full .b-places, .b-frame:fullscreen .b-places { animation: b-rail-in var(--dur-3) var(--ease-out) 120ms backwards; }
+  .b-frame.is-full .b-places, .b-frame:fullscreen .b-places { animation: b-rail-in var(--dur-3) var(--ease-out) var(--dur-1) backwards; }
 }
 @keyframes b-plank-in { from { transform: translateY(calc(-100% - 0.5rem)); } }
 @keyframes b-rail-in  { from { opacity: 0; transform: translateY(var(--sp-5)); } }
@@ -2248,7 +2430,10 @@ html.is-map-full { overflow: hidden; }
 .b-hang { filter: drop-shadow(0 calc(var(--px) * 2) 0 rgb(from var(--night) r g b / 0.55)); }
 
 /* ─── the album: the whole wall, opened over the world ────────── */
-.b-album { position: fixed; inset: 0; z-index: var(--z-drawer); overflow-y: auto; background: var(--scrim-deep); padding-block: calc(var(--sp-6) + var(--safe-top)) var(--sp-8); }
+/* on the night itself, solid: through the deep scrim the HUD's date, heads
+   and tools stood faintly at the header's own baselines, and its sentence
+   ran on into them. The viewer sleeps under the album, so nothing is lost. */
+.b-album { position: fixed; inset: 0; z-index: var(--z-drawer); overflow-y: auto; background: var(--night); padding-block: calc(var(--sp-6) + var(--safe-top)) var(--sp-8); }
 .b-album__inner { display: grid; gap: var(--sp-4); }
 /* Tiles are square and butt together, so the wall never leaves holes.
    Every fifth picture is hung double size. There is no dense packing:
@@ -2372,6 +2557,11 @@ html.is-map-full { overflow: hidden; }
   touch-action: manipulation;
 }
 @media (min-width: 640px) { .b-arena { aspect-ratio: 16 / 9; } }
+/* Its resting frame is an outline in the strata's red, which outweighed the
+   site's ring, so the arena showed nothing when the keyboard came to it: the
+   frame takes the lantern's light while it is the control in hand, the one
+   Space draws with, and keeps the red at rest. */
+.b-arena:focus-visible { outline-color: var(--lantern); }
 .b-arena.is-draw { cursor: crosshair; }
 .b-arena svg { position: absolute; inset: 0; width: 100%; height: 100%; shape-rendering: crispEdges; }
 .b-arena__flash { position: absolute; inset: 0; background: var(--lantern); opacity: 0; pointer-events: none; }
@@ -2392,10 +2582,16 @@ html.is-map-full { overflow: hidden; }
 .b-arena__corner--r { left: auto; right: var(--sp-3); }
 /* A phone's arena is 4:3 and a thumb wide: the call starts below the corner
    labels and its small line drops a size, so the round count, the call and
-   the instructions no longer sit on top of one another. */
+   the instructions no longer sit on top of one another; and the round loses
+   its word, so "I af III" and "Best: 2396 ms" stand apart on a 360 px phone.
+   The call then fills the sky from side to side, and the moon's place over
+   the far mesa is cut off at the slice's edge, so the moon goes up into the
+   gap between the two labels (in the SVG's own units, QuickDraw.tsx). */
 @media (max-width: 639.98px) {
+  .b-arena__word { display: none; }
   .b-arena__call { padding: 2.25rem var(--sp-3) 18%; }
   .b-arena__small { font-size: var(--fs-sm); line-height: 1.5; }
+  .b-arena__moon { transform: translate(-390px, -228px); }
   .b-duelpanel { padding: var(--sp-4); }
 }
 .b-fig { transition: transform 0.18s var(--ease-out); transform-box: fill-box; transform-origin: bottom center; }
@@ -2407,7 +2603,7 @@ html.is-map-full { overflow: hidden; }
 .b-duel__side { display: flex; flex-direction: column; gap: var(--sp-5); }
 .b-stubs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-2); }
 .b-stub { position: relative; padding: var(--sp-3) var(--sp-2); text-align: center; color: var(--ink); background: var(--paper); border: var(--px) solid transparent; }
-.b-stub.is-live { border-color: var(--lantern); }
+.b-stub.is-live { box-shadow: inset 0 0 0 var(--px) var(--ink); }   /* the round in hand, a rule printed round the slip in its own ink: the stub is a readout, not a press, so not the lantern's */
 .b-stub.is-foul { color: var(--tc-red); }
 .b-stub__k { font-size: var(--fs-sm); color: var(--ink-faint); }
 .b-stub__v { margin-top: var(--sp-1); font-family: var(--font-data); font-size: var(--fs-data); }
@@ -2449,6 +2645,8 @@ html.is-map-full { overflow: hidden; }
 .b-night__count,
 .b-cal,
 .b-chip__count,
+.b-chip__new,
+.b-chip__heremore,
 .b-hud__count,
 .b-frame-pic__no {
   font-family: var(--font-data);
@@ -2490,7 +2688,7 @@ html.is-map-full { overflow: hidden; }
 .b-night { display: grid; gap: var(--sp-4); margin-block: var(--sp-7); }
 /* no night yet: the dead fire, the line, and the way to light one right after it, read as one sentence rather than a button across the room */
 .b-night--none { grid-template-columns: auto minmax(0, max-content) auto; justify-content: start; align-items: end; column-gap: var(--sp-5); }
-.b-night.is-picked { padding: var(--sp-4); margin-inline: calc(var(--sp-4) * -1); background: var(--veil); box-shadow: 0 0 0 var(--px) var(--lantern-glow); }
+.b-night.is-picked { padding: var(--sp-4); margin-inline: calc(var(--sp-4) * -1); background: var(--veil); box-shadow: 0 0 0 var(--px) var(--hairline); }   /* a hairline, not the lantern: the night is not a press, and it stays picked */
 /* a night under way says so in the green the server's lantern uses for on; amber is only for what can be pressed */
 .b-night--live .b-night__kicker { color: var(--online); }
 /* the ground the fire stands on, and the heads beside it standing on the same line */
@@ -2737,7 +2935,7 @@ html.is-map-full { overflow: hidden; }
 }
 
 /* the fire, and its light pooled wide across the band */
-.b-foot__camp { grid-area: camp; position: relative; display: flex; justify-content: center; align-items: flex-end; }
+.b-foot__camp { --sign: 7rem; grid-area: camp; position: relative; display: flex; justify-content: center; align-items: flex-end; }
 .b-foot__camp::before {
   content: '';
   position: absolute;
@@ -2751,10 +2949,54 @@ html.is-map-full { overflow: hidden; }
   pointer-events: none;
 }
 /* The duel's door is the fire and the sign planted beside it. The sign's
-   width is kept as an empty margin on the fire's other side, so the fire
-   stays the middle of the band and its light falls where it burns. */
-.b-foot__fire { --sign: 7rem; display: flex; align-items: flex-end; margin-left: var(--sign); padding: 0; border: 0; background: none; cursor: pointer; }
-@media (max-width: 1023.98px) { .b-foot__fire { --sign: 6.25rem; } }
+   width (--sign, on the camp, so the crew who stand in it can read it too)
+   is kept as an empty margin on the fire's other side, so the fire stays
+   the middle of the band and its light falls where it burns. */
+.b-foot__fire { display: flex; align-items: flex-end; margin-left: var(--sign); padding: 0; border: 0; background: none; cursor: pointer; }
+@media (max-width: 1023.98px) { .b-foot__camp { --sign: 6.25rem; } }
+/* Við eldinn (Footer.tsx): the crew who are in, standing on the ground in
+   that margin, on the fire's side away from its sign, and out of the flow
+   of the band, so the fire stays its middle. The same whole skins and name
+   tags as on the ridge, at a scale set beside the fire, without a lantern,
+   since the fire lights them; the first nearest the fire, the rest further
+   into the dark, and their tags at two heights as the ridge's are. Up to
+   three from 720 px, one and a count under it. One who comes in while the
+   fire is in view walks in out of the dark in the climb's four steps, and
+   one who goes walks back into it; under reduced motion they are simply
+   there or not. */
+.b-foot__crew {
+  --u: calc(2.25rem / 12);
+  position: absolute;
+  right: calc(100% - var(--sign) + var(--sp-2));
+  bottom: 0;
+  display: flex;
+  align-items: flex-end;
+  gap: calc(var(--u) * 3);
+}
+@media (max-width: 719.98px) { .b-foot__crew { --u: calc(1.75rem / 12); } }
+.b-foot__mate { position: relative; display: block; width: calc(var(--u) * 12); line-height: 0; }
+.b-foot__mate::before { content: ''; position: absolute; inset: -0.5rem calc(var(--u) * -1); }
+.b-foot__mate img { display: block; width: 100%; height: auto; aspect-ratio: 1 / 2; image-rendering: pixelated; }
+.b-foot__mate > .b-nametag { position: absolute; left: 50%; bottom: calc(100% + var(--sp-1)); translate: -50% 0; pointer-events: none; }
+/* the figures are written farthest first (Footer.tsx), so they are counted from the fire's end: the mates are links, the counts spans */
+.b-foot__mate:nth-last-of-type(even) > .b-nametag { bottom: calc(100% + var(--sp-1) + 0.75rem); }
+.b-foot__more { align-self: flex-start; }
+.b-foot__mate:focus-visible { outline: none; }
+.b-foot__mate:focus-visible img { filter: drop-shadow(var(--px) 0 0 var(--lantern)) drop-shadow(calc(var(--px) * -1) 0 0 var(--lantern)) drop-shadow(0 var(--px) 0 var(--lantern)) drop-shadow(0 calc(var(--px) * -1) 0 var(--lantern)); }
+@media (hover: hover) {
+  .b-foot__mate:hover img { filter: drop-shadow(var(--px) 0 0 var(--paper)) drop-shadow(calc(var(--px) * -1) 0 0 var(--paper)) drop-shadow(0 var(--px) 0 var(--paper)) drop-shadow(0 calc(var(--px) * -1) 0 var(--paper)); }
+  .b-foot__mate:hover > .b-nametag { color: var(--lantern); }
+}
+.b-foot__mate:active img { translate: var(--press); }
+.b-foot__mate.is-coming { animation: b-walk-in calc(var(--dur-step) * 4) var(--ease-step) backwards; }
+.b-foot__mate.is-going  { animation: b-walk-in calc(var(--dur-step) * 4) var(--ease-step) reverse forwards; pointer-events: none; }
+@keyframes b-walk-in { from { transform: translateX(-100%); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .b-foot__mate.is-coming, .b-foot__mate.is-going { animation: none; } }
+.b-foot__more--narrow { display: none; }
+@media (max-width: 719.98px) {
+  .b-foot__mate:not(:last-of-type), .b-foot__more--wide { display: none; }
+  .b-foot__more--narrow { display: block; }
+}
 /* a short plank on a post, the word burnt in lantern light, as the world's
    lantern has its sign nailed under it; the post stands in the ground the
    fire stands on */
@@ -2813,9 +3055,33 @@ html.is-map-full { overflow: hidden; }
   60%  { opacity: 0.3; }
   100% { transform: translate(2.25rem, -9rem) scale(1.8); opacity: 0; }
 }
+/* The signal fire's column (Bits.tsx, on its hay bale): eight puffs where
+   the plain fire sends six, a puff every second and a quarter (each puff's
+   place in the column is its --i), going up --rise, more than twice the
+   plain fire's height as the game's signal smoke goes, and leaning --drift
+   east only once a quarter of the way up. The hero's and the footer's set
+   the two lengths each for itself. */
+.b-fire.is-signal .b-fire__smoke { bottom: 73%; }
+.b-fire.is-signal .b-fire__smoke i { --puff: 1.25s; animation-name: b-smoke-signal; animation-duration: calc(var(--puff) * 8); animation-delay: calc(var(--i) * var(--puff) * -1); }
+.b-fire.is-signal .b-fire__smoke i:nth-child(7) { left: -0.375rem; }
+.b-fire.is-signal .b-fire__smoke i:nth-child(8) { left: -0.875rem; }
+@keyframes b-smoke-signal {
+  0%   { transform: translate(0, 0) scale(0.6); opacity: 0; }
+  8%   { opacity: 0.55; }
+  25%  { transform: translate(0, calc(var(--rise) * -0.25)) scale(1); }
+  70%  { opacity: 0.3; }
+  100% { transform: translate(var(--drift), calc(var(--rise) * -1)) scale(1.8); opacity: 0; }
+}
 /* on a wide screen the band keeps a stretch of night over the fire for the
    smoke, so it thins out under the stars rather than over the world's places */
 @media (min-width: 1024px) { .b-foot { padding-top: 6rem; } }
+/* On the day of a fire the footer's own fire stands on its bale (Bits.tsx)
+   and its column goes up more than twice as far, so the band keeps that much
+   more night over it: above the fire on a wide screen, and between the fire
+   and the row of buttons over it below 1024 px, so the column thins out
+   under the stars and never over the world's places or through a button. */
+.b-foot .b-fire.is-signal { --rise: 19rem; --drift: 1.5rem; height: auto; aspect-ratio: 16 / 22; }
+@media (min-width: 1024px) { .b-foot:has(.b-fire.is-signal) { padding-top: 15rem; } }
 /* Below 1024 px the way up and the wind share the row over the fire: the
    smoke gets a stretch of sky between them and the fire, and rises only
    that far, so it never passes through the buttons. */
@@ -2828,8 +3094,22 @@ html.is-map-full { overflow: hidden; }
 @media (max-width: 1023.98px) {
   .b-foot__inner { row-gap: var(--sp-8); }
   .b-fire__smoke i { width: 1rem; height: 1rem; animation-name: b-smoke-short; animation-duration: 5.4s; }
+  .b-foot:has(.b-fire.is-signal) .b-foot__inner { row-gap: 11rem; }
+  .b-foot .b-fire.is-signal { --rise: 11rem; --drift: 1rem; }
 }
 @media (prefers-reduced-motion: reduce) { .b-fire__smoke { display: none; } }
+/* The signal stands still under reduced motion: each puff is set where its
+   place in the column would carry it, growing and thinning on the way up,
+   so the column is there and nothing moves. */
+@media (prefers-reduced-motion: reduce) {
+  .b-fire.is-signal .b-fire__smoke { display: block; }
+  .b-fire.is-signal .b-fire__smoke i {
+    --k: calc((var(--i) + 1) / 9);
+    animation: none;
+    transform: translate(calc(var(--drift) * max(0, (var(--k) - 0.25) / 0.75)), calc(var(--rise) * var(--k) * -1)) scale(calc(0.6 + var(--k) * 1.2));
+    opacity: calc(0.5 - var(--k) * 0.35);
+  }
+}
 @keyframes b-frames { 0%, 33.33% { opacity: 1; } 33.34%, 100% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .b-fire__frame { animation: none; } .b-fire__frame:first-child { opacity: 1; } }
 
@@ -2915,6 +3195,12 @@ html.is-map-full { overflow: hidden; }
    rather than in board.css: OffTrail is the root's not-found boundary,
    and a sheet it imports is preloaded on every page, used or not. */
 .b-page { padding-block: calc(clamp(5rem, 9vw, 7rem) + var(--safe-top)) clamp(3rem, 8vw, 6rem); }
+/* Where the experience bar hangs under the plank (760 px and up), the page
+   starts a step of night below its foot: from 760 to about 1130 px the
+   padding alone put a wall's poster under the bar's last row of pixels. The
+   bar stays where it hangs, over the page as the game's sits over the world;
+   only what the page opens with is kept from starting under it. */
+@media (min-width: 760px) { .b-page { padding-top: calc(max(clamp(5rem, 9vw, 7rem), var(--bar) + var(--bar-strata) + var(--sp-2) + var(--xp) + var(--sp-4)) + var(--safe-top)); } }
 /* the night behind the top of the crew's pages (NightSky.tsx): the sky from
    its darkest at the top to the page's own night at the ridge, the stars, and
    the far ridge standing on the line where the page's night begins; the
@@ -2928,6 +3214,14 @@ html.is-map-full { overflow: hidden; }
 @keyframes b-moon-out { from { opacity: 0; } }
 @media (max-width: 759.98px) { .b-nightsky__moon { width: 2.25rem; height: 2.25rem; top: 5rem; } }
 @media (prefers-reduced-motion: reduce) { .b-nightsky__moon { animation: none; } }
+/* On a wall from 760 px the page starts a step below the bar, and until the
+   wall takes two columns at 1024 px its poster runs the page's whole width
+   under the moon, so the paper's top edge cut the moon straight across with
+   its upper part showing. There the moon is not drawn, as below 760 px it
+   is hidden whole behind the paper. */
+@media (min-width: 760px) and (max-width: 1023.98px) { .b-nightsky:has(~ .w-page) .b-nightsky__moon { display: none; } }
+/* a sign's own link on its way to the wall (skilti/[id]): one slip nailed up under the night while the wall comes */
+.b-hop { max-width: 24rem; padding: var(--sp-6) var(--sp-5) var(--sp-5); color: var(--ink); }
 /* off the trail (404 and a page that broke): the words stand alone under a dark lantern */
 /* Off the trail: the game's death screen (OffTrail.tsx). The night of the
    roll call and the walls under a veil of red that deepens towards the foot,
@@ -2975,15 +3269,22 @@ html.is-map-full { overflow: hidden; }
 .b-f3__copy { display: block; margin-top: var(--px); padding: 0; border: 0; background: none; color: var(--lantern); font: inherit; font-size: var(--fs-sm); text-transform: none; cursor: pointer; }
 .b-f3__copy:focus-visible { outline: var(--px) solid var(--lantern); outline-offset: var(--px); }
 @media (hover: hover) { .b-f3__copy:hover { color: var(--paper); } }
-/* where a place stands, on the F3 lines' own dark under its name; a press copies it */
-.b-card__xyz { display: inline-block; position: static; margin-top: var(--sp-1); padding: var(--px) var(--sp-2); border: 0; background: var(--pitch); color: var(--paper); font-family: var(--font-data); font-size: var(--fs-sm); line-height: 1.4; cursor: pointer; }
+/* where a place stands, on the F3 lines' own dark under its name; a press
+   copies it. In the bitmap face at its own 16 px, as the F3 lines it copies
+   are, and pressable: the F3 lines let the pointer through to the map
+   (.b-f3), and the key took that from them, so only a keyboard could press it */
+.b-card__xyz { display: inline-block; position: static; margin-top: var(--sp-1); padding: var(--px) var(--sp-2); border: 0; background: var(--pitch); color: var(--paper); font-family: var(--font-data); font-size: var(--fs-data); line-height: 1.4; cursor: pointer; pointer-events: auto; }
 .b-card__xyz:focus-visible { outline: var(--px) solid var(--lantern-ink); outline-offset: var(--px); }
 @media (hover: hover) { .b-card__xyz:hover { color: var(--lantern); } }
 /* the compass needle on the locator bar: a key, unlike the marks */
 .b-locator__mark--home { width: 1.25rem; height: 1.75rem; padding: 0; border: 0; background: none; cursor: pointer; pointer-events: auto; }
 .b-locator__mark--home svg { width: 0.5rem; height: 1rem; }
-/* a place whose ground changed in the newest copy of the map: the board's paper tag on its chip */
-.b-chip__new { position: absolute; top: calc(var(--px) * -1); left: calc(var(--px) * -1); padding: 0 var(--sp-1); background: var(--paper); color: var(--tc-red); border: var(--px) solid var(--tc-red); font-family: var(--font-text); font-weight: 600; font-size: var(--fs-chip); line-height: 1.6; letter-spacing: 0.04em; text-transform: uppercase; }
+/* a place whose ground changed in the newest copy of the map: the board's
+   paper tag on its chip, in the bitmap face at its 8 px grid as the count in
+   the other corner is (set with the face's other labels, above); the text
+   face at 8 px fused the Ý's accent into the letter, and tracking would
+   take the face off its grid */
+.b-chip__new { position: absolute; top: calc(var(--px) * -1); left: calc(var(--px) * -1); padding: 0 var(--sp-1); background: var(--paper); color: var(--tc-red); border: var(--px) solid var(--tc-red); font-size: var(--fs-chip); line-height: 1.6; text-transform: uppercase; }
 .b-chip.is-on .b-chip__new { background: var(--tc-red); color: var(--paper); }
 
 /* ─── the 31 October ideas: the lantern's catch, the crosshair, the clouds over the crew pages, the held tooltip ─── */
@@ -2995,8 +3296,30 @@ html.is-map-full { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) { .b-lantern__glass, .b-lantern__flame, .b-lantern.is-lit::before { transition: none; } }
 /* during the draw the pointer over the arena is the game's own crosshair: a nine by nine plus, paper with a pixel of night round it */
 .b-arena.is-draw { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 11 11' shape-rendering='crispEdges'%3E%3Cpath fill='%2315100D' d='M4 0h3v4h4v3H7v4H4V7H0V4h4z'/%3E%3Cpath fill='%23E8DCC4' d='M5 1h1v4h4v1H6v4H5V6H1V5h4z'/%3E%3C/svg%3E") 11 11, crosshair; }
-/* the crew pages' night: the hero's clouds in the band over the far ridge, drifting east with the scroll */
-.b-nightsky .b-clouds { position: absolute; left: 0; right: 0; top: 18%; height: 30%; opacity: 1; pointer-events: none; }
+/* The crew pages' night: the hero's clouds in the band over the far ridge,
+   drifting east with the scroll. A cloud is sized in cells of the sky it
+   hangs in (--cpx, the hero's on .b-sky__clouds), so the night sky gives
+   them their own cell, the hero's at each width: without one, each cloud
+   stretched to the width of the page and hung grey slabs across the title.
+   Never behind a line of words, as in the hero: on a wide screen the band
+   starts halfway across, right of the title and the lede, over the board's
+   side column; on a phone only two are drawn, on the moon's side, in the
+   strip of sky between the title's end and the moon, under the bar's strata
+   and over the lede, since the title and the lede run the screen's whole
+   width under the hero's places for the others. */
+.b-nightsky { --cpx: 6px; }
+.b-nightsky .b-clouds { position: absolute; left: 50%; right: 0; top: 18%; height: 30%; opacity: 1; pointer-events: none; }
+@media (max-width: 899.98px) {
+  .b-nightsky { --cpx: 4px; }
+  .b-nightsky .b-clouds { left: 0; top: 24%; height: 24%; }
+  .b-nightsky .b-cloud--1, .b-nightsky .b-cloud--2 { display: none; }
+  .b-nightsky .b-cloud--3 { left: 58%; top: 20%; }   /* and from 760 px, clear of the experience bar's foot */
+  .b-nightsky .b-cloud--4 { left: 70%; top: 62%; }
+}
+/* the death screen (OffTrail.tsx) sets its title across the middle of the
+   screen at every width, so there only the two on the moon's side hang, over
+   the title's end, on a wide screen as on a phone */
+.b-nightsky:has(~ .b-stray) :is(.b-cloud--1, .b-cloud--2) { display: none; }
 @supports (animation-timeline: scroll()) {
   .b-nightsky .b-clouds { animation: b-clouds-drift linear both; animation-timeline: scroll(root); }
 }

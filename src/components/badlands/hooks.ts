@@ -176,32 +176,38 @@ export function useScrollLock(active = true): void {
 }
 
 /** Copy a string with the Clipboard API, or a hidden textarea where that is
-    missing. The toast says it was done (src/components/badlands/Toast.tsx),
-    unless the caller says so itself (`toast: false`, the hero's stamp);
-    `copied` flips back after a couple of seconds either way. */
-export function useCopy(text: string, { toast: withToast = true }: { toast?: boolean } = {}): [boolean, () => void] {
-  const [copied, setCopied] = useState(false);
+    missing or refused; true when the browser says it went through. With no
+    clipboard at all the textarea is tried at once, still inside the press. */
+export async function copyText(text: string): Promise<boolean> {
+  if (navigator.clipboard?.writeText) {
+    try { await navigator.clipboard.writeText(text); return true; }
+    catch { /* refused: the textarea next */ }
+  }
+  return legacyCopy(text);
+}
+
+/** Copy a string (copyText). The toast says it was done
+    (src/components/badlands/Toast.tsx), unless the caller says so itself
+    (`toast: false`, the hero's stamp); `copied` flips back after a couple of
+    seconds. A copy that failed is toasted whoever asked, with the text on the
+    slip to be copied by hand, and `failed` says so for as long. */
+export function useCopy(text: string, { toast: withToast = true }: { toast?: boolean } = {}): [copied: boolean, copy: () => void, failed: boolean] {
+  const [state, setState] = useState<'idle' | 'copied' | 'failed'>('idle');
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const copy = useCallback(() => {
-    const done = () => {
-      setCopied(true);
-      if (withToast) toast('Afritað', text);
+    copyText(text).then(ok => {
+      /* a copy that failed used to be stamped Afritað all the same, and later
+         said nothing at all where the caller had its own answer: in an in-app
+         browser that refuses both ways, a tap on the address changed nothing */
+      if (!ok) toast('Afritun tókst ekki', text);
+      else if (withToast) toast('Afritað', text);
+      setState(ok ? 'copied' : 'failed');
       clearTimeout(timer.current);
-      timer.current = setTimeout(() => setCopied(false), COPIED_MS);
-    };
-    /* a copy that failed used to be stamped Afritað all the same; the toast
-       now says so, with the address on it to be copied by hand */
-    const failed = () => { if (withToast) toast('Afritun tókst ekki', text); };
-    if (navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(text).then(done, () => { if (legacyCopy(text)) done(); else failed(); });
-    } else if (legacyCopy(text)) {
-      done();
-    } else {
-      failed();
-    }
+      timer.current = setTimeout(() => setState('idle'), COPIED_MS);
+    });
   }, [text, withToast]);
   useEffect(() => () => clearTimeout(timer.current), []);
-  return [copied, copy];
+  return [state === 'copied', copy, state === 'failed'];
 }
 
 /** true when the browser says the copy went through */

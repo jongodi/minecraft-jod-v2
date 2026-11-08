@@ -1,7 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react';
 import type { PlayNightResponse } from '@/app/api/playnight/route';
+import { signalOf } from './signal';
 
 /* The play nights as the page holds them: one answer shared by the hero's line
    and the crew's room, asked for when the page opens and every minute while
@@ -9,6 +10,10 @@ import type { PlayNightResponse } from '@/app/api/playnight/route';
 
 type State = PlayNightResponse | undefined;   // undefined until the first answer
 let value: State = undefined;
+/* The browser's last question went unanswered. The page's own answer is
+   drawn for everyone and names nobody, so without this a member who is
+   signed in was told to sign in whenever the fires could not be asked for. */
+let failed = false;
 let inFlight: Promise<void> | null = null;
 /* counts the answers to actions: a poll that set out before one is older than it, and is dropped */
 let acted = 0;
@@ -17,19 +22,26 @@ const WAIT_MS = 12_000;
 const listeners = new Set<() => void>();
 const notify = () => listeners.forEach(l => l());
 
+/** What the store holds once the browser has asked: the answer, when there
+    is one; else what it held, or nothing planned for a first question, and
+    word that the fires could not be asked for. */
+export function afterAsking(held: State, answer: PlayNightResponse | null): { value: PlayNightResponse; failed: boolean } {
+  if (answer) return { value: answer, failed: false };
+  return { value: held ?? { nights: [], me: null, max: 5 }, failed: true };
+}
+
 async function load(): Promise<void> {
   const asOf = acted;
+  let answer: PlayNightResponse | null = null;
   try {
     /* capped: the next poll waits on this one, so one that never answered stopped the fires for good */
     const res = await fetch('/api/playnight', { cache: 'no-store', signal: AbortSignal.timeout(WAIT_MS) });
-    const data = res.ok ? await res.json() as PlayNightResponse : null;
-    if (asOf !== acted) return;
-    if (data) value = data;
-    else if (value === undefined) value = { nights: [], me: null, max: 5 };
-  } catch {
-    if (asOf !== acted) return;
-    if (value === undefined) value = { nights: [], me: null, max: 5 };
-  }
+    answer = res.ok ? await res.json() as PlayNightResponse : null;
+  } catch { /* no answer: said so below */ }
+  if (asOf !== acted) return;
+  ({ value, failed } = afterAsking(value, answer));
+  /* the browser's own question is asked again by the next line that reads the nights, not only by the next poll */
+  if (failed) askedOwn = false;
   notify();
 }
 const refresh = () => { if (!inFlight) inFlight = load().finally(() => { inFlight = null; }); return inFlight; };
@@ -64,6 +76,7 @@ export function seedNights(initial: PlayNightResponse): void {
 let askedOwn = false;
 export function usePlayNight(initial?: PlayNightResponse) {
   const state = useSyncExternalStore(subscribe, () => value, () => initial);
+  const unanswered = useSyncExternalStore(subscribe, () => failed, () => false);
   useEffect(() => {
     /* the page's own answer is drawn for everyone and names nobody, so the
        browser asks once for its own, which knows who is signed in */
@@ -77,13 +90,32 @@ export function usePlayNight(initial?: PlayNightResponse) {
       const res = await fetch('/api/playnight', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: AbortSignal.timeout(WAIT_MS) });
       const data = await res.json().catch(() => null) as (PlayNightResponse & { error?: string }) | null;
       if (!res.ok) return data?.error ?? `Villa ${res.status}`;
-      if (data) { acted++; value = data; notify(); }
+      if (data) { acted++; value = data; failed = false; notify(); }
       return null;
     } catch {
       return 'Villa í nettengingu';
     }
   }, []);
-  return { state, act, refresh };
+  /** `failed`: the browser's last question went unanswered, and `state` is
+      what was held before it: an older answer, or the page's own, which
+      names nobody whoever is signed in */
+  return { state, failed: unanswered, act, refresh };
+}
+
+/* nothing to listen to: the answer below changes once, from the server's to the browser's */
+const noChange = () => () => {};
+
+/** Whether the signal fire stands (signal.ts), for the hero's far ridge and
+    the footer's fire. The server's markup and the browser's first drawing
+    over it both take `drawn`, the page's own answer by the clock it was drawn
+    with (src/lib/home-data.ts): a page kept since last night and opened on
+    the day of a fire otherwise drew a fire its markup had not got, and React
+    threw the hero away and drew it again. Once the page is the browser's,
+    its own clock says, against the nights as they now stand, and again at
+    each answer of them. */
+export function useSignal(nights: PlayNightResponse | undefined, drawn: boolean): boolean {
+  const own = useSyncExternalStore(noChange, () => true, () => false);
+  return useMemo(() => (own ? signalOf(nights?.nights ?? []) : drawn), [own, nights, drawn]);
 }
 
 /* ─── an answer from a letter ─────────────────────────────────────────── */

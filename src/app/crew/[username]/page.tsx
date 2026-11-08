@@ -10,10 +10,11 @@ import { hasPassword } from '@/lib/crew-access';
 import { readMap } from '@/lib/map';
 import { woodOf } from '@/lib/map-types';
 import { getCachedStats, withCharges } from '@/lib/stats';
-import { outlaws } from '@/components/badlands/outlaws';
+import { standingOf } from '@/components/wall/bounty';
 import { ADVANCEMENT_COUNT, missingAdvancements, readStoredAdvancements, wallAdvancements } from '@/lib/advancements';
 import { sameUser } from '@/lib/crew-types';
 import Wall, { type WallCorner, type WallPlace } from '@/components/wall/Wall';
+import { layoutCorner } from '@/lib/corner-layout';
 import { FLIGHT, flightFrame, frameFor } from '@/lib/map-flight';
 import { onMap, type MapBounds } from '@/lib/base-links';
 import viewerFiles from '@/lib/bluemap-viewer.json';
@@ -66,19 +67,21 @@ export default async function CrewWallPage({ params, searchParams }: Props) {
      live ones. Drawn without them, it grew by its whole table of charges a
      second in and pushed every sign under it off a phone's screen. The
      snapshot carries the charges kept beside it (the draws, the calls brought
-     home, the no-shows, the firsts), read once for the poster and for which
-     charges they are the outlaw of, so an alias on their poster is one the
-     board gives them. */
+     home, the no-shows, the firsts), read once for the poster and for where
+     they stand on the board: which charges they are the outlaw of, so an
+     alias on their poster is one the board gives them, and the charge they
+     stand highest on, so its bounty is the roll call's from the first paint,
+     not their play time swapped for it when the live numbers come. */
   const charged = snapshot ? await withCharges(snapshot.players).catch(() => snapshot.players) : null;
   const mine = charged?.find(p => sameUser(p.username, profile.username));
   /* their best draw is on the wall just read, which is newer than any copy */
   const stats = mine ? { ...mine, drawMs: profile.bestDrawMs ?? 0 } : null;
-  const led = charged ? outlaws(charged).byName.get(profile.username.toLowerCase())?.led ?? [] : [];
+  const standing = charged ? standingOf(charged, profile.username) : undefined;
   /* only this member's, with their names: the list of every advancement stays on the server */
   const advancements = crewAdvancements ? { list: wallAdvancements(profile.username, crewAdvancements), of: ADVANCEMENT_COUNT, missing: missingAdvancements(profile.username, crewAdvancements) } : null;
   const places: WallPlace[] = (map?.locations ?? []).map(l => ({ id: l.id, label: l.label, sublabel: l.sublabel, builders: l.builders ?? [], wood: woodOf(l) }));
   /* drawn: which drawing this is, so Back to it is told from a fresh one (useRestored) */
-  return <Wall initial={profile} places={places} initialStats={stats} initialLed={led} advancements={advancements} justSignedIn={query.innskrad === '1'} corner={cornerOf(map?.locations ?? [], profile.username)} session={session} drawn={randomUUID()} />;
+  return <Wall initial={profile} places={places} initialStats={stats} initialLed={standing?.led ?? []} initialBest={standing?.best ?? null} advancements={advancements} justSignedIn={query.innskrad === '1'} corner={cornerOf(map?.locations ?? [], profile.username)} session={session} drawn={randomUUID()} />;
 }
 
 /* The main map's rendered edges, as map:brand wrote them */
@@ -94,5 +97,6 @@ function cornerOf(locations: { id: number; label: string; builders?: string[]; w
   const pick = frameFor(FLIGHT.wide, built.map(l => [l.world.x + 0.5, l.world.y + 1, l.world.z + 0.5]));
   if (!pick) return null;
   const pins = built.flatMap((l, i) => { const at = pick.at[i]; return at ? [{ id: l.id, label: l.label, x: at.x, y: at.y }] : []; });
-  return { src: flightFrame(FLIGHT, 'wide', pick.k), pins };
+  /* numbered and parted at the poster's narrowest picture, so no two marks touch at any width (src/lib/corner-layout.ts) */
+  return { src: flightFrame(FLIGHT, 'wide', pick.k), pins: layoutCorner(pins) };
 }

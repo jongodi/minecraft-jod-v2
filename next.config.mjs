@@ -178,6 +178,17 @@ const nextConfig = {
         source: `/kort/:id(${BASE_ID})/assets/:path*`,
         headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
       },
+      /* The flight's stills, the town's lights and the map's still are asked
+         for with the sync that made them in ?v= (map-flight.ts, data.ts), so
+         an address with a version never changes, and a return visit had sent
+         forty requests back to the server for pictures it already held. Only
+         an address that carries its version is kept for good; a bare one keeps
+         the default, so a new sync is never answered with an old picture. */
+      ...['/map-flight/:file', '/map-lights-:n(\\d+).webp', '/map-poster.webp'].map(source => ({
+        source,
+        has: [{ type: 'query', key: 'v' }],
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+      })),
       {
         source: '/(.*)',
         headers: [

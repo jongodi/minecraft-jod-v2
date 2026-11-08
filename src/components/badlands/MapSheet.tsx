@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useSyncExternalStore } from 'react';
 import type { CameraStore } from './World';
 import { motion, useMotionValue, animate } from 'framer-motion';
 import type { MotionValue } from 'framer-motion';
@@ -44,6 +44,22 @@ export function paperFit(locations: MapLocation[]): { x: (wx: number) => number;
   const x = axis(pts.map(p => p.wx), pts.map(p => p.px));
   const y = axis(pts.map(p => p.wz), pts.map(p => p.py));
   return x && y ? { x, y } : null;
+}
+
+/** The view a sheet `w` by `h` px opens at: its zoom and pan, as MapSheet
+    holds them (the paper scaled about the sheet's top left, then moved).
+    The whole sheet where the paper already fills the frame's height; where
+    it would be a band across an upright phone, the paper's full height,
+    across the middle of the places, the rest a drag away. */
+export function openingView(w: number, h: number, locations: Pick<MapLocation, 'x'>[]): { z: number; x: number; y: number } {
+  /* the svg's meet: the paper drawn whole and centred, this many px a unit */
+  const s = Math.min(w / MAP_W, h / MAP_H);
+  const z = s > 0 ? clamp(h / (MAP_H * s), MIN_Z, MAX_Z) : 1;
+  if (z <= 1.01) return { z: 1, x: 0, y: 0 };
+  const cx = locations.length ? locations.reduce((a, l) => a + l.x, 0) / locations.length : MAP_W / 2;
+  /* where the paper's own edges sit inside the sheet at the whole view */
+  const inX = (w - MAP_W * s) / 2, inY = (h - MAP_H * s) / 2;
+  return { z, x: clamp(w / 2 - z * (inX + cx * s), w - w * z, 0), y: clamp(-z * inY, h - h * z, 0) };
 }
 
 /** The game's map cursor: the white player arrow an in-game map draws where
@@ -175,25 +191,48 @@ export default function MapSheet({ config, selectedId, onSelect, camera }: Props
     go(y, clamp(ny, h - h * s1, 0));
   };
   const resetView = () => { go(z, 1); go(x, 0); go(y, 0); };
-  /* two taps on a spot bring it up close, as a phone's map does; two more lay
-     the whole sheet out again (the fit button does the same) */
+  /* The view the sheet opens at. Where the frame is wider than the paper it
+     is the whole sheet; on a phone held upright the whole sheet was a band a
+     third of the frame's height, with every name and numeral too small to
+     read, so it opens at the paper's full height instead, the places in the
+     middle, and the rest a drag away. Set before the sheet is first painted. */
+  const home = useRef({ z: 1, x: 0, y: 0 });
+  useLayoutEffect(() => {
+    const el = sheet.current;
+    if (!el) return;
+    home.current = openingView(el.clientWidth, el.clientHeight, config.locations);
+    z.set(home.current.z); x.set(home.current.x); y.set(home.current.y);
+    el.style.setProperty('--z0', String(home.current.z));
+  // once, as the sheet is laid over the world
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  /* two taps on a spot bring it up close, as a phone's map does; two more go
+     back to the view it opened at (the fit button lays the whole sheet out) */
   const onDoubleClick = (e: React.MouseEvent) => {
-    if (z.get() > 1.01) { resetView(); return; }
+    const at = home.current;
+    if (z.get() > at.z + 0.01) { go(z, at.z); go(x, at.x); go(y, at.y); return; }
     const r = e.currentTarget.getBoundingClientRect();
     const px = e.clientX - r.left, py = e.clientY - r.top;
-    const s1 = Math.min(MAX_Z, 2.2);
+    const s0 = z.get();
+    const s1 = Math.min(MAX_Z, Math.max(2.2, s0 * 1.4));
+    if (s1 <= s0) return;
     go(z, s1);
-    go(x, clamp(px - px * s1, r.width - r.width * s1, 0));
-    go(y, clamp(py - py * s1, r.height - r.height * s1, 0));
+    go(x, clamp(px - (px - x.get()) * (s1 / s0), r.width - r.width * s1, 0));
+    go(y, clamp(py - (py - y.get()) * (s1 / s0), r.height - r.height * s1, 0));
   };
 
-  /* At the sheet's own size a finger's up-and-down scrolls the page past it
-     (badlands.css, touch-action); zoomed in, the paper is bigger than its
-     frame, and the finger moves the paper instead. */
+  /* At the view it opens at a finger's up-and-down scrolls the page past the
+     sheet (badlands.css, touch-action); zoomed in further, the paper is
+     bigger than its frame both ways, and the finger moves the paper instead.
+     The zoom is handed to the stylesheet too (--z), which holds the flags at
+     the size they opened at (--z0) while the land grows under them, so a
+     zoom spreads a cluster apart where it used to only enlarge it. */
   useEffect(() => {
     const el = sheet.current;
     if (!el) return;
-    return z.on('change', v => el.classList.toggle('is-zoomed', v > 1.01));
+    const tell = (v: number) => { el.style.setProperty('--z', String(v)); el.classList.toggle('is-zoomed', v > home.current.z + 0.01); };
+    tell(z.get());
+    return z.on('change', tell);
   }, [z]);
 
   /* trackpad pinch arrives as ctrl+wheel; a plain wheel scrolls the page */

@@ -17,6 +17,15 @@ import { nightMetadata, sharedNight } from '@/lib/night-share';
 
 export const revalidate = 30;
 
+/* No night is drawn when the site is built: each is drawn on its first visit
+   and kept for its half minute after. Without this list, even an empty one,
+   a page under a [segment] is drawn anew for every visit and its revalidate
+   does nothing, and every letter's buttons, opened by each of the crew and
+   by every mail scanner, drew the whole page each time. */
+export async function generateStaticParams() {
+  return [];
+}
+
 type Props = { params: Promise<{ id: string }> };
 
 /* The link preview and the page are drawn in one request: the night is read once for both. */

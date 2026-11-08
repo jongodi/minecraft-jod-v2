@@ -1,18 +1,18 @@
 'use client';
 
-import { memo, useEffect, useMemo, useRef, useState } from 'react';
-import Mesa, { Rider } from './Mesa';
+import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import Mesa, { NONE_AWAKE, Rider } from './Mesa';
 import { Moon, Sun } from './Bits';
 import CopyAddress from './CopyAddress';
 import StatusLantern from './StatusLantern';
 import { NightLine } from './NightLine';
-import { usePlayNight } from './night';
+import { usePlayNight, useSignal } from './night';
 import { isLive, useAway, type ServerState } from './hooks';
 import type { Season } from '@/lib/season';
 import type { PlayNightResponse } from '@/app/api/playnight/route';
 import { YuleLad, useMoonPhase } from './Season';
 import { CREW, WORLD_BORN } from './data';
-import { useRoster } from './roster';
+import { beyond, useRoster } from './roster';
 
 /* The title screen's splash: what the game tilts in yellow over its logo,
    one line picked at random each time the title screen comes up. These are
@@ -85,25 +85,61 @@ function Splash({ inside, planned, live, facts }: { inside: number; planned: boo
   );
 }
 
+/* How far clear of the lantern's plate the phantoms' ring keeps, in pixels: a step of the spacing scale */
+const RING_CLEAR = 4;
+
 /* On a phone the crew who are in climb the name: one on the O, one on the
    Ð, their name tags in the sky over them, and a count for the rest. The
    plateau at the name's feet stood them in front of the O's window. One who
    comes in while the page is looked at climbs up onto the letter; one who
    goes out climbs down. */
-function Climbers({ names, known }: { names: string[]; known: boolean }) {
+function Climbers({ names, known, awake }: { names: string[]; known: boolean; awake: Record<string, number> }) {
   const { roster, settle } = useRoster(names, known);
-  if (roster.length === 0) return null;
+  const box = useRef<HTMLDivElement>(null);
   const shown = roster.slice(0, 2);
-  const more = names.length - shown.filter(r => r.phase !== 'going').length;
+  /* who stands on the name, how far along their climb, and how long awake */
+  const drawn = shown.map(r => `${r.name}:${r.phase}:${awake[r.name.toLowerCase()] ?? 0}`).join('|');
+  /* The phantoms' ring hangs a fixed height over the tag (badlands.css), and
+     on a small phone the name stands only a step under the lantern's plate:
+     there the ring circled inside the plate, dark on its dark, instead of in
+     the open sky. It is shown only once it is measured clear of the plate
+     (is-clear), as the signal fire stands only where its column has room,
+     and measured again as the page or the plate changes size (a night's
+     line makes the plate taller) and as the crew on the name change. The
+     class is written straight to the element, as useAway's is. */
+  useLayoutEffect(() => {
+    const el = box.current;
+    const plate = el?.closest('.b-hero')?.querySelector('.b-hero__action');
+    if (!el || !plate) return;
+    const measure = () => {
+      const birds = [...el.querySelectorAll<HTMLElement>('.b-phantoms')];
+      /* each ring's middle, less how far a bird reaches above it: half its
+         own height and four pixels of the round, 1.3 of its height in all */
+      const top = Math.min(...birds.map(b => b.getBoundingClientRect().top - (b.firstElementChild as HTMLElement | null ?? b).offsetHeight * 1.3));
+      el.classList.toggle('is-clear', birds.length > 0 && top >= plate.getBoundingClientRect().bottom + RING_CLEAR);
+    };
+    measure();
+    const watch = new ResizeObserver(measure);
+    watch.observe(el);
+    watch.observe(plate);
+    return () => watch.disconnect();
+  }, [drawn]);
+  if (roster.length === 0) return null;
+  const more = beyond(names.length, shown);
   return (
-    <div className="b-hero__climbers">
-      {shown.map(r => <Rider key={r.name} name={r.name} phase={r.phase} onWalked={settle} className="b-hero__climber" />)}
+    <div ref={box} className="b-hero__climbers">
+      {shown.map(r => <Rider key={r.name} name={r.name} phase={r.phase} onWalked={settle} awake={awake[r.name.toLowerCase()]} className="b-hero__climber" />)}
       {more > 0 && <span className="b-nametag b-hero__more">+{more}</span>}
     </div>
   );
 }
 
-function Hero({ server, season, nights, packs, facts = [] }: { server: ServerState; season: Season; nights?: PlayNightResponse; packs: number; facts?: string[] }) {
+/* `sleepless`: who has gone three of the game's days without a bed, counted
+   on the server (src/lib/home-data.ts), so the phantoms over them are in the
+   page's markup and nothing is asked for to draw them. `signal`: whether the
+   signal fire stood by the clock the page was drawn with, worked out there
+   too, so the browser's first drawing over the markup says the same */
+function Hero({ server, season, nights, packs, facts = [], sleepless = NONE_AWAKE, signal: drawn = false }: { server: ServerState; season: Season; nights?: PlayNightResponse; packs: number; facts?: string[]; sleepless?: Record<string, number>; signal?: boolean }) {
   /* someone's home: the server is up and somebody is in it */
   const home = server.online === true && server.players > 0;
   /* one list for as long as the same names are in, so the land under the name (memoised) is not redrawn on every status answer */
@@ -116,6 +152,12 @@ function Hero({ server, season, nights, packs, facts = [] }: { server: ServerSta
      burnt out while the page was open changed the line beside the lantern
      but not the splash's word about it */
   const { state: tonight } = usePlayNight(nights);
+  /* the day of a fire, the signal fire stands on the far ridge; drawn first
+     as the page was, then told by the browser's clock at each answer of the
+     nights, which comes every minute, so it goes up on the day and is gone
+     once the evening is over (useSignal, signal.ts). One boolean, so the
+     land under the name (memoised) is redrawn only when it changes. */
+  const signal = useSignal(tonight ?? nights, drawn);
   /* scrolled past, the hero's critters and lantern hold still (useAway) */
   const root = useRef<HTMLElement>(null);
   useAway(root);
@@ -139,7 +181,7 @@ function Hero({ server, season, nights, packs, facts = [] }: { server: ServerSta
           {/* tonight's moon, rising from behind the J as the sun sets on the other side */}
           {moon !== null && <Moon phase={moon} className="b-hero__moon" />}
         </h1>
-        <Climbers names={inside} known={known} />
+        <Climbers names={inside} known={known} awake={sleepless} />
         {/* a phone's sun: in the open sky between the words and the name, so no line above it ever crosses it (badlands.css) */}
         <div className="b-hero__sun" aria-hidden="true"><Sun /></div>
         <div className="b-hero__lead">
@@ -158,7 +200,7 @@ function Hero({ server, season, nights, packs, facts = [] }: { server: ServerSta
             action comes first to the keyboard; drawn over the Ð all the same */}
         <Splash inside={inside.length} planned={(tonight?.nights ?? []).some(n => n.phase !== 'over')} live={known} facts={facts} />
       </div>
-      <Mesa snow={season.snow} halloween={season.halloween} heads={inside} known={known} />
+      <Mesa snow={season.snow} halloween={season.halloween} heads={inside} known={known} awake={sleepless} signal={signal} />
       <YuleLad season={season} spot="mesa" />
     </section>
   );

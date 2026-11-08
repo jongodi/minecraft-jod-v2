@@ -6,9 +6,20 @@ import { useEffect, useRef } from 'react';
    drawn only while the hero or the footer is on screen and the tab is
    visible. Phones get fewer particles; the device pixel ratio is capped.
    In winter snow falls over the sunset instead of the dust, and on
-   gamlárskvöld and nýársdagur fireworks burst over the fire (src/lib/season.ts). */
+   gamlárskvöld and nýársdagur fireworks burst over the fire (src/lib/season.ts).
+   It moves on the game's tick, twenty steps a second, as Minecraft moves its
+   own particles. Every change to the canvas makes the browser draw a whole
+   frame of the page, every layer of the sunset with it, so a canvas drawn at
+   the screen's rate kept a slow phone's main thread busy for more than half
+   of every second, for two dozen specks. A step every tick is a third of the
+   frames, and the dust moves in the game's whole steps, as the site does. */
 
 const MAX_DPR = 2;
+/* One game tick. The speeds below are per sixtieth of a second, as they were
+   tuned, so a tick moves everything by three of those. */
+const TICK_MS = 50;
+const SIXTIETH = 1000 / 60;
+const STEP = TICK_MS / SIXTIETH;
 const COUNT = { fine: 56, coarse: 22 };
 const DUST = { size: 2, speed: 0.18, drift: 0.35 };
 const EMBER = { size: 2, speed: 0.55, drift: 0.12 };
@@ -57,10 +68,11 @@ export default function Particles({ heroId, fireId, snow = false, fireworks = fa
     const sparks: Spark[] = [];
     let lastBurst = 0;
     let mode: Mode = null;
-    let raf = 0;
-    /* when the last frame was drawn: the motes move by the time that passed,
-       in sixtieths of a second, so a 120 Hz screen does not blow the dust
-       twice as fast; 0 after a rest, so the first frame back counts as one */
+    /* the next tick, while one is waiting */
+    let timer = 0;
+    /* when the last tick was drawn: the motes move by the time that passed,
+       in sixtieths of a second, so a tick the browser ran late does not slow
+       the dust down; 0 after a rest, so the first tick back counts as one */
     let last = 0;
     let hidden = document.hidden;
     let heroIn = false, fireIn = false;
@@ -107,10 +119,10 @@ export default function Particles({ heroId, fireId, snow = false, fireworks = fa
     const fill = () => { motes.length = 0; for (let i = 0; i < count; i++) { const m = { x: 0, y: 0, vx: 0, vy: 0, life: 1, size: 2 }; spawn(m, true); motes.push(m); } };
 
     const frame = () => {
-      raf = 0;
+      timer = 0;
       if (!mode || hidden) { ctx.clearRect(0, 0, w, h); last = 0; return; }
       const now = performance.now();
-      const dt = last ? Math.min(2.5, (now - last) / (1000 / 60)) : 1;
+      const dt = last ? Math.min(2.5 * STEP, (now - last) / SIXTIETH) : STEP;
       last = now;
       if (mode === 'embers') seatFlame();   // the fire scrolls; read the offset once, not once per ember
       ctx.clearRect(0, 0, w, h);
@@ -127,7 +139,8 @@ export default function Particles({ heroId, fireId, snow = false, fireworks = fa
       }
       if (mode === 'embers' && fireworks) burst(dt);
       ctx.globalAlpha = 1;
-      raf = requestAnimationFrame(frame);
+      /* the next tick a tick after this one began, whatever the drawing took */
+      timer = window.setTimeout(frame, Math.max(0, TICK_MS - (performance.now() - now)));
     };
     /* Fireworks: now and then a ring of sparks somewhere over the fire, falling back and fading. */
     const burst = (dt: number) => {
@@ -155,7 +168,7 @@ export default function Particles({ heroId, fireId, snow = false, fireworks = fa
         ctx.fillRect(Math.round(p.x), Math.round(p.y), p.size, p.size);
       }
     };
-    const run = () => { if (!raf) raf = requestAnimationFrame(frame); };
+    const run = () => { if (!timer) timer = window.setTimeout(frame, 0); };
     const decide = () => {
       const next: Mode = fireIn ? 'embers' : heroIn ? (snow ? 'snow' : 'dust') : null;
       if (next !== mode) { mode = next; if (mode === 'embers') { measureFlame(); seatFlame(); } if (mode) fill(); }
@@ -184,7 +197,7 @@ export default function Particles({ heroId, fireId, snow = false, fireworks = fa
       ro.disconnect();
       document.removeEventListener('visibilitychange', onVis);
       window.removeEventListener('resize', onResize);
-      cancelAnimationFrame(raf);
+      clearTimeout(timer);
     };
   }, [heroId, fireId, snow, fireworks]);
 

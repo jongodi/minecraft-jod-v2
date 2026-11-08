@@ -3,7 +3,10 @@
 // Example: node scripts/shots.mjs shots / /crew /crew/stebbias
 // Env: BASE (default http://localhost:3000), CHROME (executable), REDUCE=1 (reduced motion),
 //      SECTIONS=1 (one shot per section), WIDTHS=360,768 (viewport widths; default 1440,390),
-//      STAGE=1 (the server on, three in, a week of stats and drawn heads: scripts/stage.mjs)
+//      STAGE=1 (the server on, three in, two of them three of the game's days without a bed so
+//      the phantoms show, a week of stats and drawn heads: scripts/stage.mjs), and with it
+//      STAGE_NIGHT=1 (a night fixed for two days from now) or STAGE_NIGHT=today (a fire fixed
+//      for eight tonight, so the signal fire stands)
 import { chromium } from 'playwright-core';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';

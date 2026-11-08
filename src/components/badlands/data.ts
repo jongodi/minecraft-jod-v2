@@ -136,8 +136,10 @@ const ms = (v: number) => `${num(v)} ms`;
 /* The wanted board. Every category is a crime, and the poster names the
    outlaw the way a real one would: by the nickname first, the charge under it.
    `low` marks the one charge where less is more: the fastest draw at the campfire.
-   The longest nicknames carry a soft hyphen at the join of their compound, so
-   a phone's two-column stat list breaks them there instead of overflowing. */
+   Every nickname longer than ten letters carries a soft hyphen at the join
+   of its compound, so a roll-call poster on a 320 px phone and a phone's
+   two-column stat list break it there instead of overflowing: ten letters
+   are as many as such a poster holds on one line. */
 export const STAT_TABS = [
   { id: 'playTimeHours',  nick: 'Innipúkinn',     label: 'Spilatími',                  unit: (v: number) => `${num(v)} klst.` },
   { id: 'mobKills',       nick: 'Slátrarinn',     label: 'Verur felldar',              unit: num },
@@ -152,7 +154,7 @@ export const STAT_TABS = [
   { id: 'bounties',       nick: 'Hausa\u00ADveiðarinn', label: 'Óskir uppfylltar fyrir verðlaun', unit: (v: number) => `${num(v)} ${plural(v, 'ósk', 'óskir')}` },
   { id: 'drawMs',         nick: 'Fógetinn',       label: 'Hraðasta skotið við varðeldinn', unit: ms, low: true },
   { id: 'noShows',        nick: 'Svikarinn',      label: 'Sagðist mæta en kom ekki',  unit: (v: number) => `${num(v)} kvöld` },
-  { id: 'attended',       nick: 'Fastagesturinn', label: 'Mætti á flest spilakvöld',  unit: (v: number) => `${num(v)} kvöld` },
+  { id: 'attended',       nick: 'Fasta­gesturinn', label: 'Mætti á flest spilakvöld',  unit: (v: number) => `${num(v)} kvöld` },
 ] as const;
 export const isLowerBetter = (id: StatKey) => STAT_TABS.some(t => t.id === id && 'low' in t && t.low);
 export type StatKey = typeof STAT_TABS[number]['id'];

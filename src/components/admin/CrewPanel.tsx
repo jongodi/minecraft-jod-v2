@@ -31,14 +31,15 @@ export default function CrewPanel() {
   }, []);
   useEffect(() => { load(); }, [load]);
 
-  /* a new link, shown with its QR code; with `send` it is mailed to the member too */
-  async function mint(username: string, send = false) {
+  /* a new link, shown with its QR code; with `send` it is mailed to the member too. True once it is made. */
+  async function mint(username: string, send = false): Promise<boolean> {
     setBusy(`${username}${send ? ':send' : ''}`); setNotice(''); setCopied(false);
     try {
       const res = await api<InviteResponse>('/api/admin/crew', { method: 'POST', body: JSON.stringify({ username, send }) });
       setInvite({ ...res, username });
       load();
-    } catch (e) { setNotice(errText(e)); }
+      return true;
+    } catch (e) { setNotice(errText(e)); return false; }
     finally { setBusy(null); }
   }
 
@@ -55,11 +56,19 @@ export default function CrewPanel() {
     finally { setClosing(null); load(); }
   }
 
+  /* The clear shuts the member's open links too, so whoever got in on one
+     cannot use it to come back; the new link they need to choose another
+     password is made only once the clear has answered. Made before it, the
+     new link was shut with the rest. */
   async function clearPassword(username: string) {
-    if (!confirm(`Hreinsa lykilorð ${username}? Viðkomandi þarf þá nýjan innskráningartengil til að velja sér annað.`)) return;
+    if (!confirm(`Hreinsa lykilorð ${username}? Opnir tenglar lokast þá líka, og nýr innskráningartengill verður til hér á eftir svo hægt sé að velja annað.`)) return;
     setNotice('');
-    try { await api('/api/admin/crew', { method: 'DELETE', body: JSON.stringify({ username, password: null }) }); setNotice(`✓ Lykilorð ${username} var hreinsað.`); load(); }
-    catch (e) { setNotice(errText(e)); }
+    let closed = 0;
+    try { closed = (await api<{ linksClosed?: number }>('/api/admin/crew', { method: 'DELETE', body: JSON.stringify({ username, password: null }) })).linksClosed ?? 0; }
+    catch (e) { setNotice(errText(e)); return; }
+    /* a link that could not be made says why at the top, and the row's own "Nýr tengill" is there to try again */
+    if (await mint(username)) setNotice(`✓ Lykilorð ${username} var hreinsað${closed ? ` og ${closed} ${plural(closed, 'opnum tengli', 'opnum tenglum')} lokað` : ''}.`);
+    else load();
   }
 
   /* from the new link's dialog, the dialog says so (a refusal went to the panel's notice, behind it); from a row, the notice at the top does */
@@ -124,7 +133,7 @@ export default function CrewPanel() {
           </tbody>
         </table>
       )}
-      <p className="a-help">Gleymt lykilorð: hreinsaðu það hér og sendu nýjan tengil; félaginn velur sér annað á veggnum. Sé netfang skráð getur félaginn líka beðið sjálfur um tengil í pósti undir „Þetta er ég“, og fær póst um spilakvöldin nema hann afþakki það. Bréfin kalla hvern og einn nafninu sem er skráð, annars notandanafninu. Aðgangslyklar í umhverfisbreytum (<code>CREW_TOKEN_…</code>) virka áfram undir „Þetta er ég“.</p>
+      <p className="a-help">Gleymt lykilorð: hreinsaðu það hér og sendu tengilinn sem verður þá til; opnum tenglum er lokað um leið, og félaginn velur sér annað lykilorð á veggnum. Sé netfang skráð getur félaginn líka beðið sjálfur um tengil í pósti undir „Þetta er ég“, og fær póst um spilakvöldin nema hann afþakki það. Bréfin kalla hvern og einn nafninu sem er skráð, annars notandanafninu. Aðgangslyklar í umhverfisbreytum (<code>CREW_TOKEN_…</code>) virka áfram undir „Þetta er ég“.</p>
 
       {editing && <ContactModal row={editing} onClose={() => setEditing(null)} onSaved={msg => { setEditing(null); setNotice(msg); load(); }} />}
 

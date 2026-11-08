@@ -102,9 +102,15 @@
   text-overflow: ellipsis;
   color: var(--ink);
 }
-.w-poster__bounty { margin-top: var(--sp-2); display: flex; align-items: baseline; gap: var(--sp-2); }
-.w-poster__bounty .b-poster__reward { margin-top: 0; }
-.w-poster__bounty .b-poster__val { margin-top: 0; font-size: var(--fs-data); }
+/* What they are wanted for, under the name, in the roll call's own lines
+   (PosterCharge.tsx): the alias in red or their place, the charge, then the
+   bounty, to the paper's side beside the skin and centred on the portrait
+   poster. A long alias breaks at its soft hyphen, as on the roll call. */
+.w-poster__wanted { margin-top: var(--sp-2); display: grid; justify-items: start; }
+.w-poster__wanted > :first-child { margin-top: 0; }
+.w-poster__wanted .b-poster__alias { white-space: normal; overflow: visible; text-overflow: clip; hyphens: manual; text-wrap: balance; }
+.w-poster__wanted .b-poster__bounty { margin-top: var(--sp-1); justify-content: start; }
+@media (min-width: 1024px) { .w-poster__wanted { justify-items: center; } .w-poster__wanted .b-poster__bounty { justify-content: center; } }
 .w-poster__biorow { display: grid; gap: var(--sp-2); margin-top: var(--sp-4); }
 .w-poster__bio { display: block; margin-top: var(--sp-4); max-width: 60ch; line-height: 1.5; color: var(--ink-soft); white-space: pre-wrap; overflow-wrap: anywhere; text-align: left; }
 .w-poster__bio.is-empty { color: var(--ink-faint); }
@@ -119,16 +125,48 @@
    shows behind the land as it does on the home page, and on it a lantern on
    each place they built, its name on a paper tag. A lantern is pressable, so
    it is amber; pressed, it opens the place in the world. */
-.w-corner { position: relative; margin: var(--sp-4) 0 0; aspect-ratio: 16 / 9; background: linear-gradient(180deg, var(--sky-night-top), var(--night) 80%); box-shadow: 0 0 0 var(--px) var(--tc-brown), 0 calc(var(--px) * 2) 0 var(--px) rgb(from var(--ink) r g b / 0.35); }
-.w-corner img { display: block; width: 100%; height: 100%; }
-.w-corner__pin { position: absolute; display: grid; justify-items: center; gap: 2px; translate: -50% -1.5rem; color: inherit; text-decoration: none; }
-.w-corner__pin .b-lantern { width: 1rem; height: 1.5rem; color: var(--paper); transition: transform var(--dur-1) var(--ease-out); }
-.w-corner__label { padding: 1px var(--sp-1) 2px; background: var(--paper); color: var(--ink); font-family: var(--font-data); font-weight: 700; font-size: var(--fs-data); letter-spacing: 0.04em; white-space: nowrap; clip-path: var(--notch); box-shadow: 0 var(--px) 0 var(--wood-dark); }
-.w-corner__pin:focus-visible { outline: none; }
-.w-corner__pin:focus-visible .w-corner__label { background: var(--lantern); outline: var(--px) solid var(--ink); }
-@media (hover: hover) { .w-corner__pin:hover .b-lantern { transform: translateY(-2px) scale(1.15); } .w-corner__pin:hover .w-corner__label { background: var(--lantern); } }
-.w-corner__cap { position: absolute; left: var(--sp-2); bottom: var(--sp-2); padding: 1px var(--sp-2) 2px; background: rgb(from var(--pitch) r g b / 0.6); color: var(--paper); font-size: var(--fs-sm); }
-.w-corner__cap .b-paper__kicker { color: var(--lantern); margin-right: var(--sp-1); }
+/* Their corner of the world: the flight's still pinned to the poster, a
+   lantern on each place they built. Two or more carry a numeral on a paper
+   tag, the numeral of their line in the list above it, the way a photograph
+   pinned to a wanted poster carries its numbered marks; the place in hand
+   says its name in the numeral's place, and one place alone is named where
+   it stands. The marks are laid out on the server (src/lib/corner-layout.ts)
+   for the narrowest picture, with the sizes below: the lantern at one pixel
+   a pixel, 12 by 18, and a tag 20 tall beside it. The caption is printed on
+   the poster under the picture, so no mark stands on it. */
+.w-corner { margin: var(--sp-4) 0 0; }
+.w-corner__photo { position: relative; aspect-ratio: 16 / 9; background: linear-gradient(180deg, var(--sky-night-top), var(--night) 80%); box-shadow: 0 0 0 var(--px) var(--tc-brown), 0 calc(var(--px) * 2) 0 var(--px) rgb(from var(--ink) r g b / 0.35); }
+.w-corner__photo img { display: block; width: 100%; height: 100%; }
+/* the lantern's foot on the place, the tag beside it at the lantern's middle */
+.w-corner__pin { position: absolute; display: flex; align-items: center; gap: 2px; translate: -6px -100%; color: inherit; text-decoration: none; }
+.w-corner__pin.is-left:is(.is-named, .is-lit, :hover, :focus-visible) { flex-direction: row-reverse; translate: calc(-100% + 6px) -100%; }
+.w-corner__pin .b-lantern { width: 12px; height: 18px; color: var(--paper); transition: translate var(--dur-1) var(--ease-step); }
+.w-corner__tag { padding: 0 4px; background: var(--paper); color: var(--ink); font-family: var(--font-data); font-weight: 400; font-size: var(--fs-data); line-height: 20px; letter-spacing: 0.04em; white-space: nowrap; clip-path: var(--notch); }
+.w-corner__tag--name { display: none; }
+.w-corner__pin.is-named .w-corner__tag--name { display: block; }
+/* in hand: the lantern lifts a pixel, the tag takes the light and says the name over every other mark */
+.w-corner__pin:is(.is-lit, :hover, :focus-visible) { z-index: 1; outline: none; }
+.w-corner__pin:is(.is-lit, :hover, :focus-visible) .b-lantern { translate: 0 calc(var(--px) * -1); }
+.w-corner__pin:is(.is-lit, :hover, :focus-visible) .w-corner__tag { background: var(--lantern); }
+.w-corner__pin:is(.is-lit, :hover, :focus-visible) .w-corner__tag--no { display: none; }
+.w-corner__pin:is(.is-lit, :hover, :focus-visible) .w-corner__tag--name { display: block; }
+.w-corner__pin:focus-visible .w-corner__tag { outline: var(--px) solid var(--ink); outline-offset: calc(var(--px) * -1); }
+.w-corner__head { margin-bottom: var(--sp-2); color: var(--ink-faint); font-size: var(--fs-sm); }
+.w-corner__head .b-paper__kicker { color: var(--ink-soft); margin-right: var(--sp-1); }   /* a caption, not a press */
+/* the key under the picture: a numeral in the picture's own face, set flush
+   right in a column of its own so the names line up, its place beside it;
+   two columns read down once the key is wide enough that no name breaks */
+.w-corner { container-type: inline-size; }
+.w-corner__key { list-style: none; margin-top: var(--sp-3); font-size: var(--fs-sm); line-height: 1.4; }
+@container (min-width: 17.5rem) { .w-corner__key.is-cols { columns: 2; column-gap: var(--sp-4); } }
+.w-corner__key li { break-inside: avoid; padding: 2px 0; }
+.w-corner__place { display: grid; grid-template-columns: 1.5rem minmax(0, 1fr); column-gap: var(--sp-2); align-items: baseline; color: inherit; text-decoration: none; }
+.w-corner__place .b-link { justify-self: start; }
+.w-corner__key.is-plain .w-corner__place { grid-template-columns: minmax(0, 1fr); }   /* one place, named on the picture: no numerals to line up */
+.w-corner__no { justify-self: end; color: var(--ink); font-family: var(--font-data); font-weight: 400; font-size: var(--fs-data); line-height: 1.25; letter-spacing: 0.04em; }
+/* in hand, from the key or the picture: its numeral takes the lantern's light, as its tag does on the
+   picture; the light is a hard edge round it, so the names beside do not move */
+.w-corner__place.is-lit .w-corner__no:not(:empty) { background: var(--lantern); box-shadow: 0 0 0 3px var(--lantern); }
 @media (prefers-reduced-motion: reduce) { .w-corner__pin .b-lantern { transition: none; } }
 
 /* The game's advancements on the poster (Advancements.tsx): a ruled list in
@@ -304,6 +342,8 @@
   text-align: center;
   font-size: var(--fs-md);
   line-height: var(--lh-night);
+  /* two even lines on a phone, not a sentence with "enn" left alone under it */
+  text-wrap: balance;
   color: var(--text-faint);
   background: none;
   border-color: transparent;
@@ -412,17 +452,15 @@
 .w-strip { list-style: none; }
 .w-note-card { --hang: 1.75rem; --bar-h: calc(var(--px) * 4); --bar-out: calc(var(--px) * 2); --chain-x: 18%; flex: 0 0 11rem; scroll-snap-align: start; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; align-content: start; gap: var(--sp-2); padding: var(--sp-3); color: var(--sign-ink); text-decoration: none; }
 .w-note-card > :first-child:not(.w-note-card__pic) { grid-row: 2; }
-.w-note-card__who { grid-row: 3; align-self: end; }
 .w-note-card__pic { aspect-ratio: 16 / 10; overflow: hidden; background: var(--sign-2); box-shadow: 0 0 0 var(--px) var(--wood-dark); }
 .w-note-card__pic img { width: 100%; height: 100%; object-fit: cover; }
 .w-note-card__text { font-size: var(--fs-sm); line-height: 1.45; color: var(--sign-ink); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow-wrap: anywhere; }
 /* words alone are lettered across the middle of the board, as on the wall */
 .w-note-card > .w-note-card__text:first-child { align-self: center; text-align: center; text-wrap: balance; }
-.w-note-card__who { display: flex; align-items: center; gap: var(--sp-2); font-size: var(--fs-sm); color: var(--sign-soft); min-width: 0; }
+.w-note-card__who { grid-row: 3; align-self: end; display: flex; flex-wrap: wrap; align-items: center; gap: var(--px) var(--sp-2); font-size: var(--fs-sm); color: var(--sign-soft); min-width: 0; }
 .w-note-card__who img { width: 1rem; height: 1rem; image-rendering: pixelated; box-shadow: 0 0 0 1px var(--wood-dark); flex-shrink: 0; }
 .w-note-card__who b { font-weight: 600; color: var(--sign-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .w-note-card__who > span { white-space: nowrap; }
-.w-note-card__who { flex-wrap: wrap; row-gap: var(--px); }
 /* the sign is a link on the night: lantern light round its board */
 .w-note-card:focus-visible { outline: var(--px) solid var(--lantern); outline-offset: var(--px); }
 @media (hover: hover) { .w-note-card:hover { outline: var(--px) solid var(--lantern); outline-offset: var(--px); } }
@@ -483,8 +521,12 @@
 @media (hover: hover) { .w-print .w-call .b-btn:hover { background: var(--lantern-ink); color: var(--paper); } }
 .w-print .w-call .b-btn--solid { background: var(--lantern); color: var(--ink); }
 .w-print .w-call .b-err { color: var(--tc-red); }
-/* paid: the stamp goes on askew, as a stamp does, over a notice gone pale */
-.w-call.is-done > :not(.w-call__stamp):not(.b-paper__nail):not(.w-call__acts) { opacity: 0.62; }
+/* paid: the stamp goes on askew, as a stamp does, over a notice gone pale.
+   Pale in the paper's faint ink rather than see-through, so its words still
+   read (4.8:1; at six tenths of their ink they were 2.4 to 2.9:1), and who
+   brought it home keeps the lantern's ink, as a link on paper does. */
+.w-call.is-done :is(.w-call__mast, .w-call__state, .w-call__pay, .b-poster__reward) { color: var(--ink-faint); }
+.w-call.is-done .w-call__mast { border-bottom-color: var(--ink-faint); }
 .w-call .w-call__stamp {
   position: absolute;
   right: var(--sp-4);
@@ -609,7 +651,7 @@
 .w-slot::before { content: ''; position: absolute; z-index: 1; inset: 0; background: rgb(from var(--glint) r g b / 0.32); opacity: 0; pointer-events: none; }
 @media (hover: hover) { .w-slot:not([disabled]):hover::before { opacity: 1; } }
 .w-slot:not([disabled]):active .w-item, .w-slot:not([disabled]):active .w-slot__plus { translate: var(--press); }
-.w-slot:focus-visible { outline: var(--px) solid var(--lantern); outline-offset: calc(var(--px) * 3); }
+.w-slot:focus-visible { outline: var(--px) solid var(--focus); outline-offset: calc(var(--px) * 3); }   /* the ring stands on the board round the slot, so it takes the board's ink */
 /* the slot pointed at or with the keyboard stands over its neighbours, so its ring and its tag are whole */
 .w-slot:is(:hover, :focus-visible) { z-index: 3; }
 .w-slot[disabled] { cursor: default; }
@@ -695,8 +737,11 @@
   .w-poster__crease:focus-visible { outline: var(--px) solid var(--lantern-ink); outline-offset: var(--px); }
   .w-poster__fold:not(.is-open) { display: none; }
 }
-/* what the others have and this member has not: the game's dim unearned frame */
-.w-adv__item.is-unearned { opacity: 0.62; }
+/* what the others have and this member has not: the game's dim unearned
+   frame, and the words in the paper's faint ink rather than see-through, so
+   they still read (4.8:1, where the faded line was 2.4:1) */
+.w-adv__item.is-unearned .w-adv__frame { opacity: 0.62; }
+.w-adv__item.is-unearned :is(.w-adv__title, .w-adv__when) { color: var(--ink-faint); }
 .w-adv__head--left, .w-adv__list--left { margin-top: var(--sp-4); }
 /* a sign's own link, beside the lantern and the hotbar */
 .w-print__share { padding: 0 var(--sp-1); border: 0; background: none; font-family: var(--font-data); font-size: var(--fs-data); letter-spacing: 0.04em; text-transform: uppercase; color: var(--sign-lantern); min-height: 2rem; cursor: pointer; }
