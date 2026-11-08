@@ -16,6 +16,7 @@ import AddressBar from '@/components/badlands/AddressBar';
 import Footer from '@/components/badlands/Footer';
 import PlayerHead from '@/components/badlands/PlayerHead';
 import { CloseIcon, Lantern, Seal } from '@/components/badlands/Bits';
+import type { CornerMark } from '@/lib/corner-layout';
 import { PAGE_LINKS, STAT_TABS, type StatKey } from '@/components/badlands/data';
 import type { Charge } from '@/components/badlands/outlaws';
 import NightSky from '@/components/badlands/NightSky';
@@ -37,10 +38,11 @@ export interface WallPlace { id: number; label: string; sublabel: string; builde
 
 /** What the member built, seen in the world: the still of the flight down
     (src/lib/map-flight.ts) that shows their places best, and where each of
-    them stands in it, as fractions of its width and height. Worked out on
+    them stands in it, as fractions of its width and height, numbered and
+    parted so no two marks touch (src/lib/corner-layout.ts). Worked out on
     the server, so the wall carries the picture and the spots, not the
     flight's cameras. */
-export interface WallCorner { src: string; pins: { id: number; label: string; x: number; y: number }[] }
+export interface WallCorner { src: string; pins: CornerMark[] }
 
 // ─── Login: the password, or a link by post ───────────────────────────────────
 
@@ -394,6 +396,17 @@ export default function Wall({ initial, places, initialStats = null, initialLed 
   }, [prints.length]);
   const cover  = coverPhoto(profile);
   const built  = places.filter(p => p.builders.some(b => sameUser(b, username)));
+  /* The place in hand on the poster's corner of the world, pointed at or
+     focused either on its lantern or in the line of what they built: its
+     lantern takes the light and says its name, its line in the list is lit. */
+  const [inHand, setInHand] = useState<number | null>(null);
+  const markOf = useMemo(() => new Map((corner?.pins ?? []).map(m => [m.id, m])), [corner]);
+  /* one place is named where it stands; two or more are numbered, the line of what they built their key */
+  const numbered = (corner?.pins.length ?? 0) > 1;
+  const hand = (id: number) => ({
+    onMouseEnter: () => setInHand(id), onMouseLeave: () => setInHand(h => (h === id ? null : h)),
+    onFocus: () => setInHand(id), onBlur: () => setInHand(h => (h === id ? null : h)),
+  });
   /* the same lines the roll call's poster of them posts, so the poster pressed is the poster arrived at */
   const wanted = wallPosted(best, stats?.playTimeHours);
 
@@ -521,7 +534,9 @@ export default function Wall({ initial, places, initialStats = null, initialLed 
               <p className={`w-poster__bio${profile.bio ? '' : ' is-empty'}`}>{profile.bio || 'engin kynning enn'}</p>
             )}
 
-            {built.length > 0 && (
+            {/* What they built, as a line of the poster's print, when none of
+                it stands where the flight's stills can show it */}
+            {built.length > 0 && !(corner && corner.pins.length > 0) && (
               <p className="w-poster__built">
                 <span className="b-paper__kicker">Byggði</span>{' '}
                 {built.map((p, i) => <span key={p.id}>{i > 0 && ', '}<Link href={`/?stadur=${p.id}#heimur`} className="b-link">{p.label}</Link></span>)}
@@ -530,18 +545,42 @@ export default function Wall({ initial, places, initialStats = null, initialLed 
             {/* Their corner of the world: what they built, where it stands,
                 on the still of the flight that shows it best, the night
                 behind the land as on the home page, each place a lantern
-                that opens its postcard in the world. */}
+                that opens its postcard in the world. Two or more carry a
+                numeral, as a photograph pinned to a poster carries its
+                numbered marks, and the key under the picture says which is
+                which; the name comes up on the lantern in hand, and one
+                place alone is named where it stands. */}
             {corner && corner.pins.length > 0 && (
               <figure className="w-corner">
-                {/* eslint-disable-next-line @next/next/no-img-element -- a still of the flight, drawn at the size it was taken */}
-                <img src={corner.src} alt={`${andList(corner.pins.map(p => p.label))} í heiminum, séð úr lofti`} width={1280} height={720} loading="lazy" decoding="async" />
-                {corner.pins.map(p => (
-                  <Link key={p.id} href={`/?stadur=${p.id}#heimur`} className="w-corner__pin" style={{ left: `${(p.x * 100).toFixed(2)}%`, top: `${(p.y * 100).toFixed(2)}%` }}>
-                    <Lantern lit />
-                    <span className="w-corner__label">{p.label}</span>
-                  </Link>
-                ))}
-                <figcaption className="w-corner__cap"><span className="b-paper__kicker">Í heiminum</span> séð úr lofti</figcaption>
+                <figcaption className="w-corner__head"><span className="b-paper__kicker">Byggði</span> í heiminum, séð úr lofti</figcaption>
+                <div className="w-corner__photo">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- a still of the flight, drawn at the size it was taken */}
+                  <img src={corner.src} alt={`${andList(corner.pins.map(p => p.label))} í heiminum, séð úr lofti`} width={1280} height={720} loading="lazy" decoding="async" />
+                  {corner.pins.map(p => (
+                    <Link key={p.id} href={`/?stadur=${p.id}#heimur`} aria-label={p.label} {...hand(p.id)}
+                      className={`w-corner__pin is-${p.side}${numbered ? '' : ' is-named'}${inHand === p.id ? ' is-lit' : ''}`}
+                      style={{ left: `${(p.x * 100).toFixed(2)}%`, top: `${(p.y * 100).toFixed(2)}%` }}>
+                      <Lantern lit />
+                      {numbered && <span className="w-corner__tag w-corner__tag--no" aria-hidden="true">{p.n}</span>}
+                      <span className="w-corner__tag w-corner__tag--name" aria-hidden="true">{p.label}</span>
+                    </Link>
+                  ))}
+                </div>
+                {/* the key: each place on the map by its numeral, then what they
+                    built that the picture cannot show (another base, the deep) */}
+                <ol className={`w-corner__key${numbered ? '' : ' is-plain'}${built.length > 5 ? ' is-cols' : ''}`} role="list">
+                  {[...built].sort((a, b) => (markOf.get(a.id)?.n ?? Infinity) - (markOf.get(b.id)?.n ?? Infinity)).map(p => {
+                    const m = numbered ? markOf.get(p.id) : undefined;
+                    return (
+                      <li key={p.id}>
+                        <Link href={`/?stadur=${p.id}#heimur`} className={`w-corner__place${inHand === p.id ? ' is-lit' : ''}`} {...(markOf.has(p.id) ? hand(p.id) : {})}>
+                          {numbered && <span className="w-corner__no" aria-hidden="true">{m?.n ?? ''}</span>}
+                          <span className="b-link">{p.label}</span>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ol>
               </figure>
             )}
 
