@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createElement } from 'react';
 import { renderToString } from 'react-dom/server';
 import type { PlayNightResponse, PublicNight } from '@/app/api/playnight/route';
-import { SIGNAL_LEAST, fullHouseOf, signalOf, signalSpot, type Plateau } from '../signal';
+import { SIGNAL_LEAST, cameOf, fullHouseOf, signalOf, signalSpot, type Plateau } from '../signal';
 import { FAR, NEAR } from '../ridges';
 import { useSignal } from '../night';
 
@@ -169,6 +169,14 @@ describe('fullHouseOf', () => {
   it('takes two or more to be a house', () => {
     expect(fullHouseOf([live(['stebbias'], ['stebbias'])])).toBe(false);
     expect(fullHouseOf([live([], [])])).toBe(false);
+  });
+
+  it('counts whoever is in the game now as come, before the server has noted them', () => {
+    const n = live(['stebbias', 'joenana', 'eikibleiki'], ['stebbias']);
+    expect(cameOf(n)).toEqual(['stebbias']);
+    expect(cameOf(n, ['JOENANA', 'Gamla123'])).toEqual(['stebbias', 'joenana']);
+    expect(fullHouseOf([n], ['joenana'])).toBe(false);
+    expect(fullHouseOf([n], ['joenana', 'eikibleiki'])).toBe(true);
   });
 
   it('is only of an evening under way', () => {

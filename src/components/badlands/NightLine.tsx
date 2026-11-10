@@ -6,6 +6,8 @@ import { Campfire } from './Bits';
 import PlayerHead from './PlayerHead';
 import { WhenAt, dayOf, untilAt, usePlayNight } from './night';
 import { plural } from '@/lib/format';
+import { cameOf } from './signal';
+import { useServerStatus } from './hooks';
 
 /* The hero's one line about the next play night, in a module of its own:
    the hero is on every visitor's first screen, and this line is all of the
@@ -37,6 +39,12 @@ export function Heads({ names, lit }: { names: string[]; lit?: (n: string) => bo
 export function NightLine({ initial, href = '#hopur' }: { initial?: PlayNightResponse; href?: string }) {
   const { state } = usePlayNight(initial);
   const night = state?.nights[0];
+  /* who is in the game now counts as come, as in the crew's room: only once
+     the page is the browser's, since the server drew the line without them */
+  const server = useServerStatus();
+  const [own, setOwn] = useState(false);
+  useEffect(() => setOwn(true), []);
+  const inGame = own && server.online ? server.list : [];
   /* on the day the line counts down on its own clock, so it keeps moving
      even when a poll fails or answers nothing new */
   const counting = night?.phase === 'chosen' || night?.phase === 'soon';
@@ -55,7 +63,7 @@ export function NightLine({ initial, href = '#hopur' }: { initial?: PlayNightRes
     const most = Math.max(...night.options.map(o => o.yes.length));
     text = `Kvöld í kortunum · ${night.options.length} ${plural(night.options.length, 'tími', 'tímar')}${most ? ` · allt að ${most} ${plural(most, 'getur', 'geta')}` : ''}`;
   } else if (night.phase === 'live') {
-    const here = night.came.filter(n => yes.some(y => lower(y) === lower(n))).length;
+    const here = cameOf(night, inGame).length;
     /* everyone who said yes is in: said in words here, and in rockets over the fire (fullHouseOf in signal.ts) */
     text = `Kvöldið er hafið · ${yes.length >= 2 && here === yes.length ? `öll ${yes.length} komin` : `${here} af ${yes.length} komin`}`;
   } else if (night.phase === 'over') {

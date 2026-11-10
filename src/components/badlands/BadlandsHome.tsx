@@ -40,9 +40,10 @@ const PRESSED_HOLD_MS = 1500;
    of its own, so a poll of the nights draws this again and not the page.
    Only from the browser's own answer, never the one the page was drawn
    with: a page kept from the evening would send them up over a morning. */
-function NightParticles({ nights, snow, fireworks }: { nights: PlayNightResponse; snow: boolean; fireworks: boolean }) {
+function NightParticles({ nights, crew, snow, fireworks }: { nights: PlayNightResponse; crew: string; snow: boolean; fireworks: boolean }) {
   const { state } = usePlayNight(nights);
-  const full = !!state && state !== nights && fullHouseOf(state.nights);
+  /* who is in now counts as come, as in the hero's line and the crew's room (cameOf) */
+  const full = !!state && state !== nights && fullHouseOf(state.nights, crew ? crew.split('|') : []);
   return <Particles heroId="top" fireId="campfire" snow={snow} fireworks={fireworks || full} />;
 }
 
@@ -165,7 +166,7 @@ export default function BadlandsHome({ syncedOn, bases, initial }: { syncedOn: s
       <Sky />
       {/* the effects start once the browser is idle, and not at all on a device without room for them */}
       {/* under reduced motion neither draws anything, so neither is fetched */}
-      {effects && !reduce && <NightParticles nights={nights} snow={season.snow} fireworks={season.fireworks} />}
+      {effects && !reduce && <NightParticles nights={nights} crew={crew} snow={season.snow} fireworks={season.fireworks} />}
       {effects && !reduce && <CursorLight />}
       <AddressBar links={SECTIONS} activeId={active} onDoor={openDoor} status={initial.status} />
       <main id="efni">
