@@ -417,7 +417,8 @@
 .b-toast .b-seal { margin-block: calc(var(--sp-1) * -1); }
 .b-toast__text { display: grid; gap: var(--px); min-width: 0; }
 .b-toast__title { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-lg); line-height: 1.1; color: var(--ink); }
-.b-toast__data { font-family: var(--font-data); font-size: var(--fs-data); color: var(--lantern-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* two lines at most: an advancement's name ("Hvernig komumst við hingað?") was cut to its first words on a phone, where one line holds about twenty letters */
+.b-toast__data { font-family: var(--font-data); font-size: var(--fs-data); line-height: 1.25; color: var(--lantern-ink); overflow: hidden; overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
 
 /* ─── the lantern (also the status readout) ───────────────────── */
 .b-lantern { position: relative; display: inline-block; width: 1.5rem; height: 2.25rem; color: var(--text-faint); }

@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { CopyIcon, Lantern, Mark, Strata } from './Bits';
 import PlayerHead from './PlayerHead';
 import ToastHost from './Toast';
+import AdvancementToasts from './AdvancementToasts';
 import { SERVER_IP, plainClick, type NavLink } from './data';
 import { modalOpen, useCopy, useCrewSession, useServerStatus, type ServerState } from './hooks';
 import { useTabLantern } from './tabLantern';
@@ -216,6 +217,7 @@ export default function AddressBar({ links, activeId, onDoor, always = false, st
         <Xp />
       </header>
       <ToastHost />
+      <AdvancementToasts />
 
       {/* The hotbar at the foot of a phone, on every page: the three doors as
           its slots, the one the visitor is behind framed the way the game
