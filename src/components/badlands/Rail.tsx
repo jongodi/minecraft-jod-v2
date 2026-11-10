@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type FocusEvent, type ReactNode } from 'react';
 import { ArrowIcon } from './Bits';
 import { useReducedMotionPref } from './hooks';
 
@@ -36,6 +36,19 @@ export default function Rail({ children, className, label, prevLabel = 'Fyrri', 
     setEdges(prev => (prev.start === next.start && prev.end === next.end ? prev : next));
   }, []);
   const onScroll = useCallback(() => { if (!raf.current) raf.current = requestAnimationFrame(measure); }, [measure]);
+  /* The keyboard walks the rail an item at a time, and the browser scrolls a
+     focused item in only once it is wholly out of sight: a poster with a
+     sliver showing under the arrow took the ring there, all but unseen. The
+     item that holds the focus is brought in whole, clear of the arrows. */
+  const onFocus = useCallback((e: FocusEvent<HTMLDivElement>) => {
+    const el = rail.current, target = e.target as Element;
+    if (!el || !target.matches(':focus-visible')) return;
+    let item: Element = target;
+    while (item.parentElement && item.parentElement !== el) item = item.parentElement;
+    if (item.parentElement !== el) return;
+    const width = (b: HTMLButtonElement | null) => (b && !b.disabled ? b.offsetWidth : 0);
+    revealIn(el, item, { left: width(prev.current), right: width(next.current) });
+  }, []);
   useEffect(() => {
     /* measured in the next frame, with the browser's own layout, rather than
        here: read right after hydration had changed the page, scrollWidth
@@ -89,7 +102,7 @@ export default function Rail({ children, className, label, prevLabel = 'Fyrri', 
 
   return (
     <div className={`b-railwrap${className ? ` ${className}` : ''}`}>
-      <div ref={rail} onScroll={onScroll} className={`b-rail${edges.start ? ' at-start' : ''}${edges.end ? ' at-end' : ''}`} role="group" aria-label={label}>
+      <div ref={rail} onScroll={onScroll} onFocus={onFocus} className={`b-rail${edges.start ? ' at-start' : ''}${edges.end ? ' at-end' : ''}`} role="group" aria-label={label}>
         {children}
       </div>
       <button ref={prev} type="button" className="b-railwrap__arrow b-railwrap__arrow--l" onClick={() => nudge(-1)} disabled={edges.start} aria-label={prevLabel}><ArrowIcon flip /></button>
@@ -107,11 +120,16 @@ export function revealRailItem(id: string | number, within?: HTMLElement | null)
   const root = within ?? document;
   const item = root.querySelector<HTMLElement>(`[data-rail-item="${id}"]`);
   const rail = item?.closest<HTMLElement>('.b-rail');
-  if (!item || !rail) return;
+  if (item && rail) revealIn(rail, item);
+}
+
+/* nearest, as scrollIntoView would put it: only as far as it takes to show
+   the whole item, clear of whatever stands over the rail's edges by `pad` */
+function revealIn(rail: HTMLElement, item: Element, pad: { left: number; right: number } = { left: 0, right: 0 }) {
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const box = rail.getBoundingClientRect();
   const at = item.getBoundingClientRect();
-  /* nearest, as scrollIntoView would put it: only as far as it takes to show the whole item */
-  const by = at.left < box.left ? at.left - box.left : at.right > box.right ? at.right - box.right : 0;
+  const left = box.left + pad.left, right = box.right - pad.right;
+  const by = at.left < left ? at.left - left : at.right > right ? at.right - right : 0;
   if (by) rail.scrollBy({ left: by, behavior: reduce ? 'auto' : 'smooth' });
 }
