@@ -326,6 +326,17 @@ export async function readNoShows(): Promise<Record<string, number>> {
   return Object.fromEntries(Object.entries(raw).map(([u, n]) => [u, Number(n) || 0]));
 }
 
+/** The lock a fire is lit under: taken (true if it was free) or let go. It
+    lets go of itself after a few seconds, so a request that died holding it
+    does not stop the next fire. */
+const LIGHTING_KEY = 'playnight:lighting';
+export async function lightingLock(take: boolean): Promise<boolean> {
+  const r = await redis();
+  if (take) return (await r.set(LIGHTING_KEY, '1', 'EX', 10, 'NX')) === 'OK';
+  await r.del(LIGHTING_KEY).catch(() => 0);
+  return true;
+}
+
 export interface NightState { night: Night; votes: Votes; seen: string[] }
 
 /** Every night as it stands now, in the order the page shows them. An

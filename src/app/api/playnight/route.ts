@@ -8,7 +8,7 @@ import { errorMessage } from '@/lib/icelandic';
 import { jsonObject, tooManyWrites } from '@/lib/http';
 import {
   MAX_NOTE, MAX_PLANNED, START_BEFORE_MS, checkTimes, clashOf, currentNights, isPlanned, optionOf, phaseOf,
-  changeNight, writeNight, writeVote, yesFor, type Night,
+  changeNight, lightingLock, writeNight, writeVote, yesFor, type Night,
 } from '@/lib/play-night';
 import { NO_NIGHTS, viewNights, type PlayNightResponse } from '@/lib/play-night-view';
 import { answerUser } from '@/lib/night-answer';
@@ -74,24 +74,36 @@ export async function POST(req: NextRequest) {
     const { all, shown } = await currentNights(now);
 
     if (action === 'propose') {
-      if (all.filter(n => isPlanned(n, now)).length >= MAX_PLANNED) {
-        return json({ error: `Það eru þegar ${MAX_PLANNED} kvöld á dagskrá. Bíddu þar til eitt er liðið eða slökktu á einu.` }, 409);
+      /* One fire is lit at a time. The checks below read the nights and the
+         write is another step, so two members lighting a fire for the same
+         evening in the same moment both passed them, and two fires on one
+         evening count who came and who did not twice (src/lib/play-night.ts).
+         Held a few seconds at most, and let go when this one is done. */
+      if (!(await lightingLock(true))) return json({ error: 'Annað bál er að kvikna í þessu. Reyndu aftur eftir smástund.' }, 409);
+      try {
+        /* read again now the lock is held: the nights read above may be from before another fire was written */
+        const { all } = await currentNights(now);
+        if (all.filter(n => isPlanned(n, now)).length >= MAX_PLANNED) {
+          return json({ error: `Það eru þegar ${MAX_PLANNED} kvöld á dagskrá. Bíddu þar til eitt er liðið eða slökktu á einu.` }, 409);
+        }
+        const times = checkTimes(body.times, now);
+        if ('error' in times) return json({ error: times.error }, 400);
+        if (clashOf(all, times.at, now)) return json({ error: 'Annað bál logar þegar sama kvöld. Veldu annan tíma.' }, 409);
+        const note = typeof body.note === 'string' ? body.note.replace(/\s+/g, ' ').trim().slice(0, MAX_NOTE) : '';
+        const night: Night = {
+          id: randomUUID().slice(0, 8), by: me, createdAt: new Date(now).toISOString(), note,
+          options: times.at.map((at, i) => ({ id: String.fromCharCode(97 + i), at })),
+          chosen: times.at.length === 1 ? 'a' : null, chosenBy: times.at.length === 1 ? me : null,
+          cancelled: false, startedBy: null, outcome: null,
+        };
+        await writeNight(night);
+        /* whoever lights the fire can make every time they offered */
+        await writeVote(night, me, night.options.map(o => o.id), now);
+        mailAfter(m => m.mailNights());
+        return json(await viewNights(session));
+      } finally {
+        await lightingLock(false);
       }
-      const times = checkTimes(body.times, now);
-      if ('error' in times) return json({ error: times.error }, 400);
-      if (clashOf(all, times.at, now)) return json({ error: 'Annað bál logar þegar sama kvöld. Veldu annan tíma.' }, 409);
-      const note = typeof body.note === 'string' ? body.note.replace(/\s+/g, ' ').trim().slice(0, MAX_NOTE) : '';
-      const night: Night = {
-        id: randomUUID().slice(0, 8), by: me, createdAt: new Date(now).toISOString(), note,
-        options: times.at.map((at, i) => ({ id: String.fromCharCode(97 + i), at })),
-        chosen: times.at.length === 1 ? 'a' : null, chosenBy: times.at.length === 1 ? me : null,
-        cancelled: false, startedBy: null, outcome: null,
-      };
-      await writeNight(night);
-      /* whoever lights the fire can make every time they offered */
-      await writeVote(night, me, night.options.map(o => o.id), now);
-      mailAfter(m => m.mailNights());
-      return json(await viewNights(session));
     }
 
     const cur = shown.find(s => s.night.id === body.night);

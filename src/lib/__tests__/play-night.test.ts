@@ -132,6 +132,20 @@ describe('/api/playnight', () => {
   const post = (body: unknown) => POST(new NextRequest('https://jod.test/api/playnight', { method: 'POST', body: JSON.stringify(body) }));
   const view = async () => (await (await GET()).json()) as import('../../app/api/playnight/route').PlayNightResponse;
 
+  /* the clash check reads and the write is another step: two at once both passed it */
+  it('lights one fire when two are lit for the same evening in the same moment, and the next can be lit after', async () => {
+    const both = await Promise.all([
+      post({ action: 'propose', times: ['2026-10-02T20:00:00Z'] }),
+      post({ action: 'propose', times: ['2026-10-02T20:30:00Z'] }),
+    ]);
+    expect(both.map(r => r.status).sort()).toEqual([200, 409]);
+    expect((await view()).nights).toHaveLength(1);
+    /* the lock is let go, also after a proposal that was turned away */
+    expect((await post({ action: 'propose', times: ['2026-10-02T21:00:00Z'] })).status).toBe(409);
+    expect((await post({ action: 'propose', times: ['2026-10-05T20:00:00Z'] })).status).toBe(200);
+    expect((await view()).nights).toHaveLength(2);
+  });
+
   it('lights a fire, takes answers, and the proposer chooses', async () => {
     const res = await post({ action: 'propose', times: ['2026-10-02T20:00:00Z', '2026-10-03T20:00:00Z'], note: '  Klárum   brúna ' });
     expect(res.status).toBe(200);
