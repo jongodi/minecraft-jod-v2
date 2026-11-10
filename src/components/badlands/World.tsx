@@ -30,11 +30,11 @@ import { crewAtPlaces, hereLine, railReveal } from './hereNow';
 
 /* Everything that opens over the world is a screen of its own, fetched when
    its door is first opened: the paper sheet, the album, and the three rooms. */
-/* The flight is drawn from the browser's first render, never into the markup
-   (posterOn below), so its code, the cloud deck and the cameras of its forty
-   stills can come after the page's first paint: asked for as soon as the
-   page is live, they are here long before anyone reaches the world, and the
-   stills themselves wait for the page's load anyway. */
+/* The flight is drawn in the browser alone, never into the markup (flightOn
+   below), so its code, the cloud deck and the cameras of its forty stills
+   come after the page's first paint: asked for once the page has loaded and
+   the browser is idle, they are here long before anyone reaches the world,
+   and the stills themselves wait for the page's load anyway. */
 const Flight   = dynamic(() => import('./Flight'),   { ssr: false });
 const MapSheet = dynamic(() => import('./MapSheet'), { ssr: false });
 const Album    = dynamic(() => import('./Album'),    { ssr: false });
@@ -307,6 +307,21 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
      anyone has scrolled to the world, as it always was, with no fade. */
   const [posterOn, setPosterOn] = useState(false);
   useEffect(() => { setPosterOn(true); }, []);
+  /* The flight is mounted once the page has loaded and the browser is idle:
+     its stills wait for the load in any case, and mounting it in the same
+     breath as the page's hydration made one long task of the two on a phone.
+     A visitor is a screen or more away from it by then. */
+  const [flightOn, setFlightOn] = useState(false);
+  useEffect(() => {
+    const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void };
+    let idle = 0, timer = 0;
+    const go = () => {
+      if (w.requestIdleCallback) idle = w.requestIdleCallback(() => setFlightOn(true), { timeout: 1500 });
+      else timer = window.setTimeout(() => setFlightOn(true), 200);
+    };
+    if (document.readyState === 'complete') go(); else window.addEventListener('load', go, { once: true });
+    return () => { window.removeEventListener('load', go); if (idle) w.cancelIdleCallback?.(idle); window.clearTimeout(timer); };
+  }, []);
   /* the town's lights coming on over the still: not on a device that skips the effects */
   const effects = useEffectsAllowed();
   /* They come on when the world is most of the way into view, and go out
@@ -904,7 +919,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
         {/* The flight down, and the places pinned on whatever is showing.
             Once the live map is asked for, the still is what it takes over
             from, and the live map has its own lanterns. */}
-        {FLIGHT_ON && posterOn && (
+        {FLIGHT_ON && posterOn && flightOn && (
           <Flight fly={fly && (!live || auto)} runway={runway} f3={flightF3} places={grounded} players={onLand}
             selected={selected} onChoose={choose} near={near} onNear={pointAt} camera={cameraSink}
             hidden={shown || drawn} onLanded={setLanded} onApproach={approach} awake={sleepless} />
