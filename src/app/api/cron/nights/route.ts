@@ -39,6 +39,18 @@ export async function GET(req: NextRequest) {
   }
 
   const headers = { 'Cache-Control': 'no-store' };
+  /* Reading the nights is what decides one whose time has come. The letters
+     read them, but with no mail set up nothing here did, and a night with
+     several times that nobody opened a page for was never chosen, so nobody
+     was noted as seen at it. Read here, in a try of its own. */
+  if (!process.env.RESEND_API_KEY) {
+    try {
+      const { currentNights } = await import('@/lib/play-night');
+      if (process.env.REDIS_URL) await currentNights();
+    } catch (err) {
+      console.error('[cron/nights] the nights were not read:', err instanceof Error ? err.message : err);
+    }
+  }
   if (!process.env.RESEND_API_KEY) return NextResponse.json({ status, mailed: [], skipped: 'RESEND_API_KEY is not set' }, { headers });
   try {
     const { mailNights } = await import('@/lib/night-mail');

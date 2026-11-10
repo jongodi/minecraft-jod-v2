@@ -206,7 +206,8 @@ export function sanitizeMapConfig(body: unknown): { error: string } | { config: 
   const seenIds = new Set<number>();
   for (const raw of b.locations as unknown[]) {
     const l = raw as Partial<MapLocation> | null;
-    if (!l || !isNum(l.id) || !isNum(l.x) || !isNum(l.y)) return { error: 'Pinni með ógild gildi.' };
+    /* a whole number: 3 and 3.5 were both let through as different pins and both kept as 3 */
+    if (!l || !isNum(l.id) || !Number.isInteger(l.id) || !isNum(l.x) || !isNum(l.y)) return { error: 'Pinni með ógild gildi.' };
     if (seenIds.has(l.id)) return { error: `Pinni #${l.id} kemur oftar en einu sinni fyrir.` };
     seenIds.add(l.id);
     const type = LOCATION_TYPES.has(l.type as MapLocation['type']) ? (l.type as MapLocation['type']) : 'surface';

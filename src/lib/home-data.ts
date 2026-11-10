@@ -20,7 +20,7 @@ import { DATAPACKS } from '@/data/datapacks';
 import { getCachedStats } from '@/lib/stats';
 import { ADVANCEMENT_COUNT, readStoredAdvancements } from '@/lib/advancements';
 import { heldNights, type HeldNight } from '@/lib/play-night';
-import { formatNumber } from '@/lib/format';
+import { formatNumber, plural } from '@/lib/format';
 import { freshPlaces } from '@/lib/bluemap-snapshot';
 import { sleeplessOf } from '@/lib/sleepless';
 import { signalOf } from '@/components/badlands/signal';
@@ -63,8 +63,8 @@ async function worldFacts(awake: Record<string, number> = {}): Promise<string[]>
     /* from the ticks: each member's hours are floored, and eight floors lose most of a day */
     const hours = Math.round(stats.players.reduce((a, p) => a + (p.playTimeTicks ?? 0), 0) / 72000);
     const mobs = stats.players.reduce((a, p) => a + (p.mobKills ?? 0), 0);
-    if (hours > 0) out.push(`${formatNumber(hours)} klukkustundir í heiminum!`);
-    if (mobs > 0) out.push(`${formatNumber(mobs)} verur felldar!`);
+    if (hours > 0) out.push(`${formatNumber(hours)} ${plural(hours, 'klukkustund', 'klukkustundir')} í heiminum!`);
+    if (mobs > 0) out.push(`${formatNumber(mobs)} ${plural(mobs, 'vera felld', 'verur felldar')}!`);
     Object.assign(awake, sleeplessOf(stats.players));
   }
   if (crew) {
