@@ -109,7 +109,8 @@ function QuickDraw({ onClose }: { onClose: () => void }) {
   const last       = shots[shots.length - 1];
   const lastIsHit  = phase === 'result' && typeof last === 'number';
   const lastIsFoul = phase === 'result' && last === null;
-  const arenaCls   = ['b-arena', `is-${phase}`, lastIsHit ? 'is-hit' : '', lastIsFoul ? 'is-foul' : ''].filter(Boolean).join(' ');
+  /* is-fouled: the game ended with no clean shot, its call four words long (badlands.css) */
+  const arenaCls   = ['b-arena', `is-${phase}`, lastIsHit ? 'is-hit' : '', lastIsFoul ? 'is-foul' : '', phase === 'done' && gameBest === null ? 'is-fouled' : ''].filter(Boolean).join(' ');
 
   /* When the game ends, a signed-in member's best draw goes to the wanted
      board as Fógetinn's charge; only a quicker time replaces the old one. */

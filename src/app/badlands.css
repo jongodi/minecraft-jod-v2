@@ -2639,11 +2639,15 @@ html.is-map-full { overflow: hidden; }
 /* the puff of a hit: its own keyframes, since the campfire's b-smoke below once shared the name and won the whole sheet */
 .is-result.is-hit .b-arena__smoke { animation: b-arena-smoke 1.2s var(--ease-out) forwards; transform-box: fill-box; transform-origin: center; }
 @keyframes b-arena-smoke { 0% { opacity: 0.9; transform: scale(0.4); } 100% { opacity: 0; transform: scale(2.2) translateY(-30px); } }
-.b-arena__hole { position: absolute; width: 34px; height: 34px; margin: -17px 0 0 -17px; pointer-events: none; }
+/* the hole is an svg in the arena too, so it is named with the arena: the scene's own rule above laid it
+   over the whole arena, and every hit left a black block the size of the sky */
+.b-arena .b-arena__hole { position: absolute; inset: auto; width: 34px; height: 34px; margin: -17px 0 0 -17px; pointer-events: none; }
 .b-arena__call { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: var(--sp-4) var(--sp-4) 24%; pointer-events: none; }
 .b-arena__big { font-family: var(--font-display); font-size: var(--fs-2xl); line-height: 1; color: var(--paper); text-shadow: var(--px) var(--px) 0 var(--night); }
 .is-draw .b-arena__big { color: var(--lantern); animation: b-pop var(--dur-2) var(--ease-out); }
 .is-result.is-hit .b-arena__big { font-family: var(--font-data); font-size: calc(var(--fs-data-lg) * 2); }   /* 48px: six of the face's pixels, on the grid */
+/* three fouls end the game in four words, not a number: a size down, so they stay on one line between the corners' labels */
+.b-arena.is-fouled .b-arena__big { font-size: var(--fs-xl); }
 @keyframes b-pop { 0% { transform: scale(0.6); } 100% { transform: none; } }
 .b-arena__small { margin-top: var(--sp-2); font-size: var(--fs-md); color: var(--paper); text-shadow: 0 var(--px) 0 var(--night); max-width: 30ch; }
 .b-arena__corner { position: absolute; top: var(--sp-2); left: var(--sp-3); font-family: var(--font-data); font-size: var(--fs-data); color: var(--paper); text-shadow: 0 var(--px) 0 var(--night); }
@@ -2662,6 +2666,8 @@ html.is-map-full { overflow: hidden; }
   .b-arena__moon { transform: translate(-390px, -228px); }
   .b-duelpanel { padding: var(--sp-4); }
 }
+/* under 360 the gap between the two labels is narrower than the moon: it is left out there */
+@media (max-width: 359.98px) { .b-arena__moon { display: none; } }
 .b-fig { transition: transform 0.18s var(--ease-out); transform-box: fill-box; transform-origin: bottom center; }
 .b-arm { transition: transform var(--dur-1) var(--ease-out); transform-box: fill-box; transform-origin: top left; }
 .is-draw .b-fig--foe .b-arm, .is-result .b-fig--foe .b-arm { transform: rotate(-80deg); }
@@ -2675,6 +2681,16 @@ html.is-map-full { overflow: hidden; }
 .b-stub.is-foul { color: var(--tc-red); }
 .b-stub__k { font-size: var(--fs-sm); color: var(--ink-faint); }
 .b-stub__v { margin-top: var(--sp-1); font-family: var(--font-data); font-size: var(--fs-data); }
+/* In a narrow column (the panel beside the arena on a small desktop, or a
+   320 px phone) three slips side by side broke "Umferð / III" and "457 / ms"
+   over two lines: there each slip is a ledger row instead, the round on the
+   left and its time on the right. */
+.b-duel__side { container-type: inline-size; }
+@container (max-width: 18rem) {
+  .b-stubs { grid-template-columns: minmax(0, 1fr); gap: var(--sp-1); }
+  .b-stub { display: flex; justify-content: space-between; align-items: baseline; padding: var(--sp-2) var(--sp-3); text-align: start; }
+  .b-stub__v { margin-top: 0; white-space: nowrap; }
+}
 .b-duel__readout { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-4); }
 .b-duel__k { font-size: var(--fs-sm); color: var(--text-faint); }
 .b-duel__v { margin-top: var(--sp-1); font-family: var(--font-data); font-size: var(--fs-data); color: var(--paper); display: inline-flex; align-items: center; gap: var(--sp-2); }
