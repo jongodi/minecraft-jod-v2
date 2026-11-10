@@ -27,8 +27,9 @@ export function signalOf(nights: readonly PublicNight[], now = Date.now()): bool
 }
 
 /** Fullt hús: an evening under way that everyone who said they would come
-    has come to, when two or more said so. The crew's own rockets go up over
-    the fire then (Fireworks.tsx) and the hero's line says it in words. Names
+    has come to, when two or more said so. The fireworks of gamlárskvöld go up
+    over the fire then (NightParticles in BadlandsHome.tsx, Particles.tsx)
+    and the hero's line says it in words. Names
     are matched as the game matches them, whatever their capitals. Over with
     the evening. */
 export function fullHouseOf(nights: readonly PublicNight[]): boolean {

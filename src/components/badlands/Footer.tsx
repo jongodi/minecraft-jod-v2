@@ -12,8 +12,6 @@ import AmbienceToggle from '@/effects/AmbienceToggle';
 import { useAway, useBackCloses, useBackdropClose, useScrollLock } from './hooks';
 import { YuleLad, seasonClass, useSeason } from './Season';
 import { usePlayNight, useSignal } from './night';
-import { fullHouseOf } from './signal';
-import Fireworks from './Fireworks';
 import type { Season } from '@/lib/season';
 import type { PlayNightResponse } from '@/app/api/playnight/route';
 
@@ -46,16 +44,7 @@ function FireDoor({ signal = false, onOpen }: { signal?: boolean; onOpen: () => 
 function NightFireDoor({ nights, drawn, onOpen }: { nights: PlayNightResponse; drawn: boolean; onOpen: () => void }) {
   const { state } = usePlayNight(nights);
   const signal = useSignal(state ?? nights, drawn);
-  /* Rockets over the fire once everyone who said yes has come. Only from the
-     browser's own answer, never the page's: a page kept from the evening
-     would send them up over a morning. */
-  const full = useMemo(() => !!state && state !== nights && fullHouseOf(state.nights), [state, nights]);
-  return (
-    <>
-      {full && <Fireworks />}
-      <FireDoor signal={signal} onOpen={onOpen} />
-    </>
-  );
+  return <FireDoor signal={signal} onOpen={onOpen} />;
 }
 
 /* Við eldinn: the crew who are in stand on the ground beside the fire, the
