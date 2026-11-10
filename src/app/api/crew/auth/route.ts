@@ -29,8 +29,12 @@ export async function POST(req: NextRequest) {
   const known = isCrewUsername(username);
   const action = `crew-auth:${known ? canonicalUsername(username).toLowerCase() : '?'}`;
   const { limited } = await checkRateLimit(ip, action);
-  /* and per account whatever the address: a guesser with addresses to spare got five tries from each */
-  const account = known ? await checkRateLimit(canonicalUsername(username).toLowerCase(), 'crew-auth-account', ACCOUNT_TRIES, 60 * 60) : { limited: false };
+  /* and per account whatever the address: a guesser with addresses to spare
+     got five tries from each. A try the address is already refused for is not
+     counted against the account: counted, one address could keep asking past
+     its own limit until the member's own right password was turned away too,
+     hour after hour. */
+  const account = known && !limited ? await checkRateLimit(canonicalUsername(username).toLowerCase(), 'crew-auth-account', ACCOUNT_TRIES, 60 * 60) : { limited: false };
   if (limited || account.limited) {
     return NextResponse.json({ error: 'Of margar tilraunir. Reyndu aftur síðar.' }, { status: 429 });
   }

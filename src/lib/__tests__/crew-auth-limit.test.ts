@@ -33,13 +33,19 @@ const { POST } = await import('@/app/api/crew/auth/route');
 afterAll(() => { delete process.env.REDIS_URL; });
 beforeEach(() => { counts.clear(); });
 
-const signIn = (username: string, token: string) => POST(new Request('http://x/api/crew/auth', {
+const signIn = (username: string, token: string, from = '85.220.1.9') => POST(new Request('http://x/api/crew/auth', {
   method: 'POST',
-  headers: { 'content-type': 'application/json', 'x-forwarded-for': '85.220.1.9' },
+  headers: { 'content-type': 'application/json', 'x-forwarded-for': from },
   body: JSON.stringify({ username, token }),
 }) as never);
 
 describe('signing in, counted per account', () => {
+  it('one address asking past its own limit cannot lock the member out of their own sign-in', async () => {
+    for (let i = 0; i < 40; i++) await signIn('joenana', 'guess');
+    expect((await signIn('joenana', 'guess')).status).toBe(429);
+    expect((await signIn('joenana', 'right-b', '194.144.7.7')).status).toBe(200);
+  });
+
   it('a sign-in of your own does not forget the guesses at someone else', async () => {
     for (let i = 0; i < 4; i++) expect((await signIn('joenana', 'guess')).status).toBe(401);
     expect((await signIn('stebbias', 'right-a')).status).toBe(200);
