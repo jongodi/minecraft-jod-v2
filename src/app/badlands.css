@@ -2577,7 +2577,7 @@ html.is-map-full { overflow: hidden; }
 .is-draw .b-arena__big { color: var(--lantern); animation: b-pop var(--dur-2) var(--ease-out); }
 .is-result.is-hit .b-arena__big { font-family: var(--font-data); font-size: calc(var(--fs-data-lg) * 2); }   /* 48px: six of the face's pixels, on the grid */
 @keyframes b-pop { 0% { transform: scale(0.6); } 100% { transform: none; } }
-.b-arena__small { margin-top: var(--sp-2); font-size: var(--fs-md); color: var(--paper); text-shadow: 0 var(--px) 0 var(--night); max-width: 30ch; }
+.b-arena__small { margin: var(--sp-2) auto 0; font-size: var(--fs-md); color: var(--paper); text-shadow: 0 var(--px) 0 var(--night); max-width: 30ch; }   /* in the middle under a call wider than its own measure */
 .b-arena__corner { position: absolute; top: var(--sp-2); left: var(--sp-3); font-family: var(--font-data); font-size: var(--fs-data); color: var(--paper); text-shadow: 0 var(--px) 0 var(--night); }
 .b-arena__corner--r { left: auto; right: var(--sp-3); }
 /* A phone's arena is 4:3 and a thumb wide: the call starts below the corner
@@ -3216,7 +3216,6 @@ html.is-map-full { overflow: hidden; }
 }
 .b-light.is-on { opacity: 1; }
 
-
 /* Skjátextar (Subtitles.tsx): the game's subtitle box, at the foot of the
    screen on the right, saying what the site sounds while the wind and the
    fire are on. The game's own: a box of the night at four fifths, as wide as
@@ -3248,6 +3247,7 @@ html.is-map-full { overflow: hidden; }
 }
 @keyframes b-subs-dim { to { opacity: 0.35; } }
 @media (prefers-reduced-motion: reduce) { .b-subs__line { animation: none; } }
+
 
 
 /* ─── the pages: their frame, the night behind their top, and off the trail ──

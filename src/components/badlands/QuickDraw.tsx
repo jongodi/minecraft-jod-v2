@@ -135,7 +135,8 @@ function QuickDraw({ onClose }: { onClose: () => void }) {
     phase === 'draw'   ? { big: 'SKJÓTTU',      small: '' } :
     phase === 'result' ? (lastIsHit ? { big: `${last} ms`, small: rankOf(last) } : { big: 'Of snemma', small: 'þessi umferð er fallin' }) :
     gameBest !== null  ? { big: `${gameBest} ms`, small: `${rankOf(gameBest)}. Ýttu til að reyna aftur` } :
-                         { big: 'Þrjár fallnar umferðir', small: 'rólegur á gikknum! Ýttu til að reyna aftur' };
+                         /* short: three words in the slab ran under the round and the best time in the corners */
+                         { big: 'Allt fallið', small: 'Rólega á gikknum! Ýttu til að reyna aftur' };
 
   return (
     <div className="b-duelpanel">
