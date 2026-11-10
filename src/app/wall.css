@@ -55,7 +55,7 @@
 @media (max-width: 719.98px) {
   .w-poster { grid-template-columns: 5.5rem minmax(0, 1fr); gap: var(--sp-4); }
   .w-poster > * { grid-column: 1 / -1; }
-  .w-poster > .w-poster__skin { grid-column: 1; width: 5.5rem; }
+  .w-poster > .w-poster__skin { grid-column: 1; width: 5.5rem; align-self: start; }   /* its own height, not the row's: the row grew with the name and left empty wood under the figure */
   .w-poster > .w-poster__body { display: contents; }
   /* lifted over the faded print and the paper's weathering, as every child
      of the paper is (.b-paper > *): with the body's box gone, its children

@@ -236,8 +236,9 @@
   white-space: nowrap;
   transition: background var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
 }
-/* a label longer than a narrow phone is wide wraps inside its button rather than running off the edge */
-.b-btn { max-width: 100%; }
+/* a label longer than a narrow phone is wide wraps inside its button rather than running off the edge,
+   in even lines: "Þetta er / ég" left one word alone on a 320 px wall */
+.b-btn { max-width: 100%; text-wrap: balance; }
 @media (max-width: 399px) { .b-btn { white-space: normal; text-align: center; } }
 .b-btn:focus-visible { background: var(--lantern); color: var(--night); }
 @media (hover: hover) { .b-btn:hover { background: var(--lantern); color: var(--night); } }
@@ -2983,6 +2984,10 @@ html.is-map-full { overflow: hidden; }
 @media (hover: hover) { .b-paper .b-btn:hover { background: var(--lantern-ink); color: var(--paper); } }
 /* the one lit button on a sheet is the lantern itself, with ink on it */
 .b-paper .b-btn--solid { background: var(--lantern); border-color: var(--lantern-ink); color: var(--ink); }
+/* a lit lantern on a lantern-coloured button (the postcard's Sjá staðinn í þrívídd) drew its glass and frame in the
+   button's own colour and all but vanished: on the solid button its iron is the ink and its glass the paper */
+.b-btn--solid .b-lantern.is-lit { color: currentColor; }
+.b-btn--solid .b-lantern.is-lit .b-lantern__glass { fill: var(--paper); }
 @media (hover: hover) { .b-paper .b-btn--solid:hover { background: var(--ink); border-color: var(--ink); } }
 .b-paper .b-note { color: var(--ink-faint); }
 
@@ -3303,7 +3308,8 @@ html.is-map-full { overflow: hidden; }
    under the moon, so the paper's top edge cut the moon straight across with
    its upper part showing. There the moon is not drawn, as below 760 px it
    is hidden whole behind the paper. */
-@media (min-width: 760px) and (max-width: 1023.98px) { .b-nightsky:has(~ .w-page) .b-nightsky__moon { display: none; } }
+/* and the clouds with it: from 760 to about 950 a slab's edge showed above the poster's top, under the bar */
+@media (min-width: 760px) and (max-width: 1023.98px) { .b-nightsky:has(~ .w-page) :is(.b-nightsky__moon, .b-clouds) { display: none; } }
 /* a sign's own link on its way to the wall (skilti/[id]): one slip nailed up under the night while the wall comes */
 .b-hop { max-width: 24rem; padding: var(--sp-6) var(--sp-5) var(--sp-5); color: var(--ink); }
 /* off the trail (404 and a page that broke): the words stand alone under a dark lantern */
@@ -3359,6 +3365,7 @@ html.is-map-full { overflow: hidden; }
    (.b-f3), and the key took that from them, so only a keyboard could press it */
 .b-card__xyz { display: inline-block; position: static; margin-top: var(--sp-1); padding: var(--px) var(--sp-2); border: 0; background: var(--pitch); color: var(--paper); font-family: var(--font-data); font-size: var(--fs-data); line-height: 1.4; cursor: pointer; pointer-events: auto; }
 .b-card__xyz:focus-visible { outline: var(--px) solid var(--lantern-ink); outline-offset: var(--px); }
+@media (max-width: 359.98px) { .b-card__xyzword { display: none; } }
 @media (hover: hover) { .b-card__xyz:hover { color: var(--lantern); } }
 /* the compass needle on the locator bar: a key, unlike the marks */
 .b-locator__mark--home { width: 1.25rem; height: 1.75rem; padding: 0; border: 0; background: none; cursor: pointer; pointer-events: auto; }
