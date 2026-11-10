@@ -423,8 +423,9 @@
 /* The game's /title when a play night begins (NightTitle.tsx): the words in
    the middle of the screen a little over halfway up, as the game sets them,
    over whatever is showing and taking no press. The title is the name's own
-   slab cut from the strata, at a third of the name's size; the line under it
-   is the bitmap face on the hard band small words sit on over a bright sky.
+   slab cut from the strata, at a third of the name's size, and the line under
+   it the bitmap face, both on one hard band of the night across the screen:
+   over a phone's lantern plate or the busiest world, the words read alone.
    The game's timing in its own ticks: in over ten, held seventy, out over
    twenty, its light stepping a tick at a time. Under reduced motion it stands
    still for the time it is held, and goes. */
@@ -434,12 +435,18 @@
   z-index: var(--z-title);
   display: grid;
   align-content: center;
-  justify-items: center;
-  gap: var(--sp-3);
-  padding: var(--bar-safe) var(--gutter) 12svh;
+  padding: var(--bar-safe) 0 12svh;
   text-align: center;
   pointer-events: none;
   animation: b-titlecmd 5s linear both;
+}
+.b-titlecmd__band {
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-5) var(--gutter);
+  /* deep enough that the lantern's plate under it leaves no ghost of its words */
+  background: var(--scrim-deep);
 }
 .b-titlecmd__title {
   font-family: var(--font-display);
@@ -460,15 +467,14 @@
 }
 .b-titlecmd__sub {
   max-width: min(36rem, 100%);
-  padding: 2px var(--sp-2) 3px;
-  background: var(--plate);
   color: var(--chat-white);
   font-family: var(--font-data);
   font-size: var(--fs-data);
   letter-spacing: 0.04em;
   text-shadow: var(--px) var(--px) 0 var(--chat-white-shadow);
-  clip-path: var(--notch);
+  text-wrap: balance;
 }
+.b-titlecmd__count { white-space: nowrap; }
 @keyframes b-titlecmd {
   0%   { opacity: 0; animation-timing-function: steps(10, end); }
   10%  { opacity: 1; animation-timing-function: linear; }

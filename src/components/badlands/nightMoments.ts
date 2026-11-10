@@ -40,9 +40,14 @@ export function titleState(night: TitleNight | null, now: number, shown: boolean
 /** The line under the title: the night's note, or who lit the fire, and how
     many of those who said yes are in, once anyone is. "Mætt" is the same
     for one as for many, so it never has to guess at anyone's gender. */
-export function subtitleOf(night: TitleNight): string {
+export function subtitleParts(night: TitleNight): { what: string; count: string | null } {
   const what = night.note ? `„${night.note}“` : `${night.by} kveikti bálið`;
-  return night.came > 0 && night.yes > 0 ? `${what} · ${Math.min(night.came, night.yes)} af ${night.yes} mætt` : what;
+  return { what, count: night.came > 0 && night.yes > 0 ? `${Math.min(night.came, night.yes)} af ${night.yes} mætt` : null };
+}
+
+export function subtitleOf(night: TitleNight): string {
+  const { what, count } = subtitleParts(night);
+  return count ? `${what} · ${count}` : what;
 }
 
 /** Everyone who said yes to the hour chosen has come, on a night still going:

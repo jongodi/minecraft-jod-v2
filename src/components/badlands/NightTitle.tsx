@@ -2,7 +2,8 @@
 
 /* The game's /title when a play night begins (nightMoments.ts): "Kvöldið er
    hafið" cut from the strata as the name is, at a third of its size, the
-   night's note under it on the hard band small words sit on. The game's own
+   night's note under it, both on one hard band of the night across the
+   screen, so they read over the lantern's plate or the busiest world. The game's own
    timing: in over ten ticks, held seventy, out over twenty (badlands.css),
    the light coming and going in whole ticks. Once a night in a browser;
    never over a dialog, where it waits for the dialog to close. The words are
@@ -10,7 +11,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { usePlayNight } from './night';
 import { modalOpen } from './hooks';
-import { subtitleOf, titleNight, titleState, type TitleNight } from './nightMoments';
+import { subtitleOf, subtitleParts, titleNight, titleState, type TitleNight } from './nightMoments';
 
 const TITLE = 'Kvöldið er hafið';
 const seenKey = (id: string) => `jod-title-${id}`;
@@ -53,8 +54,11 @@ export default function NightTitle() {
       <p className="b-visually-hidden" role="status">{on ? `${TITLE}. ${subtitleOf(on)}` : ''}</p>
       {on && (
         <div className="b-titlecmd" aria-hidden="true" onAnimationEnd={e => { if (e.target === e.currentTarget) setOn(null); }}>
-          <p className="b-titlecmd__title">{TITLE}</p>
-          <p className="b-titlecmd__sub">{subtitleOf(on)}</p>
+          <div className="b-titlecmd__band">
+            <p className="b-titlecmd__title">{TITLE}</p>
+            {/* the count held together, so a phone never breaks "3 af 3 mætt" across lines */}
+            <p className="b-titlecmd__sub">{(({ what, count }) => <>{what}{count && <> · <span className="b-titlecmd__count">{count}</span></>}</>)(subtitleParts(on))}</p>
+          </div>
         </div>
       )}
     </>
