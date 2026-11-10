@@ -3188,6 +3188,42 @@ html.is-map-full { overflow: hidden; }
 }
 .b-light.is-on { opacity: 1; }
 
+/* Kvöldið er hafið (NightTitle.tsx): the game's /title, at the moment a play
+   night's hour comes. The words stand across the middle of the screen in the
+   slab, in paper with the night's hard shadow under them, and a smaller line
+   in the text face under them. The game sets a title straight on the world;
+   here the world behind is a page of words, so a hard-edged band of the
+   night lies across the screen behind the two lines. They come up in four whole steps, stand, and go
+   in four, all in opacity. In the top layer; a press goes through. */
+.b-title-card {
+  position: fixed;
+  inset: 50% 0 auto 0;
+  translate: 0 -50%;
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-3);
+  width: auto;
+  height: auto;
+  margin: 0;
+  padding: var(--sp-5) var(--gutter);
+  border: 0;
+  background: rgb(from var(--night) r g b / 0.8);
+  text-align: center;
+  pointer-events: none;
+  overflow: hidden;
+  animation: b-title-card var(--shown, 5000ms) both;
+}
+.b-title-card__big { font-family: var(--font-display); font-size: clamp(2.5rem, 9vw, 6rem); line-height: 1; color: var(--paper); text-shadow: calc(var(--px) * 2) calc(var(--px) * 2) 0 var(--night); text-wrap: balance; }
+.b-title-card__small { max-width: 32ch; font-size: var(--fs-lg); line-height: 1.4; color: var(--paper); text-shadow: var(--px) var(--px) 0 var(--night); }
+@keyframes b-title-card {
+  0%   { opacity: 0; animation-timing-function: var(--ease-step); }
+  10%  { opacity: 1; }
+  80%  { opacity: 1; animation-timing-function: var(--ease-step); }
+  100% { opacity: 0; }
+}
+/* under reduced motion the page's animations are cut to nothing, and this one ends unseen: the words simply stand until they are taken down */
+@media (prefers-reduced-motion: reduce) { .b-title-card { animation: none; } }
+
 /* Skjátextar (Subtitles.tsx): the game's subtitle box, at the foot of the
    screen on the right, saying what the site sounds while the wind and the
    fire are on. The game's own: a box of the night at four fifths, as wide as

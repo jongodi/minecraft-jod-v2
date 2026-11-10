@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createElement } from 'react';
 import { renderToString } from 'react-dom/server';
 import type { PlayNightResponse, PublicNight } from '@/app/api/playnight/route';
-import { SIGNAL_LEAST, cameOf, fullHouseOf, signalOf, signalSpot, type Plateau } from '../signal';
+import { SIGNAL_LEAST, cameOf, fullHouseOf, justBegun, signalOf, signalSpot, type Plateau } from '../signal';
 import { FAR, NEAR } from '../ridges';
 import { useSignal } from '../night';
 
@@ -184,5 +184,20 @@ describe('fullHouseOf', () => {
       expect(fullHouseOf([live(['stebbias', 'joenana'], ['stebbias', 'joenana'], phase)])).toBe(false);
     }
     expect(fullHouseOf([])).toBe(false);
+  });
+});
+
+describe('justBegun', () => {
+  const at = '2026-11-07T20:00:00Z';
+  it('is the night whose hour came since the page last looked', () => {
+    expect(justBegun({ n1: 'soon' }, [night('live', at)])?.id).toBe('n1');
+    expect(justBegun({ n1: 'chosen' }, [night('live', at)])?.id).toBe('n1');
+  });
+
+  it('is none for a night first seen under way, one still under way, or one not yet begun', () => {
+    expect(justBegun({}, [night('live', at)])).toBeNull();
+    expect(justBegun({ n1: 'live' }, [night('live', at)])).toBeNull();
+    expect(justBegun({ n1: 'chosen' }, [night('soon', at)])).toBeNull();
+    expect(justBegun({ n1: 'soon' }, [night('over', at)])).toBeNull();
   });
 });

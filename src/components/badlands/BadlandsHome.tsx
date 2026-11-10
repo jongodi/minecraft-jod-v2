@@ -15,6 +15,7 @@ import { CREW, SECTIONS, isRoom, plainClick, type PlaceId, type RoomId } from '.
 import { isLive, modalOpen, seedStatus, showWorld, useEffectsAllowed, useReducedMotionPref, useScrollSpy, useServerStatus } from './hooks';
 import { seedNights, usePlayNight } from './night';
 import { fullHouseOf } from './signal';
+import NightTitle from './NightTitle';
 import type { PlayNightResponse } from '@/app/api/playnight/route';
 import { seasonClass, useSeason } from './Season';
 
@@ -168,6 +169,7 @@ export default function BadlandsHome({ syncedOn, bases, initial }: { syncedOn: s
       {/* under reduced motion neither draws anything, so neither is fetched */}
       {effects && !reduce && <NightParticles nights={nights} crew={crew} snow={season.snow} fireworks={season.fireworks} />}
       {effects && !reduce && <CursorLight />}
+      <NightTitle nights={nights} />
       <AddressBar links={SECTIONS} activeId={active} onDoor={openDoor} status={initial.status} />
       <main id="efni">
         <Hero server={server} season={season} nights={nights} packs={packs} facts={facts} sleepless={sleepless} signal={signal} />

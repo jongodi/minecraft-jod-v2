@@ -51,6 +51,15 @@ export function fullHouseOf(nights: readonly PublicNight[], inGame: readonly str
   });
 }
 
+/** The night that has just begun: one now under way that this page last saw
+    waiting for its hour (`before`, each night's phase at the last answer).
+    The game's title is shown for it once (NightTitle.tsx). A night first
+    seen already under way has not just begun: a page opened mid-evening
+    shows no title. */
+export function justBegun(before: Readonly<Record<string, PublicNight['phase']>>, nights: readonly PublicNight[]): PublicNight | null {
+  return nights.find(n => n.phase === 'live' && (before[n.id] === 'soon' || before[n.id] === 'chosen')) ?? null;
+}
+
 export interface SignalLand {
   /** the far ridge, whose plateaus the fire may stand on */
   far: readonly Plateau[];
