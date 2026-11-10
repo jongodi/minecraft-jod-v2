@@ -2,7 +2,7 @@
 
 import '@/app/badlands.css';
 /* board.css (the posters, the counter) comes with the rooms that hang them: Crew.tsx, Shelf.tsx */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import type { BaseLink } from '@/lib/base-links';
 import type { HomeData } from '@/lib/home-data';
@@ -13,16 +13,29 @@ import World from './World';
 import Footer from './Footer';
 import { CREW, SECTIONS, isRoom, plainClick, type PlaceId, type RoomId } from './data';
 import { isLive, modalOpen, seedStatus, showWorld, useEffectsAllowed, useReducedMotionPref, useScrollSpy, useServerStatus } from './hooks';
-import { seedNights } from './night';
+import { seedNights, usePlayNight } from './night';
+import { fullHouse } from './nightMoments';
 import { seasonClass, useSeason } from './Season';
 
 /* Effects load after the page is interactive; none of them is needed for the first paint. */
 const Particles   = dynamic(() => import('@/effects/Particles'),   { ssr: false });
 const CursorLight = dynamic(() => import('@/effects/CursorLight'), { ssr: false });
+/* the game's /title when a night begins: nothing until a night does, so it comes after the page */
+const NightTitle  = dynamic(() => import('./NightTitle'),          { ssr: false });
 
 /* How long a pressed door stays lit on its own if the page never reaches the
    frame (the visitor scrolled back up before the smooth scroll arrived). */
 const PRESSED_HOLD_MS = 1500;
+
+/** The dust, the embers and the snow, and fireworks over the fire on New
+    Year's Eve and on a play night once everyone who said yes has come
+    (nightMoments.ts). Its own component, so the night's answer each minute
+    redraws only this and not the page. */
+function Sparks({ snow, newYear }: { snow: boolean; newYear: boolean }) {
+  const { state } = usePlayNight();
+  const full = useMemo(() => fullHouse(state?.nights ?? []), [state]);
+  return <Particles heroId="top" fireId="campfire" snow={snow} fireworks={newYear || full} />;
+}
 
 /** The evening: the sunset, the world, and the campfire. The board, the crew
     and the shelf are rooms that open over the world; the hash says which is
@@ -151,7 +164,7 @@ export default function BadlandsHome({ syncedOn, bases, initial }: { syncedOn: s
       <Sky />
       {/* the effects start once the browser is idle, and not at all on a device without room for them */}
       {/* under reduced motion neither draws anything, so neither is fetched */}
-      {effects && !reduce && <Particles heroId="top" fireId="campfire" snow={season.snow} fireworks={season.fireworks} />}
+      {effects && !reduce && <Sparks snow={season.snow} newYear={season.fireworks} />}
       {effects && !reduce && <CursorLight />}
       <AddressBar links={SECTIONS} activeId={active} onDoor={openDoor} status={initial.status} />
       <main id="efni">
@@ -159,6 +172,7 @@ export default function BadlandsHome({ syncedOn, bases, initial }: { syncedOn: s
         <World plates={plates} config={map} pinned={pinned} server={server} syncedOn={syncedOn} bases={bases} fresh={fresh} room={room} onCloseRoom={closeRoom} />
       </main>
       <Footer season={season} nights={nights} signal={signal} crew={crew} known={isLive(server)} />
+      <NightTitle />
     </div>
   );
 }

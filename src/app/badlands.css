@@ -419,6 +419,64 @@
 .b-toast__title { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-lg); line-height: 1.1; color: var(--ink); }
 .b-toast__data { font-family: var(--font-data); font-size: var(--fs-data); color: var(--lantern-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
+
+/* The game's /title when a play night begins (NightTitle.tsx): the words in
+   the middle of the screen a little over halfway up, as the game sets them,
+   over whatever is showing and taking no press. The title is the name's own
+   slab cut from the strata, at a third of the name's size; the line under it
+   is the bitmap face on the hard band small words sit on over a bright sky.
+   The game's timing in its own ticks: in over ten, held seventy, out over
+   twenty, its light stepping a tick at a time. Under reduced motion it stands
+   still for the time it is held, and goes. */
+.b-titlecmd {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-title);
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: var(--sp-3);
+  padding: var(--bar-safe) var(--gutter) 12svh;
+  text-align: center;
+  pointer-events: none;
+  animation: b-titlecmd 5s linear both;
+}
+.b-titlecmd__title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: calc(var(--fs-hero) / 3);
+  line-height: 0.95;
+  letter-spacing: -0.01em;
+  color: var(--paper);
+  text-wrap: balance;
+  --cut: max(1px, round(nearest, 0.013em, 1px));
+  text-shadow:
+    0 var(--cut) 0 var(--tc-white),
+    0 calc(var(--cut) * 2) 0 var(--tc-yellow),
+    0 calc(var(--cut) * 3) 0 var(--tc-orange),
+    0 calc(var(--cut) * 4) 0 var(--tc-red),
+    0 calc(var(--cut) * 5) 0 var(--tc-brown),
+    0 calc(var(--cut) * 5 + var(--px) * 2) 0 rgb(from var(--night) r g b / 0.35);
+}
+.b-titlecmd__sub {
+  max-width: min(36rem, 100%);
+  padding: 2px var(--sp-2) 3px;
+  background: var(--plate);
+  color: var(--chat-white);
+  font-family: var(--font-data);
+  font-size: var(--fs-data);
+  letter-spacing: 0.04em;
+  text-shadow: var(--px) var(--px) 0 var(--chat-white-shadow);
+  clip-path: var(--notch);
+}
+@keyframes b-titlecmd {
+  0%   { opacity: 0; animation-timing-function: steps(10, end); }
+  10%  { opacity: 1; animation-timing-function: linear; }
+  80%  { opacity: 1; animation-timing-function: steps(20, end); }
+  100% { opacity: 0; }
+}
+@keyframes b-titlecmd-still { to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .b-titlecmd { animation: b-titlecmd-still 3.5s step-end both; } }
 /* ─── the lantern (also the status readout) ───────────────────── */
 .b-lantern { position: relative; display: inline-block; width: 1.5rem; height: 2.25rem; color: var(--text-faint); }
 .b-lantern svg { width: 100%; height: 100%; shape-rendering: crispEdges; display: block; }

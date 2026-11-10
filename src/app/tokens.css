@@ -285,6 +285,7 @@
   --z-bar: 41;
   --z-drawer: 42;
   --z-light: 45;
+  --z-title: 48;      /* the game's /title when a night begins: over the page and its light, under a slip, a lightbox and a dialog */
   --z-toast: 50;
   --z-lightbox: 60;
   --z-modal: 70;
