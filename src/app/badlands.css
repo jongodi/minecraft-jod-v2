@@ -3165,6 +3165,35 @@ html.is-map-full { overflow: hidden; }
 }
 .b-ground::before { content: ''; display: block; height: var(--px); background: var(--tc-red); opacity: 0.5; }
 
+/* Flugeldar (Fireworks.tsx): rockets over the fire on an evening everyone who
+   said yes has come to. Each rocket is a trail that climbs to its height in
+   eight steps and a ball of square sparks that opens in four, hangs, sinks
+   two of the art's pixels and goes out; three take turns in one round. The
+   sparks are placed on a four-pixel grid by the component, so the ball is
+   square-cornered at every step. Behind the fire and the buttons, taking no
+   press. Not drawn under reduced motion: the hero's line says it in words. */
+.b-fireworks { position: absolute; left: 50%; bottom: 0; width: min(40rem, 100vw - 2 * var(--gutter)); height: 18rem; translate: -50% 0; pointer-events: none; z-index: 0; }
+.b-rocket { --round: 7200ms; position: absolute; left: var(--x); bottom: 0; width: 0; height: var(--h); }
+.b-rocket__trail { position: absolute; left: calc(var(--px) * -0.5); bottom: 0; width: var(--px); height: calc(var(--px) * 4); background: var(--star); opacity: 0; animation: b-rocket-up var(--round) calc(var(--at) * var(--round) / 3) infinite; }
+.b-rocket__burst { position: absolute; left: 0; top: 0; }
+.b-rocket__burst i { position: absolute; left: calc(var(--px) * -1); top: calc(var(--px) * -1); width: calc(var(--px) * 2); height: calc(var(--px) * 2); background: var(--c); opacity: 0; animation: b-rocket-burst var(--round) calc(var(--at) * var(--round) / 3) infinite; }
+@keyframes b-rocket-up {
+  0%   { opacity: 1; transform: none; animation-timing-function: steps(8, end); }
+  10%  { opacity: 1; transform: translateY(calc(var(--h) * -1)); animation-timing-function: step-end; }
+  10.1%, 100% { opacity: 0; transform: translateY(calc(var(--h) * -1)); }
+}
+@keyframes b-rocket-burst {
+  0%, 10%  { opacity: 0; translate: 0 0; animation-timing-function: step-end; }
+  10.1%    { opacity: 1; translate: 0 0; animation-timing-function: steps(4, end); }
+  16%      { opacity: 1; translate: var(--dx) var(--dy); animation-timing-function: step-end; }
+  26%      { opacity: 1; translate: var(--dx) calc(var(--dy) + var(--px)); animation-timing-function: step-end; }
+  31%      { opacity: 0.6; translate: var(--dx) calc(var(--dy) + var(--px) * 2); animation-timing-function: step-end; }
+  36%      { opacity: 0.3; translate: var(--dx) calc(var(--dy) + var(--px) * 3); animation-timing-function: step-end; }
+  40%, 100% { opacity: 0; translate: var(--dx) calc(var(--dy) + var(--px) * 3); }
+}
+.b-foot.is-away :is(.b-rocket__trail, .b-rocket__burst i) { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) { .b-fireworks { display: none; } }
+
 /* ─── effects ─────────────────────────────────────────────────── */
 .b-particles { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
 /* One pre-rasterised disc of light, parked at the origin and moved by

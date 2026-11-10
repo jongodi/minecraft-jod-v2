@@ -26,6 +26,21 @@ export function signalOf(nights: readonly PublicNight[], now = Date.now()): bool
   });
 }
 
+/** Fullt hús: an evening under way that everyone who said they would come
+    has come to, when two or more said so. The crew's own rockets go up over
+    the fire then (Fireworks.tsx) and the hero's line says it in words. Names
+    are matched as the game matches them, whatever their capitals. Over with
+    the evening. */
+export function fullHouseOf(nights: readonly PublicNight[]): boolean {
+  return nights.some(n => {
+    if (n.phase !== 'live') return false;
+    const yes = n.options.find(o => o.id === n.chosen)?.yes ?? [];
+    if (yes.length < 2) return false;
+    const came = new Set(n.came.map(c => c.toLowerCase()));
+    return yes.every(y => came.has(y.toLowerCase()));
+  });
+}
+
 export interface SignalLand {
   /** the far ridge, whose plateaus the fire may stand on */
   far: readonly Plateau[];
