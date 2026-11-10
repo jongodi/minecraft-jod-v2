@@ -14,10 +14,11 @@ import Drawer from './Drawer';
 import PlayerHead from './PlayerHead';
 import Rail, { revealRailItem } from './Rail';
 import Chat from './Chat';
-import Flight, { type FlightPlace } from './Flight';
+import type { FlightPlace } from './Flight';
 import Locator, { type CameraSink } from './Locator';
 import { answered, useLivePlayers } from './livePlayers';
-import { FLIGHT, headingOf } from '@/lib/map-flight';
+import { headingOf } from '@/lib/compass';
+import { FLIGHT_ON } from '@/lib/flight-meta';
 import { CREW, FACING, MAP_LIGHTS, MAP_POSTER, MAP_START_VIEW, MAP_URL, SITE_NAME, handCase, isRoom, plainClick, titleCase, type Plate, type RoomId } from './data';
 import type { ServerState } from './hooks';
 import { copyText, modalOpen, showWorld, useEffectsAllowed, useInert, useMediaQuery, useReducedMotionPref, useRoomForEffects } from './hooks';
@@ -29,6 +30,12 @@ import { crewAtPlaces, hereLine, railReveal } from './hereNow';
 
 /* Everything that opens over the world is a screen of its own, fetched when
    its door is first opened: the paper sheet, the album, and the three rooms. */
+/* The flight is drawn from the browser's first render, never into the markup
+   (posterOn below), so its code, the cloud deck and the cameras of its forty
+   stills can come after the page's first paint: asked for as soon as the
+   page is live, they are here long before anyone reaches the world, and the
+   stills themselves wait for the page's load anyway. */
+const Flight   = dynamic(() => import('./Flight'),   { ssr: false });
 const MapSheet = dynamic(() => import('./MapSheet'), { ssr: false });
 const Album    = dynamic(() => import('./Album'),    { ssr: false });
 const Crew     = dynamic(() => import('./Crew'),     { ssr: false });
@@ -326,7 +333,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
      out from under a visitor who had already scrolled down to it. */
   const reduce = useReducedMotionPref();
   const capable = useRoomForEffects();
-  const fly = FLIGHT !== null && capable && !reduce;
+  const fly = FLIGHT_ON && capable && !reduce;
   /* A link that arrives in the world (/#heimur, a room's /#hopur, a place's
      /stadur/<id>) is scrolled to before the flight is decided, when the
      world's top is still where the camera sets off: it stopped a third of
@@ -892,8 +899,8 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
         {/* The flight down, and the places pinned on whatever is showing.
             Once the live map is asked for, the still is what it takes over
             from, and the live map has its own lanterns. */}
-        {FLIGHT && posterOn && (
-          <Flight flight={FLIGHT} fly={fly && (!live || auto)} runway={runway} f3={flightF3} places={grounded} players={onLand}
+        {FLIGHT_ON && posterOn && (
+          <Flight fly={fly && (!live || auto)} runway={runway} f3={flightF3} places={grounded} players={onLand}
             selected={selected} onChoose={choose} near={near} onNear={pointAt} camera={cameraSink}
             hidden={shown || drawn} onLanded={setLanded} onApproach={approach} />
         )}

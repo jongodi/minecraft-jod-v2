@@ -2,7 +2,7 @@
 
 import { memo, useCallback, useEffect, useRef, type MutableRefObject } from 'react';
 import { baseUrl, type BaseLink } from '@/lib/base-links';
-import { bearing } from '@/lib/map-flight';
+import { bearing } from '@/lib/compass';
 import { formatNumber } from '@/lib/format';
 import { Lantern } from './Bits';
 import PlayerHead from './PlayerHead';

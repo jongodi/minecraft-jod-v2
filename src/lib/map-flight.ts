@@ -157,20 +157,8 @@ export function heading(eye: readonly number[], look: readonly number[]): [numbe
   return [fx / n, fz / n];
 }
 
-/** BlueMap's camera turned `rotation` radians looks this way across the ground
-    (its ControlsManager: rotation 0 faces north). */
-export const headingOf = (rotation: number): [number, number] => [Math.sin(rotation), -Math.cos(rotation)];
-
-/** Where something stands as seen from a point facing a way across the
-    ground: its angle off straight ahead in radians (negative to the left,
-    positive to the right, ±π behind) and how far it is in blocks. */
-export function bearing(from: readonly [number, number], way: readonly [number, number], to: readonly [number, number]): { angle: number; blocks: number } {
-  const dx = to[0] - from[0], dz = to[1] - from[1];
-  /* to the right of facing north is east: right is (-z, x) of the way ahead */
-  const ahead = dx * way[0] + dz * way[1];
-  const right = dx * -way[1] + dz * way[0];
-  return { angle: Math.atan2(right, ahead), blocks: Math.hypot(dx, dz) };
-}
+/* which way is which on the ground: kept apart for the page's first paint, and said here too */
+export { bearing, headingOf } from './compass';
 
 /** A point on the horizon straight ahead of the camera: far off along the way
     it faces, at its own height, which a still puts on the line where the land

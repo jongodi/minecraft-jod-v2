@@ -338,4 +338,8 @@ await browser.close();
    is never answered from a year-long cache of the old one */
 const version = hash.digest('hex').slice(0, 10);
 writeFileSync('src/lib/map-flight.json', JSON.stringify({ version, frames: FRAMES, ...flights }) + '\n');
-console.log(`${OUT} og src/lib/map-flight.json skrifuð (útgáfa ${version})`);
+/* and the few bytes the page needs at its first paint, to lay out the runway
+   before the flight's own code and cameras arrive (src/lib/flight-meta.ts) */
+const flown = FRAMES >= 2 && flights.wide?.shots?.length === FRAMES;
+writeFileSync('src/lib/map-flight-meta.json', JSON.stringify({ version, frames: FRAMES, flown }) + '\n');
+console.log(`${OUT}, src/lib/map-flight.json og map-flight-meta.json skrifuð (útgáfa ${version})`);

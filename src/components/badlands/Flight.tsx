@@ -2,8 +2,8 @@
 
 import { memo, useEffect, useRef, type MutableRefObject, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
 import type { WorldPoint } from '@/lib/map-types';
-import { cameraAt, cameraMatrix, CLOUD_BANDS, cloudDeck, clouded, cloudThinned, cover, deckHomography, depthScale, easeFlight, facing, fetchOrder, flightFrame, flightProgress, flightShape, follow, heading, horizonPoint, lensOf, projectPoint, warp, type CloudDeck, type Flight as FlightData, type FlightShape } from '@/lib/map-flight';
-import { Lantern, Moon, paintCloudDeck, Stars } from './Bits';
+import { FLIGHT, cameraAt, cameraMatrix, CLOUD_BANDS, cloudDeck, clouded, cloudThinned, cover, deckHomography, depthScale, easeFlight, facing, fetchOrder, flightFrame, flightProgress, flightShape, follow, heading, horizonPoint, lensOf, projectPoint, warp, type CloudDeck, type Flight as FlightData, type FlightShape } from '@/lib/map-flight';
+import { Lantern, Moon, Stars } from './Bits';
 import { FACING, titleCase } from './data';
 import PlayerHead from './PlayerHead';
 import { useMoonPhase } from './Season';
@@ -69,6 +69,33 @@ const LEAD = 0.5;
    camera is given a glider's lean over the overview, levelling out as it
    comes down and level for the landing, where the still takes over. */
 const BANK = -2.5;
+/** The same clouds from above, as the flight comes down through them
+    (src/lib/map-flight.ts, Flight.tsx): the cells of one band of the deck,
+    a pixel a cell, in one colour, made into a picture once. A picture, and
+    not an SVG: drawn under a projective transform the browser samples a
+    picture marked `image-rendering: pixelated` cell by cell, so a cell
+    stays a hard square however near the camera comes, where an SVG laid out
+    once would be stretched soft. The colour is any CSS colour the page has
+    worked out (a token, read off the element it is drawn for); one the
+    canvas cannot take, or no canvas at all, leaves no picture, and the
+    flight comes down without its clouds. In the browser only: the object
+    URL is the caller's to let go. */
+function paintCloudDeck(cells: Uint8Array, size: number, band: number, colour: string): Promise<string | null> {
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  if (!ctx || typeof canvas.toBlob !== 'function') return Promise.resolve(null);
+  /* a colour the canvas cannot read leaves the one before it: the marker says so */
+  ctx.fillStyle = '#010203';
+  ctx.fillStyle = colour;
+  if (ctx.fillStyle === '#010203') return Promise.resolve(null);
+  for (let j = 0; j < size; j++) {
+    for (let i = 0; i < size; i++) if (cells[j * size + i] === band) ctx.fillRect(i, j, 1, 1);
+  }
+  return new Promise(done => canvas.toBlob(blob => done(blob ? URL.createObjectURL(blob) : null)));
+}
+
 /* the deck's bands, a picture each, from the edges of the clouds in to their middles (map-flight.ts) */
 const BANDS = Array.from({ length: CLOUD_BANDS }, (_, b) => b + 1);
 
@@ -608,4 +635,11 @@ function Flight({ flight, fly, runway, f3, places, players, selected, onChoose, 
   );
 }
 
-export default memo(Flight);
+/** The flight as the world mounts it: the flight map:flight took last, read
+    here rather than handed down, so its cameras come with this module and not
+    with the page's first paint (World.tsx loads it once the page is live). */
+function FlightFromFile(props: Omit<Props, 'flight'>) {
+  return FLIGHT ? <Flight flight={FLIGHT} {...props} /> : null;
+}
+
+export default memo(FlightFromFile);
