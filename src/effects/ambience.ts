@@ -199,6 +199,10 @@ export function stopAmbience() {
   engine = null;
   document.removeEventListener('visibilitychange', onVisibility);
   clearInterval(crackle);
+  /* the fade starts from now: a ramp with nothing before it runs from the
+     last one's end, the start-up's, long past, and the sound was cut */
+  master.gain.cancelScheduledValues(ctx.currentTime);
+  master.gain.setValueAtTime(master.gain.value, ctx.currentTime);
   master.gain.linearRampToValueAtTime(0, ctx.currentTime + FADE_S);
   setTimeout(() => ctx.close().catch(() => { /* already closed */ }), FADE_S * 1000 + 100);
 }
