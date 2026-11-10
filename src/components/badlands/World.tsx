@@ -1081,7 +1081,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
                 {place.world && (
                   <button type="button" className="b-f3 b-card__xyz" aria-label={`Afrita hnitin ${place.world.x}, ${place.world.y}, ${place.world.z}`}
                     onClick={() => { const w = place.world!; const xyz = `${w.x} ${w.y} ${w.z}`; copyText(xyz).then(ok => (ok ? toast('Afritað', 'hnitin') : toast('Afritun tókst ekki', xyz))); }}>
-                    <span aria-hidden="true">XYZ: {place.world.x} / {place.world.y} / {place.world.z}</span>
+                    <span aria-hidden="true"><span className="b-card__xyzk">XYZ: </span>{place.world.x} / {place.world.y} / {place.world.z}</span>
                   </button>
                 )}
               </figcaption>

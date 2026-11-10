@@ -3307,6 +3307,8 @@ html.is-map-full { overflow: hidden; }
    (.b-f3), and the key took that from them, so only a keyboard could press it */
 .b-card__xyz { display: inline-block; position: static; margin-top: var(--sp-1); padding: var(--px) var(--sp-2); border: 0; background: var(--pitch); color: var(--paper); font-family: var(--font-data); font-size: var(--fs-data); line-height: 1.4; cursor: pointer; pointer-events: auto; }
 .b-card__xyz:focus-visible { outline: var(--px) solid var(--lantern-ink); outline-offset: var(--px); }
+/* on a 320 px phone three long coordinates ran 12 px past the card: the numbers stand without their XYZ there */
+@media (max-width: 359.98px) { .b-card__xyzk { display: none; } }
 @media (hover: hover) { .b-card__xyz:hover { color: var(--lantern); } }
 /* the compass needle on the locator bar: a key, unlike the marks */
 .b-locator__mark--home { width: 1.25rem; height: 1.75rem; padding: 0; border: 0; background: none; cursor: pointer; pointer-events: auto; }
@@ -3352,6 +3354,12 @@ html.is-map-full { overflow: hidden; }
    screen at every width, so there only the two on the moon's side hang, over
    the title's end, on a wide screen as on a phone */
 .b-nightsky:has(~ .b-stray) :is(.b-cloud--1, .b-cloud--2) { display: none; }
+/* A wall below its two columns opens with the poster across the whole
+   screen, straight under the bar, where every other page has its title's
+   strip of sky: the two slabs hung there showed as slivers over the poster's
+   top edge. No clouds there; from 1024 px the poster is a column and they
+   hang in the sky beside it. */
+@media (max-width: 1023.98px) { .b-nightsky:has(~ .w-page) .b-clouds { display: none; } }
 @supports (animation-timeline: scroll()) {
   .b-nightsky .b-clouds { animation: b-clouds-drift linear both; animation-timeline: scroll(root); }
 }
