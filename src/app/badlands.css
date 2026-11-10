@@ -3188,6 +3188,38 @@ html.is-map-full { overflow: hidden; }
 .b-light.is-on { opacity: 1; }
 
 
+/* Skjátextar (Subtitles.tsx): the game's subtitle box, at the foot of the
+   screen on the right, saying what the site sounds while the wind and the
+   fire are on. The game's own: a box of the night at four fifths, as wide as
+   its longest line, each line centred in the bitmap face, dimming over its
+   three seconds in four whole steps and then gone. In the top layer, so
+   placed on the screen itself; on a phone it stands on the hotbar. It takes
+   no press and is in nobody's way: a press goes through it. */
+.b-subs {
+  position: fixed;
+  inset: auto max(var(--sp-3), var(--safe-right)) calc(var(--sp-3) + var(--safe-bottom)) auto;
+  display: grid;
+  margin: 0;
+  padding: var(--px) 0;
+  border: 0;
+  background: rgb(from var(--night) r g b / 0.8);
+  color: var(--paper);
+  pointer-events: none;
+  overflow: hidden;
+}
+@media (max-width: 759.98px) { .b-subs { bottom: calc(var(--doorbar) + var(--safe-bottom) + var(--sp-2)); } }
+.b-subs__line {
+  padding: var(--px) var(--sp-3);
+  font-family: var(--font-data);
+  font-size: var(--fs-data);
+  line-height: 1.5;
+  text-align: center;
+  white-space: nowrap;
+  animation: b-subs-dim var(--line-ms, 3000ms) var(--ease-step) forwards;
+}
+@keyframes b-subs-dim { to { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) { .b-subs__line { animation: none; } }
+
 
 /* ─── the pages: their frame, the night behind their top, and off the trail ──
    The crew's pages (RollCall.tsx, Wall.tsx, BoardPage.tsx) and the death
