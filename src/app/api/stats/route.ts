@@ -17,6 +17,24 @@ export const dynamic = 'force-dynamic';
    every view of the home page, a wall or the roll call asked it again. */
 const FALLBACK = { headers: { 'Cache-Control': 's-maxage=60, stale-while-revalidate=60' } };
 
+/* The game's files as last read, kept a minute in this instance. The CDN
+   keeps an answer five minutes, but only per address asked: with any query
+   string on the end each request read the listing and eight files from
+   exaroton again, on the key the lantern and the map share. A read that
+   fails is not kept. */
+const READ_KEEP_MS = 60_000;
+let lastRead: { at: number; players: Promise<PlayerStat[]> } | null = null;
+function gameStats(token: string): Promise<PlayerStat[]> {
+  const now = Date.now();
+  if (lastRead && now - lastRead.at < READ_KEEP_MS) return lastRead.players;
+  /* a file that could not be read this time is not a member who never played: they keep their last numbers */
+  const players = readGameStats(token).then(keepSnapshot);
+  const mine = { at: now, players };
+  lastRead = mine;
+  players.catch(() => { if (lastRead === mine) lastRead = null; });
+  return players;
+}
+
 export async function GET() {
   const token = process.env.EXAROTON_API_KEY;
   /* the week's numbers come from the daily copies, whatever the server says
@@ -38,9 +56,7 @@ export async function GET() {
   }
 
   try {
-    const [read, week] = await Promise.all([readGameStats(token), weekRead]);
-    /* a file that could not be read this time is not a member who never played: they keep their last numbers */
-    const players = await keepSnapshot(read);
+    const [players, week] = await Promise.all([gameStats(token), weekRead]);
     const now = new Date().toISOString();
 
     return NextResponse.json({

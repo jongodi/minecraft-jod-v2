@@ -22,8 +22,33 @@ vi.mock('@/lib/stats', async (orig) => ({
 const { GET } = await import('../../app/api/stats/route');
 
 describe('/api/stats', () => {
-  beforeEach(() => { vi.stubEnv('EXAROTON_API_KEY', 'k'); saved.length = 0; });
-  afterEach(() => { vi.unstubAllEnvs(); });
+  /* each test a few minutes after the last: the route keeps a read of the game's files for a minute */
+  let clock = Date.parse('2026-11-10T12:00:00Z');
+  beforeEach(() => { vi.stubEnv('EXAROTON_API_KEY', 'k'); saved.length = 0; vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(clock += 5 * 60_000); });
+  afterEach(() => { vi.unstubAllEnvs(); vi.useRealTimers(); });
+
+  /* the CDN keeps an answer per address asked, so a query string on the end reached exaroton every time */
+  it('reads the game\'s files once for requests within the same minute, and again after it', async () => {
+    const { readGameStats } = await import('@/lib/stats');
+    const calls = () => vi.mocked(readGameStats).mock.calls.length;
+    read = { players: [stat('stebbias', 81), stat('joenana', 121)], counters: {}, failed: [] };
+    const before = calls();
+    await GET(); await GET(); await GET();
+    expect(calls() - before).toBe(1);
+    vi.setSystemTime(clock += 61_000);
+    await GET();
+    expect(calls() - before).toBe(2);
+  });
+
+  it('does not keep a read that failed', async () => {
+    const { readGameStats } = await import('@/lib/stats');
+    vi.mocked(readGameStats).mockRejectedValueOnce(new Error('exaroton is down'));
+    const quiet = vi.spyOn(console, 'error').mockImplementation(() => {});
+    expect(((await (await GET()).json()) as { source: string }).source).toBe('cached');
+    read = { players: [stat('stebbias', 82), stat('joenana', 122)], counters: {}, failed: [] };
+    expect(((await (await GET()).json()) as { source: string }).source).toBe('live');
+    quiet.mockRestore();
+  });
 
   it('keeps the last numbers of a member whose file could not be read', async () => {
     read = { players: [stat('stebbias', 81), { username: 'joenana', ...EMPTY }], counters: { stebbias: {} }, failed: ['joenana'] };
