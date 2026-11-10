@@ -1628,6 +1628,10 @@ html:has(.b-world.has-flight) { scroll-snap-type: y proximity; }
    jod:follow); the HUD's heads stay the way to them from a keyboard. */
 .b-pin--player { pointer-events: auto; cursor: pointer; translate: -50% -100%; gap: 2px; }
 .b-pin--player .b-pin__head { display: block; width: 1rem; height: 1rem; image-rendering: pixelated; box-shadow: 0 0 0 1px var(--night); }
+/* the phantoms over one who has not slept follow them down into the world: it
+   is night there already, so the ring is simply out, a little over their tag,
+   and not brought out on the sunset's scroll as it is in the hero */
+.b-pin--player > .b-phantoms { bottom: calc(100% + var(--sp-3)); opacity: 1; animation: none; }
 @media (hover: hover) {
   .b-pin:hover .b-pin__lamp { transform: translateY(-2px) scale(1.15); }
   .b-pin:hover .b-pin__label { opacity: 1; transform: none; }

@@ -169,7 +169,7 @@ export default function BadlandsHome({ syncedOn, bases, initial }: { syncedOn: s
       <AddressBar links={SECTIONS} activeId={active} onDoor={openDoor} status={initial.status} />
       <main id="efni">
         <Hero server={server} season={season} nights={nights} packs={packs} facts={facts} sleepless={sleepless} signal={signal} />
-        <World plates={plates} config={map} pinned={pinned} server={server} syncedOn={syncedOn} bases={bases} fresh={fresh} room={room} onCloseRoom={closeRoom} />
+        <World plates={plates} config={map} pinned={pinned} server={server} syncedOn={syncedOn} bases={bases} fresh={fresh} room={room} onCloseRoom={closeRoom} sleepless={sleepless} />
       </main>
       <Footer season={season} nights={nights} signal={signal} crew={crew} known={isLive(server)} />
       <NightTitle />

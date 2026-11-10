@@ -157,6 +157,8 @@ interface Props {
   /** which room is open over the world, if any */
   room: RoomId | null;
   onCloseRoom: () => void;
+  /** who of the crew has gone three of the game's days without a bed, and how many nights (src/lib/sleepless.ts) */
+  sleepless?: Record<string, number>;
 }
 
 /** Dusk: the world is the page. BlueMap fills the viewport under the mesas,
@@ -220,7 +222,10 @@ const F3 = memo(function F3({ store, onCopy }: { store: CameraStore; onCopy?: ()
   );
 });
 
-function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], room, onCloseRoom }: Props) {
+/* a stable empty answer, so the flight's memo holds where nobody has gone without sleep */
+const NO_ONE_AWAKE: Record<string, number> = {};
+
+function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], room, onCloseRoom, sleepless = NO_ONE_AWAKE }: Props) {
   const [selected, setSelect] = useState<number | null>(null);
   const [drawn, setDrawn]     = useState(false);
   const [album, setAlbum]     = useState(false);
@@ -902,7 +907,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
         {FLIGHT_ON && posterOn && (
           <Flight fly={fly && (!live || auto)} runway={runway} f3={flightF3} places={grounded} players={onLand}
             selected={selected} onChoose={choose} near={near} onNear={pointAt} camera={cameraSink}
-            hidden={shown || drawn} onLanded={setLanded} onApproach={approach} />
+            hidden={shown || drawn} onLanded={setLanded} onApproach={approach} awake={sleepless} />
         )}
         </div>
 

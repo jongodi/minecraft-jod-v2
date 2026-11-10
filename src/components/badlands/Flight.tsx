@@ -3,7 +3,7 @@
 import { memo, useEffect, useRef, type MutableRefObject, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
 import type { WorldPoint } from '@/lib/map-types';
 import { FLIGHT, cameraAt, cameraMatrix, CLOUD_BANDS, cloudDeck, clouded, cloudThinned, cover, deckHomography, depthScale, easeFlight, facing, fetchOrder, flightFrame, flightProgress, flightShape, follow, heading, horizonPoint, lensOf, projectPoint, warp, type CloudDeck, type Flight as FlightData, type FlightShape } from '@/lib/map-flight';
-import { Lantern, Moon, Stars } from './Bits';
+import { Lantern, Moon, Phantom, Stars } from './Bits';
 import { FACING, titleCase } from './data';
 import PlayerHead from './PlayerHead';
 import { useMoonPhase } from './Season';
@@ -42,6 +42,8 @@ interface Props {
   /** the visitor has set off down the page, once: time to wake the live map
       behind the flight (World.tsx), while the sky above still moves on its own */
   onApproach?: () => void;
+  /** the nights each of the crew has gone without a bed, where the game would send phantoms after them (src/lib/sleepless.ts) */
+  awake?: Record<string, number>;
 }
 
 /* frames fetched at once: enough to keep ahead of a quick scroll, few enough
@@ -130,7 +132,7 @@ interface Pin { el: HTMLElement; at: [number, number, number]; least: number; de
     rest, a few MB, from the visitor's first scroll, ever finer between, so a
     quick scroll always has one near, moved to where the camera is. Only those
     round the camera are decoded, off the main thread, ahead of it. */
-function Flight({ flight, fly, runway, f3, places, players, selected, onChoose, near, onNear, camera, hidden, onLanded, onApproach }: Props) {
+function Flight({ flight, fly, runway, f3, places, players, selected, onChoose, near, onNear, camera, hidden, onLanded, onApproach, awake }: Props) {
   const layer = useRef<HTMLDivElement>(null);
   const stage = useRef<HTMLDivElement>(null);
   const moon = useMoonPhase();
@@ -627,6 +629,8 @@ function Flight({ flight, fly, runway, f3, places, players, selected, onChoose, 
           <button key={p.name} type="button" tabIndex={-1} data-pin={`player:${p.name}`} className="b-pin b-pin--player"
             onClick={() => window.dispatchEvent(new CustomEvent('jod:follow', { detail: p.name }))}>
             <span className="b-nametag b-pin__tag">{p.name}</span>
+            {/* the phantoms that came after them in the hero follow them down into the world */}
+            {awake?.[p.name.toLowerCase()] ? <span className="b-phantoms" aria-hidden="true"><Phantom /><Phantom /></span> : null}
             <PlayerHead name={p.name} size={16} alt="" className="b-pin__head" />
           </button>
         ))}
