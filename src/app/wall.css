@@ -444,6 +444,13 @@
 .w-reply__when button::before { content: ''; position: absolute; inset: -0.6rem -0.4rem; }
 @media (hover: hover) { .w-reply__when button:hover { color: var(--sign-ink); } }
 .w-reply__input { min-height: 2.25rem; padding: var(--sp-1) var(--sp-2); background: transparent; border: 0; border-bottom: var(--px) solid var(--sign-line); color: var(--sign-ink); font-family: var(--font-text); font-size: var(--fs-sm); outline: none; }
+/* On a phone a field set under 16 px makes Safari zoom the whole page in when
+   it is tapped, and leave it zoomed: every sign has this field, and after
+   one answer the board slid sideways under the thumb for the rest of the
+   visit. Where the finger is the pointer, the answer and the place are
+   typed at the size that needs no zoom; with a mouse they keep the sign's
+   small type. Both keep their tap's height. */
+@media (pointer: coarse) { .w-reply__input, .w-pin__select { font-size: 1rem; min-height: var(--tap); } }
 .w-reply__input::placeholder { color: var(--sign-soft); }
 .w-reply__input:focus { border-bottom-color: var(--sign-lantern); }
 
