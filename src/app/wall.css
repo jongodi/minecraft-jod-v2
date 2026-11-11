@@ -438,7 +438,7 @@
 .w-reply__who { font-weight: 600; font-size: var(--fs-sm); color: var(--sign-ink); text-decoration: none; }
 @media (hover: hover) { .w-reply__who:hover { color: var(--sign-lantern); } }
 .w-reply__text { font-size: var(--fs-sm); line-height: 1.5; color: var(--sign-ink); white-space: pre-wrap; overflow-wrap: anywhere; }
-.w-reply__when { display: flex; gap: var(--sp-3); font-size: var(--fs-sm); color: var(--sign-soft); }
+.w-reply__when { display: flex; align-items: center; gap: var(--sp-3); font-size: var(--fs-sm); color: var(--sign-soft); }   /* centred: on a phone Eyða is a tap tall, and hung half a line below the time beside it */
 .w-reply__when button { position: relative; font-family: var(--font-data); font-size: var(--fs-data); letter-spacing: 0.04em; text-transform: uppercase; color: var(--sign-lantern); }
 /* a word-sized control on a phone: its reach is a thumb's, not the word's */
 .w-reply__when button::before { content: ''; position: absolute; inset: -0.6rem -0.4rem; }
@@ -768,3 +768,12 @@
    the wood, as every control on a sign shows it; the line under each only
    changed colour, which could not be seen */
 .w-pin__text:focus-visible, .w-draft__cap:focus-visible, .w-reply__input:focus-visible { outline: var(--px) solid var(--sign-lantern); outline-offset: var(--px); }
+
+/* ─── a thumb's reach, last in the sheet so nothing after it takes it back ───
+   Measured on a phone with a sign's every control out: Deila was 32 px tall
+   and the pin's three kinds 39, each under the 44 px a thumb is given
+   everywhere else on the site. (The lantern keeps its width: widened, it
+   pushed Deila off the row onto a line of its own.) */
+@media (pointer: coarse) {
+  .w-print__share, .w-pin__kind { min-height: var(--tap); }
+}
