@@ -180,7 +180,15 @@ export default function AddressBar({ links, activeId, onDoor, always = false, st
         </a>
       );
     }
-    return <Link key={l.id} href={l.href} className={className} aria-current={current} aria-keyshortcuts={key}>{inner}</Link>;
+    /* The door of the page already open leads back to its top, as the slot
+       in hand does on any phone: pressed far down the board it did nothing
+       at all, the address being the one already shown. */
+    return (
+      <Link key={l.id} href={l.href} className={className} aria-current={current} aria-keyshortcuts={key}
+            onClick={e => { if (current === 'page' && plainClick(e)) { e.preventDefault(); window.scrollTo({ top: 0 }); } }}>
+        {inner}
+      </Link>
+    );
   };
 
   return (

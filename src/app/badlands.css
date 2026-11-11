@@ -154,7 +154,14 @@
 /* The band of sky they hang in, a third of the screen deep: each set of
    clouds is a layer of its own the size of the band, not of the screen, since
    the sky is behind the whole page and is composited on every scroll frame. */
-.b-sky__clouds { position: absolute; inset-inline: 0; top: 33%; height: 36%; --cpx: 6px; overflow: clip; }   /* a cloud drifting past the edge of the screen goes out of the sky, not off the page */
+/* A cloud drifting past the edge of the screen goes out of the sky, not off
+   the page. Hidden, not clip: the band of clouds slides 120 px to the right
+   as the page is scrolled, and Safari counted what `clip` had cut off into
+   the page's width, so a phone could be dragged sideways further and further
+   the lower it was scrolled. Nothing in the sky takes focus or is scrolled
+   to, so a box that could scroll is no cost here. The same for the night sky
+   over the other pages (.b-nightsky) and for the flight's stills. */
+.b-sky__clouds { position: absolute; inset-inline: 0; top: 33%; height: 36%; --cpx: 6px; overflow: hidden; }
 .b-clouds {
   position: absolute;
   inset: 0;
@@ -1441,7 +1448,7 @@ html:has(.b-world.has-flight) { scroll-snap-type: y proximity; }
    them for the margin a moved frame can leave. The frames carry the still's
    saturate(0.85) already (scripts/map-flight.mjs): no filter on a layer that
    changes. */
-.b-flight { position: absolute; inset: 0; overflow: clip; background: var(--night); visibility: hidden; will-change: transform; }   /* leaned by Flight.tsx */
+.b-flight { position: absolute; inset: 0; overflow: hidden; background: var(--night); visibility: hidden; will-change: transform; }   /* leaned by Flight.tsx */
 .b-flight__sheet { position: absolute; left: 0; top: 0; display: block; transform-origin: 0 0; opacity: 0; will-change: transform, opacity; }
 /* With a flight the still is square at rest: the flight ends on it, and the
    live map takes over from it, at the very view each was drawn at. */
@@ -2082,6 +2089,8 @@ html.is-map-full { overflow: hidden; }
   gap: var(--sp-2);
   overflow-x: auto;
   overflow-y: hidden;
+  /* a strip dragged to its end stops there: the drag is not handed on to the page, where a phone took it for a swipe back to the last page */
+  overscroll-behavior-x: contain;
   padding: 3px;                  /* room for the focus ring */
   scroll-snap-type: x proximity;
   scrollbar-width: none;
@@ -2421,7 +2430,7 @@ html.is-map-full { overflow: hidden; }
 .b-room__close svg { width: 1rem; height: 1rem; }
 .b-room__close:focus-visible { background: var(--lantern); color: var(--night); }
 @media (hover: hover) { .b-room__close:hover { background: var(--lantern); color: var(--night); } }
-.b-room__body { overflow-y: auto; overscroll-behavior: contain; padding-block: var(--sp-5) var(--sp-6); scrollbar-width: thin; scrollbar-color: var(--wood-light) transparent; }
+.b-room__body { overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; padding-block: var(--sp-5) var(--sp-6); scrollbar-width: thin; scrollbar-color: var(--wood-light) transparent; }
 @media (max-width: 899.98px) { .b-room__body { padding-block: var(--sp-4) var(--sp-5); } }
 @media (max-width: 479.98px) { .b-room__note { display: none; } }
 
@@ -2434,7 +2443,7 @@ html.is-map-full { overflow: hidden; }
 /* on the night itself, solid: through the deep scrim the HUD's date, heads
    and tools stood faintly at the header's own baselines, and its sentence
    ran on into them. The viewer sleeps under the album, so nothing is lost. */
-.b-album { position: fixed; inset: 0; z-index: var(--z-drawer); overflow-y: auto; background: var(--night); padding-block: calc(var(--sp-6) + var(--safe-top)) var(--sp-8); }
+.b-album { position: fixed; inset: 0; z-index: var(--z-drawer); overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; background: var(--night); padding-block: calc(var(--sp-6) + var(--safe-top)) var(--sp-8); }
 .b-album__inner { display: grid; gap: var(--sp-4); }
 /* Tiles are square and butt together, so the wall never leaves holes.
    Every fifth picture is hung double size. There is no dense packing:
@@ -2537,7 +2546,7 @@ html.is-map-full { overflow: hidden; }
 .b-shelf__lede { font-size: var(--fs-md); }
 
 /* ─── duel: the arena at night, behind the fire ───────────────── */
-.b-duelbox { position: fixed; inset: 0; z-index: var(--z-modal); display: grid; place-items: center; padding: calc(var(--sp-4) + var(--safe-top)) var(--gutter) calc(var(--sp-4) + var(--safe-bottom)); background: var(--scrim); overflow-y: auto; }
+.b-duelbox { position: fixed; inset: 0; z-index: var(--z-modal); display: grid; place-items: center; padding: calc(var(--sp-4) + var(--safe-top)) var(--gutter) calc(var(--sp-4) + var(--safe-bottom)); background: var(--scrim); overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; }
 .b-duelbox__in { width: 100%; max-width: 64rem; }
 .b-duelpanel { padding: var(--sp-5); background: var(--dusk-2); box-shadow: var(--bevel); clip-path: var(--notch); }
 .b-duel { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-5); }
@@ -3275,7 +3284,7 @@ html.is-map-full { overflow: hidden; }
    the far ridge standing on the line where the page's night begins; the
    posters hang in front of it */
 :root { --nightsky: clamp(19rem, 14rem + 12vw, 26rem); }
-.b-nightsky { position: absolute; inset-inline: 0; top: 0; height: calc(var(--nightsky) + var(--safe-top)); z-index: 0; overflow: clip; pointer-events: none; background: linear-gradient(180deg, var(--sky-night-top), var(--night) 92%); --ground: 0px; }
+.b-nightsky { position: absolute; inset-inline: 0; top: 0; height: calc(var(--nightsky) + var(--safe-top)); z-index: 0; overflow: hidden; pointer-events: none; background: linear-gradient(180deg, var(--sky-night-top), var(--night) 92%); --ground: 0px; }
 .b-nightsky__stars { position: absolute; inset: 0; width: 100%; height: 100%; color: var(--star); opacity: 0.55; }
 .b-nightsky .b-ridge { height: clamp(3.5rem, 8vw, 6rem); }
 /* tonight's moon, risen: high on the right, where the sun stood at the top of the evening */

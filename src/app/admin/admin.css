@@ -75,6 +75,8 @@
 /* a solid ring for the keyboard: the glow it had is 1.5:1 on the night and could not be seen */
 .a-input:focus, .a-select:focus { border-color: var(--lantern); }
 .a-input:focus-visible, .a-select:focus-visible { outline: var(--px) solid var(--lantern); outline-offset: var(--px); }
+/* on a phone a field under 16 px makes Safari zoom the page in on a tap and leave it there (wall.css says the same of a sign's answer) */
+@media (pointer: coarse) { .a-input, .a-select, .a-card__posinput { font-size: 1rem; } }
 .a-input.is-changed { border-color: var(--lantern-deep); }
 .a-input--data { font-family: var(--font-data); font-size: var(--fs-data); }
 .a-input--short { width: 7.5rem; }

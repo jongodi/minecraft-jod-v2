@@ -438,12 +438,19 @@
 .w-reply__who { font-weight: 600; font-size: var(--fs-sm); color: var(--sign-ink); text-decoration: none; }
 @media (hover: hover) { .w-reply__who:hover { color: var(--sign-lantern); } }
 .w-reply__text { font-size: var(--fs-sm); line-height: 1.5; color: var(--sign-ink); white-space: pre-wrap; overflow-wrap: anywhere; }
-.w-reply__when { display: flex; gap: var(--sp-3); font-size: var(--fs-sm); color: var(--sign-soft); }
+.w-reply__when { display: flex; align-items: center; gap: var(--sp-3); font-size: var(--fs-sm); color: var(--sign-soft); }   /* centred: on a phone Eyða is a tap tall, and hung half a line below the time beside it */
 .w-reply__when button { position: relative; font-family: var(--font-data); font-size: var(--fs-data); letter-spacing: 0.04em; text-transform: uppercase; color: var(--sign-lantern); }
 /* a word-sized control on a phone: its reach is a thumb's, not the word's */
 .w-reply__when button::before { content: ''; position: absolute; inset: -0.6rem -0.4rem; }
 @media (hover: hover) { .w-reply__when button:hover { color: var(--sign-ink); } }
 .w-reply__input { min-height: 2.25rem; padding: var(--sp-1) var(--sp-2); background: transparent; border: 0; border-bottom: var(--px) solid var(--sign-line); color: var(--sign-ink); font-family: var(--font-text); font-size: var(--fs-sm); outline: none; }
+/* On a phone a field set under 16 px makes Safari zoom the whole page in when
+   it is tapped, and leave it zoomed: every sign has this field, and after
+   one answer the board slid sideways under the thumb for the rest of the
+   visit. Where the finger is the pointer, the answer and the place are
+   typed at the size that needs no zoom; with a mouse they keep the sign's
+   small type. Both keep their tap's height. */
+@media (pointer: coarse) { .w-reply__input, .w-pin__select { font-size: 1rem; min-height: var(--tap); } }
 .w-reply__input::placeholder { color: var(--sign-soft); }
 .w-reply__input:focus { border-bottom-color: var(--sign-lantern); }
 
@@ -502,6 +509,9 @@
 .w-print__by:focus-visible { outline: var(--px) solid var(--sign-lantern); outline-offset: var(--px); }
 
 .w-mention { color: var(--sign-lantern); font-weight: 600; text-decoration: none; }
+/* an address in a note (Mentions.tsx): the sign's own lantern ink, as everything on a sign that can be pressed, underlined so it reads as a link among the words, and broken anywhere rather than pushed off the sign */
+.w-link { color: var(--sign-lantern); text-decoration: underline var(--px); text-underline-offset: 0.3em; overflow-wrap: anywhere; }
+@media (hover: hover) { .w-link:hover { text-decoration-thickness: calc(var(--px) * 1.5); } }
 @media (hover: hover) { .w-mention:hover { text-decoration: underline var(--px); text-underline-offset: 0.3em; } }
 /* the one looking, called by name: the lantern's own light behind the name */
 .w-mention.is-me { padding-inline: var(--px); background: var(--lantern); color: var(--ink); box-shadow: 0 var(--px) 0 var(--lantern-deep); }
@@ -758,3 +768,12 @@
    the wood, as every control on a sign shows it; the line under each only
    changed colour, which could not be seen */
 .w-pin__text:focus-visible, .w-draft__cap:focus-visible, .w-reply__input:focus-visible { outline: var(--px) solid var(--sign-lantern); outline-offset: var(--px); }
+
+/* ─── a thumb's reach, last in the sheet so nothing after it takes it back ───
+   Measured on a phone with a sign's every control out: Deila was 32 px tall
+   and the pin's three kinds 39, each under the 44 px a thumb is given
+   everywhere else on the site. (The lantern keeps its width: widened, it
+   pushed Deila off the row onto a line of its own.) */
+@media (pointer: coarse) {
+  .w-print__share, .w-pin__kind { min-height: var(--tap); }
+}

@@ -342,7 +342,7 @@
 .b-stat.is-led .b-stat__v { color: var(--tc-red); }
 
 /* taller than the screen (a phone on its side, the keyboard up) it scrolls from its top rather than losing both ends */
-.b-modal { position: fixed; inset: 0; z-index: var(--z-modal); background: var(--scrim); display: grid; place-items: safe center; padding: calc(var(--sp-4) + var(--safe-top)) var(--gutter) calc(var(--sp-4) + var(--safe-bottom)); overflow-y: auto; }
+.b-modal { position: fixed; inset: 0; z-index: var(--z-modal); background: var(--scrim); display: grid; place-items: safe center; padding: calc(var(--sp-4) + var(--safe-top)) var(--gutter) calc(var(--sp-4) + var(--safe-bottom)); overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; }
 /* the backdrop holds focus only until a field inside can take it; no ring around the whole screen */
 .b-modal:focus { outline: none; }
 .b-modal__box { width: 100%; max-width: 22rem; padding: var(--sp-5); }
