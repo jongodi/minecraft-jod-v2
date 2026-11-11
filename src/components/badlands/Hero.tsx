@@ -1,5 +1,6 @@
 'use client';
 
+import { plural } from '@/lib/format';
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Mesa, { NONE_AWAKE, Rider } from './Mesa';
 import { Moon, Sun } from './Bits';
@@ -46,7 +47,7 @@ function birthdayLine(now: Date): string | null {
   if (born.getUTCMonth() !== now.getUTCMonth() || born.getUTCDate() !== now.getUTCDate()) return null;
   const years = now.getUTCFullYear() - born.getUTCFullYear();
   const word = ['', 'eins', 'tveggja', 'þriggja', 'fjögurra', 'fimm', 'sex', 'sjö', 'átta', 'níu', 'tíu'][years] ?? String(years);
-  return years >= 1 ? `Heimurinn ${word} ára í dag!` : null;
+  return years >= 1 ? `Heimurinn ${word} ${plural(years, 'árs', 'ára')} í dag!` : null;
 }
 
 function Splash({ inside, planned, live, facts }: { inside: number; planned: boolean; live: boolean; facts: string[] }) {

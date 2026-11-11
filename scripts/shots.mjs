@@ -6,7 +6,8 @@
 //      STAGE=1 (the server on, three in, two of them three of the game's days without a bed so
 //      the phantoms show, a week of stats and drawn heads: scripts/stage.mjs), and with it
 //      STAGE_NIGHT=1 (a night fixed for two days from now) or STAGE_NIGHT=today (a fire fixed
-//      for eight tonight, so the signal fire stands)
+//      for eight tonight, so the signal fire stands) or STAGE_NIGHT=full (that evening under
+//      way with everyone who said yes in, so the rockets go up over the fire)
 import { chromium } from 'playwright-core';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';

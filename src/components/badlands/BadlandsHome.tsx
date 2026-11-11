@@ -13,7 +13,10 @@ import World from './World';
 import Footer from './Footer';
 import { CREW, SECTIONS, isRoom, plainClick, type PlaceId, type RoomId } from './data';
 import { isLive, modalOpen, seedStatus, showWorld, useEffectsAllowed, useReducedMotionPref, useScrollSpy, useServerStatus } from './hooks';
-import { seedNights } from './night';
+import { seedNights, usePlayNight } from './night';
+import { fullHouseOf } from './signal';
+import NightTitle from './NightTitle';
+import type { PlayNightResponse } from '@/app/api/playnight/route';
 import { seasonClass, useSeason } from './Season';
 
 /* Effects load after the page is interactive; none of them is needed for the first paint. */
@@ -32,6 +35,19 @@ const PRESSED_HOLD_MS = 1500;
     (src/lib/home-data.ts): the status and the nights seed the browser's
     stores, which keep polling from there; the gallery, the map and the
     crew's prints are the page's for as long as it is open. */
+/* Fullt hús: the fireworks of gamlárskvöld also go up over the fire on an
+   evening everyone who said they would come has come to (fullHouseOf in
+   signal.ts), the same sparks on the game's tick (Particles.tsx). In a part
+   of its own, so a poll of the nights draws this again and not the page.
+   Only from the browser's own answer, never the one the page was drawn
+   with: a page kept from the evening would send them up over a morning. */
+function NightParticles({ nights, crew, snow, fireworks }: { nights: PlayNightResponse; crew: string; snow: boolean; fireworks: boolean }) {
+  const { state } = usePlayNight(nights);
+  /* who is in now counts as come, as in the hero's line and the crew's room (cameOf) */
+  const full = !!state && state !== nights && fullHouseOf(state.nights, crew ? crew.split('|') : []);
+  return <Particles heroId="top" fireId="campfire" snow={snow} fireworks={fireworks || full} />;
+}
+
 export default function BadlandsHome({ syncedOn, bases, initial }: { syncedOn: string | null; bases: BaseLink[]; initial: HomeData }) {
   seedStatus(initial.status);
   seedNights(initial.nights);
@@ -151,8 +167,9 @@ export default function BadlandsHome({ syncedOn, bases, initial }: { syncedOn: s
       <Sky />
       {/* the effects start once the browser is idle, and not at all on a device without room for them */}
       {/* under reduced motion neither draws anything, so neither is fetched */}
-      {effects && !reduce && <Particles heroId="top" fireId="campfire" snow={season.snow} fireworks={season.fireworks} />}
+      {effects && !reduce && <NightParticles nights={nights} crew={crew} snow={season.snow} fireworks={season.fireworks} />}
       {effects && !reduce && <CursorLight />}
+      <NightTitle nights={nights} />
       <AddressBar links={SECTIONS} activeId={active} onDoor={openDoor} status={initial.status} />
       <main id="efni">
         <Hero server={server} season={season} nights={nights} packs={packs} facts={facts} sleepless={sleepless} signal={signal} />

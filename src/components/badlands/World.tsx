@@ -674,7 +674,10 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
   /* the postcard stays up a beat after its place is let go, to leave the way it came */
   const { shown: place, leaving, settle } = useLinger(chosen && !shut ? chosen : null);
   const plate = place?.photoId ? plates.find(p => p.id === place.photoId) ?? null : null;
-  const lower = server.list.map(n => n.toLowerCase());
+  /* only while the server answers that it is on: a status that was lost
+     keeps its last list (hooks.ts), and the screen went on saying "inni núna"
+     with their heads under a lantern that said it could not reach the server */
+  const lower = server.online ? server.list.map(n => n.toLowerCase()) : [];
   const inside = CREW.filter(n => lower.includes(n.toLowerCase()));
   /* for the planks' live lines: what is new on the board, and the next fire */
   const news = useBoardNews();
@@ -1078,7 +1081,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
                 {place.world && (
                   <button type="button" className="b-f3 b-card__xyz" aria-label={`Afrita hnitin ${place.world.x}, ${place.world.y}, ${place.world.z}`}
                     onClick={() => { const w = place.world!; const xyz = `${w.x} ${w.y} ${w.z}`; copyText(xyz).then(ok => (ok ? toast('Afritað', 'hnitin') : toast('Afritun tókst ekki', xyz))); }}>
-                    <span aria-hidden="true">XYZ: {place.world.x} / {place.world.y} / {place.world.z}</span>
+                    <span aria-hidden="true"><span className="b-card__xyzk">XYZ: </span>{place.world.x} / {place.world.y} / {place.world.z}</span>
                   </button>
                 )}
               </figcaption>

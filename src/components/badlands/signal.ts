@@ -26,6 +26,40 @@ export function signalOf(nights: readonly PublicNight[], now = Date.now()): bool
   });
 }
 
+/** Who of those who said yes to a night has come: noted by the server
+    during the evening (`came`), or in the game right now (`inGame`, the live
+    list, where the caller has one). The server notes who it sees every five
+    minutes, so its note alone trails the lantern; the hero's line counted by
+    it said "2 af 3 komin" beside a room that said three. Names are matched
+    as the game matches them, whatever their capitals. */
+export function cameOf(night: PublicNight, inGame: readonly string[] = []): string[] {
+  const here = new Set([...night.came, ...inGame].map(n => n.toLowerCase()));
+  const yes = night.options.find(o => o.id === night.chosen)?.yes ?? [];
+  return yes.filter(y => here.has(y.toLowerCase()));
+}
+
+/** Fullt hús: an evening under way that everyone who said they would come
+    has come to (cameOf), when two or more said so. The fireworks of
+    gamlárskvöld go up over the fire then (NightParticles in
+    BadlandsHome.tsx, Particles.tsx) and the hero's line says it in words.
+    Over with the evening. */
+export function fullHouseOf(nights: readonly PublicNight[], inGame: readonly string[] = []): boolean {
+  return nights.some(n => {
+    if (n.phase !== 'live') return false;
+    const yes = n.options.find(o => o.id === n.chosen)?.yes ?? [];
+    return yes.length >= 2 && cameOf(n, inGame).length === yes.length;
+  });
+}
+
+/** The night that has just begun: one now under way that this page last saw
+    waiting for its hour (`before`, each night's phase at the last answer).
+    The game's title is shown for it once (NightTitle.tsx). A night first
+    seen already under way has not just begun: a page opened mid-evening
+    shows no title. */
+export function justBegun(before: Readonly<Record<string, PublicNight['phase']>>, nights: readonly PublicNight[]): PublicNight | null {
+  return nights.find(n => n.phase === 'live' && (before[n.id] === 'soon' || before[n.id] === 'chosen')) ?? null;
+}
+
 export interface SignalLand {
   /** the far ridge, whose plateaus the fire may stand on */
   far: readonly Plateau[];

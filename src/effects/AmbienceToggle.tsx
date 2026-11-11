@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { SoundIcon } from '@/components/badlands/Bits';
+import Subtitles from './Subtitles';
 import { ambienceHeld, ambienceRunning, isRemembered, remember, startAmbience, stopAmbience } from './ambience';
 
 /** The wind-and-fire toggle. A remembered "on" waits for the first tap or
@@ -47,10 +48,14 @@ export default function AmbienceToggle({ className }: { className?: string }) {
   };
 
   return (
-    /* a pressed button, named by what it plays: aria-pressed says whether it is playing */
-    <button ref={button} type="button" className={`b-sound${on ? ' is-on' : ''}${className ? ` ${className}` : ''}`} onClick={toggle} aria-pressed={on}>
-      <SoundIcon on={on} />
-      <span className="b-sound__label">Vindur og eldur</span>
-    </button>
+    <>
+      {/* a pressed button, named by what it plays: aria-pressed says whether it is playing */}
+      <button ref={button} type="button" className={`b-sound${on ? ' is-on' : ''}${className ? ` ${className}` : ''}`} onClick={toggle} aria-pressed={on}>
+        <SoundIcon on={on} />
+        <span className="b-sound__label">Vindur og eldur</span>
+      </button>
+      {/* what is sounding, written as the game writes it, wherever the toggle is */}
+      <Subtitles />
+    </>
   );
 }

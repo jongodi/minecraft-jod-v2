@@ -112,6 +112,34 @@ export function wallAdvancements(username: string, crew: CrewAdvancements | null
     .sort((a, b) => b.at.localeCompare(a.at) || a.title.localeCompare(b.title, 'is'));
 }
 
+/** One of a member's own advancements as news to them: when the site first
+    had it (`seen`), which is what a device remembers having shown. */
+export interface OwnAdvancement { id: string; title: string; frame: Frame; seen: string }
+
+const OWN_DAYS = 14;
+const OWN_MOST = 20;
+
+/** A member's advancements that reached the site in the last two weeks,
+    oldest first: what the game's toast is shown for when they next open the
+    site (AdvancementToasts.tsx). Dated by the daily copy that found each,
+    not by the game's own moment, which may be a day older than the copy and
+    so older than the member's last visit. Advancements with no such date
+    (all of them at the first copy) are not news. */
+export function ownRecent(username: string, crew: CrewAdvancements | null, now = Date.now()): OwnAdvancement[] {
+  if (!crew?.found) return [];
+  const key = Object.keys(crew.found).find(u => u.toLowerCase() === username.toLowerCase());
+  if (!key) return [];
+  const since = now - OWN_DAYS * 86_400_000;
+  return Object.entries(crew.found[key])
+    .flatMap(([id, seen]) => {
+      const def = DEFS.get(id);
+      const t = Date.parse(seen);
+      return def && t >= since && t <= now ? [{ id, title: def.title, frame: def.frame, seen }] : [];
+    })
+    .sort((a, b) => a.seen.localeCompare(b.seen) || a.title.localeCompare(b.title, 'is'))
+    .slice(-OWN_MOST);
+}
+
 // ─── the copy in Redis ───────────────────────────────────────────────────────
 
 const KEY = 'adv:crew';

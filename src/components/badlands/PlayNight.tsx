@@ -314,7 +314,10 @@ function LetterSlip({ night, letter, busy, onSend, onDrop }: {
   /* what they answered before, with the letter's choice added to it (or none, for "Kemst ekki") */
   const before = night.options.filter(o => o.yes.some(y => lower(y) === lower(letter.user))).map(o => o.id);
   const [yes, setYes] = useState<string[]>(() =>
-    letter.svar === 'ekki' ? [] : chosen ? [chosen.id] : [...new Set([...before, letter.svar])].filter(has));
+    /* once a time is chosen, a letter's yes to another time is not a yes to
+       this one: an old letter's button for the time that lost stood ready as
+       "Mæti" for the one that won */
+    letter.svar === 'ekki' ? [] : chosen ? (letter.svar === chosen.id || before.includes(chosen.id) ? [chosen.id] : []) : [...new Set([...before, letter.svar])].filter(has));
   const toggle = (id: string) => setYes(y => (y.includes(id) ? y.filter(x => x !== id) : [...y, id]));
   const closed = night.phase === 'live' || night.phase === 'over';
 

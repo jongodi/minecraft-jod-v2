@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createElement } from 'react';
 import { renderToString } from 'react-dom/server';
 import type { PlayNightResponse, PublicNight } from '@/app/api/playnight/route';
-import { SIGNAL_LEAST, signalOf, signalSpot, type Plateau } from '../signal';
+import { SIGNAL_LEAST, cameOf, fullHouseOf, justBegun, signalOf, signalSpot, type Plateau } from '../signal';
 import { FAR, NEAR } from '../ridges';
 import { useSignal } from '../night';
 
@@ -150,5 +150,54 @@ describe('signalSpot on a phone, where the stretch beside the J is the gutter', 
     expect(px(spot!.x + spot!.fw / 2)).toBeLessThanOrEqual(clear + 1e-9);
     expect(spot!.fw).toBeLessThanOrEqual(6);
     expect(spot!.fw).toBeGreaterThanOrEqual(SIGNAL_LEAST);
+  });
+});
+
+describe('fullHouseOf', () => {
+  const at = '2026-11-07T20:00:00Z';
+  const live = (yes: string[], came: string[], phase: PublicNight['phase'] = 'live'): PublicNight =>
+    ({ ...night(phase, at), options: [{ id: 'o1', at, yes }], came });
+
+  it('is everyone who said yes having come, whatever the capitals of their names', () => {
+    expect(fullHouseOf([live(['stebbias', 'IMlonely', 'joenana'], ['joenana', 'imlonely', 'Stebbias'])])).toBe(true);
+  });
+
+  it('is not while one of them is still missing, and a guest who said nothing does not stand in', () => {
+    expect(fullHouseOf([live(['stebbias', 'joenana', 'eikibleiki'], ['stebbias', 'joenana', 'Gamla123'])])).toBe(false);
+  });
+
+  it('takes two or more to be a house', () => {
+    expect(fullHouseOf([live(['stebbias'], ['stebbias'])])).toBe(false);
+    expect(fullHouseOf([live([], [])])).toBe(false);
+  });
+
+  it('counts whoever is in the game now as come, before the server has noted them', () => {
+    const n = live(['stebbias', 'joenana', 'eikibleiki'], ['stebbias']);
+    expect(cameOf(n)).toEqual(['stebbias']);
+    expect(cameOf(n, ['JOENANA', 'Gamla123'])).toEqual(['stebbias', 'joenana']);
+    expect(fullHouseOf([n], ['joenana'])).toBe(false);
+    expect(fullHouseOf([n], ['joenana', 'eikibleiki'])).toBe(true);
+  });
+
+  it('is only of an evening under way', () => {
+    for (const phase of ['open', 'chosen', 'soon', 'over'] as const) {
+      expect(fullHouseOf([live(['stebbias', 'joenana'], ['stebbias', 'joenana'], phase)])).toBe(false);
+    }
+    expect(fullHouseOf([])).toBe(false);
+  });
+});
+
+describe('justBegun', () => {
+  const at = '2026-11-07T20:00:00Z';
+  it('is the night whose hour came since the page last looked', () => {
+    expect(justBegun({ n1: 'soon' }, [night('live', at)])?.id).toBe('n1');
+    expect(justBegun({ n1: 'chosen' }, [night('live', at)])?.id).toBe('n1');
+  });
+
+  it('is none for a night first seen under way, one still under way, or one not yet begun', () => {
+    expect(justBegun({}, [night('live', at)])).toBeNull();
+    expect(justBegun({ n1: 'live' }, [night('live', at)])).toBeNull();
+    expect(justBegun({ n1: 'chosen' }, [night('soon', at)])).toBeNull();
+    expect(justBegun({ n1: 'soon' }, [night('over', at)])).toBeNull();
   });
 });

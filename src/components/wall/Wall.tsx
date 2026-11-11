@@ -11,6 +11,7 @@ import { nameEm } from '@/lib/name-width';
 import { LIMITS, NAME_MAX, PASSWORD_MIN, allPhotos, coverPhoto, sameUser } from '@/lib/crew-types';
 import type { PlayerStat, StatsResponse } from '@/app/api/stats/route';
 import { andList, formatDate } from '@/lib/format';
+import { creaseLabel } from './crease';
 import { errorFrom, failure, OFFLINE } from '@/lib/crew-upload';
 import AddressBar from '@/components/badlands/AddressBar';
 import Footer from '@/components/badlands/Footer';
@@ -589,7 +590,7 @@ export default function Wall({ initial, places, initialStats = null, initialLed 
                 the line on the crease is amber because it can be pressed (wall.css) */}
             {(stats || advancements) && (
               <button type="button" className="w-poster__crease" aria-expanded={unfolded} onClick={() => setUnfolded(v => !v)}>
-                {unfolded ? 'Fella saman' : [stats && `${STAT_TABS.filter(t => (stats[t.id] ?? 0) > 0).length} ákærur`, advancements && advancements.list.length > 0 && `${advancements.list.length} afrek`].filter(Boolean).join(' og ')}
+                {unfolded ? 'Fella saman' : creaseLabel(stats ? STAT_TABS.filter(t => (stats[t.id] ?? 0) > 0).length : null, advancements?.list.length ?? 0)}
               </button>
             )}
             <div className={`w-poster__fold${unfolded ? ' is-open' : ''}`}>

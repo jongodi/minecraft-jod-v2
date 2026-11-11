@@ -417,7 +417,8 @@
 .b-toast .b-seal { margin-block: calc(var(--sp-1) * -1); }
 .b-toast__text { display: grid; gap: var(--px); min-width: 0; }
 .b-toast__title { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-lg); line-height: 1.1; color: var(--ink); }
-.b-toast__data { font-family: var(--font-data); font-size: var(--fs-data); color: var(--lantern-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* two lines at most: an advancement's name ("Hvernig komumst við hingað?") was cut to its first words on a phone, where one line holds about twenty letters */
+.b-toast__data { font-family: var(--font-data); font-size: var(--fs-data); line-height: 1.25; color: var(--lantern-ink); overflow: hidden; overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
 
 /* ─── the lantern (also the status readout) ───────────────────── */
 .b-lantern { position: relative; display: inline-block; width: 1.5rem; height: 2.25rem; color: var(--text-faint); }
@@ -2577,7 +2578,7 @@ html.is-map-full { overflow: hidden; }
 .is-draw .b-arena__big { color: var(--lantern); animation: b-pop var(--dur-2) var(--ease-out); }
 .is-result.is-hit .b-arena__big { font-family: var(--font-data); font-size: calc(var(--fs-data-lg) * 2); }   /* 48px: six of the face's pixels, on the grid */
 @keyframes b-pop { 0% { transform: scale(0.6); } 100% { transform: none; } }
-.b-arena__small { margin-top: var(--sp-2); font-size: var(--fs-md); color: var(--paper); text-shadow: 0 var(--px) 0 var(--night); max-width: 30ch; }
+.b-arena__small { margin: var(--sp-2) auto 0; font-size: var(--fs-md); color: var(--paper); text-shadow: 0 var(--px) 0 var(--night); max-width: 30ch; }   /* in the middle under a call wider than its own measure */
 .b-arena__corner { position: absolute; top: var(--sp-2); left: var(--sp-3); font-family: var(--font-data); font-size: var(--fs-data); color: var(--paper); text-shadow: 0 var(--px) 0 var(--night); }
 .b-arena__corner--r { left: auto; right: var(--sp-3); }
 /* A phone's arena is 4:3 and a thumb wide: the call starts below the corner
@@ -3187,6 +3188,74 @@ html.is-map-full { overflow: hidden; }
 }
 .b-light.is-on { opacity: 1; }
 
+/* Kvöldið er hafið (NightTitle.tsx): the game's /title, at the moment a play
+   night's hour comes. The words stand across the middle of the screen in the
+   slab, in paper with the night's hard shadow under them, and a smaller line
+   in the text face under them. The game sets a title straight on the world;
+   here the world behind is a page of words, so a hard-edged band of the
+   night lies across the screen behind the two lines. They come up in four whole steps, stand, and go
+   in four, all in opacity. In the top layer; a press goes through. */
+.b-title-card {
+  position: fixed;
+  inset: 50% 0 auto 0;
+  translate: 0 -50%;
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-3);
+  width: auto;
+  height: auto;
+  margin: 0;
+  padding: var(--sp-5) var(--gutter);
+  border: 0;
+  background: rgb(from var(--night) r g b / 0.8);
+  text-align: center;
+  pointer-events: none;
+  overflow: hidden;
+  animation: b-title-card var(--shown, 5000ms) both;
+}
+.b-title-card__big { font-family: var(--font-display); font-size: clamp(2.5rem, 9vw, 6rem); line-height: 1; color: var(--paper); text-shadow: calc(var(--px) * 2) calc(var(--px) * 2) 0 var(--night); text-wrap: balance; }
+.b-title-card__small { max-width: 32ch; font-size: var(--fs-lg); line-height: 1.4; color: var(--paper); text-shadow: var(--px) var(--px) 0 var(--night); }
+@keyframes b-title-card {
+  0%   { opacity: 0; animation-timing-function: var(--ease-step); }
+  10%  { opacity: 1; }
+  80%  { opacity: 1; animation-timing-function: var(--ease-step); }
+  100% { opacity: 0; }
+}
+/* under reduced motion the page's animations are cut to nothing, and this one ends unseen: the words simply stand until they are taken down */
+@media (prefers-reduced-motion: reduce) { .b-title-card { animation: none; } }
+
+/* Skjátextar (Subtitles.tsx): the game's subtitle box, at the foot of the
+   screen on the right, saying what the site sounds while the wind and the
+   fire are on. The game's own: a box of the night at four fifths, as wide as
+   its longest line, each line centred in the bitmap face, dimming over its
+   three seconds in four whole steps and then gone. In the top layer, so
+   placed on the screen itself; on a phone it stands on the hotbar. It takes
+   no press and is in nobody's way: a press goes through it. */
+.b-subs {
+  position: fixed;
+  inset: auto max(var(--sp-3), var(--safe-right)) calc(var(--sp-3) + var(--safe-bottom)) auto;
+  display: grid;
+  margin: 0;
+  padding: var(--px) 0;
+  border: 0;
+  background: rgb(from var(--night) r g b / 0.8);
+  color: var(--paper);
+  pointer-events: none;
+  overflow: hidden;
+}
+@media (max-width: 759.98px) { .b-subs { bottom: calc(var(--doorbar) + var(--safe-bottom) + var(--sp-2)); } }
+.b-subs__line {
+  padding: var(--px) var(--sp-3);
+  font-family: var(--font-data);
+  font-size: var(--fs-data);
+  line-height: 1.5;
+  text-align: center;
+  white-space: nowrap;
+  animation: b-subs-dim var(--line-ms, 3000ms) var(--ease-step) forwards;
+}
+@keyframes b-subs-dim { to { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) { .b-subs__line { animation: none; } }
+
 
 
 /* ─── the pages: their frame, the night behind their top, and off the trail ──
@@ -3275,6 +3344,8 @@ html.is-map-full { overflow: hidden; }
    (.b-f3), and the key took that from them, so only a keyboard could press it */
 .b-card__xyz { display: inline-block; position: static; margin-top: var(--sp-1); padding: var(--px) var(--sp-2); border: 0; background: var(--pitch); color: var(--paper); font-family: var(--font-data); font-size: var(--fs-data); line-height: 1.4; cursor: pointer; pointer-events: auto; }
 .b-card__xyz:focus-visible { outline: var(--px) solid var(--lantern-ink); outline-offset: var(--px); }
+/* on a 320 px phone three long coordinates ran 12 px past the card: the numbers stand without their XYZ there */
+@media (max-width: 359.98px) { .b-card__xyzk { display: none; } }
 @media (hover: hover) { .b-card__xyz:hover { color: var(--lantern); } }
 /* the compass needle on the locator bar: a key, unlike the marks */
 .b-locator__mark--home { width: 1.25rem; height: 1.75rem; padding: 0; border: 0; background: none; cursor: pointer; pointer-events: auto; }
@@ -3320,6 +3391,12 @@ html.is-map-full { overflow: hidden; }
    screen at every width, so there only the two on the moon's side hang, over
    the title's end, on a wide screen as on a phone */
 .b-nightsky:has(~ .b-stray) :is(.b-cloud--1, .b-cloud--2) { display: none; }
+/* A wall below its two columns opens with the poster across the whole
+   screen, straight under the bar, where every other page has its title's
+   strip of sky: the two slabs hung there showed as slivers over the poster's
+   top edge. No clouds there; from 1024 px the poster is a column and they
+   hang in the sky beside it. */
+@media (max-width: 1023.98px) { .b-nightsky:has(~ .w-page) .b-clouds { display: none; } }
 @supports (animation-timeline: scroll()) {
   .b-nightsky .b-clouds { animation: b-clouds-drift linear both; animation-timeline: scroll(root); }
 }

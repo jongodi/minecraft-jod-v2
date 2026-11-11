@@ -1,6 +1,8 @@
 /* Wind and a distant fire, made from noise in Web Audio. No files.
    Off by default; the choice is remembered in localStorage. */
 
+import { sounded } from './subtitles';
+
 const AMBIENCE_KEY = 'jod-ambience-v1';
 
 const WIND_CUTOFF = 420;   // Hz, low-passed brown noise
@@ -11,6 +13,21 @@ const FADE_S = 1.2;
 
 interface Engine { ctx: AudioContext; master: GainNode; crackle: ReturnType<typeof setInterval> }
 let engine: Engine | null = null;
+
+/* The wind and the fire are written in the subtitle box (subtitles.ts) each
+   time they really begin: when the context first runs, and when it runs
+   again after a phone or a hidden tab held it. A context made in a gesture
+   may be running at once or a moment later, so both are listened for, and
+   the two are one beginning. */
+let begun = 0;
+const beginning = (ctx: AudioContext) => {
+  if (engine?.ctx !== ctx || ctx.state !== 'running') return;
+  const now = Date.now();
+  if (now - begun < 1000) return;
+  begun = now;
+  sounded('wind');
+  sounded('fire');
+};
 
 /* The wind and the fire belong to the page being looked at. A tab left in
    the background, which is where the site waits on a play night, kept
@@ -84,8 +101,11 @@ export function startAmbience(): boolean {
 
   noise.start();
   swell.start();
+  master.gain.setValueAtTime(0, ctx.currentTime);
   master.gain.linearRampToValueAtTime(1, ctx.currentTime + FADE_S);
   engine = { ctx, master, crackle };
+  ctx.addEventListener('statechange', () => beginning(ctx));
+  beginning(ctx);
   document.addEventListener('visibilitychange', onVisibility);
   return true;
 }
@@ -123,6 +143,7 @@ export function pickupPop() {
   osc.connect(gain).connect(master);
   osc.start(t);
   osc.stop(t + 0.1);
+  sounded('pop');
 }
 
 /** Four moments as the game sounds them, only while the wind and the fire
@@ -134,6 +155,7 @@ export function playSound(kind: 'flint' | 'ding' | 'thud' | 'chime') {
   if (!engine || engine.ctx.state !== 'running') return;
   const { ctx, master } = engine;
   const t = ctx.currentTime;
+  sounded(kind);
   const tone = (type: OscillatorType, from: number, to: number, at: number, len: number, peak: number) => {
     const osc = ctx.createOscillator();
     osc.type = type;
@@ -177,6 +199,10 @@ export function stopAmbience() {
   engine = null;
   document.removeEventListener('visibilitychange', onVisibility);
   clearInterval(crackle);
+  /* the fade starts from now: a ramp with nothing before it runs from the
+     last one's end, the start-up's, long past, and the sound was cut */
+  master.gain.cancelScheduledValues(ctx.currentTime);
+  master.gain.setValueAtTime(master.gain.value, ctx.currentTime);
   master.gain.linearRampToValueAtTime(0, ctx.currentTime + FADE_S);
   setTimeout(() => ctx.close().catch(() => { /* already closed */ }), FADE_S * 1000 + 100);
 }

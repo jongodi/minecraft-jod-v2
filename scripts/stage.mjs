@@ -76,13 +76,17 @@ export async function stage(page) {
      STAGE_NIGHT=today: fixed for eight tonight, so the signal fire stands
      (signal.ts), in the phase the clock gives it: chosen, about to be lit,
      or under way. */
-  if (process.env.STAGE_NIGHT === '1' || process.env.STAGE_NIGHT === 'today') {
-    const today = process.env.STAGE_NIGHT === 'today';
+  /* STAGE_NIGHT=full: that evening under way and everyone who said yes in,
+     so the rockets go up over the fire (fullHouseOf in signal.ts). */
+  if (['1', 'today', 'full'].includes(process.env.STAGE_NIGHT)) {
+    const full = process.env.STAGE_NIGHT === 'full';
+    const today = full || process.env.STAGE_NIGHT === 'today';
     const at = new Date(now + (today ? 0 : 2 * 86400_000)); at.setUTCHours(20, 0, 0, 0);
-    const phase = !today || now < at.getTime() - 30 * 60_000 ? 'chosen' : now < at.getTime() ? 'soon' : 'live';
+    const phase = full ? 'live' : !today || now < at.getTime() - 30 * 60_000 ? 'chosen' : now < at.getTime() ? 'soon' : 'live';
+    const yes = ['stebbias', 'joenana', 'AmmaGaur', 'eikibleiki'];
     const night = { id: 'n1', by: 'stebbias', note: 'Byggjum brúna yfir gilið', phase, chosen: 'o1', chosenBy: 'stebbias',
-      options: [{ id: 'o1', at: at.toISOString(), yes: ['stebbias', 'joenana', 'AmmaGaur', 'eikibleiki'] }],
-      decidesAt: at.toISOString(), startedBy: null, came: [] };
+      options: [{ id: 'o1', at: at.toISOString(), yes }],
+      decidesAt: at.toISOString(), startedBy: null, came: full ? yes : [] };
     await page.route('**/api/playnight', r => r.request().method() === 'GET' ? r.fulfill({ json: { nights: [night], me: null, max: 5 } }) : r.continue());
   }
   /* Who has not slept is counted on the server from the stored stats and
