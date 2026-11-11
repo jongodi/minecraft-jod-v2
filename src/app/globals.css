@@ -19,6 +19,12 @@ html {
   -webkit-tap-highlight-color: transparent;
   tab-size: 4;
   scroll-behavior: smooth;
+  /* The page scrolls up and down and never sideways, on the root itself,
+     which every browser honours: the body's `clip` below was the only guard,
+     and where a browser let something past it (Safari, with the clouds that
+     drift as the page scrolls) a phone could be dragged to the side. With
+     this on the root the body's clip is the body's own, a second edge. */
+  overflow-x: hidden;
 }
 body {
   background: var(--night);
