@@ -502,6 +502,9 @@
 .w-print__by:focus-visible { outline: var(--px) solid var(--sign-lantern); outline-offset: var(--px); }
 
 .w-mention { color: var(--sign-lantern); font-weight: 600; text-decoration: none; }
+/* an address in a note (Mentions.tsx): the sign's own lantern ink, as everything on a sign that can be pressed, underlined so it reads as a link among the words, and broken anywhere rather than pushed off the sign */
+.w-link { color: var(--sign-lantern); text-decoration: underline var(--px); text-underline-offset: 0.3em; overflow-wrap: anywhere; }
+@media (hover: hover) { .w-link:hover { text-decoration-thickness: calc(var(--px) * 1.5); } }
 @media (hover: hover) { .w-mention:hover { text-decoration: underline var(--px); text-underline-offset: 0.3em; } }
 /* the one looking, called by name: the lantern's own light behind the name */
 .w-mention.is-me { padding-inline: var(--px); background: var(--lantern); color: var(--ink); box-shadow: 0 var(--px) 0 var(--lantern-deep); }
