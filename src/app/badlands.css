@@ -2089,6 +2089,8 @@ html.is-map-full { overflow: hidden; }
   gap: var(--sp-2);
   overflow-x: auto;
   overflow-y: hidden;
+  /* a strip dragged to its end stops there: the drag is not handed on to the page, where a phone took it for a swipe back to the last page */
+  overscroll-behavior-x: contain;
   padding: 3px;                  /* room for the focus ring */
   scroll-snap-type: x proximity;
   scrollbar-width: none;
@@ -2428,7 +2430,7 @@ html.is-map-full { overflow: hidden; }
 .b-room__close svg { width: 1rem; height: 1rem; }
 .b-room__close:focus-visible { background: var(--lantern); color: var(--night); }
 @media (hover: hover) { .b-room__close:hover { background: var(--lantern); color: var(--night); } }
-.b-room__body { overflow-y: auto; overscroll-behavior: contain; padding-block: var(--sp-5) var(--sp-6); scrollbar-width: thin; scrollbar-color: var(--wood-light) transparent; }
+.b-room__body { overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; padding-block: var(--sp-5) var(--sp-6); scrollbar-width: thin; scrollbar-color: var(--wood-light) transparent; }
 @media (max-width: 899.98px) { .b-room__body { padding-block: var(--sp-4) var(--sp-5); } }
 @media (max-width: 479.98px) { .b-room__note { display: none; } }
 
@@ -2441,7 +2443,7 @@ html.is-map-full { overflow: hidden; }
 /* on the night itself, solid: through the deep scrim the HUD's date, heads
    and tools stood faintly at the header's own baselines, and its sentence
    ran on into them. The viewer sleeps under the album, so nothing is lost. */
-.b-album { position: fixed; inset: 0; z-index: var(--z-drawer); overflow-y: auto; background: var(--night); padding-block: calc(var(--sp-6) + var(--safe-top)) var(--sp-8); }
+.b-album { position: fixed; inset: 0; z-index: var(--z-drawer); overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; background: var(--night); padding-block: calc(var(--sp-6) + var(--safe-top)) var(--sp-8); }
 .b-album__inner { display: grid; gap: var(--sp-4); }
 /* Tiles are square and butt together, so the wall never leaves holes.
    Every fifth picture is hung double size. There is no dense packing:
@@ -2544,7 +2546,7 @@ html.is-map-full { overflow: hidden; }
 .b-shelf__lede { font-size: var(--fs-md); }
 
 /* ─── duel: the arena at night, behind the fire ───────────────── */
-.b-duelbox { position: fixed; inset: 0; z-index: var(--z-modal); display: grid; place-items: center; padding: calc(var(--sp-4) + var(--safe-top)) var(--gutter) calc(var(--sp-4) + var(--safe-bottom)); background: var(--scrim); overflow-y: auto; }
+.b-duelbox { position: fixed; inset: 0; z-index: var(--z-modal); display: grid; place-items: center; padding: calc(var(--sp-4) + var(--safe-top)) var(--gutter) calc(var(--sp-4) + var(--safe-bottom)); background: var(--scrim); overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; }
 .b-duelbox__in { width: 100%; max-width: 64rem; }
 .b-duelpanel { padding: var(--sp-5); background: var(--dusk-2); box-shadow: var(--bevel); clip-path: var(--notch); }
 .b-duel { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-5); }
