@@ -2819,6 +2819,8 @@ html.is-map-full { overflow: hidden; }
   .b-night--light { padding-inline: var(--sp-4); }
   .b-cal { flex-basis: 100%; margin-right: 0; padding: var(--sp-2); }
   .b-night__row .b-night__select { max-width: none; }
+  /* the day takes its row whole, so it ends where the time and its ✕ end under it: capped at 18rem it stopped 28px short of them */
+  .b-night__day { flex-basis: 100%; max-width: none; }
 }
 @media (max-width: 599px) { .b-night--none { grid-template-columns: auto minmax(0, 1fr); } .b-night--none > .b-btn { grid-column: 1 / -1; justify-self: start; } }
 

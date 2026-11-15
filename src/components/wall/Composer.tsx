@@ -248,6 +248,8 @@ export default function Composer({ username, places, onPinned, active = true, co
     try {
       const res = await fetch(`/api/crew/${username}/entries`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
+        /* given up on after half a minute: while it hung, the slot was held and nothing in it could be taken out, with a reload the only way on */
+        signal: AbortSignal.timeout(30_000),
         body: JSON.stringify({
           text,
           placeId,
