@@ -184,9 +184,9 @@ function QuickDraw({ onClose }: { onClose: () => void }) {
                 {call.small && <div className="b-arena__small">{call.small}</div>}
               </div>
             </div>
-            {/* the call, said: a button's children are presentational to a screen reader, so the live region stands beside the arena */}
-            <p className="b-visually-hidden" role="status">{call.big}{call.small ? ` ${call.small}` : ''}</p>
           </motion.div>
+          {/* the call, said: a button's children are presentational to a screen reader, so the live region stands beside the arena, not in it */}
+          <p className="b-visually-hidden" role="status">{call.big}{call.small ? ` ${call.small}` : ''}</p>
 
           <div className="b-duel__side">
             <div className="b-stubs">

@@ -353,7 +353,12 @@ export default function Composer({ username, places, onPinned, active = true, co
 
       <div className="w-pin__row">
         <input ref={input} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={e => { add(Array.from(e.target.files ?? [])); e.target.value = ''; }} />
-        <button type="button" className="b-btn b-btn--small" onClick={() => input.current?.click()} disabled={pinning || !storage || storage.mode === 'none'}>Velja myndir</button>
+        {/* A store that did not answer is asked again by this press, and the
+            button waits for the answer ("athuga geymsluna") before it opens
+            the pictures. Disabled for it, one missed answer when the slot
+            opened left a phone, which has no paste or drop to ask again
+            with, without pictures until the page was loaded anew. */}
+        <button type="button" className="b-btn b-btn--small" onClick={() => { if (storage?.mode === 'none') { setStorage(null); askStorage(); } else input.current?.click(); }} disabled={pinning || !storage}>Velja myndir</button>
         <label className="w-pin__place">
           <span className="b-visually-hidden">Staður</span>
           <select className="w-pin__select" value={placeId ?? ''} disabled={pinning} onChange={e => setPlaceId(e.target.value ? Number(e.target.value) : null)}>

@@ -438,7 +438,7 @@ export default function Wall({ initial, places, initialStats = null, initialLed 
     covering.current = true;
     setWallError('');
     patchProfile({ coverPhotoId: photoId })
-      .catch(e => setWallError(failure(e, 'Ekki tókst að skipta um forsíðumynd.')))
+      .catch(e => setWallError(failure(e, 'Ekki tókst að skipta um mynd á plakatinu.')))
       .finally(() => { covering.current = false; });
   }, [patchProfile]);
   /* The prints are read through a ref, so the callback every sign holds stays
@@ -518,7 +518,7 @@ export default function Wall({ initial, places, initialStats = null, initialLed 
 
             {editingBio && isOwner ? (
               <div className="w-poster__biorow">
-                <textarea className={`b-textarea${bioError ? ' is-error' : ''}`} value={bioText} onChange={e => setBioText(e.target.value)} maxLength={LIMITS.bio} rows={3} placeholder="Ein eða tvær línur um þig" autoFocus />
+                <textarea className={`b-textarea${bioError ? ' is-error' : ''}`} value={bioText} onChange={e => setBioText(e.target.value)} maxLength={LIMITS.bio} rows={3} placeholder="Ein eða tvær línur um þig" aria-label="Kynning" autoFocus />
                 <div className="b-inline">
                   <button className="b-btn b-btn--solid b-btn--small" onClick={saveBio} disabled={bioSaving}>{bioSaving ? 'Vista…' : 'Vista'}</button>
                   <button className="b-btn b-btn--small" onClick={() => { closeBio(); setBioError(''); setBioText(profile.bio); }}>Hætta við</button>
@@ -615,7 +615,7 @@ export default function Wall({ initial, places, initialStats = null, initialLed 
                 )}
               </>
             )}
-            {advancements && <Advancements list={advancements.list} of={advancements.of} missing={advancements.missing} />}
+            {advancements && <Advancements list={advancements.list} of={advancements.of} missing={advancements.missing} mine={isOwner} />}
             </div>
           </div>
           {/* the poster made good: JOÐ's seal in its corner */}
