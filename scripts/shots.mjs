@@ -7,7 +7,8 @@
 //      the phantoms show, a week of stats and drawn heads: scripts/stage.mjs), and with it
 //      STAGE_NIGHT=1 (a night fixed for two days from now) or STAGE_NIGHT=today (a fire fixed
 //      for eight tonight, so the signal fire stands) or STAGE_NIGHT=full (that evening under
-//      way with everyone who said yes in, so the rockets go up over the fire)
+//      way with everyone who said yes in, so the rockets go up over the fire),
+//      COOKIE='jod_crew_session=…' (walk it signed in: scripts/seed.mjs prints one per member)
 import { chromium } from 'playwright-core';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
@@ -32,6 +33,12 @@ async function launch() {
 const browser = await launch();
 for (const [w, h] of SIZES) {
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 1, hasTouch: w < 800 });
+  if (process.env.COOKIE) {
+    await ctx.addCookies(process.env.COOKIE.split(/;\s*/).filter(Boolean).map(pair => {
+      const at = pair.indexOf('=');
+      return { name: pair.slice(0, at), value: pair.slice(at + 1), url: BASE };
+    }));
+  }
   const page = await ctx.newPage();
   const errors = [];
   page.on('console', m => { if (m.type() === 'error' || m.type() === 'warning') errors.push(`${m.type()}: ${m.text()}`); });
