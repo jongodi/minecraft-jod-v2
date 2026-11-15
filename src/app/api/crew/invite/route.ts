@@ -51,12 +51,18 @@ async function signInByLink(req: NextRequest, key: string) {
   return res;
 }
 
+/** between two sign-in letters to one member, whoever asked for them */
+const MEMBER_GAP_S = 15 * 60;
+/** sign-in letters to one member in a day, whoever asked for them */
+const MEMBER_A_DAY = 5;
+
 /** "Send me a link": a member who is signed out asks for a sign-in link by
     post. It goes only to the address kept for them, so asking for someone
     else's does that someone no harm, and the answer is the same whether an
     address is kept or not. The letter is sent after the answer, so how long
-    the answer takes does not tell either. A few an hour per member, so
-    nobody's inbox can be filled. */
+    the answer takes does not tell either. Three an hour for a member from
+    one address, and whoever asks, one letter a quarter of an hour and five
+    a day to a member, so nobody's inbox can be filled. */
 export async function POST(req: NextRequest) {
   const body = await jsonObject(req);
   if (!body) return badJson();
@@ -74,6 +80,20 @@ export async function POST(req: NextRequest) {
      ask turned away all day; the address's own limit above caps the rest */
   if ((await checkRateLimit(`${ip}|${username.toLowerCase()}`, 'crew-mail-link-member', 3, 60 * 60)).limited) {
     return NextResponse.json({ error: 'Nokkrir tenglar hafa þegar verið sendir á síðasta klukkutíma. Kíktu í pósthólfið, eða reyndu aftur síðar.' }, { status: 429 });
+  }
+  /* And for the member whoever asks, from however many addresses: one letter
+     a quarter of an hour and five a day. The limits above are all per
+     address, so one address going round the crew sent some fifty letters a
+     day to each of them, and ten addresses thirty to one member in an hour,
+     every one leaving a live link for a week. Past the cap the answer is the
+     same and nothing is sent: unlike a refusal this cannot be turned on the
+     member, whose own ask finds the letter already in the inbox, good for a
+     week and five devices. The day's count is only of asks the quarter-hour
+     let through. */
+  const member = username.toLowerCase();
+  if ((await checkRateLimit(member, 'crew-mail-link-sent', 1, MEMBER_GAP_S)).limited
+    || (await checkRateLimit(member, 'crew-mail-link-day', MEMBER_A_DAY, 24 * 60 * 60)).limited) {
+    return NextResponse.json({ ok: true });
   }
   /* as every letter reads it (a trailing slash dropped, an empty value ignored), else the address asked on */
   const origin = process.env.NEXT_PUBLIC_SITE_URL ? siteUrl() : req.nextUrl.origin;
