@@ -30,7 +30,8 @@ export function AdvancementFrame({ frame }: { frame: Frame }) {
 
 const FRAME_NAMES: Record<Frame, string> = { task: 'verkefni', goal: 'markmið', challenge: 'áskorun' };
 
-export default function Advancements({ list, of, missing = [] }: { list: WallAdvancement[]; of: number; missing?: WallAdvancement[] }) {
+/** `mine`: the wall is the reader's own, so what is left is said to them; a visitor reads it of the member. */
+export default function Advancements({ list, of, missing = [], mine = false }: { list: WallAdvancement[]; of: number; missing?: WallAdvancement[]; mine?: boolean }) {
   const [all, setAll] = useState(false);
   if (list.length === 0 && missing.length === 0) return null;
   const shown = all ? list : list.slice(0, SHOWN);
@@ -58,7 +59,7 @@ export default function Advancements({ list, of, missing = [] }: { list: WallAdv
       {/* what most of the others have and this member has not, in the game's dim unearned frame */}
       {missing.length > 0 && (
         <>
-          <p className="w-adv__head w-adv__head--left"><span className="b-paper__kicker">Þú átt eftir</span></p>
+          <p className="w-adv__head w-adv__head--left"><span className="b-paper__kicker">{mine ? 'Þú átt eftir' : 'Á enn eftir'}</span></p>
           <ol className="w-adv__list w-adv__list--left">
             {missing.map(a => (
               <li key={a.id} className="w-adv__item is-unearned">

@@ -79,16 +79,16 @@ export async function POST(req: NextRequest) {
          evening in the same moment both passed them, and two fires on one
          evening count who came and who did not twice (src/lib/play-night.ts).
          Held a few seconds at most, and let go when this one is done. */
-      if (!(await lightingLock(true))) return json({ error: 'Annað bál er að kvikna í þessu. Reyndu aftur eftir smástund.' }, 409);
+      if (!(await lightingLock(true))) return json({ error: 'Einhver annar er að kveikja bál í þessu. Reyndu aftur eftir smástund.' }, 409);
       try {
         /* read again now the lock is held: the nights read above may be from before another fire was written */
         const { all } = await currentNights(now);
         if (all.filter(n => isPlanned(n, now)).length >= MAX_PLANNED) {
-          return json({ error: `Það eru þegar ${MAX_PLANNED} kvöld á dagskrá. Bíddu þar til eitt er liðið eða slökktu á einu.` }, 409);
+          return json({ error: `Það eru þegar ${MAX_PLANNED} kvöld á dagskrá. Bíddu þar til eitt þeirra er búið eða slökktu eitt bál.` }, 409);
         }
         const times = checkTimes(body.times, now);
         if ('error' in times) return json({ error: times.error }, 400);
-        if (clashOf(all, times.at, now)) return json({ error: 'Annað bál logar þegar sama kvöld. Veldu annan tíma.' }, 409);
+        if (clashOf(all, times.at, now)) return json({ error: 'Það logar þegar bál þetta kvöld. Veldu annan tíma.' }, 409);
         const note = typeof body.note === 'string' ? body.note.replace(/\s+/g, ' ').trim().slice(0, MAX_NOTE) : '';
         const night: Night = {
           id: randomUUID().slice(0, 8), by: me, createdAt: new Date(now).toISOString(), note,
@@ -145,13 +145,13 @@ export async function POST(req: NextRequest) {
     if (action === 'start') {
       const chosen = optionOf(night, night.chosen);
       if (!chosen || (phase !== 'soon' && phase !== 'live')) {
-        return json({ error: `Hægt er að kveikja á þjóninum frá ${START_BEFORE_MS / 60_000} mínútum fyrir kvöldið.` }, 409);
+        return json({ error: `Það má kveikja á þjóninum þegar ${START_BEFORE_MS / 60_000} mínútur eru í kvöldið.` }, 409);
       }
       if (!yesFor(votes, chosen.id).includes(me)) return json({ error: 'Aðeins þau sem sögðust mæta geta kveikt á þjóninum.' }, 403);
       const token = process.env.EXAROTON_API_KEY;
       if (!token) return json({ error: 'EXAROTON_API_KEY hefur ekki verið stilltur.' }, 503);
       const status = await exarotonStatus(token);
-      if (status !== 0 && status !== 7) return json({ error: status === 1 ? 'Þjónninn er þegar í gangi.' : 'Þjónninn er að ræsa eða stöðvast; bíddu smá.' }, 409);
+      if (status !== 0 && status !== 7) return json({ error: status === 1 ? 'Þjónninn er þegar í gangi.' : 'Þjónninn er að ræsa sig eða slökkva á sér. Bíddu aðeins.' }, 409);
       await startExaroton(token);
       /* the status is asked for afresh, so the lantern sees the server on its way up */
       forgetStatus();

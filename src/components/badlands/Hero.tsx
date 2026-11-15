@@ -187,7 +187,7 @@ function Hero({ server, season, nights, packs, facts = [], sleepless = NONE_AWAK
         <div className="b-hero__sun" aria-hidden="true"><Sun /></div>
         <div className="b-hero__lead">
           {/* one line says what this is and who it is for; the resource pack is the shelf's to mention */}
-          <p className="b-hero__sub">Minecraft-heimur átta vina, frá sumrinu 2024. Aðgangur með boði.</p>
+          <p className="b-hero__sub">Minecraft-heimur átta vina síðan sumarið 2024. Aðeins fyrir boðsgesti.</p>
           <div className="b-hero__action">
             <CopyAddress />
             <div className="b-hero__side">

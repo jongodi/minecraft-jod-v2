@@ -10,7 +10,9 @@ import { cronAuthorised } from '@/lib/cron';
    last burned, and a new version of the game. It used to be noted only while
    someone had a page open. It also keeps two live answers no more than five
    minutes apart, which is what tells the lantern the server went out
-   (src/lib/server-status.ts).
+   (src/lib/server-status.ts). While any of the crew is in, their
+   advancements are read every half hour, and once more as the last of them
+   leaves (src/lib/advancements-beat.ts).
 
    Reading the nights also fixes a night whose time came to be chosen on its
    own, so its letter goes out within minutes even when nobody has the page
@@ -19,6 +21,8 @@ import { cronAuthorised } from '@/lib/cron';
    nothing. */
 
 export const dynamic = 'force-dynamic';
+/* the advancements' read is ten requests to exaroton, each given eight seconds */
+export const maxDuration = 60;
 
 export async function GET(req: NextRequest) {
   if (!cronAuthorised(req.headers.get('authorization'))) {
@@ -28,14 +32,28 @@ export async function GET(req: NextRequest) {
 
   /* in a try of its own: a lookup that fails never stops the letters */
   let status: string | null = null;
+  let seen: Awaited<ReturnType<typeof import('@/lib/server-status').getStatus>> | null = null;
   try {
     const { getStatus, noteCrewSeen } = await import('@/lib/server-status');
     const { noteServerVersion } = await import('@/lib/server-news');
     const body = await getStatus();
     await Promise.all([noteCrewSeen(body), noteServerVersion(body)]);
     status = body.life;
+    seen = body;
   } catch (err) {
     console.error('[cron/nights] the status beat did not run:', err instanceof Error ? err.message : err);
+  }
+
+  /* the crew's advancements, read while they play and once as the last one
+     leaves, so the board tells them the same evening (src/lib/advancements-beat.ts).
+     In a try of its own, and never on an answer that could not say who is in. */
+  if (seen) {
+    try {
+      const { advancementsBeat } = await import('@/lib/advancements-beat');
+      await advancementsBeat(seen);
+    } catch (err) {
+      console.error('[cron/nights] the advancements were not read:', err instanceof Error ? err.message : err);
+    }
   }
 
   const headers = { 'Cache-Control': 'no-store' };

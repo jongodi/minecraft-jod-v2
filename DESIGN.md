@@ -1,6 +1,6 @@
 # JOÐ: Last Light in the Badlands
 
-Design document for the redesign of play.jodcraft.world. Written before any code was touched. The site is a Next.js 15 app in TypeScript with plain CSS; that stack stays. The site is written in Icelandic; the copy stays Icelandic.
+Design document for the redesign of play.jodcraft.world. Written before any code was touched. The site is a Next.js 16 app in TypeScript (15 when this was written) with plain CSS; that stack stays. The site is written in Icelandic; the copy stays Icelandic.
 
 ## Concept
 
@@ -430,4 +430,17 @@ Asked for by the owner: on a phone the board could be dragged sideways while scr
 - **The door of the page already open leads to its top** (`AddressBar.tsx`): the hotbar's slot in hand did nothing when pressed far down the board.
 - **Links in a note** (`src/lib/note-links.ts`, `Mentions.tsx`): an address typed on a sign or in an answer is a link in the sign's own lantern ink, underlined, shown without its scheme and cut at 38 letters; the site's own pages open in place. It is the sign's ink and an underline, not a new colour: on a sign, what can be pressed is already that ink.
 - **A thumb's reach on a sign.** Deila and the pin's three kinds are 44 px tall on touch, and a reply's Eyða sits level with its time.
+
+## The 15 November pass
+
+An evolve pass on 15 November 2026 (`docs/improve/2026-11-15-jodcraft.md`). Three things added, and two rules the fixes left behind.
+
+- **Dagatal í áskrift.** One quiet line under the fires in the crew's room, a calendar glyph and a link in the lantern's light: *Öll kvöldin í dagatalið þitt*. It is a `webcal` address to `/kvold/dagatal.ics`, which a phone's calendar takes as a subscription, with the address to copy beside it for a calendar on the web. The play nights are the crew's one standing appointment, and each had to be added to a calendar by hand from its own file; subscribed, a new fire is simply there. It is a line and not a button: the room's buttons are for answering a fire, and this is done once.
+- **Áfangar.** A round number a member's own counter passes is a printed slip on the board, among the events: *Gamla123 dó í 100. sinn*, *stebbias hefur verið 1.000 klukkustundir í heiminum* with *það er rúmur 41 sólarhringur* under it. Its glyph is a milestone by the road, a stone with two lines cut in it, in the red the posters print their numbers in. Each mark has a slip of its own, since they are rare and each is one member's. Like the phantoms and the signal fire, it is the game's own count shown only when it is true; unlike an advancement, the game itself never says it, which is why the board does.
+- **Afrek sama kvöld.** Nothing to see: the advancements are read while the crew plays, so the board's slip, the chat's line and the member's own toast come the evening they were won.
+- **What is told from the clock is put up anew.** A line that reads the clock as it is drawn (a countdown, "í gær", "fyrir 3 dögum") and stands on a page the CDN keeps must either wait for the page to be mounted, or suppress the hydration warning *and* be given a key that changes on mount. Suppressing alone leaves the server's words standing: React 19 does not write its own over them. `scripts/stale.mjs` reads a page two days late and fails on a hydration error.
+- **A name stands on its line.** A head beside a name is centred on the name; the name keeps the line's baseline (`.t-notice__who`, `.w-call__who`). Centring the two in one box takes the box's baseline from the head's foot and lifts the name off the grid.
+- **A part that cannot be fetched has a stand-in** (`lost.tsx`): a room says so and offers to load the page anew, a layer over the page takes itself down and says so on a slip, an effect is not there. Every `dynamic()` import names one.
+- **Næstu áfangar.** Under the charges on a poster, the two round numbers its member is nearest to and what is left to each, printed as the charges are: a line, dots, a number, with *eftir* said once over the column. It is the counterpart of the board's slip: the board says a mark was passed, the poster says which is coming.
+- **The site's Icelandic is spoken, not translated.** A second round read every string. The rules it left: a button says what the presser does or can ("Ég kemst", not "Ég get"); a label names the thing counted in a few words ("Vakað samfleytt"); a note under a title is a whole sentence with a capital; "tími" is a time offered and "klukkustund" an hour; the neuter plural ("flest", "öll", "hin") stands for the crew.
 

@@ -1,7 +1,7 @@
 /* Taflan: the board where everything on JOÐ is posted, newest first. What
    the crew pinned on their walls, what the server did (fires lit, nights
-   decided and held, advancements, a new version of the game, packs on the
-   shelf), and what changed on the map. The types
+   decided and held, advancements, the round numbers a member's counters
+   pass, a new version of the game, packs on the shelf), and what changed on the map. The types
    and the pure helpers, with no server imports, so the board's components
    and its routes read the same definitions. The items are gathered on the
    server (src/lib/board.ts). */
@@ -9,6 +9,7 @@ import type { CrewEntry } from '@/lib/crew-types';
 import type { SignWood } from '@/lib/sign-wood';
 import type { Frame } from '@/lib/advancements';
 import type { Painted } from '@/lib/map-news';
+import type { MilestoneKind } from '@/lib/milestones';
 
 export type BoardItem =
   /** something pinned on a wall: a note, prints, a call for something or a question */
@@ -21,6 +22,8 @@ export type BoardItem =
   | { kind: 'held'; id: string; at: string; who: string; nightId: string; note: string; came: string[]; noShows: string[] }
   /** one member's advancements on one day; `arrived` is when the daily copy brought the newest of them, if later than `at` */
   | { kind: 'advancement'; id: string; at: string; who: string; list: { title: string; frame: Frame }[]; arrived?: string }
+  /** a round number one member's own counters passed: the hundredth death, the five hundredth hour (src/lib/milestones.ts) */
+  | { kind: 'milestone'; id: string; at: string; who: string; what: MilestoneKind; mark: number }
   /** a place drawn on the map */
   | { kind: 'place'; id: string; at: string; who: null; placeId: number; label: string; sublabel: string; photo: string | null }
   /** a picture hung on a place, or on the wall of pictures */
@@ -77,7 +80,7 @@ export function inFilter(item: BoardItem, f: BoardFilter): boolean {
     case 'allt':      return true;
     case 'myndir':    return (item.kind === 'post' && item.entry.photos.length > 0) || item.kind === 'photo' || (item.kind === 'place' && item.photo !== null);
     case 'midar':     return item.kind === 'post' && (item.entry.text.trim() !== '' || !!item.entry.bounty || !!item.entry.poll);
-    case 'vidburdir': return item.kind === 'fire' || item.kind === 'decided' || item.kind === 'held' || item.kind === 'advancement' || item.kind === 'version' || item.kind === 'shelf';
+    case 'vidburdir': return item.kind === 'fire' || item.kind === 'decided' || item.kind === 'held' || item.kind === 'advancement' || item.kind === 'milestone' || item.kind === 'version' || item.kind === 'shelf';
     case 'kortid':    return item.kind === 'place' || item.kind === 'photo' || item.kind === 'painted' || item.kind === 'synced';
   }
 }

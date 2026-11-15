@@ -37,9 +37,19 @@ describe('/bluemap, live', () => {
     expect(await res.json()).toEqual({ players: [] });
   });
 
-  it('answers a file outside the map with a 502, not a thrown error', async () => {
-    const res = await ask('assets/logo.png');
-    expect(res.status).toBe(502);
+  it('answers a file outside the map itself, without asking exaroton for it', async () => {
+    /* the viewer's own files are in public/bluemap; a made-up name here once cost a call with the owner's key */
+    for (const path of ['assets/logo.png', 'x1', 'settings.json.bak']) {
+      const res = await ask(path);
+      expect(res.status).toBe(404);
+      expect(res.headers.get('cache-control')).toContain('s-maxage');
+    }
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('answers a map file exaroton cannot hand over from the copy or with a quiet miss, not a thrown error', async () => {
+    const res = await ask('maps/world/tiles/0/x9/z9.prbm');
+    expect([200, 204, 404]).toContain(res.status);
   });
 
   it("turns BlueMap's live event stream away quietly, without asking exaroton", async () => {

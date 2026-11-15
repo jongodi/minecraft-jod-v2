@@ -137,7 +137,7 @@ export function signinLetter({ name, url, expiresAt, uses }: { name: string; url
     ],
     button: { label: 'Skrá mig inn', url },
     verse: VERSES.signin,
-    foot: ['Baðstu ekki um lykil? Hunsaðu þá bréfið; enginn kemst inn án hans.'],
+    foot: ['Baðstu ekki um lykil? Þá geturðu hent þessu bréfi. Enginn kemst inn án lykilsins.'],
   };
 }
 
@@ -206,15 +206,15 @@ export function nightLetter(kind: NightNotice, night: Night, votes: Votes, reade
       ...base,
       subject: night.note ? `${by} kveikti bál: ${night.note}` : `${by} kveikti bál á ${BRAND}`,
       preheader: chosen ? `${dayTime(chosen.at)}. Kemurðu?` : `${times.length} tímar í boði. Hvenær kemstu?`,
-      heading: `${by} kallar saman hópinn`,
+      heading: `${by} kallar hópinn saman`,
       ...(chosen || !answers ? { when: chosen ? [dayTime(chosen.at)] : times } : {}),
       lines: answers
         ? [chosen
             ? 'Kemurðu? Veldu svar hér fyrir neðan og staðfestu það á vefnum, svo hin viti hvort von sé á þér.'
-            : 'Hvaða tíma kemstu? Veldu einn hér fyrir neðan og merktu við fleiri á vefnum. Sá tími sem flest komast á verður fyrir valinu.']
+            : 'Hvenær kemstu? Veldu einn tíma hér fyrir neðan og merktu við fleiri á vefnum. Sá tími sem flest komast á verður fyrir valinu.']
         : [chosen
             ? 'Kemurðu? Svaraðu á vefnum svo hin viti hvort von sé á þér.'
-            : 'Merktu við alla tímana sem þú kemst. Sá tími sem flest komast á verður fyrir valinu.'],
+            : 'Merktu við alla tíma sem henta þér. Sá tími sem flest komast á verður fyrir valinu.'],
       ...(answers ? { answers, links: [{ label: 'Sjá bálið á vefnum', url }] } : { button: { label: 'Svara kallinu', url } }),
     };
   }

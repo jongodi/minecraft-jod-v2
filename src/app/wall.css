@@ -176,6 +176,9 @@
    The day sits under the title at every width: the portrait poster beside a
    wide wall is narrower than a phone. */
 .w-adv { margin-top: var(--sp-5); scroll-margin-top: calc(var(--bar-safe) + var(--sp-4)); }
+/* the marks a member is on the way to, printed as the charges above them are */
+.w-next { margin-top: var(--sp-5); }
+.w-next__list { display: grid; gap: var(--sp-1); margin-top: var(--sp-2); }
 .w-adv__head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-3); }
 .w-adv__count { font-family: var(--font-data); font-size: var(--fs-data); color: var(--ink-soft); }
 .w-adv__list { margin-top: var(--sp-2); list-style: none; }
@@ -521,8 +524,9 @@
 .w-call__reward { display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: var(--sp-1) var(--sp-2); }
 .w-call__pay { font-family: var(--font-data); font-size: var(--fs-data); line-height: 1.3; color: var(--tc-red); overflow-wrap: anywhere; }
 .w-call__state { font-size: var(--fs-sm); color: var(--ink-soft); }
-.w-call__who { display: inline-flex; align-items: center; gap: var(--sp-1); color: var(--lantern-ink); font-weight: 600; text-decoration: none; }
-.w-call__who img { width: 1rem; height: 1rem; image-rendering: pixelated; }
+/* the name on the line's baseline, the head centred beside it (as .t-notice__who, taflan.css) */
+.w-call__who { display: inline-flex; align-items: baseline; gap: var(--sp-1); color: var(--lantern-ink); font-weight: 600; text-decoration: none; }
+.w-call__who img { align-self: center; width: 1rem; height: 1rem; image-rendering: pixelated; }
 @media (hover: hover) { .w-call__who:hover { text-decoration: underline var(--px); text-underline-offset: 0.3em; } }
 .w-call__acts { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--sp-2); margin-top: var(--sp-1); }
 /* on a dark wood the sign's own inks are pale; on the notice's paper they are the paper's */

@@ -13,7 +13,7 @@ function usualLine(h: NightHabit, now: Date): string {
   if (now.getUTCDay() === h.weekday && now.getUTCHours() < h.hour) return `logar oftast í kvöld ${clockHour(h.hour)}`;
   return `logar oftast á ${DAYS_PLURAL[h.weekday]}`;
 }
-import { andList, plural } from '@/lib/format';
+import { andList, formatDate, plural } from '@/lib/format';
 
 /* What the lantern says in each state the server can be in: the word in
    the pixel face, a line under it, and how the lantern burns. A server on
@@ -70,8 +70,13 @@ export default function StatusLantern({ server, packs, habit }: { server: Server
       <Lantern lit={burn === 'lit'} className={burn === 'kindling' ? 'is-kindling' : undefined} />
       <span className="b-status__text">
         <span className="b-status__word" role="status" aria-live="polite">{word}</span>
-        {/* how stale the answer is is told from the clock, which the server read before the browser does */}
-        <span className="b-status__row" suppressHydrationWarning>
+        {/* How stale the answer is, and "í dag" or "í gær", are told from the
+            clock, which the server read before the browser does. React keeps
+            the server's words in a node that suppresses the warning, so the
+            row is put up anew once the page is the browser's (`ago` is ''
+            until then): a page kept from last night went on saying "síðast
+            kveikt í dag" the morning after. */}
+        <span key={ago === '' ? 'drawn' : 'own'} className="b-status__row" suppressHydrationWarning>
           {!said ? 'bíð eftir svari' :
            online ? (players === 0 ? 'enginn inni enn, en það er opið' : <>inni núna: <b>{players}</b></>) :
            last ? `síðast kveikt ${sinceAt(last.at)}` :
@@ -98,7 +103,7 @@ export default function StatusLantern({ server, packs, habit }: { server: Server
           <span className="b-nowrap">
             Minecraft {launcherVersion(version)} · Java
             {/* the game moved to this version within the week: the board's own paper tag, the way it marks what came since last time */}
-            {versionSince && <span className="t-new b-status__new">Nýtt<span className="b-visually-hidden">: ný útgáfa síðan {sinceAt(versionSince)}</span></span>}
+            {versionSince && <span className="t-new b-status__new">Nýtt<span className="b-visually-hidden">: ný útgáfa síðan {formatDate(versionSince)}</span></span>}
           </span>
         )}
         <span className="b-nowrap">{packs} {plural(packs, 'gagnapakki', 'gagnapakkar')} <b className="b-status__shelfword">á hillunni</b></span>

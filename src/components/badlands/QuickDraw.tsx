@@ -133,10 +133,10 @@ function QuickDraw({ onClose }: { onClose: () => void }) {
     phase === 'idle'   ? { big: 'Tilbúin?', small: 'ýttu til að byrja, bíddu eftir ljósinu og ýttu aftur' } :
     phase === 'hold'   ? { big: 'Bíddu…',     small: 'ekki strax' } :
     phase === 'draw'   ? { big: 'SKJÓTTU',      small: '' } :
-    phase === 'result' ? (lastIsHit ? { big: `${last} ms`, small: rankOf(last) } : { big: 'Of snemma', small: 'þessi umferð er fallin' }) :
+    phase === 'result' ? (lastIsHit ? { big: `${last} ms`, small: rankOf(last) } : { big: 'Of snemma', small: 'þessi umferð telst ekki' }) :
     gameBest !== null  ? { big: `${gameBest} ms`, small: `${rankOf(gameBest)}. Ýttu til að reyna aftur` } :
                          /* short: three words in the slab ran under the round and the best time in the corners */
-                         { big: 'Allt fallið', small: 'Rólega á gikknum! Ýttu til að reyna aftur' };
+                         { big: 'Allt ógilt', small: 'Rólega á gikknum! Ýttu til að reyna aftur' };
 
   return (
     <div className="b-duelpanel">
@@ -184,9 +184,9 @@ function QuickDraw({ onClose }: { onClose: () => void }) {
                 {call.small && <div className="b-arena__small">{call.small}</div>}
               </div>
             </div>
-            {/* the call, said: a button's children are presentational to a screen reader, so the live region stands beside the arena */}
-            <p className="b-visually-hidden" role="status">{call.big}{call.small ? ` ${call.small}` : ''}</p>
           </motion.div>
+          {/* the call, said: a button's children are presentational to a screen reader, so the live region stands beside the arena, not in it */}
+          <p className="b-visually-hidden" role="status">{call.big}{call.small ? ` ${call.small}` : ''}</p>
 
           <div className="b-duel__side">
             <div className="b-stubs">
@@ -196,14 +196,14 @@ function QuickDraw({ onClose }: { onClose: () => void }) {
                 return (
                   <div key={i} className={`b-stub b-paper${live ? ' is-live' : ''}${s === null ? ' is-foul' : ''}`}>
                     <div className="b-stub__k">Umferð {NUMERAL[i]}</div>
-                    <div className="b-stub__v">{typeof s === 'number' ? `${s} ms` : s === null ? 'Fallið' : live ? '…' : '·'}</div>
+                    <div className="b-stub__v">{typeof s === 'number' ? `${s} ms` : s === null ? 'Ógilt' : live ? '…' : '·'}</div>
                   </div>
                 );
               })}
             </div>
             <div className="b-duel__readout">
-              <div><div className="b-duel__k">Meðaltal leiks</div><div className="b-duel__v">{gameAvg !== null ? `${gameAvg} ms` : '·'}</div></div>
-              <div><div className="b-duel__k">Staða</div><div className="b-duel__v">{gameBest !== null && gameBest < 200 && <Star className="b-star" />}{gameBest !== null ? rankOf(gameBest) : '·'}</div></div>
+              <div><div className="b-duel__k">Meðaltal</div><div className="b-duel__v">{gameAvg !== null ? `${gameAvg} ms` : '·'}</div></div>
+              <div><div className="b-duel__k">Nafnbót</div><div className="b-duel__v">{gameBest !== null && gameBest < 200 && <Star className="b-star" />}{gameBest !== null ? rankOf(gameBest) : '·'}</div></div>
             </div>
             {/* aria-disabled, not disabled: a disabled button lets go of the keyboard,
                 and the next draw's Space or Enter went nowhere (tap() waits out 'result' itself) */}

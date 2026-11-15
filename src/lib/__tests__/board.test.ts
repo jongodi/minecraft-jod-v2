@@ -183,6 +183,20 @@ describe('what is new, and where it goes', () => {
     expect(inFilter({ kind: 'synced', id: 's', at: ago(1), who: null }, 'vidburdir')).toBe(false);
   });
 
+  it('posts a round number a member passed, under their own name, among the events', () => {
+    const items = boardItems({ ...base, milestones: [
+      { who: 'ammagaur', what: 'deaths', mark: 100, at: ago(5) },
+      { who: 'stebbias', what: 'hours', mark: 500, at: ago(24 * 70) },   // older than the board reaches
+      { who: 'Herobrine', what: 'mobs', mark: 1000, at: ago(2) },        // not one of the crew
+    ] });
+    expect(items).toEqual([{ kind: 'milestone', id: 'r-ammagaur:deaths:100', at: ago(5), who: 'AmmaGaur', what: 'deaths', mark: 100 }]);
+    expect(inFilter(items[0], 'vidburdir')).toBe(true);
+    expect(inFilter(items[0], 'midar')).toBe(false);
+    /* new to the others, not to the one whose number it is */
+    expect(isNew(stampOf(items[0]), ago(48), 'joenana', NOW)).toBe(true);
+    expect(isNew(stampOf(items[0]), ago(48), 'AmmaGaur', NOW)).toBe(false);
+  });
+
   it('heads the days in Icelandic', () => {
     expect(dayLabel('2026-10-22', NOW)).toBe('Í dag');
     expect(dayLabel('2026-10-21', NOW)).toBe('Í gær');

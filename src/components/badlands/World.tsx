@@ -2,6 +2,7 @@
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import dynamic from 'next/dynamic';
+import { lostLayer, lostRoom } from './lost';
 import Link from 'next/link';
 import type { MapConfig, WorldPoint } from '@/lib/map-types';
 import { woodClass } from '@/lib/sign-wood';
@@ -29,11 +30,11 @@ import { crewAtPlaces, hereLine, railReveal } from './hereNow';
 
 /* Everything that opens over the world is a screen of its own, fetched when
    its door is first opened: the paper sheet, the album, and the three rooms. */
-const MapSheet = dynamic(() => import('./MapSheet'), { ssr: false });
-const Album    = dynamic(() => import('./Album'),    { ssr: false });
-const Crew     = dynamic(() => import('./Crew'),     { ssr: false });
-const Shelf    = dynamic(() => import('./Shelf'),    { ssr: false });
-const Board    = dynamic(() => import('@/components/board/Board'), { ssr: false });
+const MapSheet = dynamic(() => import('./MapSheet').catch(lostLayer), { ssr: false });
+const Album    = dynamic(() => import('./Album').catch(lostLayer), { ssr: false });
+const Crew     = dynamic(() => import('./Crew').catch(lostRoom), { ssr: false });
+const Shelf    = dynamic(() => import('./Shelf').catch(lostRoom), { ssr: false });
+const Board    = dynamic(() => import('@/components/board/Board').catch(lostRoom), { ssr: false });
 
 /** What public/bluemap-jod/jod.js offers the page, once the viewer's map has loaded. */
 interface JodViewer {
@@ -129,7 +130,7 @@ function Signpost({ here, loading }: { here: boolean; loading: boolean }) {
       {/* landed in the live map (World.tsx): it is already here, and waits to be taken hold of;
           on its way, the tag says so; otherwise it says what a press does (it once said
           "loading" whatever the state, and a first visit waited for a map nobody had asked for) */}
-      <span className="b-boot__sub b-boot__sub--wide">{here ? 'þrívíddarkortið er komið · smelltu og taktu í það' : loading ? 'sæki þrívíddarkortið · andartak' : 'opnar þrívíddarkortið · dragðu, snúðu, stækkaðu'}</span>
+      <span className="b-boot__sub b-boot__sub--wide">{here ? 'þrívíddarkortið er tilbúið · smelltu til að skoða' : loading ? 'sæki þrívíddarkortið · andartak' : 'opnar þrívíddarkortið · dragðu, snúðu, stækkaðu'}</span>
       <span className="b-boot__sub b-boot__sub--phone">opnar þrívíddarkortið á heilum skjá</span>
     </>
   );
@@ -971,8 +972,8 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
             <div ref={tools} className="b-hud__tools">
               {held && !drawn && (
                 <button type="button" className="b-btn b-btn--small b-btn--ghost b-hud__tool b-hud__letgo b-tip b-tip--below"
-                  data-tip="Síðan flettist aftur með hjólinu · Esc" onClick={letGoMap}>
-                  <CloseIcon className="b-btn__icon" /><span className="b-hud__word">Sleppa korti</span>
+                  data-tip="Þá skrunar hjólið síðunni aftur · Esc" onClick={letGoMap}>
+                  <CloseIcon className="b-btn__icon" /><span className="b-hud__word">Sleppa kortinu</span>
                 </button>
               )}
               {viewer && shown && !drawn && !still && (
@@ -1020,7 +1021,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
                 still; a phone says the failure in one line of the bitmap face,
                 where the longer sentence wrapped down into the places' rail. */}
             <p className="b-boot__wait" role="status">
-              {failed && !live ? <span className="b-boot__say">{phone ? 'kortið kom ekki · reyndu aftur' : 'kortið náði ekki að hlaðast · reyndu aftur eftir smástund'}</span>
+              {failed && !live ? <span className="b-boot__say">{phone ? 'kortið hlóðst ekki · reyndu aftur' : 'kortið náði ekki að hlaðast · reyndu aftur eftir smástund'}</span>
                 : loading ? <span className="b-boot__say">{`sæki kortið${tiles.of > 0 ? ` · ${tiles.drawn} af ${tiles.of} ${plural(tiles.of, 'reit', 'reitum')}` : '…'}`}</span> : ''}
               {loading && (
                 <span className="b-xp b-boot__bar" aria-hidden="true">
@@ -1174,7 +1175,7 @@ function World({ plates, config, pinned, server, syncedOn, bases, fresh = [], ro
                 <span className="b-chip__thumb b-chip__thumb--lantern"><Lantern lit /></span>
                 <span className="b-chip__text">
                   <span className="b-chip__name">{b.name}</span>
-                  <span className="b-chip__sub">eigið þrívíddarkort</span>
+                  <span className="b-chip__sub">með eigið þrívíddarkort</span>
                 </span>
               </a>
             ))}

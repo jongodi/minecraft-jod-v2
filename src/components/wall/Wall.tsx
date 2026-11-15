@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
+import { lostLayer } from '@/components/badlands/lost';
 import type { CrewProfile, CrewEntry } from '@/lib/crew-types';
 import type { SignWood } from '@/lib/sign-wood';
 import { nameEm } from '@/lib/name-width';
@@ -25,6 +26,7 @@ import { landFocus, seedSession, useBackCloses, useBackdropClose, useCrewSession
 import { photoProps, PHOTO_SIZES } from '@/components/badlands/photo';
 import type { WallAdvancement } from '@/lib/advancements';
 import Advancements from './Advancements';
+import NextMarks from './NextMarks';
 import { standingOf, wallPosted } from './bounty';
 import PosterCharge from './PosterCharge';
 import Composer from './Composer';
@@ -32,7 +34,7 @@ import Print from './Print';
 
 /* The lightbox and the motion library it throws with are a chunk of their
    own, fetched once the page is idle; the wall itself needs neither. */
-const WallLightbox = dynamic(() => import('./WallLightbox'), { ssr: false });
+const WallLightbox = dynamic(() => import('./WallLightbox').catch(lostLayer), { ssr: false });
 
 /** A place on the map, as the wall needs it: to pin things at and to list what the member built. */
 export interface WallPlace { id: number; label: string; sublabel: string; builders: string[]; wood: SignWood }
@@ -47,7 +49,7 @@ export interface WallCorner { src: string; pins: CornerMark[] }
 
 // ─── Login: the password, or a link by post ───────────────────────────────────
 
-function LoginModal({ username, onSuccess, onClose }: { username: string; onSuccess: () => void; onClose: () => void }) {
+function LoginModal({ username, onSuccess, onClose }: { username: string; onSuccess: () => void | Promise<void>; onClose: () => void }) {
   const [token,   setToken]   = useState('');
   const [error,   setError]   = useState('');
   const [loading, setLoading] = useState(false);
@@ -74,7 +76,9 @@ function LoginModal({ username, onSuccess, onClose }: { username: string; onSucc
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, token }),
       });
-      if (res.ok) { onSuccess(); onClose(); }
+      /* the wall is drawn as the member's own before the slip is taken down: closed first, the keyboard's
+         focus went back to "Þetta er ég", which was gone a moment later, and was dropped to the top of the page */
+      if (res.ok) { await onSuccess(); onClose(); }
       else setError(await errorFrom(res));
     } catch { setError(OFFLINE); }
     finally   { setLoading(false); }
@@ -84,7 +88,7 @@ function LoginModal({ username, onSuccess, onClose }: { username: string; onSucc
     <div ref={box} tabIndex={-1} className="b-modal" {...backdrop} role="dialog" aria-modal="true" aria-label="Skrá inn">
       <form className="b-paper b-modal__box" onSubmit={submit}>
         <p className="b-modal__title">Skrá inn sem {username}</p>
-        <p className="b-modal__sub">lykilorðið sem þú valdir þér á veggnum. Ekkert lykilorð, eða gleymt? Fáðu tengil í pósti, eða biddu stjórnandann um einn.</p>
+        <p className="b-modal__sub">Notaðu lykilorðið sem þú valdir þér á veggnum. Áttu ekki lykilorð eða manstu það ekki? Fáðu tengil í pósti eða biddu stjórnandann um einn.</p>
         <label className="b-visually-hidden" htmlFor="w-login-pw">Lykilorð</label>
         <input id="w-login-pw" type="password" className={`b-input${error ? ' is-error' : ''}`} value={token} onChange={e => setToken(e.target.value)} placeholder="Lykilorð" autoFocus autoComplete="current-password" />
         {error && <p className="b-err" role="alert">{error}</p>}
@@ -149,7 +153,7 @@ function PasswordModal({ username, change, onDone, onClose }: { username: string
     <div ref={box} tabIndex={-1} className="b-modal" {...backdrop} role="dialog" aria-modal="true" aria-label="Lykilorð">
       <form className="b-paper b-modal__box" onSubmit={submit}>
         <p className="b-modal__title">{change ? 'Nýtt lykilorð' : 'Veldu þér lykilorð'}</p>
-        <p className="b-modal__sub">með því skráir þú þig inn á hvaða síma eða tölvu sem er undir „Þetta er ég“, án tengils frá stjórnandanum. Minnst {PASSWORD_MIN} stafir.</p>
+        <p className="b-modal__sub">Með lykilorði skráirðu þig inn í hvaða síma eða tölvu sem er undir „Þetta er ég“, án þess að fá tengil frá stjórnandanum. Minnst {PASSWORD_MIN} stafir.</p>
         <label className="b-visually-hidden" htmlFor="w-pw-new">{change ? 'Nýtt lykilorð' : 'Lykilorð'}</label>
         <input id="w-pw-new" type="password" className={`b-input${error ? ' is-error' : ''}`} value={pw} onChange={e => setPw(e.target.value)} placeholder="Lykilorð" autoFocus autoComplete="new-password" />
         <label className="b-visually-hidden" htmlFor="w-pw-again">Lykilorðið aftur</label>
@@ -189,7 +193,8 @@ function ContactModal({ username, onClose }: { username: string; onClose: () => 
   useEffect(() => {
     let live = true;
     setState('loading');
-    fetch(`/api/crew/${username}/email`, { cache: 'no-store' })
+    /* given up on after a quarter of a minute, so the fields do not sit at "sæki…" with no way to ask again */
+    fetch(`/api/crew/${username}/email`, { cache: 'no-store', signal: AbortSignal.timeout(15_000) })
       .then(r => { if (!r.ok) throw new Error(); return r.json() as Promise<Contact>; })
       .then(d => {
         if (!live) return;
@@ -220,20 +225,20 @@ function ContactModal({ username, onClose }: { username: string; onClose: () => 
     <div ref={box} tabIndex={-1} className="b-modal" {...backdrop} role="dialog" aria-modal="true" aria-label="Nafn og netfang">
       <form className="b-paper b-modal__box" onSubmit={submit}>
         <p className="b-modal__title">Nafn og netfang</p>
-        <p className="b-modal__sub">fyrir póstinn frá JOÐ. Aðrir sjá þetta ekki á vefnum; nafnið sést aðeins í bréfunum.</p>
+        <p className="b-modal__sub">Fyrir póstinn frá JOÐ. Enginn annar sér þetta á vefnum og nafnið birtist bara í bréfunum.</p>
         <label className="b-modal__label" htmlFor="w-contact-name">Hvað eiga bréfin að kalla þig?</label>
         <input ref={nameRef} id="w-contact-name" className={`b-input${error ? ' is-error' : ''}`} value={name} onChange={e => setName(e.target.value)} placeholder={ready ? username : state === 'loading' ? 'sæki…' : ''} disabled={!ready} maxLength={NAME_MAX} autoComplete="given-name" />
         <label className="b-modal__label" htmlFor="w-contact-email">Netfang</label>
         <input id="w-contact-email" type="email" className={`b-input${error ? ' is-error' : ''}`} value={address} onChange={e => setAddress(e.target.value)} placeholder={ready ? 'nafn@dæmi.is' : state === 'loading' ? 'sæki…' : ''} disabled={!ready} autoComplete="email" />
         <label className="b-modal__check">
           <input type="checkbox" checked={nights} onChange={e => setNights(e.target.checked)} disabled={!ready} />
-          Póstur þegar bál er kveikt, þegar kvöldið er ákveðið, og hálftíma áður en það hefst
+          Fá póst þegar bál er kveikt, þegar kvöldið er ákveðið og hálftíma áður en það hefst
         </label>
         <label className="b-modal__check">
           <input type="checkbox" checked={mentions} onChange={e => setMentions(e.target.checked)} disabled={!ready} />
-          Póstur þegar einhver nefnir mig á töflunni (@{username})
+          Fá póst þegar einhver nefnir mig á töflunni (@{username})
         </label>
-        <p className="b-modal__ok">Autt nafn: bréfin segja {username}. Autt netfang: enginn póstur.</p>
+        <p className="b-modal__ok">Ef nafnið er autt nota bréfin {username}. Ef netfangið er autt færðu engan póst.</p>
         {state === 'failed' && (
           <p className="b-err" role="alert">
             Náði ekki í það sem er skráð, svo ekkert verður vistað í bili.{' '}
@@ -438,7 +443,7 @@ export default function Wall({ initial, places, initialStats = null, initialLed 
     covering.current = true;
     setWallError('');
     patchProfile({ coverPhotoId: photoId })
-      .catch(e => setWallError(failure(e, 'Ekki tókst að skipta um forsíðumynd.')))
+      .catch(e => setWallError(failure(e, 'Ekki tókst að skipta um mynd á plakatinu.')))
       .finally(() => { covering.current = false; });
   }, [patchProfile]);
   /* The prints are read through a ref, so the callback every sign holds stays
@@ -518,7 +523,7 @@ export default function Wall({ initial, places, initialStats = null, initialLed 
 
             {editingBio && isOwner ? (
               <div className="w-poster__biorow">
-                <textarea className={`b-textarea${bioError ? ' is-error' : ''}`} value={bioText} onChange={e => setBioText(e.target.value)} maxLength={LIMITS.bio} rows={3} placeholder="Ein eða tvær línur um þig" autoFocus />
+                <textarea className={`b-textarea${bioError ? ' is-error' : ''}`} value={bioText} onChange={e => setBioText(e.target.value)} maxLength={LIMITS.bio} rows={3} placeholder="Ein eða tvær línur um þig" aria-label="Kynning" autoFocus />
                 <div className="b-inline">
                   <button className="b-btn b-btn--solid b-btn--small" onClick={saveBio} disabled={bioSaving}>{bioSaving ? 'Vista…' : 'Vista'}</button>
                   <button className="b-btn b-btn--small" onClick={() => { closeBio(); setBioError(''); setBioText(profile.bio); }}>Hætta við</button>
@@ -615,7 +620,8 @@ export default function Wall({ initial, places, initialStats = null, initialLed 
                 )}
               </>
             )}
-            {advancements && <Advancements list={advancements.list} of={advancements.of} missing={advancements.missing} />}
+            {stats && <NextMarks stats={stats} />}
+            {advancements && <Advancements list={advancements.list} of={advancements.of} missing={advancements.missing} mine={isOwner} />}
             </div>
           </div>
           {/* the poster made good: JOÐ's seal in its corner */}
@@ -641,7 +647,7 @@ export default function Wall({ initial, places, initialStats = null, initialLed 
       </main>
       <Footer />
 
-      {showLogin && <LoginModal username={username} onSuccess={() => { refresh(); setWelcome(true); }} onClose={() => setShowLogin(false)} />}
+      {showLogin && <LoginModal username={username} onSuccess={async () => { await refresh(); setWelcome(true); }} onClose={() => setShowLogin(false)} />}
       {showPw && isOwner && <PasswordModal username={username} change={hasPassword} onDone={() => { refresh(); setWelcome(false); }} onClose={() => setShowPw(false)} />}
       {showEmail && isOwner && <ContactModal username={username} onClose={() => setShowEmail(false)} />}
       {prints.length > 0 && (

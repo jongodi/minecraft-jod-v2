@@ -35,6 +35,7 @@ export function newId(): string {
 }
 
 export const OFFLINE = 'Nettenging brást. Reyndu aftur.';
+export const SLOW = 'Þetta tók of langan tíma. Reyndu aftur.';
 
 /** What a failed action says under it. A request that never reached the
     site rejects with the browser's own English ("Failed to fetch", "Load
@@ -43,6 +44,8 @@ export const OFFLINE = 'Nettenging brást. Reyndu aftur.';
     the action's own words. */
 export function failure(e: unknown, fallback: string): string {
   if (e instanceof TypeError || (e instanceof DOMException && (e.name === 'NetworkError' || e.name === 'AbortError'))) return OFFLINE;
+  /* a request given up on after its time (AbortSignal.timeout): the browser's word for it is English too */
+  if (e instanceof DOMException && e.name === 'TimeoutError') return SLOW;
   if (e instanceof Error && e.constructor === Error && e.message) return e.message;
   return fallback;
 }
@@ -75,7 +78,7 @@ export async function sendToBlob(...args: Parameters<typeof upload>): ReturnType
     const m = e instanceof Error ? e.message : '';
     if (!m.startsWith('Vercel Blob:')) throw e;
     throw new Error(/client token/i.test(m)
-      ? 'Geymslan tók ekki við myndinni; innskráningin gæti verið útrunnin. Endurhlaðaðu síðuna og reyndu aftur.'
+      ? 'Geymslan tók ekki við myndinni; innskráningin gæti verið útrunnin. Endurhladdu síðuna og reyndu aftur.'
       : 'Ekki tókst að senda myndina í geymsluna. Reyndu aftur.');
   }
 }

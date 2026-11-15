@@ -14,8 +14,10 @@ import Footer from '@/components/badlands/Footer';
 import PlayerHead from '@/components/badlands/PlayerHead';
 import NightSky from '@/components/badlands/NightSky';
 import { Lantern, Seal } from '@/components/badlands/Bits';
-import { useServerStatus } from '@/components/badlands/hooks';
+import { useMounted, useServerStatus } from '@/components/badlands/hooks';
 import { NightLine } from '@/components/badlands/NightLine';
+import { seedNights } from '@/components/badlands/night';
+import type { PlayNightResponse } from '@/lib/play-night-view';
 import { CREW, PAGE_LINKS } from '@/components/badlands/data';
 import { toast } from '@/components/badlands/Toast';
 import { outlaws, type Outlaw, type StatRow } from '@/components/badlands/outlaws';
@@ -59,7 +61,9 @@ function Charge({ outlaw, waiting }: { outlaw: Outlaw | undefined; waiting: bool
     is nailed up in the space the board has left. `initialPlayers` is the
     last snapshot of the game's numbers, read on the server (page.tsx), so
     the board is whole at first paint. */
-export default function RollCall({ initialPlayers, initialCrew = null }: { initialPlayers: StatRow[] | null; initialCrew?: CrewSummary[] | null }) {
+export default function RollCall({ initialPlayers, initialCrew = null, initialNights }: { initialPlayers: StatRow[] | null; initialCrew?: CrewSummary[] | null; initialNights?: PlayNightResponse }) {
+  /* the nights the page was drawn with are the store's first value in the browser, as on the home page */
+  if (initialNights) seedNights(initialNights);
   /* the lines as the page was drawn with them (page.tsx), then the browser's
      own; null while loading, 'error' if the list never came */
   const [crew, setCrew] = useState<CrewSummary[] | null | 'error'>(initialCrew);
@@ -71,6 +75,13 @@ export default function RollCall({ initialPlayers, initialCrew = null }: { initi
   /* who is in the game now: the bar asks for the same answer, so this is no second question */
   const server = useServerStatus();
   const isIn = (name: string) => server.online === true && server.list.some(n => n.toLowerCase() === name.toLowerCase());
+  /* "fyrir 3 dögum" and "í gær kl. 21:40" are told from the clock, and this page is kept five minutes and longer
+     on a quiet day: read as the page was drawn, the browser's words differed from the kept page's and React threw the
+     whole roll call away (error #418). The two lines let the kept page's words stand through hydration and are put
+     up anew once the page is the browser's, as the hero's night line is (NightLine.tsx). Not the plain date first
+     and the age after: a date is longer, wrapped a poster's note onto a second line on a phone, and the board
+     jumped on every visit when it was taken away (a layout shift of 0.07). */
+  const mounted = useMounted();
 
   /* the press that spends the link's use: signed in, the member goes to their wall; a spent link says so */
   const signIn = async () => {
@@ -143,7 +154,7 @@ export default function RollCall({ initialPlayers, initialCrew = null }: { initi
             <h1 className="b-title">Eftirlýst</h1>
             <p className="b-lede">Hópurinn, öll sem hafa aðgang. Hvert og eitt á sinn vegg: kynningu, tölur úr leiknum, miða og myndir.</p>
             {/* the next fire: the room on the home page holds it, one tap away */}
-            <div className="b-page__night"><NightLine href="/kvold#hopur" /></div>
+            <div className="b-page__night"><NightLine initial={initialNights} href="/kvold#hopur" /></div>
           </div>
           {/* everything the crew pinned, with the fires and the map's news, is on the board */}
           <Link href="/taflan" className="b-btn b-btn--small">Taflan: það nýjasta frá hópnum</Link>
@@ -199,9 +210,9 @@ export default function RollCall({ initialPlayers, initialCrew = null }: { initi
                     <div className="b-poster__meta" aria-hidden="true" style={{ visibility: 'hidden' }}><span className="b-nowrap">0 færslur</span> · <span className="b-nowrap">0 myndir</span></div>
                   </>) : (<>
                     {/* someone with a charge against them has a poster already; "nothing heard yet" is for one with neither */}
-                    {(m.bio || m.lastEntry || (!outlaw?.best && players !== null)) && <div className="b-poster__note">{m.bio || (m.lastEntry ? `festi eitthvað upp ${formatAge(m.lastEntry)}` : 'ekkert heyrst enn')}</div>}
+                    {(m.bio || m.lastEntry || (!outlaw?.best && players !== null)) && <div key={mounted ? 'own' : 'drawn'} className="b-poster__note" suppressHydrationWarning>{m.bio || (m.lastEntry ? `festi eitthvað upp ${formatAge(m.lastEntry)}` : 'ekkert heyrst enn')}</div>}
                     {/* when they were last in the game, under the charges, for one who is not in now: the lantern says the rest */}
-                    {m.lastSeen && !isIn(m.username) && <div className="b-poster__seen">síðast inni {sinceAt(m.lastSeen)}</div>}
+                    {m.lastSeen && !isIn(m.username) && <div key={mounted ? 'own' : 'drawn'} className="b-poster__seen" suppressHydrationWarning>{`síðast inni ${sinceAt(m.lastSeen)}`}</div>}
                     {/* a bare wall says so once, in the line above; its two zeros keep their height so the board's rows stay level */}
                     <div className="b-poster__meta" aria-hidden={m.entryCount + m.photoCount === 0 || undefined} style={m.entryCount + m.photoCount === 0 ? { visibility: 'hidden' } : undefined}><span className="b-nowrap">{m.entryCount} {plural(m.entryCount, 'færsla', 'færslur')}</span> · <span className="b-nowrap">{m.photoCount} {plural(m.photoCount, 'mynd', 'myndir')}</span></div>
                   </>)}

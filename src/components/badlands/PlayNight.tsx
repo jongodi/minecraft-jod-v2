@@ -8,7 +8,7 @@ import Calendar from './Calendar';
 import type { ServerState } from './hooks';
 import { expectStarting, useMounted } from './hooks';
 import { isChanging } from '@/lib/server-state';
-import { DAYS_NOM_PLURAL, DECIDE_MS, LAST_DAY_AHEAD, SOON_MS, TIME_CHOICES, WhenAt, dayLabel, dayLong, dayNum, dayOf, dayValue, isLate, letterAnswer, usePlayNight, whenAt, type LetterAnswer } from './night';
+import { DAYS_PLURAL, DECIDE_MS, LAST_DAY_AHEAD, SOON_MS, TIME_CHOICES, WhenAt, dayLabel, dayLong, dayNum, dayOf, dayValue, isLate, letterAnswer, usePlayNight, whenAt, type LetterAnswer } from './night';
 import type { NightHabit } from '@/lib/play-night-view';
 import { Fire, Heads, chosenOf, lower } from './NightLine';
 import { plural } from '@/lib/format';
@@ -116,6 +116,7 @@ export function NightBoard({ server }: { server: ServerState }) {
           <h3 className="b-night__title">Næsta spilakvöld</h3>
           {!lost && <p className="b-note">{me ? 'Ekkert bál logar. Kveiktu eitt og sjáðu hver kemur.' : 'Ekkert kvöld á dagskrá.'}</p>}
           <Unanswered lost={lost} onRetry={refresh} />
+          {me && !lost && <Subscribe />}
         </div>
         {me ? <button type="button" className="b-btn b-btn--solid b-btn--small" onClick={() => setLighting(true)}>Kveikja bál</button>
             : !lost && <Link href="/crew" className="b-btn b-btn--small b-btn--ghost">Skrá mig inn</Link>}
@@ -149,9 +150,33 @@ export function NightBoard({ server }: { server: ServerState }) {
           {planned === 0 ? 'Kveikja nýtt bál' : '+ Kveikja annað bál'}
         </button>
       ) : (
-        <p className="b-note b-nights__full">{max} kvöld eru á dagskrá, eins mörg og komast í einu. Nýtt bál má kveikja þegar eitt er liðið.</p>
+        <p className="b-note b-nights__full">Það eru {max} kvöld á dagskrá og fleiri komast ekki fyrir. Þú getur kveikt nýtt bál þegar eitt þeirra er búið.</p>
       ))}
+      {!lost && <Subscribe />}
     </div>
+  );
+}
+
+/** Every night in the phone's own calendar: one calendar it subscribes to
+    (/kvold/dagatal.ics, src/lib/night-ics.ts), which then carries each new
+    fire whose time is chosen without anyone adding it. A webcal address is
+    what a phone's or a Mac's calendar takes as a subscription; a calendar on
+    the web wants the address pasted in, so it can be copied too. */
+function Subscribe() {
+  const path = '/kvold/dagatal.ics';
+  const copy = async () => {
+    const url = `${window.location.origin}${path}`;
+    try { await navigator.clipboard.writeText(url); toast('Afritað', 'slóð dagatalsins'); }
+    catch { window.prompt('Afritaðu slóðina:', url); }
+  };
+  return (
+    <p className="b-note b-nights__feed">
+      <CalendarIcon className="b-nights__feedicon" />
+      <span>
+        <a className="b-link" href={`webcal://${window.location.host}${path}`}>Fáðu öll kvöldin í dagatalið þitt</a>
+        . Ný bál bætast þá sjálfkrafa við. <button type="button" className="b-link" onClick={copy}>Afrita slóðina</button>
+      </span>
+    </p>
   );
 }
 
@@ -213,7 +238,7 @@ function NightFire({ night, kicker, me, lost, server, busy, err, picked, letter,
         <h3 className="b-night__title">{title}</h3>
         <p className="b-note">
           {night.note && <><q>{night.note}</q> · </>}{night.by} kveikti bálið
-          {night.phase === 'open' && `. Kvöldið velst sjálft ${whenAt(night.decidesAt)}, sá tími sem flest geta.`}
+          {night.phase === 'open' && `. Tíminn sem flest komast á verður valinn sjálfkrafa ${whenAt(night.decidesAt)}.`}
         </p>
       </header>
 
@@ -228,10 +253,10 @@ function NightFire({ night, kicker, me, lost, server, busy, err, picked, letter,
                 {/* each time is a campsite of its own: its fire, and who can come gathered by it */}
                 <div className="b-night__camp"><Fire count={o.yes.length} /><Heads names={o.yes} /></div>
                 <span className="b-night__when">{WhenAt(o.at)}</span>
-                <span className="b-note">{o.yes.length ? `${o.yes.length} ${plural(o.yes.length, 'getur', 'geta')}` : 'enginn enn'}</span>
+                <span className="b-note">{o.yes.length ? `${o.yes.length} ${plural(o.yes.length, 'kemst', 'komast')}` : 'enginn enn'}</span>
                 {me && (
                   <span className="b-inline">
-                    <button type="button" className={`b-btn b-btn--small${on ? ' b-btn--solid' : ''}`} aria-pressed={on} disabled={busy} onClick={() => toggle(o.id)}>Ég get{on && <CheckIcon className="b-btn__icon" />}</button>
+                    <button type="button" className={`b-btn b-btn--small${on ? ' b-btn--solid' : ''}`} aria-pressed={on} disabled={busy} onClick={() => toggle(o.id)}>Ég kemst{on && <CheckIcon className="b-btn__icon" />}</button>
                     {mineIsBy && <button type="button" className="b-btn b-btn--small b-btn--ghost" disabled={busy} onClick={() => onRun({ action: 'choose', option: o.id })}>Velja</button>}
                   </span>
                 )}
@@ -329,7 +354,7 @@ function LetterSlip({ night, letter, busy, onSend, onDrop }: {
           <p className="b-night__sliptext">{night.phase === 'over' ? 'Kvöldið er liðið' : 'Kvöldið er hafið'}, svo ekki er lengur hægt að svara.</p>
         ) : (
           <>
-            <p className="b-night__sliptext">Svar fyrir <b>{letter.user}</b>. Það fer þegar þú staðfestir.</p>
+            <p className="b-night__sliptext">Svar fyrir <b>{letter.user}</b>. Það er sent þegar þú staðfestir.</p>
             {night.phase === 'open' ? (
               <div className="b-inline">
                 {night.options.map(o => {
@@ -421,8 +446,8 @@ function LightFire({ busy, err, habit, onLight, onCancel }: { busy: boolean; err
     <form className="b-night b-night--light" aria-label="Kveikja bál" onSubmit={e => { e.preventDefault(); onLight(rows.map(r => `${r.day}T${r.time}:00Z`), note); }}>
       <header className="b-night__top">
         <h3 className="b-night__title">Kveikja bál</h3>
-        <p className="b-note">Einn til þrír tímar. Hópurinn segir hvaða tímar henta og kvöldið velst þremur tímum fyrir þann fyrsta, nema þú veljir fyrr.</p>
-        {habit && usual && <p className="b-note">Venjulega {DAYS_NOM_PLURAL[habit.weekday]} kl. {habit.hour}, {habit.of} af {habit.total} kvöldum.</p>}
+        <p className="b-note">Stingdu upp á einum til þremur tímum. Hópurinn merkir við þá sem henta og tíminn er valinn sjálfkrafa þremur klukkustundum fyrir þann fyrsta, nema þú veljir hann fyrr.</p>
+        {habit && usual && <p className="b-note">Oftast er spilað á {DAYS_PLURAL[habit.weekday]} kl. {habit.hour} ({habit.of} af {habit.total} kvöldum).</p>}
       </header>
       {rows.map((r, i) => (
         <div key={r.key} className="b-inline b-night__row">
@@ -446,8 +471,8 @@ function LightFire({ busy, err, habit, onLight, onCancel }: { busy: boolean; err
           {open === i && <Calendar value={r.day} today={today} min={first} max={last} triggerId={trigger(i)} onPick={v => pick(i, v)} onClose={close} />}
         </div>
       ))}
-      {held && <p className="b-note">Með fleiri en einum tíma þarf sá fyrsti að vera minnst þrjá tíma fram í tímann, svo hópurinn nái að svara.</p>}
-      <p className="b-visually-hidden" role="status">{held ? 'Með fleiri en einum tíma þarf sá fyrsti að vera minnst þrjá tíma fram í tímann, svo hópurinn nái að svara.' : ''}</p>
+      {held && <p className="b-note">Ef tímarnir eru fleiri en einn þarf sá fyrsti að vera eftir minnst þrjár klukkustundir, svo hópurinn nái að svara.</p>}
+      <p className="b-visually-hidden" role="status">{held ? 'Ef tímarnir eru fleiri en einn þarf sá fyrsti að vera eftir minnst þrjár klukkustundir, svo hópurinn nái að svara.' : ''}</p>
       {rows.length < 3 && (
         /* a second time brings the three-hour rule in: any time that falls short of it moves to the first that does not */
         <button type="button" className="b-btn b-btn--small b-btn--ghost" onClick={addTime}>+ Annar tími</button>

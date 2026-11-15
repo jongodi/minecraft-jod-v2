@@ -4,12 +4,13 @@
    same reads as the chat's (src/app/api/chat/route.ts), each with its own
    fallback, so a store that can't be read leaves its part out rather than
    the board. Server only. */
-import type { CrewProfile } from '@/lib/crew-types';
+import { canonicalUsername, isCrewUsername, type CrewProfile } from '@/lib/crew-types';
 import type { MapConfig } from '@/lib/map-types';
 import type { GalleryPhoto } from '@/lib/gallery';
 import type { Night, PastNight } from '@/lib/play-night';
 import type { MapNews, Painted } from '@/lib/map-news';
 import { gameVersion, type ServerNews } from '@/lib/server-news';
+import { milestoneId, type Milestone } from '@/lib/milestones';
 import type { BoardItem, BoardPlace, BoardResponse, ShelfPack } from '@/lib/board-types';
 import { advancementOf, type CrewAdvancements } from '@/lib/advancements';
 import { optionOf, decidesAt, EVENING_MS } from '@/lib/play-night';
@@ -34,6 +35,8 @@ export interface BoardSources {
   news:         MapNews[];
   /** what the server changed: its version, the shelf (src/lib/server-news.ts) */
   server?:      ServerNews[];
+  /** the round numbers the crew's counters passed (src/lib/milestones.ts) */
+  milestones?:  Milestone[];
   /** when the 3D map was last copied, if it ever was */
   syncedAt:     string | null;
   now?:         number;
@@ -44,7 +47,7 @@ export function boardPlaces(map: MapConfig | null): BoardPlace[] {
 }
 
 /** Everything on the board, newest first. */
-export function boardItems({ walls, map, gallery, nights, past, advancements, news, server = [], syncedAt, now = Date.now() }: BoardSources): BoardItem[] {
+export function boardItems({ walls, map, gallery, nights, past, advancements, news, server = [], milestones = [], syncedAt, now = Date.now() }: BoardSources): BoardItem[] {
   const since = now - BOARD_DAYS * 86_400_000;
   const recent = (at: string) => { const t = Date.parse(at); return t >= since && t <= now; };
   const places = new Map((map?.locations ?? []).map(l => [l.id, l]));
@@ -144,6 +147,11 @@ export function boardItems({ walls, map, gallery, nights, past, advancements, ne
 
   if (syncedAt && recent(syncedAt)) items.push({ kind: 'synced', id: `s-${syncedAt}`, at: syncedAt, who: null });
 
+  /* the round numbers passed, each on a slip of its own: they are rare, and each is one member's */
+  for (const m of milestones) {
+    if (isCrewUsername(m.who) && recent(m.at)) items.push({ kind: 'milestone', id: `r-${milestoneId(m)}`, at: m.at, who: canonicalUsername(m.who), what: m.what, mark: m.mark });
+  }
+
   /* The server's own news. The shelf of one day is one slip: a pack changed
      twice that day is told once, from where it stood that morning to where it
      ended, and one put up and updated the same day is simply new. */
@@ -196,20 +204,21 @@ async function readNightsForBoard(): Promise<{ nights: Night[]; past: PastNight[
 }
 
 export async function readBoard(): Promise<BoardResponse> {
-  const [{ readAllProfiles }, { readMap }, { readGallery }, { readStoredAdvancements }, { readNews }, { readServerNews }, snapshot] = await Promise.all([
-    import('@/lib/crew'), import('@/lib/map'), import('@/lib/gallery'), import('@/lib/advancements'), import('@/lib/map-news'), import('@/lib/server-news'), import('@/lib/bluemap-snapshot.json'),
+  const [{ readAllProfiles }, { readMap }, { readGallery }, { readStoredAdvancements }, { readNews }, { readServerNews }, { readMilestones }, snapshot] = await Promise.all([
+    import('@/lib/crew'), import('@/lib/map'), import('@/lib/gallery'), import('@/lib/advancements'), import('@/lib/map-news'), import('@/lib/server-news'), import('@/lib/milestones'), import('@/lib/bluemap-snapshot.json'),
   ]);
-  const [walls, map, gallery, advancements, news, server, { nights, past }] = await Promise.all([
+  const [walls, map, gallery, advancements, news, server, milestones, { nights, past }] = await Promise.all([
     readAllProfiles().catch(() => []),
     readMap().catch(() => null),
     readGallery().catch(() => []),
     readStoredAdvancements(),
     readNews().catch(() => []),
     readServerNews().catch(() => []),
+    readMilestones().catch(() => []),
     readNightsForBoard().catch(() => ({ nights: [], past: [] })),
   ]);
   return {
-    items: boardItems({ walls, map, gallery, nights, past, advancements, news, server, syncedAt: (snapshot.default as { syncedAt?: string | null }).syncedAt ?? null }),
+    items: boardItems({ walls, map, gallery, nights, past, advancements, news, server, milestones, syncedAt: (snapshot.default as { syncedAt?: string | null }).syncedAt ?? null }),
     places: boardPlaces(map),
   };
 }

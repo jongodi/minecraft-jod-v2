@@ -1,7 +1,7 @@
 'use client';
 
 // What the town itself posts on the board: a fire lit, a night decided or
-// held, a member's advancements, the map's news, and the server's own: the
+// held, a member's advancements and the round numbers they pass, the map's news, and the server's own: the
 // game moved to a new version, packs put on the shelf or updated there.
 // Printed slips nailed to the planks, a line or two each, beside the crew's
 // hand-lettered signs. Each leads to where it happened.
@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { ADV_SHOWN, type BoardItem, type ShelfPack } from '@/lib/board-types';
 import type { Painted } from '@/lib/map-news';
 import { andList, plural } from '@/lib/format';
+import { milestoneWords } from './milestone';
 import { noShowsLine } from './held';
 import { Campfire, CalendarIcon, FoldedMapIcon, PictureIcon } from '@/components/badlands/Bits';
 import PlayerHead from '@/components/badlands/PlayerHead';
@@ -55,6 +56,11 @@ function FrameIcon({ frame }: { frame: 'task' | 'goal' | 'challenge' }) {
   return <svg viewBox="0 0 16 16" width="16" height="16" shapeRendering="crispEdges" aria-hidden="true"><path fill="currentColor" fillRule="evenodd" d={d} /></svg>;
 }
 
+/* a milestone by the road: a stone with two lines cut in it, for a round number passed */
+function StoneIcon() {
+  return <svg viewBox="0 0 16 16" width="16" height="16" shapeRendering="crispEdges" aria-hidden="true"><path fill="currentColor" fillRule="evenodd" d="M5 2h6v1h1v1h1v9h1v1H2v-1h1V4h1V3h1zM6 6v1h4V6zM6 9v1h4V9z" /></svg>;
+}
+
 /* A room's hash (#hopur) is a plain link, so the home page's own door handler
    swaps the room; the router would only push it and no room would know. */
 function Go({ href, className, children }: { href: string; className: string; children: React.ReactNode }) {
@@ -68,7 +74,10 @@ function Head({ name }: { name: string }) {
 /** One slip. `room`: the board is open over the world, where a fire's room
     is a hash away. `onOpen` holds the map's picture up in the lightbox. */
 export default function Notice({ item, room, mounted, onOpen }: { item: Notice; room: boolean; mounted: boolean; onOpen?: (id: string, origin: DOMRect) => void }) {
-  /* when, as the browser's clock tells it; the plain day until it has one */
+  /* when, as the browser's clock tells it; the plain day until it has one.
+     A line that reads the clock as it is drawn ("í kvöld kl. 20") is put up
+     anew once mounted: React keeps the server's words in a node that
+     suppresses the warning rather than write its own over them. */
   const when = mounted ? sinceAt(item.at) : item.at.slice(0, 10);
   const fire = (id: string) => (room ? '#hopur' : `/kvold/${id}#hopur`);
   const shelf = room ? '#hillan' : '/#hillan';
@@ -83,7 +92,7 @@ export default function Notice({ item, room, mounted, onOpen }: { item: Notice; 
       href = fire(item.nightId);
       body = <>
         <span className="t-notice__line"><Head name={item.who} /> kveikti bál{item.note && <>: <q>{item.note}</q></>}</span>
-        <span className="t-notice__sub" suppressHydrationWarning>{item.chosen ? WhenAt(item.chosen) : `${item.times.length} ${plural(item.times.length, 'tími', 'tímar')} í boði: ${item.times.map(t => WhenAt(t)).join(' · ')}`}</span>
+        <span key={mounted ? 'own' : 'drawn'} className="t-notice__sub" suppressHydrationWarning>{item.chosen ? WhenAt(item.chosen) : `${item.times.length} ${plural(item.times.length, 'tími', 'tímar')} í boði: ${item.times.map(t => WhenAt(t)).join(' · ')}`}</span>
       </>;
       break;
     case 'decided':
@@ -91,7 +100,7 @@ export default function Notice({ item, room, mounted, onOpen }: { item: Notice; 
       href = fire(item.nightId);
       body = <>
         <span className="t-notice__line">Kvöldið er ákveðið{item.note && <>: <q>{item.note}</q></>}</span>
-        <span className="t-notice__sub" suppressHydrationWarning>{WhenAt(item.time)} · {item.who ? <><Head name={item.who} /> festi tímann</> : 'flest komast þá'}</span>
+        <span key={mounted ? 'own' : 'drawn'} className="t-notice__sub" suppressHydrationWarning>{WhenAt(item.time)} · {item.who ? <><Head name={item.who} /> festi tímann</> : 'flest komast þá'}</span>
       </>;
       break;
     case 'held':
@@ -119,6 +128,16 @@ export default function Notice({ item, room, mounted, onOpen }: { item: Notice; 
       </>;
       break;
     }
+    case 'milestone': {
+      icon = <StoneIcon />;
+      href = `/crew/${item.who}`;
+      const w = milestoneWords(item.what, item.mark);
+      body = <>
+        <span className="t-notice__line"><Head name={item.who} /> {w.before}<b>{w.bold}</b>{w.after}</span>
+        {w.sub && <span className="t-notice__sub">{w.sub}</span>}
+      </>;
+      break;
+    }
     case 'place':
       icon = <PinIcon />;
       href = `/stadur/${item.placeId}#heimur`;
@@ -133,7 +152,7 @@ export default function Notice({ item, room, mounted, onOpen }: { item: Notice; 
       href = item.placeId !== null ? `/stadur/${item.placeId}#heimur` : '/#heimur';
       pic = item.photo;
       body = <>
-        <span className="t-notice__line">{item.label ? <>Ný mynd af <b>{item.label}</b></> : <>Ný mynd á myndaveggnum: <b>{item.title}</b></>}</span>
+        <span className="t-notice__line">{item.label ? <>Ný mynd: <b>{item.label}</b></> : <>Ný mynd á myndaveggnum: <b>{item.title}</b></>}</span>
         {item.label && item.title && item.title !== item.label && <span className="t-notice__sub">{item.title}</span>}
       </>;
       break;
@@ -189,7 +208,7 @@ export default function Notice({ item, room, mounted, onOpen }: { item: Notice; 
         {body}
         <span className="t-notice__meta">
           <time dateTime={item.at} suppressHydrationWarning>{when}</time>
-          <Go href={href} className="t-notice__go">{item.kind === 'place' || item.kind === 'photo' ? 'sjá á kortinu' : item.kind === 'advancement' ? 'á veggnum' : item.kind === 'painted' || item.kind === 'synced' ? 'í heiminn' : item.kind === 'version' || item.kind === 'shelf' ? 'á hilluna' : 'sjá kvöldið'}</Go>
+          <Go href={href} className="t-notice__go">{item.kind === 'place' || item.kind === 'photo' ? 'sjá á kortinu' : item.kind === 'advancement' || item.kind === 'milestone' ? 'á veggnum' : item.kind === 'painted' || item.kind === 'synced' ? 'í heiminn' : item.kind === 'version' || item.kind === 'shelf' ? 'á hilluna' : 'sjá kvöldið'}</Go>
         </span>
       </div>
       {pic && (

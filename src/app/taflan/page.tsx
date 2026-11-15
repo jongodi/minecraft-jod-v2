@@ -6,6 +6,7 @@ import { isFilter } from '@/lib/board-types';
 import { getCrewSession } from '@/lib/crew';
 import { hasPassword } from '@/lib/crew-access';
 import BoardPage from '@/components/board/BoardPage';
+import { viewNights } from '@/lib/play-night-view';
 
 /* The board's own page: the same board that opens over the world (#taflan),
    with the bar and the night around it, for a link to share and for the
@@ -23,9 +24,10 @@ export const metadata: Metadata = {
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 
 export default async function Taflan({ searchParams }: Props) {
-  const [board, session, query] = await Promise.all([readBoard().catch(() => null), getCrewSession(), searchParams]);
+  /* the next fire too, for the line beside the board (above it on a phone): asked for by the browser, it came a moment in and moved what was under it */
+  const [board, session, query, nights] = await Promise.all([readBoard().catch(() => null), getCrewSession(), searchParams, viewNights(null).catch(() => undefined)]);
   const seed = { me: session?.username ?? null, hasPassword: session ? await hasPassword(session.username).catch(() => false) : false };
   const syna = typeof query.syna === 'string' ? query.syna : null;
   /* which drawing this is, so Back to it is told from a fresh one (useRestored) */
-  return <BoardPage initial={board} session={seed} initialFilter={isFilter(syna) ? syna : 'allt'} drawn={randomUUID()} />;
+  return <BoardPage initial={board} session={seed} initialFilter={isFilter(syna) ? syna : 'allt'} drawn={randomUUID()} nights={nights} />;
 }

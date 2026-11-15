@@ -17,7 +17,7 @@ export default function PageError({ error, reset }: { error: Error & { digest?: 
   return (
     <LostScreen
       title="Ljósið slokknaði"
-      cause="Eitthvað fór úrskeiðis meðan síðan var teiknuð."
+      cause="Eitthvað fór úrskeiðis við að birta síðuna."
       actions={<>
         <button type="button" className="b-btn b-btn--solid" onClick={retry}>Reyna aftur</button>
         {/* a whole new load, not the router: what broke may be the page's own state */}

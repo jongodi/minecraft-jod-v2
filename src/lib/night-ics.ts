@@ -29,18 +29,14 @@ export function fold(line: string): string {
   return parts.join('\r\n ');
 }
 
-/** The entry for a night whose time is chosen; null while it is still open. */
-export function icsOf(night: Night, now = Date.now()): string | null {
-  const chosen = optionOf(night, night.chosen);
-  if (!chosen) return null;
-  const start = Date.parse(chosen.at);
+/** One evening as the calendar holds it: a fire with its time chosen, or a night of the annals. */
+export interface CalendarNight { id: string; by: string; note: string; at: string }
+
+/** The entry itself, between BEGIN:VEVENT and END:VEVENT. */
+function eventLines(night: CalendarNight, now: number): string[] {
+  const start = Date.parse(night.at);
   const url = `${siteUrl()}/kvold/${night.id}#hopur`;
-  const lines = [
-    'BEGIN:VCALENDAR',
-    'VERSION:2.0',
-    'PRODID:-//JOÐ//Spilakvöld//IS',
-    'CALSCALE:GREGORIAN',
-    'METHOD:PUBLISH',
+  return [
     'BEGIN:VEVENT',
     /* the entry's name for good, the same whichever address served it, so a calendar that fetches it again updates it rather than adding a second */
     `UID:spilakvold-${night.id}@jodcraft.world`,
@@ -52,7 +48,42 @@ export function icsOf(night: Night, now = Date.now()): string | null {
     `LOCATION:${SERVER_IP}`,
     `URL:${url}`,
     'END:VEVENT',
-    'END:VCALENDAR',
   ];
-  return lines.map(fold).join('\r\n') + '\r\n';
+}
+
+const calendar = (head: string[], events: string[]) =>
+  ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//JOÐ//Spilakvöld//IS', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', ...head, ...events, 'END:VCALENDAR'].map(fold).join('\r\n') + '\r\n';
+
+/** The entry for a night whose time is chosen; null while it is still open. */
+export function icsOf(night: Night, now = Date.now()): string | null {
+  const chosen = optionOf(night, night.chosen);
+  if (!chosen) return null;
+  return calendar([], eventLines({ id: night.id, by: night.by, note: night.note, at: chosen.at }, now));
+}
+
+/** How often a calendar that subscribes is asked to look again. */
+export const FEED_REFRESH = 'PT1H';
+
+/** Every evening in one calendar, for a phone that subscribes to it
+    (/kvold/dagatal.ics): each fire whose time is chosen, and the nights of
+    the annals, oldest first. A subscribed calendar takes the whole file anew
+    each time it looks, so a fire put out is simply no longer in it, and one
+    still open is not in it until its time is chosen. A night that is both
+    among the fires and in the annals is the fires' own. */
+export function feedOf(fires: readonly Night[], past: readonly CalendarNight[], now = Date.now()): string {
+  const nights = new Map<string, CalendarNight>();
+  for (const p of past) nights.set(p.id, { id: p.id, by: p.by, note: p.note, at: p.at });
+  for (const night of fires) {
+    const chosen = optionOf(night, night.chosen);
+    if (night.cancelled) nights.delete(night.id);
+    else if (chosen) nights.set(night.id, { id: night.id, by: night.by, note: night.note, at: chosen.at });
+  }
+  const sorted = [...nights.values()].filter(n => Number.isFinite(Date.parse(n.at))).sort((a, b) => Date.parse(a.at) - Date.parse(b.at) || a.id.localeCompare(b.id));
+  return calendar([
+    /* the calendar's own name in the phone's list, and how often to look again (Apple and Google read the X- lines, others the RFC 7986 ones) */
+    'NAME:Spilakvöld á JOÐ',
+    'X-WR-CALNAME:Spilakvöld á JOÐ',
+    `REFRESH-INTERVAL;VALUE=DURATION:${FEED_REFRESH}`,
+    `X-PUBLISHED-TTL:${FEED_REFRESH}`,
+  ], sorted.flatMap(n => eventLines(n, now)));
 }

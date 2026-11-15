@@ -15,7 +15,7 @@ export async function GET() {
     return NextResponse.json({ seen: await getSeen(session.username), member: true }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (e) {
     console.error('GET board seen:', e);
-    return NextResponse.json({ error: 'Náði ekki í hvað þú hefur séð.' }, { status: 503 });
+    return NextResponse.json({ error: 'Náði ekki í hvenær þú leist síðast við.' }, { status: 503 });
   }
 }
 
