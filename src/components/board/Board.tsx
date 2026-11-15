@@ -13,6 +13,7 @@ import { FILTERS, FIRST_LOOK_WORDS, byDay, dayLabel, inFilter, isFilter, isNew, 
 import { formatDate, plural } from '@/lib/format';
 import { useCrewSession, useMounted, useRestored, type CrewSessionSeed } from '@/components/badlands/hooks';
 import { NightLine } from '@/components/badlands/NightLine';
+import type { PlayNightResponse } from '@/lib/play-night-view';
 import PlayerHead from '@/components/badlands/PlayerHead';
 import { CREW } from '@/components/badlands/data';
 import Composer, { type Ask } from '@/components/wall/Composer';
@@ -71,6 +72,8 @@ interface Props {
   session?: CrewSessionSeed;
   /** which drawing of the board's page this is (useRestored) */
   drawn?: string;
+  /** the nights the board's own page was drawn with, for the line beside it at first paint */
+  nights?: PlayNightResponse;
 }
 
 /** Taflan: everything that happens on JOÐ, newest first, on one notice
@@ -82,7 +85,7 @@ interface Props {
     where they left off, and what calls them by name says Til þín. Under
     Myndir the pictures hang in item frames, a wall of them. Members put
     things up from the slot at the top; everyone can read it. */
-function Board({ room = false, open = true, initial = null, initialFilter = 'allt', session, drawn }: Props) {
+function Board({ room = false, open = true, initial = null, initialFilter = 'allt', session, drawn, nights }: Props) {
   const { me } = useCrewSession(session);
   const mounted = useMounted();
   /* Back to the board's page brings the board as it was first drawn: asked
@@ -437,7 +440,7 @@ function Board({ room = false, open = true, initial = null, initialFilter = 'all
       {/* Á döfinni: what is asking something of the crew right now, pinned beside the board */}
       <aside className="t-board__side" aria-label="Á döfinni">
         <H className="t-side__title">Á döfinni</H>
-        <div className="t-side__night"><NightLine href={room ? '#hopur' : '/kvold#hopur'} /></div>
+        <div className="t-side__night"><NightLine initial={nights} href={room ? '#hopur' : '/kvold#hopur'} /></div>
         <div className={`t-side__block${calls.length === 0 ? ' is-empty' : ''}`}>
           <p className="t-side__kicker">Óskast{calls.length > 0 && ` · ${calls.length}`}</p>
           {calls.length === 0 ? (
