@@ -2722,6 +2722,9 @@ html.is-map-full { overflow: hidden; }
 .b-nights { display: grid; gap: var(--sp-7); margin-block: var(--sp-6); }
 .b-nights > .b-night { margin-block: 0; scroll-margin-top: var(--sp-4); }
 .b-nights__more { justify-self: start; }
+/* the calendar to subscribe to: one quiet line under the fires, its glyph on the first line's cap height */
+.b-nights__feed { display: flex; align-items: flex-start; gap: var(--sp-2); margin: 0; }
+.b-nights__feedicon { flex: none; width: 1em; height: 1em; margin-top: 0.3em; }
 .b-night__kicker { font-weight: 600; font-size: var(--fs-sm); letter-spacing: 0.04em; text-transform: uppercase; color: var(--tc-yellow); }
 .b-night--over .b-night__kicker { color: var(--tc-white); }
 .b-night__top { display: grid; gap: var(--sp-1); }

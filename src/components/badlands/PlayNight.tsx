@@ -116,6 +116,7 @@ export function NightBoard({ server }: { server: ServerState }) {
           <h3 className="b-night__title">Næsta spilakvöld</h3>
           {!lost && <p className="b-note">{me ? 'Ekkert bál logar. Kveiktu eitt og sjáðu hver kemur.' : 'Ekkert kvöld á dagskrá.'}</p>}
           <Unanswered lost={lost} onRetry={refresh} />
+          {me && !lost && <Subscribe />}
         </div>
         {me ? <button type="button" className="b-btn b-btn--solid b-btn--small" onClick={() => setLighting(true)}>Kveikja bál</button>
             : !lost && <Link href="/crew" className="b-btn b-btn--small b-btn--ghost">Skrá mig inn</Link>}
@@ -151,7 +152,31 @@ export function NightBoard({ server }: { server: ServerState }) {
       ) : (
         <p className="b-note b-nights__full">{max} kvöld eru á dagskrá, eins mörg og komast í einu. Nýtt bál má kveikja þegar eitt er liðið.</p>
       ))}
+      {!lost && <Subscribe />}
     </div>
+  );
+}
+
+/** Every night in the phone's own calendar: one calendar it subscribes to
+    (/kvold/dagatal.ics, src/lib/night-ics.ts), which then carries each new
+    fire whose time is chosen without anyone adding it. A webcal address is
+    what a phone's or a Mac's calendar takes as a subscription; a calendar on
+    the web wants the address pasted in, so it can be copied too. */
+function Subscribe() {
+  const path = '/kvold/dagatal.ics';
+  const copy = async () => {
+    const url = `${window.location.origin}${path}`;
+    try { await navigator.clipboard.writeText(url); toast('Afritað', 'slóð dagatalsins'); }
+    catch { window.prompt('Afritaðu slóðina:', url); }
+  };
+  return (
+    <p className="b-note b-nights__feed">
+      <CalendarIcon className="b-nights__feedicon" />
+      <span>
+        <a className="b-link" href={`webcal://${window.location.host}${path}`}>Öll kvöldin í dagatalið þitt</a>
+        : áskrift, svo ný bál bætast við af sjálfu sér. <button type="button" className="b-link" onClick={copy}>Afrita slóðina</button>
+      </span>
+    </p>
   );
 }
 
