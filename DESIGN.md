@@ -1,6 +1,6 @@
 # JOÐ: Last Light in the Badlands
 
-Design document for the redesign of play.jodcraft.world. Written before any code was touched. The site is a Next.js 15 app in TypeScript with plain CSS; that stack stays. The site is written in Icelandic; the copy stays Icelandic.
+Design document for the redesign of play.jodcraft.world. Written before any code was touched. The site is a Next.js 16 app in TypeScript (15 when this was written) with plain CSS; that stack stays. The site is written in Icelandic; the copy stays Icelandic.
 
 ## Concept
 
