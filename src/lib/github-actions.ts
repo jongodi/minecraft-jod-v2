@@ -38,7 +38,7 @@ export function workflowApi(workflow: string) {
     the run and answer late. Said so, so the button is not pressed twice. */
 export function dispatchError(err: unknown): string | null {
   return err instanceof Error && err.name === 'TimeoutError'
-    ? 'GitHub svaraði ekki í tæka tíð en keyrslan gæti samt hafa farið af stað. Endurhlaðaðu og sjáðu stöðuna áður en þú reynir aftur.'
+    ? 'GitHub svaraði ekki í tæka tíð en keyrslan gæti samt hafa farið af stað. Endurhladdu og sjáðu stöðuna áður en þú reynir aftur.'
     : null;
 }
 

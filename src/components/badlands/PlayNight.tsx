@@ -446,7 +446,7 @@ function LightFire({ busy, err, habit, onLight, onCancel }: { busy: boolean; err
     <form className="b-night b-night--light" aria-label="Kveikja bál" onSubmit={e => { e.preventDefault(); onLight(rows.map(r => `${r.day}T${r.time}:00Z`), note); }}>
       <header className="b-night__top">
         <h3 className="b-night__title">Kveikja bál</h3>
-        <p className="b-note">Einn til þrír tímar. Hópurinn segir hvaða tímar henta og kvöldið velst þremur tímum fyrir þann fyrsta, nema þú veljir fyrr.</p>
+        <p className="b-note">Einn til þrír tímar. Hópurinn segir hvaða tímar henta og kvöldið velst þremur klukkustundum fyrir þann fyrsta, nema þú veljir fyrr.</p>
         {habit && usual && <p className="b-note">Venjulega {DAYS_NOM_PLURAL[habit.weekday]} kl. {habit.hour}, {habit.of} af {habit.total} kvöldum.</p>}
       </header>
       {rows.map((r, i) => (
@@ -471,8 +471,8 @@ function LightFire({ busy, err, habit, onLight, onCancel }: { busy: boolean; err
           {open === i && <Calendar value={r.day} today={today} min={first} max={last} triggerId={trigger(i)} onPick={v => pick(i, v)} onClose={close} />}
         </div>
       ))}
-      {held && <p className="b-note">Með fleiri en einum tíma þarf sá fyrsti að vera minnst þrjá tíma fram í tímann, svo hópurinn nái að svara.</p>}
-      <p className="b-visually-hidden" role="status">{held ? 'Með fleiri en einum tíma þarf sá fyrsti að vera minnst þrjá tíma fram í tímann, svo hópurinn nái að svara.' : ''}</p>
+      {held && <p className="b-note">Með fleiri en einum tíma þarf sá fyrsti að vera minnst þrjár klukkustundir fram í tímann, svo hópurinn nái að svara.</p>}
+      <p className="b-visually-hidden" role="status">{held ? 'Með fleiri en einum tíma þarf sá fyrsti að vera minnst þrjár klukkustundir fram í tímann, svo hópurinn nái að svara.' : ''}</p>
       {rows.length < 3 && (
         /* a second time brings the three-hour rule in: any time that falls short of it moves to the first that does not */
         <button type="button" className="b-btn b-btn--small b-btn--ghost" onClick={addTime}>+ Annar tími</button>

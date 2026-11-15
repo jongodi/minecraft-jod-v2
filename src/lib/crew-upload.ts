@@ -75,7 +75,7 @@ export async function sendToBlob(...args: Parameters<typeof upload>): ReturnType
     const m = e instanceof Error ? e.message : '';
     if (!m.startsWith('Vercel Blob:')) throw e;
     throw new Error(/client token/i.test(m)
-      ? 'Geymslan tók ekki við myndinni; innskráningin gæti verið útrunnin. Endurhlaðaðu síðuna og reyndu aftur.'
+      ? 'Geymslan tók ekki við myndinni; innskráningin gæti verið útrunnin. Endurhladdu síðuna og reyndu aftur.'
       : 'Ekki tókst að senda myndina í geymsluna. Reyndu aftur.');
   }
 }

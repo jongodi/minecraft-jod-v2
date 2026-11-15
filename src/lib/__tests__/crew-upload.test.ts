@@ -55,7 +55,7 @@ describe('sendToBlob', () => {
 
   it('puts the client\'s English back into Icelandic', async () => {
     sdk.upload.mockRejectedValueOnce(new Error('Vercel Blob: Failed to retrieve the client token'));
-    await expect(send()).rejects.toThrow('Geymslan tók ekki við myndinni; innskráningin gæti verið útrunnin. Endurhlaðaðu síðuna og reyndu aftur.');
+    await expect(send()).rejects.toThrow('Geymslan tók ekki við myndinni; innskráningin gæti verið útrunnin. Endurhladdu síðuna og reyndu aftur.');
     sdk.upload.mockRejectedValueOnce(new Error('Vercel Blob: The request was aborted'));
     await expect(send()).rejects.toThrow('Ekki tókst að senda myndina í geymsluna. Reyndu aftur.');
   });

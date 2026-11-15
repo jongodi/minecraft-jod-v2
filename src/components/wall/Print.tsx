@@ -138,7 +138,7 @@ export default memo(function Print({ username, entry, places, me, isOwner, cover
       if (!res.ok) throw new Error(await errorFrom(res));
       const { lanterns } = await res.json() as { lanterns: string[] };
       onChange(entry.id, e => ({ ...e, lanterns }));
-    } catch (err) { setError(failure(err, 'Ekki tókst að kveikja á luktinni.')); }
+    } catch (err) { setError(failure(err, lit ? 'Ekki tókst að slökkva á luktinni.' : 'Ekki tókst að kveikja á luktinni.')); }
     finally { setBusyLantern(false); }
   }
 

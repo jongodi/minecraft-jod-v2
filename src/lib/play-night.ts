@@ -151,7 +151,7 @@ export function checkTimes(times: unknown, now: number): { error: string } | { a
   }
   ms.sort((a, b) => a - b);
   for (let i = 1; i < ms.length; i++) if (ms[i] - ms[i - 1] < 30 * 60_000) return { error: 'Tímarnir verða að vera að minnsta kosti hálftíma hver frá öðrum.' };
-  if (ms.length > 1 && ms[0] < now + CHOOSE_BEFORE_MS) return { error: 'Með fleiri en einum tíma þarf sá fyrsti að vera minnst þrjá tíma fram í tímann, svo hópurinn nái að svara. Veldu einn tíma eða seinni tíma.' };
+  if (ms.length > 1 && ms[0] < now + CHOOSE_BEFORE_MS) return { error: 'Með fleiri en einum tíma þarf sá fyrsti að vera minnst þrjár klukkustundir fram í tímann, svo hópurinn nái að svara. Veldu einn tíma eða seinni tíma.' };
   return { at: ms.map(m => new Date(m).toISOString()) };
 }
 
