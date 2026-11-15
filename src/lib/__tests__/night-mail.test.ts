@@ -13,6 +13,9 @@ vi.mock('@/lib/redis', () => ({
     del: async (k: string) => (kv.delete(k) ? 1 : 0),
     hgetall: async (k: string) => Object.fromEntries(hash(k)),
     hset: async (k: string, f: string, v: string) => { hash(k).set(f, v); return 1; },
+    hget: async (k: string, f: string) => hash(k).get(f) ?? null,
+    /* the one script the nights run: write a night only if it still stands as it was read */
+    eval: async (_script: string, _keys: number, k: string, f: string, was: string, next: string) => { if ((hash(k).get(f) ?? '') !== was) return 0; hash(k).set(f, next); return 1; },
     hdel: async (k: string, f: string) => (hash(k).delete(f) ? 1 : 0),
     sadd: async (k: string, ...v: string[]) => v.filter(x => !set(k).has(x) && !!set(k).add(x)).length,
     srem: async (k: string, ...v: string[]) => v.filter(x => set(k).delete(x)).length,
@@ -176,6 +179,22 @@ describe('sending, once', () => {
     fetchMock.mockReset();
     vi.unstubAllGlobals();
     vi.unstubAllEnvs();
+  });
+
+  it('reads the nights, and so decides one whose time has come, even when nobody takes the letters', async () => {
+    const taking = readers.splice(0);
+    try {
+      /* two times offered, the first under three hours off: it is decided on the read, and with no answers it is put out */
+      store(night({ id: 'n9', createdAt: iso(NOW - 24 * H), options: [{ id: 'a', at: iso(NOW + 2 * H) }, { id: 'b', at: iso(NOW + 26 * H) }] }));
+      expect(await mailNights(NOW)).toEqual([]);
+      const after = hash('playnight:nights').get('n9');
+      const decided = after ? JSON.parse(after) as Night : null;
+      /* cleared away as put out, or kept as decided: either way it was read and acted on */
+      expect(decided === null || decided.cancelled || decided.chosen !== null).toBe(true);
+      expect(fetchMock).not.toHaveBeenCalled();
+    } finally {
+      readers.push(...taking);
+    }
   });
 
   it('sends a letter once however often it is asked, calling the crew by name', async () => {

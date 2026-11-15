@@ -136,9 +136,14 @@ export interface Mailed { id: string; kind: NightNotice; to: number }
 /** Sends every letter the planned nights owe now. */
 export async function mailNights(now = Date.now()): Promise<Mailed[]> {
   if (!canSendEmail() || !process.env.REDIS_URL) return [];
+  /* Read before anyone is counted: reading the nights is what fixes one whose
+     time has come to be chosen on its own (and so who is noted as seen at
+     it), and the five-minute job leaves that read to this when mail is on.
+     Returned from first, with mail on and nobody taking the nights'
+     letters, such a night was never chosen unless someone opened a page. */
+  const { shown } = await currentNights(now);
   const readers = await nightReaders();
   if (readers.length === 0) return [];
-  const { shown } = await currentNights(now);
   const dress = { themes: await readThemes(), names: await getNames() };
   const done: Mailed[] = await mailPendingOut(now, readers, dress);
   for (const { night, votes } of shown) {
