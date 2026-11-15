@@ -52,7 +52,7 @@ const data = localFont({
 const DEPLOY = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 12) || undefined;
 
 const TITLE = `${SITE_NAME} · Minecraft-heimurinn okkar`;
-const DESCRIPTION = `Minecraft-heimur átta vina frá sumrinu 2024. Staða þjónsins, hver er inni, landakort, myndir úr leiknum og tölfræði leikmanna. ${SERVER_IP}`;
+const DESCRIPTION = `Minecraft-heimur átta vina síðan sumarið 2024. Staða þjónsins, hver er inni, landakort, myndir úr leiknum og tölfræði leikmanna. ${SERVER_IP}`;
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://jodcraft.world'),

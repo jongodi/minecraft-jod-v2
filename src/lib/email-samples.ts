@@ -20,7 +20,7 @@ export function sampleLetter(kind: MailKind, site: string, names: Names = {}, no
     return signinLetter({ name: names.joenana ?? 'joenana', url: `${site}/api/crew/invite?lykill=synishorn-ekki-alvoru`, expiresAt: new Date(now + 7 * DAY).toISOString(), uses: 5 });
   }
   if (kind === 'mention') {
-    return mentionLetter({ by: names.stebbias ?? 'stebbias', reader: names.joenana ?? 'joenana', text: '@joenana áttu nokkuð þrjá stakka af járni handa brúnni? Ég borga í smaragðum.', url: `${site}/crew/stebbias`, reply: false, site });
+    return mentionLetter({ by: names.stebbias ?? 'stebbias', reader: names.joenana ?? 'joenana', text: '@joenana áttu nokkuð þrjá stafla af járni handa brúnni? Ég borga í smaragðum.', url: `${site}/crew/stebbias`, reply: false, site });
   }
   const sat = nextSaturday(now);
   const night: Night = {

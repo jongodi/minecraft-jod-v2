@@ -17,7 +17,7 @@ const VALUE = { deaths: formatNumber, mobKills: formatNumber, travelCm: km } as 
 export default function NightNumbers({ numbers }: { numbers: NightSummary }) {
   const records = new Set(numbers.records ?? []);
   const totals = [
-    { key: 'hours' as const, label: 'Í heiminum, öll saman', n: numbers.hours, value: hours(numbers.hours) },
+    { key: 'hours' as const, label: 'Samtals í heiminum', n: numbers.hours, value: hours(numbers.hours) },
     { key: 'deaths' as const, label: 'Dauðsföll', n: numbers.deaths, value: formatNumber(numbers.deaths) },
     { key: 'mobKills' as const, label: 'Verur felldar', n: numbers.mobKills, value: formatNumber(numbers.mobKills) },
     { key: 'travelCm' as const, label: 'Á eigin fótum', n: numbers.travelCm, value: km(numbers.travelCm) },

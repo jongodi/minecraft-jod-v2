@@ -114,7 +114,7 @@ export default function Wanted({ stats }: { stats: StatsState }) {
           {stats.source === 'live' ? `beint frá þjóninum${when ? `, sótt ${when}` : ''}` :
            /* a copy is kept while the server is off, and also when it is on but did not answer: the room's line says which */
            stats.source === 'cached' ? `úr síðasta afriti, sótt ${when ?? 'við síðustu uppfærslu'}` :
-           'engar tölur úr leiknum í augnablikinu; varðeldurinn telur samt'}
+           'engar tölur úr leiknum í augnablikinu, en einvígið við varðeldinn telur samt'}
         </p>
       )}
     </div>

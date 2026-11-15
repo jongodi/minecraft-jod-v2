@@ -47,7 +47,7 @@ export default async function Image({ params }: { params: Promise<{ username: st
     profile ? playTimeHours(profile.username) : null,
   ]);
   const name = profile?.username ?? 'Fannst ekki';
-  const bio = profile?.bio ? profile.bio.slice(0, 140) : profile ? 'JOÐ-félagi frá sumrinu 2024' : '';
+  const bio = profile?.bio ? profile.bio.slice(0, 140) : profile ? 'JOÐ-félagi síðan sumarið 2024' : '';
 
   return new ImageResponse(
     (

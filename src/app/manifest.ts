@@ -7,7 +7,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: `${SITE_NAME} · Minecraft-heimurinn okkar`,
     short_name: 'JOÐ',
-    description: 'Minecraft-heimur átta vina frá sumrinu 2024. play.jodcraft.world',
+    description: 'Minecraft-heimur átta vina síðan sumarið 2024. play.jodcraft.world',
     start_url: '/',
     display: 'standalone',
     orientation: 'any',

@@ -140,18 +140,18 @@ export function shownNights(nights: Night[], now: number): Night[] {
     lit less than three hours ahead was decided the moment it was lit, on the
     proposer's own answer alone. */
 export function checkTimes(times: unknown, now: number): { error: string } | { at: string[] } {
-  if (!Array.isArray(times) || times.length < 1 || times.length > MAX_OPTIONS) return { error: `Einn til ${MAX_OPTIONS} tímar.` };
+  if (!Array.isArray(times) || times.length < 1 || times.length > MAX_OPTIONS) return { error: `Veldu einn til ${MAX_OPTIONS} tíma.` };
   const ms: number[] = [];
   for (const v of times) {
     const m = typeof v === 'string' ? Date.parse(v) : NaN;
     if (!Number.isFinite(m)) return { error: 'Ógildur tími.' };
-    if (m < now + 15 * 60_000) return { error: 'Tími verður að vera að minnsta kosti korter fram í tímann.' };
-    if (m > now + AHEAD_MS) return { error: 'Tími má vera í mesta lagi ár fram í tímann.' };
+    if (m < now + 15 * 60_000) return { error: 'Tíminn þarf að vera eftir minnst korter.' };
+    if (m > now + AHEAD_MS) return { error: 'Tíminn má ekki vera meira en ár fram í tímann.' };
     ms.push(m);
   }
   ms.sort((a, b) => a - b);
-  for (let i = 1; i < ms.length; i++) if (ms[i] - ms[i - 1] < 30 * 60_000) return { error: 'Tímarnir verða að vera að minnsta kosti hálftíma hver frá öðrum.' };
-  if (ms.length > 1 && ms[0] < now + CHOOSE_BEFORE_MS) return { error: 'Með fleiri en einum tíma þarf sá fyrsti að vera minnst þrjár klukkustundir fram í tímann, svo hópurinn nái að svara. Veldu einn tíma eða seinni tíma.' };
+  for (let i = 1; i < ms.length; i++) if (ms[i] - ms[i - 1] < 30 * 60_000) return { error: 'Það þarf að vera minnst hálftími á milli tíma.' };
+  if (ms.length > 1 && ms[0] < now + CHOOSE_BEFORE_MS) return { error: 'Ef tímarnir eru fleiri en einn þarf sá fyrsti að vera eftir minnst þrjár klukkustundir, svo hópurinn nái að svara. Veldu bara einn tíma eða færðu þann fyrsta aftar.' };
   return { at: ms.map(m => new Date(m).toISOString()) };
 }
 

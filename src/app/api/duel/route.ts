@@ -12,7 +12,7 @@ const MAX_MS = 5000;
 /** Post a draw from the campfire to the board. Only a better time replaces the old one. */
 export async function POST(req: NextRequest) {
   const session = await getCrewSession();
-  if (!session) return NextResponse.json({ error: 'Skráðu þig inn á veggnum þínum til að komast á töfluna.' }, { status: 401 });
+  if (!session) return NextResponse.json({ error: 'Skráðu þig inn á veggnum þínum til að komast á spjaldið.' }, { status: 401 });
   if (await tooManyWrites(session.username)) return tooMany();
 
   let body: { ms?: unknown };
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
       best = p.bestDrawMs ?? ms;
     });
   } catch (e) {
-    return wallError(e, 'Tíminn komst ekki á töfluna.', 'POST duel');
+    return wallError(e, 'Tíminn komst ekki á spjaldið.', 'POST duel');
   }
   return NextResponse.json({ username: session.username, bestDrawMs: best, improved });
 }

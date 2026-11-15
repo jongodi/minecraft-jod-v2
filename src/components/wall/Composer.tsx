@@ -47,7 +47,7 @@ export interface Ask { kind: 'call' | 'ask'; n: number }
 type Kind = 'note' | 'call' | 'ask';
 const KINDS: { id: Kind; label: string; text: string }[] = [
   { id: 'note', label: 'Miði',     text: 'Hvað er að frétta úr heiminum?' },
-  { id: 'call', label: 'Óskast',   text: 'Hvað vantar þig? Til dæmis þrjá stakka af járni' },
+  { id: 'call', label: 'Óskast',   text: 'Hvað vantar þig? Til dæmis þrjá stafla af járni' },
   { id: 'ask',  label: 'Spurning', text: 'Hvað viltu spyrja hópinn um?' },
 ];
 

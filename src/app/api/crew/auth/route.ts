@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
   if (!body) return badJson();
   const { username, token } = body;
   if (typeof username !== 'string' || typeof token !== 'string' || !username || !token) {
-    return NextResponse.json({ error: 'Innskráningarupplýsingar vantar.' }, { status: 400 });
+    return NextResponse.json({ error: 'Notandanafn eða lykilorð vantar.' }, { status: 400 });
   }
   /* nothing that long is a password or a token, and scrypt was run on whatever came */
   if (token.length > TOKEN_MAX) return NextResponse.json({ error: 'Lykilorðið er ekki rétt.' }, { status: 401 });

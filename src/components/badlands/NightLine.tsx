@@ -61,7 +61,7 @@ export function NightLine({ initial, href = '#hopur' }: { initial?: PlayNightRes
   let text: string;
   if (night.phase === 'open') {
     const most = Math.max(...night.options.map(o => o.yes.length));
-    text = `Kvöld í kortunum · ${night.options.length} ${plural(night.options.length, 'tími', 'tímar')}${most ? ` · allt að ${most} ${plural(most, 'getur', 'geta')}` : ''}`;
+    text = `Kvöld í kortunum · ${night.options.length} ${plural(night.options.length, 'tími', 'tímar')}${most ? ` · allt að ${most} ${plural(most, 'kemst', 'komast')}` : ''}`;
   } else if (night.phase === 'live') {
     const here = cameOf(night, inGame).length;
     /* everyone who said yes is in: said in words here, and in rockets over the fire (fullHouseOf in signal.ts) */
