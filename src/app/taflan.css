@@ -136,6 +136,8 @@
 .t-notice__icon svg { width: 1.5rem; height: 1.5rem; }
 .t-notice__icon .b-fire { width: 1.75rem; height: 1.75rem; margin: 0; }
 .t-notice--advancement .t-notice__icon { color: var(--online); }
+/* a round number passed is one of the game's own counts, in the red the posters print theirs in */
+.t-notice--milestone .t-notice__icon { color: var(--tc-red); }
 .t-notice--place .t-notice__icon, .t-notice--photo .t-notice__icon, .t-notice--painted .t-notice__icon, .t-notice--synced .t-notice__icon { color: var(--tc-orange); }
 /* the server's own news, from the shelf: a crate's wood, and a pack's own glyph in its own inks */
 .t-notice--version .t-notice__icon, .t-notice--shelf .t-notice__icon { color: var(--wood-light); }

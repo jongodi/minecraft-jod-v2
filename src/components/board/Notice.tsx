@@ -1,7 +1,7 @@
 'use client';
 
 // What the town itself posts on the board: a fire lit, a night decided or
-// held, a member's advancements, the map's news, and the server's own: the
+// held, a member's advancements and the round numbers they pass, the map's news, and the server's own: the
 // game moved to a new version, packs put on the shelf or updated there.
 // Printed slips nailed to the planks, a line or two each, beside the crew's
 // hand-lettered signs. Each leads to where it happened.
@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { ADV_SHOWN, type BoardItem, type ShelfPack } from '@/lib/board-types';
 import type { Painted } from '@/lib/map-news';
 import { andList, plural } from '@/lib/format';
+import { milestoneWords } from './milestone';
 import { noShowsLine } from './held';
 import { Campfire, CalendarIcon, FoldedMapIcon, PictureIcon } from '@/components/badlands/Bits';
 import PlayerHead from '@/components/badlands/PlayerHead';
@@ -53,6 +54,11 @@ function FrameIcon({ frame }: { frame: 'task' | 'goal' | 'challenge' }) {
     : frame === 'goal' ? 'M4 1h8v1h1v1h1v1h1v8h-1v1h-1v1h-1v1H4v-1H3v-1H2v-1H1V4h1V3h1V2h1zm1 4v6h6V5z'
     : 'M1 1h14v14H1zm4 4v6h6V5z';
   return <svg viewBox="0 0 16 16" width="16" height="16" shapeRendering="crispEdges" aria-hidden="true"><path fill="currentColor" fillRule="evenodd" d={d} /></svg>;
+}
+
+/* a milestone by the road: a stone with two lines cut in it, for a round number passed */
+function StoneIcon() {
+  return <svg viewBox="0 0 16 16" width="16" height="16" shapeRendering="crispEdges" aria-hidden="true"><path fill="currentColor" fillRule="evenodd" d="M5 2h6v1h1v1h1v9h1v1H2v-1h1V4h1V3h1zM6 6v1h4V6zM6 9v1h4V9z" /></svg>;
 }
 
 /* A room's hash (#hopur) is a plain link, so the home page's own door handler
@@ -116,6 +122,16 @@ export default function Notice({ item, room, mounted, onOpen }: { item: Notice; 
           {shown.map(a => <span key={a.title} className={`b-chat__adv b-chat__adv--${a.frame}`}>[{a.title}]</span>)}
           {item.list.length > shown.length && <span>og {item.list.length - shown.length} í viðbót</span>}
         </span>
+      </>;
+      break;
+    }
+    case 'milestone': {
+      icon = <StoneIcon />;
+      href = `/crew/${item.who}`;
+      const w = milestoneWords(item.what, item.mark);
+      body = <>
+        <span className="t-notice__line"><Head name={item.who} /> {w.before}<b>{w.bold}</b>{w.after}</span>
+        {w.sub && <span className="t-notice__sub">{w.sub}</span>}
       </>;
       break;
     }
@@ -189,7 +205,7 @@ export default function Notice({ item, room, mounted, onOpen }: { item: Notice; 
         {body}
         <span className="t-notice__meta">
           <time dateTime={item.at} suppressHydrationWarning>{when}</time>
-          <Go href={href} className="t-notice__go">{item.kind === 'place' || item.kind === 'photo' ? 'sjá á kortinu' : item.kind === 'advancement' ? 'á veggnum' : item.kind === 'painted' || item.kind === 'synced' ? 'í heiminn' : item.kind === 'version' || item.kind === 'shelf' ? 'á hilluna' : 'sjá kvöldið'}</Go>
+          <Go href={href} className="t-notice__go">{item.kind === 'place' || item.kind === 'photo' ? 'sjá á kortinu' : item.kind === 'advancement' || item.kind === 'milestone' ? 'á veggnum' : item.kind === 'painted' || item.kind === 'synced' ? 'í heiminn' : item.kind === 'version' || item.kind === 'shelf' ? 'á hilluna' : 'sjá kvöldið'}</Go>
         </span>
       </div>
       {pic && (

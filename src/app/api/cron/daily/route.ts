@@ -12,7 +12,8 @@ import { noteShelf } from '@/lib/server-news';
    night included, falls between two copies. The server need not be running:
    exaroton hands out a stopped server's files as it does a running one's.
 
-   It also reads the crew's advancements (src/lib/advancements.ts), settles
+   It also notes the round numbers a member's counters passed
+   (src/lib/milestones.ts), reads the crew's advancements (src/lib/advancements.ts), settles
    the play nights of the evenings before (src/lib/play-night.ts), and sweeps
    out of storage the pictures that went up to a wall's pin slot and were
    never pinned (src/lib/crew-sweep.ts), and looks over the shelf for packs
@@ -65,6 +66,15 @@ export async function GET(req: NextRequest) {
   await keepSnapshot(stats);
   if (stats.failed.length) console.warn(`[cron/daily] ${day}: could not read ${stats.failed.join(', ')}`);
 
+  /* the round numbers the day's copy shows a member passed, for the board (src/lib/milestones.ts) */
+  let milestones = null;
+  try {
+    const { noteMilestones } = await import('@/lib/milestones');
+    milestones = (await noteMilestones(now)).length;
+  } catch (err) {
+    console.error('[cron/daily] could not note the milestones:', err instanceof Error ? err.message : err);
+  }
+
   /* the game's advancements, for the walls and the wanted board (src/lib/advancements.ts) */
   let advancements = null;
   try {
@@ -83,5 +93,5 @@ export async function GET(req: NextRequest) {
     console.error('[cron/daily] could not settle the play nights:', err instanceof Error ? err.message : err);
   }
 
-  return answer({ day, read, failed: stats.failed, advancements, playNights });
+  return answer({ day, read, failed: stats.failed, milestones, advancements, playNights });
 }
