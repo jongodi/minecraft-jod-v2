@@ -74,7 +74,10 @@ function Head({ name }: { name: string }) {
 /** One slip. `room`: the board is open over the world, where a fire's room
     is a hash away. `onOpen` holds the map's picture up in the lightbox. */
 export default function Notice({ item, room, mounted, onOpen }: { item: Notice; room: boolean; mounted: boolean; onOpen?: (id: string, origin: DOMRect) => void }) {
-  /* when, as the browser's clock tells it; the plain day until it has one */
+  /* when, as the browser's clock tells it; the plain day until it has one.
+     A line that reads the clock as it is drawn ("í kvöld kl. 20") is put up
+     anew once mounted: React keeps the server's words in a node that
+     suppresses the warning rather than write its own over them. */
   const when = mounted ? sinceAt(item.at) : item.at.slice(0, 10);
   const fire = (id: string) => (room ? '#hopur' : `/kvold/${id}#hopur`);
   const shelf = room ? '#hillan' : '/#hillan';
@@ -89,7 +92,7 @@ export default function Notice({ item, room, mounted, onOpen }: { item: Notice; 
       href = fire(item.nightId);
       body = <>
         <span className="t-notice__line"><Head name={item.who} /> kveikti bál{item.note && <>: <q>{item.note}</q></>}</span>
-        <span className="t-notice__sub" suppressHydrationWarning>{item.chosen ? WhenAt(item.chosen) : `${item.times.length} ${plural(item.times.length, 'tími', 'tímar')} í boði: ${item.times.map(t => WhenAt(t)).join(' · ')}`}</span>
+        <span key={mounted ? 'own' : 'drawn'} className="t-notice__sub" suppressHydrationWarning>{item.chosen ? WhenAt(item.chosen) : `${item.times.length} ${plural(item.times.length, 'tími', 'tímar')} í boði: ${item.times.map(t => WhenAt(t)).join(' · ')}`}</span>
       </>;
       break;
     case 'decided':
@@ -97,7 +100,7 @@ export default function Notice({ item, room, mounted, onOpen }: { item: Notice; 
       href = fire(item.nightId);
       body = <>
         <span className="t-notice__line">Kvöldið er ákveðið{item.note && <>: <q>{item.note}</q></>}</span>
-        <span className="t-notice__sub" suppressHydrationWarning>{WhenAt(item.time)} · {item.who ? <><Head name={item.who} /> festi tímann</> : 'flest komast þá'}</span>
+        <span key={mounted ? 'own' : 'drawn'} className="t-notice__sub" suppressHydrationWarning>{WhenAt(item.time)} · {item.who ? <><Head name={item.who} /> festi tímann</> : 'flest komast þá'}</span>
       </>;
       break;
     case 'held':
@@ -149,7 +152,7 @@ export default function Notice({ item, room, mounted, onOpen }: { item: Notice; 
       href = item.placeId !== null ? `/stadur/${item.placeId}#heimur` : '/#heimur';
       pic = item.photo;
       body = <>
-        <span className="t-notice__line">{item.label ? <>Ný mynd af <b>{item.label}</b></> : <>Ný mynd á myndaveggnum: <b>{item.title}</b></>}</span>
+        <span className="t-notice__line">{item.label ? <>Ný mynd: <b>{item.label}</b></> : <>Ný mynd á myndaveggnum: <b>{item.title}</b></>}</span>
         {item.label && item.title && item.title !== item.label && <span className="t-notice__sub">{item.title}</span>}
       </>;
       break;

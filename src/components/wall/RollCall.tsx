@@ -5,7 +5,7 @@ import '@/app/board.css';
 import '@/app/wall.css';
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { formatAge, plural } from '@/lib/format';
+import { formatAge, formatDate, plural } from '@/lib/format';
 import { sinceAt } from '@/components/badlands/night';
 import type { CrewSummary } from '@/app/api/crew/route';
 import type { FeedEntry } from '@/app/api/crew/feed/route';
@@ -14,7 +14,7 @@ import Footer from '@/components/badlands/Footer';
 import PlayerHead from '@/components/badlands/PlayerHead';
 import NightSky from '@/components/badlands/NightSky';
 import { Lantern, Seal } from '@/components/badlands/Bits';
-import { useServerStatus } from '@/components/badlands/hooks';
+import { useMounted, useServerStatus } from '@/components/badlands/hooks';
 import { NightLine } from '@/components/badlands/NightLine';
 import { CREW, PAGE_LINKS } from '@/components/badlands/data';
 import { toast } from '@/components/badlands/Toast';
@@ -71,6 +71,10 @@ export default function RollCall({ initialPlayers, initialCrew = null }: { initi
   /* who is in the game now: the bar asks for the same answer, so this is no second question */
   const server = useServerStatus();
   const isIn = (name: string) => server.online === true && server.list.some(n => n.toLowerCase() === name.toLowerCase());
+  /* "fyrir 3 dögum" and "í gær kl. 21:40" are told from the clock, and this page is kept five minutes and longer
+     on a quiet day: read as the page was drawn, the browser's words differed from the kept page's and React threw the
+     whole roll call away (error #418). The plain date until the page is the browser's, as a print does (Print.tsx). */
+  const mounted = useMounted();
 
   /* the press that spends the link's use: signed in, the member goes to their wall; a spent link says so */
   const signIn = async () => {
@@ -199,9 +203,9 @@ export default function RollCall({ initialPlayers, initialCrew = null }: { initi
                     <div className="b-poster__meta" aria-hidden="true" style={{ visibility: 'hidden' }}><span className="b-nowrap">0 færslur</span> · <span className="b-nowrap">0 myndir</span></div>
                   </>) : (<>
                     {/* someone with a charge against them has a poster already; "nothing heard yet" is for one with neither */}
-                    {(m.bio || m.lastEntry || (!outlaw?.best && players !== null)) && <div className="b-poster__note">{m.bio || (m.lastEntry ? `festi eitthvað upp ${formatAge(m.lastEntry)}` : 'ekkert heyrst enn')}</div>}
+                    {(m.bio || m.lastEntry || (!outlaw?.best && players !== null)) && <div className="b-poster__note">{m.bio || (m.lastEntry ? `festi eitthvað upp ${mounted ? formatAge(m.lastEntry) : formatDate(m.lastEntry)}` : 'ekkert heyrst enn')}</div>}
                     {/* when they were last in the game, under the charges, for one who is not in now: the lantern says the rest */}
-                    {m.lastSeen && !isIn(m.username) && <div className="b-poster__seen">síðast inni {sinceAt(m.lastSeen)}</div>}
+                    {m.lastSeen && !isIn(m.username) && <div className="b-poster__seen">síðast inni {mounted ? sinceAt(m.lastSeen) : formatDate(m.lastSeen)}</div>}
                     {/* a bare wall says so once, in the line above; its two zeros keep their height so the board's rows stay level */}
                     <div className="b-poster__meta" aria-hidden={m.entryCount + m.photoCount === 0 || undefined} style={m.entryCount + m.photoCount === 0 ? { visibility: 'hidden' } : undefined}><span className="b-nowrap">{m.entryCount} {plural(m.entryCount, 'færsla', 'færslur')}</span> · <span className="b-nowrap">{m.photoCount} {plural(m.photoCount, 'mynd', 'myndir')}</span></div>
                   </>)}

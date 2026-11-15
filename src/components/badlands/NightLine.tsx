@@ -78,8 +78,14 @@ export function NightLine({ initial, href = '#hopur' }: { initial?: PlayNightRes
       <Fire count={night.phase === 'open' ? Math.max(...night.options.map(o => o.yes.length)) : yes.length} embers={night.phase === 'over'} />
       <span className="b-nightline__text">
         <span className="b-nightline__kicker">{night.phase === 'over' ? 'Síðasta spilakvöld' : 'Næsta spilakvöld'}{planned > 1 && ` · ${planned} á dagskrá`}</span>
-        {/* "í kvöld" and the minutes left are told from the clock, which the server read a moment before the browser does */}
-        <span suppressHydrationWarning>{text}</span>
+        {/* "í kvöld" and the minutes left are told from the clock, which the
+            server read before the browser does: a moment before, or as long
+            ago as the cached page is old. React keeps the server's words in
+            a node that suppresses the warning and does not write its own
+            over them, so the line is put up anew once the page is the
+            browser's: left as it was, a page kept from yesterday said "á
+            morgun" on the day itself until the minute's count next changed. */}
+        <span key={own ? 'own' : 'drawn'} suppressHydrationWarning>{text}</span>
         {night.phase !== 'open' && <Heads names={night.phase === 'over' ? night.came : yes} />}
       </span>
     </a>
