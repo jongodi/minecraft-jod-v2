@@ -15,8 +15,8 @@ import { discard, fetchFile, isMissing, isOnline, resolveServerId } from '@/lib/
    (served before this route is ever asked) and the map data in Vercel Blob,
    reached as /bluemap-data. With map-data-root pointed at that copy in
    BlueMap's webapp.conf, the viewer loads the map from the store and only live
-   data (players, markers) comes through here. Anything else that still arrives
-   is served live while the server runs and from the copy once it stops: a
+   data (players, markers) comes through here. Anything else under maps/ that
+   still arrives is served live while the server runs and from the copy once it stops: a
    stopped server's map doesn't change, and the copy answers without spending
    exaroton's limit on how often it may be asked.
 
@@ -185,6 +185,15 @@ async function serve(req: Request, segments: string[]): Promise<Response> {
 
   const path = segments.join('/');
   if (EVENTS.test(path)) return empty(204, 'public, max-age=3600, s-maxage=86400');
+  /* Only the map itself is read off the server. The viewer's own files
+     (index.html, assets, lang, settings.json) are in public/bluemap and are
+     served before this route is ever asked, so a path outside maps/ that
+     does arrive here names nothing the viewer has: it used to be passed on
+     to exaroton with the owner's key all the same, and since the CDN keeps
+     an answer per address, any made-up name (/bluemap/x1, /bluemap/x2 …)
+     cost one call of the limit the lantern, the stats and "kveikja á
+     þjóninum" share. Answered here, and kept by the CDN. */
+  if (!path.startsWith('maps/')) return empty(404, 'public, max-age=300, s-maxage=3600');
 
   const token = process.env.EXAROTON_API_KEY;
   if (!token) {
