@@ -176,6 +176,9 @@
    The day sits under the title at every width: the portrait poster beside a
    wide wall is narrower than a phone. */
 .w-adv { margin-top: var(--sp-5); scroll-margin-top: calc(var(--bar-safe) + var(--sp-4)); }
+/* the marks a member is on the way to, printed as the charges above them are */
+.w-next { margin-top: var(--sp-5); }
+.w-next__list { display: grid; gap: var(--sp-1); margin-top: var(--sp-2); }
 .w-adv__head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-3); }
 .w-adv__count { font-family: var(--font-data); font-size: var(--fs-data); color: var(--ink-soft); }
 .w-adv__list { margin-top: var(--sp-2); list-style: none; }

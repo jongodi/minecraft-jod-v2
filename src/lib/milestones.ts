@@ -10,7 +10,9 @@
 import type { Counters } from '@/lib/stats';
 import type { DailySnapshot } from '@/lib/daily-stats';
 
-export type MilestoneKind = 'hours' | 'deaths' | 'mobs' | 'km';
+import { MARKS, passed, type MilestoneKind } from '@/lib/milestone-marks';
+
+export { MARKS, passed, type MilestoneKind };
 
 export interface Milestone {
   who:  string;
@@ -21,15 +23,6 @@ export interface Milestone {
   at:   string;
 }
 
-/** The marks worth a slip, low to high. Past the last, hours go on every 500. */
-export const MARKS: Record<MilestoneKind, readonly number[]> = {
-  hours:  [50, 100, 250, 500, 750, 1000],
-  deaths: [50, 100, 250, 500, 1000],
-  mobs:   [1000, 5000, 10_000, 25_000, 50_000, 100_000],
-  km:     [100, 500, 1000, 2500, 5000, 10_000],
-};
-const HOURS_ON = 500;
-
 /** A counter in its mark's unit: whole hours, deaths, mobs, kilometres. */
 const READ: Record<MilestoneKind, (c: Counters) => number> = {
   hours:  c => (c.playTimeTicks ?? 0) / 72_000,
@@ -37,20 +30,6 @@ const READ: Record<MilestoneKind, (c: Counters) => number> = {
   mobs:   c => c.mobKills ?? 0,
   km:     c => (c.travelCm ?? 0) / 100_000,
 };
-
-/** The highest mark with `before` under it and `after` at or over it; null when none was passed. */
-export function passed(what: MilestoneKind, before: number, after: number): number | null {
-  if (!Number.isFinite(before) || !Number.isFinite(after) || after <= before) return null;
-  let top: number | null = null;
-  for (const m of MARKS[what]) if (before < m && m <= after) top = m;
-  if (what === 'hours') {
-    /* every 500 past the listed marks: 1500, 2000, … */
-    const last = MARKS.hours[MARKS.hours.length - 1];
-    const on = Math.floor(after / HOURS_ON) * HOURS_ON;
-    if (on > last && before < on) top = on;
-  }
-  return top;
-}
 
 /** What one member passed between two of their copies. */
 export function passedBetween(who: string, before: Counters, after: Counters, at: string): Milestone[] {

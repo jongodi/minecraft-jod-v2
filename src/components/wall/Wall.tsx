@@ -26,6 +26,7 @@ import { landFocus, seedSession, useBackCloses, useBackdropClose, useCrewSession
 import { photoProps, PHOTO_SIZES } from '@/components/badlands/photo';
 import type { WallAdvancement } from '@/lib/advancements';
 import Advancements from './Advancements';
+import NextMarks from './NextMarks';
 import { standingOf, wallPosted } from './bounty';
 import PosterCharge from './PosterCharge';
 import Composer from './Composer';
@@ -619,6 +620,7 @@ export default function Wall({ initial, places, initialStats = null, initialLed 
                 )}
               </>
             )}
+            {stats && <NextMarks stats={stats} />}
             {advancements && <Advancements list={advancements.list} of={advancements.of} missing={advancements.missing} mine={isOwner} />}
             </div>
           </div>
