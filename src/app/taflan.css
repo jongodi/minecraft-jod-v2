@@ -148,8 +148,11 @@
 .t-notice__line { overflow-wrap: anywhere; }
 .t-notice__line q { quotes: '„' '“'; }
 .t-notice__sub { font-size: var(--fs-sm); color: var(--ink-soft); overflow-wrap: anywhere; }
-.t-notice__who { display: inline-flex; align-items: center; gap: var(--sp-1); color: var(--ink); font-weight: 600; text-decoration: none; }
-.t-notice__who img { width: 1rem; height: 1rem; image-rendering: pixelated; }
+/* The name stands on the line's own baseline: the head is centred beside it
+   and takes no part in the baseline. Centred together, the box took its
+   baseline from the head's foot and the name stood 3px above the words after it. */
+.t-notice__who { display: inline-flex; align-items: baseline; gap: var(--sp-1); color: var(--ink); font-weight: 600; text-decoration: none; }
+.t-notice__who img { align-self: center; width: 1rem; height: 1rem; image-rendering: pixelated; }
 @media (hover: hover) { .t-notice__who:hover { color: var(--lantern-ink); } }
 .t-notice__heads { display: inline-flex; flex-wrap: wrap; gap: var(--px); vertical-align: middle; }
 .t-notice__heads img { width: 1rem; height: 1rem; image-rendering: pixelated; }
@@ -166,7 +169,11 @@
    thumb's height where there is a thumb, as the frames' captions are: it was
    the height of its words, 21 px. The block margins give the extra height
    back, so the slip keeps its printed lines and the paper does not grow. */
-@media (pointer: coarse) { .t-notice__go, .t-notice__who { display: inline-flex; align-items: center; min-height: var(--tap); margin-block: calc((var(--tap) - 1.5em) / -2); } }
+@media (pointer: coarse) {
+  .t-notice__go { display: inline-flex; align-items: center; min-height: var(--tap); margin-block: calc((var(--tap) - 1.5em) / -2); }
+  /* the name's thumb height is padding, not a taller box, so it keeps the line's baseline */
+  .t-notice__who { padding-block: calc((var(--tap) - 1.5em) / 2); margin-block: calc((var(--tap) - 1.5em) / -2); }
+}
 /* the map's new picture, held up beside the words like a postcard; a press holds it up larger */
 .t-notice__pic { display: block; width: 12rem; padding: 0; background: var(--paper-2); box-shadow: 0 0 0 var(--px) var(--wood-dark), 0 var(--px) 0 calc(var(--px) * 2) rgb(from var(--night) r g b / 0.12); transition: box-shadow var(--dur-2) var(--ease-out); }
 .t-notice__pic img { display: block; width: 100%; aspect-ratio: 16 / 10; object-fit: cover; }
