@@ -17,6 +17,18 @@ describe('addresses', () => {
     expect(emailProblem(`${'x'.repeat(250)}@b.is`)).toMatch(/mest/);
     expect(emailProblem(42)).toMatch(/texti/);
   });
+
+  it('turns away what looks like an address and no post office takes', () => {
+    expect(emailProblem('jon@gmail..com')).toMatch(/netfang/);
+    expect(emailProblem('jon..jonsson@gmail.com')).toMatch(/netfang/);
+    expect(emailProblem('.jon@gmail.com')).toMatch(/netfang/);
+    expect(emailProblem('jon.@gmail.com')).toMatch(/netfang/);
+    expect(emailProblem('jon@.gmail.com')).toMatch(/netfang/);
+    /* a zero-width space pasted in with the address */
+    expect(emailProblem('jon@gmail.com\u200b')).toMatch(/netfang/);
+    expect(emailProblem('jo\u00adn@gmail.com')).toMatch(/netfang/);
+    expect(emailProblem('jon.jonsson@mail.simnet.is')).toBeNull();
+  });
 });
 
 describe('sending', () => {
@@ -69,6 +81,39 @@ describe('sending', () => {
     expect(JSON.parse(init.body).map((m: { to: string[] }) => m.to)).toEqual([['a@b.is'], ['c@d.is']]);
     expect(await sendEmails([])).toEqual({ sent: true, ids: [] });
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('sends a batch refused as invalid again letter by letter, so one bad address does not keep the rest', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const refusal = (status: number) => new Response(JSON.stringify({ message: 'Invalid `to` field.' }), { status });
+    fetchMock
+      .mockResolvedValueOnce(refusal(422))               // the batch
+      .mockResolvedValueOnce(ok({ id: 'e1' }))           // a@b.is
+      .mockResolvedValueOnce(refusal(422))               // the bad one
+      .mockResolvedValueOnce(ok({ id: 'e3' }));          // e@f.is
+    const going = sendEmails([mail('a@b.is'), mail('bad@address.is'), mail('e@f.is')]);
+    await vi.runAllTimersAsync();
+    expect(await going).toEqual({ sent: true, ids: ['e1', 'e3'] });
+    expect(fetchMock.mock.calls.map(c => c[0])).toEqual(['https://api.resend.com/emails/batch', 'https://api.resend.com/emails', 'https://api.resend.com/emails', 'https://api.resend.com/emails']);
+    /* the log names the address without spelling it out */
+    expect(vi.mocked(console.error).mock.calls.flat().join(' ')).toContain('b…@address.is');
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  it('passes on a refusal that is not about the letters, and a batch nobody of which went', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ message: 'Too many requests' }), { status: 429 }));
+    expect(await sendEmails([mail('a@b.is'), mail('c@d.is')])).toMatchObject({ sent: false, status: 429 });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    fetchMock.mockImplementation(async () => new Response(JSON.stringify({ message: 'Invalid `to` field.' }), { status: 422 }));
+    const going = sendEmails([mail('a@b.is'), mail('c@d.is')]);
+    await vi.runAllTimersAsync();
+    expect(await going).toMatchObject({ sent: false, status: 422 });
+    vi.useRealTimers();
+    vi.restoreAllMocks();
   });
 
   it('reports a refusal or a lost connection instead of throwing', async () => {
