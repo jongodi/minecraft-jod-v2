@@ -4,6 +4,7 @@ import '@/app/badlands.css';
 /* board.css (the posters, the counter) comes with the rooms that hang them: Crew.tsx, Shelf.tsx */
 import { useCallback, useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
+import { lostEffect } from './lost';
 import type { BaseLink } from '@/lib/base-links';
 import type { HomeData } from '@/lib/home-data';
 import Sky from './Sky';
@@ -20,8 +21,8 @@ import type { PlayNightResponse } from '@/app/api/playnight/route';
 import { seasonClass, useSeason } from './Season';
 
 /* Effects load after the page is interactive; none of them is needed for the first paint. */
-const Particles   = dynamic(() => import('@/effects/Particles'),   { ssr: false });
-const CursorLight = dynamic(() => import('@/effects/CursorLight'), { ssr: false });
+const Particles   = dynamic(() => import('@/effects/Particles').catch(lostEffect), { ssr: false });
+const CursorLight = dynamic(() => import('@/effects/CursorLight').catch(lostEffect), { ssr: false });
 
 /* How long a pressed door stays lit on its own if the page never reaches the
    frame (the visitor scrolled back up before the smooth scroll arrived). */

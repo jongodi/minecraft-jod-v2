@@ -3,6 +3,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
+import { lostLayer } from './lost';
 import { usePathname } from 'next/navigation';
 import { Campfire, ChevronIcon } from './Bits';
 import { Ridge, Rider } from './Mesa';
@@ -16,7 +17,7 @@ import type { Season } from '@/lib/season';
 import type { PlayNightResponse } from '@/app/api/playnight/route';
 
 /* The duel lives behind the fire; nobody pays for it until they tap. */
-const QuickDraw = dynamic(() => import('./QuickDraw'), { ssr: false });
+const QuickDraw = dynamic(() => import('./QuickDraw').catch(lostLayer), { ssr: false });
 
 /* The evening's doors are in the bar (and the hotbar at the foot of a
    phone), the crew's among them, so the footer does not post them a second

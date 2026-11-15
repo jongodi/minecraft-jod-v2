@@ -5,6 +5,7 @@ import '@/app/wall.css';
 import '@/app/taflan.css';
 import { Fragment, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
+import { lostLayer } from '@/components/badlands/lost';
 import Link from 'next/link';
 import type { CrewEntry } from '@/lib/crew-types';
 import { bountyState, mentionsIn, sameUser } from '@/lib/crew-types';
@@ -21,7 +22,7 @@ import PrintWall, { framesOf } from './PrintWall';
 import { markSeen, takeStamps, useBoardNews } from './news';
 
 /* The lightbox and the motion library it throws with come when the board is idle, as on a wall. */
-const WallLightbox = dynamic(() => import('@/components/wall/WallLightbox'), { ssr: false });
+const WallLightbox = dynamic(() => import('@/components/wall/WallLightbox').catch(lostLayer), { ssr: false });
 
 type Post = Extract<BoardItem, { kind: 'post' }>;
 type Shown = BoardFilter | 'mer';

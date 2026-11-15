@@ -2,6 +2,7 @@
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import dynamic from 'next/dynamic';
+import { lostLayer, lostRoom } from './lost';
 import Link from 'next/link';
 import type { MapConfig, WorldPoint } from '@/lib/map-types';
 import { woodClass } from '@/lib/sign-wood';
@@ -29,11 +30,11 @@ import { crewAtPlaces, hereLine, railReveal } from './hereNow';
 
 /* Everything that opens over the world is a screen of its own, fetched when
    its door is first opened: the paper sheet, the album, and the three rooms. */
-const MapSheet = dynamic(() => import('./MapSheet'), { ssr: false });
-const Album    = dynamic(() => import('./Album'),    { ssr: false });
-const Crew     = dynamic(() => import('./Crew'),     { ssr: false });
-const Shelf    = dynamic(() => import('./Shelf'),    { ssr: false });
-const Board    = dynamic(() => import('@/components/board/Board'), { ssr: false });
+const MapSheet = dynamic(() => import('./MapSheet').catch(lostLayer), { ssr: false });
+const Album    = dynamic(() => import('./Album').catch(lostLayer), { ssr: false });
+const Crew     = dynamic(() => import('./Crew').catch(lostRoom), { ssr: false });
+const Shelf    = dynamic(() => import('./Shelf').catch(lostRoom), { ssr: false });
+const Board    = dynamic(() => import('@/components/board/Board').catch(lostRoom), { ssr: false });
 
 /** What public/bluemap-jod/jod.js offers the page, once the viewer's map has loaded. */
 interface JodViewer {

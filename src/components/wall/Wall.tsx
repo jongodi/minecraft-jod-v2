@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
+import { lostLayer } from '@/components/badlands/lost';
 import type { CrewProfile, CrewEntry } from '@/lib/crew-types';
 import type { SignWood } from '@/lib/sign-wood';
 import { nameEm } from '@/lib/name-width';
@@ -32,7 +33,7 @@ import Print from './Print';
 
 /* The lightbox and the motion library it throws with are a chunk of their
    own, fetched once the page is idle; the wall itself needs neither. */
-const WallLightbox = dynamic(() => import('./WallLightbox'), { ssr: false });
+const WallLightbox = dynamic(() => import('./WallLightbox').catch(lostLayer), { ssr: false });
 
 /** A place on the map, as the wall needs it: to pin things at and to list what the member built. */
 export interface WallPlace { id: number; label: string; sublabel: string; builders: string[]; wood: SignWood }

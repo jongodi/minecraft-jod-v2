@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
+import { lostRoom } from '@/components/badlands/lost';
 import { Mark } from '@/components/badlands/Bits';
 import { Button } from '@/components/admin/ui';
 import ServerPanel from '@/components/admin/ServerPanel';
@@ -16,7 +17,7 @@ import CrewPanel from '@/components/admin/CrewPanel';
 import EmailPanel from '@/components/admin/EmailPanel';
 import { confirmLeave, hasUnsaved } from '@/components/admin/unsaved';
 
-const MapPanel = dynamic(() => import('@/components/admin/MapPanel'), { ssr: false });
+const MapPanel = dynamic(() => import('@/components/admin/MapPanel').catch(lostRoom), { ssr: false });
 
 const TABS = [
   { id: 'server',    label: 'Þjónn' },
