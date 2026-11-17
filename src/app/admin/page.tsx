@@ -9,6 +9,7 @@ import { lostRoom } from '@/components/badlands/lost';
 import { Mark } from '@/components/badlands/Bits';
 import { Button } from '@/components/admin/ui';
 import ServerPanel from '@/components/admin/ServerPanel';
+import FramkollunPanel from '@/components/admin/FramkollunPanel';
 import MapSyncPanel from '@/components/admin/MapSyncPanel';
 import MapBasesPanel from '@/components/admin/MapBasesPanel';
 import DatapacksPanel from '@/components/admin/DatapacksPanel';
@@ -106,7 +107,7 @@ export default function AdminPage() {
           ))}
         </nav>
 
-        {tab === 'server'    && <><ServerPanel /><MapSyncPanel /><MapBasesPanel /></>}
+        {tab === 'server'    && <><ServerPanel /><FramkollunPanel /><MapSyncPanel /><MapBasesPanel /></>}
         {tab === 'datapacks' && <DatapacksPanel />}
         {tab === 'gallery'   && <GalleryPanel />}
         {mapOpened && <div hidden={tab !== 'map'}><MapPanel key={mapKey} /></div>}
