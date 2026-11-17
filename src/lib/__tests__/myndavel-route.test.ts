@@ -45,7 +45,7 @@ const JPEG = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3, 4]).toString('base64'
 /* tile x -201, z -263 is in the map's copy (src/lib/bluemap-snapshot.json) */
 const MAPPED = { dim: 'minecraft:overworld', x: -6420, y: 70, z: -8410 };
 
-type Wall = { entries: Array<{ id: string; text: string; photos: Array<{ id: string; filename: string; takenAt: string | null }>; shot?: { job: string; spot: unknown; at?: unknown } }> };
+type Wall = { entries: Array<{ id: string; text: string; photos: Array<{ id: string; filename: string; takenAt: string | null }>; shot?: { job: string; spot: unknown; at?: unknown; with?: string[] } }> };
 const wall = () => JSON.parse(store.get(KEY) ?? '{"entries":[]}') as Wall;
 
 function post(body: Record<string, unknown>, { secret = 'leyndo', time = Math.floor(Date.now() / 1000) } = {}) {
@@ -123,6 +123,16 @@ describe('a photo from the Myndavél', () => {
     const [onIt, notYet] = (await readProfile('joenana')).entries;
     expect(onIt.shot).toEqual({ job, spot: { x: MAPPED.x, y: MAPPED.y, z: MAPPED.z } });
     expect(notYet.shot?.spot).toBeNull();
+  });
+
+  it('names the others of the crew in the frame, and nobody else', async () => {
+    const STEBBI = '00000000-0000-4000-8000-000000000000';
+    mojang = { ...mojang, [STEBBI]: 'stebbias' };
+    await ingest(post(photo({ inFrame: [STEBBI.toUpperCase(), JOENANA, STEBBI, '11111111-2222-4333-8444-555555555555', 'ekki uuid', 7] })));
+    expect(wall().entries[0].shot?.with).toEqual(['stebbias']);
+    await ingest(post(photo({ inFrame: [JOENANA] })));
+    await ingest(post(photo()));
+    expect(wall().entries.slice(0, 2).map(e => e.shot?.with)).toEqual([undefined, undefined]);
   });
 
   it('may come without a caption', async () => {

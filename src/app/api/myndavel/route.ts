@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
   if (body.length > MAX_BODY) return fail(413, 'Of stór sending.');
   if (!signedBy(secret, req.headers.get('x-myndavel-time'), req.headers.get('x-myndavel-signature'), body)) return fail(401, 'Ógild undirskrift.');
 
-  let raw: { job?: unknown; author?: { uuid?: unknown } | null; caption?: unknown; takenAt?: unknown; spot?: unknown; photo?: unknown };
+  let raw: { job?: unknown; author?: { uuid?: unknown } | null; caption?: unknown; takenAt?: unknown; spot?: unknown; photo?: unknown; inFrame?: unknown };
   try { raw = JSON.parse(body); } catch { return fail(400, 'Ógilt JSON.'); }
   if (!raw || typeof raw !== 'object') return fail(400, 'Ógilt JSON.');
 
@@ -42,7 +42,8 @@ export async function POST(req: NextRequest) {
   if (!isJpeg(photo)) return fail(400, 'Þetta er ekki JPEG-mynd.');
 
   let name: string | null | undefined;
-  try { name = crewNameOf(uuid, await crewUuids()); } catch { name = undefined; }
+  let known: Record<string, string> = {};
+  try { known = await crewUuids(); name = crewNameOf(uuid, known); } catch { name = undefined; }
   if (name === undefined) return fail(503, 'Ekki tókst að fletta upp ljósmyndaranum; reyndu aftur.');
   if (name === null) return fail(403, 'Ljósmyndarinn er ekki í hópnum.', 'notcrew');
 
@@ -54,6 +55,12 @@ export async function POST(req: NextRequest) {
   const spot = at && onMap(at.dim, at.spot) ? at.spot : null;
   /* a shown spot the map does not reach yet is kept with its dimension, for the copy of the map that does */
   const later = at && !spot && DIM.test(at.dim) ? { dim: at.dim, ...at.spot } : null;
+
+  /* the others of the crew in the camera's view; anyone else in it is nobody the site knows */
+  const others = (Array.isArray(raw.inFrame) ? raw.inFrame.slice(0, 32) : [])
+    .map(u => (typeof u === 'string' && UUID.test(u.toLowerCase()) ? crewNameOf(u.toLowerCase(), known) : null))
+    .filter((n): n is string => typeof n === 'string' && n !== name);
+  const inFrame = Array.from(new Set(others));
 
   const now = new Date().toISOString();
   const taken = typeof raw.takenAt === 'string' ? Date.parse(raw.takenAt) : NaN;
@@ -80,7 +87,7 @@ export async function POST(req: NextRequest) {
     createdAt: now,
     lanterns:  [],
     replies:   [],
-    shot:      { job, spot, ...(later ? { at: later } : {}) },
+    shot:      { job, spot, ...(later ? { at: later } : {}), ...(inFrame.length ? { with: inFrame } : {}) },
   };
   let pinned: CrewEntry = entry;
   try {

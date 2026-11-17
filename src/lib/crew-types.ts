@@ -83,6 +83,8 @@ export interface CrewShot {
   /** a spot the photographer chose to show that the map did not reach when
       the photo came in, with its dimension: a later copy of the map may */
   at?:  CrewShotAt;
+  /** the others of the crew who stood in the camera's view, as the game recorded them */
+  with?: string[];
 }
 
 /** One thing pinned to the wall: a note, a print, or a note with prints;
@@ -220,7 +222,14 @@ export function normalizeShot(raw: unknown): CrewShot | null {
   const a = s.at as Partial<CrewShotAt> | null | undefined;
   const ax = coord(a?.x, 30_000_000), ay = coord(a?.y, 4096), az = coord(a?.z, 30_000_000);
   const kept = !spot && typeof a?.dim === 'string' && DIM.test(a.dim) && ax !== null && ay !== null && az !== null;
-  return { job: s.job, spot, ...(kept ? { at: { dim: a.dim as string, x: ax, y: ay, z: az } } : {}) };
+  const others = Array.isArray(s.with)
+    ? Array.from(new Set(s.with.filter((n): n is string => typeof n === 'string' && isCrewUsername(n)).map(canonicalUsername)))
+    : [];
+  return {
+    job: s.job, spot,
+    ...(kept ? { at: { dim: a.dim as string, x: ax, y: ay, z: az } } : {}),
+    ...(others.length ? { with: others } : {}),
+  };
 }
 
 export function normalizeEntry(raw: unknown): CrewEntry | null {

@@ -64,7 +64,10 @@ export function onMap(dim: string, spot: CrewShotSpot): boolean {
 export function withSpots(profile: CrewProfile): CrewProfile {
   for (const e of profile.entries) {
     const at = e.shot?.at;
-    if (e.shot && at && !e.shot.spot && onMap(at.dim, at)) e.shot = { job: e.shot.job, spot: { x: at.x, y: at.y, z: at.z } };
+    if (e.shot && at && !e.shot.spot && onMap(at.dim, at)) {
+      const { at: _kept, ...rest } = e.shot;
+      e.shot = { ...rest, spot: { x: at.x, y: at.y, z: at.z } };
+    }
   }
   return profile;
 }
