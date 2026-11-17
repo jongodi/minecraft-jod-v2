@@ -85,6 +85,7 @@ export async function readWeek(now = new Date()): Promise<WeekStats | null> {
 const KV_KEY = 'stats:snapshot';
 const UUID_KEY = 'mojang:uuids';
 const UUID_TTL_MS = 24 * 3600_000;
+const UUID_RETRY_MS = 3600_000;
 
 export function hasKV(): boolean {
   return !!process.env.REDIS_URL;
@@ -157,13 +158,19 @@ let memUuids: { at: number; map: Record<string, string> } | null = null;
 const MOJANG_TIMEOUT_MS = 4000;
 export async function crewUuids(): Promise<Record<string, string>> {
   if (memUuids && Date.now() - memUuids.at < UUID_TTL_MS) return memUuids.map;
+  /* the last full answer, however old: a UUID is its member's for good, so it
+     stands in for whoever Mojang does not name this time */
+  let last: Record<string, string> = memUuids?.map ?? {};
   if (hasKV()) {
     try {
       const { rGet } = await import('@/lib/redis');
       const cached = await rGet<{ at: number; map: Record<string, string> }>(UUID_KEY);
-      if (cached && Date.now() - cached.at < UUID_TTL_MS && Object.keys(cached.map).length === CREW_USERNAMES.length) {
-        memUuids = cached;
-        return cached.map;
+      if (cached && Object.keys(cached.map).length === CREW_USERNAMES.length) {
+        if (Date.now() - cached.at < UUID_TTL_MS) {
+          memUuids = cached;
+          return cached.map;
+        }
+        last = cached.map;
       }
     } catch { /* ask Mojang */ }
   }
@@ -180,9 +187,19 @@ export async function crewUuids(): Promise<Record<string, string>> {
       } catch { /* skip */ }
     })
   );
+  const full = Object.keys(map).length === CREW_USERNAMES.length;
+  if (!full) {
+    /* Mojang is down, or a member took a new name in the game and the old one
+       answers nothing: they keep the UUID they had, under the name the crew knows */
+    const named = new Set(Object.values(map).map(n => n.toLowerCase()));
+    for (const [uuid, name] of Object.entries(last)) {
+      if (!(uuid in map) && !named.has(name.toLowerCase())) map[uuid] = name;
+    }
+  }
   /* a partial answer is not kept: a name Mojang did not return would stay missing for a day */
   if (Object.keys(map).length === CREW_USERNAMES.length) {
-    memUuids = { at: Date.now(), map };
+    /* one pieced together from the last is asked for again in an hour, not a day */
+    memUuids = { at: full ? Date.now() : Date.now() - UUID_TTL_MS + UUID_RETRY_MS, map };
     if (hasKV()) {
       try { const { rSet } = await import('@/lib/redis'); await rSet(UUID_KEY, memUuids); } catch { /* non-fatal */ }
     }

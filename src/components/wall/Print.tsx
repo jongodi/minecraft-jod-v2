@@ -259,6 +259,15 @@ export default memo(function Print({ username, entry, places, me, isOwner, cover
         {place && <Link href={`/stadur/${place.id}#heimur`} className="w-print__place">{place.label}</Link>}
         {/* a Myndavél photo whose photographer showed where it was taken; the viewer is a page of its own, not a route */}
         {entry.shot?.spot && <a href={mapAt(entry.shot.spot.x, entry.shot.spot.y, entry.shot.spot.z)} className="w-print__place">Sjá á korti</a>}
+        {/* the others of the crew the Myndavél had in view, each a way to their wall */}
+        {!!entry.shot?.with?.length && (
+          <span className="w-print__with">
+            Á myndinni
+            {entry.shot.with.map(n => (
+              <Link key={n} href={`/crew/${n}`} className="b-tip" data-tip={n} aria-label={n}><PlayerHead name={n} size={16} alt="" /></Link>
+            ))}
+          </span>
+        )}
         <button type="button" className={`w-lantern b-tip${lit ? ' is-lit' : ''}`} onClick={toggleLantern} disabled={!me || busyLantern}
           aria-pressed={lit} aria-label={`Lukt undir færslunni${entry.lanterns.length ? `, ${entry.lanterns.length} ${plural(entry.lanterns.length, 'logar', 'loga')}: ${andList(entry.lanterns)}` : ', engin lukt enn'}${me ? '' : '. Skráðu þig inn til að kveikja á lukt'}`}
           data-tip={me ? (lit ? 'Slökkva á luktinni' : 'Kveikja á lukt') : 'Skráðu þig inn til að kveikja á lukt'}>

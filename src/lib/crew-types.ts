@@ -70,6 +70,9 @@ export interface CrewPoll {
 /** Where in the world a Myndavél photo was taken, to the block. */
 export interface CrewShotSpot { x: number; y: number; z: number }
 
+/** A shown spot and the dimension it is in, as the game names it. */
+export interface CrewShotAt extends CrewShotSpot { dim: string }
+
 /** A photo taken with the Myndavél in the game, which Framköllun developed and
     pinned to the photographer's wall. Its print is named by `job`. */
 export interface CrewShot {
@@ -77,6 +80,11 @@ export interface CrewShot {
   job:  string;
   /** set only when the photographer chose to show the spot and it is on the map */
   spot: CrewShotSpot | null;
+  /** a spot the photographer chose to show that the map did not reach when
+      the photo came in, with its dimension: a later copy of the map may */
+  at?:  CrewShotAt;
+  /** the others of the crew who stood in the camera's view, as the game recorded them */
+  with?: string[];
 }
 
 /** One thing pinned to the wall: a note, a print, or a note with prints;
@@ -203,12 +211,25 @@ const JOB = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 /* past the world border is no place in the world */
 const coord = (v: unknown, max: number) => (typeof v === 'number' && Number.isInteger(v) && Math.abs(v) <= max ? v : null);
 
+const DIM = /^[a-z0-9_.-]{1,64}:[a-z0-9_./-]{1,64}$/;
+
 export function normalizeShot(raw: unknown): CrewShot | null {
   const s = raw as Partial<CrewShot> | null;
   if (!s || typeof s !== 'object' || typeof s.job !== 'string' || !JOB.test(s.job)) return null;
   const at = s.spot as Partial<CrewShotSpot> | null | undefined;
   const x = coord(at?.x, 30_000_000), y = coord(at?.y, 4096), z = coord(at?.z, 30_000_000);
-  return { job: s.job, spot: x !== null && y !== null && z !== null ? { x, y, z } : null };
+  const spot = x !== null && y !== null && z !== null ? { x, y, z } : null;
+  const a = s.at as Partial<CrewShotAt> | null | undefined;
+  const ax = coord(a?.x, 30_000_000), ay = coord(a?.y, 4096), az = coord(a?.z, 30_000_000);
+  const kept = !spot && typeof a?.dim === 'string' && DIM.test(a.dim) && ax !== null && ay !== null && az !== null;
+  const others = Array.isArray(s.with)
+    ? Array.from(new Set(s.with.filter((n): n is string => typeof n === 'string' && isCrewUsername(n)).map(canonicalUsername)))
+    : [];
+  return {
+    job: s.job, spot,
+    ...(kept ? { at: { dim: a.dim as string, x: ax, y: ay, z: az } } : {}),
+    ...(others.length ? { with: others } : {}),
+  };
 }
 
 export function normalizeEntry(raw: unknown): CrewEntry | null {

@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
 import { CREW_COOKIE } from '@/lib/auth';
 import { CREW_USERNAMES, canonicalUsername, normalizeProfile, type CrewProfile } from '@/lib/crew-types';
+import { withSpots } from '@/lib/myndavel';
 
 export * from '@/lib/crew-types';
 export { CREW_COOKIE } from '@/lib/auth';
@@ -38,7 +39,7 @@ export async function readProfile(username: string): Promise<CrewProfile> {
   if (hasKV()) {
     try {
       const { rGet } = await import('./redis');
-      return normalizeProfile(await rGet<unknown>(profileKey(name)), name);
+      return withSpots(normalizeProfile(await rGet<unknown>(profileKey(name)), name));
     } catch (e) {
       console.error('Redis readProfile error:', e);
       return normalizeProfile(null, name);
@@ -47,7 +48,7 @@ export async function readProfile(username: string): Promise<CrewProfile> {
 
   const file = path.join(profilesDir(), `${name.toLowerCase()}.json`);
   try {
-    return normalizeProfile(JSON.parse(await fs.readFile(file, 'utf-8')), name);
+    return withSpots(normalizeProfile(JSON.parse(await fs.readFile(file, 'utf-8')), name));
   } catch {
     return normalizeProfile(null, name);
   }
@@ -64,7 +65,7 @@ export async function readAllProfiles(): Promise<CrewProfile[]> {
     return CREW_USERNAMES.map((name, i) => {
       let stored: unknown = null;
       try { stored = raw[i] ? JSON.parse(raw[i]!) : null; } catch { /* an empty wall, as rGet reads it */ }
-      return normalizeProfile(stored, name);
+      return withSpots(normalizeProfile(stored, name));
     });
   } catch (e) {
     console.error('Redis readAllProfiles error:', e);

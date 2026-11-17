@@ -3,7 +3,7 @@
 // with MYNDAVEL_INGEST_SECRET. Server only.
 import { createHash, createHmac, timingSafeEqual } from 'crypto';
 import { mainCopy } from '@/lib/bluemap-snapshot';
-import { CREW_USERNAMES, canonicalUsername, isCrewUsername, type CrewShotSpot } from '@/lib/crew-types';
+import { CREW_USERNAMES, canonicalUsername, isCrewUsername, type CrewProfile, type CrewShotSpot } from '@/lib/crew-types';
 
 /** How far Framköllun's clock may be from ours, in seconds. */
 export const CLOCK_SKEW_S = 300;
@@ -57,6 +57,19 @@ export function onMap(dim: string, spot: CrewShotSpot): boolean {
   if (dim !== 'minecraft:overworld' || !mainCopy.hasFiles) return false;
   const tile = `maps/world/tiles/0/x${digits(Math.floor((spot.x - TRANSLATE) / TILE))}/z${digits(Math.floor((spot.z - TRANSLATE) / TILE))}.prbm`;
   return mainCopy.has(`${tile}.gz`) || mainCopy.has(tile);
+}
+
+/** A wall as it is read: a shown spot the map did not reach when its photo
+    came in is on the map from the first copy of the map that reaches it. */
+export function withSpots(profile: CrewProfile): CrewProfile {
+  for (const e of profile.entries) {
+    const at = e.shot?.at;
+    if (e.shot && at && !e.shot.spot && onMap(at.dim, at)) {
+      const { at: _kept, ...rest } = e.shot;
+      e.shot = { ...rest, spot: { x: at.x, y: at.y, z: at.z } };
+    }
+  }
+  return profile;
 }
 
 /** A JPEG, by its first bytes. */

@@ -377,6 +377,10 @@
 .w-print__note { max-width: 62ch; padding-inline: var(--sp-1); line-height: 1.55; color: var(--sign-ink); white-space: pre-wrap; overflow-wrap: anywhere; }
 .w-print__meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-4); padding-inline: var(--sp-1); font-size: var(--fs-sm); color: var(--sign-soft); }
 .w-print__place { color: var(--sign-lantern); text-decoration: none; }
+/* who else the Myndavél had in view: their heads in a row after the words */
+.w-print__with { display: inline-flex; align-items: center; gap: var(--sp-1); }
+.w-print__with a { display: inline-flex; min-height: 1.5rem; align-items: center; }
+.w-print__with img { width: 1rem; height: 1rem; image-rendering: pixelated; box-shadow: 0 0 0 var(--px) var(--sign-rim); }
 /* a pixel pin before the place's name, in whatever colour the link is: a mask, so the hover's ink applies to it too */
 .w-print__place::before { content: ''; display: inline-block; width: 0.75rem; height: 0.75rem; margin-right: 0.3em; vertical-align: -0.1em; background: currentColor; -webkit-mask: var(--w-pin) center / contain no-repeat; mask: var(--w-pin) center / contain no-repeat; }
 .w-print__place { --w-pin: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Cpath d='M5 1h6v2h2v5h-2v2h-2v2H9v3H7v-3H6v-2H5V8H3V3h2zm2 3v3h2V4z'/%3E%3C/svg%3E"); }
