@@ -91,6 +91,14 @@ describe('a photo from the Myndavél', () => {
     expect(normalizeEntry({ ...base, shot: { job, spot: null } })?.shot).toEqual({ job, spot: null });
   });
 
+  it('keeps a shown spot the map did not reach, with its dimension, until it has a spot on the map', () => {
+    const at = { dim: 'minecraft:the_nether', x: 12, y: 64, z: -40 };
+    expect(normalizeEntry({ ...base, shot: { job, spot: null, at } })?.shot).toEqual({ job, spot: null, at });
+    expect(normalizeEntry({ ...base, shot: { job, spot: { x: 1, y: 2, z: 3 }, at } })?.shot).toEqual({ job, spot: { x: 1, y: 2, z: 3 } });
+    expect(normalizeEntry({ ...base, shot: { job, spot: null, at: { ...at, dim: 'Not A Dimension' } } })?.shot).toEqual({ job, spot: null });
+    expect(normalizeEntry({ ...base, shot: { job, spot: null, at: { ...at, x: 0.5 } } })?.shot).toEqual({ job, spot: null });
+  });
+
   it('drops a spot that is no block in the world, and a shot with no job', () => {
     expect(normalizeEntry({ ...base, shot: { job, spot: { x: 1.5, y: 70, z: 0 } } })?.shot).toEqual({ job, spot: null });
     expect(normalizeEntry({ ...base, shot: { job, spot: { x: 4e7, y: 70, z: 0 } } })?.shot).toEqual({ job, spot: null });

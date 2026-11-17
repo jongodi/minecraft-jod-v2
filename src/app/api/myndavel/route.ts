@@ -10,6 +10,7 @@ export const dynamic = 'force-dynamic';
 /* a photo is at most 700 KB as Framköllun packs it; base64 and the rest stay well under this */
 const MAX_BODY = 2 * 1024 * 1024;
 const MAX_PHOTO = 1536 * 1024;
+const DIM = /^[a-z0-9_.-]{1,64}:[a-z0-9_./-]{1,64}$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 const fail = (status: number, error: string, reason?: string) => NextResponse.json(reason ? { error, reason } : { error }, { status });
@@ -51,6 +52,8 @@ export async function POST(req: NextRequest) {
     ? { dim: s.dim, spot: { x: Math.floor(s.x as number), y: Math.floor(s.y as number), z: Math.floor(s.z as number) } satisfies CrewShotSpot }
     : null;
   const spot = at && onMap(at.dim, at.spot) ? at.spot : null;
+  /* a shown spot the map does not reach yet is kept with its dimension, for the copy of the map that does */
+  const later = at && !spot && DIM.test(at.dim) ? { dim: at.dim, ...at.spot } : null;
 
   const now = new Date().toISOString();
   const taken = typeof raw.takenAt === 'string' ? Date.parse(raw.takenAt) : NaN;
@@ -77,7 +80,7 @@ export async function POST(req: NextRequest) {
     createdAt: now,
     lanterns:  [],
     replies:   [],
-    shot:      { job, spot },
+    shot:      { job, spot, ...(later ? { at: later } : {}) },
   };
   let pinned: CrewEntry = entry;
   try {

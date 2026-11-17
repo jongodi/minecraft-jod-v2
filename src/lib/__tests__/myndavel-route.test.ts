@@ -45,7 +45,7 @@ const JPEG = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3, 4]).toString('base64'
 /* tile x -201, z -263 is in the map's copy (src/lib/bluemap-snapshot.json) */
 const MAPPED = { dim: 'minecraft:overworld', x: -6420, y: 70, z: -8410 };
 
-type Wall = { entries: Array<{ id: string; text: string; photos: Array<{ id: string; filename: string; takenAt: string | null }>; shot?: { job: string; spot: unknown } }> };
+type Wall = { entries: Array<{ id: string; text: string; photos: Array<{ id: string; filename: string; takenAt: string | null }>; shot?: { job: string; spot: unknown; at?: unknown } }> };
 const wall = () => JSON.parse(store.get(KEY) ?? '{"entries":[]}') as Wall;
 
 function post(body: Record<string, unknown>, { secret = 'leyndo', time = Math.floor(Date.now() / 1000) } = {}) {
@@ -101,6 +101,28 @@ describe('a photo from the Myndavél', () => {
     await ingest(post(photo({ spot: { dim: 'minecraft:overworld', x: 900000, y: 64, z: 900000 } })));
     await ingest(post(photo({ spot: { ...MAPPED, dim: 'minecraft:the_nether' } })));
     expect(wall().entries.map(e => e.shot?.spot)).toEqual([null, null, null]);
+  });
+
+  it('keeps a shown spot the map does not reach, for the copy of the map that will', async () => {
+    const far = { dim: 'minecraft:overworld', x: 900000, y: 64, z: 900000 };
+    await ingest(post(photo({ spot: null })));
+    await ingest(post(photo({ spot: far })));
+    await ingest(post(photo({ spot: { ...MAPPED, dim: 'minecraft:the_nether' } })));
+    await ingest(post(photo({ spot: MAPPED })));
+    expect(wall().entries.map(e => e.shot?.at)).toEqual([undefined, { ...MAPPED, dim: 'minecraft:the_nether' }, far, undefined]);
+  });
+
+  it('shows a kept spot on the map once the map reaches it', async () => {
+    const job = randomUUID();
+    const kept = { id: 'e1', text: '', photos: [{ id: job, filename: '/screenshots/upload-a.jpg', caption: '', uploadedAt: '2026-10-26T00:00:00.000Z' }], placeId: null, createdAt: '2026-10-26T00:00:00.000Z' };
+    store.set(KEY, JSON.stringify({ entries: [
+      { ...kept, shot: { job, spot: null, at: MAPPED } },
+      { ...kept, id: 'e2', shot: { job, spot: null, at: { ...MAPPED, dim: 'minecraft:the_nether' } } },
+    ] }));
+    const { readProfile } = await import('@/lib/crew');
+    const [onIt, notYet] = (await readProfile('joenana')).entries;
+    expect(onIt.shot).toEqual({ job, spot: { x: MAPPED.x, y: MAPPED.y, z: MAPPED.z } });
+    expect(notYet.shot?.spot).toBeNull();
   });
 
   it('may come without a caption', async () => {
