@@ -42,7 +42,7 @@ vi.mock('@/lib/redis', () => {
   };
 });
 
-const { getEmail, setEmail, nightReaders, mentionReaders, mailSignInLink, getName, getNames, setName, nameProblem, updateContact } = await import('@/lib/crew-email');
+const { getEmail, setEmail, nightReaders, mentionReaders, mailSignInLink, mailWelcome, getName, getNames, setName, nameProblem, updateContact } = await import('@/lib/crew-email');
 const { listInvites } = await import('@/lib/crew-access');
 
 describe('a member’s name', () => {
@@ -157,6 +157,30 @@ describe('a sign-in link by post', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     fetchMock.mockResolvedValueOnce(new Response('{"message":"down"}', { status: 500 }));
     expect(await mailSignInLink('joenana', 'https://jod.test')).toMatchObject({ sent: false });
+    expect(await listInvites('joenana')).toEqual([]);
+  });
+  it('sends the welcome with a fresh link in it, the game\'s version and the rest of the crew by their names', async () => {
+    await setEmail('joenana', { address: 'jo@dæmi.is', nights: true });
+    await setName('joenana', 'Jóna');
+    await setName('stebbias', 'Stefán');
+    kv.set('server:version', '26.5 (222)');
+    fetchMock.mockResolvedValueOnce(new Response('{"id":"e1"}', { status: 200 }));
+    const res = await mailWelcome('joenana', 'https://jod.test');
+    if (!res.sent) throw new Error(res.reason);
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(body.subject).toBe('Borgarabréfið þitt er komið, Jóna');
+    expect(body.text).toContain(`Skrá mig inn: ${res.url}`);
+    expect(body.text).toContain('Útgáfa: Minecraft Java 26.5\n');
+    expect(body.text).toMatch(/Í hópnum eru Stefán, AmmaGaur, /);
+    expect(body.html).toContain('/api/mail-art?t=sunset&amp;k=welcome');
+    expect((await listInvites('joenana')).map(i => i.key)).toEqual([res.invite.key]);
+  });
+
+  it('shuts the welcome\'s link at once when the letter does not go', async () => {
+    await setEmail('joenana', { address: 'jo@dæmi.is', nights: true });
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    fetchMock.mockResolvedValueOnce(new Response('{"message":"down"}', { status: 500 }));
+    expect(await mailWelcome('joenana', 'https://jod.test')).toMatchObject({ sent: false });
     expect(await listInvites('joenana')).toEqual([]);
   });
 });

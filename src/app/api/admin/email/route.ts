@@ -14,6 +14,7 @@ import { readThemes, setTheme } from '@/lib/email-settings';
 import { sampleLetter } from '@/lib/email-samples';
 import { getNames } from '@/lib/crew-email';
 import { canSendEmail, emailProblem, sendEmail, siteUrl } from '@/lib/email';
+import { lastGameVersion } from '@/lib/server-news';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,7 +32,7 @@ export async function GET(req: NextRequest) {
 
   if (kind !== null || theme !== null) {
     if (!isKind(kind) || !isTheme(theme)) return NextResponse.json({ error: 'Óþekkt bréf eða útlit.' }, { status: 400 });
-    const { html } = renderLetter(sampleLetter(kind, here, await getNames()), theme, here, { webFonts: req.nextUrl.searchParams.get('fonts') !== '0' });
+    const { html } = renderLetter(sampleLetter(kind, here, await getNames(), Date.now(), await lastGameVersion()), theme, here, { webFonts: req.nextUrl.searchParams.get('fonts') !== '0' });
     return new NextResponse(html, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } });
   }
 
@@ -64,7 +65,7 @@ export async function POST(req: NextRequest) {
   const theme = isTheme(body.theme) ? body.theme : (await readThemes())[body.kind];
   /* a real letter's pictures and links point at the live site */
   const site = siteUrl();
-  const { subject, html, text } = renderLetter(sampleLetter(body.kind, site, await getNames()), theme, site);
+  const { subject, html, text } = renderLetter(sampleLetter(body.kind, site, await getNames(), Date.now(), await lastGameVersion()), theme, site);
   const sent = await sendEmail({ to: (body.to as string).trim(), subject: `[Prufa] ${subject}`, html, text });
   if (!sent.sent) return NextResponse.json({ error: sent.reason }, { status: 502 });
   return NextResponse.json({ ok: true });
