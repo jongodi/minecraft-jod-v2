@@ -2,20 +2,32 @@
 //
 //   Sólsetur   the site at sunset: sky and mesa in the picture, the words on
 //              parchment, a card framed like everything pinned on the site
-//   Varðeldur  the site at night: stars and a campfire in the picture, the
-//              words light on warm dark wood
+//   Varðeldur  the site at night: stars, tonight's moon and a campfire in the
+//              picture, the words light on warm dark wood
 //
-// The picture at the top (/api/mail-art) carries the letter's own heading
-// ("Söðlaðu hestinn, Jóna") in the site's slab face, so the loudest words
-// read the same in every mail app. Its address is signed, so the site only
-// ever draws words it wrote itself. The words under it ask for the site's
-// fonts (served from /email-fonts); Apple Mail and some others show them,
-// while Gmail and Outlook show none, so the stand-ins are chosen to keep the
-// look: Verdana, the screen face nearest the pixel letters, and bold capitals
-// for the labels, times and buttons.
+// Everything that carries the look is drawn as a picture by /api/mail-art, in
+// the site's own faces, so it reads the same in every mail app, Gmail
+// included: the picture at the top, with the letter's heading ("Söðlaðu
+// hestinn, Jóna") and the crew it is about standing in it in their own
+// skins; the verse, cut on a sign as the game's signs hold four lines; and
+// the welcome's small pictures. The heading's address is signed, so the site
+// only ever draws words it wrote itself. The words between ask for the
+// site's fonts (served from /email-fonts); Apple Mail and some others show
+// them, while Gmail and Outlook show none, so the stand-ins are chosen to
+// keep the look: Verdana, the screen face nearest the pixel letters, and
+// bold capitals for the labels, times and buttons.
+//
 // Mail apps read only the simplest HTML: tables, inline styles, no scripts.
+// Gmail keeps a <style> only if it can read every rule in it, so what it
+// cannot read (the fonts, Apple's detectors) sits in a block of its own and
+// the phone's rules in another; and it folds away the end of a letter that
+// matches one before it in a thread, so the foot carries a postmark of its
+// own minute.
 import { createHmac, timingSafeEqual } from 'node:crypto';
-import { BANNERS, BRAND, type Letter, type MailKind } from '@/lib/email-copy';
+import { BANNERS, BRAND, SERVER, VERSES, type Letter, type MailKind } from '@/lib/email-copy';
+import { isCrewUsername, canonicalUsername } from '@/lib/crew-types';
+import type { MailIcon } from '@/lib/mail-icons';
+import { moonPhase } from '@/lib/moon';
 
 export type Theme = 'sunset' | 'campfire';
 export const THEMES: Theme[] = ['sunset', 'campfire'];
@@ -24,16 +36,24 @@ export const THEME_NAMES: Record<Theme, string> = { sunset: 'Sólsetur', campfir
 /** The look each letter has until another is chosen in the admin panel:
     the day's letters at sunset, the evening's by the fire. */
 export const DEFAULT_THEMES: Record<MailKind, Theme> = {
-  signin: 'sunset', lit: 'sunset', chosen: 'sunset', soon: 'campfire', out: 'campfire', mention: 'campfire',
+  welcome: 'sunset', signin: 'sunset', lit: 'sunset', chosen: 'sunset', soon: 'campfire', out: 'campfire', mention: 'campfire',
 };
 
 export const isTheme = (v: unknown): v is Theme => v === 'sunset' || v === 'campfire';
 
 /** Bump to make mail apps fetch every picture afresh after the drawing changes. */
-const DESIGN_VERSION = 4;
+const DRAW_VERSION = 5;
+/** What a heading's signature is made with. Changing it costs every letter
+    already sent its heading (the picture falls back to the plain title), so
+    it is kept apart from the drawing's version. */
+const SIGN_VERSION = 4;
 
 /** The picture's size as shown; it is drawn at twice this. */
-export const ART = { width: 600, height: 190 };
+export const ART = { width: 600, height: 210 };
+/** The verse's sign as shown, drawn at twice this. */
+export const VERSE_ART = { width: 460, height: 172 };
+/** A small picture beside the welcome's list, as shown. */
+export const ICON_SIZE = 32;
 
 /* The site's tokens (src/app/tokens.css); mail apps read no CSS variables. */
 const STRATA = ['#A15325', '#BA8523', '#D1B2A1', '#8F3D2E', '#4D3323'];
@@ -43,20 +63,26 @@ interface Palette {
   card: string; frame: string; bar: string;
   ink: string; soft: string; faint: string; rule: string;
   ticket: string; ticketEdge: string; link: string; quoteEdge: string;
-  button: string; buttonInk: string; buttonEdge: string;
+  button: string; buttonInk: string; buttonEdge: string; buttonLight: string; outline: string;
+  /** the numbers beside the steps */
+  badge: string; badgeInk: string;
+  /** the bar's words */
+  barInk: string; barFaint: string;
   scheme: 'light' | 'dark';
 }
 
 const PALETTES: Record<Theme, Palette> = {
   sunset: {
     card: '#E8DCC4', frame: '#4D3323', bar: '#15100D', ink: '#1E1611', soft: '#5A4634', faint: '#6E5A45', rule: '#C9B89A',
-    ticket: '#DCCDB0', ticketEdge: '#A15325', link: '#A3620F', quoteEdge: '#C9801F',
-    button: '#F2A63B', buttonInk: '#1E1611', buttonEdge: '#9A5F14', scheme: 'light',
+    ticket: '#DCCDB0', ticketEdge: '#A15325', link: '#9A520C', quoteEdge: '#C9801F',
+    button: '#F2A63B', buttonInk: '#1E1611', buttonEdge: '#9A5F14', buttonLight: '#F8CB7E', outline: '#1E1611',
+    badge: '#4D3323', badgeInk: '#F2E6CE', barInk: '#F2A63B', barFaint: '#A08C78', scheme: 'light',
   },
   campfire: {
     card: '#1E1611', frame: '#0B0910', bar: '#0B0910', ink: '#E8DCC4', soft: '#D1B2A1', faint: '#A08C78', rule: '#3A2B21',
     ticket: '#2A1F18', ticketEdge: '#E0602A', link: '#F2A63B', quoteEdge: '#E0602A',
-    button: '#F2A63B', buttonInk: '#1E1611', buttonEdge: '#9A5F14', scheme: 'dark',
+    button: '#F2A63B', buttonInk: '#1E1611', buttonEdge: '#9A5F14', buttonLight: '#F8CB7E', outline: '#0B0910',
+    badge: '#F2A63B', badgeInk: '#1E1611', barInk: '#F2A63B', barFaint: '#8A7764', scheme: 'dark',
   },
 };
 
@@ -68,10 +94,18 @@ const FONT = {
   display: `'Alfa Slab One',Rockwell,'Rockwell Extra Bold','Roboto Slab',Georgia,serif`,
   text:    `'Pixelify Sans',Verdana,Geneva,Tahoma,sans-serif`,
   label:   `Silkscreen,Verdana,Geneva,Tahoma,sans-serif`,
+  book:    `Georgia,'Times New Roman',serif`,
 };
 const BOLD = 'font-weight:700;font-synthesis:none';
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+/* The server's address, kept from being made a link of: Gmail turns a bare
+   address into one, blue and underlined, and this one opens no page. A dot
+   in a span of its own breaks what it looks for, and copies as it reads. */
+const SERVER_HTML = esc(SERVER).replace(/\./g, '<span style="color:inherit">.</span>');
+/** Text as HTML, the server's address in it kept from being made a link of. */
+const words = (s: string) => esc(s).split(esc(SERVER)).join(SERVER_HTML);
 
 /** A short stable hash, so a picture's address changes whenever its words or drawing do. */
 function hash(s: string): string {
@@ -85,12 +119,30 @@ function hash(s: string): string {
    letters their heading; their picture falls back to the plain one. */
 const artKey = () => process.env.MAIL_ART_SECRET || process.env.CRON_SECRET || '';
 const sign = (theme: Theme, kind: MailKind, heading: string) =>
-  createHmac('sha256', artKey()).update(`mail-art|${DESIGN_VERSION}|${theme}|${kind}|${heading}`).digest('base64url').slice(0, 22);
+  createHmac('sha256', artKey()).update(`mail-art|${SIGN_VERSION}|${theme}|${kind}|${heading}`).digest('base64url').slice(0, 22);
+
+/** The crew a picture may stand up: members of the crew, as the list spells them, none twice. */
+export function figuresOf(v: readonly string[] | string | null | undefined): string[] {
+  const list = typeof v === 'string' ? v.split(',') : v ?? [];
+  return [...new Set(list.filter(isCrewUsername).map(canonicalUsername))].slice(0, 4);
+}
+
+export interface ArtExtras {
+  /** the crew standing in the picture, by their Minecraft names */
+  figures?: readonly string[];
+  /** the moon's phase over the fire, 0 (new) to 7 */
+  moon?: number;
+}
 
 /** Where a letter's picture is drawn. With a heading (and a key to sign it
-    with), the picture carries the heading; otherwise the letter's title. */
-export function artUrl(assets: string, theme: Theme, kind: MailKind, heading?: string): string {
-  const base = `${assets}/api/mail-art?t=${theme}&k=${kind}&v=${hash(`${DESIGN_VERSION}|${theme}|${BANNERS[kind].tag}|${BANNERS[kind].title}`)}`;
+    with), the picture carries the heading; otherwise the letter's title.
+    The crew in it and the moon need no signature: the picture only ever
+    stands up members of the crew, and there are only eight moons. */
+export function artUrl(assets: string, theme: Theme, kind: MailKind, heading?: string, { figures, moon }: ArtExtras = {}): string {
+  const who = figuresOf(figures);
+  const m = theme === 'campfire' && Number.isInteger(moon) && moon! >= 0 && moon! <= 7 ? moon! : null;
+  const extra = `${who.length ? `&f=${who.join(',')}` : ''}${m !== null ? `&m=${m}` : ''}`;
+  const base = `${assets}/api/mail-art?t=${theme}&k=${kind}&v=${hash(`${DRAW_VERSION}|${theme}|${BANNERS[kind].tag}|${BANNERS[kind].title}`)}${extra}`;
   if (!heading || !artKey()) return base;
   return `${base}&h=${Buffer.from(heading, 'utf8').toString('base64url')}&s=${sign(theme, kind, heading)}`;
 }
@@ -104,73 +156,151 @@ export function artHeading(theme: Theme, kind: MailKind, h: string | null, s: st
   return heading.length <= 120 && want.length === got.length && timingSafeEqual(want, got) ? heading : null;
 }
 
+/** Where a letter's verse is drawn on its sign: the verse is the site's own (VERSES), so nothing is signed. */
+export const verseUrl = (assets: string, theme: Theme, kind: MailKind) =>
+  `${assets}/api/mail-art?d=verse&t=${theme}&k=${kind}&v=${hash(`${DRAW_VERSION}|${theme}|${VERSES[kind].join('|')}`)}`;
+
+/** Where one of the welcome's small pictures is drawn. */
+export const iconUrl = (assets: string, icon: MailIcon) => `${assets}/api/mail-art?d=icon&i=${icon}&v=${DRAW_VERSION}`;
+
+/** When a letter was stamped, as the foot says it: "19. nóvember 2026 kl. 16:05" (Iceland keeps UTC). */
+export function postmark(now: number): string {
+  const d = new Date(now);
+  const date = d.toLocaleDateString('is-IS', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+  return `${date} kl. ${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`;
+}
+
 export interface Rendered { subject: string; html: string; text: string }
 
-/** The letter in its dress. `assets` is the site address the picture and fonts
-    are fetched from; `webFonts: false` leaves the fonts out, as Gmail does. */
-export function renderLetter(letter: Letter, theme: Theme, assets: string, { webFonts = true }: { webFonts?: boolean } = {}): Rendered {
+export interface RenderOptions {
+  /** false leaves the site's fonts out, as Gmail does */
+  webFonts?: boolean;
+  /** when the letter is written: its postmark, and the moon over the fire */
+  now?: number;
+}
+
+/** The letter in its dress. `assets` is the site address the pictures and
+    fonts are fetched from and the foot's links lead to. */
+export function renderLetter(letter: Letter, theme: Theme, assets: string, { webFonts = true, now = Date.now() }: RenderOptions = {}): Rendered {
   const c = PALETTES[theme];
   /* the heading is drawn in the picture when it can be signed; otherwise it is written on the paper */
-  const art = artUrl(assets, theme, letter.kind, letter.heading);
+  const art = artUrl(assets, theme, letter.kind, letter.heading, { figures: letter.figures, moon: moonPhase(new Date(now)) });
   const headingInArt = art.includes('&h=');
-  const strata = (h: number) => STRATA.map(s => `<tr><td height="${h}" style="height:${h}px;line-height:${h}px;font-size:0;background:${s}">&nbsp;</td></tr>`).join('');
+  const strata = (h: number) => STRATA.map(s => `<tr><td height="${h}" bgcolor="${s}" style="height:${h}px;line-height:${h}px;font-size:0;background:${s}">&nbsp;</td></tr>`).join('');
+  /* the badlands' bands stood on end, as a ticket's stub */
+  const stub = STRATA.map(s => `<td width="5" bgcolor="${s}" style="width:5px;background:${s};font-size:0;line-height:0">&nbsp;</td>`).join('');
 
-  const p = (s: string) => `<p style="margin:0 0 14px;font-family:${FONT.text};font-size:15px;line-height:1.55;color:${c.ink}">${esc(s)}</p>`;
+  const label = (s: string, color = c.faint, extra = '') =>
+    `<p style="margin:0 0 10px;font-family:${FONT.label};${BOLD};font-size:11px;line-height:1.3;letter-spacing:2px;text-transform:uppercase;color:${color}${extra}">${esc(s)}</p>`;
+  const p = (s: string) => `<p style="margin:0 0 14px;font-family:${FONT.text};font-size:15px;line-height:1.6;color:${c.ink}">${words(s)}</p>`;
 
   const heading = headingInArt ? '' :
     `<h1 class="jod-h1" style="margin:0 0 18px;font-family:${FONT.display};${BOLD};font-size:30px;line-height:1.15;color:${c.ink}">${esc(letter.heading)}</h1>`;
 
-  const quote = letter.quote
-    ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 16px"><tr><td style="border-left:4px solid ${c.quoteEdge};padding:1px 0 1px 12px;font-family:${FONT.text};font-size:18px;line-height:1.4;color:${c.ink}">„${esc(letter.quote)}“</td></tr></table>`
+  const lead = letter.lead
+    ? `<p class="jod-lead" style="margin:0 0 16px;font-family:${FONT.text};font-size:18px;line-height:1.5;color:${c.ink}">${words(letter.lead)}</p>`
     : '';
 
-  const ticket = letter.when?.length
-    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 16px;background:${c.ticket};border:2px dashed ${c.ticketEdge}">
-<tr><td style="padding:11px 16px 3px;font-family:${FONT.label};${BOLD};font-size:10px;letter-spacing:2px;text-transform:uppercase;color:${c.faint}">${letter.struck ? 'Aflýst' : letter.when.length > 1 ? 'Tímarnir' : 'Hvenær'}</td></tr>
-${letter.when.map(w => `<tr><td class="jod-when" style="padding:3px 16px;font-family:${FONT.label};${BOLD};font-size:15px;letter-spacing:1px;text-transform:uppercase;color:${c.ink}${letter.struck ? ';text-decoration:line-through' : ''}">${esc(w)}</td></tr>`).join('')}
-<tr><td height="9" style="height:9px;line-height:9px;font-size:0">&nbsp;</td></tr>
+  const quote = letter.quote
+    ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 18px"><tr><td style="border-left:4px solid ${c.quoteEdge};padding:2px 0 2px 14px;font-family:${FONT.text};font-size:19px;line-height:1.4;color:${c.ink}">„${esc(letter.quote)}“</td></tr></table>`
+    : '';
+
+  /** a ticket: the strata for a stub, a dashed tear, and its lines */
+  const ticket = (inner: string) =>
+    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="${c.ticket}" style="margin:2px 0 18px;background:${c.ticket};border:2px solid ${c.ticketEdge}">
+<tr>${stub}<td style="padding:12px 18px 10px;border-left:2px dashed ${c.ticketEdge}">${inner}</td></tr>
+</table>`;
+
+  const when = letter.when?.length
+    ? ticket(`${label(letter.struck ? 'Aflýst' : letter.when.length > 1 ? 'Tímarnir' : 'Hvenær', letter.struck ? c.ticketEdge : c.faint, ';margin-bottom:6px')}
+${letter.when.map(w => `<p class="jod-when" style="margin:0 0 4px;font-family:${FONT.label};${BOLD};font-size:16px;line-height:1.35;letter-spacing:1px;text-transform:uppercase;color:${c.ink}${letter.struck ? ';text-decoration:line-through' : ''}">${esc(w)}</p>`).join('\n')}`)
+    : '';
+
+  const facts = letter.facts?.length
+    ? ticket(letter.facts.map((f, i) =>
+        `${label(f.label, c.faint, ';margin-bottom:4px')}<p class="jod-fact" style="margin:0 0 ${i === letter.facts!.length - 1 ? 4 : 12}px;font-family:${FONT.label};${BOLD};font-size:${i === 0 ? 20 : 15}px;line-height:1.3;letter-spacing:1px;color:${c.ink}">${words(f.value)}</p>`).join('\n'))
+    : '';
+
+  const steps = letter.steps
+    ? `${label(letter.steps.title)}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 6px">
+${letter.steps.list.map((s, i) => `<tr>
+<td width="44" valign="top" style="width:44px;padding:0 0 14px">
+<table role="presentation" cellpadding="0" cellspacing="0"><tr><td width="30" height="30" align="center" valign="middle" bgcolor="${c.badge}" style="width:30px;height:30px;background:${c.badge};border:2px solid ${c.outline};font-family:${FONT.label};${BOLD};font-size:14px;line-height:30px;color:${c.badgeInk}">${i + 1}</td></tr></table>
+</td>
+<td valign="top" style="padding:1px 0 14px">
+<p style="margin:0 0 3px;font-family:${FONT.text};${BOLD};font-size:15px;line-height:1.4;color:${c.ink}">${esc(s.title)}</p>
+<p style="margin:0;font-family:${FONT.text};font-size:14px;line-height:1.55;color:${c.soft}">${words(s.text)}</p>
+</td>
+</tr>`).join('\n')}
+</table>`
+    : '';
+
+  const items = letter.items
+    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="${c.ticket}" style="margin:22px 0 8px;background:${c.ticket};border-top:4px solid ${c.ticketEdge}">
+<tr><td class="jod-box" style="padding:18px 22px 6px">
+${label(letter.items.title)}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+${letter.items.list.map(it => `<tr>
+<td width="48" valign="top" style="width:48px;padding:2px 0 14px"><img src="${esc(iconUrl(assets, it.icon))}" width="${ICON_SIZE}" height="${ICON_SIZE}" alt="" style="display:block;width:${ICON_SIZE}px;height:${ICON_SIZE}px;border:0"></td>
+<td valign="top" style="padding:0 0 14px">
+<p style="margin:0 0 2px;font-family:${FONT.label};${BOLD};font-size:13px;line-height:1.4;letter-spacing:1px;text-transform:uppercase;color:${c.ink}">${esc(it.title)}</p>
+<p style="margin:0;font-family:${FONT.text};font-size:14px;line-height:1.55;color:${c.soft}">${words(it.text)}</p>
+</td>
+</tr>`).join('\n')}
+</table>
+</td></tr>
 </table>`
     : '';
 
   const smallLink = (l: { label: string; url: string }) =>
-    `<a href="${esc(l.url)}" style="font-family:${FONT.label};${BOLD};font-size:12px;letter-spacing:1px;text-transform:uppercase;color:${c.link}">${esc(l.label)}&nbsp;→</a>`;
-  const bigButton = (b: { label: string; url: string }) =>
-    `<td bgcolor="${c.button}" style="background:${c.button};border:2px solid ${c.buttonEdge};border-bottom-width:5px">
-<a href="${esc(b.url)}" style="display:inline-block;padding:13px 24px;font-family:${FONT.label};${BOLD};font-size:14px;letter-spacing:2px;text-transform:uppercase;color:${c.buttonInk};text-decoration:none">${esc(b.label)}</a>
-</td>`;
+    `<a href="${esc(l.url)}" style="font-family:${FONT.label};${BOLD};font-size:12px;letter-spacing:1px;text-transform:uppercase;color:${c.link};text-decoration:underline">${esc(l.label)}&nbsp;→</a>`;
+  /* the game's own button: a light edge above and to the left, a heavy one under it, the ink around it */
+  const button = (b: { label: string; url: string }, wide = false) =>
+    `<table role="presentation" cellpadding="0" cellspacing="0"${wide ? ' width="100%"' : ''} style="margin:8px 0 10px;${wide ? 'max-width:400px;' : ''}border:2px solid ${c.outline}"><tr>
+<td bgcolor="${c.button}" align="center" style="background:${c.button};border-top:2px solid ${c.buttonLight};border-left:2px solid ${c.buttonLight};border-right:2px solid ${c.buttonEdge};border-bottom:5px solid ${c.buttonEdge}">
+<a href="${esc(b.url)}" style="display:${wide ? 'block' : 'inline-block'};padding:13px 26px;font-family:${FONT.label};${BOLD};font-size:14px;line-height:1.2;letter-spacing:2px;text-transform:uppercase;text-align:center;color:${c.buttonInk};text-decoration:none">${esc(b.label)}</a>
+</td></tr></table>`;
 
-  /* answers straight from the letter: a button each, one under another, and a quiet one ("Kemst ekki") as a link under them */
+  /* answers straight from the letter: a button each, one under another, all as wide, and a quiet one ("Kemst ekki") as a link under them */
   const loud = (letter.answers ?? []).filter(a => !a.quiet);
   const quiet = (letter.answers ?? []).filter(a => a.quiet);
   const answers = letter.answers?.length
-    ? `${loud.map(a => `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:6px 0 8px"><tr>${bigButton(a)}</tr></table>`).join('\n')}
-${quiet.length ? `<p style="margin:4px 0 14px">${quiet.map(smallLink).join('<br>')}</p>` : ''}`
+    ? `${loud.map(a => button(a, true)).join('\n')}
+${quiet.length ? `<p style="margin:6px 0 14px">${quiet.map(smallLink).join('<br>')}</p>` : ''}`
     : '';
 
-  /* the button, with any smaller links beside it (under it on a phone) */
-  const links = (letter.links ?? []).map(smallLink).join('<br>');
-  const actions = letter.button
-    ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:6px 0 4px"><tr>
-${bigButton(letter.button)}
-${links ? `<td class="jod-stack" style="padding:0 0 0 20px;vertical-align:middle">${links}</td>` : ''}
-</tr></table>`
-    : links ? `<p style="margin:0">${links}</p>` : '';
+  /* the button, with any smaller links in a row under it */
+  const links = (letter.links ?? []).map(smallLink).join(`<span style="color:${c.rule}">&nbsp;&nbsp;·&nbsp;&nbsp;</span>`);
+  const actions = `${letter.button ? button(letter.button) : ''}${links ? `<p style="margin:${letter.button ? 6 : 0}px 0 8px;line-height:2">${links}</p>` : ''}`;
 
-  /* the verse in a printed book's italic, the same in every mail app */
+  /* the verse, cut on a sign; where pictures are not shown, its words in a printed book's italic */
   const verse = letter.verse?.length
-    ? `<p style="margin:18px 0 6px;padding-left:14px;border-left:2px dotted ${c.rule};font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:15px;line-height:1.55;color:${c.soft}">${letter.verse.map(esc).join('<br>')}</p>`
+    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0 4px"><tr><td align="center">
+${letter.verseIntro ? label(letter.verseIntro, c.faint, ';text-align:center;margin-bottom:12px') : ''}<img src="${esc(verseUrl(assets, theme, letter.kind))}" width="${VERSE_ART.width}" height="${VERSE_ART.height}" alt="${esc(letter.verse.join(' / '))}" style="display:block;margin:0 auto;width:100%;max-width:${VERSE_ART.width}px;height:auto;border:0;font-family:${FONT.book};font-style:italic;font-size:15px;line-height:1.55;text-align:center;color:${c.soft}">
+</td></tr></table>`
     : '';
 
-  const small = `font-family:${FONT.text};font-size:12px;line-height:1.5;color:${c.faint}`;
-  const foot = letter.foot.map(f => `<p style="margin:0 0 6px;${small}">${esc(f)}</p>`).join('')
-    + (letter.button ? `<p style="margin:0 0 6px;${small};word-break:break-all">Virkar hnappurinn ekki? Opnaðu <a href="${esc(letter.button.url)}" style="color:${c.faint}">${esc(letter.button.url)}</a></p>` : '')
+  const small = `font-family:${FONT.text};font-size:12px;line-height:1.55;color:${c.faint}`;
+  const foot = letter.foot.map(f => `<p style="margin:0 0 7px;${small}">${words(f)}</p>`).join('')
+    + (letter.button ? `<p style="margin:0 0 7px;${small};word-break:break-all">Virkar hnappurinn ekki? Opnaðu <a href="${esc(letter.button.url)}" style="color:${c.faint}">${esc(letter.button.url)}</a></p>` : '')
     + (letter.footLink ? `<p style="margin:0;${small}"><a href="${esc(letter.footLink.url)}" style="color:${c.link}">${esc(letter.footLink.label)}</a></p>` : '');
 
+  /* the site's three doors, as the bar on every page has them */
+  const doors = [
+    { label: 'Heimurinn', url: `${assets}/#heimur` },
+    { label: 'Taflan',    url: `${assets}/taflan` },
+    { label: 'Eftirlýst', url: `${assets}/crew` },
+  ].map(d => `<a href="${esc(d.url)}" style="color:${c.barInk};text-decoration:none">${esc(d.label)}</a>`).join(`<span style="color:${c.barFaint}">&nbsp;&nbsp;·&nbsp;&nbsp;</span>`);
+  const stamped = postmark(now);
+
   const html = `<!doctype html>
-<html lang="is" xmlns="http://www.w3.org/1999/xhtml">
+<html lang="is" dir="ltr" xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="x-apple-disable-message-reformatting">
+<meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no">
 <meta name="color-scheme" content="${c.scheme} only">
 <meta name="supported-color-schemes" content="${c.scheme} only">
 <title>${esc(letter.subject)}</title>
@@ -179,50 +309,66 @@ ${webFonts ? `@font-face{font-family:'Alfa Slab One';font-style:normal;font-weig
 @font-face{font-family:'Pixelify Sans';font-style:normal;font-weight:400;src:url(${assets}/email-fonts/pixelify-sans.woff2) format('woff2')}
 @font-face{font-family:'Silkscreen';font-style:normal;font-weight:400;src:url(${assets}/email-fonts/silkscreen.woff2) format('woff2')}
 ` : ''}:root{color-scheme:${c.scheme} only}
-body{margin:0;padding:0}
+a[x-apple-data-detectors]{color:inherit!important;text-decoration:none!important;font-size:inherit!important;font-family:inherit!important;font-weight:inherit!important;line-height:inherit!important}
+</style>
+<style>
+body{margin:0;padding:0;word-spacing:normal;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 body,table,td,p,a,h1{font-variant-ligatures:none;font-feature-settings:"liga" 0,"clig" 0}
+table,td{border-collapse:collapse}
 a{text-decoration-thickness:2px;text-underline-offset:3px}
-@media (max-width:620px){.jod-pad{padding-left:20px!important;padding-right:20px!important}.jod-h1{font-size:26px!important}.jod-when{font-size:13px!important;letter-spacing:0!important;padding-left:12px!important;padding-right:12px!important}.jod-stack{display:block!important;padding:14px 0 0!important}}
+@media (max-width:620px){.jod-pad{padding-left:22px!important;padding-right:22px!important}.jod-box{padding-left:16px!important;padding-right:16px!important}.jod-h1{font-size:26px!important}.jod-lead{font-size:17px!important}.jod-when{font-size:14px!important;letter-spacing:0!important}.jod-fact{letter-spacing:0!important}}
 </style>
 </head>
-<body style="margin:0;padding:0">
-<div style="display:none;max-height:0;overflow:hidden;opacity:0">${esc(letter.preheader)}${'&#847;&zwnj;&nbsp;'.repeat(40)}</div>
+<body style="margin:0;padding:0;word-spacing:normal">
+<div role="article" aria-roledescription="email" aria-label="${esc(letter.subject)}" lang="is" dir="ltr">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all">${esc(letter.preheader)}${'&#847;&zwnj;&nbsp;'.repeat(40)}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-<tr><td align="center" style="padding:12px 6px">
+<tr><td align="center" style="padding:14px 6px">
 <table role="presentation" width="${ART.width}" cellpadding="0" cellspacing="0" bgcolor="${c.card}" style="width:100%;max-width:${ART.width}px;background:${c.card};border:1px solid ${c.frame}">
-<tr><td style="background:${c.bar}"><a href="${esc(assets)}" style="text-decoration:none"><img src="${esc(art)}" width="${ART.width}" height="${ART.height}" alt="${esc(headingInArt ? letter.heading : `${BRAND} · ${BANNERS[letter.kind].title}`)}" style="display:block;width:100%;max-width:${ART.width}px;height:auto;border:0;background:${c.bar};font-family:${FONT.display};${BOLD};font-size:24px;line-height:1.3;text-align:center;color:#E8DCC4"></a></td></tr>
+<tr><td bgcolor="${c.bar}" style="background:${c.bar}"><a href="${esc(assets)}" style="text-decoration:none"><img src="${esc(art)}" width="${ART.width}" height="${ART.height}" alt="${esc(headingInArt ? letter.heading : `${BRAND} · ${BANNERS[letter.kind].title}`)}" style="display:block;width:100%;max-width:${ART.width}px;height:auto;border:0;background:${c.bar};font-family:${FONT.display};${BOLD};font-size:24px;line-height:1.3;text-align:center;color:#E8DCC4"></a></td></tr>
 ${strata(3)}
-<tr><td class="jod-pad" bgcolor="${c.card}" style="background:${c.card};padding:24px 40px 10px">
-${heading}${quote}${ticket}${letter.lines.map(p).join('\n')}${answers}${actions}${verse}
+<tr><td class="jod-pad" bgcolor="${c.card}" style="background:${c.card};padding:28px 40px 10px">
+${heading}${lead}${quote}${when}${letter.lines.map(p).join('\n')}${facts}${steps}${answers}${actions}${items}${verse}
 </td></tr>
-<tr><td class="jod-pad" bgcolor="${c.card}" style="background:${c.card};padding:8px 40px 20px">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="border-top:2px dashed ${c.rule};padding-top:12px">${foot}</td></tr></table>
+<tr><td class="jod-pad" bgcolor="${c.card}" style="background:${c.card};padding:10px 40px 22px">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="border-top:2px dashed ${c.rule};padding-top:14px">${foot}</td></tr></table>
 </td></tr>
 ${strata(2)}
-<tr><td align="center" bgcolor="${c.bar}" style="background:${c.bar};padding:11px 20px;font-family:${FONT.label};${BOLD};font-size:11px;letter-spacing:2px">
-<a href="${esc(assets)}" style="color:#F2A63B;text-decoration:none">${BRAND} · play.jodcraft.world</a>
+<tr><td align="center" bgcolor="${c.bar}" style="background:${c.bar};padding:18px 20px 16px">
+<table role="presentation" cellpadding="0" cellspacing="0" align="center"><tr>
+<td valign="middle" style="padding:0 10px 0 0"><a href="${esc(assets)}"><img src="${esc(`${assets}/icon-192.png`)}" width="24" height="24" alt="" style="display:block;width:24px;height:24px;border:0"></a></td>
+<td valign="middle" style="font-family:${FONT.display};${BOLD};font-size:17px;line-height:24px;color:#E8DCC4"><a href="${esc(assets)}" style="color:#E8DCC4;text-decoration:none">${BRAND}</a></td>
+</tr></table>
+<p style="margin:12px 0 0;font-family:${FONT.label};${BOLD};font-size:11px;line-height:1.6;letter-spacing:2px;text-transform:uppercase">${doors}</p>
+<p style="margin:10px 0 0;font-family:${FONT.text};font-size:11px;line-height:1.5;color:${c.barFaint}">Stimplað í JOÐ ${esc(stamped)} · ${SERVER_HTML}</p>
 </td></tr>
 </table>
 </td></tr>
 </table>
+</div>
 </body>
 </html>`;
 
   const text = [
     letter.heading.toUpperCase(),
     '',
+    ...(letter.lead ? [letter.lead, ''] : []),
     ...(letter.quote ? [`„${letter.quote}“`, ''] : []),
     ...(letter.when?.length ? [...letter.when.map(w => `${letter.struck ? '(aflýst) ' : ''}${w}`), ''] : []),
     ...letter.lines.flatMap(l => [l, '']),
+    ...(letter.facts ?? []).flatMap(f => [`${f.label}: ${f.value}`]),
+    ...(letter.facts?.length ? [''] : []),
+    ...(letter.steps ? [letter.steps.title.toUpperCase(), ...letter.steps.list.flatMap((s, i) => [`${i + 1}. ${s.title}`, `   ${s.text}`]), ''] : []),
     ...(letter.answers ?? []).flatMap(a => [`${a.label}: ${a.url}`, '']),
     ...(letter.button ? [`${letter.button.label}: ${letter.button.url}`, ''] : []),
     ...(letter.links ?? []).flatMap(l => [`${l.label}: ${l.url}`, '']),
-    ...(letter.verse?.length ? [...letter.verse, ''] : []),
+    ...(letter.items ? [letter.items.title.toUpperCase(), ...letter.items.list.flatMap(it => [`* ${it.title}: ${it.text}`]), ''] : []),
+    ...(letter.verse?.length ? [...(letter.verseIntro ? [`${letter.verseIntro}:`, ''] : []), ...letter.verse, ''] : []),
     '--',
     ...letter.foot,
     ...(letter.footLink ? [`${letter.footLink.label}: ${letter.footLink.url}`] : []),
     '',
-    `${BRAND} · play.jodcraft.world`,
+    `${BRAND} · ${SERVER}`,
   ].join('\n').trim() + '\n';
 
   return { subject: letter.subject, html, text };

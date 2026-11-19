@@ -48,7 +48,7 @@ export async function mailMentions({ by, owner, entryId, text, reply }: { by: st
   const who = (u: string) => names[u.toLowerCase()] ?? u;
   const url = `${site}/crew/${owner}#${entryId}`;
   const res = await sendEmails(to.map(r => {
-    const { subject, html, text: plain } = renderLetter(mentionLetter({ by: who(by), reader: who(r.username), text, url, reply, site }), themes.mention, site);
+    const { subject, html, text: plain } = renderLetter(mentionLetter({ by: who(by), byUser: by, reader: who(r.username), text, url, reply, site }), themes.mention, site);
     return { to: r.address, subject, html, text: plain };
   }));
   if (!res.sent) {

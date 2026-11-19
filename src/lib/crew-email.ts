@@ -10,7 +10,7 @@ import path from 'path';
 import { CREW_USERNAMES, NAME_MAX, canonicalUsername } from '@/lib/crew-types';
 import { closeInvite, createInvite, inviteUrl, type Invite } from '@/lib/crew-access';
 import { canSendEmail, cleanEmail, emailProblem, sendEmail, siteUrl } from '@/lib/email';
-import { signinLetter } from '@/lib/email-copy';
+import { crewBut, signinLetter, welcomeLetter, type Letter } from '@/lib/email-copy';
 import { renderLetter } from '@/lib/email-design';
 import { readThemes } from '@/lib/email-settings';
 
@@ -168,10 +168,16 @@ export async function updateContact(username: string, body: { email?: unknown; n
 
 /* ─── a sign-in link by post ──────────────────────────────────────────────── */
 
-/** A fresh sign-in link, mailed to the member's address. No link is left
-    open that nobody was sent: none is made without an address or a mail key,
-    and one whose letter did not go is shut at once. */
-export async function mailSignInLink(username: string, origin: string): Promise<{ sent: true; invite: Invite; url: string; to: string } | { sent: false; reason: string }> {
+export type MailedLink = { sent: true; invite: Invite; url: string; to: string } | { sent: false; reason: string };
+
+/** What a letter carrying a sign-in link is written from. */
+interface KeyFor { username: string; name: string; names: Names; url: string; expiresAt: string; uses: number; site: string }
+
+/** A fresh sign-in link, mailed to the member's address in the letter
+    `write` makes around it. No link is left open that nobody was sent: none
+    is made without an address or a mail key, and one whose letter did not
+    go is shut at once. */
+async function mailWithLink(username: string, origin: string, kind: 'signin' | 'welcome', write: (key: KeyFor) => Letter | Promise<Letter>): Promise<MailedLink> {
   const name = canonicalUsername(username);
   const email = await getEmail(name);
   if (!email) return { sent: false, reason: `${name} er ekki með netfang.` };
@@ -180,10 +186,29 @@ export async function mailSignInLink(username: string, origin: string): Promise<
   const invite = await createInvite(name);
   const url = inviteUrl(origin, invite.key);
   const site = siteUrl();
-  const called = (await getName(name)) ?? name;
-  const { subject, html, text } = renderLetter(signinLetter({ name: called, url, expiresAt: invite.expiresAt, uses: invite.maxUses }), (await readThemes()).signin, site);
-  const result = await sendEmail({ to: email.address, subject, html, text });
-  /* a link that never left is shut at once */
-  if (!result.sent) { await closeInvite(invite.key); return result; }
-  return { sent: true, invite, url, to: email.address };
+  try {
+    const names = await getNames();
+    const letter = await write({ username: name, name: names[name.toLowerCase()] ?? name, names, url, expiresAt: invite.expiresAt, uses: invite.maxUses, site });
+    const { subject, html, text } = renderLetter(letter, (await readThemes())[kind], site);
+    const result = await sendEmail({ to: email.address, subject, html, text });
+    /* a link that never left is shut at once */
+    if (!result.sent) { await closeInvite(invite.key); return result; }
+    return { sent: true, invite, url, to: email.address };
+  } catch (e) {
+    await closeInvite(invite.key);
+    throw e;
+  }
 }
+
+/** A fresh sign-in link, mailed to the member's address. */
+export const mailSignInLink = (username: string, origin: string) =>
+  mailWithLink(username, origin, 'signin', k => signinLetter({ name: k.name, username: k.username, url: k.url, expiresAt: k.expiresAt, uses: k.uses }));
+
+/** The welcome letter (Borgarabréf), with a fresh sign-in link in it, mailed
+    to a new member's address: what JOÐ is, how to get into the game and what
+    waits on the site. Sent by the admin from Hópurinn. */
+export const mailWelcome = (username: string, origin: string) =>
+  mailWithLink(username, origin, 'welcome', async k => {
+    const { lastGameVersion } = await import('@/lib/server-news');
+    return welcomeLetter({ ...k, crew: crewBut(k.username, k.names), version: await lastGameVersion() });
+  });

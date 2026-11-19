@@ -60,6 +60,18 @@ async function record(news: ServerNews[]): Promise<void> {
   await r.ltrim(SERVER_NEWS_KEY, 0, SERVER_NEWS_SIZE - 1);
 }
 
+/** The game's version on the server as last seen live, for the welcome
+    letter to say which version to play; null without Redis or before any. */
+export async function lastGameVersion(): Promise<string | null> {
+  if (!process.env.REDIS_URL) return null;
+  try {
+    const v = await (await redis()).get(VERSION_KEY);
+    return v ? gameVersion(v) || null : null;
+  } catch {
+    return null;
+  }
+}
+
 /* the version this instance last saw stored, so a status read that changes nothing costs nothing */
 let knownVersion: string | null = null;
 

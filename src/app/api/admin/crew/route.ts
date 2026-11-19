@@ -1,13 +1,13 @@
 // The crew, from the admin's side: who has a token, how much hangs on each
 // wall, each member's email address, and a sign-in link (with its QR code,
-// or by post) for any member.
+// or by post, alone or in the welcome letter) for any member.
 import { NextRequest, NextResponse } from 'next/server';
 import { badJson, jsonObject } from '@/lib/http';
 import QRCode from 'qrcode';
 import { requireAdmin, unauthorizedResponse } from '@/lib/auth';
 import { readAllProfiles, allPhotos, createInvite, closeInvite, closeInvitesOf, listInvites, inviteUrl, getCrewToken, isCrewUsername, canonicalUsername, revokeCrewSessions, type Invite } from '@/lib/crew';
 import { hasPassword, setPasswordHash } from '@/lib/crew-access';
-import { getEmail, getNames, mailSignInLink, updateContact, type CrewEmail } from '@/lib/crew-email';
+import { getEmail, getNames, mailSignInLink, mailWelcome, updateContact, type CrewEmail } from '@/lib/crew-email';
 import { canSendEmail, siteUrl } from '@/lib/email';
 
 export const dynamic = 'force-dynamic';
@@ -49,12 +49,15 @@ export interface InviteResponse {
   url: string; expiresAt: string; maxUses: number; svg: string;
   /** the address the link was mailed to, when it was sent by post */
   sentTo?: string;
+  /** it went in the welcome letter (Borgarabréf) */
+  welcome?: boolean;
 }
 
 const qr = (url: string) => QRCode.toString(url, { type: 'svg', errorCorrectionLevel: 'M', margin: 1, color: { dark: '#1E1611', light: '#E8DCC4' } });
 
 /** A new sign-in link for a member: good for a week and a handful of devices.
-    With `send: true` it is mailed to the member's address instead of only shown. */
+    With `send: true` it is mailed to the member's address instead of only
+    shown; with `send: 'welcome'` it goes in the welcome letter (Borgarabréf). */
 export async function POST(req: NextRequest) {
   if (!(await requireAdmin())) return unauthorizedResponse();
   let body: { username?: unknown; maxUses?: unknown; send?: unknown };
@@ -63,13 +66,14 @@ export async function POST(req: NextRequest) {
 
   const username = canonicalUsername(body.username);
   const origin = process.env.NEXT_PUBLIC_SITE_URL ? siteUrl() : req.nextUrl.origin;
-  if (body.send === true) {
+  if (body.send === true || body.send === 'welcome') {
     if (!(await getEmail(username))) return NextResponse.json({ error: `${username} er ekki með netfang. Settu það inn fyrst.` }, { status: 409 });
     if (!canSendEmail()) return NextResponse.json({ error: 'Póstur er ekki tengdur (RESEND_API_KEY vantar).' }, { status: 503 });
-    const mailed = await mailSignInLink(username, origin);
+    const welcome = body.send === 'welcome';
+    const mailed = await (welcome ? mailWelcome : mailSignInLink)(username, origin);
     if (!mailed.sent) return NextResponse.json({ error: mailed.reason }, { status: 502 });
     const { invite, url } = mailed;
-    return NextResponse.json({ url, expiresAt: invite.expiresAt, maxUses: invite.maxUses, svg: await qr(url), sentTo: mailed.to } satisfies InviteResponse, { status: 201 });
+    return NextResponse.json({ url, expiresAt: invite.expiresAt, maxUses: invite.maxUses, svg: await qr(url), sentTo: mailed.to, ...(welcome ? { welcome } : {}) } satisfies InviteResponse, { status: 201 });
   }
   const inv = await createInvite(username, typeof body.maxUses === 'number' ? body.maxUses : undefined);
   const url = inviteUrl(origin, inv.key);

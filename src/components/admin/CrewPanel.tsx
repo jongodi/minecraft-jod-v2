@@ -31,9 +31,10 @@ export default function CrewPanel() {
   }, []);
   useEffect(() => { load(); }, [load]);
 
-  /* a new link, shown with its QR code; with `send` it is mailed to the member too. True once it is made. */
-  async function mint(username: string, send = false): Promise<boolean> {
-    setBusy(`${username}${send ? ':send' : ''}`); setNotice(''); setCopied(false);
+  /* A new link, shown with its QR code; with `send` it is mailed to the
+     member too, on its own or ('welcome') in the welcome letter. True once it is made. */
+  async function mint(username: string, send: boolean | 'welcome' = false): Promise<boolean> {
+    setBusy(`${username}${send === 'welcome' ? ':welcome' : send ? ':send' : ''}`); setNotice(''); setCopied(false);
     try {
       const res = await api<InviteResponse>('/api/admin/crew', { method: 'POST', body: JSON.stringify({ username, send }) });
       setInvite({ ...res, username });
@@ -126,6 +127,7 @@ export default function CrewPanel() {
                   <div className="a-inline">
                     <Button small onClick={() => mint(r.username)} disabled={busy !== null}>{busy === r.username ? 'Bý til…' : 'Nýr tengill'}</Button>
                     {r.email && <Button small onClick={() => mint(r.username, true)} disabled={busy !== null} title={`Sendir nýjan tengil á ${r.email.address}`}>{busy === `${r.username}:send` ? 'Sendi…' : 'Senda í pósti'}</Button>}
+                    {r.email && <Button small onClick={() => mint(r.username, 'welcome')} disabled={busy !== null} title={`Sendir velkomubréfið, með nýjum tengli, á ${r.email.address}`}>{busy === `${r.username}:welcome` ? 'Sendi…' : 'Senda borgarabréf'}</Button>}
                   </div>
                 </td>
               </tr>
@@ -133,14 +135,14 @@ export default function CrewPanel() {
           </tbody>
         </table>
       )}
-      <p className="a-help">Gleymt lykilorð: hreinsaðu það hér og sendu tengilinn sem verður þá til; opnum tenglum er lokað um leið, og félaginn velur sér annað lykilorð á veggnum. Sé netfang skráð getur félaginn líka beðið sjálfur um tengil í pósti undir „Þetta er ég“, og fær póst um spilakvöldin nema hann afþakki það. Bréfin kalla hvern og einn nafninu sem er skráð, annars notandanafninu. Aðgangslyklar í umhverfisbreytum (<code>CREW_TOKEN_…</code>) virka áfram undir „Þetta er ég“.</p>
+      <p className="a-help">Gleymt lykilorð: hreinsaðu það hér og sendu tengilinn sem verður þá til; opnum tenglum er lokað um leið, og félaginn velur sér annað lykilorð á veggnum. „Senda borgarabréf“ sendir nýjum félaga velkomubréfið: hvað JOÐ er, heimilisfang þjónsins, hvernig á að komast inn og hvað bíður á vefnum, með nýjum innskráningartengli; það sést undir Póstur. Sé netfang skráð getur félaginn líka beðið sjálfur um tengil í pósti undir „Þetta er ég“, og fær póst um spilakvöldin nema hann afþakki það. Bréfin kalla hvern og einn nafninu sem er skráð, annars notandanafninu. Aðgangslyklar í umhverfisbreytum (<code>CREW_TOKEN_…</code>) virka áfram undir „Þetta er ég“.</p>
 
       {editing && <ContactModal row={editing} onClose={() => setEditing(null)} onSaved={msg => { setEditing(null); setNotice(msg); load(); }} />}
 
       {invite && (
         <Modal title={`Innskráningartengill fyrir ${invite.username}`} onClose={() => setInvite(null)} width="34rem">
           <div className="a-stack">
-            {invite.sentTo && <Notice text={`✓ Tengillinn var sendur á ${invite.sentTo}.`} />}
+            {invite.sentTo && <Notice text={invite.welcome ? `✓ Borgarabréfið, með tenglinum, var sent á ${invite.sentTo}.` : `✓ Tengillinn var sendur á ${invite.sentTo}.`} />}
             <p className="a-help">{invite.sentTo ? 'Hann er líka hér, til að afrita eða skanna.' : `Sendu ${invite.username} tengilinn eða láttu skanna kóðann.`} Hann gildir til {when(invite.expiresAt)} og fyrir {invite.maxUses} tæki; hvert tæki sem opnar hann er skráð inn sem {invite.username} í eitt ár. Á veggnum getur {invite.username} svo valið sér lykilorð.</p>
             <div className="a-qr" role="img" dangerouslySetInnerHTML={{ __html: invite.svg }} aria-label="QR-kóði með tenglinum" />
             <input className="a-input a-input--data" readOnly value={invite.url} onFocus={e => e.target.select()} aria-label="Tengill" />
