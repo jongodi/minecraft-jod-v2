@@ -1,7 +1,8 @@
 import type { NextRequest } from 'next/server';
 import { ImageResponse } from 'next/og';
 import { BANNERS, BRAND, MAIL_KINDS, VERSES, type MailKind } from '@/lib/email-copy';
-import { ART, ICON_SIZE, VERSE_ART, VERSE_SIDE, artHeading, figuresOf, isTheme, type Theme } from '@/lib/email-design';
+import { ART, ICON_SIZE, VERSE_ART, VERSE_SIDE, artHeading, figuresOf, isTheme, textOf, toneColor, type Theme } from '@/lib/email-design';
+import { DRAWN, drawnText, drawnWidth, isDrawnStyle, isTone } from '@/lib/mail-text';
 import { iconSvg, isMailIcon } from '@/lib/mail-icons';
 import { MOON_COLUMNS, MOON_CRATERS } from '@/lib/moon';
 import { CLOUDS } from '@/components/badlands/Bits';
@@ -18,6 +19,10 @@ import { C, cardFonts } from '@/lib/og-card';
      ?d=verse      the letter's verse cut on a sign (?t=, ?k=); ?n=1 the
                    narrower sign a short letter stands beside its words
      ?d=icon&i=    one of the welcome's small pictures (src/lib/mail-icons.ts)
+     ?d=text       a few words in the site's own faces (src/lib/mail-text.ts):
+                   ?y= the style, ?c= the colour's part in the look, ?x= the
+                   words with ?s= the site's signature on them, on no ground
+                   of their own so the paper shows through
 
    A heading is only drawn when the signature holds, so nobody can have the
    site draw a picture saying anything it did not write; without one (or with
@@ -318,9 +323,25 @@ export async function GET(req: NextRequest) {
   }
 
   const t = q.get('t');
-  const k = q.get('k') as MailKind | null;
-  if (!isTheme(t) || !k || !MAIL_KINDS.includes(k)) return new Response('Not found', { status: 404 });
+  if (!isTheme(t)) return new Response('Not found', { status: 404 });
   const theme: Theme = t;
+
+  if (q.get('d') === 'text') {
+    const y = q.get('y'), tone = q.get('c');
+    if (!isDrawnStyle(y) || !isTone(tone)) return new Response('Not found', { status: 404 });
+    /* words the site did not sign are never drawn */
+    const text = textOf(theme, y, tone, q.get('x'), q.get('s'));
+    if (!text) return new Response('Not found', { status: 404 });
+    const d = DRAWN[y];
+    const width = drawnWidth(y, text) * 2, height = d.height * 2;
+    return new ImageResponse(
+      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', whiteSpace: 'nowrap', fontFamily: d.face === 'slab' ? 'Alfa Slab One' : 'Silkscreen', fontSize: d.size * 2, letterSpacing: d.spacing * 2, color: toneColor(theme, tone), ...(d.strike ? { textDecoration: 'line-through' } : {}) }}>{drawnText(y, text)}</div>,
+      { width, height, fonts, headers: { 'Cache-Control': IMMUTABLE } },
+    );
+  }
+
+  const k = q.get('k') as MailKind | null;
+  if (!k || !MAIL_KINDS.includes(k)) return new Response('Not found', { status: 404 });
 
   if (q.get('d') === 'verse') {
     const size = q.get('n') === '1' ? 'side' : 'full';
