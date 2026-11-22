@@ -61,7 +61,7 @@ describe('a letter in its dress', () => {
     expect(blocks[0]).toContain('x-apple-data-detectors');
     expect(blocks[1]).not.toContain('@font-face');
     expect(blocks[1]).not.toContain('[');
-    expect(blocks[1]).toContain('@media (max-width:620px)');
+    expect(blocks[1]).toContain('@media (max-width:700px)');
     /* times and addresses are not made links of on the phone */
     expect(html).toContain('<meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no">');
     expect(renderLetter(letter(), 'sunset', SITE, { webFonts: false }).html).not.toContain('@font-face');
@@ -165,8 +165,12 @@ describe('the welcome', () => {
 
   it('shows what waits on the site, each with its small picture', () => {
     const { html, text } = renderLetter(welcome(), 'campfire', SITE);
-    for (const icon of ['wall', 'board', 'fire', 'wanted', 'map'] as const) expect(html).toContain(`src="${iconUrl(SITE, icon).replace(/&/g, '&amp;')}"`);
+    for (const icon of ['wall', 'board', 'fire', 'wanted'] as const) expect(html).toContain(`src="${iconUrl(SITE, icon).replace(/&/g, '&amp;')}"`);
     expect(text).toContain('JOÐ Á VEFNUM');
+    /* the long letter is wider, its parts side by side; a short one keeps its width */
+    expect(html).toContain('max-width:680px');
+    expect(html.match(/class="jod-col"/g)).toHaveLength(2 + 3 + 4);
+    expect(renderLetter(letter(), 'sunset', SITE).html).not.toMatch(/max-width:680px|class="jod-col"/);
     expect(text).toContain('* Eftirlýst: Sá sem lofar að mæta en kemur ekki fær nafnbótina Svikarinn. Bara svo þú vitir það.');
   });
 });

@@ -202,6 +202,7 @@ export function welcomeLetter({ name, username, url, expiresAt, uses, site, crew
       ],
     },
     button: { label: 'Skrá mig inn', url },
+    /* the world in 3D is this link, so the list under it does not say it again */
     links: [{ label: 'Sjá heiminn í þrívídd', url: `${site}/heimskort` }],
     items: {
       title: 'JOÐ á vefnum',
@@ -210,7 +211,6 @@ export function welcomeLetter({ name, username, url, expiresAt, uses, site, crew
         { icon: 'board',  title: 'Taflan',              text: 'Þar hangir allt sem gerist í JOÐ. Skrifaðu @nafn á miða og viðkomandi fær bréf.' },
         { icon: 'fire',   title: 'Bálin',               text: 'Svona ákveðum við spilakvöld: einhver kveikir bál og stingur upp á tímum, hin merkja við hvenær þau komast. Þjónninn sefur þess á milli, en hálftíma fyrir bál má vekja hann.' },
         { icon: 'wanted', title: 'Eftirlýst',           text: 'Sá sem lofar að mæta en kemur ekki fær nafnbótina Svikarinn. Bara svo þú vitir það.' },
-        { icon: 'map',    title: 'Heimurinn í þrívídd', text: 'Allt sem við höfum byggt, á korti sem þú getur flogið yfir í vafranum.' },
       ],
     },
     verseIntro: 'Borgaravísan',

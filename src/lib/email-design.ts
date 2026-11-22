@@ -50,6 +50,9 @@ const SIGN_VERSION = 4;
 
 /** The picture's size as shown; it is drawn at twice this. */
 export const ART = { width: 600, height: 210 };
+/** How wide a long letter's card is (one with steps or a list, the Borgarabréf):
+    its parts stand side by side on a wide screen, so it is not a long scroll. */
+export const WIDE = 680;
 /** The verse's sign as shown, drawn at twice this. */
 export const VERSE_ART = { width: 460, height: 172 };
 /** A small picture beside the welcome's list, as shown. */
@@ -183,6 +186,15 @@ export interface RenderOptions {
     fonts are fetched from and the foot's links lead to. */
 export function renderLetter(letter: Letter, theme: Theme, assets: string, { webFonts = true, now = Date.now() }: RenderOptions = {}): Rendered {
   const c = PALETTES[theme];
+  /* a long letter is wider, its parts in columns; the picture keeps its shape */
+  const width = letter.steps || letter.items ? WIDE : ART.width;
+  const artHeight = Math.round(width * ART.height / ART.width);
+  /** Parts side by side, each `w` wide, that fall under one another where
+      there is no room: boxes on a line, which every mail app can lay out,
+      with no rule a phone must read (where it reads the phone's rules, each
+      takes the whole line). No space between them, or it would show. */
+  const cols = (cells: string[], w: number) =>
+    `<div style="font-size:0;line-height:0;text-align:left">${cells.map(cell => `<div class="jod-col" style="display:inline-block;width:100%;max-width:${w}px;vertical-align:top">${cell}</div>`).join('')}</div>`;
   /* the heading is drawn in the picture when it can be signed; otherwise it is written on the paper */
   const art = artUrl(assets, theme, letter.kind, letter.heading, { figures: letter.figures, moon: moonPhase(new Date(now)) });
   const headingInArt = art.includes('&h=');
@@ -220,39 +232,38 @@ export function renderLetter(letter: Letter, theme: Theme, assets: string, { web
 ${letter.when.map(w => `<p class="jod-when" style="margin:0 0 4px;font-family:${FONT.label};${BOLD};font-size:16px;line-height:1.35;letter-spacing:1px;text-transform:uppercase;color:${c.ink}${letter.struck ? ';text-decoration:line-through' : ''}">${esc(w)}</p>`).join('\n')}`)
     : '';
 
+  /* the address and the version side by side on the ticket */
   const facts = letter.facts?.length
-    ? ticket(letter.facts.map((f, i) =>
-        `${label(f.label, c.faint, ';margin-bottom:4px')}<p class="jod-fact" style="margin:0 0 ${i === letter.facts!.length - 1 ? 4 : 12}px;font-family:${FONT.label};${BOLD};font-size:${i === 0 ? 20 : 15}px;line-height:1.3;letter-spacing:1px;color:${c.ink}">${words(f.value)}</p>`).join('\n'))
+    ? ticket(cols(letter.facts.map((f, i) =>
+        `${label(f.label, c.faint, ';margin-bottom:4px')}<p class="jod-fact" style="margin:0 0 6px;padding-right:14px;font-family:${FONT.label};${BOLD};font-size:${i === 0 ? 20 : 15}px;line-height:26px;letter-spacing:1px;color:${c.ink}">${words(f.value)}</p>`), 262))
     : '';
 
+  /* the steps across the card, a number and a title over each one's words */
   const steps = letter.steps
     ? `${title(letter.steps.title)}
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 6px">
-${letter.steps.list.map((s, i) => `<tr>
-<td width="44" valign="top" style="width:44px;padding:0 0 14px">
+${cols(letter.steps.list.map((s, i) => `<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td width="42" valign="top" style="width:42px;padding:0 0 8px">
 <table role="presentation" cellpadding="0" cellspacing="0"><tr><td width="30" height="30" align="center" valign="middle" bgcolor="${c.badge}" style="width:30px;height:30px;background:${c.badge};border:2px solid ${c.outline};font-family:${FONT.label};${BOLD};font-size:14px;line-height:30px;color:${c.badgeInk}">${i + 1}</td></tr></table>
 </td>
-<td valign="top" style="padding:1px 0 14px">
-<p style="margin:0 0 3px;font-family:${FONT.text};${BOLD};font-size:15px;line-height:1.4;color:${c.ink}">${esc(s.title)}</p>
-<p style="margin:0;font-family:${FONT.text};font-size:14px;line-height:1.55;color:${c.soft}">${words(s.text)}</p>
-</td>
-</tr>`).join('\n')}
-</table>`
+<td valign="middle" style="padding:0 14px 8px 0"><p style="margin:0;font-family:${FONT.text};${BOLD};font-size:15px;line-height:1.3;color:${c.ink}">${esc(s.title)}</p></td>
+</tr>
+<tr><td colspan="2" style="padding:0 18px 14px 0"><p style="margin:0;font-family:${FONT.text};font-size:14px;line-height:1.5;color:${c.soft}">${words(s.text)}</p></td></tr>
+</table>`), 199)}`
     : '';
 
+  /* the list, two across */
   const items = letter.items
-    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="${c.ticket}" style="margin:22px 0 8px;background:${c.ticket};border-top:4px solid ${c.ticketEdge}">
-<tr><td class="jod-box" style="padding:18px 22px 6px">
+    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="${c.ticket}" style="margin:18px 0 8px;background:${c.ticket};border-top:4px solid ${c.ticketEdge}">
+<tr><td class="jod-box" style="padding:18px 8px 4px 22px">
 ${title(letter.items.title)}
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-${letter.items.list.map(it => `<tr>
-<td width="48" valign="top" style="width:48px;padding:2px 0 14px"><img src="${esc(iconUrl(assets, it.icon))}" width="${ICON_SIZE}" height="${ICON_SIZE}" alt="" style="display:block;width:${ICON_SIZE}px;height:${ICON_SIZE}px;border:0"></td>
-<td valign="top" style="padding:0 0 14px">
+${cols(letter.items.list.map(it => `<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+<td width="46" valign="top" style="width:46px;padding:2px 0 14px"><img src="${esc(iconUrl(assets, it.icon))}" width="${ICON_SIZE}" height="${ICON_SIZE}" alt="" style="display:block;width:${ICON_SIZE}px;height:${ICON_SIZE}px;border:0"></td>
+<td valign="top" style="padding:0 16px 14px 0">
 <p style="margin:0 0 2px;font-family:${FONT.label};${BOLD};font-size:13px;line-height:1.4;letter-spacing:1px;text-transform:uppercase;color:${c.ink}">${esc(it.title)}</p>
-<p style="margin:0;font-family:${FONT.text};font-size:14px;line-height:1.55;color:${c.soft}">${words(it.text)}</p>
+<p style="margin:0;font-family:${FONT.text};font-size:14px;line-height:1.5;color:${c.soft}">${words(it.text)}</p>
 </td>
-</tr>`).join('\n')}
-</table>
+</tr></table>`), 282)}
 </td></tr>
 </table>`
     : '';
@@ -280,7 +291,7 @@ ${quiet.length ? `<p style="margin:6px 0 14px">${quiet.map(smallLink).join('<br>
 
   /* the verse, cut on a sign; where pictures are not shown, its words in a printed book's italic */
   const verse = letter.verse?.length
-    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0 4px"><tr><td align="center">
+    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0 4px"><tr><td align="center">
 ${letter.verseIntro ? label(letter.verseIntro, c.faint, ';text-align:center;margin-bottom:12px') : ''}<img src="${esc(verseUrl(assets, theme, letter.kind))}" width="${VERSE_ART.width}" height="${VERSE_ART.height}" alt="${esc(letter.verse.join(' / '))}" style="display:block;margin:0 auto;width:100%;max-width:${VERSE_ART.width}px;height:auto;border:0;font-family:${FONT.book};font-style:italic;font-size:15px;line-height:1.55;text-align:center;color:${c.soft}">
 </td></tr></table>`
     : '';
@@ -320,7 +331,7 @@ body{margin:0;padding:0;word-spacing:normal;-webkit-text-size-adjust:100%;text-s
 body,table,td,p,a,h1{font-variant-ligatures:none;font-feature-settings:"liga" 0,"clig" 0}
 table,td{border-collapse:collapse}
 a{text-decoration-thickness:2px;text-underline-offset:3px}
-@media (max-width:620px){.jod-pad{padding-left:22px!important;padding-right:22px!important}.jod-box{padding-left:16px!important;padding-right:16px!important}.jod-h1{font-size:26px!important}.jod-lead{font-size:17px!important}.jod-when{font-size:14px!important;letter-spacing:0!important}.jod-fact{letter-spacing:0!important}}
+@media (max-width:700px){.jod-col{max-width:100%!important}.jod-pad{padding-left:22px!important;padding-right:22px!important}.jod-box{padding-left:16px!important;padding-right:16px!important}.jod-h1{font-size:26px!important}.jod-lead{font-size:17px!important}.jod-when{font-size:14px!important;letter-spacing:0!important}.jod-fact{letter-spacing:0!important}}
 </style>
 </head>
 <body style="margin:0;padding:0;word-spacing:normal">
@@ -328,8 +339,8 @@ a{text-decoration-thickness:2px;text-underline-offset:3px}
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all">${esc(letter.preheader)}${'&#847;&zwnj;&nbsp;'.repeat(40)}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
 <tr><td align="center" style="padding:14px 6px">
-<table role="presentation" width="${ART.width}" cellpadding="0" cellspacing="0" bgcolor="${c.card}" style="width:100%;max-width:${ART.width}px;background:${c.card};border:1px solid ${c.frame}">
-<tr><td bgcolor="${c.bar}" style="background:${c.bar}"><a href="${esc(assets)}" style="text-decoration:none"><img src="${esc(art)}" width="${ART.width}" height="${ART.height}" alt="${esc(headingInArt ? letter.heading : `${BRAND} · ${BANNERS[letter.kind].title}`)}" style="display:block;width:100%;max-width:${ART.width}px;height:auto;border:0;background:${c.bar};font-family:${FONT.display};${BOLD};font-size:24px;line-height:1.3;text-align:center;color:#E8DCC4"></a></td></tr>
+<table role="presentation" width="${width}" cellpadding="0" cellspacing="0" bgcolor="${c.card}" style="width:100%;max-width:${width}px;background:${c.card};border:1px solid ${c.frame}">
+<tr><td bgcolor="${c.bar}" style="background:${c.bar}"><a href="${esc(assets)}" style="text-decoration:none"><img src="${esc(art)}" width="${width}" height="${artHeight}" alt="${esc(headingInArt ? letter.heading : `${BRAND} · ${BANNERS[letter.kind].title}`)}" style="display:block;width:100%;max-width:${width}px;height:auto;border:0;background:${c.bar};font-family:${FONT.display};${BOLD};font-size:24px;line-height:1.3;text-align:center;color:#E8DCC4"></a></td></tr>
 ${strata(3)}
 <tr><td class="jod-pad" bgcolor="${c.card}" style="background:${c.card};padding:28px 40px 10px">
 ${heading}${lead}${quote}${when}${letter.lines.map(p).join('\n')}${facts}${steps}${answers}${actions}${items}${verse}
