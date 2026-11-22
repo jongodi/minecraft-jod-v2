@@ -69,7 +69,7 @@ Vefurinn sendir póst frá `hallo@jodcraft.world` í gegnum [Resend](https://res
 
 | Bréf | Hverjum | Hvenær |
 |---|---|---|
-| Borgarabréf | nýjum félaga | þegar stjórnandinn ýtir á „Senda borgarabréf“ í Hópnum: hvað JOÐ er, heimilisfang þjónsins og útgáfa leiksins, hvernig á að komast inn og hvað bíður á vefnum, með nýjum innskráningartengli |
+| Borgarabréf | félaga, nýjum eða gamalgrónum | þegar stjórnandinn ýtir á „Senda borgarabréf“ í Hópnum: hvað JOÐ er, heimilisfang þjónsins og útgáfa leiksins, hvernig á að komast inn og hvað bíður á vefnum, með nýjum innskráningartengli |
 | Innskráningartengill | félaganum sjálfum | þegar stjórnandinn ýtir á „Senda í pósti“, eða félaginn biður um hann undir „Þetta er ég“ (mest þrír á klukkutíma) |
 | Bál kveikt | öllum nema þeim sem kveikti | strax, meðan bálið er nýtt |
 | Kvöldið ákveðið | öllum nema þeim sem valdi | þegar kvöld með fleiri en einum tíma er ákveðið, af þeim sem kveikti eða sjálfkrafa; með tengli í dagatalið |

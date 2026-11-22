@@ -42,7 +42,7 @@ export const DEFAULT_THEMES: Record<MailKind, Theme> = {
 export const isTheme = (v: unknown): v is Theme => v === 'sunset' || v === 'campfire';
 
 /** Bump to make mail apps fetch every picture afresh after the drawing changes. */
-const DRAW_VERSION = 5;
+const DRAW_VERSION = 6;
 /** What a heading's signature is made with. Changing it costs every letter
     already sent its heading (the picture falls back to the plain title), so
     it is kept apart from the drawing's version. */
@@ -194,6 +194,10 @@ export function renderLetter(letter: Letter, theme: Theme, assets: string, { web
     `<p style="margin:0 0 10px;font-family:${FONT.label};${BOLD};font-size:11px;line-height:1.3;letter-spacing:2px;text-transform:uppercase;color:${color}${extra}">${esc(s)}</p>`;
   const p = (s: string) => `<p style="margin:0 0 14px;font-family:${FONT.text};font-size:15px;line-height:1.6;color:${c.ink}">${words(s)}</p>`;
 
+  /* a section's title (the steps, the list): the slab face in the ink, so the letter's parts are found at a glance */
+  const title = (s: string) =>
+    `<h2 style="margin:0 0 14px;font-family:${FONT.display};${BOLD};font-size:19px;line-height:1.25;color:${c.ink}">${esc(s)}</h2>`;
+
   const heading = headingInArt ? '' :
     `<h1 class="jod-h1" style="margin:0 0 18px;font-family:${FONT.display};${BOLD};font-size:30px;line-height:1.15;color:${c.ink}">${esc(letter.heading)}</h1>`;
 
@@ -222,7 +226,7 @@ ${letter.when.map(w => `<p class="jod-when" style="margin:0 0 4px;font-family:${
     : '';
 
   const steps = letter.steps
-    ? `${label(letter.steps.title)}
+    ? `${title(letter.steps.title)}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 6px">
 ${letter.steps.list.map((s, i) => `<tr>
 <td width="44" valign="top" style="width:44px;padding:0 0 14px">
@@ -239,7 +243,7 @@ ${letter.steps.list.map((s, i) => `<tr>
   const items = letter.items
     ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="${c.ticket}" style="margin:22px 0 8px;background:${c.ticket};border-top:4px solid ${c.ticketEdge}">
 <tr><td class="jod-box" style="padding:18px 22px 6px">
-${label(letter.items.title)}
+${title(letter.items.title)}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
 ${letter.items.list.map(it => `<tr>
 <td width="48" valign="top" style="width:48px;padding:2px 0 14px"><img src="${esc(iconUrl(assets, it.icon))}" width="${ICON_SIZE}" height="${ICON_SIZE}" alt="" style="display:block;width:${ICON_SIZE}px;height:${ICON_SIZE}px;border:0"></td>

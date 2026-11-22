@@ -32,7 +32,7 @@ export const MAIL_KINDS: MailKind[] = ['welcome', 'signin', 'lit', 'chosen', 'so
 
 /** What each letter is called in the admin panel, and when it goes. */
 export const MAIL_NAMES: Record<MailKind, { name: string; when: string }> = {
-  welcome: { name: 'Borgarabréf',          when: 'Þegar stjórnandinn sendir það úr Hópnum, til nýs félaga. Með nýjum innskráningartengli.' },
+  welcome: { name: 'Borgarabréf',          when: 'Þegar stjórnandinn sendir það úr Hópnum, til félaga, nýs eða gamalgróins. Með nýjum innskráningartengli.' },
   signin: { name: 'Innskráningartengill', when: 'Þegar stjórnandinn sendir tengil, eða félagi biður um einn.' },
   lit:    { name: 'Bál kveikt',           when: 'Þegar félagi stingur upp á spilakvöldi. Til allra nema hans.' },
   chosen: { name: 'Kvöldið ákveðið',      when: 'Þegar tími er festur á kvöldi með fleiri en einum tíma.' },
@@ -173,9 +173,10 @@ export function signinLetter({ name, username, url, expiresAt, uses }: { name: s
 
 /* ─── the welcome ─────────────────────────────────────────────────────────── */
 
-/** A new member's first letter, sent by the admin from Hópurinn: what JOÐ is,
-    how to get into the game, what waits on the site, and a sign-in link of
-    their own. `crew` is what the letters call the others, `version` the
+/** A member's citizen's letter, sent by the admin from Hópurinn: what JOÐ is,
+    how to get into the game, what is on the site, and a sign-in link of
+    their own. It goes to new members and to those who have played for years
+    alike, so nothing in it says the reader has only just arrived. `crew` is what the letters call the others, `version` the
     game's version on the server, when it is known. */
 export function welcomeLetter({ name, username, url, expiresAt, uses, site, crew, version }: {
   name: string; username: string; url: string; expiresAt: string; uses: number; site: string; crew: string[]; version?: string | null;
@@ -183,11 +184,11 @@ export function welcomeLetter({ name, username, url, expiresAt, uses, site, crew
   return {
     kind: 'welcome',
     subject: `Borgarabréfið þitt er komið, ${name}`,
-    preheader: 'Heimilisfang þjónsins, lykillinn að vefnum og allt hitt sem þarf til að byrja.',
-    heading: `Gaman að fá þig, ${name}`,
+    preheader: 'Heimilisfang þjónsins, lykill að vefnum og allt hitt sem borgari í JOÐ þarf að vita.',
+    heading: `Þú ert borgari í JOÐ, ${name}`,
     figures: [username],
-    lead: `Hæ ${name}! JOÐ er heimurinn okkar: eyðimörk við sólsetur, varðeldur sem logar þegar við spilum saman og vinahópur sem byggir, berst og hlær.`,
-    lines: crew.length ? [`Í hópnum eru ${andList(crew)}. Og nú þú líka!`] : [],
+    lead: `Hæ ${name}! Þetta bréf staðfestir það sem við vissum öll: þú ert fullgildur borgari í JOÐ, litla bænum okkar í eyðimörkinni. Hér er byggt, grafið og sprengt í loft upp, yfirleitt í þessari röð.`,
+    lines: crew.length ? [`Aðrir borgarar eru ${andList(crew)}. Ekkert þeirra kannast við að hafa hleypt creepernum inn.`] : [],
     facts: [
       { label: 'Heimilisfang þjónsins', value: SERVER },
       { label: 'Útgáfa', value: version ? `Minecraft Java ${version}` : 'Minecraft Java' },
@@ -196,20 +197,20 @@ export function welcomeLetter({ name, username, url, expiresAt, uses, site, crew
       title: 'Svona kemstu inn',
       list: [
         { title: 'Bættu þjóninum við', text: `Opnaðu Minecraft, farðu í Multiplayer og ýttu á Add Server. Í Server Address skrifarðu ${SERVER}.` },
-        { title: 'Segðu já við útlitspakkanum', text: 'Ef leikurinn spyr hvort þú viljir útlitspakka þjónsins skaltu segja já. Hann fylgir heiminum.' },
-        { title: 'Skráðu þig inn á vefinn', text: 'Ýttu á hnappinn hér fyrir neðan. Þá færðu þinn eigin vegg, getur fest miða á töfluna og kveikt bál þegar þig langar að spila.' },
+        { title: 'Segðu já við útlitspakkanum', text: 'Ef leikurinn spyr hvort þú viljir útlitspakka þjónsins skaltu segja já. Án hans er bærinn ekki nema hálfur.' },
+        { title: 'Skráðu þig inn á vefinn', text: 'Ýttu á hnappinn hér fyrir neðan. Þar áttu þinn eigin vegg, getur fest miða á töfluna og kveikt bál þegar þig langar að spila.' },
       ],
     },
     button: { label: 'Skrá mig inn', url },
     links: [{ label: 'Sjá heiminn í þrívídd', url: `${site}/heimskort` }],
     items: {
-      title: 'Það sem bíður þín',
+      title: 'Bærinn á vefnum',
       list: [
-        { icon: 'wall',   title: 'Veggurinn þinn',      text: 'Þinn eigin staður á vefnum. Hengdu upp skjáskot og segðu frá því sem þú byggðir.' },
+        { icon: 'wall',   title: 'Veggurinn þinn',      text: 'Þinn eigin staður á vefnum. Hengdu upp skjáskot og montaðu þig af því sem þú byggðir.' },
         { icon: 'board',  title: 'Taflan',              text: 'Þar hangir allt sem gerist í JOÐ. Skrifaðu @nafn á miða og viðkomandi fær bréf.' },
-        { icon: 'fire',   title: 'Bálin',               text: 'Svona ákveðum við spilakvöld: einhver kveikir bál og stingur upp á tímum, hin merkja við. Þjónninn sefur þess á milli, en hálftíma fyrir bál má vekja hann.' },
+        { icon: 'fire',   title: 'Bálin',               text: 'Svona ákveðum við spilakvöld: einhver kveikir bál og stingur upp á tímum, hin merkja við hvenær þau komast. Þjónninn sefur þess á milli, en hálftíma fyrir bál má vekja hann.' },
         { icon: 'wanted', title: 'Eftirlýst',           text: 'Sá sem lofar að mæta en kemur ekki fær nafnbótina Svikarinn. Bara svo þú vitir það.' },
-        { icon: 'map',    title: 'Heimurinn í þrívídd', text: 'Allt sem við höfum byggt, á korti sem þú getur flogið yfir í vafranum.' },
+        { icon: 'map',    title: 'Heimurinn í þrívídd', text: 'Allt sem við höfum byggt, á korti sem þú getur flogið yfir í vafranum. Engir creeperar þar.' },
       ],
     },
     verseIntro: 'Lífið í JOÐ í fjórum línum',

@@ -140,9 +140,11 @@ describe('the welcome', () => {
   it('greets the member by name and names the rest of the crew, not them', () => {
     const l = welcome();
     expect(l.subject).toBe('Borgarabréfið þitt er komið, Jóna');
-    expect(l.heading).toBe('Gaman að fá þig, Jóna');
+    expect(l.heading).toBe('Þú ert borgari í JOÐ, Jóna');
     expect(l.lead).toMatch(/^Hæ Jóna! /);
-    expect(l.lines[0]).toMatch(/^Í hópnum eru Stefán, AmmaGaur, .* og eikibleiki\. Og nú þú líka!$/);
+    expect(l.lines[0]).toMatch(/^Aðrir borgarar eru Stefán, AmmaGaur, .* og eikibleiki\. /);
+    /* it goes to those already playing too, so it never says the reader has just come */
+    expect(`${l.heading} ${l.lead} ${l.lines.join(' ')} ${l.preheader}`).not.toMatch(/nú þú|Gaman að fá|til að byrja/);
     expect(l.lines[0]).not.toContain('joenana');
   });
 
@@ -164,7 +166,7 @@ describe('the welcome', () => {
   it('shows what waits on the site, each with its small picture', () => {
     const { html, text } = renderLetter(welcome(), 'campfire', SITE);
     for (const icon of ['wall', 'board', 'fire', 'wanted', 'map'] as const) expect(html).toContain(`src="${iconUrl(SITE, icon).replace(/&/g, '&amp;')}"`);
-    expect(text).toContain('ÞAÐ SEM BÍÐUR ÞÍN');
+    expect(text).toContain('BÆRINN Á VEFNUM');
     expect(text).toContain('* Eftirlýst: Sá sem lofar að mæta en kemur ekki fær nafnbótina Svikarinn. Bara svo þú vitir það.');
   });
 });

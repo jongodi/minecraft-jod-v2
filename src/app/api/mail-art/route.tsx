@@ -274,10 +274,11 @@ function Sign({ theme, lines }: { theme: Theme; lines: string[] }) {
     const top = y + e + i * ph;
     wood.push([x + e, top, bw - 2 * e, ph, w.face[i % 2]], [x + e, top, bw - 2 * e, 4, w.light]);
     if (i > 0) wood.push([x + e, top - 2, bw - 2 * e, 4, w.seam]);
-    /* the grain: a few dashes on each plank, the same on every sign */
+    /* the grain: a few dashes on each plank, the same on every sign, along
+       its upper and lower edge so none runs through the words like a line struck out */
     for (let k = 0; k < 6; k++) {
       const gx = x + e + 24 + ((i * 173 + k * 151) % (bw - 2 * e - 140));
-      wood.push([gx, top + 16 + ((k * 13 + i * 11) % Math.max(1, ph - 28)), 40 + ((i + k) % 3) * 24, 4, w.grain]);
+      wood.push([gx, top + (k % 2 ? ph - 11 : 8), 40 + ((i + k) % 3) * 24, 3, w.grain]);
     }
   }
   return (
