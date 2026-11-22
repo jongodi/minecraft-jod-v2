@@ -127,7 +127,7 @@ export default function CrewPanel() {
                   <div className="a-inline">
                     <Button small onClick={() => mint(r.username)} disabled={busy !== null}>{busy === r.username ? 'Bý til…' : 'Nýr tengill'}</Button>
                     {r.email && <Button small onClick={() => mint(r.username, true)} disabled={busy !== null} title={`Sendir nýjan tengil á ${r.email.address}`}>{busy === `${r.username}:send` ? 'Sendi…' : 'Senda í pósti'}</Button>}
-                    {r.email && <Button small onClick={() => mint(r.username, 'welcome')} disabled={busy !== null} title={`Sendir velkomubréfið, með nýjum tengli, á ${r.email.address}`}>{busy === `${r.username}:welcome` ? 'Sendi…' : 'Senda borgarabréf'}</Button>}
+                    {r.email && <Button small onClick={() => mint(r.username, 'welcome')} disabled={busy !== null} title={`Sendir borgarabréfið, með nýjum tengli, á ${r.email.address}`}>{busy === `${r.username}:welcome` ? 'Sendi…' : 'Senda borgarabréf'}</Button>}
                   </div>
                 </td>
               </tr>

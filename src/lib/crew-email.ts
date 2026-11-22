@@ -204,9 +204,9 @@ async function mailWithLink(username: string, origin: string, kind: 'signin' | '
 export const mailSignInLink = (username: string, origin: string) =>
   mailWithLink(username, origin, 'signin', k => signinLetter({ name: k.name, username: k.username, url: k.url, expiresAt: k.expiresAt, uses: k.uses }));
 
-/** The welcome letter (Borgarabréf), with a fresh sign-in link in it, mailed
-    to a new member's address: what JOÐ is, how to get into the game and what
-    waits on the site. Sent by the admin from Hópurinn. */
+/** The citizen's letter (Borgarabréf), with a fresh sign-in link in it, mailed
+    to a member's address, new or long in town: what JOÐ is, how to get into
+    the game and what is on the site. Sent by the admin from Hópurinn. */
 export const mailWelcome = (username: string, origin: string) =>
   mailWithLink(username, origin, 'welcome', async k => {
     const { lastGameVersion } = await import('@/lib/server-news');
