@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { BANNERS, MAIL_KINDS, SERVER, VERSES, crewBut, welcomeLetter, type Letter } from '@/lib/email-copy';
-import { DEFAULT_THEMES, THEMES, artHeading, artUrl, figuresOf, iconUrl, postmark, renderLetter, verseUrl } from '@/lib/email-design';
+import { DEFAULT_THEMES, THEMES, artHeading, artUrl, figuresOf, iconUrl, postmark, renderLetter, textOf, textUrl, verseUrl } from '@/lib/email-design';
+import { drawnChunks, drawnText, drawnWidth } from '@/lib/mail-text';
 import { MAIL_ICONS, iconRows, iconSvg } from '@/lib/mail-icons';
 import { moonPhase } from '@/lib/moon';
 import { readThemes, setTheme } from '@/lib/email-settings';
@@ -236,6 +237,58 @@ describe('the heading in the picture', () => {
     expect(html).not.toContain('&amp;h=');
     const { canAnswerByLink } = await import('@/lib/night-answer');
     expect(canAnswerByLink()).toBe(false);
+  });
+});
+
+describe('the words drawn in the site\'s own faces', () => {
+  afterEach(() => vi.unstubAllEnvs());
+  const q = (url: string) => new URL(url).searchParams;
+
+  it('breaks long words into pictures between words, a time before its hour', () => {
+    expect(drawnChunks('value', 'Laugardag 28. nóv. kl. 20:00')).toEqual(['Laugardag 28. nóv.', 'kl. 20:00']);
+    expect(drawnChunks('label', 'Heimilisfang þjónsins')).toEqual(['Heimilisfang þjónsins']);
+    expect(drawnText('label', 'Útgáfa')).toBe('ÚTGÁFA');
+    expect(drawnText('title', 'Svona kemstu inn')).toBe('Svona kemstu inn');
+    /* wider words make wider pictures, none wider than a phone's column */
+    expect(drawnWidth('title', 'Svona kemstu inn')).toBeGreaterThan(drawnWidth('title', 'Svona'));
+    for (const chunk of drawnChunks('value', 'Miðvikudag 28. september kl. 20:00')) expect(drawnWidth('value', chunk)).toBeLessThan(270);
+  });
+
+  it('are pictures when the site can sign them, their words in the alt, and words when it cannot', () => {
+    vi.stubEnv('CRON_SECRET', 'a-long-secret-for-the-cron-job');
+    const { html, text } = renderLetter(letter({ struck: true }), 'campfire', SITE);
+    expect(html).toContain('alt="AFLÝST"');
+    expect(html).toContain('alt="Laugardag 10. okt."');
+    expect(html).toMatch(/d=text&amp;t=campfire&amp;y=struck&amp;c=ink/);
+    expect(html).not.toContain('class="jod-when"');
+    /* the plain text says them as ever */
+    expect(text).toContain('(aflýst) Laugardag 10. okt. kl. 20:00');
+    vi.stubEnv('CRON_SECRET', '');
+    vi.stubEnv('MAIL_ART_SECRET', '');
+    const plain = renderLetter(letter({ struck: true }), 'campfire', SITE).html;
+    expect(plain).toContain('class="jod-when"');
+    expect(plain).not.toContain('d=text');
+  });
+
+  it('are never drawn from words the site did not sign', () => {
+    vi.stubEnv('CRON_SECRET', 'a-long-secret-for-the-cron-job');
+    const p = q(textUrl(SITE, 'sunset', 'title', 'ink', 'Svona kemstu inn')!);
+    expect(textOf('sunset', 'title', 'ink', p.get('x'), p.get('s'))).toBe('Svona kemstu inn');
+    expect(textOf('sunset', 'title', 'ink', Buffer.from('Ókeypis gull').toString('base64url'), p.get('s'))).toBeNull();
+    expect(textOf('campfire', 'title', 'ink', p.get('x'), p.get('s'))).toBeNull();
+    expect(textOf('sunset', 'label', 'ink', p.get('x'), p.get('s'))).toBeNull();
+    expect(textOf('sunset', 'title', 'faint', p.get('x'), p.get('s'))).toBeNull();
+    vi.stubEnv('CRON_SECRET', '');
+    expect(textUrl(SITE, 'sunset', 'title', 'ink', 'Svona kemstu inn')).toBeNull();
+  });
+
+  it('keep the server\'s address as words, to be copied into the game', () => {
+    vi.stubEnv('CRON_SECRET', 'a-long-secret-for-the-cron-job');
+    const { html } = renderLetter(sampleLetter('welcome', SITE), 'sunset', SITE);
+    expect(html).toContain('class="jod-fact"');
+    expect(html).toContain('alt="Svona kemstu inn"');
+    /* Gmail cuts a letter off at about 100 kB */
+    expect(html.length).toBeLessThan(70_000);
   });
 });
 

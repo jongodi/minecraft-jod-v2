@@ -11,11 +11,14 @@
 // hestinn, Jóna") and the crew it is about standing in it in their own
 // skins; the verse, cut on a sign as the game's signs hold four lines; and
 // the welcome's small pictures. The heading's address is signed, so the site
-// only ever draws words it wrote itself. The words between ask for the
-// site's fonts (served from /email-fonts); Apple Mail and some others show
-// them, while Gmail and Outlook show none, so the stand-ins are chosen to
-// keep the look: Verdana, the screen face nearest the pixel letters, and
-// bold capitals for the labels, times and buttons.
+// only ever draws words it wrote itself. So are the few words that carry the
+// look between them (src/lib/mail-text.ts): the section titles and the
+// times in the slab face, the small labels in the pixel capitals. The rest
+// stays words, asking for the site's fonts (served from /email-fonts);
+// Apple Mail and some others show them, while Gmail and Outlook show none,
+// so the stand-ins are chosen for those: Georgia for the paragraphs, a
+// printed notice's face on the parchment, and Verdana's bold capitals for
+// the buttons and the server's address, which must stay words to be copied.
 //
 // Mail apps read only the simplest HTML: tables, inline styles, no scripts.
 // Gmail keeps a <style> only if it can read every rule in it, so what it
@@ -28,6 +31,7 @@ import { BANNERS, BRAND, SERVER, VERSES, type Letter, type MailKind } from '@/li
 import { isCrewUsername, canonicalUsername } from '@/lib/crew-types';
 import type { MailIcon } from '@/lib/mail-icons';
 import { moonPhase } from '@/lib/moon';
+import { DRAWN, drawnChunks, drawnText, drawnWidth, type DrawnStyle, type Tone } from '@/lib/mail-text';
 
 export type Theme = 'sunset' | 'campfire';
 export const THEMES: Theme[] = ['sunset', 'campfire'];
@@ -42,7 +46,7 @@ export const DEFAULT_THEMES: Record<MailKind, Theme> = {
 export const isTheme = (v: unknown): v is Theme => v === 'sunset' || v === 'campfire';
 
 /** Bump to make mail apps fetch every picture afresh after the drawing changes. */
-const DRAW_VERSION = 6;
+const DRAW_VERSION = 7;
 /** What a heading's signature is made with. Changing it costs every letter
     already sent its heading (the picture falls back to the plain title), so
     it is kept apart from the drawing's version. */
@@ -97,7 +101,7 @@ const PALETTES: Record<Theme, Palette> = {
    letters' weight where they are missing. */
 const FONT = {
   display: `'Alfa Slab One',Rockwell,'Rockwell Extra Bold','Roboto Slab',Georgia,serif`,
-  text:    `'Pixelify Sans',Verdana,Geneva,Tahoma,sans-serif`,
+  text:    `'Pixelify Sans',Georgia,'Times New Roman',Times,serif`,
   label:   `Silkscreen,Verdana,Geneva,Tahoma,sans-serif`,
   book:    `Georgia,'Times New Roman',serif`,
 };
@@ -161,6 +165,29 @@ export function artHeading(theme: Theme, kind: MailKind, h: string | null, s: st
   return heading.length <= 120 && want.length === got.length && timingSafeEqual(want, got) ? heading : null;
 }
 
+/** What a look's drawn words are coloured: the ink, the faint of a label, the ticket's edge (a night called off). */
+export const toneColor = (theme: Theme, tone: Tone) => ({ ink: PALETTES[theme].ink, faint: PALETTES[theme].faint, edge: PALETTES[theme].ticketEdge })[tone];
+
+const signText = (theme: Theme, style: DrawnStyle, tone: Tone, text: string) =>
+  createHmac('sha256', artKey()).update(`mail-text|${SIGN_VERSION}|${theme}|${style}|${tone}|${text}`).digest('base64url').slice(0, 22);
+
+/** Where a few words are drawn in the site's own faces (src/lib/mail-text.ts),
+    signed like a heading so the site only draws words it wrote; null without
+    a key to sign with, and the words are then written as words. */
+export function textUrl(assets: string, theme: Theme, style: DrawnStyle, tone: Tone, text: string): string | null {
+  if (!artKey()) return null;
+  return `${assets}/api/mail-art?d=text&t=${theme}&y=${style}&c=${tone}&v=${DRAW_VERSION}&x=${Buffer.from(text, 'utf8').toString('base64url')}&s=${signText(theme, style, tone, text)}`;
+}
+
+/** The words a drawn picture's address carries, if the site signed them; null otherwise. */
+export function textOf(theme: Theme, style: DrawnStyle, tone: Tone, x: string | null, sig: string | null): string | null {
+  if (!x || !sig || !artKey()) return null;
+  let text: string;
+  try { text = Buffer.from(x, 'base64url').toString('utf8'); } catch { return null; }
+  const want = Buffer.from(signText(theme, style, tone, text)), got = Buffer.from(sig);
+  return text.length <= 60 && want.length === got.length && timingSafeEqual(want, got) ? text : null;
+}
+
 /** Where a letter's verse is drawn on its sign: the verse is the site's own (VERSES), so nothing is signed. */
 export const verseUrl = (assets: string, theme: Theme, kind: MailKind, side = false) =>
   `${assets}/api/mail-art?d=verse&t=${theme}&k=${kind}${side ? '&n=1' : ''}&v=${hash(`${DRAW_VERSION}|${theme}|${VERSES[kind].join('|')}`)}`;
@@ -203,12 +230,36 @@ export function renderLetter(letter: Letter, theme: Theme, assets: string, { web
   /* the badlands' bands stood on end, as a ticket's stub */
   const stub = STRATA.map(s => `<td width="5" bgcolor="${s}" style="width:5px;background:${s};font-size:0;line-height:0">&nbsp;</td>`).join('');
 
-  const label = (s: string, color = c.faint, extra = '') =>
+  /** Words drawn in the site's own faces, a picture to each few words so a
+      line breaks between them on a phone; each picture's alt says its
+      words, in the stand-in face where pictures are not shown. Null when
+      there is no key to sign them with: the words are then written. */
+  const drawn = (text: string, style: DrawnStyle, tone: Tone, fallbackFont: string): string | null => {
+    const d = DRAWN[style];
+    const imgs = drawnChunks(style, text).map(chunk => {
+      const url = textUrl(assets, theme, style, tone, chunk);
+      const w = drawnWidth(style, chunk);
+      return url && `<img src="${esc(url)}" width="${w}" height="${d.height}" alt="${esc(drawnText(style, chunk))}" style="display:inline-block;vertical-align:top;margin:0 ${Math.round(d.size * 0.3)}px 0 0;max-width:100%;height:auto;border:0;font-family:${fallbackFont};${BOLD};font-size:${d.size}px;line-height:${d.height}px;color:${toneColor(theme, tone)}">`;
+    });
+    return imgs.every(Boolean) ? imgs.join('') : null;
+  };
+  const toneOf = (color: string): Tone => (color === c.ticketEdge ? 'edge' : color === c.ink ? 'ink' : 'faint');
+
+  const label = (s: string, color = c.faint, extra = '') => {
+    const pic = drawn(s, 'label', toneOf(color), FONT.label);
+    if (pic) return `<p style="margin:0 0 ${/margin-bottom:4px/.test(extra) ? 2 : /margin-bottom:6px/.test(extra) ? 4 : 8}px;font-size:0;line-height:0${/text-align:center/.test(extra) ? ';text-align:center' : ''}">${pic}</p>`;
+    return labelText(s, color, extra);
+  };
+  const labelText = (s: string, color = c.faint, extra = '') =>
     `<p style="margin:0 0 10px;font-family:${FONT.label};${BOLD};font-size:11px;line-height:1.3;letter-spacing:2px;text-transform:uppercase;color:${color}${extra}">${esc(s)}</p>`;
-  const p = (s: string) => `<p style="margin:0 0 14px;font-family:${FONT.text};font-size:15px;line-height:1.6;color:${c.ink}">${words(s)}</p>`;
+  const p = (s: string) => `<p style="margin:0 0 14px;font-family:${FONT.text};font-size:16px;line-height:1.55;color:${c.ink}">${words(s)}</p>`;
 
   /* a section's title (the steps, the list): the slab face in the ink, so the letter's parts are found at a glance */
-  const title = (s: string) =>
+  const title = (s: string) => {
+    const pic = drawn(s, 'title', 'ink', FONT.display);
+    return pic ? `<h2 style="margin:0 0 12px;font-size:0;line-height:0">${pic}</h2>` : titleText(s);
+  };
+  const titleText = (s: string) =>
     `<h2 style="margin:0 0 14px;font-family:${FONT.display};${BOLD};font-size:19px;line-height:1.25;color:${c.ink}">${esc(s)}</h2>`;
 
   const heading = headingInArt ? '' :
@@ -230,7 +281,7 @@ export function renderLetter(letter: Letter, theme: Theme, assets: string, { web
 
   const when = letter.when?.length
     ? ticket(`${label(letter.struck ? 'Aflýst' : letter.when.length > 1 ? 'Tímarnir' : 'Hvenær', letter.struck ? c.ticketEdge : c.faint, ';margin-bottom:6px')}
-${letter.when.map(w => `<p class="jod-when" style="margin:0 0 4px;font-family:${FONT.label};${BOLD};font-size:16px;line-height:1.35;letter-spacing:1px;text-transform:uppercase;color:${c.ink}${letter.struck ? ';text-decoration:line-through' : ''}">${esc(w)}</p>`).join('\n')}`)
+${letter.when.map(w => drawn(w, letter.struck ? 'struck' : 'value', 'ink', FONT.label) ? `<p style="margin:0 0 4px;font-size:0;line-height:0">${drawn(w, letter.struck ? 'struck' : 'value', 'ink', FONT.label)}</p>` : `<p class="jod-when" style="margin:0 0 4px;font-family:${FONT.label};${BOLD};font-size:16px;line-height:1.35;letter-spacing:1px;text-transform:uppercase;color:${c.ink}${letter.struck ? ';text-decoration:line-through' : ''}">${esc(w)}</p>`).join('\n')}`)
     : '';
 
   /* the address and the version side by side on the ticket */
@@ -249,7 +300,7 @@ ${cols(letter.steps.list.map((s, i) => `<table role="presentation" width="100%" 
 </td>
 <td valign="middle" style="padding:0 14px 8px 0"><p style="margin:0;font-family:${FONT.text};${BOLD};font-size:15px;line-height:1.3;color:${c.ink}">${esc(s.title)}</p></td>
 </tr>
-<tr><td colspan="2" style="padding:0 18px 14px 0"><p style="margin:0;font-family:${FONT.text};font-size:14px;line-height:1.5;color:${c.soft}">${words(s.text)}</p></td></tr>
+<tr><td colspan="2" style="padding:0 18px 14px 0"><p style="margin:0;font-family:${FONT.text};font-size:15px;line-height:1.5;color:${c.soft}">${words(s.text)}</p></td></tr>
 </table>`), 199)}`
     : '';
 
@@ -261,8 +312,8 @@ ${title(letter.items.title)}
 ${cols(letter.items.list.map(it => `<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
 <td width="46" valign="top" style="width:46px;padding:2px 0 14px"><img src="${esc(iconUrl(assets, it.icon))}" width="${ICON_SIZE}" height="${ICON_SIZE}" alt="" style="display:block;width:${ICON_SIZE}px;height:${ICON_SIZE}px;border:0"></td>
 <td valign="top" style="padding:0 16px 14px 0">
-<p style="margin:0 0 2px;font-family:${FONT.label};${BOLD};font-size:13px;line-height:1.4;letter-spacing:1px;text-transform:uppercase;color:${c.ink}">${esc(it.title)}</p>
-<p style="margin:0;font-family:${FONT.text};font-size:14px;line-height:1.5;color:${c.soft}">${words(it.text)}</p>
+${drawn(it.title, 'item', 'ink', FONT.label) ? `<p style="margin:0 0 2px;font-size:0;line-height:0">${drawn(it.title, 'item', 'ink', FONT.label)}</p>` : `<p style="margin:0 0 2px;font-family:${FONT.label};${BOLD};font-size:13px;line-height:1.4;letter-spacing:1px;text-transform:uppercase;color:${c.ink}">${esc(it.title)}</p>`}
+<p style="margin:0;font-family:${FONT.text};font-size:15px;line-height:1.5;color:${c.soft}">${words(it.text)}</p>
 </td>
 </tr></table>`), 282)}
 </td></tr>
@@ -283,7 +334,7 @@ ${cols(letter.items.list.map(it => `<table role="presentation" width="100%" cell
   const answers = loud.map(a => button(a, true)).join('\n');
 
   /* the button, and in one row under it every smaller link: a quiet answer ("Kemst ekki") first */
-  const links = [...(letter.answers ?? []).filter(a => a.quiet), ...(letter.links ?? [])].map(smallLink).join(`<span style="color:${c.rule}">&nbsp;&nbsp;·&nbsp;&nbsp;</span>`);
+  const links = [...(letter.answers ?? []).filter(a => a.quiet), ...(letter.links ?? [])].map(smallLink).join(` <span style="color:${c.rule}">&nbsp;·&nbsp;</span> `);
   const actions = `${letter.button ? button(letter.button) : ''}${links ? `<p style="margin:${letter.button || loud.length ? 6 : 0}px 0 8px;font-size:12px;line-height:2">${links}</p>` : ''}`;
 
   /* the verse, cut on a sign; where pictures are not shown, its words in a printed book's italic.
@@ -300,7 +351,7 @@ ${letter.verseIntro ? label(letter.verseIntro, c.faint, ';text-align:center;marg
 </td></tr></table>`
     : '';
 
-  const small = `font-family:${FONT.text};font-size:12px;line-height:1.55;color:${c.faint}`;
+  const small = `font-family:${FONT.text};font-size:13px;line-height:1.5;color:${c.faint}`;
   const foot = letter.foot.map(f => `<p style="margin:0 0 7px;${small}">${words(f)}</p>`).join('')
     + (letter.button ? `<p style="margin:0 0 7px;${small};word-break:break-all">Virkar hnappurinn ekki? Opnaðu <a href="${esc(letter.button.url)}" style="color:${c.faint}">${esc(letter.button.url)}</a></p>` : '')
     + (letter.footLink ? `<p style="margin:0;${small}"><a href="${esc(letter.footLink.url)}" style="color:${c.link}">${esc(letter.footLink.label)}</a></p>` : '');
@@ -310,7 +361,7 @@ ${letter.verseIntro ? label(letter.verseIntro, c.faint, ';text-align:center;marg
     { label: 'Heimurinn', url: `${assets}/#heimur` },
     { label: 'Taflan',    url: `${assets}/taflan` },
     { label: 'Eftirlýst', url: `${assets}/crew` },
-  ].map(d => `<a href="${esc(d.url)}" style="color:${c.barInk};text-decoration:none">${esc(d.label)}</a>`).join(`<span style="color:${c.barFaint}">&nbsp;&nbsp;·&nbsp;&nbsp;</span>`);
+  ].map(d => `<a href="${esc(d.url)}" style="color:${c.barInk};text-decoration:none">${esc(d.label)}</a>`).join(` <span style="color:${c.barFaint}">&nbsp;·&nbsp;</span> `);
   const stamped = postmark(now);
 
   const html = `<!doctype html>
@@ -356,10 +407,10 @@ ${heading}${lead}${quote}${when}${sideVerse
 </td></tr>
 ${strata(2)}
 <tr><td align="center" bgcolor="${c.bar}" style="background:${c.bar};padding:16px 20px 14px;font-size:0;line-height:0;text-align:center">
-<div style="display:inline-block;vertical-align:middle;padding:0 18px 6px"><table role="presentation" cellpadding="0" cellspacing="0" align="center"><tr>
+<div style="display:inline-block;vertical-align:middle;padding:0 10px 6px"><table role="presentation" cellpadding="0" cellspacing="0" align="center"><tr>
 <td valign="middle" style="padding:0 10px 0 0"><a href="${esc(assets)}"><img src="${esc(`${assets}/icon-192.png`)}" width="24" height="24" alt="" style="display:block;width:24px;height:24px;border:0"></a></td>
 <td valign="middle" style="font-family:${FONT.display};${BOLD};font-size:17px;line-height:24px;color:#E8DCC4"><a href="${esc(assets)}" style="color:#E8DCC4;text-decoration:none">${BRAND}</a></td>
-</tr></table></div><div style="display:inline-block;vertical-align:middle;padding:0 18px 6px"><p style="margin:0;font-family:${FONT.label};${BOLD};font-size:11px;line-height:24px;letter-spacing:2px;text-transform:uppercase">${doors}</p></div>
+</tr></table></div><div style="display:inline-block;vertical-align:middle;padding:0 10px 6px"><p style="margin:0;font-family:${FONT.label};${BOLD};font-size:11px;line-height:24px;letter-spacing:2px;text-transform:uppercase">${doors}</p></div>
 <p style="margin:4px 0 0;font-family:${FONT.text};font-size:11px;line-height:1.5;color:${c.barFaint}">Stimplað í JOÐ ${esc(stamped)} · ${SERVER_HTML}</p>
 </td></tr>
 </table>
