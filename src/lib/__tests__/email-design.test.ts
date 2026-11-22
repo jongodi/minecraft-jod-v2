@@ -162,6 +162,8 @@ describe('the welcome', () => {
     expect(text).toContain('Borgaravísan:');
     expect(text).toContain('Veggurinn þinn: https://jod.test/crew/joenana');
     expect(html).toContain('>Skrá mig inn</a>');
+    /* the opening paragraph stands out in bold */
+    expect(html).toMatch(/<p class="jod-lead" style="[^"]*font-weight:700[^"]*">Hæ Jóna! /);
     /* without a version known, no number is guessed */
     expect(renderLetter(welcome({ version: null }), 'sunset', SITE).text).toContain('Útgáfa: Minecraft Java\n');
   });
