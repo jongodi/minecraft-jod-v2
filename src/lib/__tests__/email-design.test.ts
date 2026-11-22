@@ -142,7 +142,7 @@ describe('the welcome', () => {
     expect(l.subject).toBe('Borgarabréfið þitt er komið, Jóna');
     expect(l.heading).toBe('Þú ert borgari í JOÐ, Jóna');
     expect(l.lead).toMatch(/^Hæ Jóna! /);
-    expect(l.lines[0]).toMatch(/^Aðrir borgarar eru Stefán, AmmaGaur, .* og eikibleiki\. /);
+    expect(l.lines[0]).toMatch(/^Samborgarar þínir eru Stefán, AmmaGaur, .* og eikibleiki\. /);
     /* it goes to those already playing too, so it never says the reader has just come */
     expect(`${l.heading} ${l.lead} ${l.lines.join(' ')} ${l.preheader}`).not.toMatch(/nú þú|Gaman að fá|til að byrja/);
     expect(l.lines[0]).not.toContain('joenana');
@@ -166,7 +166,7 @@ describe('the welcome', () => {
   it('shows what waits on the site, each with its small picture', () => {
     const { html, text } = renderLetter(welcome(), 'campfire', SITE);
     for (const icon of ['wall', 'board', 'fire', 'wanted', 'map'] as const) expect(html).toContain(`src="${iconUrl(SITE, icon).replace(/&/g, '&amp;')}"`);
-    expect(text).toContain('BÆRINN Á VEFNUM');
+    expect(text).toContain('JOÐ Á VEFNUM');
     expect(text).toContain('* Eftirlýst: Sá sem lofar að mæta en kemur ekki fær nafnbótina Svikarinn. Bara svo þú vitir það.');
   });
 });

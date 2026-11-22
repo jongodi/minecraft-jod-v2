@@ -171,7 +171,7 @@ describe('a sign-in link by post', () => {
     expect(body.subject).toBe('Borgarabréfið þitt er komið, Jóna');
     expect(body.text).toContain(`Skrá mig inn: ${res.url}`);
     expect(body.text).toContain('Útgáfa: Minecraft Java 26.5\n');
-    expect(body.text).toMatch(/Aðrir borgarar eru Stefán, AmmaGaur, /);
+    expect(body.text).toMatch(/Samborgarar þínir eru Stefán, AmmaGaur, /);
     expect(body.html).toContain('/api/mail-art?t=sunset&amp;k=welcome');
     expect((await listInvites('joenana')).map(i => i.key)).toEqual([res.invite.key]);
   });
