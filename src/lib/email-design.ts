@@ -265,8 +265,9 @@ export function renderLetter(letter: Letter, theme: Theme, assets: string, { web
   const heading = headingInArt ? '' :
     `<h1 class="jod-h1" style="margin:0 0 18px;font-family:${FONT.display};${BOLD};font-size:30px;line-height:1.15;color:${c.ink}">${esc(letter.heading)}</h1>`;
 
+  /* the opening paragraph, larger and bold where the stand-in face has a bold (the pixel face has one weight) */
   const lead = letter.lead
-    ? `<p class="jod-lead" style="margin:0 0 16px;font-family:${FONT.text};font-size:18px;line-height:1.5;color:${c.ink}">${words(letter.lead)}</p>`
+    ? `<p class="jod-lead" style="margin:0 0 16px;font-family:${FONT.text};${BOLD};font-size:18px;line-height:1.5;color:${c.ink}">${words(letter.lead)}</p>`
     : '';
 
   const quote = letter.quote
