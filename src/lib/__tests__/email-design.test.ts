@@ -156,7 +156,7 @@ describe('the welcome', () => {
     expect(text).toContain('1. Bættu þjóninum við');
     expect(text).toContain('Skrá mig inn: https://jod.test/api/crew/invite?lykill=k1');
     expect(text).toContain('Lykillinn í hnappnum gildir til 26. nóvember og dugar á fimm tæki.');
-    expect(text).toContain('Lífið í JOÐ í fjórum línum:');
+    expect(text).toContain('Borgaravísan:');
     expect(text).toContain('Veggurinn þinn: https://jod.test/crew/joenana');
     expect(html).toContain('>Skrá mig inn</a>');
     /* without a version known, no number is guessed */

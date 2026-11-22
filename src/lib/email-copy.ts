@@ -58,12 +58,12 @@ export const BANNERS: Record<MailKind, { tag: string; title: string }> = {
     rhyme with their staves (stuðlar and höfuðstafir). Change one here and
     keep it to four lines. */
 export const VERSES: Record<MailKind, string[]> = {
-  /* the fire's own verse, which says what life in JOÐ is in four lines */
+  /* the citizen's own verse: the letter is brought, and what the world gives */
   welcome: [
-    'Kveikt er bál og creeper eytt,',
-    'kallar hópinn saman.',
-    'Byggjum hátt og berjumst sveitt,',
-    'bros og glens og gaman.',
+    'Bréf er skráð og borið þér,',
+    'borgari þú heitir.',
+    'Veröld kubba, vittu, hér',
+    'vist og gleði veitir.',
   ],
   signin: [
     'Lykill þinn er loksins klár,',
@@ -213,7 +213,7 @@ export function welcomeLetter({ name, username, url, expiresAt, uses, site, crew
         { icon: 'map',    title: 'Heimurinn í þrívídd', text: 'Allt sem við höfum byggt, á korti sem þú getur flogið yfir í vafranum.' },
       ],
     },
-    verseIntro: 'Lífið í JOÐ í fjórum línum',
+    verseIntro: 'Borgaravísan',
     verse: VERSES.welcome,
     foot: [
       'Einhverjar spurningar? Svaraðu bara þessu bréfi.',
