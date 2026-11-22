@@ -1,7 +1,7 @@
 import type { NextRequest } from 'next/server';
 import { ImageResponse } from 'next/og';
 import { BANNERS, BRAND, MAIL_KINDS, VERSES, type MailKind } from '@/lib/email-copy';
-import { ART, ICON_SIZE, VERSE_ART, artHeading, figuresOf, isTheme, type Theme } from '@/lib/email-design';
+import { ART, ICON_SIZE, VERSE_ART, VERSE_SIDE, artHeading, figuresOf, isTheme, type Theme } from '@/lib/email-design';
 import { iconSvg, isMailIcon } from '@/lib/mail-icons';
 import { MOON_COLUMNS, MOON_CRATERS } from '@/lib/moon';
 import { CLOUDS } from '@/components/badlands/Bits';
@@ -15,7 +15,8 @@ import { C, cardFonts } from '@/lib/og-card';
                    letter, ?h= the letter's own heading with ?s= the site's
                    signature on it, ?f= the crew standing in it (Minecraft
                    names, the crew's only) and ?m= the moon's phase over the fire
-     ?d=verse      the letter's verse cut on a sign (?t=, ?k=)
+     ?d=verse      the letter's verse cut on a sign (?t=, ?k=); ?n=1 the
+                   narrower sign a short letter stands beside its words
      ?d=icon&i=    one of the welcome's small pictures (src/lib/mail-icons.ts)
 
    A heading is only drawn when the signature holds, so nobody can have the
@@ -258,15 +259,20 @@ function Campfire({ kind, heading, crew, moon }: { kind: MailKind; heading: stri
 
 /* ─── the verse on its sign ───────────────────────────────────────────────── */
 
-const SIGN_W = VERSE_ART.width * 2, SIGN_H = VERSE_ART.height * 2;
+/* the sign under a long letter, and the narrower one beside a short letter's words: its size and the verse's */
+const SIGNS = {
+  full: { W: VERSE_ART.width * 2, H: VERSE_ART.height * 2, font: 38 },
+  side: { W: VERSE_SIDE.width * 2, H: VERSE_SIDE.height * 2, font: 27 },
+} as const;
 /* the game's woods for it: oak by day, dark oak by the fire with the words in glow ink */
 const WOOD = {
   sunset:   { face: ['#B8945F', '#AF8A55'], light: '#C9A56E', grain: '#9A7646', seam: '#7A5A35', edge: '#4D3323', ink: '#2A1A10', glow: '' },
   campfire: { face: ['#4E3826', '#473221'], light: '#5C4430', grain: '#3A2819', seam: '#2C1E13', edge: '#120C08', ink: '#F7DE9F', glow: '0 0 14px rgba(242, 166, 59, 0.75)' },
 } as const;
 
-function Sign({ theme, lines }: { theme: Theme; lines: string[] }) {
+function Sign({ theme, lines, size }: { theme: Theme; lines: string[]; size: keyof typeof SIGNS }) {
   const w = WOOD[theme];
+  const { W: SIGN_W, H: SIGN_H, font } = SIGNS[size];
   const x = 16, y = 12, bw = SIGN_W - 44, bh = SIGN_H - 36, e = 8;
   const planks = 4, ph = (bh - 2 * e) / planks;
   const wood: Rect[] = [];
@@ -289,7 +295,7 @@ function Sign({ theme, lines }: { theme: Theme; lines: string[] }) {
         {rects(wood)}
       </svg>
       {/* a line on each plank, as the game writes a sign */}
-      <div style={{ position: 'absolute', left: x + e, top: y + e, width: bw - 2 * e, height: bh - 2 * e, display: 'flex', flexDirection: 'column', fontFamily: 'Pixelify Sans', fontSize: 38, color: w.ink, ...(w.glow ? { textShadow: w.glow } : {}) }}>
+      <div style={{ position: 'absolute', left: x + e, top: y + e, width: bw - 2 * e, height: bh - 2 * e, display: 'flex', flexDirection: 'column', fontFamily: 'Pixelify Sans', fontSize: font, color: w.ink, ...(w.glow ? { textShadow: w.glow } : {}) }}>
         {lines.slice(0, planks).map((l, i) => <div key={i} style={{ display: 'flex', height: ph, alignItems: 'center', justifyContent: 'center', paddingBottom: 4 }}>{l}</div>)}
       </div>
     </div>
@@ -317,7 +323,8 @@ export async function GET(req: NextRequest) {
   const theme: Theme = t;
 
   if (q.get('d') === 'verse') {
-    return new ImageResponse(<Sign theme={theme} lines={VERSES[k]} />, { width: SIGN_W, height: SIGN_H, fonts, headers: { 'Cache-Control': IMMUTABLE } });
+    const size = q.get('n') === '1' ? 'side' : 'full';
+    return new ImageResponse(<Sign theme={theme} lines={VERSES[k]} size={size} />, { width: SIGNS[size].W, height: SIGNS[size].H, fonts, headers: { 'Cache-Control': IMMUTABLE } });
   }
 
   /* a heading the site did not sign is never drawn; the picture says the title instead */

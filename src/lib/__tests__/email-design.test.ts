@@ -103,7 +103,9 @@ describe('a letter in its dress', () => {
       expect(text).toContain('JOÐcraft · play.jodcraft.world');
       /* every letter ends on its four-line verse, cut on a sign, its words said where the picture is not shown, and in the plain text */
       expect(VERSES[k]).toHaveLength(4);
-      expect(html).toContain(`src="${verseUrl(SITE, t, k).replace(/&/g, '&amp;')}"`);
+      /* a short letter stands the narrower sign beside its words; the long one hangs the full sign under them */
+      expect(html).toContain(`src="${verseUrl(SITE, t, k, k !== 'welcome').replace(/&/g, '&amp;')}"`);
+      expect(html).toContain('max-width:680px');
       expect(html).toContain(`alt="${VERSES[k].join(' / ')}"`);
       expect(text).toContain(VERSES[k].join('\n'));
     }
@@ -167,10 +169,10 @@ describe('the welcome', () => {
     const { html, text } = renderLetter(welcome(), 'campfire', SITE);
     for (const icon of ['wall', 'board', 'fire', 'wanted'] as const) expect(html).toContain(`src="${iconUrl(SITE, icon).replace(/&/g, '&amp;')}"`);
     expect(text).toContain('JOÐ Á VEFNUM');
-    /* the long letter is wider, its parts side by side; a short one keeps its width */
-    expect(html).toContain('max-width:680px');
+    /* its parts stand side by side: the ticket's two lines, the three steps, the list of four */
     expect(html.match(/class="jod-col"/g)).toHaveLength(2 + 3 + 4);
-    expect(renderLetter(letter(), 'sunset', SITE).html).not.toMatch(/max-width:680px|class="jod-col"/);
+    /* a short letter has two: its words, and its sign beside them */
+    expect(renderLetter(letter({ verse: ['a', 'b', 'c', 'd'] }), 'sunset', SITE).html.match(/class="jod-col"/g)).toHaveLength(2);
     expect(text).toContain('* Eftirlýst: Sá sem lofar að mæta en kemur ekki fær nafnbótina Svikarinn. Bara svo þú vitir það.');
   });
 });
