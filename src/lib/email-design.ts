@@ -50,11 +50,13 @@ const SIGN_VERSION = 4;
 
 /** The picture's size as shown; it is drawn at twice this. */
 export const ART = { width: 600, height: 210 };
-/** How wide a long letter's card is (one with steps or a list, the Borgarabréf):
-    its parts stand side by side on a wide screen, so it is not a long scroll. */
-export const WIDE = 680;
+/** How wide a letter's card is as shown. The picture is drawn on ART's
+    grid and shown this wide, so it keeps its shape. */
+export const CARD = 680;
 /** The verse's sign as shown, drawn at twice this. */
 export const VERSE_ART = { width: 460, height: 172 };
+/** The sign as a short letter shows it, beside its words: narrower, the verse cut smaller. */
+export const VERSE_SIDE = { width: 276, height: 168 };
 /** A small picture beside the welcome's list, as shown. */
 export const ICON_SIZE = 32;
 
@@ -160,8 +162,8 @@ export function artHeading(theme: Theme, kind: MailKind, h: string | null, s: st
 }
 
 /** Where a letter's verse is drawn on its sign: the verse is the site's own (VERSES), so nothing is signed. */
-export const verseUrl = (assets: string, theme: Theme, kind: MailKind) =>
-  `${assets}/api/mail-art?d=verse&t=${theme}&k=${kind}&v=${hash(`${DRAW_VERSION}|${theme}|${VERSES[kind].join('|')}`)}`;
+export const verseUrl = (assets: string, theme: Theme, kind: MailKind, side = false) =>
+  `${assets}/api/mail-art?d=verse&t=${theme}&k=${kind}${side ? '&n=1' : ''}&v=${hash(`${DRAW_VERSION}|${theme}|${VERSES[kind].join('|')}`)}`;
 
 /** Where one of the welcome's small pictures is drawn. */
 export const iconUrl = (assets: string, icon: MailIcon) => `${assets}/api/mail-art?d=icon&i=${icon}&v=${DRAW_VERSION}`;
@@ -186,15 +188,14 @@ export interface RenderOptions {
     fonts are fetched from and the foot's links lead to. */
 export function renderLetter(letter: Letter, theme: Theme, assets: string, { webFonts = true, now = Date.now() }: RenderOptions = {}): Rendered {
   const c = PALETTES[theme];
-  /* a long letter is wider, its parts in columns; the picture keeps its shape */
-  const width = letter.steps || letter.items ? WIDE : ART.width;
+  const width = CARD;
   const artHeight = Math.round(width * ART.height / ART.width);
   /** Parts side by side, each `w` wide, that fall under one another where
       there is no room: boxes on a line, which every mail app can lay out,
       with no rule a phone must read (where it reads the phone's rules, each
       takes the whole line). No space between them, or it would show. */
-  const cols = (cells: string[], w: number) =>
-    `<div style="font-size:0;line-height:0;text-align:left">${cells.map(cell => `<div class="jod-col" style="display:inline-block;width:100%;max-width:${w}px;vertical-align:top">${cell}</div>`).join('')}</div>`;
+  const cols = (cells: string[], w: number | number[]) =>
+    `<div style="font-size:0;line-height:0;text-align:left">${cells.map((cell, i) => `<div class="jod-col" style="display:inline-block;width:100%;max-width:${typeof w === 'number' ? w : w[i]}px;vertical-align:top">${cell}</div>`).join('')}</div>`;
   /* the heading is drawn in the picture when it can be signed; otherwise it is written on the paper */
   const art = artUrl(assets, theme, letter.kind, letter.heading, { figures: letter.figures, moon: moonPhase(new Date(now)) });
   const headingInArt = art.includes('&h=');
@@ -269,30 +270,33 @@ ${cols(letter.items.list.map(it => `<table role="presentation" width="100%" cell
     : '';
 
   const smallLink = (l: { label: string; url: string }) =>
-    `<a href="${esc(l.url)}" style="font-family:${FONT.label};${BOLD};font-size:12px;letter-spacing:1px;text-transform:uppercase;color:${c.link};text-decoration:underline">${esc(l.label)}&nbsp;→</a>`;
+    `<a href="${esc(l.url)}" style="font-family:${FONT.label};${BOLD};font-size:12px;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;color:${c.link};text-decoration:underline">${esc(l.label)}&nbsp;→</a>`;
   /* the game's own button: a light edge above and to the left, a heavy one under it, the ink around it */
   const button = (b: { label: string; url: string }, wide = false) =>
     `<table role="presentation" cellpadding="0" cellspacing="0"${wide ? ' width="100%"' : ''} style="margin:8px 0 10px;${wide ? 'max-width:400px;' : ''}border:2px solid ${c.outline}"><tr>
 <td bgcolor="${c.button}" align="center" style="background:${c.button};border-top:2px solid ${c.buttonLight};border-left:2px solid ${c.buttonLight};border-right:2px solid ${c.buttonEdge};border-bottom:5px solid ${c.buttonEdge}">
-<a href="${esc(b.url)}" style="display:${wide ? 'block' : 'inline-block'};padding:13px 26px;font-family:${FONT.label};${BOLD};font-size:14px;line-height:1.2;letter-spacing:2px;text-transform:uppercase;text-align:center;color:${c.buttonInk};text-decoration:none">${esc(b.label)}</a>
+<a href="${esc(b.url)}" style="display:${wide ? 'block' : 'inline-block'};padding:13px 26px;font-family:${FONT.label};${BOLD};font-size:14px;line-height:1.2;letter-spacing:2px;text-transform:uppercase;text-align:center;color:${c.buttonInk};text-decoration:none">${esc(b.label).replace(/ kl\. /g, ' kl.&nbsp;')}</a>
 </td></tr></table>`;
 
-  /* answers straight from the letter: a button each, one under another, all as wide, and a quiet one ("Kemst ekki") as a link under them */
+  /* answers straight from the letter: a button each, one under another, all as wide */
   const loud = (letter.answers ?? []).filter(a => !a.quiet);
-  const quiet = (letter.answers ?? []).filter(a => a.quiet);
-  const answers = letter.answers?.length
-    ? `${loud.map(a => button(a, true)).join('\n')}
-${quiet.length ? `<p style="margin:6px 0 14px">${quiet.map(smallLink).join('<br>')}</p>` : ''}`
+  const answers = loud.map(a => button(a, true)).join('\n');
+
+  /* the button, and in one row under it every smaller link: a quiet answer ("Kemst ekki") first */
+  const links = [...(letter.answers ?? []).filter(a => a.quiet), ...(letter.links ?? [])].map(smallLink).join(`<span style="color:${c.rule}">&nbsp;&nbsp;·&nbsp;&nbsp;</span>`);
+  const actions = `${letter.button ? button(letter.button) : ''}${links ? `<p style="margin:${letter.button || loud.length ? 6 : 0}px 0 8px;font-size:12px;line-height:2">${links}</p>` : ''}`;
+
+  /* the verse, cut on a sign; where pictures are not shown, its words in a printed book's italic.
+     A short letter stands its sign beside its words, so the whole letter is about a screen;
+     a long one (the Borgarabréf) hangs it under them, full size. */
+  const sideVerse = !!letter.verse?.length && !letter.steps && !letter.items;
+  const sign = sideVerse ? VERSE_SIDE : VERSE_ART;
+  const signImg = letter.verse?.length
+    ? `<img src="${esc(verseUrl(assets, theme, letter.kind, sideVerse))}" width="${sign.width}" height="${sign.height}" alt="${esc(letter.verse.join(' / '))}" style="display:block;margin:0 auto;width:100%;max-width:${sign.width}px;height:auto;border:0;font-family:${FONT.book};font-style:italic;font-size:15px;line-height:1.55;text-align:center;color:${c.soft}">`
     : '';
-
-  /* the button, with any smaller links in a row under it */
-  const links = (letter.links ?? []).map(smallLink).join(`<span style="color:${c.rule}">&nbsp;&nbsp;·&nbsp;&nbsp;</span>`);
-  const actions = `${letter.button ? button(letter.button) : ''}${links ? `<p style="margin:${letter.button ? 6 : 0}px 0 8px;line-height:2">${links}</p>` : ''}`;
-
-  /* the verse, cut on a sign; where pictures are not shown, its words in a printed book's italic */
-  const verse = letter.verse?.length
-    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0 4px"><tr><td align="center">
-${letter.verseIntro ? label(letter.verseIntro, c.faint, ';text-align:center;margin-bottom:12px') : ''}<img src="${esc(verseUrl(assets, theme, letter.kind))}" width="${VERSE_ART.width}" height="${VERSE_ART.height}" alt="${esc(letter.verse.join(' / '))}" style="display:block;margin:0 auto;width:100%;max-width:${VERSE_ART.width}px;height:auto;border:0;font-family:${FONT.book};font-style:italic;font-size:15px;line-height:1.55;text-align:center;color:${c.soft}">
+  const verse = letter.verse?.length && !sideVerse
+    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0 4px"><tr><td align="center">
+${letter.verseIntro ? label(letter.verseIntro, c.faint, ';text-align:center;margin-bottom:12px') : ''}${signImg}
 </td></tr></table>`
     : '';
 
@@ -331,7 +335,7 @@ body{margin:0;padding:0;word-spacing:normal;-webkit-text-size-adjust:100%;text-s
 body,table,td,p,a,h1{font-variant-ligatures:none;font-feature-settings:"liga" 0,"clig" 0}
 table,td{border-collapse:collapse}
 a{text-decoration-thickness:2px;text-underline-offset:3px}
-@media (max-width:700px){.jod-col{max-width:100%!important}.jod-pad{padding-left:22px!important;padding-right:22px!important}.jod-box{padding-left:16px!important;padding-right:16px!important}.jod-h1{font-size:26px!important}.jod-lead{font-size:17px!important}.jod-when{font-size:14px!important;letter-spacing:0!important}.jod-fact{letter-spacing:0!important}}
+@media (max-width:700px){.jod-col{max-width:100%!important}.jod-sign{padding-left:0!important}.jod-pad{padding-left:22px!important;padding-right:22px!important}.jod-box{padding-left:16px!important;padding-right:16px!important}.jod-h1{font-size:26px!important}.jod-lead{font-size:17px!important}.jod-when{font-size:14px!important;letter-spacing:0!important}.jod-fact{letter-spacing:0!important}}
 </style>
 </head>
 <body style="margin:0;padding:0;word-spacing:normal">
@@ -342,20 +346,21 @@ a{text-decoration-thickness:2px;text-underline-offset:3px}
 <table role="presentation" width="${width}" cellpadding="0" cellspacing="0" bgcolor="${c.card}" style="width:100%;max-width:${width}px;background:${c.card};border:1px solid ${c.frame}">
 <tr><td bgcolor="${c.bar}" style="background:${c.bar}"><a href="${esc(assets)}" style="text-decoration:none"><img src="${esc(art)}" width="${width}" height="${artHeight}" alt="${esc(headingInArt ? letter.heading : `${BRAND} · ${BANNERS[letter.kind].title}`)}" style="display:block;width:100%;max-width:${width}px;height:auto;border:0;background:${c.bar};font-family:${FONT.display};${BOLD};font-size:24px;line-height:1.3;text-align:center;color:#E8DCC4"></a></td></tr>
 ${strata(3)}
-<tr><td class="jod-pad" bgcolor="${c.card}" style="background:${c.card};padding:28px 40px 10px">
-${heading}${lead}${quote}${when}${letter.lines.map(p).join('\n')}${facts}${steps}${answers}${actions}${items}${verse}
+<tr><td class="jod-pad" bgcolor="${c.card}" style="background:${c.card};padding:24px 40px 10px">
+${heading}${lead}${quote}${when}${sideVerse
+  ? cols([`<div style="padding:0 0 6px">${letter.lines.map(p).join('\n')}${answers}${actions}</div>`, `<div class="jod-sign" style="padding:4px 0 10px 20px">${signImg}</div>`], [CARD - 82 - VERSE_SIDE.width - 20, VERSE_SIDE.width + 20])
+  : `${letter.lines.map(p).join('\n')}${facts}${steps}${answers}${actions}${items}${verse}`}
 </td></tr>
 <tr><td class="jod-pad" bgcolor="${c.card}" style="background:${c.card};padding:10px 40px 22px">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="border-top:2px dashed ${c.rule};padding-top:14px">${foot}</td></tr></table>
 </td></tr>
 ${strata(2)}
-<tr><td align="center" bgcolor="${c.bar}" style="background:${c.bar};padding:18px 20px 16px">
-<table role="presentation" cellpadding="0" cellspacing="0" align="center"><tr>
+<tr><td align="center" bgcolor="${c.bar}" style="background:${c.bar};padding:16px 20px 14px;font-size:0;line-height:0;text-align:center">
+<div style="display:inline-block;vertical-align:middle;padding:0 18px 6px"><table role="presentation" cellpadding="0" cellspacing="0" align="center"><tr>
 <td valign="middle" style="padding:0 10px 0 0"><a href="${esc(assets)}"><img src="${esc(`${assets}/icon-192.png`)}" width="24" height="24" alt="" style="display:block;width:24px;height:24px;border:0"></a></td>
 <td valign="middle" style="font-family:${FONT.display};${BOLD};font-size:17px;line-height:24px;color:#E8DCC4"><a href="${esc(assets)}" style="color:#E8DCC4;text-decoration:none">${BRAND}</a></td>
-</tr></table>
-<p style="margin:12px 0 0;font-family:${FONT.label};${BOLD};font-size:11px;line-height:1.6;letter-spacing:2px;text-transform:uppercase">${doors}</p>
-<p style="margin:10px 0 0;font-family:${FONT.text};font-size:11px;line-height:1.5;color:${c.barFaint}">Stimplað í JOÐ ${esc(stamped)} · ${SERVER_HTML}</p>
+</tr></table></div><div style="display:inline-block;vertical-align:middle;padding:0 18px 6px"><p style="margin:0;font-family:${FONT.label};${BOLD};font-size:11px;line-height:24px;letter-spacing:2px;text-transform:uppercase">${doors}</p></div>
+<p style="margin:4px 0 0;font-family:${FONT.text};font-size:11px;line-height:1.5;color:${c.barFaint}">Stimplað í JOÐ ${esc(stamped)} · ${SERVER_HTML}</p>
 </td></tr>
 </table>
 </td></tr>
